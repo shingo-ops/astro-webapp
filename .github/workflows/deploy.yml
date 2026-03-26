@@ -40,13 +40,13 @@ jobs:
             git pull origin main
 
             echo "Step 2: Rebuilding and restarting containers..."
-            sudo docker compose up -d --build
+            docker compose up -d --build
 
             echo "Step 3: Cleaning up old Docker images..."
-            sudo docker image prune -f
+            docker image prune -f
 
             echo "Step 4: Checking container status..."
-            sudo docker compose ps
+            docker compose ps
 
             echo "============================================"
             echo "Deployment completed successfully!"
