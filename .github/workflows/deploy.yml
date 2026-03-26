@@ -1,0 +1,67 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
+            set -e
+            echo "============================================"
+            echo "Starting deployment..."
+            echo "============================================"
+
+            cd /home/deploy/myapp
+
+            echo "Step 1: Pulling latest code from GitHub..."
+            git pull origin main
+
+            echo "Step 2: Rebuilding and restarting containers..."
+            sudo docker compose up -d --build
+
+            echo "Step 3: Cleaning up old Docker images..."
+            sudo docker image prune -f
+
+            echo "Step 4: Checking container status..."
+            sudo docker compose ps
+
+            echo "============================================"
+            echo "Deployment completed successfully!"
+            echo "============================================"
+          ENDSSH
+
+      - name: Deployment Success Notification
+        if: success()
+        run: |
+          echo "✅ Deployment to VPS completed successfully!"
+          echo "🚀 Application is now live at https://jarvis-claude.uk"
+
+      - name: Deployment Failure Notification
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Please check the logs above for details."
+          exit 1
