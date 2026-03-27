@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth.dependencies import get_current_tenant
 from app.routers import health
 from app.routers import auth
+from app.routers import admin
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -34,16 +35,17 @@ app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 
 # --- 認証必須なルーター（デフォルトで認証が強制される） ---
-# 今後追加するCRM業務ルーターは全てここに登録する。
 # dependencies=[Depends(get_current_tenant)] により、
 # JWTトークンの検証 + tenant_idの取得 + search_pathの切り替えが自動で行われる。
-#
-# 例:
-# from app.routers import customers, deals, orders
+app.include_router(
+    admin.router,
+    prefix="/api/v1/admin",
+    tags=["admin"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# 今後追加するCRM業務ルーターも同じパターンで登録する:
 # app.include_router(
-#     customers.router,
-#     prefix="/api/v1",
-#     tags=["customers"],
+#     customers.router, prefix="/api/v1", tags=["customers"],
 #     dependencies=[Depends(get_current_tenant)],
 # )
 
