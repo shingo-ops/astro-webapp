@@ -18,6 +18,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # アプリケーションコードをコピー
 COPY . .
 
+# 非rootユーザーを作成して切り替え（Rootlessコンテナ）
+# コンテナが侵害されてもroot権限を取得できないようにする
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+USER appuser
+
 # ポート8000を公開（コンテナ間通信用）
 EXPOSE 8000
 
