@@ -12,6 +12,8 @@ services:
       - ./certbot/www:/var/www/certbot:ro
       - ./certbot/conf:/etc/letsencrypt:ro
     restart: unless-stopped
+    networks:
+      - frontnet
 
   # Certbot（SSL証明書取得・更新）
   certbot:
@@ -20,6 +22,8 @@ services:
       - ./certbot/www:/var/www/certbot:rw
       - ./certbot/conf:/etc/letsencrypt:rw
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - frontnet
 
   # バックエンドAPI（FastAPI）
   backend:
@@ -29,11 +33,16 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    networks:
+      - frontnet
+      - backnet
 
   # フロントエンド（React + TypeScript + Vite）
   frontend:
     build: ./frontend
     restart: unless-stopped
+    networks:
+      - frontnet
 
   # PostgreSQLデータベース
   postgres:
@@ -46,6 +55,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
+    networks:
+      - backnet
 
 volumes:
   postgres_data:
+
+networks:
+  frontnet:
+  backnet:
