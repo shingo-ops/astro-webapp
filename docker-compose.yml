@@ -30,6 +30,12 @@ services:
     build: ./backend
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-credentials.json
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://jarvis-claude.uk}
+    volumes:
+      - ./firebase-credentials.json:/app/firebase-credentials.json:ro
     depends_on:
       - postgres
     restart: unless-stopped

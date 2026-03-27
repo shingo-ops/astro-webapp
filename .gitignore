@@ -24,6 +24,10 @@ ENV/
 .env.*.local
 *-password.txt
 
+# Firebase / GCP credentials（絶対にGitHubに上げない）
+firebase-credentials.json
+*-credentials.json
+
 # Database
 postgres_data/
 *.sql
