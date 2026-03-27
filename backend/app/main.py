@@ -31,8 +31,10 @@ app.add_middleware(
 )
 
 # --- 認証不要なルーター（明示的に除外） ---
+# /api/health はバージョンなし（監視ツールが固定URLを使うため）
 app.include_router(health.router, prefix="/api", tags=["health"])
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+# /api/v1/auth にバージョン管理を適用
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 
 # --- 認証必須なルーター（デフォルトで認証が強制される） ---
 # dependencies=[Depends(get_current_tenant)] により、
