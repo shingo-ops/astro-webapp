@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models import User, Tenant
 from app.auth.utils import hash_password
 from app.auth.schemas import UserRegister, UserResponse
+from app.services.audit import record_audit_log
 
 router = APIRouter()
 
@@ -64,6 +65,23 @@ async def register_user(
         is_active=True,
     )
     db.add(user)
+    await db.flush()
+
+    # 監査ログ記録（パスワード等の機密情報は記録しない）
+    await record_audit_log(
+        db=db,
+        tenant_id=tenant.id,
+        user_id=user.id,
+        action="create",
+        table_name="users",
+        record_id=user.id,
+        new_data={
+            "email": user.email,
+            "username": user.username,
+            "role": user.role,
+        },
+    )
+
     await db.commit()
     await db.refresh(user)
 

@@ -4,8 +4,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Tenant
+from app.models import Tenant, User
 from app.services.tenant import create_tenant_schema
+from app.services.audit import record_audit_log
+from app.auth.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -31,6 +33,7 @@ class TenantResponse(BaseModel):
 async def register_tenant(
     data: TenantCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     テナント（契約企業）を登録し、専用スキーマを自動生成する。
@@ -67,6 +70,21 @@ async def register_tenant(
 
     # 専用スキーマを自動生成（テーブル + RLSポリシー込み）
     schema_name = await create_tenant_schema(db, tenant.id)
+
+    # 監査ログ記録
+    await record_audit_log(
+        db=db,
+        tenant_id=current_user.tenant_id,
+        user_id=current_user.id,
+        action="create",
+        table_name="tenants",
+        record_id=tenant.id,
+        new_data={
+            "tenant_name": tenant.tenant_name,
+            "tenant_code": tenant.tenant_code,
+            "schema_name": schema_name,
+        },
+    )
 
     return TenantResponse(
         id=tenant.id,
