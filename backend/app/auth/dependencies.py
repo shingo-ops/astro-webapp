@@ -85,6 +85,14 @@ async def get_current_user(
             detail="ユーザーが見つかりません",
         )
 
+    # JWTカスタムクレームのtenant_idとDB上のtenant_idの一致を検証
+    jwt_tenant_id = decoded.get("tenant_id")
+    if jwt_tenant_id is not None and jwt_tenant_id != user.tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="テナント情報が不正です",
+        )
+
     return user
 
 

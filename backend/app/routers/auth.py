@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import User, Tenant
-from app.auth.utils import hash_password
+from app.auth.utils import hash_password, set_tenant_claim
 from app.auth.schemas import UserRegister, UserResponse
 from app.services.audit import record_audit_log
 
@@ -81,6 +81,9 @@ async def register_user(
             "role": user.role,
         },
     )
+
+    # FirebaseカスタムクレームにテナントIDを埋め込み
+    set_tenant_claim(data.firebase_uid, tenant.id)
 
     await db.commit()
     await db.refresh(user)

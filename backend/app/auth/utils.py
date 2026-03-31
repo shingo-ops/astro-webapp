@@ -1,4 +1,14 @@
+import logging
+
 import bcrypt
+from firebase_admin import auth as firebase_auth
+
+logger = logging.getLogger(__name__)
+
+
+def set_tenant_claim(firebase_uid: str, tenant_id: int) -> None:
+    """FirebaseユーザーにカスタムクレームとしてテナントIDを設定する。"""
+    firebase_auth.set_custom_user_claims(firebase_uid, {"tenant_id": tenant_id})
 
 
 def hash_password(password: str) -> str:

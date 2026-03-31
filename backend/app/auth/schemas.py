@@ -8,6 +8,7 @@ class UserRegister(BaseModel):
     username: str = Field(min_length=1, max_length=255)
     full_name: str | None = None
     tenant_code: str = Field(min_length=1, max_length=50)
+    firebase_uid: str = Field(min_length=1, max_length=128)
 
 
 class UserLogin(BaseModel):
