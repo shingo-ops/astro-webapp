@@ -12,6 +12,9 @@ from app.models import User, Tenant
 
 security = HTTPBearer()
 
+# MFA強制フラグ（本番では必ずTrue）
+MFA_REQUIRED = os.getenv("MFA_REQUIRED", "true").lower() == "true"
+
 # Firebase Admin SDK の初期化（アプリ起動時に1回だけ実行）
 _firebase_app = None
 
@@ -53,6 +56,16 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="無効な認証トークンです",
         )
+
+    # MFA完了チェック: sign_in_second_factorクレームがないとMFA未完了
+    if MFA_REQUIRED:
+        firebase_claims = decoded.get("firebase", {})
+        second_factor = firebase_claims.get("sign_in_second_factor")
+        if not second_factor:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="MFA認証が必要です。認証アプリを設定してください",
+            )
 
     email = decoded.get("email")
     if not email:
