@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models import User, Tenant
 from app.auth.utils import hash_password, set_tenant_claim
 from app.auth.schemas import UserRegister, UserResponse
+from app.auth.dependencies import get_current_user
 from app.services.audit import record_audit_log
 
 router = APIRouter()
@@ -15,22 +16,31 @@ router = APIRouter()
 async def register_user(
     data: UserRegister,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
-    ユーザー登録API。
+    ユーザー登録API（管理者のみ実行可能）。
 
     フロー:
-      ① tenant_codeからテナントを検索（存在しなければ404）
-      ② 同じメールアドレスのユーザーがいないか確認（いれば409）
-      ③ パスワードをbcryptでハッシュ化（平文は保存しない）
-      ④ usersテーブルにユーザーを作成
+      ① 管理者権限を確認
+      ② tenant_codeからテナントを検索
+      ③ 同じメールアドレスのユーザーがいないか確認（いれば409）
+      ④ パスワードをbcryptでハッシュ化（平文は保存しない）
+      ⑤ usersテーブルにユーザーを作成
 
     注意:
       - このAPIで登録した後、ユーザーはFirebase Authenticationにも
         アカウントを作成する必要がある（フロントエンド側で実施）
       - パスワードはDB側のバックアップ認証用（Firebase障害時のフォールバック）
     """
-    # テナントの存在確認
+    # 管理者権限チェック
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="ユーザー登録は管理者のみ可能です",
+        )
+
+    # テナントの存在確認（エラーメッセージにテナントコードを含めない）
     result = await db.execute(
         select(Tenant).where(
             Tenant.tenant_code == data.tenant_code,
@@ -40,8 +50,8 @@ async def register_user(
     tenant = result.scalar_one_or_none()
     if not tenant:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"テナント '{data.tenant_code}' が見つかりません",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="テナントコードが無効です",
         )
 
     # メールアドレスの重複チェック
@@ -82,8 +92,16 @@ async def register_user(
         },
     )
 
-    # FirebaseカスタムクレームにテナントIDを埋め込み
-    set_tenant_claim(data.firebase_uid, tenant.id)
+    # FirebaseカスタムクレームにテナントIDを埋め込み（同期APIをスレッドで実行）
+    import asyncio
+    try:
+        await asyncio.to_thread(set_tenant_claim, data.firebase_uid, tenant.id)
+    except Exception:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Firebase連携に失敗しました。再度お試しください",
+        )
 
     await db.commit()
     await db.refresh(user)

@@ -47,8 +47,15 @@ async def register_tenant(
 
     注意:
       - tenant_codeは英小文字・数字・ハイフンのみ（例: "demo-a", "company-123"）
-      - このAPIは管理者のみが呼び出せるようにする（将来的にroleチェックを追加）
+      - 管理者（role="admin"）のみ実行可能
     """
+    # 管理者権限チェック
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="テナント作成は管理者のみ可能です",
+        )
+
     # tenant_codeの重複チェック
     result = await db.execute(
         select(Tenant).where(Tenant.tenant_code == data.tenant_code)
@@ -85,6 +92,8 @@ async def register_tenant(
             "schema_name": schema_name,
         },
     )
+
+    await db.commit()
 
     return TenantResponse(
         id=tenant.id,

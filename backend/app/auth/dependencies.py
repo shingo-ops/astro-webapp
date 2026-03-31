@@ -15,21 +15,27 @@ security = HTTPBearer()
 # MFA強制フラグ（本番では必ずTrue）
 MFA_REQUIRED = os.getenv("MFA_REQUIRED", "true").lower() == "true"
 
-# Firebase Admin SDK の初期化（アプリ起動時に1回だけ実行）
-_firebase_app = None
+# Firebase Admin SDK の初期化（スレッドセーフ）
+import threading
+
+_firebase_init_lock = threading.Lock()
+_firebase_initialized = False
 
 
 def _init_firebase():
-    global _firebase_app
-    if _firebase_app is not None:
+    global _firebase_initialized
+    if _firebase_initialized:
         return
-    cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if cred_path and os.path.exists(cred_path):
-        cred = credentials.Certificate(cred_path)
-        _firebase_app = firebase_admin.initialize_app(cred)
-    else:
-        # 環境変数 or デフォルト認証情報を使用
-        _firebase_app = firebase_admin.initialize_app()
+    with _firebase_init_lock:
+        if _firebase_initialized:
+            return
+        cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if cred_path and os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+        else:
+            firebase_admin.initialize_app()
+        _firebase_initialized = True
 
 
 async def get_current_user(
@@ -107,11 +113,11 @@ async def get_current_tenant(
 
     さらにDBセッションのsearch_pathをテナントスキーマに切り替える。
     """
-    tenant_id = user.tenant_id
+    safe_id = int(user.tenant_id)
 
     # テナントの存在・有効性を確認
     result = await db.execute(
-        select(Tenant).where(Tenant.id == tenant_id, Tenant.is_active == True)
+        select(Tenant).where(Tenant.id == safe_id, Tenant.is_active == True)
     )
     tenant = result.scalar_one_or_none()
     if not tenant:
@@ -120,11 +126,11 @@ async def get_current_tenant(
             detail="テナントが無効です",
         )
 
-    # search_pathをテナントスキーマに切り替え
-    schema_name = f"tenant_{tenant_id:03d}"
+    # search_pathをテナントスキーマに切り替え（int()で型を強制しSQLi防止）
+    schema_name = f"tenant_{safe_id:03d}"
     await db.execute(text(f"SET search_path = {schema_name}, public"))
 
     # RLS用のapp.tenant_idも設定
-    await db.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
+    await db.execute(text(f"SET app.tenant_id = '{safe_id}'"))
 
-    return tenant_id
+    return safe_id
