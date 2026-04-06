@@ -64,8 +64,122 @@ services:
     networks:
       - backnet
 
+  # ============================================================
+  # 監視・運用基盤（ステージ3）
+  # ============================================================
+
+  # --- B-1: Prometheus（メトリクス収集） ---
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+    restart: unless-stopped
+    networks:
+      - backnet
+
+  # Grafana（可視化・アラート・ダッシュボード）
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
+      - GF_SERVER_ROOT_URL=https://jarvis-claude.uk/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+    networks:
+      - backnet
+      - frontnet
+
+  # Node Exporter（ホストOS: CPU/メモリ/ディスク）
+  node-exporter:
+    image: prom/node-exporter:latest
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    restart: unless-stopped
+    networks:
+      - backnet
+
+  # PostgreSQL Exporter（DB接続数・クエリ統計）
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - backnet
+
+  # Nginx Exporter（リクエスト数・ステータスコード）
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    command:
+      - "-nginx.scrape-uri=http://nginx:80/nginx_status"
+    depends_on:
+      - nginx
+    restart: unless-stopped
+    networks:
+      - frontnet
+      - backnet
+
+  # --- B-2: Loki（ログ集積） ---
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+    restart: unless-stopped
+    networks:
+      - backnet
+
+  # Promtail（ログ収集 → Lokiに送信）
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./monitoring/promtail/promtail.yml:/etc/promtail/config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+    networks:
+      - backnet
+
+  # --- B-3: Uptime Kuma（死活監視） ---
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    volumes:
+      - uptime_kuma_data:/app/data
+    restart: unless-stopped
+    networks:
+      - frontnet
+      - backnet
+
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  uptime_kuma_data:
 
 networks:
   frontnet:

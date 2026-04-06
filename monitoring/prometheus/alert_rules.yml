@@ -1,0 +1,57 @@
+# Prometheus アラートルール
+# Grafana経由でSlack通知を設定する
+
+groups:
+  - name: system_alerts
+    rules:
+      # CPU使用率が80%を超えた場合（5分間平均）
+      - alert: HighCpuUsage
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU使用率が80%を超えています"
+          description: "CPU使用率: {{ $value | printf \"%.1f\" }}%（5分間平均）"
+
+      # メモリ使用率が85%を超えた場合
+      - alert: HighMemoryUsage
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "メモリ使用率が85%を超えています"
+          description: "メモリ使用率: {{ $value | printf \"%.1f\" }}%"
+
+      # ディスク使用率が80%を超えた場合
+      - alert: HighDiskUsage
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ディスク使用率が80%を超えています"
+          description: "ディスク使用率: {{ $value | printf \"%.1f\" }}%"
+
+  - name: application_alerts
+    rules:
+      # PostgreSQL接続数が上限の80%を超えた場合
+      - alert: HighDbConnections
+        expr: pg_stat_activity_count > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DB接続数が80を超えています"
+          description: "現在の接続数: {{ $value }}"
+
+      # PostgreSQLがダウンした場合
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQLがダウンしています"
+          description: "即時対応が必要です"
