@@ -5,6 +5,7 @@
 - 新しい機能についての作業を始める前に必ず `develop` から `feature/morimoto/` ブランチを作成すること
 - ブランチ名は `feature/morimoto/作業内容を英語で簡潔に` とすること
 - 直接 `develop` や `main` にはコミットしないこと
+- feature ブランチの作業が完了したら、必要に応じて `gh pr create` でPRを作成し、レビュー後に `develop` へマージする
 
 ## Git運用ルール
 

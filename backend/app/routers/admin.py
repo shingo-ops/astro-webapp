@@ -1,32 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import Tenant, User
+from app.schemas.tenant import TenantCreate, TenantResponse
 from app.services.tenant import create_tenant_schema
 from app.services.audit import record_audit_log
 from app.auth.dependencies import get_current_user
 
 router = APIRouter()
-
-
-class TenantCreate(BaseModel):
-    """テナント登録リクエスト"""
-    tenant_name: str = Field(min_length=1, max_length=255)
-    tenant_code: str = Field(min_length=1, max_length=50, pattern=r"^[a-z0-9\-]+$")
-
-
-class TenantResponse(BaseModel):
-    """テナント情報レスポンス"""
-    id: int
-    tenant_name: str
-    tenant_code: str
-    is_active: bool
-    schema_name: str
-
-    model_config = {"from_attributes": True}
 
 
 @router.post("/tenants", response_model=TenantResponse, status_code=201)
