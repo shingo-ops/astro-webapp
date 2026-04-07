@@ -55,3 +55,23 @@ groups:
         annotations:
           summary: "PostgreSQLがダウンしています"
           description: "即時対応が必要です"
+
+      # Nginx 5xxエラーが5分間に10件以上
+      - alert: HighErrorRate
+        expr: increase(nginx_http_requests_total{status=~"5.."}[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "5xxエラーが急増しています"
+          description: "直近5分間の5xxエラー: {{ $value | printf \"%.0f\" }}件"
+
+      # サービスダウン検知（Exporter応答なし）
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }}がダウンしています"
+          description: "Exporterからの応答がありません。即時確認してください。"

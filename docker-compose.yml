@@ -89,9 +89,11 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
       - GF_SERVER_ROOT_URL=https://jarvis-claude.uk/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/provisioning/dashboards/json:/etc/grafana/provisioning/dashboards/json:ro
     depends_on:
       - prometheus
       - loki
@@ -140,12 +142,14 @@ services:
       - frontnet
       - backnet
 
-  # --- B-2: Loki（ログ集積） ---
+  # --- B-2: Loki（ログ集積 + 異常検知） ---
   loki:
     image: grafana/loki:latest
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/loki-config.yaml
     volumes:
       - loki_data:/loki
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - ./monitoring/loki/rules:/loki/rules:ro
     restart: unless-stopped
     networks:
       - backnet
