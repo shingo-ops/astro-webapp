@@ -34,7 +34,7 @@ jobs:
             echo "Starting deployment..."
             echo "============================================"
 
-            cd /home/deploy/myapp
+            cd /home/ubuntu/astro-webapp
 
             echo "Step 1: Pulling latest code from GitHub..."
             git pull origin main
