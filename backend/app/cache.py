@@ -2,7 +2,7 @@ import hashlib
 import json
 import logging
 import os
-from typing import Any
+from typing import Optional
 
 import redis.asyncio as redis
 
@@ -15,7 +15,7 @@ JWT_CACHE_TTL = 300
 # テナント情報キャッシュ: 10分
 TENANT_CACHE_TTL = 600
 
-_redis: redis.Redis | None = None
+_redis: Optional[redis.Redis] = None
 
 
 async def init_redis() -> None:
@@ -38,7 +38,7 @@ async def close_redis() -> None:
         _redis = None
 
 
-def get_redis() -> redis.Redis | None:
+def get_redis() -> Optional[redis.Redis]:
     """現在のRedis接続を返す。未接続の場合はNone。"""
     return _redis
 
@@ -60,7 +60,7 @@ async def cache_jwt_result(token: str, user_data: dict) -> None:
         logger.warning("JWTキャッシュ書き込み失敗")
 
 
-async def get_cached_jwt(token: str) -> dict | None:
+async def get_cached_jwt(token: str) -> Optional[dict]:
     """キャッシュ済みのJWT検証結果を取得する。"""
     r = get_redis()
     if not r:
@@ -87,7 +87,7 @@ async def cache_tenant(tenant_id: int, is_active: bool) -> None:
         logger.warning("テナントキャッシュ書き込み失敗")
 
 
-async def get_cached_tenant(tenant_id: int) -> dict | None:
+async def get_cached_tenant(tenant_id: int) -> Optional[dict]:
     """キャッシュ済みのテナント情報を取得する。"""
     r = get_redis()
     if not r:

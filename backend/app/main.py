@@ -6,9 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.dependencies import get_current_tenant
 from app.cache import init_redis, close_redis
+from app.middleware.audit import AuditMiddleware
 from app.routers import health
 from app.routers import auth
 from app.routers import admin
+from app.routers import customers
+from app.routers import deals
+from app.routers import orders
+from app.routers import dashboard
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -37,9 +42,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+# 認証イベント自動記録ミドルウェア
+app.add_middleware(AuditMiddleware)
 
 # --- 認証不要なルーター（明示的に除外） ---
 # /api/health はバージョンなし（監視ツールが固定URLを使うため）
@@ -56,11 +64,23 @@ app.include_router(
     tags=["admin"],
     dependencies=[Depends(get_current_tenant)],
 )
-# 今後追加するCRM業務ルーターも同じパターンで登録する:
-# app.include_router(
-#     customers.router, prefix="/api/v1", tags=["customers"],
-#     dependencies=[Depends(get_current_tenant)],
-# )
+# CRM業務ルーター（認証必須）
+app.include_router(
+    customers.router, prefix="/api/v1", tags=["customers"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    deals.router, prefix="/api/v1", tags=["deals"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    orders.router, prefix="/api/v1", tags=["orders"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    dashboard.router, prefix="/api/v1", tags=["dashboard"],
+    dependencies=[Depends(get_current_tenant)],
+)
 
 
 @app.get("/")

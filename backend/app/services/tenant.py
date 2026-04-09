@@ -119,8 +119,9 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
     Returns:
         作成したスキーマ名（例: "tenant_001"）
     """
-    # スキーマ名はtenant_{数値ID}形式（SQLインジェクション防止）
-    schema_name = f"tenant_{tenant_id:03d}"
+    # スキーマ名はtenant_{数値ID}形式（int()で型を強制しSQLインジェクション防止）
+    safe_id = int(tenant_id)
+    schema_name = f"tenant_{safe_id:03d}"
 
     # 1. スキーマ作成
     await db.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
@@ -128,7 +129,7 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
     # 2. 業務テーブル作成
     tables_sql = _TENANT_TABLES_SQL.format(
         schema=schema_name,
-        tenant_id=tenant_id,
+        tenant_id=safe_id,
     )
     for statement in tables_sql.strip().split(";"):
         statement = statement.strip()
@@ -145,5 +146,5 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
         if statement:
             await db.execute(text(statement))
 
-    await db.commit()
+    # commitは呼び出し元で行う（監査ログ等と一括でcommitするため）
     return schema_name
