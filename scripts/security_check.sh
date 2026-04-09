@@ -122,7 +122,8 @@ echo ""
 echo "[3/5] API認証検証"
 
 # 未認証アクセスの拒否確認
-ENDPOINTS=("/api/v1/customers" "/api/v1/deals" "/api/v1/orders" "/api/v1/dashboard" "/api/v1/admin/tenants")
+# GETメソッドのエンドポイントのみ（POSTのみのエンドポイントは405を返すため除外）
+ENDPOINTS=("/api/v1/customers" "/api/v1/deals" "/api/v1/orders" "/api/v1/dashboard")
 for endpoint in "${ENDPOINTS[@]}"; do
     STATUS=$(curl -so /dev/null -w "%{http_code}" "$TARGET_URL$endpoint" 2>/dev/null)
     if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
@@ -131,6 +132,14 @@ for endpoint in "${ENDPOINTS[@]}"; do
         print_result FAIL "未認証アクセス可能: $endpoint (${STATUS})"
     fi
 done
+
+# POSTエンドポイントの未認証拒否確認
+STATUS=$(curl -so /dev/null -w "%{http_code}" -X POST "$TARGET_URL/api/v1/admin/tenants" -H "Content-Type: application/json" -d '{}' 2>/dev/null)
+if [ "$STATUS" = "401" ] || [ "$STATUS" = "403" ]; then
+    print_result PASS "未認証拒否: /api/v1/admin/tenants POST (${STATUS})"
+else
+    print_result FAIL "未認証アクセス可能: /api/v1/admin/tenants POST (${STATUS})"
+fi
 
 # ヘルスチェックはアクセス可能
 STATUS=$(curl -so /dev/null -w "%{http_code}" "$TARGET_URL/api/health" 2>/dev/null)
