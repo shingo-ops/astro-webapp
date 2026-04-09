@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 注文管理API（CRUD）。
 

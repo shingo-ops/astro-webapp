@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 テナント別スキーマ自動生成サービス。
 

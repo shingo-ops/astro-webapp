@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 認証関連Pydanticスキーマ。
 

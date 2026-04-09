@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 案件管理API（CRUD）。
 

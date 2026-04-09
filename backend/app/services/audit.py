@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 監査ログ（audit_logs）記録サービス。
 

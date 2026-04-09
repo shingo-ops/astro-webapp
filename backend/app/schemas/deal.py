@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 商談（deals）テーブル用Pydanticスキーマ。
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 顧客（customers）テーブル用Pydanticスキーマ。
 
