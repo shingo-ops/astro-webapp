@@ -14,6 +14,7 @@ from app.routers import customers
 from app.routers import deals
 from app.routers import orders
 from app.routers import dashboard
+from app.routers import reports
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -79,6 +80,10 @@ app.include_router(
 )
 app.include_router(
     dashboard.router, prefix="/api/v1", tags=["dashboard"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    reports.router, prefix="/api/v1", tags=["reports"],
     dependencies=[Depends(get_current_tenant)],
 )
 
