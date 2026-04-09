@@ -1,0 +1,211 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "CPU使用率",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "red", "value": 80 }
+            ]
+          },
+          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "CPU使用率",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "メモリ使用率",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+          "legendFormat": "メモリ使用率",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "ディスク使用率",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "red", "value": 80 }
+            ]
+          },
+          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100",
+          "legendFormat": "ディスク使用率",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "DB接続数",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "red", "value": 80 }
+            ]
+          },
+          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "pg_stat_activity_count",
+          "legendFormat": "DB接続数",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Nginxリクエスト数 (per sec)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total[5m])",
+          "legendFormat": "リクエスト/秒",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Nginx 5xxエラー率",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total{status=~\"5..\"}[5m]) or vector(0)",
+          "legendFormat": "5xxエラー/秒",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "サービスステータス",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "pg_up", "legendFormat": "PostgreSQL", "refId": "A" },
+        { "expr": "up{job=\"nginx-exporter\"}", "legendFormat": "Nginx", "refId": "B" },
+        { "expr": "up{job=\"node-exporter\"}", "legendFormat": "Node", "refId": "C" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["jarvis-crm", "system"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Tokyo",
+  "title": "Jarvis CRM - システム概要",
+  "uid": "jarvis-system-overview",
+  "version": 1
+}

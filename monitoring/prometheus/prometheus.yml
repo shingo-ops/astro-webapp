@@ -1,0 +1,31 @@
+# Prometheus 設定ファイル
+# CPU・メモリ・DB接続数・HTTPエラーレートを収集
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# アラートルール
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  # Prometheus 自身のメトリクス
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Node Exporter（ホストOS: CPU/メモリ/ディスク）
+  - job_name: "node"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # PostgreSQL Exporter（DB接続数・クエリ統計）
+  - job_name: "postgres"
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  # Nginx Exporter（リクエスト数・ステータスコード）
+  - job_name: "nginx"
+    static_configs:
+      - targets: ["nginx-exporter:9113"]

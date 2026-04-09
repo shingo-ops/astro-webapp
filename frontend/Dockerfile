@@ -17,9 +17,9 @@ FROM nginx:alpine
 # ビルド成果物をNginxの公開ディレクトリにコピー
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# カスタムNginx設定（オプション）
+# カスタムNginx設定（非rootユーザー用にポート8080でlisten）
 RUN echo 'server { \
-    listen 80; \
+    listen 8080; \
     server_name localhost; \
     root /usr/share/nginx/html; \
     index index.html; \
@@ -28,6 +28,16 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# 非rootユーザーの作成とファイル権限設定
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
+    && chown -R appuser:appgroup /usr/share/nginx/html \
+    && chown -R appuser:appgroup /var/cache/nginx \
+    && chown -R appuser:appgroup /var/log/nginx \
+    && touch /var/run/nginx.pid \
+    && chown appuser:appgroup /var/run/nginx.pid
+
+USER appuser
+
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]

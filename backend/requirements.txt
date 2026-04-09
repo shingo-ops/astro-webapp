@@ -5,3 +5,14 @@ asyncpg==0.31.0
 python-dotenv==1.0.1
 pydantic==2.10.6
 pydantic-settings==2.13.1
+bcrypt==4.2.1
+firebase-admin==6.6.0
+python-jose[cryptography]==3.3.0
+httpx==0.28.1
+redis[hiredis]>=5.0.0
+celery[redis]>=5.4.0
+# テスト用
+pytest==8.3.5
+pytest-asyncio==0.25.3
+pytest-cov==6.1.1
+aiosqlite==0.21.0

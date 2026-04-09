@@ -10,9 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
@@ -21,11 +18,47 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+            echo "============================================"
             echo "Starting deployment..."
+            echo "============================================"
+
             cd /home/ubuntu/astro-webapp
+
+            echo "Step 1: Pulling latest code from GitHub..."
             git pull origin main
+
+            echo "Step 2: Rebuilding and restarting containers..."
             docker compose up -d --build
-            docker compose restart nginx
-            docker image prune -f
+
+            echo "Step 3: Waiting for services to become healthy..."
+            sleep 10
+
+            echo "Step 4: Health check..."
+            curl -sf http://localhost:8000/api/health || (echo "Health check failed!" && exit 1)
+
+            echo "Step 5: Checking container status..."
             docker compose ps
+
+            echo "Step 6: Cleaning up old Docker images..."
+            docker image prune -f
+
+            echo "============================================"
             echo "Deployment completed successfully!"
+            echo "============================================"
+
+      - name: Verify deployment
+        if: success()
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            curl -sf https://jarvis-claude.uk/api/health || echo "External health check warning"
+
+      - name: Deployment Failure Notification
+        if: failure()
+        run: |
+          echo "Deployment failed!"
+          echo "Please check the logs above for details."
+          exit 1

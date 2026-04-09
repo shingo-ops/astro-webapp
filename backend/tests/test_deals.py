@@ -1,0 +1,145 @@
+"""案件管理API（deals）のテスト"""
+
+import pytest
+
+
+async def _create_customer(client, name="テスト顧客"):
+    """テスト用の顧客を作成するヘルパー"""
+    res = await client.post("/api/v1/customers", json={"name": name})
+    assert res.status_code == 201
+    return res.json()["id"]
+
+
+class TestDealsCRUD:
+    """案件の作成・取得・更新・削除"""
+
+    async def test_create_deal(self, client):
+        """案件を新規作成できる"""
+        customer_id = await _create_customer(client)
+        res = await client.post("/api/v1/deals", json={
+            "customer_id": customer_id,
+            "title": "大型案件",
+            "amount": 1000000,
+            "status": "open",
+            "notes": "重要案件",
+        })
+        assert res.status_code == 201
+        data = res.json()
+        assert data["title"] == "大型案件"
+        assert float(data["amount"]) == 1000000.0
+        assert data["status"] == "open"
+        assert data["customer_id"] == customer_id
+
+    async def test_create_deal_invalid_customer(self, client):
+        """存在しない顧客IDで案件作成は400"""
+        res = await client.post("/api/v1/deals", json={
+            "customer_id": 99999,
+            "title": "無効な案件",
+        })
+        assert res.status_code == 400
+
+    async def test_list_deals(self, client):
+        """案件一覧を取得できる"""
+        customer_id = await _create_customer(client)
+        await client.post("/api/v1/deals", json={"customer_id": customer_id, "title": "案件A"})
+        await client.post("/api/v1/deals", json={"customer_id": customer_id, "title": "案件B"})
+
+        res = await client.get("/api/v1/deals")
+        assert res.status_code == 200
+        assert len(res.json()) >= 2
+
+    async def test_list_deals_filter_by_status(self, client):
+        """ステータスでフィルタリングできる"""
+        customer_id = await _create_customer(client)
+        await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "成約案件", "status": "won",
+        })
+        await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "進行中案件", "status": "open",
+        })
+
+        res = await client.get("/api/v1/deals", params={"status": "won"})
+        assert res.status_code == 200
+        data = res.json()
+        assert all(d["status"] == "won" for d in data)
+
+    async def test_list_deals_filter_by_customer(self, client):
+        """顧客IDでフィルタリングできる"""
+        cust_a = await _create_customer(client, "顧客A")
+        cust_b = await _create_customer(client, "顧客B")
+        await client.post("/api/v1/deals", json={"customer_id": cust_a, "title": "Aの案件"})
+        await client.post("/api/v1/deals", json={"customer_id": cust_b, "title": "Bの案件"})
+
+        res = await client.get("/api/v1/deals", params={"customer_id": cust_a})
+        assert res.status_code == 200
+        data = res.json()
+        assert all(d["customer_id"] == cust_a for d in data)
+
+    async def test_get_deal(self, client):
+        """案件詳細を取得できる"""
+        customer_id = await _create_customer(client)
+        create_res = await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "詳細テスト案件",
+        })
+        deal_id = create_res.json()["id"]
+
+        res = await client.get(f"/api/v1/deals/{deal_id}")
+        assert res.status_code == 200
+        assert res.json()["title"] == "詳細テスト案件"
+
+    async def test_update_deal_status(self, client):
+        """案件のステータスを更新できる"""
+        customer_id = await _create_customer(client)
+        create_res = await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "進行中",
+        })
+        deal_id = create_res.json()["id"]
+
+        res = await client.patch(f"/api/v1/deals/{deal_id}", json={"status": "won"})
+        assert res.status_code == 200
+        assert res.json()["status"] == "won"
+
+    async def test_delete_deal(self, client):
+        """案件を削除できる"""
+        customer_id = await _create_customer(client)
+        create_res = await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "削除案件",
+        })
+        deal_id = create_res.json()["id"]
+
+        res = await client.delete(f"/api/v1/deals/{deal_id}")
+        assert res.status_code == 204
+
+        res = await client.get(f"/api/v1/deals/{deal_id}")
+        assert res.status_code == 404
+
+
+class TestDealsValidation:
+    """案件バリデーション"""
+
+    async def test_create_without_title(self, client):
+        """タイトルなしは422"""
+        customer_id = await _create_customer(client)
+        res = await client.post("/api/v1/deals", json={"customer_id": customer_id})
+        assert res.status_code == 422
+
+    async def test_create_without_customer_id(self, client):
+        """顧客IDなしは422"""
+        res = await client.post("/api/v1/deals", json={"title": "顧客なし案件"})
+        assert res.status_code == 422
+
+    async def test_invalid_status(self, client):
+        """無効なステータスは422"""
+        customer_id = await _create_customer(client)
+        res = await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "無効ステータス", "status": "invalid",
+        })
+        assert res.status_code == 422
+
+    async def test_negative_amount(self, client):
+        """負の金額は422"""
+        customer_id = await _create_customer(client)
+        res = await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "負の金額", "amount": -100,
+        })
+        assert res.status_code == 422

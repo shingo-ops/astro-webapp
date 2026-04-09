@@ -12,6 +12,25 @@ services:
       - ./certbot/www:/var/www/certbot:ro
       - ./certbot/conf:/etc/letsencrypt:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/nginx_status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - frontnet
 
   # Certbot（SSL証明書取得・更新）
   certbot:
@@ -20,20 +39,184 @@ services:
       - ./certbot/www:/var/www/certbot:rw
       - ./certbot/conf:/etc/letsencrypt:rw
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    networks:
+      - frontnet
 
   # バックエンドAPI（FastAPI）
   backend:
     build: ./backend
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-credentials.json
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://jarvis-claude.uk}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+    volumes:
+      - ./firebase-credentials.json:/app/firebase-credentials.json:ro
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64M
+    networks:
+      - frontnet
+      - backnet
 
   # フロントエンド（React + TypeScript + Vite）
   frontend:
     build: ./frontend
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:size=32M
+      - /var/run:size=1M
+      - /tmp:size=16M
+    networks:
+      - frontnet
+
+  # Celeryワーカー（非同期タスク実行）
+  celery-worker:
+    build: ./backend
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/firebase-credentials.json
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/1}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/2}
+    volumes:
+      - ./firebase-credentials.json:/app/firebase-credentials.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64M
+    networks:
+      - backnet
+
+  # Celery Beat（定期タスクスケジューラー）
+  celery-beat:
+    build: ./backend
+    command: celery -A app.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/1}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/2}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
+  # Redisキャッシュ
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-changeme}
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16M
+    networks:
+      - backnet
 
   # PostgreSQLデータベース
   postgres:
@@ -46,6 +229,215 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
+  # ============================================================
+  # 監視・運用基盤（ステージ3）
+  # ============================================================
+
+  # --- B-1: Prometheus（メトリクス収集） ---
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=30d"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
+  # Grafana（可視化・アラート・ダッシュボード）
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
+      - GF_SERVER_ROOT_URL=https://jarvis-claude.uk/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/provisioning/dashboards/json:/etc/grafana/provisioning/dashboards/json:ro
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+      - frontnet
+
+  # Node Exporter（ホストOS: CPU/メモリ/ディスク）
+  node-exporter:
+    image: prom/node-exporter:latest
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.25"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
+  # PostgreSQL Exporter（DB接続数・クエリ統計）
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.25"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
+  # Nginx Exporter（リクエスト数・ステータスコード）
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    command:
+      - "-nginx.scrape-uri=http://nginx:80/nginx_status"
+    depends_on:
+      - nginx
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.25"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - frontnet
+      - backnet
+
+  # --- B-2: Loki（ログ集積 + 異常検知） ---
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - loki_data:/loki
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - ./monitoring/loki/rules:/loki/rules:ro
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
+  # Promtail（ログ収集 → Lokiに送信）
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./monitoring/promtail/promtail.yml:/etc/promtail/config.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
+  # --- B-3: Uptime Kuma（死活監視） ---
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    volumes:
+      - uptime_kuma_data:/app/data
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - frontnet
+      - backnet
 
 volumes:
   postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  uptime_kuma_data:
+
+networks:
+  frontnet:
+  backnet:

@@ -1,0 +1,51 @@
+# Loki 異常検知アラートルール
+# 認証失敗の連続検知、エラーログ急増検知
+
+groups:
+  - name: auth_anomaly
+    rules:
+      # 認証失敗が5分間に20回以上（ブルートフォース攻撃の可能性）
+      - alert: BruteForceAttempt
+        expr: |
+          sum(count_over_time({job="containerlogs"} |~ "401|403|auth.*fail|login.*fail|Unauthorized" [5m])) > 20
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ブルートフォース攻撃の可能性を検知"
+          description: "直近5分間に認証失敗が20回以上発生しています。即時確認してください。"
+
+      # 認証失敗が1時間に50回以上（低頻度の攻撃）
+      - alert: SustainedAuthFailure
+        expr: |
+          sum(count_over_time({job="containerlogs"} |~ "401|403|auth.*fail|Unauthorized" [1h])) > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "認証失敗が継続的に発生しています"
+          description: "直近1時間に認証失敗が50回以上です。"
+
+  - name: error_anomaly
+    rules:
+      # バックエンドのエラーログ急増（5分間に30件以上）
+      - alert: BackendErrorSpike
+        expr: |
+          sum(count_over_time({job="containerlogs", container_name=~".*backend.*"} |~ "ERROR|Exception|Traceback" [5m])) > 30
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "バックエンドのエラーログが急増しています"
+          description: "直近5分間にERROR/Exceptionが30件以上検出されました。"
+
+      # PostgreSQLエラーログ検知
+      - alert: DatabaseError
+        expr: |
+          sum(count_over_time({job="containerlogs", container_name=~".*postgres.*"} |~ "ERROR|FATAL|PANIC" [5m])) > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQLでエラーが発生しています"
+          description: "直近5分間にDB ERROR/FATAL/PANICログを検出しました。"
