@@ -3,11 +3,24 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import get_current_user
 from app.database import get_db
-from app.models import Tenant
+from app.models import Tenant, User
 from app.services.tenant import create_tenant_schema
 
 router = APIRouter()
+
+
+async def require_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """管理者ロールを要求するDependency。"""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="この操作には管理者権限が必要です",
+        )
+    return current_user
 
 
 class TenantCreate(BaseModel):
@@ -31,20 +44,11 @@ class TenantResponse(BaseModel):
 async def register_tenant(
     data: TenantCreate,
     db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_admin),
 ):
     """
     テナント（契約企業）を登録し、専用スキーマを自動生成する。
-
-    フロー:
-      ① tenant_codeの重複チェック
-      ② public.tenants にテナント情報を保存
-      ③ tenant_{id:03d} スキーマを自動作成
-      ④ スキーマ内に業務テーブル（customers, deals, orders, audit_logs）を作成
-      ⑤ Row Level Security（RLS）ポリシーを自動適用
-
-    注意:
-      - tenant_codeは英小文字・数字・ハイフンのみ（例: "demo-a", "company-123"）
-      - このAPIは管理者のみが呼び出せるようにする（将来的にroleチェックを追加）
+    管理者権限（role="admin"）が必要。
     """
     # tenant_codeの重複チェック
     result = await db.execute(

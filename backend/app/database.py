@@ -6,10 +6,10 @@ from sqlalchemy.orm import sessionmaker
 # 環境変数からDATABASE_URLを取得
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://myapp_user:password@postgres:5432/myapp_db")
 
-# 非同期エンジンの作成
+# 非同期エンジンの作成（本番ではSQLログを無効化）
 engine = create_async_engine(
     DATABASE_URL,
-    echo=True,  # SQLログを出力（開発用）
+    echo=os.getenv("ENVIRONMENT", "development") != "production",
     future=True
 )
 
