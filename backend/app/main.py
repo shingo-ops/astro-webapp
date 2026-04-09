@@ -1,9 +1,11 @@
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.dependencies import get_current_tenant
+from app.cache import init_redis, close_redis
 from app.routers import health
 from app.routers import auth
 from app.routers import admin
@@ -11,12 +13,21 @@ from app.routers import admin
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_redis()
+    yield
+    await close_redis()
+
+
 app = FastAPI(
     title="Multi-tenant CRM API",
     description="B2B SaaS CRM バックエンドAPI",
     version="1.0.0",
     docs_url=None if is_production else "/docs",
     redoc_url=None if is_production else "/redoc",
+    lifespan=lifespan,
 )
 
 # CORS設定（本番では特定のオリジンのみ許可）
