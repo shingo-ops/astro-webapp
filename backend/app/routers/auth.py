@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.cache import blacklist_token
 from app.database import get_db
 from app.models import User, Tenant
 from app.auth.utils import hash_password
 from app.auth.schemas import UserRegister, UserResponse
 
 router = APIRouter()
+security = HTTPBearer()
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
@@ -68,3 +71,17 @@ async def register_user(
     await db.refresh(user)
 
     return user
+
+
+@router.post("/logout", status_code=200)
+async def logout(
+    cred: HTTPAuthorizationCredentials = Depends(security),
+):
+    """
+    ログアウトAPI。
+    トークンをブラックリストに追加し、以降の利用を拒否する。
+    Firebase IDトークンの残存有効期限（最大1時間）をTTLとする。
+    """
+    token = cred.credentials
+    await blacklist_token(token, ttl=3600)
+    return {"message": "ログアウトしました"}

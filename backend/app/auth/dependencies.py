@@ -7,6 +7,13 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.cache import (
+    cache_jwt_result,
+    cache_tenant,
+    get_cached_jwt,
+    get_cached_tenant,
+    is_token_blacklisted,
+)
 from app.database import get_db
 from app.models import User, Tenant
 
@@ -38,14 +45,33 @@ async def get_current_user(
     全認証付きエンドポイントの共通Dependency。
 
     フロー:
-      ① クライアントがAuthorizationヘッダーにFirebase IDトークンを付与
-      ② このDependencyがトークンを検証（Googleの公開鍵で署名確認）
-      ③ トークンからemailを取得し、DBのusersテーブルから該当ユーザーを検索
-      ④ ユーザーが見つかればそのオブジェクトを返す
+      ① ブラックリスト確認（ログアウト済みトークンを拒否）
+      ② Redisキャッシュからユーザー情報を取得（キャッシュヒット時はDB不要）
+      ③ キャッシュミス時: Firebase検証 → DB検索 → 結果をキャッシュ
     """
     _init_firebase()
 
     token = cred.credentials
+
+    # ブラックリスト確認（ログアウト済みトークンを拒否）
+    if await is_token_blacklisted(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="このトークンは無効化されています",
+        )
+
+    # Redisキャッシュからユーザー情報を取得
+    cached = await get_cached_jwt(token)
+    if cached:
+        email = cached["email"]
+        result = await db.execute(
+            select(User).where(User.email == email, User.is_active == True)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            return user
+
+    # キャッシュミス: Firebase検証
     try:
         decoded = firebase_auth.verify_id_token(token)
     except Exception:
@@ -72,6 +98,9 @@ async def get_current_user(
             detail="ユーザーが見つかりません",
         )
 
+    # 検証結果をキャッシュ
+    await cache_jwt_result(token, {"email": email})
+
     return user
 
 
@@ -85,19 +114,31 @@ async def get_current_tenant(
     URLパラメータからtenant_idを受け取ることは絶対にしない。
 
     さらにDBセッションのsearch_pathをテナントスキーマに切り替える。
+    テナントの有効性はRedisキャッシュで高速に確認する。
     """
     tenant_id = user.tenant_id
 
-    # テナントの存在・有効性を確認
-    result = await db.execute(
-        select(Tenant).where(Tenant.id == tenant_id, Tenant.is_active == True)
-    )
-    tenant = result.scalar_one_or_none()
-    if not tenant:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="テナントが無効です",
+    # Redisキャッシュからテナント情報を取得
+    cached = await get_cached_tenant(tenant_id)
+    if cached:
+        if not cached["is_active"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="テナントが無効です",
+            )
+    else:
+        # キャッシュミス: DB確認してキャッシュに保存
+        result = await db.execute(
+            select(Tenant).where(Tenant.id == tenant_id)
         )
+        tenant = result.scalar_one_or_none()
+        if not tenant or not tenant.is_active:
+            await cache_tenant(tenant_id, False)
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="テナントが無効です",
+            )
+        await cache_tenant(tenant_id, True)
 
     # search_pathをテナントスキーマに切り替え
     schema_name = f"tenant_{tenant_id:03d}"
