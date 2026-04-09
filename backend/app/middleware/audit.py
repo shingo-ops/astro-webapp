@@ -102,5 +102,6 @@ class AuditMiddleware(BaseHTTPMiddleware):
                 )
                 await db.commit()
         except Exception:
-            # ログ記録の失敗でリクエスト処理を止めない
-            pass
+            # ログ記録の失敗でリクエスト処理を止めないが、必ずログに残す
+            import logging
+            logging.getLogger(__name__).exception("認証イベント記録に失敗")

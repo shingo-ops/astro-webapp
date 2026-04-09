@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.auth.dependencies import get_current_tenant
+from app.auth.dependencies import get_current_tenant, get_current_admin
 from app.cache import init_redis, close_redis
 from app.middleware.audit import AuditMiddleware
 from app.routers import health
@@ -63,7 +63,7 @@ app.include_router(
     admin.router,
     prefix="/api/v1/admin",
     tags=["admin"],
-    dependencies=[Depends(get_current_tenant)],
+    dependencies=[Depends(get_current_tenant), Depends(get_current_admin)],
 )
 # CRM業務ルーター（認証必須）
 app.include_router(

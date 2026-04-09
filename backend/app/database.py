@@ -7,11 +7,19 @@ from sqlalchemy.orm import sessionmaker
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://myapp_user:password@postgres:5432/myapp_db")
 
 # 非同期エンジンの作成（本番ではSQLログを無効化）
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=os.getenv("ENVIRONMENT", "development") != "production",
-    future=True
-)
+_engine_kwargs = {
+    "echo": os.getenv("ENVIRONMENT", "development") != "production",
+    "future": True,
+}
+# PostgreSQL使用時のみコネクションプール設定を追加（SQLiteはStaticPoolのため不要）
+if DATABASE_URL.startswith("postgresql"):
+    _engine_kwargs.update(
+        pool_size=20,
+        max_overflow=10,
+        pool_recycle=3600,
+        pool_pre_ping=True,
+    )
+engine = create_async_engine(DATABASE_URL, **_engine_kwargs)
 
 # 非同期セッションの作成
 AsyncSessionLocal = sessionmaker(

@@ -122,8 +122,12 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
         作成したスキーマ名（例: "tenant_001"）
     """
     # スキーマ名はtenant_{数値ID}形式（int()で型を強制しSQLインジェクション防止）
+    # セキュリティ不変条件: schema_nameは必ず ^tenant_\d{3,}$ にマッチすること
+    import re
     safe_id = int(tenant_id)
     schema_name = f"tenant_{safe_id:03d}"
+    if not re.match(r"^tenant_\d{3,}$", schema_name):
+        raise ValueError(f"不正なスキーマ名: {schema_name}")
 
     # 1. スキーマ作成
     await db.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))

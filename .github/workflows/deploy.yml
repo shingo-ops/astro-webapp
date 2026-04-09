@@ -30,24 +30,31 @@ jobs:
             echo "Step 2: Rebuilding and restarting containers..."
             docker compose up -d --build
 
-            echo "Step 3: Restarting nginx to refresh DNS cache..."
-            docker compose restart nginx
+            echo "Step 3: Waiting for services to become healthy..."
+            sleep 10
 
-            echo "Step 4: Cleaning up old Docker images..."
-            docker image prune -f
+            echo "Step 4: Health check..."
+            curl -sf http://localhost:8000/api/health || (echo "Health check failed!" && exit 1)
 
             echo "Step 5: Checking container status..."
             docker compose ps
+
+            echo "Step 6: Cleaning up old Docker images..."
+            docker image prune -f
 
             echo "============================================"
             echo "Deployment completed successfully!"
             echo "============================================"
 
-      - name: Deployment Success Notification
+      - name: Verify deployment
         if: success()
-        run: |
-          echo "Deployment to VPS completed successfully!"
-          echo "Application is now live at https://jarvis-claude.uk"
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            curl -sf https://jarvis-claude.uk/api/health || echo "External health check warning"
 
       - name: Deployment Failure Notification
         if: failure()

@@ -106,13 +106,21 @@ class TestBlacklist:
     @pytest.fixture
     def mock_redis(self):
         r = AsyncMock()
+        # pipeline()は同期メソッドとしてMagicMockを返す
+        mock_pipe = MagicMock()
+        mock_pipe.execute = AsyncMock(return_value=[True, 0])
+        r.pipeline = MagicMock(return_value=mock_pipe)
+        r._mock_pipe = mock_pipe  # テストからアクセス用
         with patch("app.cache._redis", r):
             yield r
 
     async def test_blacklist_token(self, mock_redis):
-        """トークンがブラックリストに追加されること"""
+        """トークンがブラックリストに追加されること（pipeline使用）"""
         await blacklist_token("test-token", ttl=3600)
-        mock_redis.setex.assert_called_once()
+        pipe = mock_redis._mock_pipe
+        pipe.setex.assert_called_once()
+        pipe.delete.assert_called_once()
+        pipe.execute.assert_called_once()
 
     async def test_is_token_blacklisted_true(self, mock_redis):
         """ブラックリストに含まれるトークンでTrueが返ること"""
@@ -125,10 +133,11 @@ class TestBlacklist:
         assert await is_token_blacklisted("test-token") is False
 
     async def test_blacklist_no_redis(self):
-        """Redis未接続時にエラーにならないこと"""
+        """Redis未接続時はfail-closed（Trueを返す）"""
         with patch("app.cache._redis", None):
             await blacklist_token("token")
-            assert await is_token_blacklisted("token") is False
+            # fail-closed: Redis障害時は安全側に倒してブラックリスト扱い
+            assert await is_token_blacklisted("token") is True
 
 
 class TestLogoutEndpoint:

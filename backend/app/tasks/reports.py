@@ -100,9 +100,9 @@ def export_csv(tenant_id: int, report_type: str):
 
     csv_content = output.getvalue()
 
-    # Redisに結果を保存
+    # Redisに結果を保存（テナントIDをキーに含めてIDOR防止）
     task_id = export_csv.request.id
-    cache_key = f"export:{task_id}"
+    cache_key = f"export:{tenant_id}:{task_id}"
     r.setex(cache_key, EXPORT_RESULT_TTL, csv_content)
 
     logger.info(

@@ -93,7 +93,8 @@ async def download_export(
             detail="キャッシュサービスが利用できません",
         )
 
-    cache_key = f"export:{task_id}"
+    # テナントIDをキーに含めることで他テナントのデータアクセスを防止
+    cache_key = f"export:{tenant_id}:{task_id}"
     csv_content = await r.get(cache_key)
 
     if not csv_content:

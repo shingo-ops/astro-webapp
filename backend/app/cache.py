@@ -26,7 +26,7 @@ async def init_redis() -> None:
         await _redis.ping()
         logger.info("Redis接続成功: %s", REDIS_URL)
     except Exception:
-        logger.warning("Redis接続失敗: キャッシュなしで動作します")
+        logger.critical("Redis接続失敗: ブラックリスト検証が無効になります")
         _redis = None
 
 
@@ -75,6 +75,18 @@ async def get_cached_jwt(token: str) -> Optional[dict]:
     return None
 
 
+async def invalidate_jwt_cache(token: str) -> None:
+    """JWT検証キャッシュを削除する（ログアウト時に使用）。"""
+    r = get_redis()
+    if not r:
+        return
+    try:
+        key = f"jwt:{_token_hash(token)}"
+        await r.delete(key)
+    except Exception:
+        logger.warning("JWTキャッシュ削除失敗")
+
+
 async def cache_tenant(tenant_id: int, is_active: bool) -> None:
     """テナント情報をキャッシュする。"""
     r = get_redis()
@@ -103,25 +115,33 @@ async def get_cached_tenant(tenant_id: int) -> Optional[dict]:
 
 
 async def blacklist_token(token: str, ttl: int = 3600) -> None:
-    """トークンをブラックリストに追加する（ログアウト時）。"""
+    """トークンをブラックリストに追加し、JWTキャッシュも削除する（ログアウト時）。"""
     r = get_redis()
     if not r:
+        logger.critical("Redis未接続: トークンのブラックリスト登録に失敗")
         return
     try:
-        key = f"blacklist:{_token_hash(token)}"
-        await r.setex(key, ttl, "1")
+        token_h = _token_hash(token)
+        pipe = r.pipeline()
+        pipe.setex(f"blacklist:{token_h}", ttl, "1")
+        pipe.delete(f"jwt:{token_h}")
+        await pipe.execute()
     except Exception:
-        logger.warning("ブラックリスト書き込み失敗")
+        logger.critical("ブラックリスト書き込み失敗: トークン無効化が不完全")
 
 
 async def is_token_blacklisted(token: str) -> bool:
-    """トークンがブラックリストに含まれているか確認する。"""
+    """
+    トークンがブラックリストに含まれているか確認する。
+    Redis障害時はfail-closed（安全側に倒してTrueを返す）。
+    """
     r = get_redis()
     if not r:
-        return False
+        logger.critical("Redis未接続: ブラックリスト検証不能のためリクエスト拒否")
+        return True
     try:
         key = f"blacklist:{_token_hash(token)}"
         return await r.exists(key) > 0
     except Exception:
-        logger.warning("ブラックリスト確認失敗")
-        return False
+        logger.critical("ブラックリスト確認失敗: 安全側に倒してリクエスト拒否")
+        return True
