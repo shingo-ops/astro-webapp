@@ -62,7 +62,7 @@ async def record_audit_log(
                 (tenant_id, user_id, action, table_name, record_id, old_data, new_data)
             VALUES
                 (:tenant_id, :user_id, :action, :table_name, :record_id,
-                 :old_data::jsonb, :new_data::jsonb)
+                 CAST(:old_data AS jsonb), CAST(:new_data AS jsonb))
         """),
         {
             "tenant_id": tenant_id,
