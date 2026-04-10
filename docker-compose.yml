@@ -62,6 +62,7 @@ services:
       - ENVIRONMENT=${ENVIRONMENT:-development}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://jarvis-claude.uk}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - MFA_REQUIRED=${MFA_REQUIRED:-true}
     volumes:
       - ./firebase-credentials.json:/app/firebase-credentials.json:ro
     depends_on:
