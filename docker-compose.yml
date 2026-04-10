@@ -115,10 +115,7 @@ services:
         max-file: "3"
     security_opt:
       - no-new-privileges:true
-    read_only: true
     tmpfs:
-      - /var/cache/nginx:size=32M
-      - /var/run:size=1M
       - /tmp:size=16M
     networks:
       - frontnet
