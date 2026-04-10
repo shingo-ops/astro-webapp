@@ -3,20 +3,20 @@
 # 障害時にバックアップからデータベースを復元する
 #
 # 使い方:
-#   bash /home/deploy/myapp/scripts/restore.sh /home/deploy/backups/myapp_db_20260326_030000.sql.gz
+#   bash /home/ubuntu/astro-webapp/scripts/restore.sh /home/ubuntu/backups/postgres/jarvis_db_20260410_030000.sql.gz
 
 set -euo pipefail
 
-COMPOSE_FILE="/home/deploy/myapp/docker-compose.yml"
-DB_USER="myapp_user"
-DB_NAME="myapp_db"
+COMPOSE_FILE="/home/ubuntu/astro-webapp/docker-compose.yml"
+DB_USER="${POSTGRES_USER:-jarvis}"
+DB_NAME="${POSTGRES_DB:-jarvis_db}"
 
 if [ $# -ne 1 ]; then
   echo "使い方: $0 <バックアップファイルのパス>"
-  echo "例:     $0 /home/deploy/backups/myapp_db_20260326_030000.sql.gz"
+  echo "例:     $0 /home/ubuntu/backups/postgres/jarvis_db_20260410_030000.sql.gz"
   echo ""
   echo "利用可能なバックアップ一覧:"
-  ls -lh /home/deploy/backups/myapp_db_*.sql.gz 2>/dev/null || echo "  バックアップが見つかりません"
+  ls -lh /home/ubuntu/backups/postgres/jarvis_db_*.sql.gz 2>/dev/null || echo "  バックアップが見つかりません"
   exit 1
 fi
 
