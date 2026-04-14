@@ -3,6 +3,20 @@
 import pytest
 
 
+class TestCustomerDeleteConstraint:
+    """顧客削除時のFK保護"""
+
+    async def test_delete_customer_with_deal_returns_409(self, client):
+        """関連商談がある顧客は削除できず、409とわかりやすいメッセージを返す"""
+        cust = await client.post("/api/v1/customers", json={"name": "関連データ付き顧客"})
+        customer_id = cust.json()["id"]
+        await client.post("/api/v1/deals", json={"customer_id": customer_id, "title": "関連商談"})
+
+        res = await client.delete(f"/api/v1/customers/{customer_id}")
+        assert res.status_code == 409
+        assert "関連" in res.json()["detail"]
+
+
 class TestCustomersCRUD:
     """顧客の作成・取得・更新・削除"""
 

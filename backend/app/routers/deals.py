@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, get_current_tenant
@@ -192,11 +193,17 @@ async def delete_deal(
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="商談が見つかりません")
 
-    await db.execute(text("DELETE FROM deals WHERE id = :id"), {"id": deal_id})
-
-    await record_audit_log(
-        db=db, tenant_id=tenant_id, user_id=current_user.id,
-        action="delete", table_name="deals", record_id=deal_id,
-        old_data=dict(old_row),
-    )
-    await db.commit()
+    try:
+        await db.execute(text("DELETE FROM deals WHERE id = :id"), {"id": deal_id})
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=current_user.id,
+            action="delete", table_name="deals", record_id=deal_id,
+            old_data=dict(old_row),
+        )
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="この商談には関連する注文があるため削除できません。先に注文を削除してください。",
+        )
