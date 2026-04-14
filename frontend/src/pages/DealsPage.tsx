@@ -18,7 +18,7 @@ interface Customer { id: number; name: string; }
 
 const STATUSES = ["open", "negotiating", "won", "lost", "on_hold"];
 const STATUS_LABELS: Record<string, string> = {
-  open: "進行中", negotiating: "交渉中", won: "成約", lost: "失注", on_hold: "保留",
+  open: "オープン", negotiating: "交渉中", won: "成約", lost: "失注", on_hold: "保留",
 };
 
 const emptyForm = { customer_id: "", title: "", amount: "", status: "open", expected_close_date: "", notes: "" };
