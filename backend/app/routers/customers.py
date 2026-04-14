@@ -9,6 +9,7 @@ search_path は get_current_tenant dependency で自動切り替え済み。
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, get_current_tenant
@@ -173,11 +174,17 @@ async def delete_customer(
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="顧客が見つかりません")
 
-    await db.execute(text("DELETE FROM customers WHERE id = :id"), {"id": customer_id})
-
-    await record_audit_log(
-        db=db, tenant_id=tenant_id, user_id=current_user.id,
-        action="delete", table_name="customers", record_id=customer_id,
-        old_data=dict(old_row),
-    )
-    await db.commit()
+    try:
+        await db.execute(text("DELETE FROM customers WHERE id = :id"), {"id": customer_id})
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=current_user.id,
+            action="delete", table_name="customers", record_id=customer_id,
+            old_data=dict(old_row),
+        )
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="この顧客には関連する商談または注文があるため削除できません。先に関連データを削除してください。",
+        )
