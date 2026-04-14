@@ -134,6 +134,21 @@ class TestDealsCRUD:
         res = await client.get(f"/api/v1/deals/{deal_id}")
         assert res.status_code == 404
 
+    async def test_delete_deal_with_order_returns_409(self, client):
+        """関連注文がある商談は削除できず、409とわかりやすいメッセージを返す"""
+        customer_id = await _create_customer(client)
+        deal_res = await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "注文紐付け商談",
+        })
+        deal_id = deal_res.json()["id"]
+        await client.post("/api/v1/orders", json={
+            "customer_id": customer_id, "deal_id": deal_id, "order_number": "ORD-FK-TEST",
+        })
+
+        res = await client.delete(f"/api/v1/deals/{deal_id}")
+        assert res.status_code == 409
+        assert "注文" in res.json()["detail"]
+
 
 class TestDealsValidation:
     """案件バリデーション"""
