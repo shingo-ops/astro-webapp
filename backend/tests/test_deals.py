@@ -99,6 +99,27 @@ class TestDealsCRUD:
         assert res.status_code == 200
         assert res.json()["status"] == "won"
 
+    async def test_update_deal_with_date_and_amount(self, client):
+        """date(expected_close_date)とDecimal(amount)を同時更新できる（asyncpg encoder対策の回帰テスト）"""
+        customer_id = await _create_customer(client)
+        create_res = await client.post("/api/v1/deals", json={
+            "customer_id": customer_id, "title": "日付更新テスト",
+        })
+        deal_id = create_res.json()["id"]
+
+        res = await client.patch(f"/api/v1/deals/{deal_id}", json={
+            "status": "negotiating",
+            "amount": 10000,
+            "expected_close_date": "2026-04-30",
+            "notes": "備考更新",
+        })
+        assert res.status_code == 200
+        body = res.json()
+        assert body["status"] == "negotiating"
+        assert float(body["amount"]) == 10000.0
+        assert body["expected_close_date"] == "2026-04-30"
+        assert body["notes"] == "備考更新"
+
     async def test_delete_deal(self, client):
         """案件を削除できる"""
         customer_id = await _create_customer(client)
