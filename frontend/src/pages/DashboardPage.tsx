@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
 const DEAL_STATUS_LABELS: Record<string, string> = {
-  open: "オープン", negotiating: "交渉中", won: "成約", lost: "失注", on_hold: "保留",
+  open: "進行中", negotiating: "交渉中", won: "成約", lost: "失注", on_hold: "保留",
 };
 
 interface Dashboard {
@@ -41,9 +41,9 @@ export default function DashboardPage() {
           <div className="kpi-value">{data.customer_count}</div>
           <div className="kpi-label">顧客数</div>
         </div>
-        <div className="kpi-card" title="ステータスが「オープン」の商談数（交渉中・保留中は含まない）">
+        <div className="kpi-card" title="ステータスが「進行中」の商談数（交渉中・保留中は含まない）">
           <div className="kpi-value">{data.deal_open_count}</div>
-          <div className="kpi-label">オープン商談</div>
+          <div className="kpi-label">進行中の商談</div>
         </div>
         <div className="kpi-card accent" title="ステータスが「成約」の商談数">
           <div className="kpi-value">{data.deal_won_count}</div>
