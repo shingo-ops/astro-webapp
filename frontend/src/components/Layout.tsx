@@ -3,11 +3,14 @@
  * サイドバーナビゲーション + メインコンテンツ領域。
  */
 
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import ConfirmModal from "./ConfirmModal";
 
 export default function Layout() {
   const { user, signOut } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
     <div className="layout">
@@ -23,12 +26,21 @@ export default function Layout() {
         </nav>
         <div className="sidebar-footer">
           <div className="user-info">{user?.email}</div>
-          <button className="btn-logout" onClick={signOut}>ログアウト</button>
+          <button className="btn-logout" onClick={() => setShowLogoutConfirm(true)}>ログアウト</button>
         </div>
       </aside>
       <main className="main-content">
         <Outlet />
       </main>
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="ログアウト"
+        message="ログアウトしますか？ 入力中のデータは失われます。"
+        confirmLabel="ログアウト"
+        onConfirm={() => { setShowLogoutConfirm(false); signOut(); }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 }
