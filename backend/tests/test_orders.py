@@ -136,6 +136,25 @@ class TestOrdersCRUD:
         assert res.status_code == 200
         assert res.json()["status"] == "shipped"
 
+    async def test_update_order_with_amount_and_status(self, client):
+        """Decimal(total_amount)とEnum(status)を同時更新できる（asyncpg encoder対策の回帰テスト）"""
+        customer_id = await _create_customer(client)
+        create_res = await client.post("/api/v1/orders", json={
+            "customer_id": customer_id, "order_number": "ORD-UPD-FULL",
+        })
+        order_id = create_res.json()["id"]
+
+        res = await client.patch(f"/api/v1/orders/{order_id}", json={
+            "status": "confirmed",
+            "total_amount": 50000,
+            "notes": "備考更新",
+        })
+        assert res.status_code == 200
+        body = res.json()
+        assert body["status"] == "confirmed"
+        assert float(body["total_amount"]) == 50000.0
+        assert body["notes"] == "備考更新"
+
     async def test_delete_order(self, client):
         """注文を削除できる"""
         customer_id = await _create_customer(client)
