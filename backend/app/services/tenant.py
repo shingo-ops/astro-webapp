@@ -75,38 +75,36 @@ CREATE TABLE IF NOT EXISTS {schema}.audit_logs (
 );
 """
 
-# Row Level Security ポリシーの設定SQL
-_RLS_SQL = """
--- RLSを有効化（金庫の二重ロックをONにする）
+# RLS有効化のALTER TABLE群（;で安全に分割可能）
+_RLS_ENABLE_SQL = """
 ALTER TABLE {schema}.customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.deals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.audit_logs ENABLE ROW LEVEL SECURITY;
+"""
 
--- テナント分離ポリシー（自テナントのデータのみアクセス可能）
+# テナント分離ポリシー（DO $$ ... END $$ ブロックは1ステートメントとして実行する。
+# 内部の;でsplitすると$$ドル引用が分断されPostgresSyntaxErrorになるため）
+_RLS_POLICY_SQL = """
 DO $$
 BEGIN
-    -- customers
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customers' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_customers ON {schema}.customers
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
     END IF;
-    -- deals
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_deals' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_deals ON {schema}.deals
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
     END IF;
-    -- orders
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_orders' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_orders ON {schema}.orders
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
     END IF;
-    -- audit_logs
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_audit_logs' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_audit_logs ON {schema}.audit_logs
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
     END IF;
-END $$;
+END $$
 """
 
 
@@ -142,15 +140,16 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
         if statement:
             await db.execute(text(statement))
 
-    # 3. RLSポリシー設定
-    rls_sql = _RLS_SQL.format(
-        schema=schema_name,
-        schema_raw=schema_name,
-    )
-    for statement in rls_sql.strip().split(";"):
+    # 3a. RLS有効化（ALTER TABLE群、;で分割可能）
+    enable_sql = _RLS_ENABLE_SQL.format(schema=schema_name)
+    for statement in enable_sql.strip().split(";"):
         statement = statement.strip()
         if statement:
             await db.execute(text(statement))
+
+    # 3b. RLSポリシー（DOブロック、splitせず1ステートメントで実行）
+    policy_sql = _RLS_POLICY_SQL.format(schema=schema_name, schema_raw=schema_name)
+    await db.execute(text(policy_sql))
 
     # commitは呼び出し元で行う（監査ログ等と一括でcommitするため）
     return schema_name
