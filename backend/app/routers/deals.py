@@ -142,13 +142,12 @@ async def update_deal(
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="商談が見つかりません")
 
-    update_data = data.model_dump(exclude_unset=True, mode="json")
+    update_data = data.model_dump(exclude_unset=True)
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
 
-    # Enum値を文字列に変換
     if "status" in update_data and update_data["status"] is not None:
-        update_data["status"] = str(update_data["status"])
+        update_data["status"] = update_data["status"].value
 
     set_clauses = ", ".join(f"{k} = :{k}" for k in update_data)
     update_data["id"] = deal_id
