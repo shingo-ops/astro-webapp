@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, get_current_tenant
+from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
 from app.schemas.customer import CustomerCreate, CustomerUpdate, CustomerResponse
@@ -108,6 +109,7 @@ async def create_customer(
         new_data=data.model_dump(exclude_none=True),
     )
     await db.commit()
+    await invalidate_dashboard_cache(tenant_id)
 
     return CustomerResponse(**row)
 
@@ -154,6 +156,7 @@ async def update_customer(
         old_data=dict(old_row), new_data=update_data,
     )
     await db.commit()
+    await invalidate_dashboard_cache(tenant_id)
 
     return CustomerResponse(**row)
 
@@ -188,3 +191,4 @@ async def delete_customer(
             status_code=status.HTTP_409_CONFLICT,
             detail="この顧客には関連する商談または注文があるため削除できません。先に関連データを削除してください。",
         )
+    await invalidate_dashboard_cache(tenant_id)
