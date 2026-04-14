@@ -1,5 +1,6 @@
 import { useEffect, useState, FormEvent } from "react";
 import { api } from "../lib/api";
+import ConfirmModal from "../components/ConfirmModal";
 
 interface Deal {
   id: number;
@@ -31,6 +32,7 @@ export default function DealsPage() {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<Deal | null>(null);
 
   const loadDeals = async () => {
     try {
@@ -92,8 +94,10 @@ export default function DealsPage() {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("この商談を削除しますか？")) return;
+  const performDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeleteTarget(null);
     try {
       await api.delete(`/deals/${id}`);
       loadDeals();
@@ -190,7 +194,7 @@ export default function DealsPage() {
                 <td>{d.expected_close_date || "-"}</td>
                 <td className="actions">
                   <button className="btn-sm" onClick={() => handleEdit(d)}>編集</button>
-                  <button className="btn-sm btn-danger" onClick={() => handleDelete(d.id)}>削除</button>
+                  <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(d)}>削除</button>
                 </td>
               </tr>
             ))}
@@ -200,6 +204,22 @@ export default function DealsPage() {
           </tbody>
         </table>
       )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="商談を削除"
+        message={
+          <>
+            <strong>{deleteTarget?.title}</strong> を削除します。<br />
+            関連する注文がある場合は削除できません（先に注文を削除してください）。<br />
+            この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        danger
+        onConfirm={performDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

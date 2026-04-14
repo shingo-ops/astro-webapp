@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
+const DEAL_STATUS_LABELS: Record<string, string> = {
+  open: "オープン", negotiating: "交渉中", won: "成約", lost: "失注", on_hold: "保留",
+};
+
 interface Dashboard {
   customer_count: number;
   deal_count: number;
@@ -37,15 +41,15 @@ export default function DashboardPage() {
           <div className="kpi-value">{data.customer_count}</div>
           <div className="kpi-label">顧客数</div>
         </div>
-        <div className="kpi-card">
+        <div className="kpi-card" title="ステータスが「オープン」の商談数（交渉中・保留中は含まない）">
           <div className="kpi-value">{data.deal_open_count}</div>
-          <div className="kpi-label">進行中の商談</div>
+          <div className="kpi-label">オープン商談</div>
         </div>
-        <div className="kpi-card accent">
+        <div className="kpi-card accent" title="ステータスが「成約」の商談数">
           <div className="kpi-value">{data.deal_won_count}</div>
           <div className="kpi-label">成約商談</div>
         </div>
-        <div className="kpi-card accent">
+        <div className="kpi-card accent" title="ステータスが「成約」の商談の金額合計">
           <div className="kpi-value">{fmt(data.deal_won_amount)}</div>
           <div className="kpi-label">成約金額</div>
         </div>
@@ -92,7 +96,7 @@ export default function DashboardPage() {
                 <tr key={d.id}>
                   <td>{d.title}</td>
                   <td>{d.amount ? fmt(d.amount) : "-"}</td>
-                  <td><span className={`badge badge-${d.status}`}>{d.status}</span></td>
+                  <td><span className={`badge badge-${d.status}`}>{DEAL_STATUS_LABELS[d.status] || d.status}</span></td>
                 </tr>
               ))}
               {data.recent_deals.length === 0 && (

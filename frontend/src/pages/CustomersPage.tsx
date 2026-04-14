@@ -1,5 +1,13 @@
 import { useEffect, useState, FormEvent } from "react";
 import { api } from "../lib/api";
+import ConfirmModal from "../components/ConfirmModal";
+
+const PHONE_RE = /^(\+?\d{10,15}|0\d{9,10})$/;
+const validatePhoneClient = (raw: string): string | null => {
+  if (!raw) return null;
+  const cleaned = raw.replace(/[\s\-()]/g, "");
+  return PHONE_RE.test(cleaned) ? null : "電話番号の形式が正しくありません（例: 03-1234-5678, 090-1234-5678）";
+};
 
 interface Customer {
   id: number;
@@ -21,7 +29,9 @@ export default function CustomersPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
 
   const loadCustomers = async () => {
     try {
@@ -40,6 +50,12 @@ export default function CustomersPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    const phoneErr = validatePhoneClient(form.phone);
+    if (phoneErr) {
+      setPhoneError(phoneErr);
+      return;
+    }
+    setPhoneError(null);
     const payload = {
       name: form.name,
       email: form.email || null,
@@ -71,11 +87,14 @@ export default function CustomersPage() {
       company: c.company || "",
       notes: c.notes || "",
     });
+    setPhoneError(null);
     setShowForm(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("この顧客を削除しますか？")) return;
+  const performDelete = async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeleteTarget(null);
     try {
       await api.delete(`/customers/${id}`);
       loadCustomers();
@@ -88,7 +107,7 @@ export default function CustomersPage() {
     <div className="page">
       <div className="page-header">
         <h2>顧客管理</h2>
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
+        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); }}>
           新規登録
         </button>
       </div>
@@ -119,7 +138,13 @@ export default function CustomersPage() {
               </div>
               <div className="form-group">
                 <label>電話番号</label>
-                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <input
+                  value={form.phone}
+                  placeholder="例: 03-1234-5678 または 090-1234-5678"
+                  onChange={(e) => { setForm({ ...form, phone: e.target.value }); if (phoneError) setPhoneError(null); }}
+                  onBlur={(e) => setPhoneError(validatePhoneClient(e.target.value))}
+                />
+                {phoneError && <div className="error-message" style={{ marginTop: 4 }}>{phoneError}</div>}
               </div>
               <div className="form-group">
                 <label>会社名</label>
@@ -160,7 +185,7 @@ export default function CustomersPage() {
                 <td>{c.company || "-"}</td>
                 <td className="actions">
                   <button className="btn-sm" onClick={() => handleEdit(c)}>編集</button>
-                  <button className="btn-sm btn-danger" onClick={() => handleDelete(c.id)}>削除</button>
+                  <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(c)}>削除</button>
                 </td>
               </tr>
             ))}
@@ -170,6 +195,22 @@ export default function CustomersPage() {
           </tbody>
         </table>
       )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="顧客を削除"
+        message={
+          <>
+            <strong>{deleteTarget?.name}</strong> を削除します。<br />
+            関連する商談・注文がある場合は削除できません（先にそれらを削除してください）。<br />
+            この操作は取り消せません。
+          </>
+        }
+        confirmLabel="削除する"
+        danger
+        onConfirm={performDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
