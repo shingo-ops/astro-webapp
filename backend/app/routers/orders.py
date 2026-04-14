@@ -11,6 +11,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, get_current_tenant
+from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
 from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse
@@ -128,6 +129,7 @@ async def create_order(
         new_data=data.model_dump(exclude_none=True, mode="json"),
     )
     await db.commit()
+    await invalidate_dashboard_cache(tenant_id)
 
     return OrderResponse(**row)
 
@@ -175,6 +177,7 @@ async def update_order(
         old_data=dict(old_row), new_data=update_data,
     )
     await db.commit()
+    await invalidate_dashboard_cache(tenant_id)
 
     return OrderResponse(**row)
 
@@ -203,3 +206,4 @@ async def delete_order(
         old_data=dict(old_row),
     )
     await db.commit()
+    await invalidate_dashboard_cache(tenant_id)
