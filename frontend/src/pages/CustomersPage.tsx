@@ -87,6 +87,7 @@ export default function CustomersPage() {
       company: c.company || "",
       notes: c.notes || "",
     });
+    setPhoneError(null);
     setShowForm(true);
   };
 
@@ -106,7 +107,7 @@ export default function CustomersPage() {
     <div className="page">
       <div className="page-header">
         <h2>顧客管理</h2>
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
+        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); }}>
           新規登録
         </button>
       </div>
