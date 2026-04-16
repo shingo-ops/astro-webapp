@@ -302,20 +302,18 @@ export default function RolesPage() {
           </div>
           <ul className="roles-list">
             {roles.map((r) => {
-              // priorityに応じた階層インデント（1000→0, 700→1, 400→2, 100→3, 0→4）
+              // priorityに応じた階層インデント。カード全体（カラーバー含む）を右にずらす
+              // 1000→0, 700→1, 400→2, 100→3, 0→4
               const level =
                 r.priority >= 1000 ? 0 :
                 r.priority >= 700 ? 1 :
                 r.priority >= 400 ? 2 :
                 r.priority >= 100 ? 3 : 4;
               return (
-                <li key={r.id}>
+                <li key={r.id} style={{ marginLeft: `${level * 16}px` }}>
                   <button
                     className={`role-item ${r.id === selectedRoleId ? "active" : ""}`}
-                    style={{
-                      borderLeft: `4px solid ${r.color || "#cbd5e0"}`,
-                      paddingLeft: `${12 + level * 16}px`,
-                    }}
+                    style={{ borderLeft: `4px solid ${r.color || "#cbd5e0"}` }}
                     onClick={() => selectRole(r.id)}
                   >
                     <span className="role-item-name">{r.name}</span>
