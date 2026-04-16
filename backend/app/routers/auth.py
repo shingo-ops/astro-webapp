@@ -97,23 +97,24 @@ async def register_user(
         },
     )
 
-    # 新規ユーザーに「メンバー」ロールを自動付与（Phase 1以降）
-    # メンバーロールが未作成（Phase 1マイグレーション未適用）の場合はスキップ
+    # 新規ユーザーにデフォルトロール（CS）を自動付与（Phase 1以降）
+    # CSロール未作成（Phase 1マイグレーション未適用）の場合はスキップ
+    from app.services.tenant import DEFAULT_NEW_USER_ROLE
     schema_name = f"tenant_{tenant.id:03d}"
     await db.execute(text(f"SET search_path = {schema_name}, public"))
-    member_role = await db.execute(
-        text("SELECT id FROM roles WHERE tenant_id = :tid AND name = 'メンバー' AND is_system = TRUE"),
-        {"tid": tenant.id},
+    default_role = await db.execute(
+        text("SELECT id FROM roles WHERE tenant_id = :tid AND name = :name"),
+        {"tid": tenant.id, "name": DEFAULT_NEW_USER_ROLE},
     )
-    member_row = member_role.first()
-    if member_row:
+    default_row = default_role.first()
+    if default_row:
         await db.execute(
             text("""
                 INSERT INTO user_roles (user_id, role_id, assigned_by)
                 VALUES (:uid, :rid, :by)
                 ON CONFLICT (user_id, role_id) DO NOTHING
             """),
-            {"uid": user.id, "rid": member_row[0], "by": current_user.id},
+            {"uid": user.id, "rid": default_row[0], "by": current_user.id},
         )
         await invalidate_user_permissions(tenant.id, user.id)
 
