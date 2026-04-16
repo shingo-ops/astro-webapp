@@ -483,6 +483,212 @@
 /* ランクバッジ拡張 */
 .badge-confirmed { background: #bee3f8; color: #2a4365; }
 
+/* --- Phase 1.1: ロール・権限ページ split-view --- */
+.roles-page {
+  padding: 20px;
+}
+.roles-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+  align-items: flex-start;
+}
+.roles-sidebar {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  position: sticky;
+  top: 20px;
+}
+.roles-sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.roles-sidebar-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #2d3748;
+}
+.roles-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px 0;
+}
+.role-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: #f7fafc;
+  border: none;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.role-item:hover {
+  background: #edf2f7;
+}
+.role-item.active {
+  background: #667eea;
+  color: #fff;
+}
+.role-item-name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.role-item-meta {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+.btn-block {
+  width: 100%;
+  padding: 8px;
+}
+.roles-main {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.roles-main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  padding-top: 4px;
+}
+.roles-main-header h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.3rem;
+}
+.role-description {
+  color: #4a5568;
+  margin: 4px 0 0 0;
+  font-size: 0.9rem;
+}
+.role-note {
+  color: #a0aec0;
+  margin: 4px 0 0 0;
+  font-size: 0.8rem;
+}
+.roles-main-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.permission-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.permission-group {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.permission-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f7fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+.permission-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #2d3748;
+}
+.permission-group-icon {
+  font-size: 1.2rem;
+}
+.permission-group-toggles {
+  display: flex;
+  gap: 12px;
+}
+.chk-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: #4a5568;
+  cursor: pointer;
+  user-select: none;
+}
+.chk-label input[type="checkbox"] {
+  margin: 0;
+}
+.permission-group-body {
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+.permission-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.permission-item:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+.permission-item input[type="checkbox"] {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.permission-item-text {
+  flex: 1;
+  min-width: 0;
+}
+.permission-item-desc {
+  font-size: 0.9rem;
+  color: #2d3748;
+  line-height: 1.3;
+}
+.permission-item-key {
+  font-size: 0.72rem;
+  color: #718096;
+  background: #edf2f7;
+  padding: 1px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-top: 2px;
+}
+.unsaved-banner {
+  position: sticky;
+  bottom: 0;
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: #fefcbf;
+  border: 1px solid #f6e05e;
+  border-radius: 6px;
+  color: #744210;
+  font-size: 0.9rem;
+}
+
 /* --- Responsive --- */
 @media (max-width: 768px) {
   .layout {
@@ -511,5 +717,15 @@
   }
   .page {
     padding: 16px;
+  }
+  .roles-layout {
+    grid-template-columns: 1fr;
+  }
+  .roles-sidebar {
+    position: static;
+  }
+  .roles-main-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
