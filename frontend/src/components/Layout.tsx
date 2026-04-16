@@ -1,15 +1,20 @@
 /**
  * アプリケーション共通レイアウト。
  * サイドバーナビゲーション + メインコンテンツ領域。
+ *
+ * 変更履歴:
+ *   2026-04-16: Phase 1対応（リード/チーム/ロール管理の権限連動ナビ追加）
  */
 
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { usePermissions } from "../hooks/usePermissions";
 import ConfirmModal from "./ConfirmModal";
 
 export default function Layout() {
   const { user, signOut } = useAuth();
+  const { hasPermission, hasAny } = usePermissions();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
@@ -19,10 +24,13 @@ export default function Layout() {
           <h1>Jarvis CRM</h1>
         </div>
         <nav className="sidebar-nav">
-          <NavLink to="/" end>ダッシュボード</NavLink>
-          <NavLink to="/customers">顧客管理</NavLink>
-          <NavLink to="/deals">案件管理</NavLink>
-          <NavLink to="/orders">注文管理</NavLink>
+          {hasPermission("dashboard.view") && <NavLink to="/" end>ダッシュボード</NavLink>}
+          {hasPermission("customers.view") && <NavLink to="/customers">顧客管理</NavLink>}
+          {hasPermission("leads.view") && <NavLink to="/leads">リード管理</NavLink>}
+          {hasPermission("deals.view") && <NavLink to="/deals">案件管理</NavLink>}
+          {hasPermission("orders.view") && <NavLink to="/orders">注文管理</NavLink>}
+          {hasPermission("teams.view") && <NavLink to="/teams">チーム管理</NavLink>}
+          {hasAny("roles.view", "roles.create") && <NavLink to="/roles">ロール・権限</NavLink>}
         </nav>
         <div className="sidebar-footer">
           <div className="user-info">{user?.email}</div>
