@@ -197,6 +197,38 @@
   border-color: #a0aec0;
 }
 
+/* ロール編集フォームの表示色ピッカー（正方形スウォッチ） */
+.color-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.color-swatch {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+.color-swatch:hover {
+  transform: scale(1.08);
+}
+.color-swatch.selected {
+  border-color: #2d3748;
+  box-shadow: 0 0 0 2px #fff inset, 0 2px 4px rgba(0,0,0,0.2);
+}
+.color-swatch input[type="radio"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
 /* 準備中ページ */
 .coming-soon {
   max-width: 600px;

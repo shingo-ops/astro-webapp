@@ -62,7 +62,22 @@ const MENU_VIEW_KEY: Record<string, string[]> = {
   "システム": ["system.audit_view"],
 };
 
-const emptyRoleForm = { name: "", color: "#6c757d", priority: 10, description: "" };
+// ロール表示色の選択肢（正方形スウォッチで表示、ラジオボタン選択）
+const COLOR_PALETTE = [
+  "#e74c3c", "#e67e22", "#f39c12", "#f1c40f",
+  "#27ae60", "#16a085", "#3498db", "#9b59b6",
+  "#8e44ad", "#34495e", "#95a5a6", "#2c3e50",
+];
+
+// 優先順位は旧GAS版に合わせて第1-第4順位の4段階。priority数値とのマッピング。
+const PRIORITY_OPTIONS = [
+  { value: 1000, label: "第1順位（最上位）" },
+  { value: 900, label: "第2順位" },
+  { value: 500, label: "第3順位" },
+  { value: 300, label: "第4順位" },
+];
+
+const emptyRoleForm = { name: "", color: COLOR_PALETTE[0], priority: 500, description: "" };
 
 export default function RolesPage() {
   const { hasPermission } = usePermissions();
@@ -446,10 +461,37 @@ export default function RolesPage() {
                 <input required value={roleForm.name} onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })} />
               </div>
               <div className="form-group"><label>表示色</label>
-                <input type="color" value={roleForm.color} onChange={(e) => setRoleForm({ ...roleForm, color: e.target.value })} />
+                <div className="color-picker" role="radiogroup" aria-label="表示色">
+                  {COLOR_PALETTE.map((c) => (
+                    <label
+                      key={c}
+                      className={`color-swatch ${roleForm.color === c ? "selected" : ""}`}
+                      style={{ background: c }}
+                      title={c}
+                    >
+                      <input
+                        type="radio"
+                        name="role-color"
+                        value={c}
+                        checked={roleForm.color === c}
+                        onChange={(e) => setRoleForm({ ...roleForm, color: e.target.value })}
+                      />
+                    </label>
+                  ))}
+                </div>
               </div>
-              <div className="form-group"><label>優先順位 (0-999)</label>
-                <input type="number" min="0" max="999" value={roleForm.priority} onChange={(e) => setRoleForm({ ...roleForm, priority: Number(e.target.value) })} />
+              <div className="form-group"><label>優先順位</label>
+                <select
+                  value={roleForm.priority}
+                  onChange={(e) => setRoleForm({ ...roleForm, priority: Number(e.target.value) })}
+                >
+                  {PRIORITY_OPTIONS.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                  {!PRIORITY_OPTIONS.find((p) => p.value === roleForm.priority) && (
+                    <option value={roleForm.priority}>カスタム (P{roleForm.priority})</option>
+                  )}
+                </select>
               </div>
               <div className="form-group"><label>説明</label>
                 <textarea value={roleForm.description} onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })} />
