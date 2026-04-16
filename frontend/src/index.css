@@ -1,3 +1,101 @@
+/* ============================================================
+   カラースキーム変数（ライト/ダークモード自動切替）
+   OSの prefers-color-scheme 設定に従って自動で切り替わる。
+   ============================================================ */
+:root {
+  /* 背景 */
+  --bg-primary: #f5f7fa;        /* メイン背景（ページ全体） */
+  --bg-surface: #ffffff;         /* カード・モーダル等のサーフェス */
+  --bg-subtle: #f7fafc;          /* テーブルヘッダ・カテゴリヘッダ等 */
+  --bg-hover: #e2e8f0;           /* hover 時の明確な変化 */
+  --bg-active: #cbd5e0;          /* クリック直後/選択中の背景 */
+
+  /* テキスト */
+  --text-primary: #1a202c;       /* 見出し・本文 */
+  --text-secondary: #4a5568;     /* ラベル・補足 */
+  --text-muted: #718096;         /* 非強調・プレースホルダー */
+
+  /* ボーダー */
+  --border: #e2e8f0;
+  --border-strong: #cbd5e0;
+
+  /* アクセント */
+  --accent: #667eea;             /* プライマリボタン・フォーカス */
+  --accent-hover: #5a67d8;
+  --link: #2b6cb0;               /* ナビゲーションリンク */
+  --link-active-bg: #ebf4ff;
+
+  /* ナビゲーション（上段の濃色バー） */
+  --nav-brand-bg: #1a365d;
+  --nav-brand-text: #ffffff;
+  --nav-brand-accent: #f0b429;
+  --nav-search-bg: #2c5282;
+
+  /* ステータス色 */
+  --danger: #e53e3e;
+  --danger-bg: #fed7d7;
+  --danger-text: #9b2c2c;
+  --warning-bg: #fefcbf;
+  --warning-text: #744210;
+  --success-bg: #c6f6d5;
+  --success-text: #22543d;
+
+  /* 影 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* テーブルの交互背景 */
+  --row-hover: #edf2f7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 背景: slate系ベースのダーク */
+    --bg-primary: #0f172a;
+    --bg-surface: #1e293b;
+    --bg-subtle: #243046;
+    --bg-hover: #334155;
+    --bg-active: #475569;
+
+    /* テキスト */
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+
+    /* ボーダー */
+    --border: #334155;
+    --border-strong: #475569;
+
+    /* アクセント */
+    --accent: #818cf8;
+    --accent-hover: #6366f1;
+    --link: #93c5fd;
+    --link-active-bg: #1e3a8a;
+
+    /* ナビゲーション */
+    --nav-brand-bg: #0b1c33;
+    --nav-brand-text: #f1f5f9;
+    --nav-brand-accent: #f59e0b;
+    --nav-search-bg: #1e3a5f;
+
+    /* ステータス色（ダーク背景に合わせて彩度を落とす） */
+    --danger: #f87171;
+    --danger-bg: #4c1d1d;
+    --danger-text: #fecaca;
+    --warning-bg: #3d2f0c;
+    --warning-text: #fde68a;
+    --success-bg: #14432b;
+    --success-text: #bbf7d0;
+
+    /* 影 */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+    /* テーブル */
+    --row-hover: #2d3b52;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -10,9 +108,10 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f5f7fa;
-  color: #2d3748;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   line-height: 1.6;
+  color-scheme: light dark;
 }
 
 #root {
