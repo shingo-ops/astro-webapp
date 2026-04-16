@@ -301,20 +301,28 @@ export default function RolesPage() {
             )}
           </div>
           <ul className="roles-list">
-            {roles.map((r) => (
-              <li key={r.id}>
-                <button
-                  className={`role-item ${r.id === selectedRoleId ? "active" : ""}`}
-                  style={{ borderLeft: `4px solid ${r.color || "#cbd5e0"}` }}
-                  onClick={() => selectRole(r.id)}
-                >
-                  <span className="role-item-name">{r.name}</span>
-                  <span className="role-item-meta">
-                    {r.is_system ? "システム" : "カスタム"} · P{r.priority}
-                  </span>
-                </button>
-              </li>
-            ))}
+            {roles.map((r) => {
+              // priorityに応じた階層インデント（1000→0, 700→1, 400→2, 100→3, 0→4）
+              const level =
+                r.priority >= 1000 ? 0 :
+                r.priority >= 700 ? 1 :
+                r.priority >= 400 ? 2 :
+                r.priority >= 100 ? 3 : 4;
+              return (
+                <li key={r.id}>
+                  <button
+                    className={`role-item ${r.id === selectedRoleId ? "active" : ""}`}
+                    style={{
+                      borderLeft: `4px solid ${r.color || "#cbd5e0"}`,
+                      paddingLeft: `${12 + level * 16}px`,
+                    }}
+                    onClick={() => selectRole(r.id)}
+                  >
+                    <span className="role-item-name">{r.name}</span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           {hasPermission("roles.assign") && (
             <button className="btn-secondary btn-block" onClick={() => setUserAssignOpen(true)}>
