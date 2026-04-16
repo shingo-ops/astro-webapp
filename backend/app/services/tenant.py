@@ -25,16 +25,82 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-# 「メンバー」ロールにデフォルトで付与するパーミッションキー
-MEMBER_DEFAULT_PERMISSIONS = [
-    "dashboard.view",
-    "reports.view",
-    "customers.view",
-    "leads.view",
-    "deals.view",
-    "orders.view",
-    "teams.view",
+# GAS版互換の既定ロール定義。テナント作成時に自動シードされる。
+#
+# 「permissions」キーの値:
+#   - "ALL": 全権限付与
+#   - "ALL_EXCEPT_SYSTEM_MANAGE": system.manage 以外の全権限
+#   - list[str]: 指定された権限キーのみ付与
+#
+# is_system=True の役割は編集/削除不可（オーナーのみ）。
+# その他の4役割は default として作成されるがテナント管理者が自由に編集可能。
+DEFAULT_ROLES = [
+    {
+        "name": "オーナー",
+        "color": "#e74c3c",
+        "priority": 1000,
+        "is_system": True,
+        "permissions": "ALL",
+        "description": "テナントの全権限を持つシステムロール",
+    },
+    {
+        "name": "システム管理者",
+        "color": "#8e44ad",
+        "priority": 900,
+        "is_system": False,
+        "permissions": "ALL_EXCEPT_SYSTEM_MANAGE",
+        "description": "システム設定以外の全機能を管理する管理者",
+    },
+    {
+        "name": "リーダー",
+        "color": "#3498db",
+        "priority": 500,
+        "is_system": False,
+        "permissions": [
+            "dashboard.view", "reports.view", "reports.export",
+            "customers.view", "customers.update",
+            "leads.view", "leads.create", "leads.update", "leads.delete", "leads.convert",
+            "deals.view", "deals.update",
+            "orders.view",
+            "teams.view", "teams.manage_members",
+            "roles.view",
+        ],
+        "description": "チーム単位でリードや案件を統括するリーダー",
+    },
+    {
+        "name": "営業",
+        "color": "#27ae60",
+        "priority": 300,
+        "is_system": False,
+        "permissions": [
+            "dashboard.view", "reports.view",
+            "customers.view", "customers.create", "customers.update",
+            "leads.view", "leads.create", "leads.update", "leads.convert",
+            "deals.view", "deals.create", "deals.update",
+            "orders.view", "orders.create", "orders.update",
+        ],
+        "description": "顧客獲得から受注までを担当する営業担当者",
+    },
+    {
+        "name": "CS",
+        "color": "#f39c12",
+        "priority": 300,
+        "is_system": False,
+        "permissions": [
+            "dashboard.view", "reports.view",
+            "customers.view", "customers.update",
+            "leads.view",
+            "deals.view",
+            "orders.view",
+            "teams.view",
+        ],
+        "description": "顧客フォローアップを担当するカスタマーサクセス",
+    },
 ]
+
+
+# 新規ユーザー登録時に自動付与するデフォルトロール名（auth.py から参照）
+DEFAULT_NEW_USER_ROLE = "CS"
 
 
 # テナントスキーマ内に作成する業務テーブルのSQL定義
@@ -286,63 +352,94 @@ END $$
 """
 
 
-async def seed_system_roles(db: AsyncSession, tenant_id: int, schema_name: str) -> None:
-    """
-    システムロール（オーナー/メンバー）をシードする。
-    既に存在する場合は冪等的にupsert。
-
-    - オーナー: priority=1000、全権限付与、is_system=TRUE（削除不可）
-    - メンバー: priority=1、閲覧権限のみ、is_system=TRUE（削除不可）
-    """
-    # オーナーロール作成
-    owner_result = await db.execute(
-        text(f"""
-            INSERT INTO {schema_name}.roles (tenant_id, name, color, priority, is_system, description)
-            VALUES (:tid, 'オーナー', '#e74c3c', 1000, TRUE, 'テナントの全権限を持つシステムロール')
-            ON CONFLICT (tenant_id, name) DO UPDATE SET priority = EXCLUDED.priority
-            RETURNING id
-        """),
-        {"tid": tenant_id},
-    )
-    owner_id = owner_result.scalar_one()
-
-    # メンバーロール作成
-    member_result = await db.execute(
-        text(f"""
-            INSERT INTO {schema_name}.roles (tenant_id, name, color, priority, is_system, description)
-            VALUES (:tid, 'メンバー', '#3498db', 1, TRUE, 'デフォルトの標準メンバーロール')
-            ON CONFLICT (tenant_id, name) DO UPDATE SET priority = EXCLUDED.priority
-            RETURNING id
-        """),
-        {"tid": tenant_id},
-    )
-    member_id = member_result.scalar_one()
-
-    # 権限クリア（冪等性確保）
+async def _assign_permissions_to_role(
+    db: AsyncSession,
+    schema_name: str,
+    role_id: int,
+    permissions_spec,
+) -> None:
+    """ロールに対して指定された権限を適用する（既存割当は全クリア後に再投入）。"""
     await db.execute(
-        text(f"DELETE FROM {schema_name}.role_permissions WHERE role_id IN (:o, :m)"),
-        {"o": owner_id, "m": member_id},
+        text(f"DELETE FROM {schema_name}.role_permissions WHERE role_id = :rid"),
+        {"rid": role_id},
     )
 
-    # オーナー: 全権限
-    await db.execute(
-        text(f"""
-            INSERT INTO {schema_name}.role_permissions (role_id, permission_id)
-            SELECT :role_id, id FROM public.permissions
-        """),
-        {"role_id": owner_id},
-    )
-
-    # メンバー: デフォルト権限
-    for key in MEMBER_DEFAULT_PERMISSIONS:
+    if permissions_spec == "ALL":
         await db.execute(
             text(f"""
                 INSERT INTO {schema_name}.role_permissions (role_id, permission_id)
-                SELECT :role_id, id FROM public.permissions WHERE key = :key
-                ON CONFLICT DO NOTHING
+                SELECT :rid, id FROM public.permissions
             """),
-            {"role_id": member_id, "key": key},
+            {"rid": role_id},
         )
+    elif permissions_spec == "ALL_EXCEPT_SYSTEM_MANAGE":
+        await db.execute(
+            text(f"""
+                INSERT INTO {schema_name}.role_permissions (role_id, permission_id)
+                SELECT :rid, id FROM public.permissions WHERE key != 'system.manage'
+            """),
+            {"rid": role_id},
+        )
+    elif isinstance(permissions_spec, list):
+        for key in permissions_spec:
+            await db.execute(
+                text(f"""
+                    INSERT INTO {schema_name}.role_permissions (role_id, permission_id)
+                    SELECT :rid, id FROM public.permissions WHERE key = :key
+                    ON CONFLICT DO NOTHING
+                """),
+                {"rid": role_id, "key": key},
+            )
+
+
+async def seed_system_roles(db: AsyncSession, tenant_id: int, schema_name: str) -> None:
+    """
+    GAS版互換の既定ロールをシードする（冪等）。
+
+    - オーナー (system): 全権限、削除/編集不可
+    - システム管理者: system.manage 以外の全権限、編集可
+    - リーダー: チーム単位のリード/案件管理、編集可
+    - 営業: 顧客〜案件〜注文の販売サイクル、編集可
+    - CS: 顧客フォローアップ、編集可
+
+    非システムロールは「名前が既存でない場合のみ」権限を初期設定する。
+    既に存在する場合は権限のカスタマイズを上書きしない（priority/descriptionのみ更新）。
+    """
+    for role_def in DEFAULT_ROLES:
+        # 既存チェック（編集済みロールの権限を上書きしないため）
+        existing = await db.execute(
+            text(f"SELECT id FROM {schema_name}.roles WHERE tenant_id = :tid AND name = :name"),
+            {"tid": tenant_id, "name": role_def["name"]},
+        )
+        existing_row = existing.first()
+        is_new = existing_row is None
+
+        # upsert（名前で識別、priority と description は常に最新化）
+        result = await db.execute(
+            text(f"""
+                INSERT INTO {schema_name}.roles (tenant_id, name, color, priority, is_system, description)
+                VALUES (:tid, :name, :color, :priority, :is_system, :description)
+                ON CONFLICT (tenant_id, name) DO UPDATE
+                SET priority = EXCLUDED.priority,
+                    description = EXCLUDED.description
+                RETURNING id
+            """),
+            {
+                "tid": tenant_id,
+                "name": role_def["name"],
+                "color": role_def["color"],
+                "priority": role_def["priority"],
+                "is_system": role_def["is_system"],
+                "description": role_def["description"],
+            },
+        )
+        role_id = result.scalar_one()
+
+        # 権限割当: システムロールは常に同期（オーナーは必ず全権限）
+        # 非システムロールは「新規作成時のみ」デフォルト権限を入れる
+        # （既存の場合はテナント管理者によるカスタマイズを保持）
+        if role_def["is_system"] or is_new:
+            await _assign_permissions_to_role(db, schema_name, role_id, role_def["permissions"])
 
 
 async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
