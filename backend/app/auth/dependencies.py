@@ -179,6 +179,28 @@ async def get_current_tenant(
     return safe_id
 
 
+async def reset_tenant_context(db: AsyncSession, tenant_id: int) -> None:
+    """
+    トランザクションコミット後にテナントコンテキスト（search_path + app.tenant_id）
+    を再設定する。
+
+    背景:
+      SQLAlchemy の AsyncSession は `commit()` 後に新しいトランザクションを開始する際、
+      プールから別のコネクションが払い出される可能性がある。その場合、元のコネクションで
+      設定された session-level の search_path が新コネクションには反映されない。
+      結果として commit 後のクエリが "relation ... does not exist" で失敗する。
+
+    使用例:
+        await db.commit()
+        await reset_tenant_context(db, tenant_id)
+        # ここからテナントスキーマのテーブルに対して再度クエリ可能
+    """
+    safe_id = int(tenant_id)
+    schema_name = f"tenant_{safe_id:03d}"
+    await db.execute(text(f"SET search_path = {schema_name}, public"))
+    await db.execute(text(f"SET app.tenant_id = '{safe_id}'"))
+
+
 async def get_current_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:
