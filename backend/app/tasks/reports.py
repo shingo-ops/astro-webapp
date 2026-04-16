@@ -1,8 +1,11 @@
 """
 レポートエクスポートタスク。
 
-顧客・商談・注文データをCSV形式でエクスポートする。
+顧客・商談・注文・リードデータをCSV形式でエクスポートする。
 オンデマンドで実行され、結果はRedisに一時保存される。
+
+変更履歴:
+  2026-04-16: Phase 1拡張（リードCSV出力＋顧客/商談の拡張カラム対応）
 """
 
 import csv
@@ -28,20 +31,48 @@ EXPORT_RESULT_TTL = 3600
 EXPORT_QUERIES = {
     "customers": {
         "query": """
-            SELECT id, name, email, phone, company, notes, created_at, updated_at
+            SELECT id, customer_code, name, email, phone, company,
+                   registration_source, status, business_id,
+                   billing_address, delivery_address, delivery_country,
+                   notes, created_at, updated_at
             FROM customers ORDER BY id
         """,
-        "headers": ["ID", "名前", "メール", "電話番号", "会社名", "備考", "作成日", "更新日"],
+        "headers": [
+            "ID", "顧客コード", "名前", "メール", "電話番号", "会社名",
+            "登録元", "ステータス", "事業者ID",
+            "請求先住所", "配送先住所", "配送先国",
+            "備考", "作成日", "更新日",
+        ],
+    },
+    "leads": {
+        "query": """
+            SELECT id, lead_code, customer_name, company_name, email, phone,
+                   source, type, status, temperature, estimated_scale,
+                   customer_type, response_speed, monthly_forecast, prospect_rank,
+                   notes, created_at, updated_at
+            FROM leads ORDER BY id
+        """,
+        "headers": [
+            "ID", "リードコード", "顧客名", "会社名", "メール", "電話番号",
+            "流入元", "タイプ", "ステータス", "温度感", "想定規模",
+            "顧客タイプ", "返信速度", "月間見込金額", "見込度",
+            "備考", "作成日", "更新日",
+        ],
     },
     "deals": {
         "query": """
-            SELECT d.id, c.name AS customer_name, d.title, d.amount, d.status,
+            SELECT d.id, d.deal_code, c.name AS customer_name, d.title, d.amount,
+                   d.currency, d.status, d.stage, d.probability,
                    d.expected_close_date, d.notes, d.created_at, d.updated_at
             FROM deals d
             LEFT JOIN customers c ON d.customer_id = c.id
             ORDER BY d.id
         """,
-        "headers": ["ID", "顧客名", "案件名", "金額", "ステータス", "成約予定日", "備考", "作成日", "更新日"],
+        "headers": [
+            "ID", "案件コード", "顧客名", "案件名", "金額",
+            "通貨", "ステータス", "ステージ", "成約確率(%)",
+            "成約予定日", "備考", "作成日", "更新日",
+        ],
     },
     "orders": {
         "query": """

@@ -15,6 +15,9 @@ from app.routers import deals
 from app.routers import orders
 from app.routers import dashboard
 from app.routers import reports
+from app.routers import leads
+from app.routers import teams
+from app.routers import roles
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -84,6 +87,19 @@ app.include_router(
 )
 app.include_router(
     reports.router, prefix="/api/v1", tags=["reports"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 1追加ルーター: リード / チーム / ロール・権限
+app.include_router(
+    leads.router, prefix="/api/v1", tags=["leads"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    teams.router, prefix="/api/v1", tags=["teams"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    roles.router, prefix="/api/v1", tags=["roles"],
     dependencies=[Depends(get_current_tenant)],
 )
 

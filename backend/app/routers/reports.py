@@ -3,6 +3,9 @@
 
 CSVエクスポートをCeleryタスクとして非同期実行し、
 タスクIDで進捗確認・結果ダウンロードを行う。
+
+変更履歴:
+  2026-04-16: Phase 1拡張（リードCSVエクスポートを追加、require_permission統合）
 """
 
 from __future__ import annotations
@@ -13,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from app.auth.dependencies import get_current_user, get_current_tenant
+from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
 from app.cache import get_redis
 from app.models import User
 
@@ -22,6 +25,7 @@ router = APIRouter()
 
 class ReportType(str, Enum):
     customers = "customers"
+    leads = "leads"
     deals = "deals"
     orders = "orders"
 
@@ -41,7 +45,12 @@ class ExportStatusResponse(BaseModel):
     result: dict | None = None
 
 
-@router.post("/reports/export", response_model=ExportResponse, status_code=202)
+@router.post(
+    "/reports/export",
+    response_model=ExportResponse,
+    status_code=202,
+    dependencies=[Depends(require_permission("reports.export"))],
+)
 async def request_export(
     data: ExportRequest,
     tenant_id: int = Depends(get_current_tenant),
@@ -57,7 +66,11 @@ async def request_export(
     )
 
 
-@router.get("/reports/{task_id}/status", response_model=ExportStatusResponse)
+@router.get(
+    "/reports/{task_id}/status",
+    response_model=ExportStatusResponse,
+    dependencies=[Depends(require_permission("reports.view", "reports.export"))],
+)
 async def get_export_status(
     task_id: str,
     tenant_id: int = Depends(get_current_tenant),
@@ -79,7 +92,10 @@ async def get_export_status(
     return ExportStatusResponse(**response)
 
 
-@router.get("/reports/{task_id}/download")
+@router.get(
+    "/reports/{task_id}/download",
+    dependencies=[Depends(require_permission("reports.view", "reports.export"))],
+)
 async def download_export(
     task_id: str,
     tenant_id: int = Depends(get_current_tenant),
