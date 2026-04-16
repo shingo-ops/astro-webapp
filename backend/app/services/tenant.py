@@ -94,7 +94,7 @@ DEFAULT_ROLES = [
             "orders.view",
             "teams.view",
         ],
-        "description": "顧客フォローアップを担当するカスタマーサクセス",
+        "description": "顧客からの問い合わせ対応を担当するカスタマーサポート",
     },
 ]
 
