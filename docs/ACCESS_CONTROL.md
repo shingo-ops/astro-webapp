@@ -1,13 +1,59 @@
 # アクセス制御ポリシー - Jarvis CRM
 
-## 1. ロール定義
+## 変更履歴
 
-| ロール | 権限 | 対象者 |
-|--------|------|--------|
-| admin | テナント管理、ユーザー管理、全CRM操作 | システム管理者 |
-| user | CRM操作（顧客・商談・注文の閲覧/編集） | 一般ユーザー |
+| 日付 | 変更内容 |
+|------|---------|
+| 2026-04-16 | Phase 1: Discord式カスタムロール制へ移行。権限マスタ導入、エンドポイント毎の`require_permission`を追加。leads/teams/roles を新設。 |
+| 2026-03-xx 以前 | admin/user の2値ロール制 |
 
-## 2. APIエンドポイント権限マトリクス
+---
+
+## 1. ロールシステム（Discord式カスタムロール）
+
+テナント管理者はロール自体を自由に作成し、リソース×アクション単位の権限を割り当てられる。
+
+### 1.1 ロールの基本ルール
+- **1ユーザー＝複数ロール可**、権限は全ロールの**和集合**（Discord式）
+- ロールには**priority**（優先順位）があり、自分の最大priorityより低いロールのみ管理可能
+- `is_system=TRUE`のロール（オーナー/メンバー）は**削除/編集不可**
+- 権限マスタ（`public.permissions`）は全テナント共有
+
+### 1.2 システムロール（テナント作成時に自動生成）
+
+| ロール名 | priority | 権限 | 用途 |
+|---------|---------|------|------|
+| オーナー | 1000 | 全権限 | テナント管理者。削除/編集不可 |
+| メンバー | 1 | 閲覧権限のみ（dashboard/reports/customers/leads/deals/orders/teams の view） | デフォルトメンバー |
+
+### 1.3 後方互換
+既存の `public.users.role` カラム（admin/user）は保持。マイグレーションで既存ユーザーにロールを自動付与:
+- `role='admin'` → 「オーナー」
+- `role='user'` → 「メンバー」
+
+---
+
+## 2. 権限キー一覧（`public.permissions` テーブル）
+
+| カテゴリ | 権限キー | 説明 |
+|---------|---------|------|
+| システム | `system.manage` | システム設定の管理 |
+| システム | `system.audit_view` | 監査ログの閲覧 |
+| ロール | `roles.view` | ロール一覧の閲覧 |
+| ロール | `roles.create` | ロールの作成 |
+| ロール | `roles.update` | ロールの編集・権限割当 |
+| ロール | `roles.delete` | ロールの削除 |
+| ロール | `roles.assign` | ユーザーへのロール付与 |
+| 顧客 | `customers.view/create/update/delete` | 顧客CRUD |
+| リード | `leads.view/create/update/delete/convert` | リードCRUD＋案件化 |
+| 案件 | `deals.view/create/update/delete` | 案件CRUD |
+| 注文 | `orders.view/create/update/delete` | 注文CRUD |
+| チーム | `teams.view/create/update/delete/manage_members` | チームCRUD＋メンバー管理 |
+| レポート | `dashboard.view` `reports.view` `reports.export` | 可視化機能 |
+
+---
+
+## 3. APIエンドポイント権限マトリクス
 
 ### 認証不要（パブリック）
 | エンドポイント | メソッド | 用途 |
@@ -16,30 +62,68 @@
 | `/api/v1/auth/register` | POST | ユーザー登録 |
 | `/api/v1/auth/logout` | POST | ログアウト |
 
-### 認証必須（全ロール）
-| エンドポイント | メソッド | 用途 |
-|---------------|---------|------|
-| `/api/v1/customers` | GET/POST/PATCH/DELETE | 顧客管理 |
-| `/api/v1/deals` | GET/POST/PATCH/DELETE | 商談管理 |
-| `/api/v1/orders` | GET/POST/PATCH/DELETE | 注文管理 |
-| `/api/v1/dashboard` | GET | ダッシュボード |
-| `/api/v1/reports/export` | POST | レポートエクスポート |
-| `/api/v1/reports/{id}/status` | GET | エクスポート状態確認 |
-| `/api/v1/reports/{id}/download` | GET | CSVダウンロード |
+### 認証必須（権限チェックあり）
 
-### 管理者限定（admin）
+| エンドポイント | メソッド | 必要権限 |
+|---------------|---------|---------|
+| `/api/v1/customers` | GET | `customers.view` |
+| `/api/v1/customers` | POST | `customers.create` |
+| `/api/v1/customers/{id}` | PATCH | `customers.update` |
+| `/api/v1/customers/{id}` | DELETE | `customers.delete` |
+| `/api/v1/leads` | GET | `leads.view` |
+| `/api/v1/leads` | POST | `leads.create` |
+| `/api/v1/leads/{id}` | PATCH | `leads.update` |
+| `/api/v1/leads/{id}` | DELETE | `leads.delete` |
+| `/api/v1/leads/{id}/convert` | POST | `leads.convert` |
+| `/api/v1/deals` | GET | `deals.view` |
+| `/api/v1/deals` | POST | `deals.create` |
+| `/api/v1/deals/{id}` | PATCH | `deals.update` |
+| `/api/v1/deals/{id}` | DELETE | `deals.delete` |
+| `/api/v1/orders` | GET/POST/PATCH/DELETE | （注文系権限は現状admin/userのまま、Phase 2で追加） |
+| `/api/v1/teams` | GET | `teams.view` |
+| `/api/v1/teams` | POST | `teams.create` |
+| `/api/v1/teams/{id}` | PATCH | `teams.update` |
+| `/api/v1/teams/{id}` | DELETE | `teams.delete` |
+| `/api/v1/teams/{id}/members` | POST/DELETE | `teams.manage_members` |
+| `/api/v1/roles` | GET | `roles.view` |
+| `/api/v1/roles` | POST | `roles.create` |
+| `/api/v1/roles/{id}` | PATCH | `roles.update` |
+| `/api/v1/roles/{id}` | DELETE | `roles.delete` |
+| `/api/v1/roles/{id}/permissions` | PUT | `roles.update` |
+| `/api/v1/users/{id}/roles` | PUT | `roles.assign` |
+| `/api/v1/permissions` | GET | 認証のみ（マスタ参照） |
+| `/api/v1/me/permissions` | GET | 認証のみ（自身の権限確認） |
+| `/api/v1/dashboard` | GET | `dashboard.view` |
+| `/api/v1/reports/export` | POST | `reports.export` |
+| `/api/v1/reports/{id}/status` | GET | `reports.view` または `reports.export` |
+| `/api/v1/reports/{id}/download` | GET | `reports.view` または `reports.export` |
+
+### 管理者限定（admin ロール、後方互換）
 | エンドポイント | メソッド | 用途 |
 |---------------|---------|------|
 | `/api/v1/admin/tenants` | POST | テナント作成 |
 
-## 3. テナント分離
+---
+
+## 4. テナント分離（変更なし）
 
 - 各テナントは独立したPostgreSQLスキーマ（`tenant_{id:03d}`）を持つ
 - Row Level Security (RLS) により、テナント間のデータアクセスを完全に防止
 - API認証時に自動的にDB接続のsearch_pathを切り替え
 - テナントIDはDB上のユーザーレコードから取得（JWTやURLからは受け取らない）
+- Phase 1 で追加された roles / leads / teams テーブルにもRLSポリシーを適用
 
-## 4. インフラアクセス制御
+---
+
+## 5. 権限キャッシュ
+
+- Redis に `perms:{tenant_id}:{user_id}` 形式で権限キー集合を5分間キャッシュ
+- ロール更新/権限割当変更時は対象テナント全体のキャッシュを一括パージ (`invalidate_tenant_permissions`)
+- ユーザーのロール変更時は該当ユーザーのキャッシュのみ削除 (`invalidate_user_permissions`)
+
+---
+
+## 6. インフラアクセス制御（変更なし）
 
 ### SSHアクセス
 - 鍵認証のみ（パスワード認証無効）
@@ -59,11 +143,14 @@
 - main/developブランチへの直接コミット禁止
 - featureブランチ → PR → レビュー → マージ
 
-## 5. 定期レビュー
+---
+
+## 7. 定期レビュー
 
 | 項目 | 頻度 | 実施内容 |
 |------|------|---------|
 | SSHキー棚卸し | 月次 | 不要なキーの削除 |
 | DBユーザー確認 | 月次 | 不要なユーザーの削除 |
 | GitHub権限確認 | 月次 | コラボレーター/Deploy Key確認 |
-| ロール割り当て確認 | 四半期 | 各ユーザーのロール妥当性確認 |
+| ロール割り当て確認 | 四半期 | 各ユーザーのロール妥当性確認、priority設計の妥当性確認 |
+| 権限マスタ棚卸し | 四半期 | 未使用権限キーの削除、新機能追加時の権限追加漏れ確認 |

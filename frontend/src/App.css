@@ -437,6 +437,52 @@
   font-size: 0.9rem;
 }
 
+/* --- Phase 1: loading表示 / タブナビ / リードバッジ / モノ等幅フォント --- */
+.sidebar-loading {
+  padding: 16px;
+  color: #a0aec0;
+  font-size: 0.85rem;
+}
+
+.tab-nav {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+.tab-nav button {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #4a5568;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab-nav button:hover {
+  color: #667eea;
+}
+.tab-nav button.tab-active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+  font-weight: 600;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  color: #4a5568;
+}
+
+/* リードステータスバッジ */
+.lead-badge-新規 { background: #bee3f8; color: #2a4365; padding: 2px 8px; border-radius: 4px; }
+.lead-badge-コンタクト中 { background: #fbd38d; color: #744210; padding: 2px 8px; border-radius: 4px; }
+.lead-badge-提案中 { background: #d6bcfa; color: #44337a; padding: 2px 8px; border-radius: 4px; }
+.lead-badge-案件化 { background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 4px; }
+.lead-badge-失注 { background: #fed7d7; color: #742a2a; padding: 2px 8px; border-radius: 4px; }
+.lead-badge-保留 { background: #e2e8f0; color: #2d3748; padding: 2px 8px; border-radius: 4px; }
+
+/* ランクバッジ拡張 */
+.badge-confirmed { background: #bee3f8; color: #2a4365; }
+
 /* --- Responsive --- */
 @media (max-width: 768px) {
   .layout {

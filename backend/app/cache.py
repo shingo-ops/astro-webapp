@@ -14,6 +14,8 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 JWT_CACHE_TTL = 300
 # テナント情報キャッシュ: 10分
 TENANT_CACHE_TTL = 600
+# ユーザー権限キャッシュ: 5分
+PERMISSIONS_CACHE_TTL = 300
 
 _redis: Optional[redis.Redis] = None
 
@@ -139,6 +141,68 @@ async def blacklist_token(token: str, ttl: int = 3600) -> None:
         await pipe.execute()
     except Exception:
         logger.critical("ブラックリスト書き込み失敗: トークン無効化が不完全")
+
+
+async def cache_user_permissions(tenant_id: int, user_id: int, keys: set[str]) -> None:
+    """
+    ユーザーの有効パーミッション（文字列キーの集合）をキャッシュする。
+    キー: perms:{tenant_id}:{user_id}
+    """
+    r = get_redis()
+    if not r:
+        return
+    try:
+        key = f"perms:{tenant_id}:{user_id}"
+        await r.setex(key, PERMISSIONS_CACHE_TTL, json.dumps(sorted(keys)))
+    except Exception:
+        logger.warning("パーミッションキャッシュ書き込み失敗")
+
+
+async def get_cached_user_permissions(tenant_id: int, user_id: int) -> Optional[set[str]]:
+    """
+    キャッシュ済みのユーザー権限セットを取得する。
+    キャッシュミス時はNone。
+    """
+    r = get_redis()
+    if not r:
+        return None
+    try:
+        key = f"perms:{tenant_id}:{user_id}"
+        data = await r.get(key)
+        if data:
+            return set(json.loads(data))
+    except Exception:
+        logger.warning("パーミッションキャッシュ読み取り失敗")
+    return None
+
+
+async def invalidate_user_permissions(tenant_id: int, user_id: int) -> None:
+    """特定ユーザーの権限キャッシュを削除する（ロール付与/剥奪時に呼ぶ）。"""
+    r = get_redis()
+    if not r:
+        return
+    try:
+        await r.delete(f"perms:{tenant_id}:{user_id}")
+    except Exception:
+        logger.warning("パーミッションキャッシュ削除失敗")
+
+
+async def invalidate_tenant_permissions(tenant_id: int) -> None:
+    """
+    テナント内全ユーザーの権限キャッシュを削除する
+    （ロールの権限構成を変更した時に呼ぶ）。
+    SCANベースで対象キーを列挙→削除。
+    """
+    r = get_redis()
+    if not r:
+        return
+    try:
+        pattern = f"perms:{tenant_id}:*"
+        # Redisの非同期 scan_iter を利用してまとめて削除
+        async for key in r.scan_iter(match=pattern, count=100):
+            await r.delete(key)
+    except Exception:
+        logger.warning("テナント権限キャッシュ一括削除失敗")
 
 
 async def is_token_blacklisted(token: str) -> bool:

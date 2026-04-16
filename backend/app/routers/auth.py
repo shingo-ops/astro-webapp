@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.cache import blacklist_token
+from app.cache import blacklist_token, invalidate_user_permissions
 from app.database import get_db
 from app.models import User, Tenant
 from app.auth.utils import hash_password, set_tenant_claim
@@ -96,6 +96,26 @@ async def register_user(
             "role": user.role,
         },
     )
+
+    # 新規ユーザーに「メンバー」ロールを自動付与（Phase 1以降）
+    # メンバーロールが未作成（Phase 1マイグレーション未適用）の場合はスキップ
+    schema_name = f"tenant_{tenant.id:03d}"
+    await db.execute(text(f"SET search_path = {schema_name}, public"))
+    member_role = await db.execute(
+        text("SELECT id FROM roles WHERE tenant_id = :tid AND name = 'メンバー' AND is_system = TRUE"),
+        {"tid": tenant.id},
+    )
+    member_row = member_role.first()
+    if member_row:
+        await db.execute(
+            text("""
+                INSERT INTO user_roles (user_id, role_id, assigned_by)
+                VALUES (:uid, :rid, :by)
+                ON CONFLICT (user_id, role_id) DO NOTHING
+            """),
+            {"uid": user.id, "rid": member_row[0], "by": current_user.id},
+        )
+        await invalidate_user_permissions(tenant.id, user.id)
 
     # FirebaseカスタムクレームにテナントIDを埋め込み（同期APIをスレッドで実行）
     import asyncio

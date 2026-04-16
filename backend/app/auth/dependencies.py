@@ -10,8 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.cache import (
     cache_jwt_result,
     cache_tenant,
+    cache_user_permissions,
     get_cached_jwt,
     get_cached_tenant,
+    get_cached_user_permissions,
     is_token_blacklisted,
 )
 from app.database import get_db
@@ -187,3 +189,79 @@ async def get_current_admin(
             detail="この操作には管理者権限が必要です",
         )
     return current_user
+
+
+async def load_user_permissions(
+    db: AsyncSession,
+    tenant_id: int,
+    user_id: int,
+) -> set[str]:
+    """
+    ユーザーの有効パーミッションキー集合を取得する。
+    キャッシュヒット時はDBクエリをスキップ。
+
+    Discord方式: 複数ロールの権限を和集合で判定。
+    """
+    cached = await get_cached_user_permissions(tenant_id, user_id)
+    if cached is not None:
+        return cached
+
+    # DBクエリ: user_roles → role_permissions → public.permissions をJOIN
+    # search_pathは呼び出し元（get_current_tenant）で設定済みのため
+    # user_roles/role_permissionsはテナントスキーマから参照される
+    result = await db.execute(
+        text("""
+            SELECT DISTINCT p.key
+            FROM user_roles ur
+            JOIN role_permissions rp ON rp.role_id = ur.role_id
+            JOIN public.permissions p ON p.id = rp.permission_id
+            WHERE ur.user_id = :user_id
+        """),
+        {"user_id": user_id},
+    )
+    keys = {row[0] for row in result.fetchall()}
+
+    # admin後方互換: User.role='admin'なら全権限を持つ扱い
+    # （Phase 1移行期間中、ロール未割当ユーザーを救済）
+    if not keys:
+        # adminユーザーなら全権限取得、それ以外は最低限のビュー権限を付与
+        user_result = await db.execute(
+            text("SELECT role FROM public.users WHERE id = :uid"),
+            {"uid": user_id},
+        )
+        row = user_result.fetchone()
+        if row and row[0] == "admin":
+            all_perms = await db.execute(text("SELECT key FROM public.permissions"))
+            keys = {r[0] for r in all_perms.fetchall()}
+
+    await cache_user_permissions(tenant_id, user_id, keys)
+    return keys
+
+
+def require_permission(*permission_keys: str):
+    """
+    指定された権限のいずれか1つを持つことを要求するDependencyファクトリ。
+    Discord方式: ユーザーの全ロールの権限の和集合で判定。
+
+    使用例:
+        @router.post("/customers",
+                     dependencies=[Depends(require_permission("customers.create"))])
+    """
+    required: set[str] = set(permission_keys)
+    if not required:
+        raise ValueError("require_permission には1つ以上のキーが必要です")
+
+    async def checker(
+        current_user: User = Depends(get_current_user),
+        tenant_id: int = Depends(get_current_tenant),
+        db: AsyncSession = Depends(get_db),
+    ) -> User:
+        user_perms = await load_user_permissions(db, tenant_id, current_user.id)
+        if required & user_perms:
+            return current_user
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"権限が不足しています: {', '.join(sorted(required))}",
+        )
+
+    return checker
