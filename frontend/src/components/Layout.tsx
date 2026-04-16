@@ -1,9 +1,12 @@
 /**
- * アプリケーション共通レイアウト。
- * サイドバーナビゲーション + メインコンテンツ領域。
+ * アプリケーション共通レイアウト（トップナビ型）。
+ *
+ * 旧GAS版のレイアウトに合わせて、上部に横並びのナビゲーションバーを配置。
+ * 左: ブランド / 中央: ナビ項目（権限連動表示） / 右: ユーザー情報 + ログアウト
  *
  * 変更履歴:
- *   2026-04-16: Phase 1対応（リード/チーム/ロール管理の権限連動ナビ追加）
+ *   2026-04-16: Phase 1対応（リード/チーム/ロール・権限の権限連動ナビ追加）
+ *   2026-04-16: GAS互換のため左サイドバー→上部トップナビに変更
  */
 
 import { useState } from "react";
@@ -18,14 +21,14 @@ export default function Layout() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
-    <div className="layout">
-      <aside className="sidebar">
-        <div className="sidebar-header">
+    <div className="layout-top">
+      <header className="topnav">
+        <div className="topnav-brand">
           <h1>Jarvis CRM</h1>
         </div>
-        <nav className="sidebar-nav">
+        <nav className="topnav-links">
           {permsLoading ? (
-            <div className="sidebar-loading">権限読込中...</div>
+            <span className="topnav-loading">権限読込中...</span>
           ) : (
             <>
               {hasPermission("dashboard.view") && <NavLink to="/" end>ダッシュボード</NavLink>}
@@ -38,12 +41,14 @@ export default function Layout() {
             </>
           )}
         </nav>
-        <div className="sidebar-footer">
-          <div className="user-info">{user?.email}</div>
-          <button className="btn-logout" onClick={() => setShowLogoutConfirm(true)}>ログアウト</button>
+        <div className="topnav-user">
+          <span className="topnav-email">{user?.email}</span>
+          <button className="btn-logout" onClick={() => setShowLogoutConfirm(true)}>
+            ログアウト
+          </button>
         </div>
-      </aside>
-      <main className="main-content">
+      </header>
+      <main className="main-content-top">
         <Outlet />
       </main>
 
