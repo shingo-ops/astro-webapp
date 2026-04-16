@@ -37,7 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 DEFAULT_ROLES = [
     {
         "name": "オーナー",
-        "color": "#e74c3c",
+        "color": "#ef4444",  # 赤
         "priority": 1000,
         "is_system": True,
         "permissions": "ALL",
@@ -45,7 +45,7 @@ DEFAULT_ROLES = [
     },
     {
         "name": "システム管理者",
-        "color": "#8e44ad",
+        "color": "#a855f7",  # 紫
         "priority": 900,
         "is_system": False,
         "permissions": "ALL_EXCEPT_SYSTEM_MANAGE",
@@ -53,7 +53,7 @@ DEFAULT_ROLES = [
     },
     {
         "name": "リーダー",
-        "color": "#3498db",
+        "color": "#3b82f6",  # 青
         "priority": 500,
         "is_system": False,
         "permissions": [
@@ -69,7 +69,7 @@ DEFAULT_ROLES = [
     },
     {
         "name": "営業",
-        "color": "#27ae60",
+        "color": "#22c55e",  # 緑
         "priority": 300,
         "is_system": False,
         "permissions": [
@@ -83,7 +83,7 @@ DEFAULT_ROLES = [
     },
     {
         "name": "CS",
-        "color": "#f39c12",
+        "color": "#f97316",  # オレンジ
         "priority": 300,
         "is_system": False,
         "permissions": [
@@ -414,13 +414,17 @@ async def seed_system_roles(db: AsyncSession, tenant_id: int, schema_name: str) 
         existing_row = existing.first()
         is_new = existing_row is None
 
-        # upsert（名前で識別、priority と description は常に最新化）
+        # upsert（名前で識別、color/priority/description は常に最新化）
+        # color も更新対象とすることで、パレット変更時に既定ロールの色を一括同期できる。
+        # カスタムロール（名前が DEFAULT_ROLES にないもの）はこのループの対象外なので
+        # ユーザーのカスタマイズは保持される。
         result = await db.execute(
             text(f"""
                 INSERT INTO {schema_name}.roles (tenant_id, name, color, priority, is_system, description)
                 VALUES (:tid, :name, :color, :priority, :is_system, :description)
                 ON CONFLICT (tenant_id, name) DO UPDATE
-                SET priority = EXCLUDED.priority,
+                SET color = EXCLUDED.color,
+                    priority = EXCLUDED.priority,
                     description = EXCLUDED.description
                 RETURNING id
             """),
