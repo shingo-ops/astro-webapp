@@ -24,6 +24,12 @@ import asyncio
 import logging
 import os
 import sys
+from pathlib import Path
+
+# /app/scripts/ から /app を sys.path に追加（app.services.tenant を import するため）
+_APP_ROOT = Path(__file__).resolve().parent.parent
+if str(_APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_APP_ROOT))
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
