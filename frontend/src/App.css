@@ -99,7 +99,10 @@
   display: flex;
   align-items: stretch;
   gap: 4px;
-  overflow-x: auto;
+  /* overflow-x: auto を削除（ドロップダウンメニューが垂直方向にクリップされる問題対策）。
+     狭い画面ではレスポンシブCSSでflex-directionを縦に切り替えるため、
+     デスクトップでは全メニューが横1列で収まる前提。 */
+  flex-wrap: nowrap;
 }
 
 .mainnav-link,
@@ -132,6 +135,7 @@
 
 .nav-dropdown {
   position: relative;
+  z-index: 210;
 }
 
 .nav-dropdown-caret {
@@ -150,7 +154,7 @@
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   padding: 4px 0;
-  z-index: 100;
+  z-index: 210;
 }
 
 .nav-dropdown-menu a {
