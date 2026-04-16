@@ -11,6 +11,8 @@ Phase 1 マイグレーションスクリプト。
 
 変更履歴:
     2026-04-16: 初版作成
+    2026-04-16: asyncpgのprepared statementが複数文SQLを受け付けないため、
+                DO $$ ブロックを保持しつつ1文ずつ実行するよう修正
 """
 from __future__ import annotations
 
@@ -49,11 +51,48 @@ MEMBER_PERMISSIONS = {
 }
 
 
+def _split_sql_preserving_do_blocks(sql: str) -> list[str]:
+    """
+    DO $$ ... END $$ ブロック内の ; を保持したまま SQL をステートメント単位に分割。
+
+    asyncpg はprepared statementに複数文を渡せないため、個別実行が必要。
+    app.services.tenant._split_sql_preserving_do_blocks と同じロジック。
+    """
+    result: list[str] = []
+    buffer: list[str] = []
+    in_dollar_block = False
+    i = 0
+    while i < len(sql):
+        if sql[i:i + 2] == "$$":
+            in_dollar_block = not in_dollar_block
+            buffer.append("$$")
+            i += 2
+            continue
+        ch = sql[i]
+        if ch == ";" and not in_dollar_block:
+            result.append("".join(buffer))
+            buffer = []
+        else:
+            buffer.append(ch)
+        i += 1
+    if buffer:
+        result.append("".join(buffer))
+    return result
+
+
+async def _execute_multi_statement(conn, sql: str) -> None:
+    """複数文SQLを DO $$ ブロックを保持しつつ1文ずつ実行する。"""
+    for stmt in _split_sql_preserving_do_blocks(sql):
+        stmt = stmt.strip()
+        if stmt:
+            await conn.execute(text(stmt))
+
+
 async def apply_permissions_master(engine) -> None:
     """public.permissions を作成＋シード。全テナント共有なので1回だけ実行。"""
     sql = PERMISSIONS_SQL.read_text(encoding="utf-8")
     async with engine.begin() as conn:
-        await conn.execute(text(sql))
+        await _execute_multi_statement(conn, sql)
     logger.info("✓ public.permissions マスターテーブルを作成/更新")
 
 
@@ -81,8 +120,9 @@ async def apply_tenant_migration(engine, tenant_id: int) -> None:
     """テナント単位でスキーマ拡張を適用。"""
     sql = build_tenant_sql(tenant_id)
     async with engine.begin() as conn:
-        # DO $$ ブロックや関数定義は ; 分割せず1ステートメントで実行
-        await conn.execute(text(sql))
+        # asyncpgはprepared statementに複数文を渡せないため、DO $$ ブロックを
+        # 保持しつつ1文ずつ実行する
+        await _execute_multi_statement(conn, sql)
     logger.info("✓ tenant_%03d スキーマ拡張適用完了", tenant_id)
 
 
