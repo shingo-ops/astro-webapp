@@ -240,7 +240,7 @@ export default function RolesPage() {
       )}
 
       {userAssignPanel && (
-        <div className="modal-overlay" onClick={() => setUserAssignPanel(false)}>
+        <div className="modal-overlay" onClick={() => { setUserAssignPanel(false); setTargetUserId(""); setSelectedRoleIds(new Set()); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>ユーザーへのロール割当</h3>
             <div className="form-group"><label>対象ユーザーID *</label>
@@ -256,7 +256,7 @@ export default function RolesPage() {
               ))}
             </div>
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={() => setUserAssignPanel(false)}>キャンセル</button>
+              <button type="button" className="btn-secondary" onClick={() => { setUserAssignPanel(false); setTargetUserId(""); setSelectedRoleIds(new Set()); }}>キャンセル</button>
               <button type="button" className="btn-primary" onClick={saveUserRoles} disabled={!targetUserId}>保存</button>
             </div>
           </div>

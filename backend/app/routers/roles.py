@@ -13,7 +13,7 @@ from __future__ import annotations
   2026-04-16: 初版作成（Phase 1）
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,6 +39,8 @@ from app.schemas.role import (
 from app.services.audit import record_audit_log
 
 router = APIRouter()
+
+_UPDATABLE_COLUMNS = {"name", "color", "priority", "description"}
 
 
 async def _get_role(db: AsyncSession, role_id: int) -> dict | None:
@@ -127,17 +129,22 @@ async def get_my_permissions(
     dependencies=[Depends(require_permission("roles.view"))],
 )
 async def list_roles(
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
     """ロール一覧を取得する（priority降順）"""
+    offset = (page - 1) * per_page
     result = await db.execute(
         text("""
             SELECT id, tenant_id, name, color, priority, is_system, description,
                    created_at, updated_at
             FROM roles ORDER BY priority DESC, name
-        """)
+            LIMIT :limit OFFSET :offset
+        """),
+        {"limit": per_page, "offset": offset},
     )
     rows = result.mappings().all()
     return [RoleResponse(**row) for row in rows]
@@ -224,6 +231,7 @@ async def update_role(
         )
 
     update_data = data.model_dump(exclude_unset=True)
+    update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLUMNS}
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
 
@@ -360,18 +368,30 @@ async def set_role_permissions(
             detail="自分と同等以上のpriorityを持つロールは編集できません",
         )
 
-    # 権限IDの妥当性確認
+    # 権限IDの妥当性確認 + 権限キー取得（エスカレーションチェック用）
     if data.permission_ids:
         check_result = await db.execute(
-            text("SELECT id FROM public.permissions WHERE id = ANY(:ids)"),
+            text("SELECT id, key FROM public.permissions WHERE id = ANY(:ids)"),
             {"ids": data.permission_ids},
         )
-        found_ids = {row[0] for row in check_result.fetchall()}
+        rows = check_result.fetchall()
+        found_ids = {row.id for row in rows}
         missing = set(data.permission_ids) - found_ids
         if missing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"存在しない権限ID: {sorted(missing)}",
+            )
+
+        # エスカレーション防止: 自分が持たない権限は他ロールに付与できない
+        # （オーナーは全権限所持のため影響なし。下位priorityのユーザーだけに効く）
+        requested_keys = {row.key for row in rows}
+        my_perms = await load_user_permissions(db, tenant_id, current_user.id)
+        not_granted = requested_keys - my_perms
+        if not_granted:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"自分が持たない権限は付与できません: {sorted(not_granted)}",
             )
 
     # 既存割り当てを全削除してから挿入
@@ -414,6 +434,14 @@ async def get_user_roles(
     current_user: User = Depends(get_current_user),
 ):
     """指定ユーザーに付与されているロール一覧を取得する"""
+    # 対象ユーザーが同テナントに属するか確認（IDOR対策）
+    user_check = await db.execute(
+        text("SELECT id FROM public.users WHERE id = :uid AND tenant_id = :tid"),
+        {"uid": user_id, "tid": tenant_id},
+    )
+    if not user_check.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定されたユーザーが見つかりません")
+
     result = await db.execute(
         text("""
             SELECT ur.role_id, r.name AS role_name, r.color, r.priority, ur.assigned_at

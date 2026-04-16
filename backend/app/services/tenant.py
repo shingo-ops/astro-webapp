@@ -209,6 +209,8 @@ CREATE TABLE IF NOT EXISTS {schema}.team_members (
 """
 
 # RLS有効化のALTER TABLE群（;で安全に分割可能）
+# 連携テーブル（role_permissions, user_roles, team_members）は tenant_id カラムを持たないが、
+# 親テーブルのRLSを経由した保護を追加することで防御の二重化を実現する。
 _RLS_ENABLE_SQL = """
 ALTER TABLE {schema}.customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.deals ENABLE ROW LEVEL SECURITY;
@@ -216,7 +218,10 @@ ALTER TABLE {schema}.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.role_permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
 """
 
 # テナント分離ポリシー（DO $$ ... END $$ ブロックは1ステートメントとして実行する。
@@ -251,6 +256,31 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_teams' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_teams ON {schema}.teams
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    -- 連携テーブルは tenant_id カラムを持たないため、親テーブルのRLSをEXISTS経由で参照
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_role_permissions' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_role_permissions ON {schema}.role_permissions
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.roles r
+                WHERE r.id = role_permissions.role_id
+                  AND r.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_user_roles' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_user_roles ON {schema}.user_roles
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.roles r
+                WHERE r.id = user_roles.role_id
+                  AND r.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_team_members' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_team_members ON {schema}.team_members
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.teams t
+                WHERE t.id = team_members.team_id
+                  AND t.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
     END IF;
 END $$
 """

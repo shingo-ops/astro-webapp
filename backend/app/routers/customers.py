@@ -35,6 +35,16 @@ _CUSTOMER_COLUMNS = """
     notes, created_at, updated_at
 """
 
+# PATCH で更新を許可するカラム（防御的ホワイトリスト）
+# Pydantic で検証済みだが、将来の config 変更に備えて明示的に限定する
+_UPDATABLE_COLUMNS = {
+    "name", "email", "phone", "company",
+    "registration_source", "status",
+    "billing_name", "billing_phone", "billing_email", "billing_address",
+    "delivery_name", "delivery_phone", "delivery_email", "delivery_address", "delivery_country",
+    "business_id", "notes",
+}
+
 
 @router.get(
     "/customers",
@@ -189,6 +199,8 @@ async def update_customer(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="顧客が見つかりません")
 
     update_data = data.model_dump(exclude_unset=True)
+    # ホワイトリストで不正なキーを除外（防御の二重化）
+    update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLUMNS}
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
 

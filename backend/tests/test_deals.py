@@ -31,12 +31,12 @@ class TestDealsCRUD:
         assert data["customer_id"] == customer_id
 
     async def test_create_deal_invalid_customer(self, client):
-        """存在しない顧客IDで案件作成は400"""
+        """存在しない顧客IDで案件作成は404"""
         res = await client.post("/api/v1/deals", json={
             "customer_id": 99999,
             "title": "無効な案件",
         })
-        assert res.status_code == 400
+        assert res.status_code == 404
 
     async def test_list_deals(self, client):
         """案件一覧を取得できる"""

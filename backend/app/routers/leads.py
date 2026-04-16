@@ -32,6 +32,13 @@ _LEAD_COLUMNS = """
     converted_deal_id, notes, created_at, updated_at
 """
 
+_UPDATABLE_COLUMNS = {
+    "customer_name", "company_name", "email", "phone",
+    "source", "type", "status", "temperature", "estimated_scale",
+    "customer_type", "response_speed", "monthly_forecast",
+    "prospect_rank", "assigned_to", "notes",
+}
+
 
 def compute_prospect_rank(
     temperature: str | None,
@@ -50,6 +57,10 @@ def compute_prospect_rank(
       B-    = 上記B条件でやや反応鈍い
       仮C   = C判定要因1つ以上 + 顧客タイプ不明
       確定C = C判定要因4つ以上
+
+    C判定要因はネガティブシグナルのみをカウントする。値が None（未設定）は
+    ネガティブとはみなさず、カウントしない。これにより新規登録直後で情報
+    が揃っていないリードが不当にCランク扱いされないようにしている。
     """
     c_factors = 0
     if response_speed == "3日超":
@@ -58,7 +69,8 @@ def compute_prospect_rank(
         c_factors += 1
     if monthly_forecast is not None and monthly_forecast < Decimal("100000"):
         c_factors += 1
-    if customer_type == "価格重視" and temperature in (None, "Cold"):
+    # 温度感が明示的に Cold の場合のみペナルティ（Noneは未判定扱い）
+    if customer_type == "価格重視" and temperature == "Cold":
         c_factors += 1
 
     if c_factors >= 4:
@@ -256,6 +268,7 @@ async def update_lead(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="リードが見つかりません")
 
     update_data = data.model_dump(exclude_unset=True)
+    update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLUMNS}
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
 
@@ -345,7 +358,14 @@ async def convert_lead(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    """リードを案件化する。新しいdealを作成し、leadを'案件化'ステータスに更新＋リンクする。"""
+    """
+    リードを案件化する。新しいdealを作成し、leadを'案件化'ステータスに更新＋リンクする。
+
+    同時実行対策:
+      - deal作成後、`UPDATE leads ... WHERE converted_deal_id IS NULL` で
+        アトミックにクレーム。並行変換でクレームに失敗した場合は
+        作成済みdealと共にrollbackして409を返す。
+    """
     lead_result = await db.execute(
         text(f"SELECT {_LEAD_COLUMNS} FROM leads WHERE id = :id"),
         {"id": lead_id},
@@ -354,14 +374,15 @@ async def convert_lead(
     if not lead_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="リードが見つかりません")
     if lead_row["converted_deal_id"] is not None:
+        # 早期409（UXのため）。完全な保証は下のUPDATEで行う。
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="このリードは既に案件化されています")
 
-    # 顧客存在確認
+    # 顧客存在確認（別テナントの顧客はsearch_pathで不可視 → 404）
     cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": data.customer_id})
     if not cust.first():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された顧客が存在しません")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
 
-    # 新案件作成
+    # 新案件作成（後続のクレームUPDATEが失敗した場合、例外でトランザクション全体がロールバックされる）
     deal_result = await db.execute(
         text("""
             INSERT INTO deals (
@@ -380,7 +401,8 @@ async def convert_lead(
             "lead_id": lead_id,
             "title": data.title,
             "amount": data.amount,
-            "assigned_to": lead_row["assigned_to"],
+            # 担当者はリクエストで指定されたもの優先、省略時はリードの担当者を引き継ぐ
+            "assigned_to": data.assigned_to if data.assigned_to is not None else lead_row["assigned_to"],
             "notes": data.notes,
         },
     )
@@ -390,17 +412,25 @@ async def convert_lead(
         {"code": f"DL-{new_deal_id:05d}", "id": new_deal_id},
     )
 
-    # リードを案件化状態に更新
+    # アトミッククレーム: converted_deal_id IS NULL の場合のみ更新する
+    # 並行リクエストで既に案件化されていた場合は0行返却 → 例外で全ロールバック
     updated = await db.execute(
         text(f"""
             UPDATE leads
             SET status = '案件化', converted_deal_id = :deal_id, updated_at = NOW()
-            WHERE id = :id
+            WHERE id = :id AND converted_deal_id IS NULL
             RETURNING {_LEAD_COLUMNS}
         """),
         {"id": lead_id, "deal_id": new_deal_id},
     )
     row = updated.mappings().first()
+    if not row:
+        # 並行リクエストが先にクレームした。作成したdealも一緒にrollbackする。
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="このリードは既に案件化されています（並行リクエスト）",
+        )
 
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,

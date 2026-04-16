@@ -53,54 +53,49 @@ class TestDashboardTask:
     """ダッシュボードKPIキャッシュタスクのテスト"""
 
     def test_compute_kpis_returns_expected_keys(self):
-        """_compute_kpisが必要なキーを全て含むこと"""
+        """_compute_kpisが必要なキー（Phase 1拡張版）を全て含むこと"""
         from app.tasks.dashboard import _compute_kpis
 
         mock_session = MagicMock()
-        # 顧客数
-        mock_session.execute.return_value.scalar.return_value = 10
-        # 商談集計
+
+        lead_row = {"total": 7, "open_count": 4}
         deal_row = {
             "total": 5, "open_count": 3, "won_count": 2,
             "total_amount": 1000000, "won_amount": 500000,
         }
-        # 注文集計
         order_row = {"total": 8, "pending_count": 2, "total_amount": 800000}
 
-        # mappings().first()の返り値をセットアップ
-        mock_mapping_deal = MagicMock()
-        mock_mapping_deal.__getitem__ = lambda self, key: deal_row[key]
-        mock_mapping_order = MagicMock()
-        mock_mapping_order.__getitem__ = lambda self, key: order_row[key]
+        def mk_mapping(data):
+            m = MagicMock()
+            m.__getitem__ = lambda self, key: data[key]
+            return m
 
-        # 直近の顧客・商談
-        mock_mappings_empty = MagicMock()
-        mock_mappings_empty.all.return_value = []
+        mock_lead = mk_mapping(lead_row)
+        mock_deal = mk_mapping(deal_row)
+        mock_order = mk_mapping(order_row)
 
         call_count = [0]
 
         def side_effect(*args, **kwargs):
             call_count[0] += 1
             result = MagicMock()
-            if call_count[0] == 1:  # SET search_path
-                return result
-            elif call_count[0] == 2:  # SET app.tenant_id
-                return result
-            elif call_count[0] == 3:  # 顧客数
+            # クエリ順:
+            # 1: SET search_path / 2: SET app.tenant_id
+            # 3: customers count / 4: leads集計 / 5: deals集計
+            # 6: orders集計 / 7: teams count
+            # 8: 直近顧客 / 9: 直近商談 / 10: 直近リード
+            if call_count[0] == 3:
                 result.scalar.return_value = 10
-                return result
-            elif call_count[0] == 4:  # 商談集計
-                result.mappings.return_value.first.return_value = mock_mapping_deal
-                return result
-            elif call_count[0] == 5:  # 注文集計
-                result.mappings.return_value.first.return_value = mock_mapping_order
-                return result
-            elif call_count[0] == 6:  # 直近の顧客
+            elif call_count[0] == 4:
+                result.mappings.return_value.first.return_value = mock_lead
+            elif call_count[0] == 5:
+                result.mappings.return_value.first.return_value = mock_deal
+            elif call_count[0] == 6:
+                result.mappings.return_value.first.return_value = mock_order
+            elif call_count[0] == 7:
+                result.scalar.return_value = 3
+            elif call_count[0] in (8, 9, 10):
                 result.mappings.return_value.all.return_value = []
-                return result
-            elif call_count[0] == 7:  # 直近の商談
-                result.mappings.return_value.all.return_value = []
-                return result
             return result
 
         mock_session.execute.side_effect = side_effect
@@ -108,15 +103,22 @@ class TestDashboardTask:
         kpis = _compute_kpis(mock_session, 1)
 
         expected_keys = {
-            "customer_count", "deal_count", "deal_open_count",
-            "deal_won_count", "deal_total_amount", "deal_won_amount",
+            "schema_version",
+            "customer_count",
+            "lead_count", "lead_open_count",
+            "deal_count", "deal_open_count", "deal_won_count",
+            "deal_total_amount", "deal_won_amount",
             "order_count", "order_pending_count", "order_total_amount",
-            "recent_customers", "recent_deals",
+            "team_count",
+            "recent_customers", "recent_deals", "recent_leads",
         }
         assert set(kpis.keys()) == expected_keys
         assert kpis["customer_count"] == 10
+        assert kpis["lead_count"] == 7
         assert kpis["deal_count"] == 5
         assert kpis["order_count"] == 8
+        assert kpis["team_count"] == 3
+        assert kpis["schema_version"] == 2
 
 
 class TestMaintenanceTask:
@@ -278,8 +280,12 @@ class TestDashboardCacheIntegration:
         app.dependency_overrides[get_current_user] = lambda: mock_user
         app.dependency_overrides[get_current_tenant] = lambda: 999
 
+        # schema_version=2 を含む最新スキーマのキャッシュ
         cached_kpi = json.dumps({
+            "schema_version": 2,
             "customer_count": 42,
+            "lead_count": 7,
+            "lead_open_count": 4,
             "deal_count": 10,
             "deal_open_count": 5,
             "deal_won_count": 5,
@@ -288,8 +294,10 @@ class TestDashboardCacheIntegration:
             "order_count": 20,
             "order_pending_count": 3,
             "order_total_amount": 800000.0,
+            "team_count": 3,
             "recent_customers": [],
             "recent_deals": [],
+            "recent_leads": [],
         })
 
         mock_redis = AsyncMock()

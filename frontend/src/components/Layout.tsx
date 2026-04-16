@@ -14,7 +14,7 @@ import ConfirmModal from "./ConfirmModal";
 
 export default function Layout() {
   const { user, signOut } = useAuth();
-  const { hasPermission, hasAny } = usePermissions();
+  const { hasPermission, hasAny, loading: permsLoading } = usePermissions();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   return (
@@ -24,13 +24,19 @@ export default function Layout() {
           <h1>Jarvis CRM</h1>
         </div>
         <nav className="sidebar-nav">
-          {hasPermission("dashboard.view") && <NavLink to="/" end>ダッシュボード</NavLink>}
-          {hasPermission("customers.view") && <NavLink to="/customers">顧客管理</NavLink>}
-          {hasPermission("leads.view") && <NavLink to="/leads">リード管理</NavLink>}
-          {hasPermission("deals.view") && <NavLink to="/deals">案件管理</NavLink>}
-          {hasPermission("orders.view") && <NavLink to="/orders">注文管理</NavLink>}
-          {hasPermission("teams.view") && <NavLink to="/teams">チーム管理</NavLink>}
-          {hasAny("roles.view", "roles.create") && <NavLink to="/roles">ロール・権限</NavLink>}
+          {permsLoading ? (
+            <div className="sidebar-loading">権限読込中...</div>
+          ) : (
+            <>
+              {hasPermission("dashboard.view") && <NavLink to="/" end>ダッシュボード</NavLink>}
+              {hasPermission("customers.view") && <NavLink to="/customers">顧客管理</NavLink>}
+              {hasPermission("leads.view") && <NavLink to="/leads">リード管理</NavLink>}
+              {hasPermission("deals.view") && <NavLink to="/deals">案件管理</NavLink>}
+              {hasPermission("orders.view") && <NavLink to="/orders">注文管理</NavLink>}
+              {hasPermission("teams.view") && <NavLink to="/teams">チーム管理</NavLink>}
+              {hasAny("roles.view", "roles.create") && <NavLink to="/roles">ロール・権限</NavLink>}
+            </>
+          )}
         </nav>
         <div className="sidebar-footer">
           <div className="user-info">{user?.email}</div>

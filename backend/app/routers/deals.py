@@ -30,6 +30,12 @@ _DEAL_COLUMNS = """
     expected_close_date, notes, created_at, updated_at
 """
 
+_UPDATABLE_COLUMNS = {
+    "customer_id", "lead_id", "title", "amount", "currency",
+    "status", "stage", "probability", "lost_reason", "assigned_to",
+    "expected_close_date", "notes",
+}
+
 
 @router.get(
     "/deals",
@@ -116,16 +122,16 @@ async def create_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談を登録する（deal_codeは自動採番）"""
-    # 顧客の存在確認
+    # 顧客の存在確認（別テナントの顧客はsearch_pathで不可視 → 404）
     cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": data.customer_id})
     if not cust.first():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された顧客が存在しません")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
 
     # リード存在確認（指定時のみ）
     if data.lead_id is not None:
         lead_check = await db.execute(text("SELECT id FROM leads WHERE id = :id"), {"id": data.lead_id})
         if not lead_check.first():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定されたリードが存在しません")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定されたリードが見つかりません")
 
     result = await db.execute(
         text("""
@@ -204,6 +210,7 @@ async def update_deal(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="商談が見つかりません")
 
     update_data = data.model_dump(exclude_unset=True)
+    update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLUMNS}
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
 

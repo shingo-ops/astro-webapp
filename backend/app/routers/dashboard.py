@@ -27,11 +27,15 @@ from app.models import User
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+# キャッシュKPIのスキーマバージョン。
+# Phase 1でlead/team KPIを追加したため v2。構造を変えたらインクリメント。
+KPI_SCHEMA_VERSION = 2
+
 
 class DashboardResponse(BaseModel):
     """ダッシュボードKPIレスポンス"""
+    schema_version: int = KPI_SCHEMA_VERSION
     customer_count: int
-    # Phase 1 追加フィールド: 旧キャッシュ互換のためデフォルト0
     lead_count: int = 0
     lead_open_count: int = 0
     deal_count: int
@@ -67,8 +71,13 @@ async def get_dashboard(
             cached_data = await r.get(f"dashboard_kpi:{tenant_id}")
             if cached_data:
                 kpis = json.loads(cached_data)
-                kpis["cached"] = True
-                return DashboardResponse(**kpis)
+                # スキーマバージョンが一致しないキャッシュは破棄してDB再計算
+                if kpis.get("schema_version") != KPI_SCHEMA_VERSION:
+                    logger.info("KPIキャッシュのバージョン不一致、DBから再計算")
+                    await r.delete(f"dashboard_kpi:{tenant_id}")
+                else:
+                    kpis["cached"] = True
+                    return DashboardResponse(**kpis)
         except Exception:
             logger.warning("ダッシュボードキャッシュ読み取り失敗、DBにフォールバック")
 

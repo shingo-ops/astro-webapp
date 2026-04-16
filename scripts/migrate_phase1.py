@@ -136,16 +136,8 @@ async def seed_system_roles(engine, tenant_id: int) -> None:
             {"role_id": owner_id},
         )
 
-        # メンバーにデフォルト権限を付与
+        # メンバーにデフォルト権限を付与（オーナーは既に全権限所持）
         for key in MEMBER_PERMISSIONS:
-            await conn.execute(
-                text("""
-                    INSERT INTO role_permissions (role_id, permission_id)
-                    SELECT :role_id, id FROM public.permissions WHERE key = :key
-                    ON CONFLICT DO NOTHING
-                """),
-                {"role_id": owner_id, "key": key},
-            )
             await conn.execute(
                 text("""
                     INSERT INTO role_permissions (role_id, permission_id)

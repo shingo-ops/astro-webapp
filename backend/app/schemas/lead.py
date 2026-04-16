@@ -140,4 +140,5 @@ class LeadConvertRequest(BaseModel):
     customer_id: int = Field(ge=1, description="既存顧客ID（必須）")
     title: str = Field(min_length=1, max_length=255, description="案件タイトル")
     amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
+    assigned_to: int | None = Field(default=None, ge=1, description="担当者（省略時はリードの担当者を引き継ぐ）")
     notes: str | None = Field(default=None, max_length=5000)

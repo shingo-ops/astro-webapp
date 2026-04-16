@@ -1,16 +1,26 @@
--- Phase 1: テナントスキーマ拡張テンプレート
+-- ============================================================================
+-- !! 警告 !! 警告 !! 警告 !!
 --
--- 注意: このファイルは scripts/migrate_phase1.py が `{schema}` `{schema_raw}` `{tenant_id}` を置換して使用する。
--- 直接 psql で実行せず、必ずスクリプト経由で適用すること。
+-- このSQLファイルは **テンプレート** です。`{schema}`, `{schema_raw}`,
+-- `{tenant_id}` のプレースホルダを含むため、そのまま psql 等で実行すると
+-- シンタックスエラーになります。
+--
+-- 必ず scripts/migrate_phase1.py 経由で実行してください:
+--   docker compose exec backend python /app/scripts/migrate_phase1.py
+--
+-- ============================================================================
+--
+-- Phase 1: テナントスキーマ拡張テンプレート
 --
 -- 内容:
 --   - 新テーブル: roles, role_permissions, user_roles, leads, teams, team_members
 --   - 既存テーブルへの拡張: customers, deals
 --   - シーケンス: customer_code_seq, deal_code_seq, lead_code_seq
---   - RLS有効化＋ポリシー: roles, leads, teams
+--   - RLS有効化＋ポリシー: 新規全テーブル + 連携テーブル
 --
 -- 変更履歴:
 --   2026-04-16: 初版作成
+--   2026-04-16: 連携テーブル（role_permissions, user_roles, team_members）にもRLS追加
 
 -- === シーケンス（コード自動採番用） ===
 CREATE SEQUENCE IF NOT EXISTS {schema}.customer_code_seq START 1;
@@ -162,10 +172,13 @@ BEGIN
     END IF;
 END $$;
 
--- === RLS有効化（新テーブル） ===
+-- === RLS有効化（新テーブル＋連携テーブル） ===
 ALTER TABLE {schema}.roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.role_permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
 
 -- === RLSポリシー（新テーブル） ===
 DO $$
@@ -181,5 +194,30 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_teams' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_teams ON {schema}.teams
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    -- 連携テーブル（tenant_id なし）は親テーブル経由で保護
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_role_permissions' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_role_permissions ON {schema}.role_permissions
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.roles r
+                WHERE r.id = role_permissions.role_id
+                  AND r.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_user_roles' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_user_roles ON {schema}.user_roles
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.roles r
+                WHERE r.id = user_roles.role_id
+                  AND r.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_team_members' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_team_members ON {schema}.team_members
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.teams t
+                WHERE t.id = team_members.team_id
+                  AND t.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
     END IF;
 END $$;

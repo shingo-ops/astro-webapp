@@ -437,7 +437,13 @@
   font-size: 0.9rem;
 }
 
-/* --- Phase 1: タブナビ / リードバッジ / モノ等幅フォント --- */
+/* --- Phase 1: loading表示 / タブナビ / リードバッジ / モノ等幅フォント --- */
+.sidebar-loading {
+  padding: 16px;
+  color: #a0aec0;
+  font-size: 0.85rem;
+}
+
 .tab-nav {
   display: flex;
   border-bottom: 1px solid #e2e8f0;
