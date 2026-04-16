@@ -230,6 +230,20 @@
   border-color: #2d3748;
   box-shadow: 0 0 0 2px #fff inset, 0 2px 4px rgba(0,0,0,0.2);
 }
+.color-swatch-legacy {
+  /* 旧パレット由来の色（現在のロールに設定されている色がパレットにない場合）を区別 */
+  position: relative;
+}
+.color-swatch-legacy::after {
+  content: "現在";
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #718096;
+  white-space: nowrap;
+}
 .color-swatch input[type="radio"] {
   position: absolute;
   inset: 0;

@@ -62,11 +62,21 @@ const MENU_VIEW_KEY: Record<string, string[]> = {
   "システム": ["system.audit_view"],
 };
 
-// ロール表示色の選択肢（正方形スウォッチで表示、ラジオボタン選択）
+// ロール表示色の選択肢（12色、視覚的に明確に区別できるよう Tailwind 500系で統一）
+// 正方形スウォッチで表示、ラジオボタン選択
 const COLOR_PALETTE = [
-  "#e74c3c", "#e67e22", "#f39c12", "#f1c40f",
-  "#27ae60", "#16a085", "#3498db", "#9b59b6",
-  "#8e44ad", "#34495e", "#95a5a6", "#2c3e50",
+  "#ef4444", // 赤
+  "#f97316", // オレンジ
+  "#eab308", // 黄
+  "#84cc16", // ライム
+  "#22c55e", // 緑
+  "#14b8a6", // ティール
+  "#06b6d4", // シアン
+  "#3b82f6", // 青
+  "#6366f1", // インディゴ
+  "#a855f7", // 紫
+  "#ec4899", // ピンク
+  "#64748b", // スレート
 ];
 
 // 優先順位は旧GAS版に合わせて第1-第4順位の4段階。priority数値とのマッピング。
@@ -462,6 +472,22 @@ export default function RolesPage() {
               </div>
               <div className="form-group"><label>表示色</label>
                 <div className="color-picker" role="radiogroup" aria-label="表示色">
+                  {/* 既存ロールの色がパレットに無い場合は「現在の色」として表示 */}
+                  {roleForm.color && !COLOR_PALETTE.includes(roleForm.color.toLowerCase()) && !COLOR_PALETTE.includes(roleForm.color) && (
+                    <label
+                      className="color-swatch selected color-swatch-legacy"
+                      style={{ background: roleForm.color }}
+                      title={`現在の色（${roleForm.color}）`}
+                    >
+                      <input
+                        type="radio"
+                        name="role-color"
+                        value={roleForm.color}
+                        checked
+                        readOnly
+                      />
+                    </label>
+                  )}
                   {COLOR_PALETTE.map((c) => (
                     <label
                       key={c}
