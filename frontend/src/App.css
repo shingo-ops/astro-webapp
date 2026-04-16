@@ -2,13 +2,247 @@
    Jarvis CRM - Application Styles
    ============================================================ */
 
-/* --- Top Nav Layout (GAS互換) --- */
+/* --- Top Nav Layout (GAS互換 2段ナビ) --- */
 .layout-top {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* 上段: ブランドバー（ダークネイビー） */
+.brandbar {
+  display: flex;
+  align-items: center;
+  background: #1a365d;
+  color: #e2e8f0;
+  padding: 0 24px;
+  height: 56px;
+  gap: 24px;
+  border-bottom: 3px solid #f0b429;
+}
+
+.brandbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.brandbar-icon {
+  font-size: 1.4rem;
+  color: #f0b429;
+}
+
+.brandbar-search {
+  flex: 1;
+  display: flex;
+  max-width: 640px;
+  background: #2c5282;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.brandbar-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.brandbar-search input::placeholder {
+  color: #a0aec0;
+}
+
+.brandbar-search input:focus {
+  outline: none;
+}
+
+.brandbar-search button {
+  padding: 0 14px;
+  background: transparent;
+  border: none;
+  color: #cbd5e0;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.brandbar-search button:hover {
+  background: #2a4365;
+  color: #fff;
+}
+
+/* 下段: 白ナビゲーションバー */
+.mainnav {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  padding: 0 24px;
+  gap: 16px;
+  min-height: 48px;
+}
+
+.mainnav-links {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.mainnav-link,
+.nav-dropdown-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 16px;
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 0.9rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s;
+  border-bottom: 2px solid transparent;
+}
+
+.mainnav-link:hover,
+.nav-dropdown-toggle:hover {
+  color: #2b6cb0;
+}
+
+.mainnav-link.active,
+.nav-dropdown-toggle.active {
+  color: #2b6cb0;
+  font-weight: 600;
+  border-bottom-color: #2b6cb0;
+}
+
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-caret {
+  margin-left: 4px;
+  font-size: 0.7rem;
+  color: inherit;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 4px 0;
+  z-index: 100;
+}
+
+.nav-dropdown-menu a {
+  display: block;
+  padding: 10px 16px;
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.nav-dropdown-menu a:hover {
+  background: #f7fafc;
+  color: #2b6cb0;
+}
+
+.nav-dropdown-menu a.active {
+  background: #ebf4ff;
+  color: #2b6cb0;
+  font-weight: 600;
+}
+
+.mainnav-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.mainnav-email {
+  font-size: 0.8rem;
+  color: #718096;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mainnav-user .btn-logout {
+  background: #fff;
+  border: 1px solid #cbd5e0;
+  color: #4a5568;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mainnav-user .btn-logout:hover {
+  background: #f7fafc;
+  border-color: #a0aec0;
+}
+
+/* 準備中ページ */
+.coming-soon {
+  max-width: 600px;
+  margin: 80px auto;
+  text-align: center;
+  background: #fff;
+  padding: 48px 32px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.coming-soon-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.coming-soon h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.6rem;
+  color: #2d3748;
+}
+
+.coming-soon-label {
+  display: inline-block;
+  background: #fefcbf;
+  color: #744210;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 8px 0 16px 0;
+}
+
+.coming-soon-desc {
+  color: #4a5568;
+  margin: 12px 0;
+  font-size: 0.95rem;
+}
+
+.coming-soon-note {
+  color: #a0aec0;
+  font-size: 0.85rem;
+  margin-top: 16px;
+}
+
+/* 旧 topnav（後方互換維持） */
 .topnav {
   display: flex;
   align-items: center;
@@ -829,5 +1063,24 @@
   }
   .topnav-email {
     max-width: 140px;
+  }
+  .brandbar {
+    flex-direction: column;
+    height: auto;
+    padding: 8px 16px;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .brandbar-search {
+    max-width: 100%;
+  }
+  .mainnav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mainnav-user {
+    order: 2;
+    padding: 8px 0;
+    justify-content: flex-end;
   }
 }
