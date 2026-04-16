@@ -409,7 +409,6 @@ export default function RolesPage() {
                             />
                             <div className="permission-item-text">
                               <div className="permission-item-desc">{p.description}</div>
-                              <code className="permission-item-key">{p.key}</code>
                             </div>
                           </label>
                         ))}
