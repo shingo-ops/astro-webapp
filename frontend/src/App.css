@@ -9,7 +9,8 @@
   min-height: 100vh;
 }
 
-/* 上段: ブランドバー（ダークネイビー） */
+/* 上段: ブランドバー（ダークネイビー）
+   z-indexで modal-overlay(50) より上に配置し、モーダル表示中でもナビをクリック可能に */
 .brandbar {
   display: flex;
   align-items: center;
@@ -19,6 +20,8 @@
   height: 56px;
   gap: 24px;
   border-bottom: 3px solid #f0b429;
+  position: relative;
+  z-index: 200;
 }
 
 .brandbar-logo {
@@ -76,7 +79,8 @@
   color: #fff;
 }
 
-/* 下段: 白ナビゲーションバー */
+/* 下段: 白ナビゲーションバー
+   z-indexで modal-overlay(50) より上に配置し、モーダル表示中でもナビをクリック可能に */
 .mainnav {
   display: flex;
   align-items: center;
@@ -86,6 +90,8 @@
   padding: 0 24px;
   gap: 16px;
   min-height: 48px;
+  position: relative;
+  z-index: 200;
 }
 
 .mainnav-links {
