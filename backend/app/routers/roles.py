@@ -175,7 +175,8 @@ async def create_role(
             text("""
                 INSERT INTO roles (tenant_id, name, color, priority, is_system, description)
                 VALUES (:tenant_id, :name, :color, :priority, FALSE, :description)
-                RETURNING id
+                RETURNING id, tenant_id, name, color, priority, is_system, description,
+                          created_at, updated_at
             """),
             {
                 "tenant_id": tenant_id,
@@ -185,7 +186,7 @@ async def create_role(
                 "description": data.description,
             },
         )
-        new_id = result.scalar_one()
+        row = result.mappings().first()
     except IntegrityError:
         await db.rollback()
         raise HTTPException(
@@ -195,13 +196,14 @@ async def create_role(
 
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,
-        action="create", table_name="roles", record_id=new_id,
+        action="create", table_name="roles", record_id=row["id"],
         new_data=data.model_dump(exclude_none=True),
     )
     await db.commit()
 
-    role = await _get_role(db, new_id)
-    return RoleResponse(**role)
+    # commit後のSELECTはプールから別コネクションが払い出されてsearch_pathが
+    # 失われる可能性があるため、INSERT RETURNING で取得した row をそのまま返す。
+    return RoleResponse(**dict(row))
 
 
 @router.patch(
@@ -245,10 +247,16 @@ async def update_role(
     update_data["id"] = role_id
 
     try:
-        await db.execute(
-            text(f"UPDATE roles SET {set_clauses}, updated_at = NOW() WHERE id = :id"),
+        result = await db.execute(
+            text(f"""
+                UPDATE roles SET {set_clauses}, updated_at = NOW()
+                WHERE id = :id
+                RETURNING id, tenant_id, name, color, priority, is_system, description,
+                          created_at, updated_at
+            """),
             update_data,
         )
+        row = result.mappings().first()
     except IntegrityError:
         await db.rollback()
         raise HTTPException(
@@ -266,8 +274,9 @@ async def update_role(
     # ロール所持者全員の権限キャッシュをパージ
     await invalidate_tenant_permissions(tenant_id)
 
-    role = await _get_role(db, role_id)
-    return RoleResponse(**role)
+    # commit後のSELECTはsearch_pathが失われる可能性があるため、
+    # UPDATE RETURNING で取得した row をそのまま返す
+    return RoleResponse(**dict(row))
 
 
 @router.delete(

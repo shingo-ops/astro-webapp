@@ -14,7 +14,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_user,
+    get_current_tenant,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.schemas.team import (
@@ -129,6 +134,8 @@ async def create_team(
         new_data=data.model_dump(exclude_none=True),
     )
     await db.commit()
+    # commit後のクエリはsearch_pathが失われている可能性があるため再設定
+    await reset_tenant_context(db, tenant_id)
     team = await _load_team(db, new_id)
     return TeamResponse(**team)
 
@@ -176,6 +183,7 @@ async def update_team(
         old_data=old, new_data=update_data,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)
     team = await _load_team(db, team_id)
     return TeamResponse(**team)
 
@@ -279,6 +287,8 @@ async def add_team_member(
         new_data={"team_id": team_id, "user_id": data.user_id},
     )
     await db.commit()
+    # commit後のクエリはsearch_pathが失われている可能性があるため再設定
+    await reset_tenant_context(db, tenant_id)
 
     # 追加したレコードを取得
     fetched = await db.execute(
