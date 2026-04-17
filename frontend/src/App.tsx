@@ -16,6 +16,15 @@ import QuoteCreatePage from "./pages/QuoteCreatePage";
 import QuoteDetailPage from "./pages/QuoteDetailPage";
 import InvoicesPage from "./pages/InvoicesPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
+import SuppliersPage from "./pages/SuppliersPage";
+import PurchaseOrdersPage from "./pages/PurchaseOrdersPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import StaffReportsPage from "./pages/StaffReportsPage";
+import ArchivesPage from "./pages/ArchivesPage";
+import ShiftsPage from "./pages/ShiftsPage";
+import BuddyPage from "./pages/BuddyPage";
+import BadgesPage from "./pages/BadgesPage";
+import ERPPage from "./pages/ERPPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import "./App.css";
 
@@ -37,67 +46,42 @@ function App() {
             {/* リード系 */}
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/customers" element={<CustomersPage />} />
-            <Route path="/lead-chat" element={
-              <ComingSoonPage title="リードチャット"
-                description="Meta (WhatsApp/Instagram) 統合メッセージ受信トレイ（Phase 4 予定）" />
-            } />
-            <Route path="/archive" element={
-              <ComingSoonPage title="アーカイブ"
-                description="過去の会話ログ・取引履歴のアーカイブ閲覧（Phase 4 予定）" />
-            } />
+            <Route path="/lead-chat" element={<ComingSoonPage title="リードチャット" description="Meta統合メッセージ受信トレイ（Webhook基盤実装済み、UI開発中）" />} />
+            <Route path="/archive" element={<ArchivesPage />} />
 
-            {/* 在庫（Phase 2 実装済み） */}
+            {/* 在庫 */}
             <Route path="/inventory" element={<ProductsPage />} />
 
-            {/* 見積・請求（Phase 2 実装済み） */}
+            {/* 見積・請求 */}
             <Route path="/quotes/new" element={<QuoteCreatePage />} />
             <Route path="/quotes/:id" element={<QuoteDetailPage />} />
             <Route path="/quotes" element={<QuotesPage />} />
-            <Route path="/invoices/new" element={<InvoicesPage />} />
             <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
             <Route path="/invoices" element={<InvoicesPage />} />
 
             {/* レポート */}
-            <Route path="/reports" element={
-              <ComingSoonPage title="レポート"
-                description="コンバージョン分析、担当者別成績、売上レポート（Phase 3 予定）" />
-            } />
+            <Route path="/reports" element={<StaffReportsPage />} />
 
             {/* FAQ */}
-            <Route path="/faq" element={
-              <ComingSoonPage title="FAQ"
-                description="ヘルプ・よくある質問（Phase 4 予定）" />
-            } />
+            <Route path="/faq" element={<ComingSoonPage title="FAQ" description="ヘルプ・よくある質問" />} />
 
             {/* 管理 */}
             <Route path="/deals" element={<DealsPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/staff" element={<TeamsPage />} />
             <Route path="/roles" element={<RolesPage />} />
-            <Route path="/data" element={
-              <ComingSoonPage title="データ管理"
-                description="マスターデータのインポート/エクスポート、ERP同期（Phase 5 予定）" />
-            } />
+            <Route path="/data" element={<ERPPage />} />
+            <Route path="/suppliers" element={<SuppliersPage />} />
+            <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+            <Route path="/shifts" element={<ShiftsPage />} />
 
             {/* 設定 */}
-            <Route path="/settings" element={
-              <ComingSoonPage title="設定"
-                description="テナント設定、通知、外部連携の管理（Phase 4 予定）" />
-            } />
+            <Route path="/settings" element={<NotificationsPage />} />
 
             {/* その他 */}
-            <Route path="/knowledge" element={
-              <ComingSoonPage title="商材ナレッジ"
-                description="商品情報・知識ベース管理（Phase 5 予定）" />
-            } />
-            <Route path="/prompts" element={
-              <ComingSoonPage title="翻訳プロンプト"
-                description="AI翻訳プロンプトの管理（Phase 5 予定）" />
-            } />
-            <Route path="/templates" element={
-              <ComingSoonPage title="テンプレート管理"
-                description="メール・メッセージテンプレート管理（Phase 4 予定）" />
-            } />
+            <Route path="/knowledge" element={<BuddyPage />} />
+            <Route path="/prompts" element={<BadgesPage />} />
+            <Route path="/templates" element={<ComingSoonPage title="テンプレート管理" description="メール・メッセージテンプレート管理" />} />
           </Route>
         </Routes>
       </BrowserRouter>
