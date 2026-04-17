@@ -584,6 +584,11 @@ ALL_TEST_PERMISSIONS = {
     "notifications.view", "notifications.manage",
     "staff_reports.view_own", "staff_reports.view_team", "staff_reports.create", "staff_reports.review",
     "archive.view", "archive.manage",
+    # Phase 5
+    "shifts.view", "shifts.manage",
+    "buddy.view_own", "buddy.review", "buddy.manage",
+    "badges.view", "badges.manage",
+    "erp.view", "erp.sync",
 }
 
 
@@ -636,23 +641,22 @@ async def client(db_session):
     app.dependency_overrides[get_current_tenant] = override_get_current_tenant
 
     transport = ASGITransport(app=app)
-    with patch("app.routers.customers.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.deals.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.orders.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.leads.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.teams.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.roles.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.products.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.shipping.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.quotes.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.invoices.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.suppliers.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.purchase_orders.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.duplicates.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.notifications.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.staff_reports.record_audit_log", _make_noop_audit_log()), \
-         patch("app.routers.archives.record_audit_log", _make_noop_audit_log()), \
-         patch("app.auth.dependencies.load_user_permissions", _mock_load_user_permissions):
+    # audit_log と権限チェックをまとめてモック（ネスト制限回避のため ExitStack 使用）
+    from contextlib import ExitStack
+    _audit_targets = [
+        "app.routers.customers", "app.routers.deals", "app.routers.orders",
+        "app.routers.leads", "app.routers.teams", "app.routers.roles",
+        "app.routers.products", "app.routers.shipping", "app.routers.quotes",
+        "app.routers.invoices", "app.routers.suppliers", "app.routers.purchase_orders",
+        "app.routers.duplicates", "app.routers.notifications",
+        "app.routers.staff_reports", "app.routers.archives",
+        "app.routers.shifts", "app.routers.buddy", "app.routers.badges",
+        "app.routers.erp",
+    ]
+    with ExitStack() as stack:
+        for target in _audit_targets:
+            stack.enter_context(patch(f"{target}.record_audit_log", _make_noop_audit_log()))
+        stack.enter_context(patch("app.auth.dependencies.load_user_permissions", _mock_load_user_permissions))
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             yield ac
 
