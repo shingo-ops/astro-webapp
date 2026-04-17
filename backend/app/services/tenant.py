@@ -72,6 +72,10 @@ DEFAULT_ROLES = [
             # Phase 3
             "suppliers.view",
             "purchase_orders.view", "purchase_orders.create", "purchase_orders.update", "purchase_orders.receive",
+            # Phase 4
+            "notifications.view",
+            "staff_reports.view_own", "staff_reports.view_team", "staff_reports.create", "staff_reports.review",
+            "archive.view",
         ],
         "description": "チーム単位でリードや案件を統括するリーダー",
     },
@@ -94,6 +98,8 @@ DEFAULT_ROLES = [
             # Phase 3
             "suppliers.view",
             "purchase_orders.view", "purchase_orders.create",
+            # Phase 4
+            "staff_reports.view_own", "staff_reports.create",
         ],
         "description": "顧客獲得から受注までを担当する営業担当者",
     },
@@ -114,6 +120,8 @@ DEFAULT_ROLES = [
             "quotes.view",
             "invoices.view",
             "shipping.view",
+            # Phase 4
+            "staff_reports.view_own", "staff_reports.create",
         ],
         "description": "顧客からの問い合わせ対応を担当するカスタマーサポート",
     },
