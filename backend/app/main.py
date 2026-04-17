@@ -25,6 +25,7 @@ from app.routers import invoices
 from app.routers import suppliers
 from app.routers import purchase_orders
 from app.routers import duplicates
+from app.routers import analytics
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -137,6 +138,10 @@ app.include_router(
 )
 app.include_router(
     duplicates.router, prefix="/api/v1", tags=["duplicates"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    analytics.router, prefix="/api/v1", tags=["analytics"],
     dependencies=[Depends(get_current_tenant)],
 )
 
