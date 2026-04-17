@@ -263,7 +263,7 @@ async def calculate_shipping_fee(
               ON sr.carrier = sz.carrier
              AND sr.zone = sz.zone
              AND sr.weight_min <= :weight
-             AND sr.weight_max > :weight
+             AND sr.weight_max >= :weight
             WHERE {where}
             ORDER BY sr.price
         """),
@@ -279,7 +279,7 @@ async def calculate_shipping_fee(
 @router.post(
     "/shipping/calculate",
     response_model=ShippingCalcResponse,
-    dependencies=[Depends(require_permission("shipping.view", "shipping.calculate"))],
+    dependencies=[Depends(require_permission("shipping.calculate"))],
 )
 async def calc_shipping(
     data: ShippingCalcRequest,

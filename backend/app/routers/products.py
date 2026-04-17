@@ -33,7 +33,7 @@ _PRODUCT_COLUMNS = """
 
 _UPDATABLE_COLUMNS = {
     "name_ja", "name_en", "category", "mark", "status", "condition",
-    "unit_price", "quantity", "weight", "notes", "release_date",
+    "unit_price", "quantity", "weight", "notes", "release_date",  # release_date は ProductUpdate スキーマと一致
 }
 
 

@@ -31,15 +31,16 @@ _SELECT_COLS = """
     notes, created_at, updated_at
 """
 
+# customer_id / deal_id / invoice_id は作成後の変更を禁止（FK整合性保護）
 _UPDATABLE_COLUMNS = {
-    "customer_id", "deal_id", "invoice_id", "order_number",
-    "total_amount", "currency", "status",
+    "order_number", "total_amount", "currency", "status",
     "shipping_carrier", "shipping_fee", "tracking_number",
     "shipping_country", "notes",
 }
 
 
-@router.get("/orders", response_model=list[OrderResponse])
+@router.get("/orders", response_model=list[OrderResponse],
+            dependencies=[Depends(require_permission("orders.view"))])
 async def list_orders(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
@@ -77,7 +78,8 @@ async def list_orders(
     return [OrderResponse(**row) for row in rows]
 
 
-@router.get("/orders/{order_id}", response_model=OrderResponse)
+@router.get("/orders/{order_id}", response_model=OrderResponse,
+            dependencies=[Depends(require_permission("orders.view"))])
 async def get_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),
@@ -95,7 +97,8 @@ async def get_order(
     return OrderResponse(**row)
 
 
-@router.post("/orders", response_model=OrderResponse, status_code=201)
+@router.post("/orders", response_model=OrderResponse, status_code=201,
+             dependencies=[Depends(require_permission("orders.create"))])
 async def create_order(
     data: OrderCreate,
     db: AsyncSession = Depends(get_db),
@@ -164,7 +167,8 @@ async def create_order(
     return OrderResponse(**row)
 
 
-@router.patch("/orders/{order_id}", response_model=OrderResponse)
+@router.patch("/orders/{order_id}", response_model=OrderResponse,
+              dependencies=[Depends(require_permission("orders.update"))])
 async def update_order(
     order_id: int,
     data: OrderUpdate,
@@ -213,7 +217,8 @@ async def update_order(
     return OrderResponse(**row)
 
 
-@router.delete("/orders/{order_id}", status_code=204)
+@router.delete("/orders/{order_id}", status_code=204,
+               dependencies=[Depends(require_permission("orders.delete"))])
 async def delete_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),

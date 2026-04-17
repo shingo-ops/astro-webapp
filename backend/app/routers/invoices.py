@@ -148,8 +148,10 @@ async def create_invoice_from_quote(
     current_user: User = Depends(get_current_user),
 ):
     """承認済み見積もりから請求書を作成する（atomic変換）"""
+    # アトミック性: 見積もりステータスをSELECT FOR UPDATEで排他ロックし、
+    # 並行変換を防止。全操作が同一トランザクション内で完結する。
     quote = await db.execute(
-        text("SELECT * FROM quotes WHERE id = :id"),
+        text("SELECT * FROM quotes WHERE id = :id FOR UPDATE"),
         {"id": quote_id},
     )
     q = quote.mappings().first()
@@ -416,6 +418,8 @@ async def void_invoice(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="請求書が見つかりません")
     if old_row["status"] == "voided":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="既に無効化されています")
+    if old_row["status"] == "paid":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="入金済みの請求書は無効化できません")
 
     voided_number = f"[VOID]{old_row['invoice_number']}"
     result = await db.execute(

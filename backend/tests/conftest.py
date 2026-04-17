@@ -402,6 +402,7 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM shipping_rates"))
         await conn.execute(text("DELETE FROM shipping_zones"))
         await conn.execute(text("DELETE FROM orders"))
+        await conn.execute(text("DELETE FROM products"))
         await conn.execute(text("DELETE FROM deals"))
         await conn.execute(text("DELETE FROM leads"))
         await conn.execute(text("DELETE FROM customers"))
