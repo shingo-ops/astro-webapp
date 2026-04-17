@@ -77,12 +77,59 @@ EXPORT_QUERIES = {
     "orders": {
         "query": """
             SELECT o.id, c.name AS customer_name, o.order_number, o.total_amount,
-                   o.status, o.notes, o.created_at, o.updated_at
+                   o.currency, o.status, o.shipping_carrier, o.tracking_number,
+                   o.notes, o.created_at, o.updated_at
             FROM orders o
             LEFT JOIN customers c ON o.customer_id = c.id
             ORDER BY o.id
         """,
-        "headers": ["ID", "顧客名", "注文番号", "合計金額", "ステータス", "備考", "作成日", "更新日"],
+        "headers": [
+            "ID", "顧客名", "注文番号", "合計金額", "通貨", "ステータス",
+            "配送キャリア", "追跡番号", "備考", "作成日", "更新日",
+        ],
+    },
+    "products": {
+        "query": """
+            SELECT id, product_code, name_ja, name_en, category, mark,
+                   status, condition, unit_price, quantity, weight,
+                   notes, created_at, updated_at
+            FROM products ORDER BY id
+        """,
+        "headers": [
+            "ID", "商品コード", "商品名(日)", "商品名(英)", "カテゴリ", "マーク",
+            "ステータス", "状態", "単価", "在庫数", "重量(kg)",
+            "備考", "作成日", "更新日",
+        ],
+    },
+    "quotes": {
+        "query": """
+            SELECT q.id, q.quote_code, c.name AS customer_name,
+                   q.currency, q.subtotal, q.shipping_fee, q.total_amount,
+                   q.status, q.validity_date, q.notes, q.created_at
+            FROM quotes q
+            LEFT JOIN customers c ON q.customer_id = c.id
+            ORDER BY q.id
+        """,
+        "headers": [
+            "ID", "見積番号", "顧客名", "通貨", "小計", "送料", "合計",
+            "ステータス", "有効期限", "備考", "作成日",
+        ],
+    },
+    "invoices": {
+        "query": """
+            SELECT i.id, i.invoice_number, c.name AS customer_name,
+                   i.currency, i.subtotal, i.shipping_fee, i.total_amount,
+                   i.amount_jpy, i.payment_method, i.status,
+                   i.issued_at, i.due_date, i.paid_at, i.notes, i.created_at
+            FROM invoices i
+            LEFT JOIN customers c ON i.customer_id = c.id
+            ORDER BY i.id
+        """,
+        "headers": [
+            "ID", "請求番号", "顧客名", "通貨", "小計", "送料", "合計",
+            "JPY換算額", "支払方法", "ステータス",
+            "発行日", "支払期限", "入金日", "備考", "作成日",
+        ],
     },
 }
 
