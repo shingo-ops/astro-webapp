@@ -22,6 +22,9 @@ from app.routers import products
 from app.routers import shipping
 from app.routers import quotes
 from app.routers import invoices
+from app.routers import suppliers
+from app.routers import purchase_orders
+from app.routers import duplicates
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -121,6 +124,19 @@ app.include_router(
 )
 app.include_router(
     invoices.router, prefix="/api/v1", tags=["invoices"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 3: 仕入れ・調達 + 重複検知
+app.include_router(
+    suppliers.router, prefix="/api/v1", tags=["suppliers"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    purchase_orders.router, prefix="/api/v1", tags=["purchase_orders"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    duplicates.router, prefix="/api/v1", tags=["duplicates"],
     dependencies=[Depends(get_current_tenant)],
 )
 
