@@ -90,12 +90,15 @@ export default function Layout() {
 
               <NavDropdown
                 label="管理"
-                activePaths={["/deals", "/staff", "/roles", "/data"]}
+                activePaths={["/deals", "/staff", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts"]}
               >
                 {hasPermission("deals.view") && <NavLink to="/deals">商談管理</NavLink>}
+                {hasPermission("suppliers.view") && <NavLink to="/suppliers">仕入先管理</NavLink>}
+                {hasPermission("purchase_orders.view") && <NavLink to="/purchase-orders">仕入注文</NavLink>}
                 <NavLink to="/staff">スタッフ管理</NavLink>
+                {hasPermission("shifts.view") && <NavLink to="/shifts">シフト管理</NavLink>}
                 {hasAny("roles.view", "roles.create") && <NavLink to="/roles">権限管理</NavLink>}
-                <NavLink to="/data">データ管理</NavLink>
+                {hasPermission("erp.view") && <NavLink to="/data">データ管理</NavLink>}
               </NavDropdown>
 
               <NavLink to="/settings" className="mainnav-link">設定</NavLink>
@@ -104,8 +107,8 @@ export default function Layout() {
                 label="その他"
                 activePaths={["/knowledge", "/prompts", "/templates"]}
               >
-                <NavLink to="/knowledge">商材ナレッジ</NavLink>
-                <NavLink to="/prompts">翻訳プロンプト</NavLink>
+                {hasPermission("buddy.view_own") && <NavLink to="/knowledge">Buddy</NavLink>}
+                {hasPermission("badges.view") && <NavLink to="/prompts">バッジ</NavLink>}
                 <NavLink to="/templates">テンプレート管理</NavLink>
               </NavDropdown>
             </>
