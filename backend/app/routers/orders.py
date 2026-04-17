@@ -4,13 +4,17 @@ from __future__ import annotations
 注文管理API（CRUD）。
 
 テナントスキーマの orders テーブルに対する操作を提供する。
+
+変更履歴:
+  2026-04-17: Phase 2拡張（配送情報、invoice_id、ステータス拡張）
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant
+from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
@@ -19,10 +23,24 @@ from app.services.audit import record_audit_log
 
 router = APIRouter()
 
-_SELECT_COLS = "id, customer_id, deal_id, order_number, total_amount, status, notes, created_at, updated_at"
+_SELECT_COLS = """
+    id, customer_id, deal_id, invoice_id, order_number,
+    total_amount, currency, status,
+    shipping_carrier, shipping_fee, tracking_number,
+    shipped_at, delivered_at, shipping_country,
+    notes, created_at, updated_at
+"""
+
+# customer_id / deal_id / invoice_id は作成後の変更を禁止（FK整合性保護）
+_UPDATABLE_COLUMNS = {
+    "order_number", "total_amount", "currency", "status",
+    "shipping_carrier", "shipping_fee", "tracking_number",
+    "shipping_country", "notes",
+}
 
 
-@router.get("/orders", response_model=list[OrderResponse])
+@router.get("/orders", response_model=list[OrderResponse],
+            dependencies=[Depends(require_permission("orders.view"))])
 async def list_orders(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
@@ -60,7 +78,8 @@ async def list_orders(
     return [OrderResponse(**row) for row in rows]
 
 
-@router.get("/orders/{order_id}", response_model=OrderResponse)
+@router.get("/orders/{order_id}", response_model=OrderResponse,
+            dependencies=[Depends(require_permission("orders.view"))])
 async def get_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),
@@ -78,7 +97,8 @@ async def get_order(
     return OrderResponse(**row)
 
 
-@router.post("/orders", response_model=OrderResponse, status_code=201)
+@router.post("/orders", response_model=OrderResponse, status_code=201,
+             dependencies=[Depends(require_permission("orders.create"))])
 async def create_order(
     data: OrderCreate,
     db: AsyncSession = Depends(get_db),
@@ -107,17 +127,30 @@ async def create_order(
 
     result = await db.execute(
         text(f"""
-            INSERT INTO orders (tenant_id, customer_id, deal_id, order_number, total_amount, status, notes)
-            VALUES (:tenant_id, :customer_id, :deal_id, :order_number, :total_amount, :status, :notes)
+            INSERT INTO orders (
+                tenant_id, customer_id, deal_id, invoice_id, order_number,
+                total_amount, currency, status,
+                shipping_carrier, shipping_fee, shipping_country, notes
+            )
+            VALUES (
+                :tenant_id, :customer_id, :deal_id, :invoice_id, :order_number,
+                :total_amount, :currency, :status,
+                :shipping_carrier, :shipping_fee, :shipping_country, :notes
+            )
             RETURNING {_SELECT_COLS}
         """),
         {
             "tenant_id": tenant_id,
             "customer_id": data.customer_id,
             "deal_id": data.deal_id,
+            "invoice_id": data.invoice_id,
             "order_number": data.order_number,
             "total_amount": data.total_amount,
+            "currency": data.currency,
             "status": data.status.value,
+            "shipping_carrier": data.shipping_carrier,
+            "shipping_fee": data.shipping_fee,
+            "shipping_country": data.shipping_country,
             "notes": data.notes,
         },
     )
@@ -134,7 +167,8 @@ async def create_order(
     return OrderResponse(**row)
 
 
-@router.patch("/orders/{order_id}", response_model=OrderResponse)
+@router.patch("/orders/{order_id}", response_model=OrderResponse,
+              dependencies=[Depends(require_permission("orders.update"))])
 async def update_order(
     order_id: int,
     data: OrderUpdate,
@@ -152,6 +186,7 @@ async def update_order(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="注文が見つかりません")
 
     update_data = data.model_dump(exclude_unset=True)
+    update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLUMNS}
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
 
@@ -182,7 +217,8 @@ async def update_order(
     return OrderResponse(**row)
 
 
-@router.delete("/orders/{order_id}", status_code=204)
+@router.delete("/orders/{order_id}", status_code=204,
+               dependencies=[Depends(require_permission("orders.delete"))])
 async def delete_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),
