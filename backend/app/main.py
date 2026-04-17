@@ -29,6 +29,10 @@ from app.routers import analytics
 from app.routers import notifications
 from app.routers import staff_reports
 from app.routers import archives
+from app.routers import shifts
+from app.routers import buddy
+from app.routers import badges
+from app.routers import erp
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -158,6 +162,23 @@ app.include_router(
 )
 app.include_router(
     archives.router, prefix="/api/v1", tags=["archives"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 5: 拡張機能
+app.include_router(
+    shifts.router, prefix="/api/v1", tags=["shifts"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    buddy.router, prefix="/api/v1", tags=["buddy"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    badges.router, prefix="/api/v1", tags=["badges"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    erp.router, prefix="/api/v1", tags=["erp"],
     dependencies=[Depends(get_current_tenant)],
 )
 
