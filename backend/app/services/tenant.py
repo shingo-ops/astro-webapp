@@ -64,6 +64,14 @@ DEFAULT_ROLES = [
             "orders.view",
             "teams.view", "teams.manage_members",
             "roles.view",
+            # Phase 2
+            "products.view",
+            "quotes.view", "quotes.update", "quotes.approve",
+            "invoices.view", "invoices.update",
+            "shipping.view", "shipping.calculate",
+            # Phase 3
+            "suppliers.view",
+            "purchase_orders.view", "purchase_orders.create", "purchase_orders.update", "purchase_orders.receive",
         ],
         "description": "チーム単位でリードや案件を統括するリーダー",
     },
@@ -78,6 +86,14 @@ DEFAULT_ROLES = [
             "leads.view", "leads.create", "leads.update", "leads.convert",
             "deals.view", "deals.create", "deals.update",
             "orders.view", "orders.create", "orders.update",
+            # Phase 2
+            "products.view",
+            "quotes.view", "quotes.create", "quotes.update",
+            "invoices.view", "invoices.create",
+            "shipping.view", "shipping.calculate",
+            # Phase 3
+            "suppliers.view",
+            "purchase_orders.view", "purchase_orders.create",
         ],
         "description": "顧客獲得から受注までを担当する営業担当者",
     },
@@ -93,6 +109,11 @@ DEFAULT_ROLES = [
             "deals.view",
             "orders.view",
             "teams.view",
+            # Phase 2
+            "products.view",
+            "quotes.view",
+            "invoices.view",
+            "shipping.view",
         ],
         "description": "顧客からの問い合わせ対応を担当するカスタマーサポート",
     },
@@ -272,6 +293,178 @@ CREATE TABLE IF NOT EXISTS {schema}.team_members (
     joined_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(team_id, user_id)
 );
+
+-- === Phase 2: 販売・財務プロセス ===
+
+-- 商品マスタ
+CREATE TABLE IF NOT EXISTS {schema}.products (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    product_code VARCHAR(20),
+    category VARCHAR(100),
+    mark VARCHAR(100),
+    name_en VARCHAR(255),
+    name_ja VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'active',
+    condition VARCHAR(50),
+    unit_price NUMERIC(15, 2),
+    quantity INTEGER DEFAULT 0,
+    weight NUMERIC(10, 3),
+    notes TEXT,
+    release_date DATE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 配送ゾーン
+CREATE TABLE IF NOT EXISTS {schema}.shipping_zones (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    country_code VARCHAR(3) NOT NULL,
+    country_name VARCHAR(100) NOT NULL,
+    carrier VARCHAR(50) NOT NULL,
+    zone VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(tenant_id, country_code, carrier)
+);
+
+-- 配送料金
+CREATE TABLE IF NOT EXISTS {schema}.shipping_rates (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    carrier VARCHAR(50) NOT NULL,
+    zone VARCHAR(20) NOT NULL,
+    weight_min NUMERIC(10, 3) NOT NULL,
+    weight_max NUMERIC(10, 3) NOT NULL,
+    price NUMERIC(15, 2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'JPY',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 見積ヘッダー
+CREATE TABLE IF NOT EXISTS {schema}.quotes (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    quote_code VARCHAR(20),
+    deal_id INTEGER REFERENCES {schema}.deals(id),
+    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id),
+    currency VARCHAR(10) DEFAULT 'JPY',
+    subtotal NUMERIC(15, 2) DEFAULT 0,
+    shipping_fee NUMERIC(15, 2) DEFAULT 0,
+    tax_amount NUMERIC(15, 2) DEFAULT 0,
+    total_amount NUMERIC(15, 2) DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'draft',
+    validity_date DATE,
+    shipping_country VARCHAR(100),
+    shipping_carrier VARCHAR(50),
+    delivery_info TEXT,
+    pdf_url VARCHAR(500),
+    notes TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 見積明細
+CREATE TABLE IF NOT EXISTS {schema}.quote_items (
+    id SERIAL PRIMARY KEY,
+    quote_id INTEGER NOT NULL REFERENCES {schema}.quotes(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES {schema}.products(id),
+    product_name VARCHAR(255) NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_price NUMERIC(15, 2) NOT NULL,
+    weight NUMERIC(10, 3),
+    subtotal NUMERIC(15, 2) NOT NULL,
+    sort_order INTEGER DEFAULT 0
+);
+
+-- 請求書ヘッダー
+CREATE TABLE IF NOT EXISTS {schema}.invoices (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    invoice_number VARCHAR(30),
+    quote_id INTEGER REFERENCES {schema}.quotes(id),
+    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id),
+    currency VARCHAR(10) DEFAULT 'JPY',
+    subtotal NUMERIC(15, 2) DEFAULT 0,
+    shipping_fee NUMERIC(15, 2) DEFAULT 0,
+    tax_amount NUMERIC(15, 2) DEFAULT 0,
+    total_amount NUMERIC(15, 2) DEFAULT 0,
+    exchange_rate_jpy NUMERIC(12, 4),
+    exchange_rate_usd NUMERIC(12, 4),
+    amount_jpy NUMERIC(15, 2),
+    amount_usd NUMERIC(15, 2),
+    payment_method VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'draft',
+    branch_number INTEGER DEFAULT 1,
+    pdf_url VARCHAR(500),
+    erp_key VARCHAR(100),
+    issued_at TIMESTAMPTZ,
+    due_date DATE,
+    paid_at TIMESTAMPTZ,
+    voided_at TIMESTAMPTZ,
+    void_reason VARCHAR(500),
+    notes TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 請求書明細
+CREATE TABLE IF NOT EXISTS {schema}.invoice_items (
+    id SERIAL PRIMARY KEY,
+    invoice_id INTEGER NOT NULL REFERENCES {schema}.invoices(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES {schema}.products(id),
+    product_name VARCHAR(255) NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_price NUMERIC(15, 2) NOT NULL,
+    weight NUMERIC(10, 3),
+    subtotal NUMERIC(15, 2) NOT NULL,
+    sort_order INTEGER DEFAULT 0
+);
+
+-- === Phase 3: 仕入れ・調達管理 ===
+
+CREATE TABLE IF NOT EXISTS {schema}.suppliers (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    supplier_code VARCHAR(20),
+    name VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    address TEXT,
+    notes TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS {schema}.purchase_orders (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    po_number VARCHAR(20),
+    supplier_id INTEGER NOT NULL REFERENCES {schema}.suppliers(id),
+    status VARCHAR(20) DEFAULT 'draft',
+    total_amount NUMERIC(15, 2) DEFAULT 0,
+    ordered_at TIMESTAMPTZ,
+    received_at TIMESTAMPTZ,
+    notes TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS {schema}.purchase_order_items (
+    id SERIAL PRIMARY KEY,
+    purchase_order_id INTEGER NOT NULL REFERENCES {schema}.purchase_orders(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES {schema}.products(id),
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_cost NUMERIC(15, 2) NOT NULL,
+    subtotal NUMERIC(15, 2) NOT NULL,
+    sort_order INTEGER DEFAULT 0
+);
 """
 
 # RLS有効化のALTER TABLE群（;で安全に分割可能）
@@ -287,6 +480,17 @@ ALTER TABLE {schema}.roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.role_permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.teams ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.shipping_zones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.shipping_rates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.quotes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.quote_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.invoice_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.suppliers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.purchase_orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.purchase_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
 """
 
@@ -346,6 +550,61 @@ BEGIN
                 SELECT 1 FROM {schema}.teams t
                 WHERE t.id = team_members.team_id
                   AND t.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    -- Phase 2: 販売・財務プロセスのテーブル
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_products' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_products ON {schema}.products
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_shipping_zones' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_shipping_zones ON {schema}.shipping_zones
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_shipping_rates' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_shipping_rates ON {schema}.shipping_rates
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_quotes' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_quotes ON {schema}.quotes
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_invoices' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_invoices ON {schema}.invoices
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    -- 明細テーブル（tenant_id なし → 親テーブル経由）
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_quote_items' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_quote_items ON {schema}.quote_items
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.quotes q
+                WHERE q.id = quote_items.quote_id
+                  AND q.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_invoice_items' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_invoice_items ON {schema}.invoice_items
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.invoices inv
+                WHERE inv.id = invoice_items.invoice_id
+                  AND inv.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    -- Phase 3: 仕入れ・調達管理
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_suppliers' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_suppliers ON {schema}.suppliers
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_purchase_orders' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_purchase_orders ON {schema}.purchase_orders
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_po_items' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_po_items ON {schema}.purchase_order_items
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.purchase_orders po
+                WHERE po.id = purchase_order_items.purchase_order_id
+                  AND po.tenant_id = current_setting('app.tenant_id', true)::INTEGER
             ));
     END IF;
 END $$

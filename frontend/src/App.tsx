@@ -10,6 +10,12 @@ import OrdersPage from "./pages/OrdersPage";
 import LeadsPage from "./pages/LeadsPage";
 import TeamsPage from "./pages/TeamsPage";
 import RolesPage from "./pages/RolesPage";
+import ProductsPage from "./pages/ProductsPage";
+import QuotesPage from "./pages/QuotesPage";
+import QuoteCreatePage from "./pages/QuoteCreatePage";
+import QuoteDetailPage from "./pages/QuoteDetailPage";
+import InvoicesPage from "./pages/InvoicesPage";
+import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import "./App.css";
 
@@ -40,25 +46,16 @@ function App() {
                 description="過去の会話ログ・取引履歴のアーカイブ閲覧（Phase 4 予定）" />
             } />
 
-            {/* 在庫 */}
-            <Route path="/inventory" element={
-              <ComingSoonPage title="在庫管理"
-                description="商品在庫の閲覧・在庫同期機能（Phase 2 予定）" />
-            } />
+            {/* 在庫（Phase 2 実装済み） */}
+            <Route path="/inventory" element={<ProductsPage />} />
 
-            {/* 見積・請求 */}
-            <Route path="/quotes/new" element={
-              <ComingSoonPage title="見積もり作成"
-                description="案件から見積書を作成、PDF 出力（Phase 2 予定）" />
-            } />
-            <Route path="/quotes" element={
-              <ComingSoonPage title="見積もり履歴"
-                description="過去に発行した見積もり一覧（Phase 2 予定）" />
-            } />
-            <Route path="/invoices/new" element={
-              <ComingSoonPage title="請求書作成"
-                description="承認済み見積もりから請求書を発行、多通貨対応（Phase 2 予定）" />
-            } />
+            {/* 見積・請求（Phase 2 実装済み） */}
+            <Route path="/quotes/new" element={<QuoteCreatePage />} />
+            <Route path="/quotes/:id" element={<QuoteDetailPage />} />
+            <Route path="/quotes" element={<QuotesPage />} />
+            <Route path="/invoices/new" element={<InvoicesPage />} />
+            <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+            <Route path="/invoices" element={<InvoicesPage />} />
 
             {/* レポート */}
             <Route path="/reports" element={

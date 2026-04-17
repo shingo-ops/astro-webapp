@@ -6,6 +6,8 @@
 
 | 日付 | 変更内容 |
 |------|---------|
+| 2026-04-17 | Phase 3 実装完了: 仕入れ管理（2.8）、重複検知（2.23）を実装。ダッシュボード/レポート拡張は残タスク |
+| 2026-04-17 | Phase 2 実装完了: 在庫管理（2.7）、見積もり管理（2.4）、請求書管理（2.5）、注文拡張（2.6）、配送管理（2.9）を実装 |
 | 2026-04-16 | Phase 1 実装完了: ロール・権限（2.14）、顧客拡張（2.1）、リード管理（2.2）、案件拡張（2.3）、チーム管理（2.15）を実装 |
 | 2026-04-16 | 初版作成（旧GASシステムの機能棚卸し） |
 
@@ -29,12 +31,12 @@
 | 1 | 顧客マスタ管理 | :white_check_mark: | :white_check_mark: | **Phase 1完了**（請求先/配送先/顧客コード追加） |
 | 2 | リード管理 | :white_check_mark: | :white_check_mark: | **Phase 1完了**（見込度自動算出・案件化含む） |
 | 3 | 案件（Deal）管理 | :white_check_mark: | :white_check_mark: | **Phase 1完了**（deal_code/stage/probability/currency追加） |
-| 4 | 見積もり管理 | :white_check_mark: | :x: | **未実装** |
-| 5 | 請求書管理 | :white_check_mark: | :x: | **未実装** |
-| 6 | 注文管理 | :white_check_mark: | :white_check_mark: | 実装済み（項目不足あり） |
-| 7 | 在庫管理 | :white_check_mark: | :x: | **未実装** |
-| 8 | 仕入れ・調達管理 | :white_check_mark: | :x: | **未実装** |
-| 9 | 配送・物流管理 | :white_check_mark: | :x: | **未実装** |
+| 4 | 見積もり管理 | :white_check_mark: | :white_check_mark: | **Phase 2完了**（明細管理・ステータス遷移・請求書変換） |
+| 5 | 請求書管理 | :white_check_mark: | :white_check_mark: | **Phase 2完了**（多通貨・void・枝番・ERP Key） |
+| 6 | 注文管理 | :white_check_mark: | :white_check_mark: | **Phase 2完了**（配送情報・ステータス拡張） |
+| 7 | 在庫管理 | :white_check_mark: | :white_check_mark: | **Phase 2完了**（商品マスタ・在庫チェック） |
+| 8 | 仕入れ・調達管理 | :white_check_mark: | :white_check_mark: | **Phase 3完了**（仕入先CRUD・PO・入荷→在庫自動加算） |
+| 9 | 配送・物流管理 | :white_check_mark: | :white_check_mark: | **Phase 2完了**（ゾーン/料金マスタ・3社比較自動計算） |
 | 10 | ERP連携 | :white_check_mark: | :x: | **未実装** |
 | 11 | 見込み客ランク（自動算出） | :white_check_mark: | :x: | **未実装** |
 | 12 | ダッシュボード・KPI | :white_check_mark: | :construction: | 基本KPIのみ |
@@ -48,7 +50,7 @@
 | 20 | Buddy/コーチングシステム | :white_check_mark: | :x: | **未実装** |
 | 21 | バッジ・ゲーミフィケーション | :white_check_mark: | :x: | **未実装** |
 | 22 | リマインダー・通知 | :white_check_mark: | :x: | **未実装** |
-| 23 | 重複検知 | :white_check_mark: | :x: | **未実装** |
+| 23 | 重複検知 | :white_check_mark: | :white_check_mark: | **Phase 3完了**（メール/電話/会社名+名前の重複検出・マージ） |
 | 24 | アーカイブ・復元 | :white_check_mark: | :x: | **未実装** |
 | 25 | 監査ログ | :white_check_mark: | :white_check_mark: | 実装済み |
 | 26 | マルチテナント | :no_entry_sign: | :white_check_mark: | 新規（GASになし） |

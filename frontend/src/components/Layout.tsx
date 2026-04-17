@@ -72,15 +72,17 @@ export default function Layout() {
                 <NavLink to="/archive">アーカイブ</NavLink>
               </NavDropdown>
 
-              <NavLink to="/inventory" className="mainnav-link">在庫</NavLink>
+              {hasPermission("products.view") && (
+                <NavLink to="/inventory" className="mainnav-link">在庫</NavLink>
+              )}
 
               <NavDropdown
                 label="見積・請求"
                 activePaths={["/quotes", "/invoices"]}
               >
-                <NavLink to="/quotes/new">見積もり作成</NavLink>
-                <NavLink to="/quotes">見積もり履歴</NavLink>
-                <NavLink to="/invoices/new">請求書作成</NavLink>
+                {hasPermission("quotes.create") && <NavLink to="/quotes/new">見積もり作成</NavLink>}
+                {hasPermission("quotes.view") && <NavLink to="/quotes">見積もり履歴</NavLink>}
+                {hasPermission("invoices.view") && <NavLink to="/invoices">請求書管理</NavLink>}
               </NavDropdown>
 
               <NavLink to="/reports" className="mainnav-link">レポート</NavLink>

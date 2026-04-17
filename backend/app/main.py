@@ -18,6 +18,13 @@ from app.routers import reports
 from app.routers import leads
 from app.routers import teams
 from app.routers import roles
+from app.routers import products
+from app.routers import shipping
+from app.routers import quotes
+from app.routers import invoices
+from app.routers import suppliers
+from app.routers import purchase_orders
+from app.routers import duplicates
 from app.routers import webhook
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
@@ -103,6 +110,36 @@ app.include_router(
 )
 app.include_router(
     roles.router, prefix="/api/v1", tags=["roles"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 2: 販売・財務プロセス
+app.include_router(
+    products.router, prefix="/api/v1", tags=["products"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    shipping.router, prefix="/api/v1", tags=["shipping"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    quotes.router, prefix="/api/v1", tags=["quotes"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    invoices.router, prefix="/api/v1", tags=["invoices"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 3: 仕入れ・調達 + 重複検知
+app.include_router(
+    suppliers.router, prefix="/api/v1", tags=["suppliers"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    purchase_orders.router, prefix="/api/v1", tags=["purchase_orders"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    duplicates.router, prefix="/api/v1", tags=["duplicates"],
     dependencies=[Depends(get_current_tenant)],
 )
 
