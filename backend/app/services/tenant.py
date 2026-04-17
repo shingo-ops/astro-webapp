@@ -69,6 +69,9 @@ DEFAULT_ROLES = [
             "quotes.view", "quotes.update", "quotes.approve",
             "invoices.view", "invoices.update",
             "shipping.view", "shipping.calculate",
+            # Phase 3
+            "suppliers.view",
+            "purchase_orders.view", "purchase_orders.create", "purchase_orders.update", "purchase_orders.receive",
         ],
         "description": "チーム単位でリードや案件を統括するリーダー",
     },
@@ -88,6 +91,9 @@ DEFAULT_ROLES = [
             "quotes.view", "quotes.create", "quotes.update",
             "invoices.view", "invoices.create",
             "shipping.view", "shipping.calculate",
+            # Phase 3
+            "suppliers.view",
+            "purchase_orders.view", "purchase_orders.create",
         ],
         "description": "顧客獲得から受注までを担当する営業担当者",
     },
@@ -417,6 +423,48 @@ CREATE TABLE IF NOT EXISTS {schema}.invoice_items (
     subtotal NUMERIC(15, 2) NOT NULL,
     sort_order INTEGER DEFAULT 0
 );
+
+-- === Phase 3: 仕入れ・調達管理 ===
+
+CREATE TABLE IF NOT EXISTS {schema}.suppliers (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    supplier_code VARCHAR(20),
+    name VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    address TEXT,
+    notes TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS {schema}.purchase_orders (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    po_number VARCHAR(20),
+    supplier_id INTEGER NOT NULL REFERENCES {schema}.suppliers(id),
+    status VARCHAR(20) DEFAULT 'draft',
+    total_amount NUMERIC(15, 2) DEFAULT 0,
+    ordered_at TIMESTAMPTZ,
+    received_at TIMESTAMPTZ,
+    notes TEXT,
+    created_by INTEGER,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS {schema}.purchase_order_items (
+    id SERIAL PRIMARY KEY,
+    purchase_order_id INTEGER NOT NULL REFERENCES {schema}.purchase_orders(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES {schema}.products(id),
+    quantity INTEGER NOT NULL DEFAULT 1,
+    unit_cost NUMERIC(15, 2) NOT NULL,
+    subtotal NUMERIC(15, 2) NOT NULL,
+    sort_order INTEGER DEFAULT 0
+);
 """
 
 # RLS有効化のALTER TABLE群（;で安全に分割可能）
@@ -440,6 +488,9 @@ ALTER TABLE {schema}.quotes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.quote_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.invoice_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.suppliers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.purchase_orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.purchase_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
 """
 
@@ -537,6 +588,23 @@ BEGIN
                 SELECT 1 FROM {schema}.invoices inv
                 WHERE inv.id = invoice_items.invoice_id
                   AND inv.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    -- Phase 3: 仕入れ・調達管理
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_suppliers' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_suppliers ON {schema}.suppliers
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_purchase_orders' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_purchase_orders ON {schema}.purchase_orders
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_po_items' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_po_items ON {schema}.purchase_order_items
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.purchase_orders po
+                WHERE po.id = purchase_order_items.purchase_order_id
+                  AND po.tenant_id = current_setting('app.tenant_id', true)::INTEGER
             ));
     END IF;
 END $$
