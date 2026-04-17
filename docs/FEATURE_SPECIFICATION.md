@@ -6,6 +6,7 @@
 
 | 日付 | 変更内容 |
 |------|---------|
+| 2026-04-17 | Phase 5（最終）実装完了: ERP連携(2.10)、シフト管理(2.16)、Buddy(2.20)、バッジ(2.21) |
 | 2026-04-17 | Phase 4 実装: Discord通知(2.18)、日報・週報・月報(2.19)、アーカイブ・復元(2.24)。Meta連携(2.17)はしんごさんPR #59で別途対応中 |
 | 2026-04-17 | Phase 3 全完了: 仕入れ管理（2.8）、重複検知（2.23）、ダッシュボード拡張（2.12）、レポート・分析拡張（2.13）を実装 |
 | 2026-04-17 | Phase 2 実装完了: 在庫管理（2.7）、見積もり管理（2.4）、請求書管理（2.5）、注文拡張（2.6）、配送管理（2.9）を実装 |
@@ -38,18 +39,18 @@
 | 7 | 在庫管理 | :white_check_mark: | :white_check_mark: | **Phase 2完了**（商品マスタ・在庫チェック） |
 | 8 | 仕入れ・調達管理 | :white_check_mark: | :white_check_mark: | **Phase 3完了**（仕入先CRUD・PO・入荷→在庫自動加算） |
 | 9 | 配送・物流管理 | :white_check_mark: | :white_check_mark: | **Phase 2完了**（ゾーン/料金マスタ・3社比較自動計算） |
-| 10 | ERP連携 | :white_check_mark: | :x: | **未実装** |
+| 10 | ERP連携 | :white_check_mark: | :white_check_mark: | **Phase 5完了**（同期ログ管理・請求書CSVエクスポート基盤） |
 | 11 | 見込み客ランク（自動算出） | :white_check_mark: | :x: | **未実装** |
 | 12 | ダッシュボード・KPI | :white_check_mark: | :white_check_mark: | **Phase 3完了**（パイプライン/コンバージョン/未入金/在庫金額/仕入） |
 | 13 | レポート・分析 | :white_check_mark: | :white_check_mark: | **Phase 3完了**（コンバージョン分析/案件停滞/未入金一覧/CSVエクスポート） |
 | 14 | ロール・権限管理 | :white_check_mark: | :white_check_mark: | **Phase 1完了**（Discord式カスタムロール） |
 | 15 | チーム管理 | :white_check_mark: | :white_check_mark: | **Phase 1完了**（チームCRUD＋メンバー管理） |
-| 16 | シフト管理 | :white_check_mark: | :x: | **未実装** |
+| 16 | シフト管理 | :white_check_mark: | :white_check_mark: | **Phase 5完了**（日別シフトCRUD・重複防止） |
 | 17 | Meta連携（WhatsApp/Instagram） | :white_check_mark: | :x: | **未実装** |
 | 18 | Discord通知 | :white_check_mark: | :white_check_mark: | **Phase 4完了**（Webhook設定/イベント通知/ログ） |
 | 19 | 日報・週報・月報 | :white_check_mark: | :white_check_mark: | **Phase 4完了**（日/週/月報CRUD/レビュー） |
-| 20 | Buddy/コーチングシステム | :white_check_mark: | :x: | **未実装** |
-| 21 | バッジ・ゲーミフィケーション | :white_check_mark: | :x: | **未実装** |
+| 20 | Buddy/コーチングシステム | :white_check_mark: | :white_check_mark: | **Phase 5完了**（ペアリング・フィードバック記録） |
+| 21 | バッジ・ゲーミフィケーション | :white_check_mark: | :white_check_mark: | **Phase 5完了**（バッジ定義・付与・リーダーボード） |
 | 22 | リマインダー・通知 | :white_check_mark: | :construction: | Phase 4一部（Discord通知基盤のみ。Celeryバッチリマインダーは後続） |
 | 23 | 重複検知 | :white_check_mark: | :white_check_mark: | **Phase 3完了**（メール/電話/会社名+名前の重複検出・マージ） |
 | 24 | アーカイブ・復元 | :white_check_mark: | :white_check_mark: | **Phase 4完了**（手動アーカイブ/復元/JSONB保存） |
