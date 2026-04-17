@@ -65,6 +65,8 @@ services:
       - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/1}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/2}
       - MFA_REQUIRED=${MFA_REQUIRED:-true}
+      - META_VERIFY_TOKEN=${META_VERIFY_TOKEN:-}
+      - META_APP_SECRET=${META_APP_SECRET:-}
     volumes:
       - ./firebase-credentials.json:/app/firebase-credentials.json:ro
     depends_on:
