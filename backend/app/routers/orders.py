@@ -4,13 +4,17 @@ from __future__ import annotations
 注文管理API（CRUD）。
 
 テナントスキーマの orders テーブルに対する操作を提供する。
+
+変更履歴:
+  2026-04-17: Phase 2拡張（配送情報、invoice_id、ステータス拡張）
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant
+from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
@@ -19,7 +23,20 @@ from app.services.audit import record_audit_log
 
 router = APIRouter()
 
-_SELECT_COLS = "id, customer_id, deal_id, order_number, total_amount, status, notes, created_at, updated_at"
+_SELECT_COLS = """
+    id, customer_id, deal_id, invoice_id, order_number,
+    total_amount, currency, status,
+    shipping_carrier, shipping_fee, tracking_number,
+    shipped_at, delivered_at, shipping_country,
+    notes, created_at, updated_at
+"""
+
+_UPDATABLE_COLUMNS = {
+    "customer_id", "deal_id", "invoice_id", "order_number",
+    "total_amount", "currency", "status",
+    "shipping_carrier", "shipping_fee", "tracking_number",
+    "shipping_country", "notes",
+}
 
 
 @router.get("/orders", response_model=list[OrderResponse])
@@ -107,17 +124,30 @@ async def create_order(
 
     result = await db.execute(
         text(f"""
-            INSERT INTO orders (tenant_id, customer_id, deal_id, order_number, total_amount, status, notes)
-            VALUES (:tenant_id, :customer_id, :deal_id, :order_number, :total_amount, :status, :notes)
+            INSERT INTO orders (
+                tenant_id, customer_id, deal_id, invoice_id, order_number,
+                total_amount, currency, status,
+                shipping_carrier, shipping_fee, shipping_country, notes
+            )
+            VALUES (
+                :tenant_id, :customer_id, :deal_id, :invoice_id, :order_number,
+                :total_amount, :currency, :status,
+                :shipping_carrier, :shipping_fee, :shipping_country, :notes
+            )
             RETURNING {_SELECT_COLS}
         """),
         {
             "tenant_id": tenant_id,
             "customer_id": data.customer_id,
             "deal_id": data.deal_id,
+            "invoice_id": data.invoice_id,
             "order_number": data.order_number,
             "total_amount": data.total_amount,
+            "currency": data.currency,
             "status": data.status.value,
+            "shipping_carrier": data.shipping_carrier,
+            "shipping_fee": data.shipping_fee,
+            "shipping_country": data.shipping_country,
             "notes": data.notes,
         },
     )
@@ -152,6 +182,7 @@ async def update_order(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="注文が見つかりません")
 
     update_data = data.model_dump(exclude_unset=True)
+    update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLUMNS}
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
 
