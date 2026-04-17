@@ -27,19 +27,25 @@ jobs:
             echo "Step 1: Pulling latest code from GitHub..."
             git pull origin main
 
-            echo "Step 2: Rebuilding and restarting containers..."
+            echo "Step 2: Setting Meta Webhook environment variables..."
+            grep -q "META_VERIFY_TOKEN" .env 2>/dev/null || \
+              echo "META_VERIFY_TOKEN=${{ secrets.META_VERIFY_TOKEN }}" >> .env
+            grep -q "META_APP_SECRET" .env 2>/dev/null || \
+              echo "META_APP_SECRET=${{ secrets.META_APP_SECRET }}" >> .env
+
+            echo "Step 3: Rebuilding and restarting containers..."
             docker compose up -d --build
 
-            echo "Step 3: Waiting for services to become healthy..."
+            echo "Step 4: Waiting for services to become healthy..."
             sleep 20
 
-            echo "Step 4: Health check..."
+            echo "Step 5: Health check..."
             docker exec astro-webapp-backend-1 python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || (echo "Health check failed!" && exit 1)
 
-            echo "Step 5: Checking container status..."
+            echo "Step 6: Checking container status..."
             docker compose ps
 
-            echo "Step 6: Cleaning up old Docker images..."
+            echo "Step 7: Cleaning up old Docker images..."
             docker image prune -f
 
             echo "============================================"
