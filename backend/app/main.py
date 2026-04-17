@@ -26,6 +26,9 @@ from app.routers import suppliers
 from app.routers import purchase_orders
 from app.routers import duplicates
 from app.routers import analytics
+from app.routers import notifications
+from app.routers import staff_reports
+from app.routers import archives
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -142,6 +145,19 @@ app.include_router(
 )
 app.include_router(
     analytics.router, prefix="/api/v1", tags=["analytics"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 4: コミュニケーション・運用
+app.include_router(
+    notifications.router, prefix="/api/v1", tags=["notifications"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    staff_reports.router, prefix="/api/v1", tags=["staff_reports"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    archives.router, prefix="/api/v1", tags=["archives"],
     dependencies=[Depends(get_current_tenant)],
 )
 

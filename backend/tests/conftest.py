@@ -409,6 +409,68 @@ async def setup_test_db(test_engine):
                 sort_order INTEGER DEFAULT 0
             )
         """))
+        # === Phase 4 テーブル ===
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS notification_channels (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                channel_type VARCHAR(20) DEFAULT 'discord',
+                channel_name VARCHAR(100) NOT NULL,
+                webhook_url VARCHAR(500) NOT NULL,
+                event_types TEXT DEFAULT '[]',
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS notification_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                channel_id INTEGER,
+                event_type VARCHAR(50) NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                message TEXT,
+                status VARCHAR(20) DEFAULT 'pending',
+                sent_at TIMESTAMP,
+                error_message TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS staff_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                report_code VARCHAR(20),
+                report_type VARCHAR(20) NOT NULL,
+                user_id INTEGER NOT NULL,
+                period VARCHAR(20) NOT NULL,
+                review TEXT,
+                goals TEXT,
+                challenges TEXT,
+                self_evaluation TEXT,
+                ai_feedback TEXT,
+                reviewer_id INTEGER,
+                reviewer_comment TEXT,
+                reviewed_at TIMESTAMP,
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS archives (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                source_table VARCHAR(100) NOT NULL,
+                source_id INTEGER NOT NULL,
+                archived_data TEXT NOT NULL,
+                archived_by INTEGER,
+                archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                restored_at TIMESTAMP,
+                restored_by INTEGER
+            )
+        """))
         # public.users 相当（SQLiteにはスキーマがないのでusersテーブルで代用）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS users (
@@ -445,6 +507,10 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM quotes"))
         await conn.execute(text("DELETE FROM shipping_rates"))
         await conn.execute(text("DELETE FROM shipping_zones"))
+        await conn.execute(text("DELETE FROM archives"))
+        await conn.execute(text("DELETE FROM staff_reports"))
+        await conn.execute(text("DELETE FROM notification_logs"))
+        await conn.execute(text("DELETE FROM notification_channels"))
         await conn.execute(text("DELETE FROM purchase_order_items"))
         await conn.execute(text("DELETE FROM purchase_orders"))
         await conn.execute(text("DELETE FROM suppliers"))
@@ -514,6 +580,10 @@ ALL_TEST_PERMISSIONS = {
     # Phase 3
     "suppliers.view", "suppliers.create", "suppliers.update", "suppliers.delete",
     "purchase_orders.view", "purchase_orders.create", "purchase_orders.update", "purchase_orders.receive",
+    # Phase 4
+    "notifications.view", "notifications.manage",
+    "staff_reports.view_own", "staff_reports.view_team", "staff_reports.create", "staff_reports.review",
+    "archive.view", "archive.manage",
 }
 
 
@@ -579,6 +649,9 @@ async def client(db_session):
          patch("app.routers.suppliers.record_audit_log", _make_noop_audit_log()), \
          patch("app.routers.purchase_orders.record_audit_log", _make_noop_audit_log()), \
          patch("app.routers.duplicates.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.notifications.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.staff_reports.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.archives.record_audit_log", _make_noop_audit_log()), \
          patch("app.auth.dependencies.load_user_permissions", _mock_load_user_permissions):
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             yield ac

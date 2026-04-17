@@ -6,6 +6,7 @@
 
 | 日付 | 変更内容 |
 |------|---------|
+| 2026-04-17 | Phase 4 実装: Discord通知(2.18)、日報・週報・月報(2.19)、アーカイブ・復元(2.24)。Meta連携(2.17)はしんごさんPR #59で別途対応中 |
 | 2026-04-17 | Phase 3 全完了: 仕入れ管理（2.8）、重複検知（2.23）、ダッシュボード拡張（2.12）、レポート・分析拡張（2.13）を実装 |
 | 2026-04-17 | Phase 2 実装完了: 在庫管理（2.7）、見積もり管理（2.4）、請求書管理（2.5）、注文拡張（2.6）、配送管理（2.9）を実装 |
 | 2026-04-16 | Phase 1 実装完了: ロール・権限（2.14）、顧客拡張（2.1）、リード管理（2.2）、案件拡張（2.3）、チーム管理（2.15）を実装 |
@@ -45,13 +46,13 @@
 | 15 | チーム管理 | :white_check_mark: | :white_check_mark: | **Phase 1完了**（チームCRUD＋メンバー管理） |
 | 16 | シフト管理 | :white_check_mark: | :x: | **未実装** |
 | 17 | Meta連携（WhatsApp/Instagram） | :white_check_mark: | :x: | **未実装** |
-| 18 | Discord通知 | :white_check_mark: | :x: | **未実装** |
-| 19 | 日報・週報・月報 | :white_check_mark: | :x: | **未実装** |
+| 18 | Discord通知 | :white_check_mark: | :white_check_mark: | **Phase 4完了**（Webhook設定/イベント通知/ログ） |
+| 19 | 日報・週報・月報 | :white_check_mark: | :white_check_mark: | **Phase 4完了**（日/週/月報CRUD/レビュー） |
 | 20 | Buddy/コーチングシステム | :white_check_mark: | :x: | **未実装** |
 | 21 | バッジ・ゲーミフィケーション | :white_check_mark: | :x: | **未実装** |
-| 22 | リマインダー・通知 | :white_check_mark: | :x: | **未実装** |
+| 22 | リマインダー・通知 | :white_check_mark: | :construction: | Phase 4一部（Discord通知基盤のみ。Celeryバッチリマインダーは後続） |
 | 23 | 重複検知 | :white_check_mark: | :white_check_mark: | **Phase 3完了**（メール/電話/会社名+名前の重複検出・マージ） |
-| 24 | アーカイブ・復元 | :white_check_mark: | :x: | **未実装** |
+| 24 | アーカイブ・復元 | :white_check_mark: | :white_check_mark: | **Phase 4完了**（手動アーカイブ/復元/JSONB保存） |
 | 25 | 監査ログ | :white_check_mark: | :white_check_mark: | 実装済み |
 | 26 | マルチテナント | :no_entry_sign: | :white_check_mark: | 新規（GASになし） |
 | 27 | Firebase MFA認証 | :no_entry_sign: | :white_check_mark: | 新規（GASになし） |
