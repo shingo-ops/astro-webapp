@@ -280,9 +280,9 @@ class TestDashboardCacheIntegration:
         app.dependency_overrides[get_current_user] = lambda: mock_user
         app.dependency_overrides[get_current_tenant] = lambda: 999
 
-        # schema_version=2 を含む最新スキーマのキャッシュ
+        # schema_version=3 を含む最新スキーマのキャッシュ（Phase 3拡張後）
         cached_kpi = json.dumps({
-            "schema_version": 2,
+            "schema_version": 3,
             "customer_count": 42,
             "lead_count": 7,
             "lead_open_count": 4,
