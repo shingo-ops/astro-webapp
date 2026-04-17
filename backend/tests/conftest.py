@@ -365,6 +365,50 @@ async def setup_test_db(test_engine):
                 sort_order INTEGER DEFAULT 0
             )
         """))
+        # === Phase 3 テーブル ===
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS suppliers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                supplier_code VARCHAR(20),
+                name VARCHAR(255) NOT NULL,
+                contact_name VARCHAR(255),
+                email VARCHAR(255),
+                phone VARCHAR(50),
+                address TEXT,
+                notes TEXT,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS purchase_orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                po_number VARCHAR(20),
+                supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
+                status VARCHAR(20) DEFAULT 'draft',
+                total_amount NUMERIC(15, 2) DEFAULT 0,
+                ordered_at TIMESTAMP,
+                received_at TIMESTAMP,
+                notes TEXT,
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS purchase_order_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                purchase_order_id INTEGER NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
+                product_id INTEGER NOT NULL REFERENCES products(id),
+                quantity INTEGER NOT NULL DEFAULT 1,
+                unit_cost NUMERIC(15, 2) NOT NULL,
+                subtotal NUMERIC(15, 2) NOT NULL,
+                sort_order INTEGER DEFAULT 0
+            )
+        """))
         # public.users 相当（SQLiteにはスキーマがないのでusersテーブルで代用）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS users (
@@ -401,6 +445,9 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM quotes"))
         await conn.execute(text("DELETE FROM shipping_rates"))
         await conn.execute(text("DELETE FROM shipping_zones"))
+        await conn.execute(text("DELETE FROM purchase_order_items"))
+        await conn.execute(text("DELETE FROM purchase_orders"))
+        await conn.execute(text("DELETE FROM suppliers"))
         await conn.execute(text("DELETE FROM orders"))
         await conn.execute(text("DELETE FROM products"))
         await conn.execute(text("DELETE FROM deals"))
@@ -464,6 +511,9 @@ ALL_TEST_PERMISSIONS = {
     "quotes.view", "quotes.create", "quotes.update", "quotes.delete", "quotes.approve",
     "invoices.view", "invoices.create", "invoices.update", "invoices.void",
     "shipping.view", "shipping.manage", "shipping.calculate",
+    # Phase 3
+    "suppliers.view", "suppliers.create", "suppliers.update", "suppliers.delete",
+    "purchase_orders.view", "purchase_orders.create", "purchase_orders.update", "purchase_orders.receive",
 }
 
 
@@ -526,6 +576,9 @@ async def client(db_session):
          patch("app.routers.shipping.record_audit_log", _make_noop_audit_log()), \
          patch("app.routers.quotes.record_audit_log", _make_noop_audit_log()), \
          patch("app.routers.invoices.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.suppliers.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.purchase_orders.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.duplicates.record_audit_log", _make_noop_audit_log()), \
          patch("app.auth.dependencies.load_user_permissions", _mock_load_user_permissions):
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             yield ac
