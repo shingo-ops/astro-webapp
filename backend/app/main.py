@@ -18,6 +18,7 @@ from app.routers import reports
 from app.routers import leads
 from app.routers import teams
 from app.routers import roles
+from app.routers import webhook
 from app.routers import products
 from app.routers import shipping
 from app.routers import quotes
@@ -73,6 +74,8 @@ app.add_middleware(AuditMiddleware)
 app.include_router(health.router, prefix="/api", tags=["health"])
 # /api/v1/auth にバージョン管理を適用
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+# Meta Webhook（認証不要 - Metaのサーバーからアクセスされる）
+app.include_router(webhook.router, prefix="/api/v1", tags=["webhook"])
 
 # --- 認証必須なルーター（デフォルトで認証が強制される） ---
 # dependencies=[Depends(get_current_tenant)] により、
