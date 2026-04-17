@@ -132,16 +132,24 @@ async def setup_test_db(test_engine):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
-        # 注文テーブル
+        # 注文テーブル（Phase 2拡張版）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tenant_id INTEGER NOT NULL DEFAULT 999,
                 customer_id INTEGER REFERENCES customers(id),
                 deal_id INTEGER REFERENCES deals(id),
+                invoice_id INTEGER,
                 order_number VARCHAR(100) NOT NULL,
                 total_amount NUMERIC(15, 2),
+                currency VARCHAR(10) DEFAULT 'JPY',
                 status VARCHAR(50) DEFAULT 'pending',
+                shipping_carrier VARCHAR(50),
+                shipping_fee NUMERIC(15, 2),
+                tracking_number VARCHAR(200),
+                shipped_at TIMESTAMP,
+                delivered_at TIMESTAMP,
+                shipping_country VARCHAR(100),
                 notes TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -228,6 +236,135 @@ async def setup_test_db(test_engine):
                 UNIQUE(team_id, user_id)
             )
         """))
+        # === Phase 2 テーブル ===
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                product_code VARCHAR(20),
+                category VARCHAR(100),
+                mark VARCHAR(100),
+                name_en VARCHAR(255),
+                name_ja VARCHAR(255) NOT NULL,
+                status VARCHAR(20) DEFAULT 'active',
+                condition VARCHAR(50),
+                unit_price NUMERIC(15, 2),
+                quantity INTEGER DEFAULT 0,
+                weight NUMERIC(10, 3),
+                notes TEXT,
+                release_date DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS shipping_zones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                country_code VARCHAR(3) NOT NULL,
+                country_name VARCHAR(100) NOT NULL,
+                carrier VARCHAR(50) NOT NULL,
+                zone VARCHAR(20) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(tenant_id, country_code, carrier)
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS shipping_rates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                carrier VARCHAR(50) NOT NULL,
+                zone VARCHAR(20) NOT NULL,
+                weight_min NUMERIC(10, 3) NOT NULL,
+                weight_max NUMERIC(10, 3) NOT NULL,
+                price NUMERIC(15, 2) NOT NULL,
+                currency VARCHAR(10) DEFAULT 'JPY',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS quotes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                quote_code VARCHAR(20),
+                deal_id INTEGER REFERENCES deals(id),
+                customer_id INTEGER NOT NULL REFERENCES customers(id),
+                currency VARCHAR(10) DEFAULT 'JPY',
+                subtotal NUMERIC(15, 2) DEFAULT 0,
+                shipping_fee NUMERIC(15, 2) DEFAULT 0,
+                tax_amount NUMERIC(15, 2) DEFAULT 0,
+                total_amount NUMERIC(15, 2) DEFAULT 0,
+                status VARCHAR(20) DEFAULT 'draft',
+                validity_date DATE,
+                shipping_country VARCHAR(100),
+                shipping_carrier VARCHAR(50),
+                delivery_info TEXT,
+                pdf_url VARCHAR(500),
+                notes TEXT,
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS quote_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                quote_id INTEGER NOT NULL REFERENCES quotes(id) ON DELETE CASCADE,
+                product_id INTEGER REFERENCES products(id),
+                product_name VARCHAR(255) NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                unit_price NUMERIC(15, 2) NOT NULL,
+                weight NUMERIC(10, 3),
+                subtotal NUMERIC(15, 2) NOT NULL,
+                sort_order INTEGER DEFAULT 0
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS invoices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                invoice_number VARCHAR(30),
+                quote_id INTEGER REFERENCES quotes(id),
+                customer_id INTEGER NOT NULL REFERENCES customers(id),
+                currency VARCHAR(10) DEFAULT 'JPY',
+                subtotal NUMERIC(15, 2) DEFAULT 0,
+                shipping_fee NUMERIC(15, 2) DEFAULT 0,
+                tax_amount NUMERIC(15, 2) DEFAULT 0,
+                total_amount NUMERIC(15, 2) DEFAULT 0,
+                exchange_rate_jpy NUMERIC(12, 4),
+                exchange_rate_usd NUMERIC(12, 4),
+                amount_jpy NUMERIC(15, 2),
+                amount_usd NUMERIC(15, 2),
+                payment_method VARCHAR(50),
+                status VARCHAR(20) DEFAULT 'draft',
+                branch_number INTEGER DEFAULT 1,
+                pdf_url VARCHAR(500),
+                erp_key VARCHAR(100),
+                issued_at TIMESTAMP,
+                due_date DATE,
+                paid_at TIMESTAMP,
+                voided_at TIMESTAMP,
+                void_reason VARCHAR(500),
+                notes TEXT,
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS invoice_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                invoice_id INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+                product_id INTEGER REFERENCES products(id),
+                product_name VARCHAR(255) NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                unit_price NUMERIC(15, 2) NOT NULL,
+                weight NUMERIC(10, 3),
+                subtotal NUMERIC(15, 2) NOT NULL,
+                sort_order INTEGER DEFAULT 0
+            )
+        """))
         # public.users 相当（SQLiteにはスキーマがないのでusersテーブルで代用）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS users (
@@ -255,10 +392,17 @@ async def db_session(test_engine, setup_test_db):
         yield session
         await session.rollback()
 
-    # テスト後にデータを全削除
+    # テスト後にデータを全削除（FK制約順）
     async with test_engine.begin() as conn:
         await conn.execute(text("DELETE FROM audit_logs"))
+        await conn.execute(text("DELETE FROM invoice_items"))
+        await conn.execute(text("DELETE FROM invoices"))
+        await conn.execute(text("DELETE FROM quote_items"))
+        await conn.execute(text("DELETE FROM quotes"))
+        await conn.execute(text("DELETE FROM shipping_rates"))
+        await conn.execute(text("DELETE FROM shipping_zones"))
         await conn.execute(text("DELETE FROM orders"))
+        await conn.execute(text("DELETE FROM products"))
         await conn.execute(text("DELETE FROM deals"))
         await conn.execute(text("DELETE FROM leads"))
         await conn.execute(text("DELETE FROM customers"))
@@ -315,6 +459,11 @@ ALL_TEST_PERMISSIONS = {
     "orders.view", "orders.create", "orders.update", "orders.delete",
     "teams.view", "teams.create", "teams.update", "teams.delete", "teams.manage_members",
     "dashboard.view", "reports.view", "reports.export",
+    # Phase 2
+    "products.view", "products.create", "products.update", "products.delete",
+    "quotes.view", "quotes.create", "quotes.update", "quotes.delete", "quotes.approve",
+    "invoices.view", "invoices.create", "invoices.update", "invoices.void",
+    "shipping.view", "shipping.manage", "shipping.calculate",
 }
 
 
@@ -373,6 +522,10 @@ async def client(db_session):
          patch("app.routers.leads.record_audit_log", _make_noop_audit_log()), \
          patch("app.routers.teams.record_audit_log", _make_noop_audit_log()), \
          patch("app.routers.roles.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.products.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.shipping.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.quotes.record_audit_log", _make_noop_audit_log()), \
+         patch("app.routers.invoices.record_audit_log", _make_noop_audit_log()), \
          patch("app.auth.dependencies.load_user_permissions", _mock_load_user_permissions):
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             yield ac

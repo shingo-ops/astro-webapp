@@ -28,6 +28,9 @@ class ReportType(str, Enum):
     leads = "leads"
     deals = "deals"
     orders = "orders"
+    products = "products"
+    quotes = "quotes"
+    invoices = "invoices"
 
 
 class ExportRequest(BaseModel):
