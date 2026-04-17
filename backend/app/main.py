@@ -18,6 +18,7 @@ from app.routers import reports
 from app.routers import leads
 from app.routers import teams
 from app.routers import roles
+from app.routers import webhook
 from app.routers import products
 from app.routers import shipping
 from app.routers import quotes
@@ -25,7 +26,6 @@ from app.routers import invoices
 from app.routers import suppliers
 from app.routers import purchase_orders
 from app.routers import duplicates
-from app.routers import webhook
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
