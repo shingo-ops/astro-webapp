@@ -3,18 +3,34 @@ import hmac
 import json
 import logging
 import os
-from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import reset_tenant_context
 from app.database import AsyncSessionLocal
 from app.routers.notifications import send_discord_notification
 
 router = APIRouter()
 
-_TENANT_ID = 1  # Phase 2: 固定。Phase 3でマルチテナント対応予定。
+_META_PAGE_ID = os.getenv("META_PAGE_ID", "")
+
+
+async def _get_tenant_id_by_page(db: AsyncSession, page_id: str) -> int | None:
+    """
+    page_idからtenant_idを取得する。
+    暫定: 環境変数 META_PAGE_ID と一致するページのテナントを返す。
+    TODO: Phase 3で設定テーブル（tenant_meta_config）を用意して管理する。
+    """
+    if not _META_PAGE_ID or page_id != _META_PAGE_ID:
+        return None
+    result = await db.execute(
+        text("SELECT id FROM public.tenants WHERE is_active = true ORDER BY id LIMIT 1")
+    )
+    row = result.first()
+    return row[0] if row else None
 
 
 # ─────────────────────────────────────────────
@@ -27,7 +43,6 @@ async def verify_messenger_webhook(
     hub_verify_token: str = Query(None, alias="hub.verify_token"),
     hub_challenge: str = Query(None, alias="hub.challenge"),
 ):
-    # C1修正：環境変数未設定時は500エラー（デフォルト値なし）
     verify_token = os.getenv("META_VERIFY_TOKEN")
     if not verify_token:
         raise HTTPException(
@@ -51,7 +66,7 @@ async def receive_messenger_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
 ):
-    # C2修正：HMAC-SHA256署名検証
+    # HMAC-SHA256署名検証
     app_secret = os.getenv("META_APP_SECRET", "")
     signature = request.headers.get("X-Hub-Signature-256", "")
     body_bytes = await request.body()
@@ -74,17 +89,20 @@ async def receive_messenger_webhook(
 async def process_messenger_event(body: dict) -> None:
     """
     Metaから受信したWebhookイベントを処理する
-    1. メッセージ内容を抽出
-    2. 送信者IDでリードを検索
-    3. リードが存在しない場合は自動作成
-    4. meta_messagesテーブルに記録
-    5. Discordに通知
+    1. page_idでテナントを特定
+    2. メッセージ内容を抽出
+    3. 送信者IDでリードを検索
+    4. リードが存在しない場合は自動作成
+    5. meta_messagesテーブルに記録
+    6. Discordに通知
     """
     try:
         if body.get("object") != "page":
             return
 
         for entry in body.get("entry", []):
+            page_id = str(entry.get("id", ""))
+
             for messaging in entry.get("messaging", []):
                 if "message" not in messaging:
                     continue
@@ -93,9 +111,17 @@ async def process_messenger_event(body: dict) -> None:
                 message_text = messaging["message"].get("text", "")
 
                 async with AsyncSessionLocal() as db:
-                    schema = f"tenant_{_TENANT_ID:03d}"
+                    # C1: page_idでテナントを特定
+                    tenant_id = await _get_tenant_id_by_page(db, page_id)
+                    if tenant_id is None:
+                        logging.warning(
+                            "[Meta] テナント特定失敗: page_id=%s", page_id
+                        )
+                        continue
+
+                    schema = f"tenant_{tenant_id:03d}"
                     await db.execute(text(f"SET search_path = {schema}, public"))
-                    await db.execute(text(f"SET app.tenant_id = '{_TENANT_ID}'"))
+                    await db.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
 
                     # 1. 送信者IDでリードを検索
                     source_key = f"messenger:{sender_id}"
@@ -117,7 +143,7 @@ async def process_messenger_event(body: dict) -> None:
                                 RETURNING id
                             """),
                             {
-                                "tenant_id": _TENANT_ID,
+                                "tenant_id": tenant_id,
                                 "customer_name": "Messenger User",
                                 "source": source_key,
                                 "type": "Inbound",
@@ -125,16 +151,18 @@ async def process_messenger_event(body: dict) -> None:
                             },
                         )
                         lead_id = ins.scalar_one()
-                        today = datetime.utcnow().strftime("%Y%m%d")
+                        # H3: 既存の LD-XXXXX 形式に統一
                         await db.execute(
                             text("UPDATE leads SET lead_code = :code WHERE id = :id"),
-                            {"code": f"META-{today}-{lead_id}", "id": lead_id},
+                            {"code": f"LD-{lead_id:05d}", "id": lead_id},
                         )
                         await db.commit()
-                        await db.execute(text(f"SET search_path = {schema}, public"))
-                        await db.execute(text(f"SET app.tenant_id = '{_TENANT_ID}'"))
+                        # H1: reset_tenant_context() を使用
+                        await reset_tenant_context(db, tenant_id)
 
                     # 3. meta_messagesテーブルに記録
+                    # H2: raw_payloadから個人情報を除去し最小限の情報のみ保存
+                    # TODO: raw_payload は90日後に自動パージする（Phase 3で実装）
                     await db.execute(
                         text("""
                             INSERT INTO meta_messages (
@@ -147,24 +175,33 @@ async def process_messenger_event(body: dict) -> None:
                             )
                         """),
                         {
-                            "tenant_id": _TENANT_ID,
+                            "tenant_id": tenant_id,
                             "lead_id": lead_id,
                             "sender_id": sender_id,
                             "message_text": message_text,
-                            "raw_payload": json.dumps(messaging),
+                            "raw_payload": json.dumps({
+                                "timestamp": messaging.get("timestamp"),
+                                "has_text": bool(
+                                    messaging.get("message", {}).get("text")
+                                ),
+                                "has_attachments": bool(
+                                    messaging.get("message", {}).get("attachments")
+                                ),
+                            }),
                         },
                     )
                     await db.commit()
-                    await db.execute(text(f"SET search_path = {schema}, public"))
-                    await db.execute(text(f"SET app.tenant_id = '{_TENANT_ID}'"))
+                    # H1: reset_tenant_context() を使用
+                    await reset_tenant_context(db, tenant_id)
 
                     # 4. Discordに通知
+                    # C3: メッセージ本文を含めない（個人情報保護）
                     await send_discord_notification(
                         db=db,
-                        tenant_id=_TENANT_ID,
+                        tenant_id=tenant_id,
                         event_type="meta_message_received",
                         title="📩 新着Messengerメッセージ",
-                        message=f"送信者: {sender_id}\n内容: {message_text}",
+                        message=f"送信者ID: {sender_id[:8]}***\nプラットフォーム: messenger",
                     )
 
         logging.info(
@@ -172,5 +209,6 @@ async def process_messenger_event(body: dict) -> None:
             body.get("object", "unknown"),
             len(body.get("entry", [])),
         )
-    except Exception as e:
-        logging.error("[Meta] Webhookイベント処理エラー: %s", str(e))
+    except Exception:
+        # M1: logging.exception() でtracebackを含める
+        logging.exception("[Meta] Webhookイベント処理エラー")
