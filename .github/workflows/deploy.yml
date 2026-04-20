@@ -39,13 +39,28 @@ jobs:
             echo "Step 4: Waiting for services to become healthy..."
             sleep 20
 
-            echo "Step 5: Health check..."
+            echo "Step 5: Running database migrations..."
+            # scripts/ と migrations/ は backend イメージに含まれていないため都度コピー
+            docker cp scripts astro-webapp-backend-1:/app/
+            docker cp migrations astro-webapp-backend-1:/app/
+
+            # Meta Webhook Phase 2: meta_messages テーブル（idempotent）
+            docker exec -w /app astro-webapp-backend-1 python scripts/migrate_meta.py
+
+            # Meta Webhook Phase 2: 冪等性・リード重複防止インデックス（idempotent）
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/013_add_meta_webhook_idempotency.sql
+
+            # 新しいマイグレーションはここに追加してください（idempotent必須）
+
+            echo "Step 6: Health check..."
             docker exec astro-webapp-backend-1 python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || (echo "Health check failed!" && exit 1)
 
-            echo "Step 6: Checking container status..."
+            echo "Step 7: Checking container status..."
             docker compose ps
 
-            echo "Step 7: Cleaning up old Docker images..."
+            echo "Step 8: Cleaning up old Docker images..."
             docker image prune -f
 
             echo "============================================"
