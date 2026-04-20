@@ -473,6 +473,29 @@ CREATE TABLE IF NOT EXISTS {schema}.purchase_order_items (
     subtotal NUMERIC(15, 2) NOT NULL,
     sort_order INTEGER DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS {schema}.meta_messages (
+    id          SERIAL PRIMARY KEY,
+    tenant_id   INTEGER NOT NULL DEFAULT {tenant_id},
+    lead_id     INTEGER REFERENCES {schema}.leads(id) ON DELETE SET NULL,
+    platform    VARCHAR(20) NOT NULL DEFAULT 'messenger',
+    sender_id   VARCHAR(100) NOT NULL,
+    sender_name VARCHAR(200),
+    message_id  VARCHAR(100),
+    message_text TEXT,
+    direction   VARCHAR(10) NOT NULL DEFAULT 'inbound',
+    raw_payload JSONB,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_meta_messages_sender ON {schema}.meta_messages (sender_id);
+CREATE INDEX IF NOT EXISTS idx_meta_messages_lead   ON {schema}.meta_messages (lead_id);
+CREATE INDEX IF NOT EXISTS idx_meta_messages_ts     ON {schema}.meta_messages (created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_meta_messages_message_id_unique
+    ON {schema}.meta_messages (message_id)
+    WHERE message_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_meta_source_unique
+    ON {schema}.leads (source)
+    WHERE source LIKE 'messenger:%' OR source LIKE 'instagram:%';
 """
 
 # RLS有効化のALTER TABLE群（;で安全に分割可能）
@@ -500,6 +523,7 @@ ALTER TABLE {schema}.suppliers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.purchase_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.purchase_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.meta_messages ENABLE ROW LEVEL SECURITY;
 """
 
 # テナント分離ポリシー（DO $$ ... END $$ ブロックは1ステートメントとして実行する。
@@ -614,6 +638,11 @@ BEGIN
                 WHERE po.id = purchase_order_items.purchase_order_id
                   AND po.tenant_id = current_setting('app.tenant_id', true)::INTEGER
             ));
+    END IF;
+    -- Meta Messaging
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_meta_messages' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_meta_messages ON {schema}.meta_messages
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
     END IF;
 END $$
 """
