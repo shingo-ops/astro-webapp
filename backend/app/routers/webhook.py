@@ -109,6 +109,7 @@ async def process_messenger_event(body: dict) -> None:
 
                 sender_id = messaging["sender"]["id"]
                 message_text = messaging["message"].get("text", "")
+                message_id = messaging["message"].get("mid")
 
                 async with AsyncSessionLocal() as db:
                     # C1: page_idでテナントを特定
@@ -133,6 +134,7 @@ async def process_messenger_event(body: dict) -> None:
                     lead_id = row["id"] if row else None
 
                     # 2. リードが存在しない場合は自動作成
+                    #    ON CONFLICT DO NOTHING で並列リクエストの競合状態を防止（C1）
                     if lead_id is None:
                         ins = await db.execute(
                             text("""
@@ -140,6 +142,9 @@ async def process_messenger_event(body: dict) -> None:
                                     tenant_id, customer_name, source, type, status
                                 )
                                 VALUES (:tenant_id, :customer_name, :source, :type, :status)
+                                ON CONFLICT (source)
+                                    WHERE source LIKE 'messenger:%' OR source LIKE 'instagram:%'
+                                DO NOTHING
                                 RETURNING id
                             """),
                             {
@@ -150,35 +155,51 @@ async def process_messenger_event(body: dict) -> None:
                                 "status": "新規",
                             },
                         )
-                        lead_id = ins.scalar_one()
-                        # H3: 既存の LD-XXXXX 形式に統一
-                        await db.execute(
-                            text("UPDATE leads SET lead_code = :code WHERE id = :id"),
-                            {"code": f"LD-{lead_id:05d}", "id": lead_id},
-                        )
-                        await db.commit()
-                        # H1: reset_tenant_context() を使用
-                        await reset_tenant_context(db, tenant_id)
+                        new_lead_id = ins.scalar_one_or_none()
+                        if new_lead_id is not None:
+                            # 新規作成成功：lead_codeを設定
+                            lead_id = new_lead_id
+                            await db.execute(
+                                text("UPDATE leads SET lead_code = :code WHERE id = :id"),
+                                {"code": f"LD-{lead_id:05d}", "id": lead_id},
+                            )
+                            await db.commit()
+                            # H1: reset_tenant_context() を使用
+                            await reset_tenant_context(db, tenant_id)
+                        else:
+                            # 競合：並列リクエストが先にINSERTしたため既存リードを取得
+                            sel = await db.execute(
+                                text("SELECT id FROM leads WHERE source = :source LIMIT 1"),
+                                {"source": source_key},
+                            )
+                            lead_id = sel.scalar_one()
 
                     # 3. meta_messagesテーブルに記録
                     # H2: raw_payloadから個人情報を除去し最小限の情報のみ保存
                     # TODO: raw_payload は90日後に自動パージする（Phase 3で実装）
-                    await db.execute(
+                    # ON CONFLICT DO NOTHING でMeta再送による重複挿入を防止（C2）
+                    ins = await db.execute(
                         text("""
                             INSERT INTO meta_messages (
                                 tenant_id, lead_id, platform,
-                                sender_id, message_text, direction, raw_payload
+                                sender_id, message_text, direction, raw_payload,
+                                message_id
                             )
                             VALUES (
                                 :tenant_id, :lead_id, 'messenger',
-                                :sender_id, :message_text, 'inbound', :raw_payload
+                                :sender_id, :message_text, 'inbound', :raw_payload,
+                                :message_id
                             )
+                            ON CONFLICT (message_id) WHERE message_id IS NOT NULL
+                            DO NOTHING
+                            RETURNING id
                         """),
                         {
                             "tenant_id": tenant_id,
                             "lead_id": lead_id,
                             "sender_id": sender_id,
                             "message_text": message_text,
+                            "message_id": message_id,
                             "raw_payload": json.dumps({
                                 "timestamp": messaging.get("timestamp"),
                                 "has_text": bool(
@@ -190,9 +211,14 @@ async def process_messenger_event(body: dict) -> None:
                             }),
                         },
                     )
+                    msg_inserted_id = ins.scalar_one_or_none()
                     await db.commit()
                     # H1: reset_tenant_context() を使用
                     await reset_tenant_context(db, tenant_id)
+
+                    if msg_inserted_id is None:
+                        logging.info("[Meta] Duplicate message_id skipped: %s", message_id)
+                        continue
 
                     # 4. Discordに通知
                     # C3: メッセージ本文を含めない（個人情報保護）

@@ -476,11 +476,12 @@ CREATE TABLE IF NOT EXISTS {schema}.purchase_order_items (
 
 CREATE TABLE IF NOT EXISTS {schema}.meta_messages (
     id          SERIAL PRIMARY KEY,
-    tenant_id   INTEGER NOT NULL DEFAULT 1,
+    tenant_id   INTEGER NOT NULL DEFAULT {tenant_id},
     lead_id     INTEGER REFERENCES {schema}.leads(id) ON DELETE SET NULL,
     platform    VARCHAR(20) NOT NULL DEFAULT 'messenger',
     sender_id   VARCHAR(100) NOT NULL,
     sender_name VARCHAR(200),
+    message_id  VARCHAR(100),
     message_text TEXT,
     direction   VARCHAR(10) NOT NULL DEFAULT 'inbound',
     raw_payload JSONB,
@@ -489,6 +490,12 @@ CREATE TABLE IF NOT EXISTS {schema}.meta_messages (
 CREATE INDEX IF NOT EXISTS idx_meta_messages_sender ON {schema}.meta_messages (sender_id);
 CREATE INDEX IF NOT EXISTS idx_meta_messages_lead   ON {schema}.meta_messages (lead_id);
 CREATE INDEX IF NOT EXISTS idx_meta_messages_ts     ON {schema}.meta_messages (created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_meta_messages_message_id_unique
+    ON {schema}.meta_messages (message_id)
+    WHERE message_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_meta_source_unique
+    ON {schema}.leads (source)
+    WHERE source LIKE 'messenger:%' OR source LIKE 'instagram:%';
 """
 
 # RLS有効化のALTER TABLE群（;で安全に分割可能）
