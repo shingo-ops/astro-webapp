@@ -1,0 +1,231 @@
+name: Discord PR Notification
+
+on:
+  pull_request:
+    types: [opened, closed, reopened]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    # fork からのPRでは secrets にアクセスできないためスキップ
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      # ============================================
+      # PR作成時の通知
+      # ============================================
+      - name: PR作成通知
+        if: github.event.action == 'opened'
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
+          PR_ADDITIONS: ${{ github.event.pull_request.additions }}
+          PR_DELETIONS: ${{ github.event.pull_request.deletions }}
+          PR_FILES: ${{ github.event.pull_request.changed_files }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          jq -n \
+            --arg title "🔵 新しいPRが作成されました" \
+            --arg desc "$PR_TITLE" \
+            --arg url "$PR_URL" \
+            --arg repo "$REPO_NAME" \
+            --arg author "$PR_AUTHOR" \
+            --arg branch "$PR_HEAD → $PR_BASE" \
+            --arg changes "+$PR_ADDITIONS -$PR_DELETIONS ($PR_FILES files)" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                url: $url,
+                color: 3447003,
+                fields: [
+                  {name: "リポジトリ", value: $repo, inline: true},
+                  {name: "作成者", value: $author, inline: true},
+                  {name: "ブランチ", value: $branch, inline: false},
+                  {name: "変更", value: $changes, inline: false}
+                ],
+                timestamp: (now | todate)
+              }]
+            }' | curl -sS -H "Content-Type: application/json" \
+                  -d @- "$WEBHOOK_URL"
+
+      # ============================================
+      # PR再オープン時の通知
+      # ============================================
+      - name: PR再オープン通知
+        if: github.event.action == 'reopened'
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          jq -n \
+            --arg title "🔄 PRが再オープンされました" \
+            --arg desc "$PR_TITLE" \
+            --arg url "$PR_URL" \
+            --arg repo "$REPO_NAME" \
+            --arg author "$PR_AUTHOR" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                url: $url,
+                color: 10181046,
+                fields: [
+                  {name: "リポジトリ", value: $repo, inline: true},
+                  {name: "作成者", value: $author, inline: true}
+                ],
+                timestamp: (now | todate)
+              }]
+            }' | curl -sS -H "Content-Type: application/json" \
+                  -d @- "$WEBHOOK_URL"
+
+      # ============================================
+      # レビュー投稿時の通知（承認・修正要求・コメント）
+      # ============================================
+      - name: レビュー投稿通知
+        if: github.event_name == 'pull_request_review'
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          REVIEW_URL: ${{ github.event.review.html_url }}
+          REVIEWER: ${{ github.event.review.user.login }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+          REVIEW_BODY: ${{ github.event.review.body }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          case "$REVIEW_STATE" in
+            "approved")
+              EMOJI="✅"
+              COLOR=3066993
+              STATUS="承認"
+              ;;
+            "changes_requested")
+              EMOJI="⚠️"
+              COLOR=15158332
+              STATUS="修正要求"
+              ;;
+            "commented")
+              EMOJI="💬"
+              COLOR=10181046
+              STATUS="コメント"
+              ;;
+            *)
+              EMOJI="📝"
+              COLOR=9807270
+              STATUS="$REVIEW_STATE"
+              ;;
+          esac
+
+          # レビュー本文は長すぎる場合があるため300文字で切る
+          BODY_TRIMMED=$(echo "$REVIEW_BODY" | head -c 300)
+          if [ -z "$BODY_TRIMMED" ]; then
+            BODY_TRIMMED="（コメント本文なし）"
+          fi
+
+          jq -n \
+            --arg title "$EMOJI レビューが投稿されました ($STATUS)" \
+            --arg desc "$PR_TITLE" \
+            --arg url "$REVIEW_URL" \
+            --arg repo "$REPO_NAME" \
+            --arg reviewer "$REVIEWER" \
+            --arg author "$PR_AUTHOR" \
+            --arg body "$BODY_TRIMMED" \
+            --argjson color "$COLOR" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                url: $url,
+                color: $color,
+                fields: [
+                  {name: "リポジトリ", value: $repo, inline: true},
+                  {name: "レビュアー", value: $reviewer, inline: true},
+                  {name: "PR作成者", value: $author, inline: true},
+                  {name: "レビュー内容(抜粋)", value: $body, inline: false}
+                ],
+                timestamp: (now | todate)
+              }]
+            }' | curl -sS -H "Content-Type: application/json" \
+                  -d @- "$WEBHOOK_URL"
+
+      # ============================================
+      # マージ時の通知
+      # ============================================
+      - name: マージ通知
+        if: github.event.action == 'closed' && github.event.pull_request.merged == true
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          MERGED_BY: ${{ github.event.pull_request.merged_by.login }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          PR_BASE: ${{ github.event.pull_request.base.ref }}
+          PR_COMMITS: ${{ github.event.pull_request.commits }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          jq -n \
+            --arg title "🎉 PRがマージされました" \
+            --arg desc "$PR_TITLE" \
+            --arg url "$PR_URL" \
+            --arg repo "$REPO_NAME" \
+            --arg merger "$MERGED_BY" \
+            --arg branch "$PR_HEAD → $PR_BASE" \
+            --arg commits "$PR_COMMITS" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                url: $url,
+                color: 3066993,
+                fields: [
+                  {name: "リポジトリ", value: $repo, inline: true},
+                  {name: "マージ者", value: $merger, inline: true},
+                  {name: "コミット数", value: $commits, inline: true},
+                  {name: "ブランチ", value: $branch, inline: false}
+                ],
+                timestamp: (now | todate)
+              }]
+            }' | curl -sS -H "Content-Type: application/json" \
+                  -d @- "$WEBHOOK_URL"
+
+      # ============================================
+      # PRクローズ（マージなし）時の通知
+      # ============================================
+      - name: PRクローズ通知
+        if: github.event.action == 'closed' && github.event.pull_request.merged == false
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          CLOSED_BY: ${{ github.event.sender.login }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          jq -n \
+            --arg title "❌ PRがクローズされました（未マージ）" \
+            --arg desc "$PR_TITLE" \
+            --arg url "$PR_URL" \
+            --arg repo "$REPO_NAME" \
+            --arg closer "$CLOSED_BY" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                url: $url,
+                color: 15158332,
+                fields: [
+                  {name: "リポジトリ", value: $repo, inline: true},
+                  {name: "クローズ者", value: $closer, inline: true}
+                ],
+                timestamp: (now | todate)
+              }]
+            }' | curl -sS -H "Content-Type: application/json" \
+                  -d @- "$WEBHOOK_URL"
