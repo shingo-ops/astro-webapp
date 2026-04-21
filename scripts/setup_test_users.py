@@ -5,22 +5,27 @@
 Firebase Auth にユーザー作成 → DB 登録 → ロール付与を一括実行。
 
 実行方法（VPS側、backendコンテナ内）:
-  docker compose exec backend python /app/scripts/setup_test_users.py
+  docker compose exec -e ALLOW_TEST_USER_RESET=1 backend python /app/scripts/setup_test_users.py
 
 前提:
   - firebase-credentials.json がコンテナ内に存在すること
   - DATABASE_URL 環境変数が設定されていること
   - テナントが既に作成済みであること
+  - ALLOW_TEST_USER_RESET=1 を環境変数で渡すこと（誤実行防止のガード）
 
 変更履歴:
   2026-04-17: 初版作成
+  2026-04-21: ユーザーごとにランダムパスワード生成、CSV出力、既存ユーザーのパスワード上書きに対応
+  2026-04-21: ALLOW_TEST_USER_RESET ガード追加、副作用最小化、generate_password を共有モジュールへ移動
 """
 from __future__ import annotations
 
 import asyncio
+import csv
 import logging
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 _APP_ROOT = Path(__file__).resolve().parent.parent
@@ -38,6 +43,16 @@ logger = logging.getLogger(__name__)
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     logger.error("DATABASE_URL not set")
+    sys.exit(1)
+
+# 本番事故防止ガード：このスクリプトは email 一致で password_hash を強制上書きするため、
+# 本番運用後に誤って実行されると本番ユーザーのパスワードが破壊される。
+# 明示的に環境変数を立てない限り起動を拒否する。
+if os.getenv("ALLOW_TEST_USER_RESET") != "1":
+    logger.error(
+        "誤実行防止: 環境変数 ALLOW_TEST_USER_RESET=1 を付けて実行してください。"
+        " 例: docker compose exec -e ALLOW_TEST_USER_RESET=1 backend python /app/scripts/setup_test_users.py"
+    )
     sys.exit(1)
 
 # Firebase 初期化
@@ -70,14 +85,20 @@ TENANT_2_USERS = [
     {"username": "営業 二郎", "email": "hlj20200401@gmail.com", "role": "user", "crm_role": "CS"},
 ]
 
-DEFAULT_PASSWORD = "JarvisTest2026!"  # 初回ログイン後に変更を促す
+# (tenant_code, username, email, crm_role, password)
+PasswordRow = tuple[str, str, str, str, str]
 
 
-def create_or_get_firebase_user(email: str, display_name: str, password: str) -> str:
-    """Firebase Auth にユーザーを作成（既存なら取得）し、UID を返す。"""
+def create_or_update_firebase_user(email: str, display_name: str, password: str) -> str:
+    """Firebase Auth にユーザーを作成または既存ユーザーのパスワードを上書きし、UID を返す。
+
+    既存ユーザーの display_name はユーザー側でカスタマイズされている可能性があるため触らず、
+    パスワードのみ上書きする。
+    """
     try:
         user = firebase_auth.get_user_by_email(email)
-        logger.info("  Firebase: 既存ユーザー %s (uid=%s)", email, user.uid)
+        firebase_auth.update_user(user.uid, password=password)
+        logger.info("  Firebase: 既存ユーザー %s のパスワードを更新 (uid=%s)", email, user.uid)
         return user.uid
     except firebase_admin.exceptions.NotFoundError:
         user = firebase_auth.create_user(
@@ -162,46 +183,65 @@ async def apply_tenant_schema(engine, tenant_id: int):
     logger.info("  テーブル + RLS + ロールシード完了")
 
 
-async def register_user(engine, tenant_id: int, firebase_uid: str, user_data: dict):
-    """DB にユーザーを登録し、ロールを付与する。"""
+async def register_user(engine, tenant_id: int, firebase_uid: str, user_data: dict, password: str):
+    """DB にユーザーを登録（既存なら password_hash を上書き）し、ロールを付与する。
+
+    既存ユーザーの tenant_id はテナント移動の可能性があるため UPDATE 対象から除外する。
+    新規作成時のみ tenant_id を設定する。
+    """
     from app.auth.utils import hash_password
 
     schema_name = f"tenant_{tenant_id:03d}"
+    password_hash = hash_password(password)
 
     async with engine.begin() as conn:
-        # 既存チェック
         existing = await conn.execute(
-            text("SELECT id FROM public.users WHERE email = :email"),
+            text("SELECT id, tenant_id FROM public.users WHERE email = :email"),
             {"email": user_data["email"]},
         )
-        if existing.first():
-            logger.info("  DB: 既存ユーザー %s（スキップ）", user_data["email"])
-            return
+        existing_row = existing.first()
+        if existing_row:
+            user_id, existing_tenant_id = existing_row
+            if existing_tenant_id != tenant_id:
+                logger.warning(
+                    "  DB: %s は別テナント (id=%d) に存在するため tenant_id は変更しません（パスワード等のみ更新）",
+                    user_data["email"], existing_tenant_id,
+                )
+            await conn.execute(
+                text("""
+                    UPDATE public.users
+                    SET password_hash = :hash,
+                        is_active = TRUE
+                    WHERE id = :id
+                """),
+                {
+                    "hash": password_hash,
+                    "id": user_id,
+                },
+            )
+            logger.info("  DB: 既存ユーザー %s のパスワードを更新 (id=%d)", user_data["email"], user_id)
+        else:
+            result = await conn.execute(
+                text("""
+                    INSERT INTO public.users (tenant_id, username, email, password_hash, full_name, role, is_active)
+                    VALUES (:tid, :username, :email, :hash, :fullname, :role, TRUE)
+                    RETURNING id
+                """),
+                {
+                    "tid": tenant_id,
+                    "username": user_data["username"],
+                    "email": user_data["email"],
+                    "hash": password_hash,
+                    "fullname": user_data["username"],
+                    "role": user_data["role"],
+                },
+            )
+            user_id = result.scalar_one()
+            logger.info("  DB: ユーザー作成 %s (id=%d)", user_data["email"], user_id)
 
-        # ユーザー作成
-        result = await conn.execute(
-            text("""
-                INSERT INTO public.users (tenant_id, username, email, password_hash, full_name, role, is_active)
-                VALUES (:tid, :username, :email, :hash, :fullname, :role, TRUE)
-                RETURNING id
-            """),
-            {
-                "tid": tenant_id,
-                "username": user_data["username"],
-                "email": user_data["email"],
-                "hash": hash_password(DEFAULT_PASSWORD),
-                "fullname": user_data["username"],
-                "role": user_data["role"],
-            },
-        )
-        user_id = result.scalar_one()
-        logger.info("  DB: ユーザー作成 %s (id=%d)", user_data["email"], user_id)
-
-        # Firebase カスタムクレーム設定
         firebase_auth.set_custom_user_claims(firebase_uid, {"tenant_id": tenant_id})
         logger.info("  Firebase: tenant_id=%d クレーム設定", tenant_id)
 
-        # CRMロール付与
         await conn.execute(text(f"SET search_path = {schema_name}, public"))
         await conn.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
 
@@ -220,6 +260,39 @@ async def register_user(engine, tenant_id: int, firebase_uid: str, user_data: di
             logger.warning("  ロール '%s' が見つかりません", user_data["crm_role"])
 
 
+def write_passwords_csv(rows: list[PasswordRow]) -> Path:
+    """生成パスワードを CSV に書き出し、出力先パスを返す。"""
+    out_dir = Path("/app/scripts/output")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    out_path = out_dir / f"passwords_{stamp}.csv"
+    with out_path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["tenant_code", "username", "email", "crm_role", "password"])
+        w.writerows(rows)
+    try:
+        os.chmod(out_path, 0o600)
+    except OSError:
+        pass
+    return out_path
+
+
+async def process_tenant(engine, tenant_code: str, tenant_name: str, users: list[dict]) -> list[PasswordRow]:
+    from app.auth.utils import generate_password
+
+    logger.info("\n--- テナント: %s ---", tenant_name)
+    tenant_id = await ensure_tenant(engine, tenant_code, tenant_name)
+    await apply_tenant_schema(engine, tenant_id)
+
+    results: list[PasswordRow] = []
+    for u in users:
+        password = generate_password()
+        firebase_uid = create_or_update_firebase_user(u["email"], u["username"], password)
+        await register_user(engine, tenant_id, firebase_uid, u, password)
+        results.append((tenant_code, u["username"], u["email"], u["crm_role"], password))
+    return results
+
+
 async def main():
     url = DATABASE_URL
     if url.startswith("postgresql://"):
@@ -230,25 +303,17 @@ async def main():
     try:
         logger.info("=== テストユーザーセットアップ開始 ===")
 
-        # テナント1
-        logger.info("\n--- テナント1: %s ---", TENANT_1_NAME)
-        t1_id = await ensure_tenant(engine, TENANT_1_CODE, TENANT_1_NAME)
-        await apply_tenant_schema(engine, t1_id)
-        for u in TENANT_1_USERS:
-            firebase_uid = create_or_get_firebase_user(u["email"], u["username"], DEFAULT_PASSWORD)
-            await register_user(engine, t1_id, firebase_uid, u)
+        rows: list[PasswordRow] = []
+        rows += await process_tenant(engine, TENANT_1_CODE, TENANT_1_NAME, TENANT_1_USERS)
+        rows += await process_tenant(engine, TENANT_2_CODE, TENANT_2_NAME, TENANT_2_USERS)
 
-        # テナント2
-        logger.info("\n--- テナント2: %s ---", TENANT_2_NAME)
-        t2_id = await ensure_tenant(engine, TENANT_2_CODE, TENANT_2_NAME)
-        await apply_tenant_schema(engine, t2_id)
-        for u in TENANT_2_USERS:
-            firebase_uid = create_or_get_firebase_user(u["email"], u["username"], DEFAULT_PASSWORD)
-            await register_user(engine, t2_id, firebase_uid, u)
+        out_path = write_passwords_csv(rows)
 
         logger.info("\n=== セットアップ完了 ===")
-        logger.info("初期パスワード: %s", DEFAULT_PASSWORD)
-        logger.info("※ 各ユーザーは初回ログイン後にMFA設定とパスワード変更が必要です")
+        logger.info("CSV出力: %s", out_path)
+        logger.info("Mac側へ取り出すには（VPSで実行）:")
+        logger.info("  docker compose cp backend:%s ~/passwords.csv && chmod 600 ~/passwords.csv", out_path)
+        logger.info("配布後は VPS 内のCSVを削除してください: docker compose exec backend rm %s", out_path)
 
     finally:
         await engine.dispose()
