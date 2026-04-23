@@ -34,6 +34,8 @@ from app.routers import shifts
 from app.routers import buddy
 from app.routers import badges
 from app.routers import erp
+from app.routers import staff
+from app.routers import bots
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -182,6 +184,15 @@ app.include_router(
 )
 app.include_router(
     erp.router, prefix="/api/v1", tags=["erp"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 1 再設計: staff / bots
+app.include_router(
+    staff.router, prefix="/api/v1", tags=["staff"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    bots.router, prefix="/api/v1", tags=["bots"],
     dependencies=[Depends(get_current_tenant)],
 )
 
