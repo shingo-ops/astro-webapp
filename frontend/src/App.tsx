@@ -25,6 +25,8 @@ import ShiftsPage from "./pages/ShiftsPage";
 import BuddyPage from "./pages/BuddyPage";
 import BadgesPage from "./pages/BadgesPage";
 import ERPPage from "./pages/ERPPage";
+import StaffPage from "./pages/StaffPage";
+import BotsPage from "./pages/BotsPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import "./App.css";
 
@@ -68,7 +70,9 @@ function App() {
             {/* 管理 */}
             <Route path="/deals" element={<DealsPage />} />
             <Route path="/orders" element={<OrdersPage />} />
-            <Route path="/staff" element={<TeamsPage />} />
+            <Route path="/staff" element={<StaffPage />} />
+            <Route path="/bots" element={<BotsPage />} />
+            <Route path="/teams" element={<TeamsPage />} />
             <Route path="/roles" element={<RolesPage />} />
             <Route path="/data" element={<ERPPage />} />
             <Route path="/suppliers" element={<SuppliersPage />} />
