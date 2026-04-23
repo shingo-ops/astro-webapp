@@ -170,7 +170,11 @@ export default function CustomersPage() {
   const [error, setError] = useState("");
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
+  // Discord タブをユーザーが触ったかどうか（PATCH 時の discord フィールド送信判定）
+  // 未タッチなら payload から discord を omit して既存 row の誤削除/上書きを防ぐ
+  const [discordTouched, setDiscordTouched] = useState(false);
 
   const loadCustomers = async () => {
     try {
@@ -240,7 +244,7 @@ export default function CustomersPage() {
     }
 
     const salesChannels = form.sales_channels
-      .split(/[,、]/)
+      .split(/[,、，]/)   // 全角カンマも許容
       .map((s) => s.trim())
       .filter(Boolean);
 
@@ -270,13 +274,19 @@ export default function CustomersPage() {
       status: form.status || "active",
       addresses,
       sales_channels: salesChannels,
-      discord,
     };
+    // discord: 新規時は常に送る。編集時は「Discord タブを触った場合のみ」送信する
+    // （未タッチで discord=null を送ると既存 customer_discord 行が削除されるため、reviewer F1）
+    if (!editId || discordTouched) {
+      payload.discord = discord;
+    }
     // 新規時のみ customer_code を送る（明示指定可）
     if (!editId && form.customer_code.trim()) {
       payload.customer_code = form.customer_code.trim();
     }
 
+    if (submitting) return;  // 二重送信ガード
+    setSubmitting(true);
     try {
       if (editId) {
         await api.patch(`/customers/${editId}`, payload);
@@ -287,9 +297,12 @@ export default function CustomersPage() {
       setEditId(null);
       setForm(emptyForm);
       setActiveTab("basic");
+      setDiscordTouched(false);
       loadCustomers();
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -333,6 +346,7 @@ export default function CustomersPage() {
     });
     setPhoneError(null);
     setActiveTab("basic");
+    setDiscordTouched(false);  // 編集開始時はタッチされていない状態に
     setShowForm(true);
   };
 
@@ -363,7 +377,7 @@ export default function CustomersPage() {
       <div className="page-header">
         <h2>顧客管理</h2>
         {hasPermission("customers.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); }}>
+          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); setDiscordTouched(false); }}>
             新規登録
           </button>
         )}
@@ -443,15 +457,15 @@ export default function CustomersPage() {
                   </div>
                   <div className="form-group">
                     <label>1回発注額</label>
-                    <input type="number" step="0.01" value={form.per_order_amount} onChange={(e) => setForm({ ...form, per_order_amount: e.target.value })} />
+                    <input type="number" min="0" step="0.01" value={form.per_order_amount} onChange={(e) => setForm({ ...form, per_order_amount: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label>月間頻度</label>
-                    <input type="number" value={form.monthly_frequency} onChange={(e) => setForm({ ...form, monthly_frequency: e.target.value })} />
+                    <input type="number" min="0" value={form.monthly_frequency} onChange={(e) => setForm({ ...form, monthly_frequency: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label>月間売上見込額</label>
-                    <input type="number" step="0.01" value={form.monthly_forecast} onChange={(e) => setForm({ ...form, monthly_forecast: e.target.value })} />
+                    <input type="number" min="0" step="0.01" value={form.monthly_forecast} onChange={(e) => setForm({ ...form, monthly_forecast: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label>
@@ -535,31 +549,38 @@ export default function CustomersPage() {
                 <>
                   <div className="form-group">
                     <label>
-                      <input type="checkbox" checked={form.discord_enabled} onChange={(e) => setForm({ ...form, discord_enabled: e.target.checked })} />
+                      <input type="checkbox" checked={form.discord_enabled} onChange={(e) => { setForm({ ...form, discord_enabled: e.target.checked }); setDiscordTouched(true); }} />
                       {" "}Discord 連携を有効にする
                     </label>
                   </div>
                   {form.discord_enabled && (
                     <>
                       <div className="form-group"><label>チャンネル ID</label>
-                        <input value={form.discord_channel_id} onChange={(e) => setForm({ ...form, discord_channel_id: e.target.value })} />
+                        <input value={form.discord_channel_id} onChange={(e) => { setForm({ ...form, discord_channel_id: e.target.value }); setDiscordTouched(true); }} />
                       </div>
                       <div className="form-group"><label>ユーザー ID</label>
-                        <input value={form.discord_user_id} onChange={(e) => setForm({ ...form, discord_user_id: e.target.value })} />
+                        <input value={form.discord_user_id} onChange={(e) => { setForm({ ...form, discord_user_id: e.target.value }); setDiscordTouched(true); }} />
                       </div>
                       <div className="form-group"><label>請求書 Webhook URL</label>
-                        <input value={form.discord_invoice_webhook} onChange={(e) => setForm({ ...form, discord_invoice_webhook: e.target.value })} />
+                        <input value={form.discord_invoice_webhook} onChange={(e) => { setForm({ ...form, discord_invoice_webhook: e.target.value }); setDiscordTouched(true); }} />
                       </div>
                       <div className="form-group"><label>発送通知 Webhook URL</label>
-                        <input value={form.discord_shipment_webhook} onChange={(e) => setForm({ ...form, discord_shipment_webhook: e.target.value })} />
+                        <input value={form.discord_shipment_webhook} onChange={(e) => { setForm({ ...form, discord_shipment_webhook: e.target.value }); setDiscordTouched(true); }} />
                       </div>
                     </>
+                  )}
+                  {editId && !discordTouched && (
+                    <div style={{ fontSize: "0.85em", color: "#666", marginTop: 8 }}>
+                      ※ 何も変更しなければ Discord 情報は既存のまま保持されます
+                    </div>
                   )}
                 </>
               )}
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>キャンセル</button>
-                <button type="submit" className="btn-primary">{editId ? "更新" : "登録"}</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>キャンセル</button>
+                <button type="submit" className="btn-primary" disabled={submitting}>
+                  {submitting ? "送信中..." : editId ? "更新" : "登録"}
+                </button>
               </div>
             </form>
           </div>
