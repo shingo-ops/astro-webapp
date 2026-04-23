@@ -8,7 +8,7 @@ async def _seed_data(client):
     # 顧客3件
     customers = []
     for name in ["顧客A", "顧客B", "顧客C"]:
-        res = await client.post("/api/v1/customers", json={"name": name})
+        res = await client.post("/api/v1/customers", json={"company_name": name})
         customers.append(res.json()["id"])
 
     # 案件: open 2件, won 1件

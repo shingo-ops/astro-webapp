@@ -55,33 +55,138 @@ async def test_engine():
 async def setup_test_db(test_engine):
     """テスト用テーブルをセットアップする"""
     async with test_engine.begin() as conn:
-        # 顧客テーブル（Phase 1拡張版）
+        # 顧客テーブル（Phase 1 再設計: 正規化本体）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS customers (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tenant_id INTEGER NOT NULL DEFAULT 999,
                 customer_code VARCHAR(20),
-                name VARCHAR(255) NOT NULL,
+                lead_id INTEGER,
+                sales_rep_id INTEGER,
+                company_name VARCHAR(255),
+                trust_level SMALLINT,
+                priority_focus VARCHAR(50),
+                per_order_amount NUMERIC(15,2),
+                monthly_frequency SMALLINT,
+                monthly_forecast NUMERIC(15,2),
+                monthly_forecast_source VARCHAR(20),
+                monthly_forecast_updated_at TIMESTAMP,
+                meeting_requested BOOLEAN NOT NULL DEFAULT 0,
+                billing_display_name VARCHAR(255),
+                payment_recipient_name VARCHAR(255),
+                fedex_account VARCHAR(100),
+                shipping_note TEXT,
+                primary_contact_channel VARCHAR(30),
+                status VARCHAR(20) NOT NULL DEFAULT 'active',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (tenant_id, customer_code)
+            )
+        """))
+        # 顧客副テーブル（Phase 1 再設計）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS customer_addresses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                address_type VARCHAR(20) NOT NULL,
+                name VARCHAR(255),
                 email VARCHAR(255),
-                phone VARCHAR(50),
-                company VARCHAR(255),
-                registration_source VARCHAR(50),
-                status VARCHAR(20) DEFAULT 'active',
-                billing_name VARCHAR(255),
-                billing_phone VARCHAR(50),
-                billing_email VARCHAR(255),
-                billing_address TEXT,
-                delivery_name VARCHAR(255),
-                delivery_phone VARCHAR(50),
-                delivery_email VARCHAR(255),
-                delivery_address TEXT,
-                delivery_country VARCHAR(100),
-                business_id VARCHAR(100),
-                transaction_count INTEGER DEFAULT 0,
-                last_transaction_date TIMESTAMP,
-                notes TEXT,
+                telephone VARCHAR(50),
+                tax_id VARCHAR(100),
+                address_line_1 VARCHAR(255),
+                address_line_2 VARCHAR(255),
+                address_line_3 VARCHAR(255),
+                city VARCHAR(100),
+                state VARCHAR(100),
+                zip VARCHAR(50),
+                country_code CHAR(2),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS customer_sales_channels (
+                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                channel VARCHAR(30) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (customer_id, channel)
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS customer_discord (
+                customer_id INTEGER PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
+                is_joined BOOLEAN NOT NULL DEFAULT 0,
+                channel_id VARCHAR(50),
+                user_id VARCHAR(50),
+                invoice_webhook TEXT,
+                shipment_webhook TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        # スタッフ関連テーブル（Phase 1 再設計）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS staff (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                user_id INTEGER,
+                staff_code VARCHAR(20) NOT NULL,
+                surname_jp VARCHAR(50) NOT NULL,
+                given_name_jp VARCHAR(50) NOT NULL,
+                surname_kana VARCHAR(100),
+                given_name_kana VARCHAR(100),
+                surname_en VARCHAR(100),
+                given_name_en VARCHAR(100),
+                primary_email VARCHAR(255) NOT NULL,
+                discord_user_id VARCHAR(50),
+                role_id INTEGER NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'active',
+                firebase_uid VARCHAR(128) UNIQUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (tenant_id, staff_code)
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS staff_emails (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                staff_id INTEGER NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+                email VARCHAR(255) NOT NULL,
+                purpose VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (staff_id, email)
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS staff_ui_preferences (
+                staff_id INTEGER PRIMARY KEY REFERENCES staff(id) ON DELETE CASCADE,
+                dark_mode BOOLEAN NOT NULL DEFAULT 0,
+                show_chat_menu BOOLEAN NOT NULL DEFAULT 1,
+                show_sales_menu BOOLEAN NOT NULL DEFAULT 1,
+                show_settings_menu BOOLEAN NOT NULL DEFAULT 1,
+                show_admin_menu BOOLEAN NOT NULL DEFAULT 0,
+                show_buddy_menu BOOLEAN NOT NULL DEFAULT 1,
+                show_sidebar BOOLEAN NOT NULL DEFAULT 1,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS bots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                bot_code VARCHAR(20) NOT NULL,
+                display_name VARCHAR(100) NOT NULL,
+                purpose VARCHAR(50) NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'active',
+                api_key_hash VARCHAR(128) NOT NULL,
+                discord_user_id VARCHAR(50),
+                sender_email VARCHAR(255),
+                owner_staff_id INTEGER NOT NULL REFERENCES staff(id),
+                last_executed_at TIMESTAMP,
+                execution_count INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (tenant_id, bot_code)
             )
         """))
         # リードテーブル
@@ -518,6 +623,14 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM products"))
         await conn.execute(text("DELETE FROM deals"))
         await conn.execute(text("DELETE FROM leads"))
+        # Phase 1 再設計の副テーブル → 本体の順
+        await conn.execute(text("DELETE FROM customer_discord"))
+        await conn.execute(text("DELETE FROM customer_sales_channels"))
+        await conn.execute(text("DELETE FROM customer_addresses"))
+        await conn.execute(text("DELETE FROM bots"))
+        await conn.execute(text("DELETE FROM staff_ui_preferences"))
+        await conn.execute(text("DELETE FROM staff_emails"))
+        await conn.execute(text("DELETE FROM staff"))
         await conn.execute(text("DELETE FROM customers"))
         await conn.execute(text("DELETE FROM team_members"))
         await conn.execute(text("DELETE FROM teams"))

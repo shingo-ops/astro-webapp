@@ -4,7 +4,7 @@ import pytest
 
 
 async def _create_customer(client, name="注文テスト顧客"):
-    res = await client.post("/api/v1/customers", json={"name": name})
+    res = await client.post("/api/v1/customers", json={"company_name": name})
     return res.json()["id"]
 
 
