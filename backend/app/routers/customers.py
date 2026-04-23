@@ -31,6 +31,8 @@ from app.models import User
 from app.schemas.customer import (
     CustomerAddressInput,
     CustomerAddressResponse,
+    CustomerContactChannelInput,
+    CustomerContactChannelResponse,
     CustomerCreate,
     CustomerDiscordInput,
     CustomerDiscordResponse,
@@ -101,6 +103,19 @@ async def _fetch_discord(db: AsyncSession, customer_id: int) -> CustomerDiscordR
     return CustomerDiscordResponse(**row) if row else None
 
 
+async def _fetch_contact_channels(db: AsyncSession, customer_id: int) -> list[CustomerContactChannelResponse]:
+    res = await db.execute(
+        text("""
+            SELECT id, channel, purpose, is_primary
+            FROM customer_contact_channels
+            WHERE customer_id = :cid
+            ORDER BY is_primary DESC, id
+        """),
+        {"cid": customer_id},
+    )
+    return [CustomerContactChannelResponse(**row) for row in res.mappings().all()]
+
+
 async def _compose_response(db: AsyncSession, main_row: dict) -> CustomerResponse:
     """本体行 + 副テーブルの値を集めて CustomerResponse を組み立てる。"""
     cid = main_row["id"]
@@ -109,6 +124,7 @@ async def _compose_response(db: AsyncSession, main_row: dict) -> CustomerRespons
         addresses=await _fetch_addresses(db, cid),
         sales_channels=await _fetch_sales_channels(db, cid),
         discord=await _fetch_discord(db, cid),
+        contact_channels=await _fetch_contact_channels(db, cid),
     )
 
 
@@ -166,13 +182,62 @@ async def _replace_sales_channels(db: AsyncSession, customer_id: int, channels: 
         )
 
 
+async def _replace_contact_channels(
+    db: AsyncSession, customer_id: int, channels: list[CustomerContactChannelInput]
+) -> None:
+    """contact_channels を DELETE + INSERT で全置換。is_primary=TRUE は最大1つに制約される（部分UNIQUE INDEX）"""
+    await db.execute(
+        text("DELETE FROM customer_contact_channels WHERE customer_id = :cid"),
+        {"cid": customer_id},
+    )
+    # is_primary=TRUE の重複を避けるため Python 側で1つに絞る（先着優先）
+    primary_seen = False
+    for ch in channels:
+        is_primary = ch.is_primary and not primary_seen
+        if is_primary:
+            primary_seen = True
+        await db.execute(
+            text("""
+                INSERT INTO customer_contact_channels (customer_id, channel, purpose, is_primary)
+                VALUES (:cid, :channel, :purpose, :is_primary)
+            """),
+            {
+                "cid": customer_id,
+                "channel": ch.channel,
+                "purpose": ch.purpose,
+                "is_primary": is_primary,
+            },
+        )
+
+
+async def _sync_primary_contact_channel(db: AsyncSession, customer_id: int) -> None:
+    """contact_channels の is_primary=TRUE から customers.primary_contact_channel を同期（後方互換）"""
+    await db.execute(
+        text("""
+            UPDATE customers SET primary_contact_channel = (
+                SELECT channel FROM customer_contact_channels
+                WHERE customer_id = :cid AND is_primary = TRUE
+                LIMIT 1
+            )
+            WHERE id = :cid
+        """),
+        {"cid": customer_id},
+    )
+
+
 async def _upsert_discord(db: AsyncSession, customer_id: int, data: CustomerDiscordInput | None) -> None:
-    """data=None なら既存行を削除、値があれば upsert"""
+    """data=None なら既存行を削除、値があれば upsert。
+    Major 4 対応: customer_discord と customer_contact_channels の整合性を保つため、
+    discord 行が存在する場合は contact_channels にも channel='discord' を自動追加する。
+    """
     if data is None:
         await db.execute(
             text("DELETE FROM customer_discord WHERE customer_id = :cid"),
             {"cid": customer_id},
         )
+        # 案α: contact_channels の channel='discord' 行は削除しない
+        # （ユーザーが明示的に Discord タブを無効化した時に、連絡ツールタブで
+        #   Discord を設定していたとしたらそれは意図的な使い分けの可能性があるため）
         return
     await db.execute(
         text("""
@@ -199,6 +264,20 @@ async def _upsert_discord(db: AsyncSession, customer_id: int, data: CustomerDisc
             "shipment_webhook": data.shipment_webhook,
         },
     )
+    # Discord を連絡手段として使用宣言（案α）
+    # is_joined=TRUE の場合のみ、contact_channels に channel='discord' 行が無ければ追加
+    if data.is_joined:
+        await db.execute(
+            text("""
+                INSERT INTO customer_contact_channels (customer_id, channel, purpose, is_primary)
+                SELECT :cid, 'discord', 'Discord連携', FALSE
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM customer_contact_channels
+                    WHERE customer_id = :cid AND channel = 'discord'
+                )
+            """),
+            {"cid": customer_id},
+        )
 
 
 # ========== エンドポイント ==========
@@ -362,6 +441,38 @@ async def create_customer(
         await _replace_sales_channels(db, new_id, data.sales_channels)
         await _upsert_discord(db, new_id, data.discord)
 
+        # contact_channels: 明示指定があればそれを使用、未指定なら primary_contact_channel から自動作成
+        # Major 3 対応: contact_channels=[] + primary_contact_channel='x' の場合、
+        #   明示的に「空の contact_channels」とユーザー指定があるので [] を優先。
+        #   その結果、_sync_primary_contact_channel で primary_contact_channel が NULL になる
+        #   が、これは意図通り（ユーザーが空を明示指定しているため）。
+        if data.contact_channels is not None:
+            # is_primary=TRUE の行が contact_channels 内にあるかチェック
+            has_primary_in_list = any(c.is_primary for c in data.contact_channels)
+            # contact_channels に is_primary が無く primary_contact_channel があれば、
+            # その値を is_primary=TRUE の1行として先頭に補完（データ喪失防止）
+            channels_to_insert = list(data.contact_channels)
+            if (
+                not has_primary_in_list
+                and data.primary_contact_channel
+                and not any(c.channel == data.primary_contact_channel for c in channels_to_insert)
+            ):
+                channels_to_insert.insert(0, CustomerContactChannelInput(
+                    channel=data.primary_contact_channel,
+                    purpose="主連絡ツール",
+                    is_primary=True,
+                ))
+            await _replace_contact_channels(db, new_id, channels_to_insert)
+        elif data.primary_contact_channel:
+            await _replace_contact_channels(db, new_id, [
+                CustomerContactChannelInput(
+                    channel=data.primary_contact_channel,
+                    purpose="主連絡ツール",
+                    is_primary=True,
+                )
+            ])
+        await _sync_primary_contact_channel(db, new_id)
+
         fetched = await db.execute(
             text(f"SELECT {_CUSTOMER_COLUMNS} FROM customers WHERE id = :id"),
             {"id": new_id},
@@ -417,6 +528,7 @@ async def update_customer(
     addresses = update_data.pop("addresses", None)
     sales_channels = update_data.pop("sales_channels", None)
     discord = update_data.pop("discord", None)
+    contact_channels = update_data.pop("contact_channels", None)
     # discord は CustomerDiscordInput 型のままだが model_dump で辞書化されている点に注意
     discord_model: CustomerDiscordInput | None = None
     if discord is not None:
@@ -466,6 +578,44 @@ async def update_customer(
     if "discord" in data.model_fields_set:
         # 明示的に discord キーを送ってきた場合（None=既存削除、値=upsert）
         await _upsert_discord(db, customer_id, discord_model)
+
+    # Phase 1-B-1: contact_channels の PATCH 処理
+    # None = 触らない、[...] = 全置換（空配列も含む）
+    if contact_channels is not None:
+        ch_models = [
+            CustomerContactChannelInput(**c) if isinstance(c, dict) else c
+            for c in contact_channels
+        ]
+        await _replace_contact_channels(db, customer_id, ch_models)
+        await _sync_primary_contact_channel(db, customer_id)
+    elif "primary_contact_channel" in data.model_fields_set:
+        # contact_channels 未指定 + primary_contact_channel 単独更新 → is_primary を同期
+        new_pcc = data.primary_contact_channel
+        await db.execute(
+            text("UPDATE customer_contact_channels SET is_primary = FALSE WHERE customer_id = :cid AND is_primary = TRUE"),
+            {"cid": customer_id},
+        )
+        if new_pcc:
+            # 該当 channel が無ければ追加（purpose=主連絡ツール, is_primary=TRUE）
+            await db.execute(
+                text("""
+                    INSERT INTO customer_contact_channels (customer_id, channel, purpose, is_primary)
+                    SELECT :cid, :ch, '主連絡ツール', TRUE
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM customer_contact_channels
+                        WHERE customer_id = :cid AND channel = :ch
+                    )
+                """),
+                {"cid": customer_id, "ch": new_pcc},
+            )
+            # 既に行があれば is_primary を TRUE に
+            await db.execute(
+                text("""
+                    UPDATE customer_contact_channels SET is_primary = TRUE
+                    WHERE customer_id = :cid AND channel = :ch
+                """),
+                {"cid": customer_id, "ch": new_pcc},
+            )
 
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,

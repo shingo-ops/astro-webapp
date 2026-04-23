@@ -42,6 +42,13 @@ interface CustomerDiscord {
   shipment_webhook: string | null;
 }
 
+interface CustomerContactChannel {
+  id: number;
+  channel: string;
+  purpose: string | null;
+  is_primary: boolean;
+}
+
 interface Customer {
   id: number;
   tenant_id: number;
@@ -66,6 +73,7 @@ interface Customer {
   addresses: CustomerAddress[];
   sales_channels: string[];
   discord: CustomerDiscord | null;
+  contact_channels: CustomerContactChannel[];
   created_at: string;
   updated_at: string;
 }
@@ -94,6 +102,12 @@ const emptyBilling: AddressFormState = {
 };
 const emptyDelivery: AddressFormState = { ...emptyBilling, address_type: "delivery" };
 
+type ContactChannelFormState = {
+  channel: string;
+  purpose: string;
+  is_primary: boolean;
+};
+
 type FormState = {
   customer_code: string;
   company_name: string;
@@ -112,6 +126,7 @@ type FormState = {
   billing: AddressFormState;
   delivery: AddressFormState;
   sales_channels: string;   // カンマ区切り UI 入力
+  contact_channels: ContactChannelFormState[];  // Phase 1-B-1
   discord_enabled: boolean;
   discord_channel_id: string;
   discord_user_id: string;
@@ -137,6 +152,7 @@ const emptyForm: FormState = {
   billing: { ...emptyBilling },
   delivery: { ...emptyDelivery },
   sales_channels: "",
+  contact_channels: [],
   discord_enabled: false,
   discord_channel_id: "",
   discord_user_id: "",
@@ -144,7 +160,8 @@ const emptyForm: FormState = {
   discord_shipment_webhook: "",
 };
 
-type Tab = "basic" | "billing" | "delivery" | "discord";
+// Phase 1-B-1: 連絡ツール別テーブル。"channels" タブでネスト編集
+type Tab = "basic" | "billing" | "delivery" | "channels" | "discord";
 
 /** レスポンスの顧客名として表示する優先順位: billing_display_name > billing.name > company_name */
 const customerDisplayName = (c: Customer): string => {
@@ -248,6 +265,15 @@ export default function CustomersPage() {
       .map((s) => s.trim())
       .filter(Boolean);
 
+    // Phase 1-B-1: 複数連絡ツール。channel 空白行は filter で除外
+    const contactChannels = form.contact_channels
+      .map((c) => ({
+        channel: c.channel.trim(),
+        purpose: c.purpose.trim() || null,
+        is_primary: c.is_primary,
+      }))
+      .filter((c) => c.channel);
+
     const discord = form.discord_enabled
       ? {
           is_joined: true,
@@ -274,6 +300,7 @@ export default function CustomersPage() {
       status: form.status || "active",
       addresses,
       sales_channels: salesChannels,
+      contact_channels: contactChannels,
     };
     // discord: 新規時は常に送る。編集時は「Discord タブを触った場合のみ」送信する
     // （未タッチで discord=null を送ると既存 customer_discord 行が削除されるため、reviewer F1）
@@ -338,6 +365,11 @@ export default function CustomersPage() {
       billing: mk(b, { ...emptyBilling }),
       delivery: mk(d, { ...emptyDelivery }),
       sales_channels: c.sales_channels.join(", "),
+      contact_channels: c.contact_channels.map((ch) => ({
+        channel: ch.channel,
+        purpose: ch.purpose || "",
+        is_primary: ch.is_primary,
+      })),
       discord_enabled: c.discord?.is_joined || false,
       discord_channel_id: c.discord?.channel_id || "",
       discord_user_id: c.discord?.user_id || "",
@@ -402,6 +434,7 @@ export default function CustomersPage() {
               <button type="button" className={activeTab === "basic" ? "tab-active" : ""} onClick={() => setActiveTab("basic")}>基本情報</button>
               <button type="button" className={activeTab === "billing" ? "tab-active" : ""} onClick={() => setActiveTab("billing")}>請求先</button>
               <button type="button" className={activeTab === "delivery" ? "tab-active" : ""} onClick={() => setActiveTab("delivery")}>配送先</button>
+              <button type="button" className={activeTab === "channels" ? "tab-active" : ""} onClick={() => setActiveTab("channels")}>連絡ツール</button>
               <button type="button" className={activeTab === "discord" ? "tab-active" : ""} onClick={() => setActiveTab("discord")}>Discord</button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -544,6 +577,69 @@ export default function CustomersPage() {
                     </>
                   );
                 })()
+              )}
+              {activeTab === "channels" && (
+                <>
+                  <div style={{ fontSize: "0.9em", color: "#666", marginBottom: 12 }}>
+                    1 顧客が複数の連絡ツールを用途別に持てます（例: WhatsApp=商談用、Discord=発送通知用）。
+                    「主」にチェックできるのは 1 つだけ（基本情報タブの「主連絡ツール」と同期）。
+                  </div>
+                  {form.contact_channels.map((ch, idx) => (
+                    <div key={idx} className="form-group" style={{ border: "1px solid #ddd", padding: 8, borderRadius: 4, marginBottom: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                        <div style={{ flex: 1 }}>
+                          <label>チャネル</label>
+                          <select value={ch.channel} onChange={(e) => {
+                            const next = [...form.contact_channels];
+                            next[idx] = { ...ch, channel: e.target.value };
+                            setForm({ ...form, contact_channels: next });
+                          }}>
+                            <option value="">（選択）</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook_messenger">Facebook Messenger</option>
+                            <option value="discord">Discord</option>
+                            <option value="line_id">LINE</option>
+                            <option value="telegram">Telegram</option>
+                            <option value="email">メール</option>
+                            <option value="phone">電話</option>
+                            <option value="referral">紹介</option>
+                          </select>
+                        </div>
+                        <div style={{ flex: 2 }}>
+                          <label>用途</label>
+                          <input value={ch.purpose} placeholder="例: 商談用 / 発送通知用" onChange={(e) => {
+                            const next = [...form.contact_channels];
+                            next[idx] = { ...ch, purpose: e.target.value };
+                            setForm({ ...form, contact_channels: next });
+                          }} />
+                        </div>
+                        <div style={{ flex: "0 0 auto" }}>
+                          <label style={{ display: "block" }}>
+                            <input type="checkbox" checked={ch.is_primary} onChange={(e) => {
+                              // 主連絡ツールは1つだけ ON にする
+                              const next = form.contact_channels.map((c, i) => ({
+                                ...c, is_primary: i === idx ? e.target.checked : false,
+                              }));
+                              setForm({ ...form, contact_channels: next });
+                            }} />
+                            {" "}主
+                          </label>
+                        </div>
+                        <button type="button" className="btn-sm btn-danger" onClick={() => {
+                          const next = form.contact_channels.filter((_, i) => i !== idx);
+                          setForm({ ...form, contact_channels: next });
+                        }}>削除</button>
+                      </div>
+                    </div>
+                  ))}
+                  <button type="button" className="btn-secondary" onClick={() => {
+                    setForm({
+                      ...form,
+                      contact_channels: [...form.contact_channels, { channel: "", purpose: "", is_primary: false }],
+                    });
+                  }}>+ 連絡ツールを追加</button>
+                </>
               )}
               {activeTab === "discord" && (
                 <>
