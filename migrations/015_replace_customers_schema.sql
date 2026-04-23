@@ -36,41 +36,41 @@
 --   2026-04-23: 初版作成（Phase 1 再設計）
 
 -- === [前段] 既存 FK を一時的に DROP + 依存テーブルのサンプルデータ TRUNCATE ===
+--
+-- customers(id) を参照している既存テーブル（4本、migration 003/005 と tenant.py で作成）:
+--   - {schema}.deals.customer_id           (migration 003)
+--   - {schema}.orders.customer_id          (backend/app/services/tenant.py)
+--   - {schema}.quotes.customer_id          (migration 005)
+--   - {schema}.invoices.customer_id        (migration 005)
+--
+-- TRUNCATE CASCADE で削除されるテーブル（想定）:
+--   quotes  → quote_items
+--   invoices → invoice_items
+--   deals   → 直接の子は無し（leads.converted_deal_id は NULL になるだけ）
+--   orders  → 直接の子は無し（もしあれば CASCADE で消える）
+-- 内部テスト中止済・本番データはサンプル扱いのため問題なし（2026-04-23 しんごさん確認）
 
--- quotes.customer_id が customers(id) を参照している FK を特定して DROP
+-- 4テーブルの customers → FK を一括で特定・DROP
 DO $$
 DECLARE
-    fk_name TEXT;
+    rec RECORD;
 BEGIN
-    SELECT conname INTO fk_name
-    FROM pg_constraint
-    WHERE contype = 'f'
-      AND conrelid = '{schema}.quotes'::regclass
-      AND confrelid = '{schema}.customers'::regclass;
-    IF fk_name IS NOT NULL THEN
-        EXECUTE format('ALTER TABLE {schema}.quotes DROP CONSTRAINT %I', fk_name);
-    END IF;
+    FOR rec IN
+        SELECT conname, conrelid::regclass AS tbl
+        FROM pg_constraint
+        WHERE contype = 'f'
+          AND confrelid = '{schema}.customers'::regclass
+          AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = '{schema_raw}')
+    LOOP
+        EXECUTE format('ALTER TABLE %s DROP CONSTRAINT %I', rec.tbl, rec.conname);
+    END LOOP;
 END $$;
 
--- invoices.customer_id が customers(id) を参照している FK を特定して DROP
-DO $$
-DECLARE
-    fk_name TEXT;
-BEGIN
-    SELECT conname INTO fk_name
-    FROM pg_constraint
-    WHERE contype = 'f'
-      AND conrelid = '{schema}.invoices'::regclass
-      AND confrelid = '{schema}.customers'::regclass;
-    IF fk_name IS NOT NULL THEN
-        EXECUTE format('ALTER TABLE {schema}.invoices DROP CONSTRAINT %I', fk_name);
-    END IF;
-END $$;
-
--- サンプルデータの TRUNCATE（CASCADE で quote_items / invoice_items も消える）
--- 内部テスト中止済・本番データはサンプル扱いのため問題なし
+-- サンプルデータの TRUNCATE（quote_items / invoice_items も CASCADE で消える）
 TRUNCATE TABLE {schema}.quotes CASCADE;
 TRUNCATE TABLE {schema}.invoices CASCADE;
+TRUNCATE TABLE {schema}.deals CASCADE;
+TRUNCATE TABLE {schema}.orders CASCADE;
 
 -- === [1] 既存 customers を退避 ===
 

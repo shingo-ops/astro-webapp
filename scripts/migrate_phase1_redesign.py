@@ -131,9 +131,20 @@ def build_tenant_sql(filename: str, tenant_id: int) -> str:
 
 
 async def apply_tenant_migration(engine, tenant_id: int, filename: str) -> None:
-    """テナント単位でテンプレート migration を適用。"""
+    """
+    テナント単位でテンプレート migration を適用。
+
+    セッションに search_path と app.tenant_id を設定するのは、021 で行う
+    role_permissions の INSERT が RLS 有効な {schema}.roles を SELECT するため。
+    設定していないと current_setting('app.tenant_id', true)::INTEGER が NULL
+    となり、USING 句で全行が不可視になり、INSERT が空振りする。
+    scripts/migrate_phase1.py の seed_system_roles() と同じ対応。
+    """
     sql = build_tenant_sql(filename, tenant_id)
+    schema_name = f"tenant_{tenant_id:03d}"
     async with engine.begin() as conn:
+        await conn.execute(text(f"SET search_path = {schema_name}, public"))
+        await conn.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
         await _execute_multi_statement(conn, sql)
     logger.info("  ✓ tenant_%03d に %s 適用完了", tenant_id, filename)
 

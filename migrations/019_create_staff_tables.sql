@@ -48,12 +48,11 @@ CREATE TABLE {schema}.staff (
     role_id INTEGER NOT NULL REFERENCES {schema}.roles(id),
     status VARCHAR(20) NOT NULL DEFAULT 'active'
         CHECK (status IN ('active','inactive','pending')),
-    firebase_uid VARCHAR(128),                            -- Firebase Auth UID（JWT の sub）
+    firebase_uid VARCHAR(128) UNIQUE,                     -- Firebase Auth UID（JWT の sub）。グローバル一意
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (tenant_id, staff_code),
-    UNIQUE (tenant_id, discord_user_id),                  -- テナント内で Discord ID 重複なし（別テナントでは同一OK）
-    UNIQUE (tenant_id, firebase_uid)                      -- 同上
+    UNIQUE (tenant_id, discord_user_id)                   -- テナント内で Discord ID 重複なし（別テナントでは同一OK）
 );
 
 CREATE INDEX idx_staff_tenant_id ON {schema}.staff (tenant_id);
