@@ -198,7 +198,18 @@ async def get_dashboard(
     team_count = result.scalar() or 0
 
     # 直近5件ずつ
-    result = await db.execute(text("SELECT id, name, company, created_at FROM customers ORDER BY created_at DESC LIMIT 5"))
+    # Phase 1 再設計: name/company は廃止、代わりに billing_display_name/company_name を使用
+    result = await db.execute(text("""
+        SELECT
+            id,
+            customer_code,
+            COALESCE(billing_display_name, company_name) AS name,
+            company_name AS company,
+            created_at
+        FROM customers
+        ORDER BY created_at DESC
+        LIMIT 5
+    """))
     recent_customers = [dict(row) for row in result.mappings().all()]
 
     result = await db.execute(text("SELECT id, title, amount, status, created_at FROM deals ORDER BY created_at DESC LIMIT 5"))

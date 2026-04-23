@@ -10,7 +10,14 @@ import { useEffect, useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
-interface Customer { id: number; name: string; }
+interface Customer {
+  id: number;
+  customer_code: string;
+  company_name: string | null;
+  billing_display_name: string | null;
+}
+const customerLabel = (c: Customer): string =>
+  c.billing_display_name || c.company_name || c.customer_code;
 interface Product { id: number; product_code: string | null; name_ja: string; unit_price: number | null; weight: number | null; quantity: number; }
 
 interface LineItem {
@@ -119,7 +126,7 @@ export default function QuoteCreatePage() {
           <div className="form-group"><label>顧客 *</label>
             <select required value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
               <option value="">選択してください</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {customers.map((c) => <option key={c.id} value={c.id}>{customerLabel(c)}</option>)}
             </select>
           </div>
           <div className="form-group"><label>通貨</label>

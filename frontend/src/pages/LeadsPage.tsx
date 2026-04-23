@@ -38,8 +38,12 @@ interface Lead {
 
 interface Customer {
   id: number;
-  name: string;
+  customer_code: string;
+  company_name: string | null;
+  billing_display_name: string | null;
 }
+const customerLabel = (c: Customer): string =>
+  c.billing_display_name || c.company_name || c.customer_code;
 
 type FormState = {
   customer_name: string;
@@ -303,7 +307,7 @@ export default function LeadsPage() {
               <div className="form-group"><label>紐付け顧客 *</label>
                 <select required value={convertForm.customer_id} onChange={(e) => setConvertForm({ ...convertForm, customer_id: e.target.value })}>
                   <option value="">選択してください</option>
-                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {customers.map((c) => <option key={c.id} value={c.id}>{customerLabel(c)}</option>)}
                 </select>
               </div>
               <div className="form-group"><label>案件タイトル *</label>
