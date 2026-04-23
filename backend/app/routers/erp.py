@@ -81,14 +81,18 @@ async def export_invoices_for_erp(
 
     try:
         # 請求書 + 明細をフラット化
+        # 顧客名は billing_display_name → billing住所の name → company_name の優先順位で取得
         result = await db.execute(text("""
             SELECT i.invoice_number, i.currency, i.status,
                    i.issued_at, i.due_date, i.paid_at,
                    i.payment_method, i.total_amount, i.amount_jpy,
-                   c.name AS customer_name, c.company,
+                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
+                   c.company_name AS company,
                    ii.product_name, ii.quantity, ii.unit_price, ii.subtotal
             FROM invoices i
             JOIN customers c ON c.id = i.customer_id
+            LEFT JOIN customer_addresses ba
+                   ON ba.customer_id = c.id AND ba.address_type = 'billing'
             JOIN invoice_items ii ON ii.invoice_id = i.id
             WHERE i.status != 'voided'
             ORDER BY i.id, ii.sort_order
