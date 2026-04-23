@@ -118,6 +118,8 @@ def parse_registered_at(value: str | None) -> datetime | None:
         "%Y-%m-%d",
         "%Y/%m/%d",
         # 米国順（MDY）: 11/6/2025 17:16:16 など
+        # NOTE: JP で「2/11/2025」が「11月2日」を意図している場合も
+        # MDY として「2月11日」に解釈されるリスクあり。データ混在時は注意。
         "%m/%d/%Y %H:%M:%S",
         "%m/%d/%Y %H:%M",
         "%m/%d/%Y",
@@ -126,7 +128,11 @@ def parse_registered_at(value: str | None) -> datetime | None:
     )
     for fmt in formats:
         try:
-            return datetime.strptime(stripped, fmt)
+            parsed = datetime.strptime(stripped, fmt)
+            # 米国順で解釈された日付は誤解釈リスクを debug ログに記録
+            if fmt.startswith("%m/"):
+                logger.debug("parse_registered_at: %r → MDY (%s) として解釈", value, fmt)
+            return parsed
         except ValueError:
             continue
     logger.warning("parse_registered_at: 変換不能 %r", value)

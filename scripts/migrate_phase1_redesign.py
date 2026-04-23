@@ -53,6 +53,10 @@ PUBLIC_MIGRATIONS = [
 ]
 
 # tenant schema 対象（全テナントにテンプレート適用、順序厳守）
+# NOTE: 本リストは TRUNCATE / RENAME を含むため**再実行禁止**。
+#       再実行するとtenantデータが消失する。
+#       追加の冪等なフィックスは PUBLIC_MIGRATIONS（deploy.yml で自動実行される）
+#       または non-template migration 023 のような形で追加すること。
 TENANT_TEMPLATE_MIGRATIONS = [
     "015_replace_customers_schema.sql",
     "016_customers_rls_policies.sql",
@@ -61,7 +65,6 @@ TENANT_TEMPLATE_MIGRATIONS = [
     "020_create_bots_and_senders_view.sql",
     "021_seed_roles_and_role_permissions.sql",
     "022_staff_bots_rls_policies.sql",
-    "023_fix_system_admin_is_system_flag.sql",
 ]
 
 
