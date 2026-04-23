@@ -42,6 +42,13 @@ interface CustomerDiscord {
   shipment_webhook: string | null;
 }
 
+interface CustomerContactChannel {
+  id: number;
+  channel: string;
+  purpose: string | null;
+  is_primary: boolean;
+}
+
 interface Customer {
   id: number;
   tenant_id: number;
@@ -66,6 +73,7 @@ interface Customer {
   addresses: CustomerAddress[];
   sales_channels: string[];
   discord: CustomerDiscord | null;
+  contact_channels: CustomerContactChannel[];
   created_at: string;
   updated_at: string;
 }

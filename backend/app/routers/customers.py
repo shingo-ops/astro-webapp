@@ -31,6 +31,8 @@ from app.models import User
 from app.schemas.customer import (
     CustomerAddressInput,
     CustomerAddressResponse,
+    CustomerContactChannelInput,
+    CustomerContactChannelResponse,
     CustomerCreate,
     CustomerDiscordInput,
     CustomerDiscordResponse,
@@ -101,6 +103,19 @@ async def _fetch_discord(db: AsyncSession, customer_id: int) -> CustomerDiscordR
     return CustomerDiscordResponse(**row) if row else None
 
 
+async def _fetch_contact_channels(db: AsyncSession, customer_id: int) -> list[CustomerContactChannelResponse]:
+    res = await db.execute(
+        text("""
+            SELECT id, channel, purpose, is_primary
+            FROM customer_contact_channels
+            WHERE customer_id = :cid
+            ORDER BY is_primary DESC, id
+        """),
+        {"cid": customer_id},
+    )
+    return [CustomerContactChannelResponse(**row) for row in res.mappings().all()]
+
+
 async def _compose_response(db: AsyncSession, main_row: dict) -> CustomerResponse:
     """本体行 + 副テーブルの値を集めて CustomerResponse を組み立てる。"""
     cid = main_row["id"]
@@ -109,6 +124,7 @@ async def _compose_response(db: AsyncSession, main_row: dict) -> CustomerRespons
         addresses=await _fetch_addresses(db, cid),
         sales_channels=await _fetch_sales_channels(db, cid),
         discord=await _fetch_discord(db, cid),
+        contact_channels=await _fetch_contact_channels(db, cid),
     )
 
 
@@ -164,6 +180,49 @@ async def _replace_sales_channels(db: AsyncSession, customer_id: int, channels: 
             """),
             {"cid": customer_id, "ch": ch.strip()},
         )
+
+
+async def _replace_contact_channels(
+    db: AsyncSession, customer_id: int, channels: list[CustomerContactChannelInput]
+) -> None:
+    """contact_channels を DELETE + INSERT で全置換。is_primary=TRUE は最大1つに制約される（部分UNIQUE INDEX）"""
+    await db.execute(
+        text("DELETE FROM customer_contact_channels WHERE customer_id = :cid"),
+        {"cid": customer_id},
+    )
+    # is_primary=TRUE の重複を避けるため Python 側で1つに絞る（先着優先）
+    primary_seen = False
+    for ch in channels:
+        is_primary = ch.is_primary and not primary_seen
+        if is_primary:
+            primary_seen = True
+        await db.execute(
+            text("""
+                INSERT INTO customer_contact_channels (customer_id, channel, purpose, is_primary)
+                VALUES (:cid, :channel, :purpose, :is_primary)
+            """),
+            {
+                "cid": customer_id,
+                "channel": ch.channel,
+                "purpose": ch.purpose,
+                "is_primary": is_primary,
+            },
+        )
+
+
+async def _sync_primary_contact_channel(db: AsyncSession, customer_id: int) -> None:
+    """contact_channels の is_primary=TRUE から customers.primary_contact_channel を同期（後方互換）"""
+    await db.execute(
+        text("""
+            UPDATE customers SET primary_contact_channel = (
+                SELECT channel FROM customer_contact_channels
+                WHERE customer_id = :cid AND is_primary = TRUE
+                LIMIT 1
+            )
+            WHERE id = :cid
+        """),
+        {"cid": customer_id},
+    )
 
 
 async def _upsert_discord(db: AsyncSession, customer_id: int, data: CustomerDiscordInput | None) -> None:
@@ -361,6 +420,19 @@ async def create_customer(
         await _replace_addresses(db, new_id, data.addresses)
         await _replace_sales_channels(db, new_id, data.sales_channels)
         await _upsert_discord(db, new_id, data.discord)
+
+        # contact_channels: 明示指定があればそれを使用、未指定なら primary_contact_channel から自動作成
+        if data.contact_channels is not None:
+            await _replace_contact_channels(db, new_id, data.contact_channels)
+        elif data.primary_contact_channel:
+            await _replace_contact_channels(db, new_id, [
+                CustomerContactChannelInput(
+                    channel=data.primary_contact_channel,
+                    purpose="主連絡ツール",
+                    is_primary=True,
+                )
+            ])
+        await _sync_primary_contact_channel(db, new_id)
 
         fetched = await db.execute(
             text(f"SELECT {_CUSTOMER_COLUMNS} FROM customers WHERE id = :id"),

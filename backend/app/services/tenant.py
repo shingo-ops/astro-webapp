@@ -200,6 +200,22 @@ CREATE TABLE IF NOT EXISTS {schema}.customer_sales_channels (
     PRIMARY KEY (customer_id, channel)
 );
 
+-- 連絡ツール（Phase 1-B-1: 複数チャネル × 用途の多対多）
+CREATE TABLE IF NOT EXISTS {schema}.customer_contact_channels (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id) ON DELETE CASCADE,
+    channel VARCHAR(30) NOT NULL,
+    purpose VARCHAR(50),
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ccc_customer_id ON {schema}.customer_contact_channels (customer_id);
+CREATE INDEX IF NOT EXISTS idx_ccc_channel ON {schema}.customer_contact_channels (channel);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_one_primary_per_customer
+    ON {schema}.customer_contact_channels (customer_id) WHERE is_primary = TRUE;
+
 -- Discord連携（任意、使う顧客のみ1行）
 CREATE TABLE IF NOT EXISTS {schema}.customer_discord (
     customer_id INTEGER PRIMARY KEY REFERENCES {schema}.customers(id) ON DELETE CASCADE,

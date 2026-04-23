@@ -126,6 +126,18 @@ async def setup_test_db(test_engine):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
+        # Phase 1-B-1: 連絡ツール別テーブル
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS customer_contact_channels (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+                channel VARCHAR(30) NOT NULL,
+                purpose VARCHAR(50),
+                is_primary BOOLEAN NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
         # スタッフ関連テーブル（Phase 1 再設計）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS staff (
@@ -626,6 +638,7 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM deals"))
         await conn.execute(text("DELETE FROM leads"))
         # Phase 1 再設計の副テーブル → 本体の順
+        await conn.execute(text("DELETE FROM customer_contact_channels"))
         await conn.execute(text("DELETE FROM customer_discord"))
         await conn.execute(text("DELETE FROM customer_sales_channels"))
         await conn.execute(text("DELETE FROM customer_addresses"))
