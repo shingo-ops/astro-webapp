@@ -90,12 +90,14 @@ export default function Layout() {
 
               <NavDropdown
                 label="管理"
-                activePaths={["/deals", "/staff", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts"]}
+                activePaths={["/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts"]}
               >
                 {hasPermission("deals.view") && <NavLink to="/deals">商談管理</NavLink>}
                 {hasPermission("suppliers.view") && <NavLink to="/suppliers">仕入先管理</NavLink>}
                 {hasPermission("purchase_orders.view") && <NavLink to="/purchase-orders">仕入注文</NavLink>}
-                <NavLink to="/staff">スタッフ管理</NavLink>
+                {hasPermission("staff.view") && <NavLink to="/staff">スタッフ管理</NavLink>}
+                {hasPermission("bots.view") && <NavLink to="/bots">Bot管理</NavLink>}
+                {hasPermission("teams.view") && <NavLink to="/teams">チーム管理</NavLink>}
                 {hasPermission("shifts.view") && <NavLink to="/shifts">シフト管理</NavLink>}
                 {hasAny("roles.view", "roles.create") && <NavLink to="/roles">権限管理</NavLink>}
                 {hasPermission("erp.view") && <NavLink to="/data">データ管理</NavLink>}
