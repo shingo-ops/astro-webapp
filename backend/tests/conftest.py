@@ -38,7 +38,7 @@ async def test_engine():
     """SQLiteインメモリエンジン"""
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
 
-    # SQLiteでNOW()を使えるようにし、Decimal型をサポートする
+    # SQLiteでNOW()を使えるようにし、Decimal型をサポートする + FK制約を有効化
     @event.listens_for(engine.sync_engine, "connect")
     def set_sqlite_compat(dbapi_conn, connection_record):
         import sqlite3
@@ -46,6 +46,8 @@ async def test_engine():
         dbapi_conn.create_function("NOW", 0, lambda: "2026-04-07 00:00:00+00:00")
         dbapi_conn.create_function("LPAD", 3, lambda s, n, pad: str(s).rjust(int(n), pad))
         sqlite3.register_adapter(Decimal, lambda d: float(d))
+        # SQLite は FK 制約がデフォルト OFF。ON DELETE CASCADE と 409 テストのために ON にする
+        dbapi_conn.execute("PRAGMA foreign_keys = ON")
 
     yield engine
     await engine.dispose()

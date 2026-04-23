@@ -88,7 +88,12 @@ class TestSQLInjection:
         """顧客名フィールドでSQLインジェクションが無効化されること"""
         resp = await client.post(
             "/api/v1/customers",
-            json={"name": payload, "email": "test@test.com"},
+            json={
+                "company_name": payload,
+                "addresses": [
+                    {"address_type": "billing", "email": "test@test.com"},
+                ],
+            },
         )
         # 201（ペイロードが文字列として安全に保存）or 422（バリデーションエラー）
         assert resp.status_code in (201, 422)
@@ -114,32 +119,37 @@ class TestXSSPrevention:
         """APIレスポンスがJSON形式でXSSペイロードをそのまま実行しないこと"""
         resp = await client.post(
             "/api/v1/customers",
-            json={"name": payload},
+            json={"company_name": payload},
         )
         # FastAPIはJSON応答なのでContent-Type: application/jsonが保証される
         if resp.status_code == 201:
             assert resp.headers["content-type"].startswith("application/json")
             # ペイロードがHTMLとして解釈されないことを確認
             data = resp.json()
-            assert data["name"] == payload  # エスケープではなくそのまま文字列保存
+            assert data["company_name"] == payload  # エスケープではなくそのまま文字列保存
 
 
 class TestInputValidation:
     """入力バリデーションが正しく動作することを検証"""
 
     async def test_oversized_payload_rejected(self, client):
-        """非常に長い文字列が拒否されること"""
+        """非常に長い文字列が拒否されること（company_name の max_length=255 制約）"""
         resp = await client.post(
             "/api/v1/customers",
-            json={"name": "A" * 10000},
+            json={"company_name": "A" * 10000},
         )
         assert resp.status_code == 422
 
     async def test_invalid_email_format(self, client):
-        """不正なメールアドレス形式が拒否されること"""
+        """不正なメールアドレス形式が拒否されること（addresses[].email のバリデーション）"""
         resp = await client.post(
             "/api/v1/customers",
-            json={"name": "Test", "email": "not-an-email"},
+            json={
+                "company_name": "Test",
+                "addresses": [
+                    {"address_type": "billing", "email": "not-an-email"},
+                ],
+            },
         )
         assert resp.status_code == 422
 

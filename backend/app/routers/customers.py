@@ -15,6 +15,7 @@ search_path は get_current_tenant dependency で自動切り替え済み。
 """
 
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
@@ -286,9 +287,16 @@ async def create_customer(
     CT-{id:05d} 形式でサーバー側自動採番する（旧実装との互換性維持）。
     """
     try:
-        # customer_code が明示指定されていなければ、後で UPDATE で自動採番
+        # customer_code 自動採番は Python 側で処理（Postgres/SQLite 両対応）:
+        #   1. 明示指定があればそのまま使用
+        #   2. 未指定なら一時コードを UUID で生成して UNIQUE 制約を満たし、
+        #      INSERT 後に id を使って CT-{id:05d} へ UPDATE する
         explicit_code = data.customer_code and data.customer_code.strip()
-        customer_code = explicit_code if explicit_code else None
+        customer_code = explicit_code if explicit_code else f"CT-PENDING-{uuid.uuid4().hex}"
+        # 月間見込み予測の source / updated_at は Python 側で決定（NOW() は dialect 依存）
+        now_for_forecast = (
+            data.monthly_forecast_source.value if data.monthly_forecast_source else "manual"
+        ) if data.monthly_forecast is not None else None
 
         result = await db.execute(
             text("""
@@ -301,14 +309,11 @@ async def create_customer(
                     billing_display_name, payment_recipient_name,
                     fedex_account, shipping_note, primary_contact_channel, status
                 ) VALUES (
-                    :tenant_id,
-                    COALESCE(:customer_code, 'CT-PENDING-' || gen_random_uuid()::text),
+                    :tenant_id, :customer_code,
                     :lead_id, :sales_rep_id, :company_name,
                     :trust_level, :priority_focus,
                     :per_order_amount, :monthly_frequency,
-                    :monthly_forecast,
-                    CASE WHEN :monthly_forecast IS NULL THEN NULL ELSE COALESCE(:monthly_forecast_source, 'manual') END,
-                    CASE WHEN :monthly_forecast IS NULL THEN NULL ELSE NOW() END,
+                    :monthly_forecast, :monthly_forecast_source, :monthly_forecast_updated_at,
                     :meeting_requested,
                     :billing_display_name, :payment_recipient_name,
                     :fedex_account, :shipping_note, :primary_contact_channel, :status
@@ -326,7 +331,9 @@ async def create_customer(
                 "per_order_amount": data.per_order_amount,
                 "monthly_frequency": data.monthly_frequency,
                 "monthly_forecast": data.monthly_forecast,
-                "monthly_forecast_source": data.monthly_forecast_source.value if data.monthly_forecast_source else None,
+                "monthly_forecast_source": now_for_forecast,
+                # NOW() は dialect 依存なので、後続 UPDATE で trigger 経由 or 明示更新
+                "monthly_forecast_updated_at": None,
                 "meeting_requested": data.meeting_requested,
                 "billing_display_name": data.billing_display_name,
                 "payment_recipient_name": data.payment_recipient_name,
@@ -338,11 +345,17 @@ async def create_customer(
         )
         new_id = result.scalar_one()
 
-        # customer_code 未指定なら CT-00001 形式で自動採番
+        # customer_code 未指定なら CT-{id:05d} 形式へ置き換え
         if not explicit_code:
             await db.execute(
                 text("UPDATE customers SET customer_code = :code WHERE id = :id"),
                 {"code": f"CT-{new_id:05d}", "id": new_id},
+            )
+        # monthly_forecast があれば updated_at を現在時刻に（NOW() は PG でも SQLite でも動く）
+        if data.monthly_forecast is not None:
+            await db.execute(
+                text("UPDATE customers SET monthly_forecast_updated_at = NOW() WHERE id = :id"),
+                {"id": new_id},
             )
 
         await _replace_addresses(db, new_id, data.addresses)
