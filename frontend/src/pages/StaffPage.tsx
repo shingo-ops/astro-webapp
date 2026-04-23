@@ -245,22 +245,27 @@ export default function StaffPage() {
                 </select>
               </div>
               <h4>UI設定</h4>
-              {([
-                ["dark_mode", "ダークモード"],
-                ["show_chat_menu", "チャットメニュー表示"],
-                ["show_sales_menu", "営業メニュー表示"],
-                ["show_settings_menu", "設定メニュー表示"],
-                ["show_admin_menu", "管理メニュー表示"],
-                ["show_buddy_menu", "Buddyメニュー表示"],
-                ["show_sidebar", "サイドバー表示"],
-              ] as Array<[keyof StaffUIPreferences, string]>).map(([k, label]) => (
-                <div className="form-group" key={k}>
-                  <label>
-                    <input type="checkbox" checked={form.ui_preferences[k]} onChange={(e) => setForm({ ...form, ui_preferences: { ...form.ui_preferences, [k]: e.target.checked } })} />
-                    {" "}{label}
-                  </label>
-                </div>
-              ))}
+              {(() => {
+                // Record<keyof StaffUIPreferences, string> で網羅性を型保証。
+                // StaffUIPreferences にフィールド追加した時にコンパイル時エラーで検知できる。
+                const labels: Record<keyof StaffUIPreferences, string> = {
+                  dark_mode: "ダークモード",
+                  show_chat_menu: "チャットメニュー表示",
+                  show_sales_menu: "営業メニュー表示",
+                  show_settings_menu: "設定メニュー表示",
+                  show_admin_menu: "管理メニュー表示",
+                  show_buddy_menu: "Buddyメニュー表示",
+                  show_sidebar: "サイドバー表示",
+                };
+                return (Object.entries(labels) as Array<[keyof StaffUIPreferences, string]>).map(([k, label]) => (
+                  <div className="form-group" key={k}>
+                    <label>
+                      <input type="checkbox" checked={form.ui_preferences[k]} onChange={(e) => setForm({ ...form, ui_preferences: { ...form.ui_preferences, [k]: e.target.checked } })} />
+                      {" "}{label}
+                    </label>
+                  </div>
+                ));
+              })()}
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>キャンセル</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
