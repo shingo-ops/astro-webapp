@@ -70,6 +70,7 @@ export default function BotsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Bot | null>(null);
+  const [rotateTarget, setRotateTarget] = useState<Bot | null>(null);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
 
   const loadAll = async () => {
@@ -136,8 +137,10 @@ export default function BotsPage() {
     setShowForm(true);
   };
 
-  const rotateKey = async (b: Bot) => {
-    if (!confirm(`Bot「${b.display_name}」のAPIキーを再発行しますか? 旧キーは無効化されます。`)) return;
+  const performRotate = async () => {
+    if (!rotateTarget) return;
+    const b = rotateTarget;
+    setRotateTarget(null);
     try {
       const res = await api.post<BotCreated>(`/bots/${b.id}/rotate-key`, {});
       setNewApiKey(res.api_key);
@@ -260,7 +263,7 @@ export default function BotsPage() {
                 <td>{b.last_executed_at ? new Date(b.last_executed_at).toLocaleDateString("ja-JP") : "-"}</td>
                 <td className="actions">
                   {hasPermission("bots.update") && <button className="btn-sm" onClick={() => handleEdit(b)}>編集</button>}
-                  {hasPermission("bots.update") && <button className="btn-sm" onClick={() => rotateKey(b)}>鍵再発行</button>}
+                  {hasPermission("bots.update") && <button className="btn-sm" onClick={() => setRotateTarget(b)}>鍵再発行</button>}
                   {hasPermission("bots.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(b)}>削除</button>}
                 </td>
               </tr>
@@ -278,6 +281,21 @@ export default function BotsPage() {
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmModal
+        open={!!rotateTarget}
+        title="APIキーを再発行"
+        message={
+          <>
+            <strong>{rotateTarget?.display_name}</strong> のAPIキーを再発行します。<br />
+            <strong>旧キーは即座に無効化され、このBot経由の外部連携は一時停止します。</strong><br />
+            新キーは表示された時に必ずコピー・保存してください（再取得不能）。
+          </>
+        }
+        confirmLabel="再発行する"
+        danger
+        onConfirm={performRotate}
+        onCancel={() => setRotateTarget(null)}
       />
     </div>
   );
