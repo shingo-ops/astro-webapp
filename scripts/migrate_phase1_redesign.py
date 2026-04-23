@@ -61,6 +61,7 @@ TENANT_TEMPLATE_MIGRATIONS = [
     "020_create_bots_and_senders_view.sql",
     "021_seed_roles_and_role_permissions.sql",
     "022_staff_bots_rls_policies.sql",
+    "023_fix_system_admin_is_system_flag.sql",
 ]
 
 

@@ -52,7 +52,21 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/013_add_meta_webhook_idempotency.sql
 
+            # Phase 1 再設計: current_tenant_id() 関数定義（CREATE OR REPLACE、idempotent）
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/014_create_current_tenant_id_function.sql
+
+            # Phase 1 再設計: permissions 拡張 + menu.* 19件 seed
+            #   ALTER TABLE ADD COLUMN IF NOT EXISTS + INSERT ON CONFLICT DO NOTHING でidempotent
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/018_extend_permissions_with_menu_grain.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
+            # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
+            #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
+            #       のテンプレートが全テーブルを作るので新テナントには追従不要。
 
             echo "Step 6: Health check..."
             docker exec astro-webapp-backend-1 python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || (echo "Health check failed!" && exit 1)

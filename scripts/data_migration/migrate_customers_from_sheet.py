@@ -98,13 +98,33 @@ def load_customer_rows(csv_path: Path) -> list[dict[str, str]]:
 
 
 def parse_registered_at(value: str | None) -> datetime | None:
-    """登録日時文字列を datetime に変換。スプレッドシートの形式揺れを吸収。"""
+    """
+    登録日時文字列を datetime に変換。スプレッドシートの形式揺れを吸収。
+
+    対応形式:
+      - 日本 ISO: 2025-10-06 12:34:56 / 2025/10/06 12:34:56 / 2025-10-06 / 2025/10/06
+      - 米国順: 11/6/2025 17:16:16 / 11/06/2025 / 11/6/25 等（米国顧客の
+        Googleスプレッドシート書式）
+    変換不能は None + warn ログ。
+    """
     if not value:
         return None
     stripped = value.strip()
     if not stripped:
         return None
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S", "%Y-%m-%d", "%Y/%m/%d"):
+    formats = (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y-%m-%d",
+        "%Y/%m/%d",
+        # 米国順（MDY）: 11/6/2025 17:16:16 など
+        "%m/%d/%Y %H:%M:%S",
+        "%m/%d/%Y %H:%M",
+        "%m/%d/%Y",
+        "%m/%d/%y %H:%M:%S",
+        "%m/%d/%y",
+    )
+    for fmt in formats:
         try:
             return datetime.strptime(stripped, fmt)
         except ValueError:
