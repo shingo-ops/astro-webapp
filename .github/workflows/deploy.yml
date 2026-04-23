@@ -70,6 +70,12 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/023_fix_system_admin_is_system_flag.sql
 
+            # Phase 1 再設計 スプリントC: staff.* / bots.* 権限8件追加
+            #   INSERT ON CONFLICT (key) DO NOTHING でidempotent
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/024_add_staff_bots_permissions.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

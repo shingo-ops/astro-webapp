@@ -704,6 +704,9 @@ ALL_TEST_PERMISSIONS = {
     "buddy.view_own", "buddy.review", "buddy.manage",
     "badges.view", "badges.manage",
     "erp.view", "erp.sync",
+    # Phase 1 再設計: staff / bots
+    "staff.view", "staff.create", "staff.update", "staff.delete",
+    "bots.view", "bots.create", "bots.update", "bots.delete",
 }
 
 
