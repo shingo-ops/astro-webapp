@@ -54,3 +54,9 @@ build/
 
 # テストユーザーセットアップスクリプトのCSV出力（個別パスワード含む）
 scripts/output/
+
+# 原本スプレッドシートCSV（個人情報・顧客データを含むため絶対に上げない）
+sheets/
+
+# Claude Code エージェント（reviewer/evaluator等）のローカル成果物
+.claude-pipeline/
