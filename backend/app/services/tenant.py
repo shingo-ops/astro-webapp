@@ -134,32 +134,82 @@ DEFAULT_NEW_USER_ROLE = "CS"
 
 # テナントスキーマ内に作成する業務テーブルのSQL定義
 _TENANT_TABLES_SQL = """
--- 顧客データ
+-- 顧客データ（Phase 1 再設計: 正規化された本体 + 3副テーブル）
+-- migration 015 と同等の構造。sales_rep_id の FK は staff テーブル作成後に付与
 CREATE TABLE IF NOT EXISTS {schema}.customers (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
-    customer_code VARCHAR(20),
-    name VARCHAR(255) NOT NULL,
+    customer_code VARCHAR(20) NOT NULL,
+    lead_id INTEGER,                                   -- FK は leads 作成後に付与（下記ALTER）
+    sales_rep_id INTEGER,                              -- FK は staff 作成後に付与（下記ALTER）
+    company_name VARCHAR(255),
+    trust_level SMALLINT CHECK (trust_level IS NULL OR trust_level BETWEEN 1 AND 5),
+    priority_focus VARCHAR(50),
+    per_order_amount NUMERIC(15,2),
+    monthly_frequency SMALLINT,
+    monthly_forecast NUMERIC(15,2),
+    monthly_forecast_source VARCHAR(20)
+        CHECK (monthly_forecast_source IS NULL OR monthly_forecast_source IN ('manual','ai_analysis')),
+    monthly_forecast_updated_at TIMESTAMPTZ,
+    meeting_requested BOOLEAN NOT NULL DEFAULT FALSE,
+    billing_display_name VARCHAR(255),
+    payment_recipient_name VARCHAR(255),
+    fedex_account VARCHAR(100),
+    shipping_note TEXT,
+    primary_contact_channel VARCHAR(30),
+    status VARCHAR(20) NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active','inactive','archived','pending_dedup_review')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (tenant_id, customer_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_customers_tenant_id ON {schema}.customers (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_customers_lead_id ON {schema}.customers (lead_id);
+CREATE INDEX IF NOT EXISTS idx_customers_sales_rep_id ON {schema}.customers (sales_rep_id);
+CREATE INDEX IF NOT EXISTS idx_customers_status ON {schema}.customers (status);
+
+-- 顧客住所（billing / delivery の2行を持つ副テーブル、将来は複数配送先にも対応）
+CREATE TABLE IF NOT EXISTS {schema}.customer_addresses (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id) ON DELETE CASCADE,
+    address_type VARCHAR(20) NOT NULL CHECK (address_type IN ('billing','delivery')),
+    name VARCHAR(255),
     email VARCHAR(255),
-    phone VARCHAR(50),
-    company VARCHAR(255),
-    registration_source VARCHAR(50),
-    status VARCHAR(20) DEFAULT 'active',
-    billing_name VARCHAR(255),
-    billing_phone VARCHAR(50),
-    billing_email VARCHAR(255),
-    billing_address TEXT,
-    delivery_name VARCHAR(255),
-    delivery_phone VARCHAR(50),
-    delivery_email VARCHAR(255),
-    delivery_address TEXT,
-    delivery_country VARCHAR(100),
-    business_id VARCHAR(100),
-    transaction_count INTEGER DEFAULT 0,
-    last_transaction_date TIMESTAMPTZ,
-    notes TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    telephone VARCHAR(50),
+    tax_id VARCHAR(100),
+    address_line_1 VARCHAR(255),
+    address_line_2 VARCHAR(255),
+    address_line_3 VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    zip VARCHAR(50),
+    country_code CHAR(2),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_addresses_customer_id ON {schema}.customer_addresses (customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_addresses_type ON {schema}.customer_addresses (customer_id, address_type);
+
+-- 顧客の販売チャネル（実店舗/EC/配信/PF 等、複数持てる中間テーブル）
+CREATE TABLE IF NOT EXISTS {schema}.customer_sales_channels (
+    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id) ON DELETE CASCADE,
+    channel VARCHAR(30) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (customer_id, channel)
+);
+
+-- Discord連携（任意、使う顧客のみ1行）
+CREATE TABLE IF NOT EXISTS {schema}.customer_discord (
+    customer_id INTEGER PRIMARY KEY REFERENCES {schema}.customers(id) ON DELETE CASCADE,
+    is_joined BOOLEAN NOT NULL DEFAULT FALSE,
+    channel_id VARCHAR(50),
+    user_id VARCHAR(50),
+    invoice_webhook TEXT,
+    shipment_webhook TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- リード管理
@@ -219,6 +269,20 @@ BEGIN
         ALTER TABLE {schema}.leads
             ADD CONSTRAINT fk_leads_converted_deal
             FOREIGN KEY (converted_deal_id) REFERENCES {schema}.deals(id);
+    END IF;
+END $$;
+
+-- customers.lead_id → leads.id（customers作成時点ではleadsが未存在のため後付け）
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'fk_customers_lead'
+          AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = '{schema_raw}')
+    ) THEN
+        ALTER TABLE {schema}.customers
+            ADD CONSTRAINT fk_customers_lead
+            FOREIGN KEY (lead_id) REFERENCES {schema}.leads(id);
     END IF;
 END $$;
 
@@ -301,6 +365,116 @@ CREATE TABLE IF NOT EXISTS {schema}.team_members (
     joined_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(team_id, user_id)
 );
+
+-- === Phase 1 再設計: スタッフ・bot ===
+
+-- 人間スタッフ（public.users との1対1紐付け）
+CREATE TABLE IF NOT EXISTS {schema}.staff (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    user_id INTEGER UNIQUE REFERENCES public.users(id),
+    staff_code VARCHAR(20) NOT NULL,
+    surname_jp VARCHAR(50) NOT NULL,
+    given_name_jp VARCHAR(50) NOT NULL,
+    surname_kana VARCHAR(100),
+    given_name_kana VARCHAR(100),
+    surname_en VARCHAR(100),
+    given_name_en VARCHAR(100),
+    primary_email VARCHAR(255) NOT NULL,
+    discord_user_id VARCHAR(50),
+    role_id INTEGER NOT NULL REFERENCES {schema}.roles(id),
+    status VARCHAR(20) NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active','inactive','pending')),
+    firebase_uid VARCHAR(128) UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (tenant_id, staff_code),
+    UNIQUE (tenant_id, discord_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_staff_tenant_id ON {schema}.staff (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_staff_role_id ON {schema}.staff (role_id);
+CREATE INDEX IF NOT EXISTS idx_staff_primary_email ON {schema}.staff (primary_email);
+CREATE INDEX IF NOT EXISTS idx_staff_user_id ON {schema}.staff (user_id);
+CREATE INDEX IF NOT EXISTS idx_staff_status ON {schema}.staff (status);
+
+-- スタッフの副メール（EMP-00005 のような1人複数メール対応）
+CREATE TABLE IF NOT EXISTS {schema}.staff_emails (
+    id SERIAL PRIMARY KEY,
+    staff_id INTEGER NOT NULL REFERENCES {schema}.staff(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    purpose VARCHAR(50),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (staff_id, email)
+);
+
+CREATE INDEX IF NOT EXISTS idx_staff_emails_staff_id ON {schema}.staff_emails (staff_id);
+
+-- スタッフのUI設定
+CREATE TABLE IF NOT EXISTS {schema}.staff_ui_preferences (
+    staff_id INTEGER PRIMARY KEY REFERENCES {schema}.staff(id) ON DELETE CASCADE,
+    dark_mode BOOLEAN NOT NULL DEFAULT FALSE,
+    show_chat_menu BOOLEAN NOT NULL DEFAULT TRUE,
+    show_sales_menu BOOLEAN NOT NULL DEFAULT TRUE,
+    show_settings_menu BOOLEAN NOT NULL DEFAULT TRUE,
+    show_admin_menu BOOLEAN NOT NULL DEFAULT FALSE,
+    show_buddy_menu BOOLEAN NOT NULL DEFAULT TRUE,
+    show_sidebar BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- customers.sales_rep_id → staff(id)（customers作成時点ではstaffが未存在のため後付け）
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'fk_customers_sales_rep'
+          AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = '{schema_raw}')
+    ) THEN
+        ALTER TABLE {schema}.customers
+            ADD CONSTRAINT fk_customers_sales_rep
+            FOREIGN KEY (sales_rep_id) REFERENCES {schema}.staff(id);
+    END IF;
+END $$;
+
+-- 自動化bot（請求書送付bot / 発送通知bot 等）
+CREATE TABLE IF NOT EXISTS {schema}.bots (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    bot_code VARCHAR(20) NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    purpose VARCHAR(50) NOT NULL
+        CHECK (purpose IN ('invoice','shipment','notification','custom')),
+    status VARCHAR(20) NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active','inactive','maintenance')),
+    api_key_hash VARCHAR(128) NOT NULL,
+    discord_user_id VARCHAR(50),
+    sender_email VARCHAR(255),
+    owner_staff_id INTEGER NOT NULL REFERENCES {schema}.staff(id),
+    last_executed_at TIMESTAMPTZ,
+    execution_count BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (tenant_id, bot_code),
+    UNIQUE (tenant_id, discord_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bots_tenant_id ON {schema}.bots (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_bots_owner_staff_id ON {schema}.bots (owner_staff_id);
+CREATE INDEX IF NOT EXISTS idx_bots_purpose ON {schema}.bots (purpose);
+
+-- 送信元統一ビュー（staff と bots を UNION）
+CREATE OR REPLACE VIEW {schema}.v_senders AS
+SELECT
+    id, tenant_id, 'staff'::VARCHAR(10) AS sender_type,
+    CONCAT(surname_jp, ' ', given_name_jp) AS display_name,
+    primary_email AS contact_email
+FROM {schema}.staff
+UNION ALL
+SELECT
+    id, tenant_id, 'bot'::VARCHAR(10) AS sender_type,
+    display_name, sender_email AS contact_email
+FROM {schema}.bots;
 
 -- === Phase 2: 販売・財務プロセス ===
 
@@ -524,6 +698,14 @@ ALTER TABLE {schema}.purchase_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.purchase_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.meta_messages ENABLE ROW LEVEL SECURITY;
+-- Phase 1 再設計の新テーブル
+ALTER TABLE {schema}.customer_addresses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.customer_sales_channels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.customer_discord ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.staff ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.staff_emails ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.staff_ui_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.bots ENABLE ROW LEVEL SECURITY;
 """
 
 # テナント分離ポリシー（DO $$ ... END $$ ブロックは1ステートメントとして実行する。
@@ -643,6 +825,56 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_meta_messages' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_meta_messages ON {schema}.meta_messages
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    -- Phase 1 再設計: customer 副テーブル群
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_addresses' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_customer_addresses ON {schema}.customer_addresses
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.customers c
+                WHERE c.id = customer_addresses.customer_id
+                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_sales_channels' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_customer_sales_channels ON {schema}.customer_sales_channels
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.customers c
+                WHERE c.id = customer_sales_channels.customer_id
+                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_discord' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_customer_discord ON {schema}.customer_discord
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.customers c
+                WHERE c.id = customer_discord.customer_id
+                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    -- Phase 1 再設計: staff / bots
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_staff' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_staff ON {schema}.staff
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_bots' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_bots ON {schema}.bots
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_staff_emails' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_staff_emails ON {schema}.staff_emails
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.staff s
+                WHERE s.id = staff_emails.staff_id
+                  AND s.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_staff_ui_preferences' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_staff_ui_preferences ON {schema}.staff_ui_preferences
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.staff s
+                WHERE s.id = staff_ui_preferences.staff_id
+                  AND s.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
     END IF;
 END $$
 """

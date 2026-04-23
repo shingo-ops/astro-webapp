@@ -77,35 +77,61 @@ async def find_customer_duplicates(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    """顧客の重複候補を検出する"""
+    """顧客の重複候補を検出する（新スキーマ：customer_addresses 副テーブル対応）"""
+    # 各顧客について、表示名・メール・電話を billing / delivery の両方から集約
     result = await db.execute(
-        text("SELECT id, name, email, phone, company FROM customers WHERE status != 'merged' ORDER BY id")
+        text("""
+            SELECT
+                c.id,
+                COALESCE(c.billing_display_name, c.company_name) AS name,
+                c.company_name AS company,
+                ba.email AS billing_email,
+                da.email AS delivery_email,
+                ba.telephone AS billing_phone,
+                da.telephone AS delivery_phone,
+                c.status
+            FROM customers c
+            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
+            LEFT JOIN customer_addresses da ON da.customer_id = c.id AND da.address_type = 'delivery'
+            WHERE c.status != 'archived'
+            ORDER BY c.id
+        """)
     )
     customers = [dict(row) for row in result.mappings().all()]
     duplicates: list[DuplicateMatch] = []
+
+    def _first_non_empty(*vals: str | None) -> str | None:
+        for v in vals:
+            if v:
+                return v
+        return None
 
     for i, c1 in enumerate(customers):
         for c2 in customers[i + 1:]:
             score = 0.0
             reason = ""
+            c1_email = _first_non_empty(c1.get("billing_email"), c1.get("delivery_email"))
+            c2_email = _first_non_empty(c2.get("billing_email"), c2.get("delivery_email"))
+            c1_phone = _first_non_empty(c1.get("billing_phone"), c1.get("delivery_phone"))
+            c2_phone = _first_non_empty(c2.get("billing_phone"), c2.get("delivery_phone"))
 
             # Rule 1: メール完全一致
-            if c1["email"] and c2["email"] and c1["email"].lower() == c2["email"].lower():
+            if c1_email and c2_email and c1_email.lower() == c2_email.lower():
                 score = 1.0
                 reason = "メールアドレス完全一致"
             # Rule 2: 電話番号正規化一致
-            elif c1["phone"] and c2["phone"]:
-                p1, p2 = _normalize_phone(c1["phone"]), _normalize_phone(c2["phone"])
+            elif c1_phone and c2_phone:
+                p1, p2 = _normalize_phone(c1_phone), _normalize_phone(c2_phone)
                 if p1 and p2 and p1 == p2 and len(p1) >= 10:
                     score = 0.95
                     reason = "電話番号一致"
-            # Rule 3: 会社名+名前の類似度
+            # Rule 3: 会社名+表示名の類似度
             if score == 0 and c1.get("company") and c2.get("company"):
-                co_sim = _similarity(c1["company"], c2["company"])
-                nm_sim = _similarity(c1["name"], c2["name"])
+                co_sim = _similarity(c1["company"] or "", c2["company"] or "")
+                nm_sim = _similarity(c1["name"] or "", c2["name"] or "")
                 if co_sim > 0.85 and nm_sim > 0.85:
                     score = (co_sim + nm_sim) / 2
-                    reason = "会社名＋名前の類似"
+                    reason = "会社名＋表示名の類似"
 
             if score >= confidence:
                 duplicates.append(DuplicateMatch(
@@ -156,9 +182,15 @@ async def merge_customers(
             count = len(r.fetchall())
             reassigned[table] = reassigned.get(table, 0) + count
 
-        # マージ元をmergedステータスに
+        # マージ元を archived ステータスに（notes 列は新スキーマでは廃止、shipping_note に追記）
         await db.execute(
-            text("UPDATE customers SET status = 'merged', notes = COALESCE(notes, '') || :note, updated_at = NOW() WHERE id = :id"),
+            text("""
+                UPDATE customers
+                SET status = 'archived',
+                    shipping_note = COALESCE(shipping_note, '') || :note,
+                    updated_at = NOW()
+                WHERE id = :id
+            """),
             {"id": merge_id, "note": f"\n[マージ済み → CT-{master_id:05d}]"},
         )
         merged += 1
