@@ -44,6 +44,18 @@ BEGIN
             CONTINUE;
         END IF;
 
+        -- trg_set_updated_at() 関数が未定義のスキーマに備えて保険で作成（冪等）
+        -- 本来 migration 015 で作成されているが、過去に手動作成されたテナントに欠けている可能性
+        EXECUTE format($q$
+            CREATE OR REPLACE FUNCTION %I.trg_set_updated_at()
+            RETURNS TRIGGER AS $fn$
+            BEGIN
+                NEW.updated_at = NOW();
+                RETURN NEW;
+            END;
+            $fn$ LANGUAGE plpgsql
+        $q$, schema_rec.nspname);
+
         -- テーブル作成（冪等: IF NOT EXISTS）
         EXECUTE format($q$
             CREATE TABLE IF NOT EXISTS %I.customer_contact_channels (

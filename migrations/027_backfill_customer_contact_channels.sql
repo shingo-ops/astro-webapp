@@ -50,9 +50,32 @@ BEGIN
         $q$, schema_rec.nspname, schema_rec.nspname, schema_rec.nspname);
         GET DIAGNOSTICS backfilled = ROW_COUNT;
         IF backfilled > 0 THEN
-            RAISE NOTICE 'migration 027: %: % 件を contact_channels に backfill', schema_rec.nspname, backfilled;
+            RAISE NOTICE 'migration 027: %: primary から % 件を contact_channels に backfill', schema_rec.nspname, backfilled;
         END IF;
         total := total + backfilled;
+
+        -- Major 4 対応: customer_discord に is_joined=TRUE の行があれば contact_channels
+        -- にも channel='discord' を自動追加（案α整合）
+        IF EXISTS (
+            SELECT 1 FROM pg_tables
+            WHERE schemaname = schema_rec.nspname AND tablename = 'customer_discord'
+        ) THEN
+            EXECUTE format($q$
+                INSERT INTO %I.customer_contact_channels (customer_id, channel, purpose, is_primary)
+                SELECT cd.customer_id, 'discord', 'Discord連携', FALSE
+                FROM %I.customer_discord cd
+                WHERE cd.is_joined = TRUE
+                  AND NOT EXISTS (
+                      SELECT 1 FROM %I.customer_contact_channels ccc
+                      WHERE ccc.customer_id = cd.customer_id AND ccc.channel = 'discord'
+                  )
+            $q$, schema_rec.nspname, schema_rec.nspname, schema_rec.nspname);
+            GET DIAGNOSTICS backfilled = ROW_COUNT;
+            IF backfilled > 0 THEN
+                RAISE NOTICE 'migration 027: %: Discord 連携 % 件を contact_channels に自動追加', schema_rec.nspname, backfilled;
+            END IF;
+            total := total + backfilled;
+        END IF;
     END LOOP;
     RAISE NOTICE 'migration 027: 全テナント合計 % 件を backfill', total;
 END $$;
