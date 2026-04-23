@@ -366,6 +366,32 @@ CREATE TABLE IF NOT EXISTS {schema}.team_members (
     UNIQUE(team_id, user_id)
 );
 
+-- === Phase 1 再設計: updated_at 自動更新トリガ ===
+
+CREATE OR REPLACE FUNCTION {schema}.trg_set_updated_at()
+RETURNS TRIGGER AS $fn$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$fn$ LANGUAGE plpgsql;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_customers_updated_at' AND tgrelid = '{schema}.customers'::regclass) THEN
+        CREATE TRIGGER trg_customers_updated_at BEFORE UPDATE ON {schema}.customers
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_customer_addresses_updated_at' AND tgrelid = '{schema}.customer_addresses'::regclass) THEN
+        CREATE TRIGGER trg_customer_addresses_updated_at BEFORE UPDATE ON {schema}.customer_addresses
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_customer_discord_updated_at' AND tgrelid = '{schema}.customer_discord'::regclass) THEN
+        CREATE TRIGGER trg_customer_discord_updated_at BEFORE UPDATE ON {schema}.customer_discord
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+END $$;
+
 -- === Phase 1 再設計: スタッフ・bot ===
 
 -- 人間スタッフ（public.users との1対1紐付け）
@@ -462,6 +488,23 @@ CREATE TABLE IF NOT EXISTS {schema}.bots (
 CREATE INDEX IF NOT EXISTS idx_bots_tenant_id ON {schema}.bots (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_bots_owner_staff_id ON {schema}.bots (owner_staff_id);
 CREATE INDEX IF NOT EXISTS idx_bots_purpose ON {schema}.bots (purpose);
+
+-- staff / staff_ui_preferences / bots の updated_at 自動更新トリガ
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_staff_updated_at' AND tgrelid = '{schema}.staff'::regclass) THEN
+        CREATE TRIGGER trg_staff_updated_at BEFORE UPDATE ON {schema}.staff
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_staff_ui_preferences_updated_at' AND tgrelid = '{schema}.staff_ui_preferences'::regclass) THEN
+        CREATE TRIGGER trg_staff_ui_preferences_updated_at BEFORE UPDATE ON {schema}.staff_ui_preferences
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_bots_updated_at' AND tgrelid = '{schema}.bots'::regclass) THEN
+        CREATE TRIGGER trg_bots_updated_at BEFORE UPDATE ON {schema}.bots
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+END $$;
 
 -- 送信元統一ビュー（staff と bots を UNION）
 CREATE OR REPLACE VIEW {schema}.v_senders AS

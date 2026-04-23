@@ -102,7 +102,10 @@ class CustomerDiscordResponse(CustomerDiscordInput):
 
 class CustomerCreate(BaseModel):
     """顧客登録リクエスト（ネスト構造）"""
-    customer_code: str = Field(min_length=1, max_length=20, description="CT-00001 形式")
+    customer_code: str | None = Field(
+        default=None, max_length=20,
+        description="CT-00001 形式。未指定ならサーバー側で自動採番",
+    )
     lead_id: int | None = Field(default=None, description="出自リード（任意）")
     sales_rep_id: int | None = Field(default=None, description="担当スタッフ id")
     company_name: str | None = Field(default=None, max_length=255)

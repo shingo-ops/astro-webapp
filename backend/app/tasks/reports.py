@@ -76,11 +76,14 @@ EXPORT_QUERIES = {
     },
     "deals": {
         "query": """
-            SELECT d.id, d.deal_code, COALESCE(c.billing_display_name, c.company_name) AS customer_name, d.title, d.amount,
+            SELECT d.id, d.deal_code,
+                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
+                   d.title, d.amount,
                    d.currency, d.status, d.stage, d.probability,
                    d.expected_close_date, d.notes, d.created_at, d.updated_at
             FROM deals d
             LEFT JOIN customers c ON d.customer_id = c.id
+            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
             ORDER BY d.id
         """,
         "headers": [
@@ -91,11 +94,14 @@ EXPORT_QUERIES = {
     },
     "orders": {
         "query": """
-            SELECT o.id, COALESCE(c.billing_display_name, c.company_name) AS customer_name, o.order_number, o.total_amount,
+            SELECT o.id,
+                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
+                   o.order_number, o.total_amount,
                    o.currency, o.status, o.shipping_carrier, o.tracking_number,
                    o.notes, o.created_at, o.updated_at
             FROM orders o
             LEFT JOIN customers c ON o.customer_id = c.id
+            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
             ORDER BY o.id
         """,
         "headers": [
@@ -118,11 +124,13 @@ EXPORT_QUERIES = {
     },
     "quotes": {
         "query": """
-            SELECT q.id, q.quote_code, COALESCE(c.billing_display_name, c.company_name) AS customer_name,
+            SELECT q.id, q.quote_code,
+                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
                    q.currency, q.subtotal, q.shipping_fee, q.total_amount,
                    q.status, q.validity_date, q.notes, q.created_at
             FROM quotes q
             LEFT JOIN customers c ON q.customer_id = c.id
+            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
             ORDER BY q.id
         """,
         "headers": [
@@ -132,12 +140,14 @@ EXPORT_QUERIES = {
     },
     "invoices": {
         "query": """
-            SELECT i.id, i.invoice_number, COALESCE(c.billing_display_name, c.company_name) AS customer_name,
+            SELECT i.id, i.invoice_number,
+                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
                    i.currency, i.subtotal, i.shipping_fee, i.total_amount,
                    i.amount_jpy, i.payment_method, i.status,
                    i.issued_at, i.due_date, i.paid_at, i.notes, i.created_at
             FROM invoices i
             LEFT JOIN customers c ON i.customer_id = c.id
+            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
             ORDER BY i.id
         """,
         "headers": [

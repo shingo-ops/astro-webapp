@@ -14,10 +14,14 @@ search_path は get_current_tenant dependency で自動切り替え済み。
   2026-04-23: Phase 1 再設計（副テーブル化、billing_/delivery_ フラット列を廃止）
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
 from app.cache import invalidate_dashboard_cache
@@ -277,8 +281,15 @@ async def create_customer(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    """顧客を登録する（本体 + 副テーブル）"""
+    """
+    顧客を登録する（本体 + 副テーブル）。customer_code は未指定なら
+    CT-{id:05d} 形式でサーバー側自動採番する（旧実装との互換性維持）。
+    """
     try:
+        # customer_code が明示指定されていなければ、後で UPDATE で自動採番
+        explicit_code = data.customer_code and data.customer_code.strip()
+        customer_code = explicit_code if explicit_code else None
+
         result = await db.execute(
             text("""
                 INSERT INTO customers (
@@ -290,7 +301,9 @@ async def create_customer(
                     billing_display_name, payment_recipient_name,
                     fedex_account, shipping_note, primary_contact_channel, status
                 ) VALUES (
-                    :tenant_id, :customer_code, :lead_id, :sales_rep_id, :company_name,
+                    :tenant_id,
+                    COALESCE(:customer_code, 'CT-PENDING-' || gen_random_uuid()::text),
+                    :lead_id, :sales_rep_id, :company_name,
                     :trust_level, :priority_focus,
                     :per_order_amount, :monthly_frequency,
                     :monthly_forecast,
@@ -304,7 +317,7 @@ async def create_customer(
             """),
             {
                 "tenant_id": tenant_id,
-                "customer_code": data.customer_code,
+                "customer_code": customer_code,
                 "lead_id": data.lead_id,
                 "sales_rep_id": data.sales_rep_id,
                 "company_name": data.company_name,
@@ -324,6 +337,14 @@ async def create_customer(
             },
         )
         new_id = result.scalar_one()
+
+        # customer_code 未指定なら CT-00001 形式で自動採番
+        if not explicit_code:
+            await db.execute(
+                text("UPDATE customers SET customer_code = :code WHERE id = :id"),
+                {"code": f"CT-{new_id:05d}", "id": new_id},
+            )
+
         await _replace_addresses(db, new_id, data.addresses)
         await _replace_sales_channels(db, new_id, data.sales_channels)
         await _upsert_discord(db, new_id, data.discord)
@@ -342,9 +363,11 @@ async def create_customer(
         await db.commit()
     except IntegrityError as e:
         await db.rollback()
+        # 詳細はログにのみ、API には generic なメッセージ（制約名漏洩防止）
+        logger.warning("create_customer IntegrityError: tenant=%d, err=%s", tenant_id, e.orig)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"登録に失敗しました（重複 or 制約違反）: {e.orig}",
+            detail="顧客の登録に失敗しました（customer_code 重複または制約違反の可能性）",
         )
     await invalidate_dashboard_cache(tenant_id)
     return await _compose_response(db, dict(row))
@@ -372,6 +395,11 @@ async def update_customer(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="顧客が見つかりません")
 
     update_data = data.model_dump(exclude_unset=True, mode="python")
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="更新するフィールドを少なくとも1つ指定してください",
+        )
     # 副テーブル系は本体 UPDATE には入れず、別処理
     addresses = update_data.pop("addresses", None)
     sales_channels = update_data.pop("sales_channels", None)

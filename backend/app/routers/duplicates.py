@@ -182,16 +182,19 @@ async def merge_customers(
             count = len(r.fetchall())
             reassigned[table] = reassigned.get(table, 0) + count
 
-        # マージ元を archived ステータスに（notes 列は新スキーマでは廃止、shipping_note に追記）
+        # マージ元を archived ステータスに。
+        # 手動 archived と区別する必要がある場合は audit_log の action='merge' +
+        # new_data.reassigned で判定する（shipping_note を流用するのは設計ミスマッチ）。
+        # TODO: CHECK 制約に 'merged' を追加する migration 023 を別PRで検討、
+        #       または customers.merge_master_id NULL 許容列を別PRで追加。
         await db.execute(
             text("""
                 UPDATE customers
                 SET status = 'archived',
-                    shipping_note = COALESCE(shipping_note, '') || :note,
                     updated_at = NOW()
                 WHERE id = :id
             """),
-            {"id": merge_id, "note": f"\n[マージ済み → CT-{master_id:05d}]"},
+            {"id": merge_id},
         )
         merged += 1
 
