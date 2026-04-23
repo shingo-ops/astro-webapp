@@ -14,7 +14,14 @@ interface Order {
   updated_at: string;
 }
 
-interface Customer { id: number; name: string; }
+interface Customer {
+  id: number;
+  customer_code: string;
+  company_name: string | null;
+  billing_display_name: string | null;
+}
+const customerLabel = (c: Customer): string =>
+  c.billing_display_name || c.company_name || c.customer_code;
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 const STATUS_LABELS: Record<string, string> = {
@@ -107,7 +114,10 @@ export default function OrdersPage() {
   };
 
   const fmt = (n: number) => n.toLocaleString("ja-JP", { style: "currency", currency: "JPY" });
-  const customerName = (id: number) => customers.find((c) => c.id === id)?.name || `ID:${id}`;
+  const customerName = (id: number) => {
+    const c = customers.find((c) => c.id === id);
+    return c ? customerLabel(c) : `ID:${id}`;
+  };
 
   return (
     <div className="page">
@@ -136,7 +146,7 @@ export default function OrdersPage() {
                 <label>顧客 *</label>
                 <select required value={form.customer_id} onChange={(e) => setForm({ ...form, customer_id: e.target.value })}>
                   <option value="">選択してください</option>
-                  {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {customers.map((c) => <option key={c.id} value={c.id}>{customerLabel(c)}</option>)}
                 </select>
               </div>
               <div className="form-group">

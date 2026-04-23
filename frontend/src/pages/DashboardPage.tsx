@@ -54,7 +54,7 @@ interface Dashboard {
   supplier_count: number;
   po_pending_count: number;
   pipeline_by_stage: PipelineStage[];
-  recent_customers: Array<{ id: number; name: string; company: string | null; created_at: string }>;
+  recent_customers: Array<{ id: number; customer_code: string; name: string | null; company: string | null; created_at: string }>;
   recent_deals: Array<{ id: number; title: string; amount: number | null; status: string; created_at: string }>;
   recent_leads: Array<{ id: number; customer_name: string; status: string; prospect_rank: string | null; created_at: string }>;
   recent_quotes: Array<{ id: number; quote_code: string; total_amount: number | null; status: string; created_at: string }>;
@@ -143,7 +143,7 @@ export default function DashboardPage() {
             <thead><tr><th>名前</th><th>会社</th><th>登録日</th></tr></thead>
             <tbody>
               {data.recent_customers.map((c) => (
-                <tr key={c.id}><td>{c.name}</td><td>{c.company || "-"}</td><td>{new Date(c.created_at).toLocaleDateString("ja-JP")}</td></tr>
+                <tr key={c.id}><td>{c.name || c.customer_code}</td><td>{c.company || "-"}</td><td>{new Date(c.created_at).toLocaleDateString("ja-JP")}</td></tr>
               ))}
               {data.recent_customers.length === 0 && <tr><td colSpan={3} className="empty">データなし</td></tr>}
             </tbody>
