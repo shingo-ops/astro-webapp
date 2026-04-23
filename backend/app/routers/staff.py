@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
 from app.database import get_db
 from app.models import User
-from app.schemas.staff import StaffCreate, StaffResponse, StaffUIPreferences, StaffUpdate
+from app.schemas.staff import StaffCreate, StaffEmailInput, StaffResponse, StaffUIPreferences, StaffUpdate
 from app.services.audit import record_audit_log
 
 logger = logging.getLogger(__name__)
@@ -73,9 +73,14 @@ async def _compose(db: AsyncSession, main_row: dict) -> StaffResponse:
 
 
 async def _upsert_ui_prefs(db: AsyncSession, staff_id: int, prefs: StaffUIPreferences | None) -> None:
+    """UI設定を upsert。prefs=None なら StaffUIPreferences のデフォルト値で行を作る。
+
+    migration 019 の design は「役割権限 AND 本人のUI設定」で最終表示を決めるため、
+    staff_ui_preferences 行は全スタッフに存在すべき。POST /staff で ui_preferences
+    省略時もデフォルト値で行を作成する。
+    """
     if prefs is None:
-        # 明示 None=削除しないがデフォルト行を作成
-        return
+        prefs = StaffUIPreferences()  # pydantic デフォルト値
     await db.execute(
         text("""
             INSERT INTO staff_ui_preferences (
@@ -99,6 +104,25 @@ async def _upsert_ui_prefs(db: AsyncSession, staff_id: int, prefs: StaffUIPrefer
             "buddy": prefs.show_buddy_menu, "sidebar": prefs.show_sidebar,
         },
     )
+
+
+async def _replace_additional_emails(
+    db: AsyncSession, staff_id: int, emails: list[StaffEmailInput]
+) -> None:
+    """副メール群を全削除 → 全 INSERT で置換（冪等）"""
+    await db.execute(
+        text("DELETE FROM staff_emails WHERE staff_id = :sid"),
+        {"sid": staff_id},
+    )
+    for e in emails:
+        await db.execute(
+            text("""
+                INSERT INTO staff_emails (staff_id, email, purpose)
+                VALUES (:sid, :email, :purpose)
+                ON CONFLICT (staff_id, email) DO NOTHING
+            """),
+            {"sid": staff_id, "email": e.email, "purpose": e.purpose},
+        )
 
 
 @router.get("/staff", response_model=list[StaffResponse],
@@ -205,6 +229,7 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
                 {"code": f"EMP-{new_id:05d}", "id": new_id},
             )
         await _upsert_ui_prefs(db, new_id, data.ui_preferences)
+        await _replace_additional_emails(db, new_id, data.additional_emails)
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="create", table_name="staff", record_id=new_id,
@@ -250,6 +275,7 @@ async def update_staff(staff_id: int, data: StaffUpdate,
                             detail="更新するフィールドを少なくとも1つ指定してください")
 
     ui_prefs = update_data.pop("ui_preferences", None)
+    additional_emails = update_data.pop("additional_emails", None)
     update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE}
     for k, v in list(update_data.items()):
         if hasattr(v, "value"):
@@ -266,6 +292,11 @@ async def update_staff(staff_id: int, data: StaffUpdate,
     if ui_prefs is not None:
         prefs = StaffUIPreferences(**ui_prefs) if isinstance(ui_prefs, dict) else ui_prefs
         await _upsert_ui_prefs(db, staff_id, prefs)
+
+    # additional_emails: None=触らない、[]=全削除、[...]=置換
+    if additional_emails is not None:
+        email_models = [StaffEmailInput(**e) if isinstance(e, dict) else e for e in additional_emails]
+        await _replace_additional_emails(db, staff_id, email_models)
 
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,

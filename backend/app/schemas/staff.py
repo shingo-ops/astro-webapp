@@ -32,6 +32,20 @@ class StaffUIPreferences(BaseModel):
     show_sidebar: bool = True
 
 
+class StaffEmailInput(BaseModel):
+    """副メールアドレス（primary_email は staff 本体、これは追加分）"""
+    email: str = Field(max_length=255)
+    purpose: str | None = Field(default=None, max_length=50, description="main/notification/discord_link/secondary等")
+
+    @field_validator("email")
+    @classmethod
+    def _check_email(cls, v: str) -> str:
+        checked = validate_email_loose(v)
+        if not checked:
+            raise ValueError("email は必須")
+        return checked
+
+
 class StaffCreate(BaseModel):
     staff_code: str | None = Field(default=None, max_length=20, description="EMP-00001 形式。空欄なら自動採番")
     surname_jp: str = Field(min_length=1, max_length=50)
@@ -47,6 +61,7 @@ class StaffCreate(BaseModel):
     firebase_uid: str | None = Field(default=None, max_length=128)
     user_id: int | None = None
     ui_preferences: StaffUIPreferences | None = None
+    additional_emails: list[StaffEmailInput] = Field(default_factory=list, description="副メール（EMP-00005問題対応）")
 
     @field_validator("primary_email")
     @classmethod
@@ -71,6 +86,8 @@ class StaffUpdate(BaseModel):
     firebase_uid: str | None = Field(default=None, max_length=128)
     user_id: int | None = None
     ui_preferences: StaffUIPreferences | None = None
+    # None=触らない、[]=全削除、[...]=置換
+    additional_emails: list[StaffEmailInput] | None = None
 
     @field_validator("primary_email")
     @classmethod

@@ -260,10 +260,18 @@ async def delete_bot(bot_id: int, db: AsyncSession = Depends(get_db),
     old_row = old.mappings().first()
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Botが見つかりません")
-    await db.execute(text("DELETE FROM bots WHERE id = :id"), {"id": bot_id})
-    await record_audit_log(
-        db=db, tenant_id=tenant_id, user_id=current_user.id,
-        action="delete", table_name="bots", record_id=bot_id,
-        old_data=dict(old_row),
-    )
-    await db.commit()
+    try:
+        await db.execute(text("DELETE FROM bots WHERE id = :id"), {"id": bot_id})
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=current_user.id,
+            action="delete", table_name="bots", record_id=bot_id,
+            old_data=dict(old_row),
+        )
+        await db.commit()
+    except IntegrityError as e:
+        await db.rollback()
+        logger.warning("delete_bot IntegrityError: tenant=%d bot=%d err=%s", tenant_id, bot_id, e.orig)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="この Bot は他のレコード（会話ログ・通知ログ等）から参照されているため削除できません",
+        )
