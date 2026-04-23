@@ -74,15 +74,34 @@ async def verify(engine, tenant_id: int, schema: str) -> VerifyResult:
         await conn.execute(text(f"SET search_path = {schema}, public"))
         await conn.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
 
-        # [1] 件数
+        # [1] 件数（原本CSV: CT-00001〜CT-00052 の約52件）
         total_customers = (await conn.execute(text(f"SELECT COUNT(*) FROM {schema}.customers"))).scalar_one()
-        r.check(total_customers >= 1, f"customers 件数 >= 1 (actual={total_customers})")
+        # 設計書想定 52 件、実データは CSV エクスポートの最終行有無で ±1 の誤差あり
+        r.check(
+            50 <= total_customers <= 52,
+            f"customers 件数が 50-52 の範囲内 (actual={total_customers})",
+        )
         logger.info("件数: customers=%d", total_customers)
 
         addr_count = (await conn.execute(text(f"SELECT COUNT(*) FROM {schema}.customer_addresses"))).scalar_one()
         channels_count = (await conn.execute(text(f"SELECT COUNT(*) FROM {schema}.customer_sales_channels"))).scalar_one()
         discord_count = (await conn.execute(text(f"SELECT COUNT(*) FROM {schema}.customer_discord"))).scalar_one()
         logger.info("件数: addresses=%d, channels=%d, discord=%d", addr_count, channels_count, discord_count)
+        # 設計書目安: 約104行（1顧客あたり billing+delivery の2行、住所未記入は例外）
+        r.check(
+            addr_count <= total_customers * 2,
+            f"customer_addresses が customers の2倍以内 (actual={addr_count}, max={total_customers * 2})",
+        )
+        # (customer_id, address_type) の重複が無い（再実行時に二重化しない前提の検証）
+        dup_addr = (await conn.execute(text(f"""
+            SELECT customer_id, address_type, COUNT(*) c
+            FROM {schema}.customer_addresses
+            GROUP BY customer_id, address_type HAVING COUNT(*) > 1
+        """))).fetchall()
+        r.check(
+            not dup_addr,
+            f"customer_addresses の (customer_id, address_type) 重複 0件 (actual={len(dup_addr)})",
+        )
 
         # [2] CHECK制約違反が無いこと
         bad_trust = (await conn.execute(text(f"""
@@ -132,6 +151,19 @@ async def verify(engine, tenant_id: int, schema: str) -> VerifyResult:
               AND customer_code IN ('CT-00030', 'CT-00032')
         """))).scalar_one()
         r.check(dup_tag_count == 2, f"CT-00030/00032 が pending_dedup_review 2件 (actual={dup_tag_count})")
+
+        # [4.5] sales_rep_id NULL 件数（テストデータスキップや lookup 失敗で発生）
+        null_rep_rows = (await conn.execute(text(f"""
+            SELECT customer_code FROM {schema}.customers
+            WHERE sales_rep_id IS NULL
+            ORDER BY customer_code
+        """))).fetchall()
+        logger.info(
+            "sales_rep_id=NULL の顧客: %d 件 (%s)",
+            len(null_rep_rows),
+            [row.customer_code for row in null_rep_rows[:10]],
+        )
+        # エラーにはせず情報として出す（営業担当者列が空の顧客は許容）
 
         # [5] 副テーブル関連性（親の customer が全て存在する）
         orphan_addr = (await conn.execute(text(f"""

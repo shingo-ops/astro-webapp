@@ -73,8 +73,13 @@ async def verify(engine, tenant_id: int, schema: str) -> VerifyResult:
         await conn.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
 
         # [1] 件数
+        # 原本CSV: EMP-00001〜00005 の 5名（EMP-00002 が「営業 太郎」ならスキップされる可能性あり）。
+        # 範囲: 4〜5件を許容（EMP-00002 スキップの有無に依存）
         staff_count = (await conn.execute(text(f"SELECT COUNT(*) FROM {schema}.staff"))).scalar_one()
-        r.check(staff_count >= 1, f"staff 件数 >= 1 (actual={staff_count})")
+        r.check(
+            4 <= staff_count <= 5,
+            f"staff 件数 4〜5件 (actual={staff_count}, 5件=全員投入 / 4件=EMP-00002 テスト扱いでスキップ)",
+        )
         logger.info("件数: staff=%d", staff_count)
 
         emails_count = (await conn.execute(text(f"SELECT COUNT(*) FROM {schema}.staff_emails"))).scalar_one()
@@ -83,7 +88,9 @@ async def verify(engine, tenant_id: int, schema: str) -> VerifyResult:
         logger.info("件数: staff_emails=%d, staff_ui_preferences=%d, roles=%d", emails_count, prefs_count, roles_count)
 
         r.check(prefs_count == staff_count, f"staff_ui_preferences の行数が staff と一致 ({prefs_count} == {staff_count})")
-        r.check(roles_count >= 7, f"roles >= 7件（オーナー+メンバー+新6） (actual={roles_count})")
+        # roles: 既存 migrate_phase1.py の seed (オーナー + メンバー = 2) + migration 021 で追加 6 = 8件
+        # ただし tenant ごとの設定差を考慮して 7 以上を許容
+        r.check(roles_count >= 7, f"roles >= 7件（オーナー+メンバー+新6 = 8件想定） (actual={roles_count})")
 
         # [2] CHECK制約
         bad_status = (await conn.execute(text(f"""
@@ -124,8 +131,13 @@ async def verify(engine, tenant_id: int, schema: str) -> VerifyResult:
             JOIN {schema}.staff s ON s.id = se.staff_id
             WHERE s.staff_code = 'EMP-00005'
         """))).scalar_one()
-        # 実データで EMP-00005 は2行 → primary 1 + secondary 1
-        r.check(emp5_emails_count >= 0, f"EMP-00005 secondary emails (actual={emp5_emails_count})")
+        # 実データで EMP-00005 は2行（1番目のメールが secondary、2番目が primary）
+        # → secondary 1件であることを検証
+        r.check(
+            emp5_emails_count == 1,
+            f"EMP-00005 secondary email が 1件 (actual={emp5_emails_count}, "
+            f"primary=staff本体, secondary=staff_emails 1件)",
+        )
         logger.info("EMP-00005: staff %d 行, secondary emails %d 件", emp5_staff_count, emp5_emails_count)
 
         # [6] 孤児 staff_emails / staff_ui_preferences

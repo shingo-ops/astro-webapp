@@ -173,20 +173,19 @@ def parse_country_code(value: str | None) -> str | None:
 
 
 def parse_contact_channel(value: str | None) -> str | None:
-    """連絡ツールの表記揺れを enum 値に正規化する。"""
+    """
+    連絡ツールの表記揺れを enum 値に正規化する。完全一致のみ。
+    partial match は誤変換の元なので行わない（reviewer Major 3 対応）。
+    未知値は warn + None。
+    """
     if value is None:
         return None
     stripped = value.strip().lower()
     if not stripped:
         return None
-    # 完全一致優先
     if stripped in _CONTACT_CHANNEL_MAP:
         return _CONTACT_CHANNEL_MAP[stripped]
-    # 部分一致（whatsapp / ig 等の短縮を救う）
-    for key, val in _CONTACT_CHANNEL_MAP.items():
-        if key in stripped:
-            return val
-    logger.warning("parse_contact_channel: 解決不能 %r → None", value)
+    logger.warning("parse_contact_channel: 解決不能 %r → None（辞書 _CONTACT_CHANNEL_MAP への追加を検討）", value)
     return None
 
 
@@ -209,8 +208,15 @@ def normalize_status(value: str | None) -> str:
     """
     担当者マスタの status 列（'有効' / '無効' / '保留'）を
     DB の CHECK 制約値（'active' / 'inactive' / 'pending'）に変換する。
+
+    未知値（例: '退職'）は warn ログを出して 'pending' を返す。
+    'active' にフォールバックすると退職者が有効扱いで残るリスクがあるため
+    保守的に 'pending' に倒す（reviewer Major 2 対応）。
     """
     if value is None:
+        return "active"
+    stripped = value.strip()
+    if not stripped:
         return "active"
     mapping = {
         "有効": "active",
@@ -220,21 +226,24 @@ def normalize_status(value: str | None) -> str:
         "保留": "pending",
         "pending": "pending",
     }
-    return mapping.get(value.strip().lower() if value.strip().isascii() else value.strip(), "active")
+    key = stripped.lower() if stripped.isascii() else stripped
+    if key not in mapping:
+        logger.warning("normalize_status: 未知の status %r → 'pending' にフォールバック", value)
+        return "pending"
+    return mapping[key]
 
 
 def is_test_user_name(surname: str | None, given_name: str | None) -> bool:
     """
     設計書 §5-1 「EMP-00002『営業 太郎』はテストデータなので投入しない」判定。
-    氏名から判定する（'太郎' 等が含まれていればテストとみなす）。
+
+    合意範囲は「営業 太郎」フルネーム一致のみ。姓または名が単独で「太郎」に
+    一致しても本物の担当者の可能性があるため除外しない（reviewer Major 1 対応）。
+    空文字 (surname/given_name ともに空) はデータ異常として True を返す。
     """
-    if not surname and not given_name:
-        return True  # 全空はテスト扱い
+    if not (surname or "").strip() and not (given_name or "").strip():
+        return True
     full_name = f"{(surname or '').strip()} {(given_name or '').strip()}".strip()
-    test_patterns = [
-        "営業 太郎",
-        "テスト",
-        "test",
-        "太郎",
-    ]
-    return any(pattern in full_name for pattern in test_patterns)
+    # 完全一致のみ（部分一致はしない）
+    test_names_exact = {"営業 太郎", "テスト ユーザー", "test user"}
+    return full_name.lower() in {n.lower() for n in test_names_exact}

@@ -237,6 +237,16 @@ async def insert_customer_with_related(
     )
     customer_id = result.scalar_one()
 
+    # 住所は UNIQUE 制約が無く（将来の複数配送先対応のため）、
+    # かつスクリプトの再実行で二重化するのを防ぐため、
+    # billing/delivery の insert 前に既存の住所行を削除する。
+    # 将来的にアプリ側で追加された住所も対象になるが、本スクリプトは
+    # 原本CSVからの冪等再投入専用なのでこの挙動で問題ない。
+    await conn.execute(
+        text(f"DELETE FROM {schema}.customer_addresses WHERE customer_id = :cid"),
+        {"cid": customer_id},
+    )
+
     # billing address
     if has_any_value(row, BILLING_KEYS):
         await conn.execute(
