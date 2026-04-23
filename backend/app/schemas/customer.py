@@ -97,6 +97,18 @@ class CustomerDiscordResponse(CustomerDiscordInput):
     model_config = {"from_attributes": True}
 
 
+class CustomerContactChannelInput(BaseModel):
+    """連絡ツール 1行（Phase 1-B-1: 1顧客が複数チャネルを用途別に持つ）"""
+    channel: str = Field(min_length=1, max_length=30, description="whatsapp/discord/instagram/facebook_messenger/line_id/telegram/email/phone/referral 等")
+    purpose: str | None = Field(default=None, max_length=50, description="'商談用' / '発送通知用' / '請求書送付用' 等の用途")
+    is_primary: bool = Field(default=False, description="主連絡ツール。1顧客につき最大1つ")
+
+
+class CustomerContactChannelResponse(CustomerContactChannelInput):
+    id: int
+    model_config = {"from_attributes": True}
+
+
 # ========== 本体 ==========
 
 
@@ -126,6 +138,8 @@ class CustomerCreate(BaseModel):
     addresses: list[CustomerAddressInput] = Field(default_factory=list)
     sales_channels: list[str] = Field(default_factory=list)
     discord: CustomerDiscordInput | None = None
+    # Phase 1-B-1: 複数連絡ツール（None=primary_contact_channelから自動作成、[]=明示的に空）
+    contact_channels: list[CustomerContactChannelInput] | None = None
 
 
 class CustomerUpdate(BaseModel):
@@ -150,6 +164,7 @@ class CustomerUpdate(BaseModel):
     addresses: list[CustomerAddressInput] | None = None
     sales_channels: list[str] | None = None
     discord: CustomerDiscordInput | None = None
+    contact_channels: list[CustomerContactChannelInput] | None = None
 
 
 class CustomerResponse(BaseModel):
@@ -177,6 +192,7 @@ class CustomerResponse(BaseModel):
     addresses: list[CustomerAddressResponse] = Field(default_factory=list)
     sales_channels: list[str] = Field(default_factory=list)
     discord: CustomerDiscordResponse | None = None
+    contact_channels: list[CustomerContactChannelResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
