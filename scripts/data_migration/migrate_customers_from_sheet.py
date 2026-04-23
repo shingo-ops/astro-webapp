@@ -172,6 +172,10 @@ async def insert_customer_with_related(
     status = "pending_dedup_review" if customer_code in KNOWN_DUP_CANDIDATES else "active"
     registered_at = parse_registered_at(row.get("登録日時"))
 
+    # monthly_forecast の連動は Python 側で決定（asyncpg の AmbiguousParameterError 回避）
+    forecast_source = "manual" if monthly_forecast is not None else None
+    forecast_updated_at_will_be_set = monthly_forecast is not None
+
     result = await conn.execute(
         text(f"""
             INSERT INTO {schema}.customers (
@@ -187,9 +191,7 @@ async def insert_customer_with_related(
                 :tenant_id, :customer_code, NULL, :sales_rep_id, :company_name,
                 :trust_level, :priority_focus,
                 :per_order_amount, :monthly_frequency,
-                :monthly_forecast,
-                CASE WHEN :monthly_forecast IS NULL THEN NULL ELSE 'manual' END,
-                CASE WHEN :monthly_forecast IS NULL THEN NULL ELSE NOW() END,
+                :monthly_forecast, :monthly_forecast_source, :monthly_forecast_updated_at,
                 :meeting_requested,
                 :billing_display_name, :payment_recipient_name,
                 :fedex_account, :shipping_note, :primary_contact_channel, :status,
@@ -225,6 +227,9 @@ async def insert_customer_with_related(
             "per_order_amount": per_order_amount,
             "monthly_frequency": monthly_frequency,
             "monthly_forecast": monthly_forecast,
+            "monthly_forecast_source": forecast_source,
+            # updated_at は INSERT 時は NULL、値あり時のみ後続 UPDATE で NOW() 設定
+            "monthly_forecast_updated_at": None,
             "meeting_requested": parse_bool_loose(row.get("面談希望")),
             "billing_display_name": billing_display_name,
             "payment_recipient_name": payment_recipient_name,
@@ -236,6 +241,13 @@ async def insert_customer_with_related(
         },
     )
     customer_id = result.scalar_one()
+
+    # monthly_forecast が値ありなら updated_at を NOW() に（bind 不能のため別クエリ）
+    if forecast_updated_at_will_be_set:
+        await conn.execute(
+            text(f"UPDATE {schema}.customers SET monthly_forecast_updated_at = NOW() WHERE id = :cid"),
+            {"cid": customer_id},
+        )
 
     # 住所は UNIQUE 制約が無く（将来の複数配送先対応のため）、
     # かつスクリプトの再実行で二重化するのを防ぐため、
