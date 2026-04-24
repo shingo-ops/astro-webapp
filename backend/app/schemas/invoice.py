@@ -31,7 +31,10 @@ class InvoiceItemInput(BaseModel):
 
 
 class InvoiceCreate(BaseModel):
-    customer_id: int = Field(ge=1)
+    customer_id: int = Field(ge=1, description="顧客ID（旧モデル、Step 5d まで必須）")
+    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
+    company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
+    contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
     currency: str = Field(default="JPY", max_length=10)
     shipping_fee: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     tax_amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
@@ -73,6 +76,9 @@ class InvoiceResponse(BaseModel):
     invoice_number: str | None
     quote_id: int | None
     customer_id: int
+    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
+    company_id: int | None = None
+    contact_id: int | None = None
     currency: str
     subtotal: Decimal | None
     shipping_fee: Decimal | None

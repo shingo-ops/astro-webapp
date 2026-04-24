@@ -39,7 +39,7 @@ from app.services.audit import record_audit_log
 router = APIRouter()
 
 _QUOTE_COLUMNS = """
-    id, quote_code, deal_id, customer_id, currency,
+    id, quote_code, deal_id, customer_id, company_id, contact_id, currency,
     subtotal, shipping_fee, tax_amount, total_amount,
     status, validity_date, shipping_country, shipping_carrier,
     delivery_info, pdf_url, notes, created_by,
@@ -74,6 +74,8 @@ async def list_quotes(
     per_page: int = Query(default=20, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
     customer_id: int | None = Query(default=None),
+    company_id: int | None = Query(default=None),
+    contact_id: int | None = Query(default=None),
     deal_id: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_current_tenant),
@@ -89,6 +91,13 @@ async def list_quotes(
     if customer_id:
         conditions.append("customer_id = :cid")
         params["cid"] = customer_id
+    # Phase 1-B-2 Step 5b-2: 新モデル filter
+    if company_id:
+        conditions.append("company_id = :company_id")
+        params["company_id"] = company_id
+    if contact_id:
+        conditions.append("contact_id = :contact_id")
+        params["contact_id"] = contact_id
     if deal_id:
         conditions.append("deal_id = :did")
         params["did"] = deal_id
@@ -142,6 +151,26 @@ async def create_quote(
     if not cust.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
 
+    # Phase 1-B-2 Step 5b-2: company_id/contact_id 指定時の存在確認
+    # 両方指定時は contact が company に所属しているかも検証（reviewer Major 1 対応）
+    if data.contact_id is not None:
+        contact_check = await db.execute(
+            text("SELECT company_id FROM contacts WHERE id = :id"),
+            {"id": data.contact_id},
+        )
+        contact_row = contact_check.first()
+        if not contact_row:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された担当者が見つかりません")
+        if data.company_id is not None and contact_row[0] != data.company_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="指定された担当者は指定会社に所属していません",
+            )
+    elif data.company_id is not None:
+        company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
+        if not company_check.first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された会社が見つかりません")
+
     # 案件存在確認（指定時のみ）
     if data.deal_id:
         deal = await db.execute(text("SELECT id FROM deals WHERE id = :id"), {"id": data.deal_id})
@@ -159,12 +188,12 @@ async def create_quote(
     header_result = await db.execute(
         text("""
             INSERT INTO quotes (
-                tenant_id, deal_id, customer_id, currency,
+                tenant_id, deal_id, customer_id, company_id, contact_id, currency,
                 subtotal, shipping_fee, tax_amount, total_amount,
                 status, validity_date, shipping_country, shipping_carrier,
                 delivery_info, notes, created_by
             ) VALUES (
-                :tid, :did, :cid, :currency,
+                :tid, :did, :cid, :company_id, :contact_id, :currency,
                 :subtotal, :shipping, :tax, :total,
                 'draft', :validity, :country, :carrier,
                 :delivery, :notes, :created_by
@@ -172,6 +201,7 @@ async def create_quote(
         """),
         {
             "tid": tenant_id, "did": data.deal_id, "cid": data.customer_id,
+            "company_id": data.company_id, "contact_id": data.contact_id,
             "currency": data.currency, "subtotal": subtotal, "shipping": shipping,
             "tax": tax, "total": total, "validity": validity,
             "country": data.shipping_country, "carrier": data.shipping_carrier,
