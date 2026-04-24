@@ -162,11 +162,17 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Company | null>(null);
+  // billing/delivery タブを触ったかどうか。編集時に触っていない場合 payload から
+  // addresses を omit することで、本ページ非対応の multi_branch 住所を保護する
+  // （backend の _replace_addresses は配列受取時に DELETE+INSERT で全置換するため）
+  const [addressesDirty, setAddressesDirty] = useState(false);
 
   const loadCompanies = async () => {
     try {
-      const params = search ? `?search=${encodeURIComponent(search)}` : "";
-      const data = await api.get<Company[]>(`/companies${params}`);
+      // per_page=100 で全件を一画面に表示（highlife-jpn: 49 社、将来の増加余地あり）
+      const parts: string[] = ["per_page=100"];
+      if (search) parts.push(`search=${encodeURIComponent(search)}`);
+      const data = await api.get<Company[]>(`/companies?${parts.join("&")}`);
       setCompanies(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "取得に失敗しました");
@@ -251,9 +257,13 @@ export default function CompaniesPage() {
       shipping_note: toNull(form.shipping_note),
       status: form.status || "active",
       notes: toNull(form.notes),
-      addresses,
       sales_channels: salesChannels,
     };
+    // 新規作成時は addresses を常に送る。編集時は billing/delivery タブを
+    // 実際に触った時のみ送る（multi_branch で管理されている住所の誤削除を防ぐ）
+    if (!editId || addressesDirty) {
+      payload.addresses = addresses;
+    }
     if (!editId && form.company_code.trim()) {
       payload.company_code = form.company_code.trim();
     }
@@ -270,6 +280,7 @@ export default function CompaniesPage() {
       setEditId(null);
       setForm(emptyForm);
       setActiveTab("basic");
+      setAddressesDirty(false);
       loadCompanies();
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました");
@@ -316,6 +327,7 @@ export default function CompaniesPage() {
     });
     setPhoneError(null);
     setActiveTab("basic");
+    setAddressesDirty(false); // 編集開始時は clean、タブで編集したら dirty に
     setShowForm(true);
   };
 
@@ -351,6 +363,7 @@ export default function CompaniesPage() {
                 setForm(emptyForm);
                 setActiveTab("basic");
                 setPhoneError(null);
+                setAddressesDirty(false);
                 setShowForm(true);
               }}
             >
@@ -499,7 +512,11 @@ export default function CompaniesPage() {
               {(activeTab === "billing" || activeTab === "delivery") && (() => {
                 const key = activeTab;
                 const addr = form[key];
-                const setAddr = (patch: Partial<AddressFormState>) => setForm({ ...form, [key]: { ...addr, ...patch } });
+                const setAddr = (patch: Partial<AddressFormState>) => {
+                  // 住所タブを触った瞬間に dirty フラグを立てて PATCH に含める
+                  setAddressesDirty(true);
+                  setForm({ ...form, [key]: { ...addr, ...patch } });
+                };
                 return (
                   <>
                     <div className="form-row">
