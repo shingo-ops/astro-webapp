@@ -310,6 +310,13 @@ async def create_company(
                 {"id": new_id},
             )
 
+        # DEBUG: Step 5c-1 検証で DELETE FROM company_addresses が
+        # "relation does not exist" で落ちる原因調査
+        try:
+            sp = await db.execute(text("SELECT current_schemas(true)"))
+            logger.warning("create_company: search_path=%s tenant_id=%s new_id=%s", sp.scalar(), tenant_id, new_id)
+        except Exception as e:
+            logger.warning("create_company: search_path probe failed: %s", e)
         await _replace_addresses(db, new_id, data.addresses)
         await _replace_sales_channels(db, new_id, data.sales_channels)
 
