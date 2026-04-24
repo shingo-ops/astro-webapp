@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -397,14 +398,18 @@ export default function CompaniesPage() {
               companies.map((c) => (
                 <tr key={c.id}>
                   <td>{c.company_code}</td>
-                  <td>{companyDisplayName(c)}</td>
+                  <td>
+                    {/* 詳細ページへ: multi_branch 住所編集 / 担当者タブ / 販売チャネル */}
+                    <Link to={`/companies/${c.id}`}>{companyDisplayName(c)}</Link>
+                  </td>
                   <td>{c.industry || "-"}</td>
                   <td><span className={`status-badge status-${c.status}`}>{c.status}</span></td>
                   <td>{addressDisplay(defaultAddress(c, "billing"))}</td>
                   <td>{addressDisplay(defaultAddress(c, "delivery"))}</td>
                   <td>
+                    <Link to={`/companies/${c.id}`} className="btn-sm">詳細</Link>
                     {hasPermission("customers.update") && (
-                      <button className="btn-sm" onClick={() => handleEdit(c)}>編集</button>
+                      <button className="btn-sm" onClick={() => handleEdit(c)}>基本編集</button>
                     )}
                     {hasPermission("customers.delete") && (
                       <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(c)}>削除</button>
