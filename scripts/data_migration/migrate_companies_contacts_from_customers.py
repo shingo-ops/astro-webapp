@@ -86,14 +86,6 @@ COMPANY_SUFFIXES = [
     "(株)", "（株）", "(有)", "（有）",
 ]
 
-BUSINESS_KEYWORDS = [
-    "shop", "trade", "cards", "harvest", "seafood", "cocoa",
-    "&", "ltd", "inc", "corp", "llc", "corporation", "limited", "pty",
-    "company", "co.", "store", "mart", "group", "holdings",
-    "株式会社", "有限会社", "合同会社", "(株)", "（株）", "(有)", "（有）",
-]
-
-
 def normalize_company_name(name: Optional[str]) -> str:
     """会社名の正規化キーを生成（名寄せ判定用）。analyze_company_names.py と同一ロジック。"""
     if not name:
@@ -108,20 +100,9 @@ def normalize_company_name(name: Optional[str]) -> str:
     return s.strip()
 
 
-def looks_like_individual(company: Optional[str], delivery_name: Optional[str]) -> bool:
-    """個人顧客判定（analyze_company_names.py と同一ロジックの簡約版）。"""
-    s = (company or "").strip()
-    if not s:
-        return True
-    s_lower = s.lower()
-    if any(kw in s_lower for kw in BUSINESS_KEYWORDS):
-        return False
-    if delivery_name and s == delivery_name.strip():
-        return True
-    words = s.split()
-    if len(words) <= 2 and all(len(w) < 20 for w in words):
-        return True
-    return False
+# Phase 1-B-2 Step 5a: 個人/法人の区別撤廃（しんごさん判断 2026-04-24）
+# 以前は looks_like_individual() で is_individual を推定していたが削除。
+# BUSINESS_KEYWORDS / looks_like_individual() は removed。
 
 
 def extract_branch_name(company_name: Optional[str]) -> Optional[str]:
@@ -487,14 +468,6 @@ async def upsert_company(
     """companies を UPSERT して id を返す。"""
     name = choose_company_name(leader)
     norm = normalize_company_name(leader.company_name)
-    # 個人顧客判定: leader の delivery name を使う
-    delivery_name = None
-    for a in leader.addresses:
-        if a["address_type"] == "delivery":
-            delivery_name = a.get("name")
-            break
-    # グループサイズ>1 なら明確に法人
-    is_individual = False if group.size > 1 else looks_like_individual(leader.company_name, delivery_name)
 
     # leader の status が 'pending_dedup_review' なら、merge 完了時点で 'active' に昇格
     # （contact 側と同じロジック。手動マージ/auto グループ化でどちらの場合も dedup は解決済み）
@@ -503,13 +476,13 @@ async def upsert_company(
     result = await conn.execute(
         text(f"""
             INSERT INTO {schema}.companies (
-                tenant_id, company_code, lead_id, name, normalized_name, is_individual,
+                tenant_id, company_code, lead_id, name, normalized_name,
                 trust_level, priority_focus, per_order_amount, monthly_frequency,
                 monthly_forecast, monthly_forecast_source, monthly_forecast_updated_at,
                 billing_display_name, payment_recipient_name, fedex_account, shipping_note,
                 status, sales_rep_id, created_at
             ) VALUES (
-                :tenant_id, :company_code, :lead_id, :name, :normalized_name, :is_individual,
+                :tenant_id, :company_code, :lead_id, :name, :normalized_name,
                 :trust_level, :priority_focus, :per_order_amount, :monthly_frequency,
                 :monthly_forecast, :monthly_forecast_source, :monthly_forecast_updated_at,
                 :billing_display_name, :payment_recipient_name, :fedex_account, :shipping_note,
@@ -519,7 +492,6 @@ async def upsert_company(
                 lead_id = EXCLUDED.lead_id,
                 name = EXCLUDED.name,
                 normalized_name = EXCLUDED.normalized_name,
-                is_individual = EXCLUDED.is_individual,
                 trust_level = EXCLUDED.trust_level,
                 priority_focus = EXCLUDED.priority_focus,
                 per_order_amount = EXCLUDED.per_order_amount,
@@ -542,7 +514,6 @@ async def upsert_company(
             "lead_id": leader.lead_id,
             "name": name,
             "normalized_name": norm or None,
-            "is_individual": is_individual,
             "trust_level": leader.trust_level,
             "priority_focus": leader.priority_focus,
             "per_order_amount": leader.per_order_amount,

@@ -124,6 +124,12 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/032_add_company_contact_to_downstream.sql
 
+            # Phase 1-B-2 Step 5a: companies.is_individual カラム削除
+            #   個人/法人の区別撤廃（しんごさん判断 2026-04-24）
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/033_drop_companies_is_individual.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
