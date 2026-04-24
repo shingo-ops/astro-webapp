@@ -11,6 +11,8 @@ from app.routers import health
 from app.routers import auth
 from app.routers import admin
 from app.routers import customers
+from app.routers import companies  # Phase 1-B-2 Step 5b-1
+from app.routers import contacts   # Phase 1-B-2 Step 5b-1
 from app.routers import deals
 from app.routers import orders
 from app.routers import dashboard
@@ -91,6 +93,15 @@ app.include_router(
 # CRM業務ルーター（認証必須）
 app.include_router(
     customers.router, prefix="/api/v1", tags=["customers"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 1-B-2 Step 5b-1: 新 companies/contacts API（既存 customers と併存）
+app.include_router(
+    companies.router, prefix="/api/v1", tags=["companies"],
+    dependencies=[Depends(get_current_tenant)],
+)
+app.include_router(
+    contacts.router, prefix="/api/v1", tags=["contacts"],
     dependencies=[Depends(get_current_tenant)],
 )
 app.include_router(
