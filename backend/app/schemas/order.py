@@ -42,10 +42,10 @@ class OrderCreate(BaseModel):
 
 
 class OrderUpdate(BaseModel):
+    # 注意: customer_id / company_id / contact_id / deal_id / invoice_id は
+    # 作成後の変更を禁止（FK 整合性保護ポリシー）。router の _UPDATABLE_COLUMNS にも含まない。
+    # schema にも出さないことで API コントラクトと router 挙動を一致させる。
     customer_id: int | None = Field(default=None, ge=1)
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
-    company_id: int | None = Field(default=None, ge=1)
-    contact_id: int | None = Field(default=None, ge=1)
     deal_id: int | None = Field(default=None, ge=1)
     invoice_id: int | None = Field(default=None, ge=1)
     order_number: str | None = Field(default=None, min_length=1, max_length=100)

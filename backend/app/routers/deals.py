@@ -139,14 +139,24 @@ async def create_deal(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
 
     # Phase 1-B-2 Step 5b-2: company_id/contact_id 指定時は存在確認
-    if data.company_id is not None:
+    # 両方指定時は contact が company に所属しているかも検証（reviewer Major 1 対応）
+    if data.contact_id is not None:
+        contact_check = await db.execute(
+            text("SELECT company_id FROM contacts WHERE id = :id"),
+            {"id": data.contact_id},
+        )
+        contact_row = contact_check.first()
+        if not contact_row:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された担当者が見つかりません")
+        if data.company_id is not None and contact_row[0] != data.company_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="指定された担当者は指定会社に所属していません",
+            )
+    elif data.company_id is not None:
         company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
         if not company_check.first():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された会社が見つかりません")
-    if data.contact_id is not None:
-        contact_check = await db.execute(text("SELECT id FROM contacts WHERE id = :id"), {"id": data.contact_id})
-        if not contact_check.first():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された担当者が見つかりません")
 
     # リード存在確認（指定時のみ）
     if data.lead_id is not None:
