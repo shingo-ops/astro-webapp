@@ -412,8 +412,9 @@ CREATE TABLE IF NOT EXISTS {schema}.deals (
     customer_id INTEGER REFERENCES {schema}.customers(id),
     -- Phase 1-B-2 Step 4: 新 B2B モデル（company + contact）への移行カラム
     -- customer_id と両立、Step 5 で customer_id を drop する予定
-    company_id INTEGER REFERENCES {schema}.companies(id),
-    contact_id INTEGER REFERENCES {schema}.contacts(id),
+    -- CONSTRAINT 名は migration 032 と合わせる（verify の FK 存在 check が新旧テナントで揃うように）
+    company_id INTEGER CONSTRAINT fk_deals_company REFERENCES {schema}.companies(id),
+    contact_id INTEGER CONSTRAINT fk_deals_contact REFERENCES {schema}.contacts(id),
     lead_id INTEGER REFERENCES {schema}.leads(id),
     title VARCHAR(255) NOT NULL,
     amount NUMERIC(15, 2),
@@ -488,8 +489,8 @@ CREATE TABLE IF NOT EXISTS {schema}.orders (
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
     customer_id INTEGER REFERENCES {schema}.customers(id),
     -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
-    company_id INTEGER REFERENCES {schema}.companies(id),
-    contact_id INTEGER REFERENCES {schema}.contacts(id),
+    company_id INTEGER CONSTRAINT fk_orders_company REFERENCES {schema}.companies(id),
+    contact_id INTEGER CONSTRAINT fk_orders_contact REFERENCES {schema}.contacts(id),
     deal_id INTEGER REFERENCES {schema}.deals(id),
     order_number VARCHAR(100) NOT NULL,
     total_amount NUMERIC(15, 2),
@@ -812,8 +813,8 @@ CREATE TABLE IF NOT EXISTS {schema}.quotes (
     deal_id INTEGER REFERENCES {schema}.deals(id),
     customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id),
     -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
-    company_id INTEGER REFERENCES {schema}.companies(id),
-    contact_id INTEGER REFERENCES {schema}.contacts(id),
+    company_id INTEGER CONSTRAINT fk_quotes_company REFERENCES {schema}.companies(id),
+    contact_id INTEGER CONSTRAINT fk_quotes_contact REFERENCES {schema}.contacts(id),
     currency VARCHAR(10) DEFAULT 'JPY',
     subtotal NUMERIC(15, 2) DEFAULT 0,
     shipping_fee NUMERIC(15, 2) DEFAULT 0,
@@ -854,8 +855,8 @@ CREATE TABLE IF NOT EXISTS {schema}.invoices (
     quote_id INTEGER REFERENCES {schema}.quotes(id),
     customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id),
     -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
-    company_id INTEGER REFERENCES {schema}.companies(id),
-    contact_id INTEGER REFERENCES {schema}.contacts(id),
+    company_id INTEGER CONSTRAINT fk_invoices_company REFERENCES {schema}.companies(id),
+    contact_id INTEGER CONSTRAINT fk_invoices_contact REFERENCES {schema}.contacts(id),
     currency VARCHAR(10) DEFAULT 'JPY',
     subtotal NUMERIC(15, 2) DEFAULT 0,
     shipping_fee NUMERIC(15, 2) DEFAULT 0,
