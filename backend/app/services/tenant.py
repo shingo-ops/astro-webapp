@@ -216,6 +216,157 @@ CREATE INDEX IF NOT EXISTS idx_ccc_channel ON {schema}.customer_contact_channels
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_one_primary_per_customer
     ON {schema}.customer_contact_channels (customer_id) WHERE is_primary = TRUE;
 
+-- Phase 1-B-2: companies + contacts 階層（新テナントは最初から新構造）
+CREATE TABLE IF NOT EXISTS {schema}.companies (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    company_code VARCHAR(20) NOT NULL,
+    lead_id INTEGER,                                   -- FK は leads 作成後に付与
+    name VARCHAR(255) NOT NULL,
+    name_en VARCHAR(255),
+    normalized_name VARCHAR(255),
+    is_individual BOOLEAN NOT NULL DEFAULT FALSE,
+    industry VARCHAR(100),
+    website VARCHAR(255),
+    trust_level SMALLINT CHECK (trust_level IS NULL OR trust_level BETWEEN 1 AND 5),
+    priority_focus VARCHAR(50),
+    per_order_amount NUMERIC(15,2),
+    monthly_frequency SMALLINT,
+    monthly_forecast NUMERIC(15,2),
+    monthly_forecast_source VARCHAR(20)
+        CHECK (monthly_forecast_source IS NULL OR monthly_forecast_source IN ('manual','ai_analysis')),
+    monthly_forecast_updated_at TIMESTAMPTZ,
+    billing_display_name VARCHAR(255),
+    payment_recipient_name VARCHAR(255),
+    fedex_account VARCHAR(100),
+    shipping_note TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active','inactive','archived','pending_dedup_review')),
+    sales_rep_id INTEGER,                              -- FK は staff 作成後に付与
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (tenant_id, company_code)
+);
+CREATE INDEX IF NOT EXISTS idx_companies_tenant_id ON {schema}.companies (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_companies_normalized_name ON {schema}.companies (normalized_name);
+CREATE INDEX IF NOT EXISTS idx_companies_lead_id ON {schema}.companies (lead_id);
+CREATE INDEX IF NOT EXISTS idx_companies_sales_rep_id ON {schema}.companies (sales_rep_id);
+CREATE INDEX IF NOT EXISTS idx_companies_status ON {schema}.companies (status);
+
+CREATE TABLE IF NOT EXISTS {schema}.contacts (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    company_id INTEGER NOT NULL REFERENCES {schema}.companies(id) ON DELETE CASCADE,
+    contact_code VARCHAR(20) NOT NULL,
+    lead_id INTEGER,                                   -- FK は leads 作成後に付与
+    surname VARCHAR(100),
+    given_name VARCHAR(100),
+    display_name VARCHAR(255),
+    job_title VARCHAR(100),
+    department VARCHAR(100),
+    is_primary_contact BOOLEAN NOT NULL DEFAULT FALSE,
+    primary_email VARCHAR(255),
+    primary_phone VARCHAR(50),
+    status VARCHAR(20) NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active','inactive','archived')),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (tenant_id, contact_code)
+);
+CREATE INDEX IF NOT EXISTS idx_contacts_tenant_id ON {schema}.contacts (tenant_id);
+CREATE INDEX IF NOT EXISTS idx_contacts_company_id ON {schema}.contacts (company_id);
+CREATE INDEX IF NOT EXISTS idx_contacts_lead_id ON {schema}.contacts (lead_id);
+CREATE INDEX IF NOT EXISTS idx_contacts_primary_email ON {schema}.contacts (primary_email);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_one_primary_per_company
+    ON {schema}.contacts (company_id) WHERE is_primary_contact = TRUE;
+
+-- companies/contacts 副テーブル 5本
+CREATE TABLE IF NOT EXISTS {schema}.company_addresses (
+    id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES {schema}.companies(id) ON DELETE CASCADE,
+    address_type VARCHAR(20) NOT NULL CHECK (address_type IN ('billing','delivery')),
+    branch_name VARCHAR(100),
+    name VARCHAR(255),
+    email VARCHAR(255),
+    telephone VARCHAR(50),
+    tax_id VARCHAR(100),
+    address_line_1 VARCHAR(255),
+    address_line_2 VARCHAR(255),
+    address_line_3 VARCHAR(255),
+    city VARCHAR(100),
+    state VARCHAR(100),
+    zip VARCHAR(50),
+    country_code CHAR(2),
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_company_addresses_company_id ON {schema}.company_addresses (company_id);
+CREATE INDEX IF NOT EXISTS idx_company_addresses_type ON {schema}.company_addresses (company_id, address_type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_company_addresses_one_default
+    ON {schema}.company_addresses (company_id, address_type) WHERE is_default = TRUE;
+
+CREATE TABLE IF NOT EXISTS {schema}.company_sales_channels (
+    company_id INTEGER NOT NULL REFERENCES {schema}.companies(id) ON DELETE CASCADE,
+    channel VARCHAR(30) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (company_id, channel)
+);
+
+CREATE TABLE IF NOT EXISTS {schema}.contact_emails (
+    id SERIAL PRIMARY KEY,
+    contact_id INTEGER NOT NULL REFERENCES {schema}.contacts(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    purpose VARCHAR(50),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (contact_id, email)
+);
+CREATE INDEX IF NOT EXISTS idx_contact_emails_contact_id ON {schema}.contact_emails (contact_id);
+
+CREATE TABLE IF NOT EXISTS {schema}.contact_discord (
+    contact_id INTEGER PRIMARY KEY REFERENCES {schema}.contacts(id) ON DELETE CASCADE,
+    is_joined BOOLEAN NOT NULL DEFAULT FALSE,
+    channel_id VARCHAR(50),
+    user_id VARCHAR(50),
+    invoice_webhook TEXT,
+    shipment_webhook TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS {schema}.contact_contact_channels (
+    id SERIAL PRIMARY KEY,
+    contact_id INTEGER NOT NULL REFERENCES {schema}.contacts(id) ON DELETE CASCADE,
+    channel VARCHAR(30) NOT NULL,
+    purpose VARCHAR(50),
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ccc_new_contact_id ON {schema}.contact_contact_channels (contact_id);
+CREATE INDEX IF NOT EXISTS idx_ccc_new_channel ON {schema}.contact_contact_channels (channel);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_new_one_primary_per_contact
+    ON {schema}.contact_contact_channels (contact_id) WHERE is_primary = TRUE;
+
+-- Phase 1-B-2 の移行マップ（Step 3 で埋まる）
+-- 注: new_company_id/new_contact_id の FK は ON DELETE 未指定（NO ACTION）。
+--     本テーブル存在中は companies/contacts の DELETE が FK で block されるが、
+--     これは Step 3-4 の段階移行中の誤削除を防ぐための意図的挙動。
+--     Step 5 で本テーブルごと drop したら解除される。
+CREATE TABLE IF NOT EXISTS {schema}._customer_migration_map (
+    old_customer_id INTEGER PRIMARY KEY,
+    new_company_id INTEGER NOT NULL REFERENCES {schema}.companies(id),
+    new_contact_id INTEGER NOT NULL REFERENCES {schema}.contacts(id),
+    migration_method VARCHAR(30) NOT NULL,
+    migrated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    notes TEXT,
+    CHECK (migration_method IN ('auto_single','auto_multi_branch','manual_merge','manual_override'))
+);
+CREATE INDEX IF NOT EXISTS idx_cmm_new_company_id ON {schema}._customer_migration_map (new_company_id);
+CREATE INDEX IF NOT EXISTS idx_cmm_new_contact_id ON {schema}._customer_migration_map (new_contact_id);
+
 -- Discord連携（任意、使う顧客のみ1行）
 CREATE TABLE IF NOT EXISTS {schema}.customer_discord (
     customer_id INTEGER PRIMARY KEY REFERENCES {schema}.customers(id) ON DELETE CASCADE,
@@ -298,6 +449,29 @@ BEGIN
     ) THEN
         ALTER TABLE {schema}.customers
             ADD CONSTRAINT fk_customers_lead
+            FOREIGN KEY (lead_id) REFERENCES {schema}.leads(id);
+    END IF;
+END $$;
+
+-- Phase 1-B-2: companies.lead_id / contacts.lead_id → leads.id
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'fk_companies_lead'
+          AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = '{schema_raw}')
+    ) THEN
+        ALTER TABLE {schema}.companies
+            ADD CONSTRAINT fk_companies_lead
+            FOREIGN KEY (lead_id) REFERENCES {schema}.leads(id);
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'fk_contacts_lead'
+          AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = '{schema_raw}')
+    ) THEN
+        ALTER TABLE {schema}.contacts
+            ADD CONSTRAINT fk_contacts_lead
             FOREIGN KEY (lead_id) REFERENCES {schema}.leads(id);
     END IF;
 END $$;
@@ -406,6 +580,32 @@ BEGIN
         CREATE TRIGGER trg_customer_discord_updated_at BEFORE UPDATE ON {schema}.customer_discord
             FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
     END IF;
+    -- Phase 1-B-1: customer_contact_channels（PR #105 で tenant.py への反映が漏れていたため同時修正）
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_ccc_updated_at' AND tgrelid = '{schema}.customer_contact_channels'::regclass) THEN
+        CREATE TRIGGER trg_ccc_updated_at BEFORE UPDATE ON {schema}.customer_contact_channels
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    -- Phase 1-B-2: companies + contacts 階層（migration 028-030 と同じトリガ名で idempotent）
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_companies_updated_at' AND tgrelid = '{schema}.companies'::regclass) THEN
+        CREATE TRIGGER trg_companies_updated_at BEFORE UPDATE ON {schema}.companies
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_contacts_updated_at' AND tgrelid = '{schema}.contacts'::regclass) THEN
+        CREATE TRIGGER trg_contacts_updated_at BEFORE UPDATE ON {schema}.contacts
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_company_addresses_updated_at' AND tgrelid = '{schema}.company_addresses'::regclass) THEN
+        CREATE TRIGGER trg_company_addresses_updated_at BEFORE UPDATE ON {schema}.company_addresses
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_contact_discord_updated_at' AND tgrelid = '{schema}.contact_discord'::regclass) THEN
+        CREATE TRIGGER trg_contact_discord_updated_at BEFORE UPDATE ON {schema}.contact_discord
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_ccc_new_updated_at' AND tgrelid = '{schema}.contact_contact_channels'::regclass) THEN
+        CREATE TRIGGER trg_ccc_new_updated_at BEFORE UPDATE ON {schema}.contact_contact_channels
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
 END $$;
 
 -- === Phase 1 再設計: スタッフ・bot ===
@@ -475,6 +675,16 @@ BEGIN
     ) THEN
         ALTER TABLE {schema}.customers
             ADD CONSTRAINT fk_customers_sales_rep
+            FOREIGN KEY (sales_rep_id) REFERENCES {schema}.staff(id);
+    END IF;
+    -- Phase 1-B-2: companies.sales_rep_id → staff(id)
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'fk_companies_sales_rep'
+          AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = '{schema_raw}')
+    ) THEN
+        ALTER TABLE {schema}.companies
+            ADD CONSTRAINT fk_companies_sales_rep
             FOREIGN KEY (sales_rep_id) REFERENCES {schema}.staff(id);
     END IF;
 END $$;
@@ -761,10 +971,20 @@ ALTER TABLE {schema}.meta_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.customer_addresses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.customer_sales_channels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.customer_discord ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.customer_contact_channels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.staff_emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.staff_ui_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.bots ENABLE ROW LEVEL SECURITY;
+-- Phase 1-B-2: companies + contacts 階層
+ALTER TABLE {schema}.companies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.company_addresses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.company_sales_channels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.contact_emails ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.contact_discord ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}.contact_contact_channels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {schema}._customer_migration_map ENABLE ROW LEVEL SECURITY;
 """
 
 # テナント分離ポリシー（DO $$ ... END $$ ブロックは1ステートメントとして実行する。
@@ -933,6 +1153,72 @@ BEGIN
                 SELECT 1 FROM {schema}.staff s
                 WHERE s.id = staff_ui_preferences.staff_id
                   AND s.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    -- Phase 1-B-1: customer_contact_channels（customer_id 経由で分離）
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_contact_channels' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_customer_contact_channels ON {schema}.customer_contact_channels
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.customers c
+                WHERE c.id = customer_contact_channels.customer_id
+                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    -- Phase 1-B-2: companies + contacts 階層
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_companies' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_companies ON {schema}.companies
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_contacts' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_contacts ON {schema}.contacts
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_company_addresses' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_company_addresses ON {schema}.company_addresses
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.companies c
+                WHERE c.id = company_addresses.company_id
+                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_company_sales_channels' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_company_sales_channels ON {schema}.company_sales_channels
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.companies c
+                WHERE c.id = company_sales_channels.company_id
+                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_contact_emails' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_contact_emails ON {schema}.contact_emails
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.contacts ct
+                WHERE ct.id = contact_emails.contact_id
+                  AND ct.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_contact_discord' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_contact_discord ON {schema}.contact_discord
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.contacts ct
+                WHERE ct.id = contact_discord.contact_id
+                  AND ct.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_contact_contact_channels' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_contact_contact_channels ON {schema}.contact_contact_channels
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.contacts ct
+                WHERE ct.id = contact_contact_channels.contact_id
+                  AND ct.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_migration_map' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_customer_migration_map ON {schema}._customer_migration_map
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.companies c
+                WHERE c.id = _customer_migration_map.new_company_id
+                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
             ));
     END IF;
 END $$
