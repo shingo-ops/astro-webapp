@@ -1,0 +1,77 @@
+name: Run Phase 1-B-2 Step 3 Migration (customers → companies/contacts)
+
+# 一度きりのデータ移行。workflow_dispatch で手動トリガーする。
+# 実行後に verify 11項目が全 PASS を確認すること。
+# 冪等なのでリトライ可能だが、万一の異常時は以下で rollback:
+#   TRUNCATE tenant_NNN._customer_migration_map, contacts, companies CASCADE;
+
+on:
+  workflow_dispatch:
+    inputs:
+      tenant_code:
+        description: '対象テナントコード'
+        required: true
+        default: 'test-corp'
+      allow_empty_manual_map:
+        description: 'manual_company_merge_map.csv が不要な場合は true'
+        required: false
+        default: 'false'
+
+jobs:
+  run-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run migration + verify on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "============================================"
+            echo "Phase 1-B-2 Step 3 データ移行"
+            echo "tenant_code=${{ inputs.tenant_code }}"
+            echo "allow_empty_manual_map=${{ inputs.allow_empty_manual_map }}"
+            echo "============================================"
+
+            cd /home/ubuntu/astro-webapp
+
+            # sheets/ は gitignore されているため、リポジトリ側からは来ない。
+            # 手動マージ判定 CSV を workflow 内で書き出す（内容は PR #107/#109 で合意済み）。
+            mkdir -p sheets
+            cat > sheets/manual_company_merge_map.csv <<'CSV_EOF'
+            old_customer_id,target_company_key,merge_type,notes
+            CT-00003,tcg_trade,same_branch,"GROUP-02: TCG TRADE 本体（しんごさん 2026-04-23 確認: CT-00008 と同じ会社・同じ支店 → 1 company + 2 contacts として移行）"
+            CT-00008,tcg_trade,same_branch,"GROUP-02: TCG TRADE(23 Worcester Street)（しんごさん 2026-04-23 確認: CT-00003 と同じ会社・同じ支店 → 1 company + 2 contacts として移行）"
+            CT-00006,card_galaxy_ltd,multi_branch,"GROUP-01: Card Galaxy LTD(Essex)（しんごさん 2026-04-23 確認: CT-00007 と同じ会社の別支店 → 1 company + 2 company_addresses(branch_name) + 2 contacts）"
+            CT-00007,card_galaxy_ltd,multi_branch,"GROUP-01: Card Galaxy LTD(Preston)（しんごさん 2026-04-23 確認: CT-00006 と同じ会社の別支店 → 1 company + 2 company_addresses(branch_name) + 2 contacts）"
+            CT-00030,ocean_harvest_seafood,multi_contact,"Ocean Harvest Seafood 本体（しんごさん 2026-04-22 指示: CT-00032 と同じ会社の別担当者 → 1 company + 2 contacts、自動検出不能なので手動マップ必須）"
+            CT-00032,ocean_harvest_seafood,multi_contact,"Michael Chiang（Ocean Harvest Seafood 購買部、CT-00030 の別担当者）"
+            CSV_EOF
+
+            # scripts と sheets をコンテナにコピー
+            docker cp scripts astro-webapp-backend-1:/app/
+            docker cp sheets astro-webapp-backend-1:/app/
+
+            # 実行
+            echo "=== migrate_companies_contacts_from_customers.py ==="
+            docker exec \
+              -e DATABASE_URL="$(docker exec astro-webapp-backend-1 printenv DATABASE_URL)" \
+              -e TENANT_CODE="${{ inputs.tenant_code }}" \
+              -e SHEETS_DIR=/app/sheets \
+              -e ALLOW_EMPTY_MANUAL_MAP="${{ inputs.allow_empty_manual_map }}" \
+              astro-webapp-backend-1 \
+              python /app/scripts/data_migration/migrate_companies_contacts_from_customers.py
+
+            echo ""
+            echo "=== verify_companies_contacts_migration.py ==="
+            docker exec \
+              -e DATABASE_URL="$(docker exec astro-webapp-backend-1 printenv DATABASE_URL)" \
+              -e TENANT_CODE="${{ inputs.tenant_code }}" \
+              astro-webapp-backend-1 \
+              python /app/scripts/data_migration/verify_companies_contacts_migration.py
+
+            echo "============================================"
+            echo "Phase 1-B-2 Step 3 完了"
+            echo "============================================"
