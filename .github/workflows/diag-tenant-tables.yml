@@ -22,6 +22,10 @@ jobs:
             docker exec astro-webapp-postgres-1 psql -U jarvis -d jarvis_db -c "
               SELECT nspname FROM pg_namespace WHERE nspname LIKE 'tenant_%' ORDER BY nspname;
             "
+            echo "=== test-admin user mapping ==="
+            docker exec astro-webapp-postgres-1 psql -U jarvis -d jarvis_db -c "
+              SELECT id, email, tenant_id, is_active FROM public.users WHERE email LIKE '%jarvis-test%' OR email LIKE '%admin%' ORDER BY id;
+            "
             echo "=== companies + company_addresses per tenant ==="
             for schema in $(docker exec astro-webapp-postgres-1 psql -U jarvis -d jarvis_db -tAc "SELECT nspname FROM pg_namespace WHERE nspname LIKE 'tenant_%'"); do
               echo "--- $schema ---"
