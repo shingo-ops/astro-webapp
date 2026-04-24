@@ -410,6 +410,10 @@ CREATE TABLE IF NOT EXISTS {schema}.deals (
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
     deal_code VARCHAR(20),
     customer_id INTEGER REFERENCES {schema}.customers(id),
+    -- Phase 1-B-2 Step 4: 新 B2B モデル（company + contact）への移行カラム
+    -- customer_id と両立、Step 5 で customer_id を drop する予定
+    company_id INTEGER REFERENCES {schema}.companies(id),
+    contact_id INTEGER REFERENCES {schema}.contacts(id),
     lead_id INTEGER REFERENCES {schema}.leads(id),
     title VARCHAR(255) NOT NULL,
     amount NUMERIC(15, 2),
@@ -424,6 +428,8 @@ CREATE TABLE IF NOT EXISTS {schema}.deals (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_deals_company_id ON {schema}.deals (company_id);
+CREATE INDEX IF NOT EXISTS idx_deals_contact_id ON {schema}.deals (contact_id);
 
 -- リード→案件への逆参照FK（leads作成時点ではdealsが未存在のため後から追加）
 DO $$
@@ -481,6 +487,9 @@ CREATE TABLE IF NOT EXISTS {schema}.orders (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
     customer_id INTEGER REFERENCES {schema}.customers(id),
+    -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
+    company_id INTEGER REFERENCES {schema}.companies(id),
+    contact_id INTEGER REFERENCES {schema}.contacts(id),
     deal_id INTEGER REFERENCES {schema}.deals(id),
     order_number VARCHAR(100) NOT NULL,
     total_amount NUMERIC(15, 2),
@@ -489,6 +498,8 @@ CREATE TABLE IF NOT EXISTS {schema}.orders (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_orders_company_id ON {schema}.orders (company_id);
+CREATE INDEX IF NOT EXISTS idx_orders_contact_id ON {schema}.orders (contact_id);
 
 -- 操作履歴（監査ログ）
 CREATE TABLE IF NOT EXISTS {schema}.audit_logs (
@@ -800,6 +811,9 @@ CREATE TABLE IF NOT EXISTS {schema}.quotes (
     quote_code VARCHAR(20),
     deal_id INTEGER REFERENCES {schema}.deals(id),
     customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id),
+    -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
+    company_id INTEGER REFERENCES {schema}.companies(id),
+    contact_id INTEGER REFERENCES {schema}.contacts(id),
     currency VARCHAR(10) DEFAULT 'JPY',
     subtotal NUMERIC(15, 2) DEFAULT 0,
     shipping_fee NUMERIC(15, 2) DEFAULT 0,
@@ -816,6 +830,8 @@ CREATE TABLE IF NOT EXISTS {schema}.quotes (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_quotes_company_id ON {schema}.quotes (company_id);
+CREATE INDEX IF NOT EXISTS idx_quotes_contact_id ON {schema}.quotes (contact_id);
 
 -- 見積明細
 CREATE TABLE IF NOT EXISTS {schema}.quote_items (
@@ -837,6 +853,9 @@ CREATE TABLE IF NOT EXISTS {schema}.invoices (
     invoice_number VARCHAR(30),
     quote_id INTEGER REFERENCES {schema}.quotes(id),
     customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id),
+    -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
+    company_id INTEGER REFERENCES {schema}.companies(id),
+    contact_id INTEGER REFERENCES {schema}.contacts(id),
     currency VARCHAR(10) DEFAULT 'JPY',
     subtotal NUMERIC(15, 2) DEFAULT 0,
     shipping_fee NUMERIC(15, 2) DEFAULT 0,
@@ -861,6 +880,8 @@ CREATE TABLE IF NOT EXISTS {schema}.invoices (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_invoices_company_id ON {schema}.invoices (company_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_contact_id ON {schema}.invoices (contact_id);
 
 -- 請求書明細
 CREATE TABLE IF NOT EXISTS {schema}.invoice_items (
