@@ -138,6 +138,135 @@ async def setup_test_db(test_engine):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
+        # Phase 1-B-2: companies + contacts 階層（Step 5b-1 で routers.companies/contacts のテスト用）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS companies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                company_code VARCHAR(20) NOT NULL,
+                lead_id INTEGER,
+                sales_rep_id INTEGER,
+                name VARCHAR(255) NOT NULL,
+                name_en VARCHAR(255),
+                normalized_name VARCHAR(255),
+                industry VARCHAR(100),
+                website VARCHAR(255),
+                trust_level SMALLINT,
+                priority_focus VARCHAR(50),
+                per_order_amount NUMERIC(15,2),
+                monthly_frequency SMALLINT,
+                monthly_forecast NUMERIC(15,2),
+                monthly_forecast_source VARCHAR(20),
+                monthly_forecast_updated_at TIMESTAMP,
+                billing_display_name VARCHAR(255),
+                payment_recipient_name VARCHAR(255),
+                fedex_account VARCHAR(100),
+                shipping_note TEXT,
+                status VARCHAR(20) NOT NULL DEFAULT 'active',
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (tenant_id, company_code)
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS contacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+                contact_code VARCHAR(20) NOT NULL,
+                lead_id INTEGER,
+                surname VARCHAR(100),
+                given_name VARCHAR(100),
+                display_name VARCHAR(255),
+                job_title VARCHAR(100),
+                department VARCHAR(100),
+                is_primary_contact BOOLEAN NOT NULL DEFAULT 0,
+                primary_email VARCHAR(255),
+                primary_phone VARCHAR(50),
+                status VARCHAR(20) NOT NULL DEFAULT 'active',
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (tenant_id, contact_code)
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS company_addresses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+                address_type VARCHAR(20) NOT NULL,
+                branch_name VARCHAR(100),
+                name VARCHAR(255),
+                email VARCHAR(255),
+                telephone VARCHAR(50),
+                tax_id VARCHAR(100),
+                address_line_1 VARCHAR(255),
+                address_line_2 VARCHAR(255),
+                address_line_3 VARCHAR(255),
+                city VARCHAR(100),
+                state VARCHAR(100),
+                zip VARCHAR(50),
+                country_code CHAR(2),
+                is_default BOOLEAN NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS company_sales_channels (
+                company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+                channel VARCHAR(30) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (company_id, channel)
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS contact_emails (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                contact_id INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+                email VARCHAR(255) NOT NULL,
+                purpose VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (contact_id, email)
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS contact_discord (
+                contact_id INTEGER PRIMARY KEY REFERENCES contacts(id) ON DELETE CASCADE,
+                is_joined BOOLEAN NOT NULL DEFAULT 0,
+                channel_id VARCHAR(50),
+                user_id VARCHAR(50),
+                invoice_webhook TEXT,
+                shipment_webhook TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS contact_contact_channels (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                contact_id INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+                channel VARCHAR(30) NOT NULL,
+                purpose VARCHAR(50),
+                is_primary BOOLEAN NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        # 部分UNIQUE INDEX（migration 028-030 と同じ、二重防御検証用）
+        await conn.execute(text("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_company_addresses_one_default_test
+            ON company_addresses (company_id, address_type) WHERE is_default = 1
+        """))
+        await conn.execute(text("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_one_primary_per_company_test
+            ON contacts (company_id) WHERE is_primary_contact = 1
+        """))
+        await conn.execute(text("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_new_one_primary_per_contact_test
+            ON contact_contact_channels (contact_id) WHERE is_primary = 1
+        """))
         # スタッフ関連テーブル（Phase 1 再設計）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS staff (
@@ -642,6 +771,14 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM customer_discord"))
         await conn.execute(text("DELETE FROM customer_sales_channels"))
         await conn.execute(text("DELETE FROM customer_addresses"))
+        # Phase 1-B-2 Step 5b-1: companies/contacts 副テーブル → 本体
+        await conn.execute(text("DELETE FROM contact_contact_channels"))
+        await conn.execute(text("DELETE FROM contact_discord"))
+        await conn.execute(text("DELETE FROM contact_emails"))
+        await conn.execute(text("DELETE FROM contacts"))
+        await conn.execute(text("DELETE FROM company_sales_channels"))
+        await conn.execute(text("DELETE FROM company_addresses"))
+        await conn.execute(text("DELETE FROM companies"))
         await conn.execute(text("DELETE FROM bots"))
         await conn.execute(text("DELETE FROM staff_ui_preferences"))
         await conn.execute(text("DELETE FROM staff_emails"))
@@ -783,6 +920,8 @@ async def client(db_session):
         "app.routers.staff_reports", "app.routers.archives",
         "app.routers.shifts", "app.routers.buddy", "app.routers.badges",
         "app.routers.erp",
+        # Phase 1-B-2 Step 5b-1: 新 routers
+        "app.routers.companies", "app.routers.contacts",
     ]
     with ExitStack() as stack:
         for target in _audit_targets:
