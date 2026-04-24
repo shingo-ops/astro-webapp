@@ -315,8 +315,20 @@ async def create_company(
         try:
             sp = await db.execute(text("SELECT current_schemas(true)"))
             logger.warning("create_company: search_path=%s tenant_id=%s new_id=%s", sp.scalar(), tenant_id, new_id)
+            probes = [
+                "SELECT regclass_oid FROM (SELECT to_regclass('company_addresses') AS regclass_oid) t",
+                "SELECT regclass_oid FROM (SELECT to_regclass('tenant_001.company_addresses') AS regclass_oid) t",
+                "SELECT schemaname, tablename FROM pg_tables WHERE tablename = 'company_addresses'",
+                "SELECT COUNT(*) FROM company_addresses",
+            ]
+            for q in probes:
+                try:
+                    r = await db.execute(text(q))
+                    logger.warning("probe OK: %s -> %s", q, list(r.fetchall()))
+                except Exception as ex:
+                    logger.warning("probe FAIL: %s -> %s", q, type(ex).__name__)
         except Exception as e:
-            logger.warning("create_company: search_path probe failed: %s", e)
+            logger.warning("create_company: outer probe failed: %s", e)
         await _replace_addresses(db, new_id, data.addresses)
         await _replace_sales_channels(db, new_id, data.sales_channels)
 
