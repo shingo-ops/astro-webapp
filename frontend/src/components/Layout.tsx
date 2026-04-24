@@ -64,11 +64,14 @@ export default function Layout() {
 
               <NavDropdown
                 label="リード"
-                activePaths={["/lead-chat", "/leads", "/customers", "/archive"]}
+                activePaths={["/lead-chat", "/leads", "/customers", "/companies", "/contacts", "/archive"]}
               >
                 <NavLink to="/lead-chat">リードチャット</NavLink>
                 {hasPermission("leads.view") && <NavLink to="/leads">新規顧客チャット</NavLink>}
                 {hasPermission("customers.view") && <NavLink to="/customers">ルート顧客チャット</NavLink>}
+                {/* Phase 1-B-2 Step 5c-1: 新 B2B モデル（会社 + 担当者）。Step 5d で customers と統合予定 */}
+                {hasPermission("customers.view") && <NavLink to="/companies">会社管理（新）</NavLink>}
+                {hasPermission("customers.view") && <NavLink to="/contacts">担当者管理（新）</NavLink>}
                 <NavLink to="/archive">アーカイブ</NavLink>
               </NavDropdown>
 

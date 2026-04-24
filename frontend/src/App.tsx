@@ -5,6 +5,8 @@ import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import CustomersPage from "./pages/CustomersPage";
+import CompaniesPage from "./pages/CompaniesPage";
+import ContactsPage from "./pages/ContactsPage";
 import DealsPage from "./pages/DealsPage";
 import OrdersPage from "./pages/OrdersPage";
 import LeadsPage from "./pages/LeadsPage";
@@ -48,6 +50,9 @@ function App() {
             {/* リード系 */}
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/customers" element={<CustomersPage />} />
+            {/* Phase 1-B-2 Step 5c-1: 新 B2B モデル（会社 + 担当者） */}
+            <Route path="/companies" element={<CompaniesPage />} />
+            <Route path="/contacts" element={<ContactsPage />} />
             <Route path="/lead-chat" element={<ComingSoonPage title="リードチャット" description="Meta統合メッセージ受信トレイ（Webhook基盤実装済み、UI開発中）" />} />
             <Route path="/archive" element={<ArchivesPage />} />
 
