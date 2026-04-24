@@ -242,7 +242,9 @@ async def create_company(
     """会社を登録する（本体 + 副テーブル）。company_code 未指定なら CO-{id:05d}。"""
     try:
         explicit_code = data.company_code and data.company_code.strip()
-        company_code = explicit_code if explicit_code else f"CO-PENDING-{uuid.uuid4().hex}"
+        # CO-PEND-<8hex> = 最大 16 文字 (VARCHAR(20) に収まる)。
+        # 元は hex 32 文字で VARCHAR(20) 超過の StringDataRightTruncationError 500 が出ていた（Step 5c-1 検証で発覚）。
+        company_code = explicit_code if explicit_code else f"CO-PEND-{uuid.uuid4().hex[:8]}"
 
         forecast_source_value = (
             data.monthly_forecast_source.value if data.monthly_forecast_source else "manual"

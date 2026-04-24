@@ -337,7 +337,9 @@ async def create_contact(
 
     try:
         explicit_code = data.contact_code and data.contact_code.strip()
-        contact_code = explicit_code if explicit_code else f"CT-PENDING-{uuid.uuid4().hex}"
+        # CT-PEND-<8hex> = 最大 16 文字 (VARCHAR(20) に収まる)。
+        # companies.py と同じパターンで、StringDataRightTruncationError 500 を回避。
+        contact_code = explicit_code if explicit_code else f"CT-PEND-{uuid.uuid4().hex[:8]}"
 
         # is_primary_contact=TRUE 指定なら既存の primary をクリア
         if data.is_primary_contact:

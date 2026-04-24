@@ -371,7 +371,10 @@ async def create_customer(
         #   2. 未指定なら一時コードを UUID で生成して UNIQUE 制約を満たし、
         #      INSERT 後に id を使って CT-{id:05d} へ UPDATE する
         explicit_code = data.customer_code and data.customer_code.strip()
-        customer_code = explicit_code if explicit_code else f"CT-PENDING-{uuid.uuid4().hex}"
+        # CT-PEND-<8hex> = 最大 16 文字 (VARCHAR(20) に収まる)。
+        # 旧 f"CT-PENDING-{uuid.uuid4().hex}" は 43 文字で VARCHAR(20) 超過のバグ（companies.py 側の Playwright 検証で発覚）。
+        # 本番ではこの経路が UI 未経由（migration script が customer_code 明示指定）だったため気付かれなかった。
+        customer_code = explicit_code if explicit_code else f"CT-PEND-{uuid.uuid4().hex[:8]}"
         # 月間見込み予測の source / updated_at は Python 側で決定（NOW() は dialect 依存）
         now_for_forecast = (
             data.monthly_forecast_source.value if data.monthly_forecast_source else "manual"
