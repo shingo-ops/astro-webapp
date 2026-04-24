@@ -250,6 +250,8 @@ CREATE TABLE IF NOT EXISTS {schema}.companies (
 );
 CREATE INDEX IF NOT EXISTS idx_companies_tenant_id ON {schema}.companies (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_companies_normalized_name ON {schema}.companies (normalized_name);
+CREATE INDEX IF NOT EXISTS idx_companies_lead_id ON {schema}.companies (lead_id);
+CREATE INDEX IF NOT EXISTS idx_companies_sales_rep_id ON {schema}.companies (sales_rep_id);
 CREATE INDEX IF NOT EXISTS idx_companies_status ON {schema}.companies (status);
 
 CREATE TABLE IF NOT EXISTS {schema}.contacts (
@@ -273,7 +275,9 @@ CREATE TABLE IF NOT EXISTS {schema}.contacts (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (tenant_id, contact_code)
 );
+CREATE INDEX IF NOT EXISTS idx_contacts_tenant_id ON {schema}.contacts (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_company_id ON {schema}.contacts (company_id);
+CREATE INDEX IF NOT EXISTS idx_contacts_lead_id ON {schema}.contacts (lead_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_primary_email ON {schema}.contacts (primary_email);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_one_primary_per_company
     ON {schema}.contacts (company_id) WHERE is_primary_contact = TRUE;
@@ -300,6 +304,7 @@ CREATE TABLE IF NOT EXISTS {schema}.company_addresses (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_company_addresses_company_id ON {schema}.company_addresses (company_id);
+CREATE INDEX IF NOT EXISTS idx_company_addresses_type ON {schema}.company_addresses (company_id, address_type);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_company_addresses_one_default
     ON {schema}.company_addresses (company_id, address_type) WHERE is_default = TRUE;
 
@@ -318,6 +323,7 @@ CREATE TABLE IF NOT EXISTS {schema}.contact_emails (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (contact_id, email)
 );
+CREATE INDEX IF NOT EXISTS idx_contact_emails_contact_id ON {schema}.contact_emails (contact_id);
 
 CREATE TABLE IF NOT EXISTS {schema}.contact_discord (
     contact_id INTEGER PRIMARY KEY REFERENCES {schema}.contacts(id) ON DELETE CASCADE,
@@ -339,10 +345,16 @@ CREATE TABLE IF NOT EXISTS {schema}.contact_contact_channels (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_ccc_new_contact_id ON {schema}.contact_contact_channels (contact_id);
+CREATE INDEX IF NOT EXISTS idx_ccc_new_channel ON {schema}.contact_contact_channels (channel);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_new_one_primary_per_contact
     ON {schema}.contact_contact_channels (contact_id) WHERE is_primary = TRUE;
 
 -- Phase 1-B-2 の移行マップ（Step 3 で埋まる）
+-- 注: new_company_id/new_contact_id の FK は ON DELETE 未指定（NO ACTION）。
+--     本テーブル存在中は companies/contacts の DELETE が FK で block されるが、
+--     これは Step 3-4 の段階移行中の誤削除を防ぐための意図的挙動。
+--     Step 5 で本テーブルごと drop したら解除される。
 CREATE TABLE IF NOT EXISTS {schema}._customer_migration_map (
     old_customer_id INTEGER PRIMARY KEY,
     new_company_id INTEGER NOT NULL REFERENCES {schema}.companies(id),
@@ -352,6 +364,8 @@ CREATE TABLE IF NOT EXISTS {schema}._customer_migration_map (
     notes TEXT,
     CHECK (migration_method IN ('auto_single','auto_multi_branch','manual_merge','manual_override'))
 );
+CREATE INDEX IF NOT EXISTS idx_cmm_new_company_id ON {schema}._customer_migration_map (new_company_id);
+CREATE INDEX IF NOT EXISTS idx_cmm_new_contact_id ON {schema}._customer_migration_map (new_contact_id);
 
 -- Discord連携（任意、使う顧客のみ1行）
 CREATE TABLE IF NOT EXISTS {schema}.customer_discord (
@@ -564,6 +578,32 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_customer_discord_updated_at' AND tgrelid = '{schema}.customer_discord'::regclass) THEN
         CREATE TRIGGER trg_customer_discord_updated_at BEFORE UPDATE ON {schema}.customer_discord
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    -- Phase 1-B-1: customer_contact_channels（PR #105 で tenant.py への反映が漏れていたため同時修正）
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_ccc_updated_at' AND tgrelid = '{schema}.customer_contact_channels'::regclass) THEN
+        CREATE TRIGGER trg_ccc_updated_at BEFORE UPDATE ON {schema}.customer_contact_channels
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    -- Phase 1-B-2: companies + contacts 階層（migration 028-030 と同じトリガ名で idempotent）
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_companies_updated_at' AND tgrelid = '{schema}.companies'::regclass) THEN
+        CREATE TRIGGER trg_companies_updated_at BEFORE UPDATE ON {schema}.companies
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_contacts_updated_at' AND tgrelid = '{schema}.contacts'::regclass) THEN
+        CREATE TRIGGER trg_contacts_updated_at BEFORE UPDATE ON {schema}.contacts
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_company_addresses_updated_at' AND tgrelid = '{schema}.company_addresses'::regclass) THEN
+        CREATE TRIGGER trg_company_addresses_updated_at BEFORE UPDATE ON {schema}.company_addresses
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_contact_discord_updated_at' AND tgrelid = '{schema}.contact_discord'::regclass) THEN
+        CREATE TRIGGER trg_contact_discord_updated_at BEFORE UPDATE ON {schema}.contact_discord
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_ccc_new_updated_at' AND tgrelid = '{schema}.contact_contact_channels'::regclass) THEN
+        CREATE TRIGGER trg_ccc_new_updated_at BEFORE UPDATE ON {schema}.contact_contact_channels
             FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
     END IF;
 END $$;

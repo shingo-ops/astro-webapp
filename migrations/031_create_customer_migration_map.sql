@@ -8,6 +8,13 @@
 --
 -- 配置: tenant schema 内（各テナントで独立）
 -- 冪等: CREATE TABLE IF NOT EXISTS + pg_namespace 走査
+--
+-- FK 挙動（意図的）:
+--   new_company_id → companies(id), new_contact_id → contacts(id) は共に
+--   ON DELETE 未指定（= NO ACTION）。本テーブルが存在する間、companies/contacts
+--   の DELETE はこの FK で block される。これは Step 3-4 の段階移行中に
+--   誤って companies/contacts が削除されて監査ログ（本表）との整合性が崩れる
+--   事故を防ぐためのロック。Step 5 で本表ごと drop した時点で解除される。
 
 DO $$
 DECLARE

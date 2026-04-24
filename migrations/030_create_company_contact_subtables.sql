@@ -128,6 +128,7 @@ BEGIN
         $q$, schema_rec.nspname, schema_rec.nspname);
 
         EXECUTE format('CREATE INDEX IF NOT EXISTS idx_ccc_new_contact_id ON %I.contact_contact_channels (contact_id)', schema_rec.nspname);
+        EXECUTE format('CREATE INDEX IF NOT EXISTS idx_ccc_new_channel ON %I.contact_contact_channels (channel)', schema_rec.nspname);
         EXECUTE format(
             'CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_new_one_primary_per_contact '
             'ON %I.contact_contact_channels (contact_id) WHERE is_primary = TRUE',
