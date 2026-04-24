@@ -73,7 +73,10 @@ async def _fetch_addresses(db: AsyncSession, company_id: int) -> list[CompanyAdd
             FROM company_addresses WHERE company_id = :cid
             ORDER BY
                 CASE address_type WHEN 'billing' THEN 0 WHEN 'delivery' THEN 1 ELSE 2 END,
-                is_default DESC, id
+                is_default DESC,
+                -- branch_name でアルファベット順、PATCH 全置換で id が滑っても並びが安定する
+                branch_name ASC NULLS LAST,
+                id
         """),
         {"cid": company_id},
     )

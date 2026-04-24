@@ -131,7 +131,9 @@ const addressFromApi = (a: CompanyAddress): AddressFormState => ({
 });
 
 const addressDisplay = (a: CompanyAddress): string => {
+  // branch_name を先頭にプレフィックスして multi_branch を一覧で区別しやすくする
   const parts = [
+    a.branch_name,
     a.name,
     a.address_line_1,
     a.city,
@@ -208,6 +210,8 @@ export default function CompanyDetailPage() {
   const [addrSubmitting, setAddrSubmitting] = useState(false);
   const [addrDeleteTarget, setAddrDeleteTarget] = useState<CompanyAddress | null>(null);
   const [addrPhoneError, setAddrPhoneError] = useState<string | null>(null);
+  // Step 5c-2 反省: モーダル内エラーは modal header に表示しないと overlay で隠れる
+  const [addrModalError, setAddrModalError] = useState<string | null>(null);
 
   const load = async () => {
     if (!id) return;
@@ -314,32 +318,51 @@ export default function CompanyDetailPage() {
     await load();
   };
 
-  const openAddressNew = (type: "billing" | "delivery") => {
-    // 同 type に既存住所がなければ初期 is_default=TRUE、あれば FALSE
-    const hasDefault = (company?.addresses || []).some(
-      (a) => a.address_type === type && a.is_default,
+  // 同 type の既定住所が既に存在するかを返す（編集中の自分自身は除外）
+  const hasOtherDefault = (type: "billing" | "delivery", excludeId: number | null): boolean =>
+    (company?.addresses || []).some(
+      (a) => a.address_type === type && a.is_default && a.id !== excludeId,
     );
-    setAddrForm({ ...emptyAddress(type), is_default: !hasDefault });
+
+  const openAddressNew = (type: "billing" | "delivery") => {
+    setAddrForm({ ...emptyAddress(type), is_default: !hasOtherDefault(type, null) });
     setAddrPhoneError(null);
+    setAddrModalError(null);
     setAddrModalOpen(true);
   };
 
   const openAddressEdit = (a: CompanyAddress) => {
     setAddrForm(addressFromApi(a));
     setAddrPhoneError(null);
+    setAddrModalError(null);
     setAddrModalOpen(true);
+  };
+
+  // F2 修正: 種別切替時に is_default を再評価（billing→delivery 切替で意図しない既定化/降格を防ぐ）
+  const handleAddressTypeChange = (newType: "billing" | "delivery") => {
+    setAddrForm({
+      ...addrForm,
+      address_type: newType,
+      is_default: !hasOtherDefault(newType, addrForm.id),
+    });
   };
 
   const handleAddressSave = async (e: FormEvent) => {
     e.preventDefault();
     if (!company) return;
     setError("");
+    setAddrModalError(null);
     const phoneErr = validatePhoneClient(addrForm.telephone);
     if (phoneErr) {
       setAddrPhoneError(phoneErr);
       return;
     }
     setAddrPhoneError(null);
+    // F5 修正: country_code は空 or 2 文字のみ許容（1 文字で 422 になる前にクライアント検知）
+    if (addrForm.country_code && addrForm.country_code.length !== 2) {
+      setAddrModalError("国コードは 2 文字（ISO 3166-1 alpha-2）または空欄で入力してください");
+      return;
+    }
     setAddrSubmitting(true);
     try {
       // 既存配列を form 版に変換し、対象 id（新規なら追加、既存なら置換）を注入
@@ -353,7 +376,8 @@ export default function CompanyDetailPage() {
       await submitAddresses(next);
       setAddrModalOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "住所の保存に失敗しました");
+      // モーダル header 直下に表示（overlay で page top の error-banner が見えない問題）
+      setAddrModalError(err instanceof Error ? err.message : "住所の保存に失敗しました");
     } finally {
       setAddrSubmitting(false);
     }
@@ -401,16 +425,36 @@ export default function CompanyDetailPage() {
       {error && <div className="error-banner">{error}</div>}
 
       <div className="tabs">
-        <button className={`tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => setActiveTab("basic")}>基本情報</button>
-        <button className={`tab ${activeTab === "addresses" ? "active" : ""}`} onClick={() => setActiveTab("addresses")}>
-          住所 ({company.addresses.length})
-        </button>
-        <button className={`tab ${activeTab === "contacts" ? "active" : ""}`} onClick={() => setActiveTab("contacts")}>
-          担当者 ({contacts.length})
-        </button>
-        <button className={`tab ${activeTab === "channels" ? "active" : ""}`} onClick={() => setActiveTab("channels")}>
-          販売チャネル ({company.sales_channels.length})
-        </button>
+        {/* F7 対応: 未保存の変更があるタブ移動前に確認 */}
+        {(() => {
+          const switchTab = (t: Tab) => {
+            if ((basicDirty || channelsDirty) && t !== activeTab) {
+              if (!window.confirm("未保存の変更があります。破棄して移動しますか？")) return;
+              // 破棄として load() で state 戻す
+              if (company) {
+                setBasicForm(basicFromApi(company));
+                setChannelsText(company.sales_channels.join(", "));
+                setBasicDirty(false);
+                setChannelsDirty(false);
+              }
+            }
+            setActiveTab(t);
+          };
+          return (
+            <>
+              <button className={`tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => switchTab("basic")}>基本情報</button>
+              <button className={`tab ${activeTab === "addresses" ? "active" : ""}`} onClick={() => switchTab("addresses")}>
+                住所 ({company.addresses.length})
+              </button>
+              <button className={`tab ${activeTab === "contacts" ? "active" : ""}`} onClick={() => switchTab("contacts")}>
+                担当者 ({contacts.length})
+              </button>
+              <button className={`tab ${activeTab === "channels" ? "active" : ""}`} onClick={() => switchTab("channels")}>
+                販売チャネル ({company.sales_channels.length})
+              </button>
+            </>
+          );
+        })()}
       </div>
 
       {activeTab === "basic" && basicForm && (
@@ -613,75 +657,77 @@ export default function CompanyDetailPage() {
             <h2>
               {addrForm.id === null ? `${typeLabel(addrForm.address_type)}住所を追加` : `${typeLabel(addrForm.address_type)}住所を編集`}
             </h2>
+            {/* F6: モーダル内エラー（page top の error-banner は overlay で隠れる） */}
+            {addrModalError && <div className="error-banner">{addrModalError}</div>}
             <form onSubmit={handleAddressSave} className="form-grid">
               <div className="form-row">
                 <label>種別</label>
-                <select value={addrForm.address_type}
-                  onChange={(e) => setAddrForm({ ...addrForm, address_type: e.target.value as "billing" | "delivery" })}>
+                <select disabled={!canEdit || addrSubmitting} value={addrForm.address_type}
+                  onChange={(e) => handleAddressTypeChange(e.target.value as "billing" | "delivery")}>
                   <option value="billing">請求先</option>
                   <option value="delivery">配送先</option>
                 </select>
               </div>
               <div className="form-row">
                 <label>支店名（複数拠点を区別する場合に使用）</label>
-                <input value={addrForm.branch_name}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.branch_name}
                   onChange={(e) => setAddrForm({ ...addrForm, branch_name: e.target.value })} />
               </div>
               <div className="form-row"><label>担当者名</label>
-                <input value={addrForm.name}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.name}
                   onChange={(e) => setAddrForm({ ...addrForm, name: e.target.value })} />
               </div>
               <div className="form-row"><label>メール</label>
-                <input type="email" value={addrForm.email}
+                <input type="email" disabled={!canEdit || addrSubmitting} value={addrForm.email}
                   onChange={(e) => setAddrForm({ ...addrForm, email: e.target.value })} />
               </div>
               <div className="form-row"><label>電話</label>
-                <input value={addrForm.telephone}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.telephone}
                   onChange={(e) => setAddrForm({ ...addrForm, telephone: e.target.value })} />
                 {addrPhoneError && <span className="field-error">{addrPhoneError}</span>}
               </div>
               <div className="form-row"><label>税番号</label>
-                <input value={addrForm.tax_id}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.tax_id}
                   onChange={(e) => setAddrForm({ ...addrForm, tax_id: e.target.value })} />
               </div>
               <div className="form-row"><label>住所1</label>
-                <input value={addrForm.address_line_1}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.address_line_1}
                   onChange={(e) => setAddrForm({ ...addrForm, address_line_1: e.target.value })} />
               </div>
               <div className="form-row"><label>住所2</label>
-                <input value={addrForm.address_line_2}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.address_line_2}
                   onChange={(e) => setAddrForm({ ...addrForm, address_line_2: e.target.value })} />
               </div>
               <div className="form-row"><label>住所3</label>
-                <input value={addrForm.address_line_3}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.address_line_3}
                   onChange={(e) => setAddrForm({ ...addrForm, address_line_3: e.target.value })} />
               </div>
               <div className="form-row"><label>市</label>
-                <input value={addrForm.city}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.city}
                   onChange={(e) => setAddrForm({ ...addrForm, city: e.target.value })} />
               </div>
               <div className="form-row"><label>州/県</label>
-                <input value={addrForm.state}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.state}
                   onChange={(e) => setAddrForm({ ...addrForm, state: e.target.value })} />
               </div>
               <div className="form-row"><label>郵便番号</label>
-                <input value={addrForm.zip}
+                <input disabled={!canEdit || addrSubmitting} value={addrForm.zip}
                   onChange={(e) => setAddrForm({ ...addrForm, zip: e.target.value })} />
               </div>
-              <div className="form-row"><label>国コード（ISO 2文字）</label>
-                <input maxLength={2} value={addrForm.country_code}
-                  onChange={(e) => setAddrForm({ ...addrForm, country_code: e.target.value })} />
+              <div className="form-row"><label>国コード（ISO 2文字、例: JP/US/GB）</label>
+                <input maxLength={2} disabled={!canEdit || addrSubmitting} value={addrForm.country_code}
+                  onChange={(e) => setAddrForm({ ...addrForm, country_code: e.target.value.toUpperCase() })} />
               </div>
               <div className="form-row">
                 <label>
-                  <input type="checkbox" checked={addrForm.is_default}
+                  <input type="checkbox" disabled={!canEdit || addrSubmitting} checked={addrForm.is_default}
                     onChange={(e) => setAddrForm({ ...addrForm, is_default: e.target.checked })} />
                   {" "}この種別の既定住所にする（同種別 1 件のみ）
                 </label>
               </div>
               <div className="form-actions">
                 <button type="button" onClick={() => setAddrModalOpen(false)} disabled={addrSubmitting}>キャンセル</button>
-                <button type="submit" className="btn-primary" disabled={addrSubmitting}>
+                <button type="submit" className="btn-primary" disabled={!canEdit || addrSubmitting}>
                   {addrSubmitting ? "保存中..." : "保存"}
                 </button>
               </div>
