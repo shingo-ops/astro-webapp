@@ -1,0 +1,36 @@
+name: Verify Phase 1-B-2 Step 4 Migration (downstream FK)
+
+# Step 4 の migration 032 は deploy.yml で全テナントに自動適用される。
+# 本 workflow は 1 テナント分の詳細整合性検証（verify_downstream_fk_migration.py）を
+# workflow_dispatch で実行する。PASS/FAIL ログを確認するだけ。
+
+on:
+  workflow_dispatch:
+    inputs:
+      tenant_code:
+        description: '対象テナントコード'
+        required: true
+        default: 'highlife-jpn'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run verify script on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /home/ubuntu/astro-webapp
+
+            docker cp scripts astro-webapp-backend-1:/app/
+            docker exec -u root astro-webapp-backend-1 chmod -R a+rX /app/scripts
+
+            docker exec \
+              -e DATABASE_URL="$(docker exec astro-webapp-backend-1 printenv DATABASE_URL)" \
+              -e TENANT_CODE="${{ inputs.tenant_code }}" \
+              astro-webapp-backend-1 \
+              python /app/scripts/data_migration/verify_downstream_fk_migration.py
