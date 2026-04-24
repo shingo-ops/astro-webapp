@@ -225,7 +225,7 @@ CREATE TABLE IF NOT EXISTS {schema}.companies (
     name VARCHAR(255) NOT NULL,
     name_en VARCHAR(255),
     normalized_name VARCHAR(255),
-    is_individual BOOLEAN NOT NULL DEFAULT FALSE,
+    -- is_individual は Phase 1-B-2 Step 5a で削除（個人/法人の区別を撤廃、migration 033）
     industry VARCHAR(100),
     website VARCHAR(255),
     trust_level SMALLINT CHECK (trust_level IS NULL OR trust_level BETWEEN 1 AND 5),

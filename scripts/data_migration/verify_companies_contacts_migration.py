@@ -298,15 +298,7 @@ async def main() -> None:
             for method, cnt in method_dist:
                 logger.info("    %s: %d 件", method, cnt)
 
-            # 11. 個人顧客フラグ件数
-            individual_count = (await conn.execute(
-                text(f"""
-                    SELECT COUNT(*) FROM {schema}.companies
-                    WHERE tenant_id = :tid AND is_individual = TRUE
-                """),
-                {"tid": tenant_id},
-            )).scalar_one()
-            logger.info("11. 個人顧客（is_individual=TRUE）: %d 件", individual_count)
+            # 11. is_individual は Phase 1-B-2 Step 5a で削除（個人/法人区別撤廃）
 
             # サマリ
             logger.info("=" * 72)
