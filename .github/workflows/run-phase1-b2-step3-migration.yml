@@ -40,6 +40,7 @@ jobs:
             # sheets/ は gitignore されているため、リポジトリ側からは来ない。
             # 手動マージ判定 CSV を workflow 内で書き出す（内容は PR #107/#109 で合意済み）。
             mkdir -p sheets
+            chmod 755 sheets
             cat > sheets/manual_company_merge_map.csv <<'CSV_EOF'
             old_customer_id,target_company_key,merge_type,notes
             CT-00003,tcg_trade,same_branch,"GROUP-02: TCG TRADE 本体（しんごさん 2026-04-23 確認: CT-00008 と同じ会社・同じ支店 → 1 company + 2 contacts として移行）"
@@ -49,10 +50,16 @@ jobs:
             CT-00030,ocean_harvest_seafood,multi_contact,"Ocean Harvest Seafood 本体（しんごさん 2026-04-22 指示: CT-00032 と同じ会社の別担当者 → 1 company + 2 contacts、自動検出不能なので手動マップ必須）"
             CT-00032,ocean_harvest_seafood,multi_contact,"Michael Chiang（Ocean Harvest Seafood 購買部、CT-00030 の別担当者）"
             CSV_EOF
+            chmod 644 sheets/manual_company_merge_map.csv
 
             # scripts と sheets をコンテナにコピー
             docker cp scripts astro-webapp-backend-1:/app/
             docker cp sheets astro-webapp-backend-1:/app/
+
+            # コンテナ内で読み取り可能になるよう所有者を container 側ユーザーに合わせる
+            # （ubuntu uid 1000 でホストに書いた CSV をそのまま cp すると、
+            #   container 内の非 root ユーザーから見えないことがある）
+            docker exec -u root astro-webapp-backend-1 chmod -R a+rX /app/sheets /app/scripts
 
             # 実行
             echo "=== migrate_companies_contacts_from_customers.py ==="
