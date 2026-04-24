@@ -19,7 +19,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_user,
+    get_current_tenant,
+    require_permission,
+    reset_tenant_context,
+)
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
@@ -310,25 +315,6 @@ async def create_company(
                 {"id": new_id},
             )
 
-        # DEBUG: Step 5c-1 検証で DELETE FROM company_addresses が
-        # "relation does not exist" で落ちる原因調査
-        try:
-            sp = await db.execute(text("SELECT current_schemas(true)"))
-            logger.warning("create_company: search_path=%s tenant_id=%s new_id=%s", sp.scalar(), tenant_id, new_id)
-            probes = [
-                "SELECT regclass_oid FROM (SELECT to_regclass('company_addresses') AS regclass_oid) t",
-                "SELECT regclass_oid FROM (SELECT to_regclass('tenant_001.company_addresses') AS regclass_oid) t",
-                "SELECT schemaname, tablename FROM pg_tables WHERE tablename = 'company_addresses'",
-                "SELECT COUNT(*) FROM company_addresses",
-            ]
-            for q in probes:
-                try:
-                    r = await db.execute(text(q))
-                    logger.warning("probe OK: %s -> %s", q, list(r.fetchall()))
-                except Exception as ex:
-                    logger.warning("probe FAIL: %s -> %s", q, type(ex).__name__)
-        except Exception as e:
-            logger.warning("create_company: outer probe failed: %s", e)
         await _replace_addresses(db, new_id, data.addresses)
         await _replace_sales_channels(db, new_id, data.sales_channels)
 
@@ -352,6 +338,9 @@ async def create_company(
             detail="会社の登録に失敗しました（company_code 重複または制約違反の可能性）",
         )
     await invalidate_dashboard_cache(tenant_id)
+    # commit 後はプールから別コネクションが払い出されて search_path が失われる可能性があるため
+    # _compose_response 内部の副テーブル SELECT 前に tenant コンテキストを再設定する
+    await reset_tenant_context(db, tenant_id)
     return await _compose_response(db, dict(row))
 
 
@@ -428,6 +417,8 @@ async def update_company(
     )
     await db.commit()
     await invalidate_dashboard_cache(tenant_id)
+    # commit 後の副テーブル SELECT 前に tenant コンテキスト再設定
+    await reset_tenant_context(db, tenant_id)
 
     fetched = await db.execute(
         text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id"),
