@@ -39,7 +39,7 @@ from app.services.audit import record_audit_log
 router = APIRouter()
 
 _INVOICE_COLUMNS = """
-    id, invoice_number, quote_id, customer_id, currency,
+    id, invoice_number, quote_id, customer_id, company_id, contact_id, currency,
     subtotal, shipping_fee, tax_amount, total_amount,
     exchange_rate_jpy, exchange_rate_usd, amount_jpy, amount_usd,
     payment_method, status, branch_number,
@@ -94,6 +94,8 @@ async def list_invoices(
     per_page: int = Query(default=20, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
     customer_id: int | None = Query(default=None),
+    company_id: int | None = Query(default=None),
+    contact_id: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
@@ -107,6 +109,13 @@ async def list_invoices(
     if customer_id:
         conditions.append("customer_id = :cid")
         params["cid"] = customer_id
+    # Phase 1-B-2 Step 5b-2: 新モデル filter
+    if company_id:
+        conditions.append("company_id = :company_id")
+        params["company_id"] = company_id
+    if contact_id:
+        conditions.append("contact_id = :contact_id")
+        params["contact_id"] = contact_id
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
     result = await db.execute(
@@ -166,22 +175,24 @@ async def create_invoice_from_quote(
     invoice_number = f"IN-{next_id:04d}-01"
     erp_key = str(uuid.uuid4())[:8].upper()
 
-    # 請求書ヘッダー作成
+    # 請求書ヘッダー作成（Phase 1-B-2 Step 5b-2: quote から company_id/contact_id を継承）
     inv_result = await db.execute(
         text(f"""
             INSERT INTO invoices (
-                tenant_id, invoice_number, quote_id, customer_id, currency,
+                tenant_id, invoice_number, quote_id, customer_id, company_id, contact_id, currency,
                 subtotal, shipping_fee, tax_amount, total_amount,
                 payment_method, status, branch_number, erp_key, notes, created_by
             ) VALUES (
-                :tid, :inv_num, :qid, :cid, :currency,
+                :tid, :inv_num, :qid, :cid, :company_id, :contact_id, :currency,
                 :subtotal, :shipping, :tax, :total,
                 NULL, 'draft', 1, :erp_key, :notes, :created_by
             ) RETURNING id
         """),
         {
             "tid": tenant_id, "inv_num": invoice_number, "qid": quote_id,
-            "cid": q["customer_id"], "currency": q["currency"],
+            "cid": q["customer_id"],
+            "company_id": q.get("company_id"), "contact_id": q.get("contact_id"),
+            "currency": q["currency"],
             "subtotal": q["subtotal"], "shipping": q["shipping_fee"],
             "tax": q["tax_amount"], "total": q["total_amount"],
             "erp_key": erp_key, "notes": q["notes"], "created_by": current_user.id,
@@ -235,6 +246,16 @@ async def create_invoice(
     if not cust.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
 
+    # Phase 1-B-2 Step 5b-2: company_id/contact_id 指定時の存在確認
+    if data.company_id is not None:
+        company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
+        if not company_check.first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された会社が見つかりません")
+    if data.contact_id is not None:
+        contact_check = await db.execute(text("SELECT id FROM contacts WHERE id = :id"), {"id": data.contact_id})
+        if not contact_check.first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された担当者が見つかりません")
+
     subtotal = sum(item.quantity * item.unit_price for item in data.items)
     shipping = data.shipping_fee or Decimal(0)
     tax = data.tax_amount or Decimal(0)
@@ -249,13 +270,13 @@ async def create_invoice(
     inv_result = await db.execute(
         text(f"""
             INSERT INTO invoices (
-                tenant_id, invoice_number, customer_id, currency,
+                tenant_id, invoice_number, customer_id, company_id, contact_id, currency,
                 subtotal, shipping_fee, tax_amount, total_amount,
                 exchange_rate_jpy, exchange_rate_usd, amount_jpy, amount_usd,
                 payment_method, status, branch_number, erp_key,
                 due_date, notes, created_by
             ) VALUES (
-                :tid, :inv_num, :cid, :currency,
+                :tid, :inv_num, :cid, :company_id, :contact_id, :currency,
                 :subtotal, :shipping, :tax, :total,
                 :rate_jpy, :rate_usd, :amt_jpy, :amt_usd,
                 :payment, 'draft', 1, :erp_key,
@@ -264,6 +285,7 @@ async def create_invoice(
         """),
         {
             "tid": tenant_id, "inv_num": invoice_number, "cid": data.customer_id,
+            "company_id": data.company_id, "contact_id": data.contact_id,
             "currency": data.currency, "subtotal": subtotal, "shipping": shipping,
             "tax": tax, "total": total, "rate_jpy": data.exchange_rate_jpy,
             "rate_usd": data.exchange_rate_usd, "amt_jpy": amount_jpy, "amt_usd": amount_usd,

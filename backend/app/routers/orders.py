@@ -24,7 +24,7 @@ from app.services.audit import record_audit_log
 router = APIRouter()
 
 _SELECT_COLS = """
-    id, customer_id, deal_id, invoice_id, order_number,
+    id, customer_id, company_id, contact_id, deal_id, invoice_id, order_number,
     total_amount, currency, status,
     shipping_carrier, shipping_fee, tracking_number,
     shipped_at, delivered_at, shipping_country,
@@ -46,6 +46,8 @@ async def list_orders(
     per_page: int = Query(default=20, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
     customer_id: int | None = Query(default=None),
+    company_id: int | None = Query(default=None),
+    contact_id: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
@@ -61,6 +63,13 @@ async def list_orders(
     if customer_id:
         conditions.append("customer_id = :customer_id")
         params["customer_id"] = customer_id
+    # Phase 1-B-2 Step 5b-2: 新モデル filter
+    if company_id:
+        conditions.append("company_id = :company_id")
+        params["company_id"] = company_id
+    if contact_id:
+        conditions.append("contact_id = :contact_id")
+        params["contact_id"] = contact_id
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
@@ -111,6 +120,16 @@ async def create_order(
     if not cust.first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された顧客が存在しません")
 
+    # Phase 1-B-2 Step 5b-2: company_id/contact_id 指定時の存在確認
+    if data.company_id is not None:
+        company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
+        if not company_check.first():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された会社が存在しません")
+    if data.contact_id is not None:
+        contact_check = await db.execute(text("SELECT id FROM contacts WHERE id = :id"), {"id": data.contact_id})
+        if not contact_check.first():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された担当者が存在しません")
+
     # 商談の存在確認（指定された場合）
     if data.deal_id:
         deal = await db.execute(text("SELECT id FROM deals WHERE id = :id"), {"id": data.deal_id})
@@ -128,12 +147,12 @@ async def create_order(
     result = await db.execute(
         text(f"""
             INSERT INTO orders (
-                tenant_id, customer_id, deal_id, invoice_id, order_number,
+                tenant_id, customer_id, company_id, contact_id, deal_id, invoice_id, order_number,
                 total_amount, currency, status,
                 shipping_carrier, shipping_fee, shipping_country, notes
             )
             VALUES (
-                :tenant_id, :customer_id, :deal_id, :invoice_id, :order_number,
+                :tenant_id, :customer_id, :company_id, :contact_id, :deal_id, :invoice_id, :order_number,
                 :total_amount, :currency, :status,
                 :shipping_carrier, :shipping_fee, :shipping_country, :notes
             )
@@ -142,6 +161,8 @@ async def create_order(
         {
             "tenant_id": tenant_id,
             "customer_id": data.customer_id,
+            "company_id": data.company_id,
+            "contact_id": data.contact_id,
             "deal_id": data.deal_id,
             "invoice_id": data.invoice_id,
             "order_number": data.order_number,

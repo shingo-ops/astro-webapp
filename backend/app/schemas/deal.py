@@ -47,7 +47,11 @@ class Currency(str, Enum):
 
 class DealCreate(BaseModel):
     """商談登録リクエスト"""
-    customer_id: int = Field(ge=1, description="顧客ID")
+    customer_id: int = Field(ge=1, description="顧客ID（旧モデル、Step 5d まで必須）")
+    # Phase 1-B-2 Step 5b-2: 新 B2B モデル（company + contact）の移行フィールド
+    # 互換性のため当面 optional。frontend は Step 5c で移行する
+    company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
+    contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
     lead_id: int | None = Field(default=None, ge=1, description="変換元リードID")
     title: str = Field(min_length=1, max_length=255, description="商談タイトル")
     amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2, description="金額")
@@ -64,6 +68,9 @@ class DealCreate(BaseModel):
 class DealUpdate(BaseModel):
     """商談更新リクエスト（部分更新）"""
     customer_id: int | None = Field(default=None, ge=1)
+    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
+    company_id: int | None = Field(default=None, ge=1)
+    contact_id: int | None = Field(default=None, ge=1)
     lead_id: int | None = Field(default=None, ge=1)
     title: str | None = Field(default=None, min_length=1, max_length=255)
     amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
@@ -82,6 +89,9 @@ class DealResponse(BaseModel):
     id: int
     deal_code: str | None
     customer_id: int | None
+    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
+    company_id: int | None = None
+    contact_id: int | None = None
     lead_id: int | None
     title: str
     amount: Decimal | None

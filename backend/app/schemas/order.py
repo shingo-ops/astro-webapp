@@ -25,7 +25,10 @@ class OrderStatus(str, Enum):
 
 
 class OrderCreate(BaseModel):
-    customer_id: int = Field(ge=1)
+    customer_id: int = Field(ge=1, description="顧客ID（旧モデル、Step 5d まで必須）")
+    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
+    company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
+    contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
     deal_id: int | None = Field(default=None, ge=1)
     invoice_id: int | None = Field(default=None, ge=1)
     order_number: str = Field(min_length=1, max_length=100)
@@ -40,6 +43,9 @@ class OrderCreate(BaseModel):
 
 class OrderUpdate(BaseModel):
     customer_id: int | None = Field(default=None, ge=1)
+    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
+    company_id: int | None = Field(default=None, ge=1)
+    contact_id: int | None = Field(default=None, ge=1)
     deal_id: int | None = Field(default=None, ge=1)
     invoice_id: int | None = Field(default=None, ge=1)
     order_number: str | None = Field(default=None, min_length=1, max_length=100)
@@ -56,6 +62,9 @@ class OrderUpdate(BaseModel):
 class OrderResponse(BaseModel):
     id: int
     customer_id: int
+    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
+    company_id: int | None = None
+    contact_id: int | None = None
     deal_id: int | None
     invoice_id: int | None
     order_number: str

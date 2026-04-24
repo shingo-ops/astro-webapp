@@ -25,13 +25,15 @@ from app.services.audit import record_audit_log
 router = APIRouter()
 
 _DEAL_COLUMNS = """
-    id, deal_code, customer_id, lead_id, title, amount, currency,
+    id, deal_code, customer_id, company_id, contact_id, lead_id,
+    title, amount, currency,
     status, stage, probability, lost_reason, assigned_to,
     expected_close_date, notes, created_at, updated_at
 """
 
 _UPDATABLE_COLUMNS = {
-    "customer_id", "lead_id", "title", "amount", "currency",
+    "customer_id", "company_id", "contact_id", "lead_id",
+    "title", "amount", "currency",
     "status", "stage", "probability", "lost_reason", "assigned_to",
     "expected_close_date", "notes",
 }
@@ -48,6 +50,8 @@ async def list_deals(
     status_filter: str | None = Query(default=None, alias="status"),
     stage: str | None = Query(default=None),
     customer_id: int | None = Query(default=None),
+    company_id: int | None = Query(default=None),
+    contact_id: int | None = Query(default=None),
     assigned_to: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_current_tenant),
@@ -67,6 +71,13 @@ async def list_deals(
     if customer_id:
         conditions.append("customer_id = :customer_id")
         params["customer_id"] = customer_id
+    # Phase 1-B-2 Step 5b-2: 新モデルの filter
+    if company_id:
+        conditions.append("company_id = :company_id")
+        params["company_id"] = company_id
+    if contact_id:
+        conditions.append("contact_id = :contact_id")
+        params["contact_id"] = contact_id
     if assigned_to:
         conditions.append("assigned_to = :assigned_to")
         params["assigned_to"] = assigned_to
@@ -127,6 +138,16 @@ async def create_deal(
     if not cust.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
 
+    # Phase 1-B-2 Step 5b-2: company_id/contact_id 指定時は存在確認
+    if data.company_id is not None:
+        company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
+        if not company_check.first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された会社が見つかりません")
+    if data.contact_id is not None:
+        contact_check = await db.execute(text("SELECT id FROM contacts WHERE id = :id"), {"id": data.contact_id})
+        if not contact_check.first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された担当者が見つかりません")
+
     # リード存在確認（指定時のみ）
     if data.lead_id is not None:
         lead_check = await db.execute(text("SELECT id FROM leads WHERE id = :id"), {"id": data.lead_id})
@@ -136,12 +157,14 @@ async def create_deal(
     result = await db.execute(
         text("""
             INSERT INTO deals (
-                tenant_id, customer_id, lead_id, title, amount, currency,
+                tenant_id, customer_id, company_id, contact_id, lead_id,
+                title, amount, currency,
                 status, stage, probability, lost_reason, assigned_to,
                 expected_close_date, notes
             )
             VALUES (
-                :tenant_id, :customer_id, :lead_id, :title, :amount, :currency,
+                :tenant_id, :customer_id, :company_id, :contact_id, :lead_id,
+                :title, :amount, :currency,
                 :status, :stage, :probability, :lost_reason, :assigned_to,
                 :expected_close_date, :notes
             )
@@ -150,6 +173,8 @@ async def create_deal(
         {
             "tenant_id": tenant_id,
             "customer_id": data.customer_id,
+            "company_id": data.company_id,
+            "contact_id": data.contact_id,
             "lead_id": data.lead_id,
             "title": data.title,
             "amount": data.amount,
