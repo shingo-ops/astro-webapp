@@ -383,9 +383,12 @@ async def create_contact(
                 {"code": f"CT-{new_id:05d}", "id": new_id},
             )
 
+        # 順序重要: _replace_contact_channels は冒頭で DELETE するため、
+        # _upsert_discord の 'discord' 自動追加より前に呼ぶ必要がある。
+        # さもないと Discord 自動追加が即座に消える（PR #121 Critical 1）。
         await _replace_emails(db, new_id, data.emails)
-        await _upsert_discord(db, new_id, data.discord)
         await _replace_contact_channels(db, new_id, data.contact_channels)
+        await _upsert_discord(db, new_id, data.discord)
 
         fetched = await db.execute(
             text(f"SELECT {_CONTACT_COLUMNS} FROM contacts WHERE id = :id"),
@@ -460,15 +463,16 @@ async def update_contact(
             params,
         )
 
+    # 順序重要: contact_channels 置換 → discord upsert（Discord 自動追加が消えないように）
     if emails is not None:
         em_models = [ContactEmailInput(**e) for e in emails]
         await _replace_emails(db, contact_id, em_models)
-    if "discord" in data.model_fields_set:
-        discord_model = ContactDiscordInput(**discord) if discord else None
-        await _upsert_discord(db, contact_id, discord_model)
     if contact_channels is not None:
         ch_models = [ContactChannelInput(**c) for c in contact_channels]
         await _replace_contact_channels(db, contact_id, ch_models)
+    if "discord" in data.model_fields_set:
+        discord_model = ContactDiscordInput(**discord) if discord else None
+        await _upsert_discord(db, contact_id, discord_model)
 
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,

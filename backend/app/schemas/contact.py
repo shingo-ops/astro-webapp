@@ -39,7 +39,11 @@ class ContactEmailInput(BaseModel):
     @field_validator("email")
     @classmethod
     def _check_email(cls, v: str) -> str:
-        return validate_email_loose(v) or v
+        # email は必須なので None にはならない。validate_email_loose は
+        # 非 None 入力に対して正規化値を返すか ValueError を raise する。
+        result = validate_email_loose(v)
+        assert result is not None  # safety: str 入力に対しては必ず str 返す
+        return result
 
 
 class ContactEmailResponse(ContactEmailInput):
