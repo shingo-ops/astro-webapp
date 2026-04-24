@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -85,9 +86,12 @@ const contactDisplayName = (c: Contact): string => {
 
 export default function ContactsPage() {
   const { hasPermission } = usePermissions();
+  // Step 5c-2: /contacts?company_id=N の URL クエリから初期フィルタを復元
+  // （CompanyDetailPage の担当者タブからの導線で会社別絞り込みを有効化）
+  const [searchParams] = useSearchParams();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [companies, setCompanies] = useState<CompanyMini[]>([]);
-  const [companyFilter, setCompanyFilter] = useState("");
+  const [companyFilter, setCompanyFilter] = useState(searchParams.get("company_id") || "");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
