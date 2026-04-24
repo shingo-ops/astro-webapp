@@ -74,6 +74,7 @@ if not DATABASE_URL:
 TENANT_CODE = os.getenv("TENANT_CODE", "test-corp")
 SHEETS_DIR = Path(os.getenv("SHEETS_DIR", "/app/sheets"))
 MANUAL_MAP_CSV = SHEETS_DIR / "manual_company_merge_map.csv"
+ALLOW_EMPTY_MANUAL_MAP = os.getenv("ALLOW_EMPTY_MANUAL_MAP", "").lower() in ("1", "true", "yes")
 
 # analyze_company_names.py と同じ定義（ロジック同一性を担保）
 COMPANY_SUFFIXES = [
@@ -157,9 +158,25 @@ class ManualMergeEntry:
 
 
 def load_manual_map() -> dict[str, ManualMergeEntry]:
-    """manual_company_merge_map.csv を読み、customer_code → ManualMergeEntry を返す。"""
+    """manual_company_merge_map.csv を読み、customer_code → ManualMergeEntry を返す。
+
+    CSV が見つからない場合:
+      - デフォルト: FileNotFoundError で loud に失敗（運用ミスでデータ破損するのを防ぐ）
+      - ALLOW_EMPTY_MANUAL_MAP=1 の場合のみ空 dict を返して続行
+        （新規テナントで手動マージ不要なことが確定している時の明示的オプトイン）
+    """
     if not MANUAL_MAP_CSV.exists():
-        logger.warning("manual_company_merge_map.csv が見つかりません: %s", MANUAL_MAP_CSV)
+        if not ALLOW_EMPTY_MANUAL_MAP:
+            raise FileNotFoundError(
+                f"manual_company_merge_map.csv が見つかりません: {MANUAL_MAP_CSV}\n"
+                "既知のマージ判定（GROUP-01 Card Galaxy / GROUP-02 TCG TRADE / Ocean Harvest）が\n"
+                "反映されずにバラバラ投入されるのを防ぐため、本スクリプトは CSV 必須です。\n"
+                "手動マージ不要なテナントで実行する場合は ALLOW_EMPTY_MANUAL_MAP=1 を明示指定してください。"
+            )
+        logger.warning(
+            "manual_company_merge_map.csv が見つかりませんが ALLOW_EMPTY_MANUAL_MAP=1 のため続行: %s",
+            MANUAL_MAP_CSV,
+        )
         return {}
     result: dict[str, ManualMergeEntry] = {}
     with MANUAL_MAP_CSV.open(encoding="utf-8") as f:
@@ -479,6 +496,10 @@ async def upsert_company(
     # グループサイズ>1 なら明確に法人
     is_individual = False if group.size > 1 else looks_like_individual(leader.company_name, delivery_name)
 
+    # leader の status が 'pending_dedup_review' なら、merge 完了時点で 'active' に昇格
+    # （contact 側と同じロジック。手動マージ/auto グループ化でどちらの場合も dedup は解決済み）
+    company_status = "active" if leader.status == "pending_dedup_review" else leader.status
+
     result = await conn.execute(
         text(f"""
             INSERT INTO {schema}.companies (
@@ -533,7 +554,7 @@ async def upsert_company(
             "payment_recipient_name": leader.payment_recipient_name,
             "fedex_account": leader.fedex_account,
             "shipping_note": leader.shipping_note,
-            "status": leader.status,
+            "status": company_status,
             "sales_rep_id": leader.sales_rep_id,
             "created_at": leader.created_at,
         },
