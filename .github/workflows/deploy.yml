@@ -95,6 +95,27 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/027_backfill_customer_contact_channels.sql
 
+            # Phase 1-B-2 Step 2: companies テーブル作成
+            #   非テンプレート、pg_namespace 走査で全tenant_NNNへ適用、idempotent
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/028_create_companies.sql
+
+            # Phase 1-B-2 Step 2: contacts テーブル作成（companies 依存）
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/029_create_contacts.sql
+
+            # Phase 1-B-2 Step 2: companies/contacts 副テーブル 5本
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/030_create_company_contact_subtables.sql
+
+            # Phase 1-B-2 Step 2: 旧customer → 新company/contact マッピングテーブル
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/031_create_customer_migration_map.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
