@@ -1,0 +1,37 @@
+name: Diag - Tenant schemas and companies tables
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all tenant schemas
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            docker exec astro-webapp-postgres-1 psql -U jarvis -d jarvis_db -c "
+              SELECT id, tenant_code, is_active FROM public.tenants ORDER BY id;
+            "
+            echo "=== tenant schemas ==="
+            docker exec astro-webapp-postgres-1 psql -U jarvis -d jarvis_db -c "
+              SELECT nspname FROM pg_namespace WHERE nspname LIKE 'tenant_%' ORDER BY nspname;
+            "
+            echo "=== companies + company_addresses per tenant ==="
+            for schema in $(docker exec astro-webapp-postgres-1 psql -U jarvis -d jarvis_db -tAc "SELECT nspname FROM pg_namespace WHERE nspname LIKE 'tenant_%'"); do
+              echo "--- $schema ---"
+              docker exec astro-webapp-postgres-1 psql -U jarvis -d jarvis_db -c "
+                SELECT tablename FROM pg_tables
+                WHERE schemaname = '$schema' AND tablename IN (
+                  'companies', 'contacts', 'company_addresses', 'company_sales_channels',
+                  'contact_emails', 'contact_discord', 'contact_contact_channels',
+                  '_customer_migration_map', 'leads', 'staff'
+                )
+                ORDER BY tablename;
+              "
+            done
