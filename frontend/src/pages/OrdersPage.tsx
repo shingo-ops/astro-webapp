@@ -1,10 +1,13 @@
 import { useEffect, useState, FormEvent } from "react";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
+import CompanyContactSelector from "../components/CompanyContactSelector";
 
 interface Order {
   id: number;
   customer_id: number;
+  company_id: number | null;
+  contact_id: number | null;
   deal_id: number | null;
   order_number: string;
   total_amount: number | null;
@@ -14,29 +17,31 @@ interface Order {
   updated_at: string;
 }
 
-interface Customer {
+interface CompanyMini {
   id: number;
-  customer_code: string;
-  company_name: string | null;
-  billing_display_name: string | null;
+  company_code: string;
+  name: string;
 }
-const customerLabel = (c: Customer): string =>
-  c.billing_display_name || c.company_name || c.customer_code;
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 const STATUS_LABELS: Record<string, string> = {
   pending: "保留", confirmed: "確定", shipped: "出荷済", delivered: "納品済", cancelled: "キャンセル",
 };
 
-const emptyForm = { customer_id: "", deal_id: "", order_number: "", total_amount: "", status: "pending", notes: "" };
+// 注文の (customer_id, company_id, contact_id) は作成後変更不可（backend OrderUpdate にも含まれない）
+// ため、編集モードではセレクタを disabled にする。
+const emptyForm = { deal_id: "", order_number: "", total_amount: "", status: "pending", notes: "" };
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [companies, setCompanies] = useState<CompanyMini[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [contactId, setContactId] = useState<number | null>(null);
+  const [selectorError, setSelectorError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Order | null>(null);
@@ -53,26 +58,41 @@ export default function OrdersPage() {
     }
   };
 
-  const loadCustomers = async () => {
+  const loadCompanies = async () => {
     try {
-      const data = await api.get<Customer[]>("/customers?per_page=100");
-      setCustomers(data);
+      const data = await api.get<CompanyMini[]>("/companies?per_page=200");
+      setCompanies(data.map((c) => ({ id: c.id, company_code: c.company_code, name: c.name })));
     } catch { /* ignore */ }
   };
 
-  useEffect(() => { loadOrders(); loadCustomers(); }, [statusFilter]);
+  useEffect(() => { loadOrders(); }, [statusFilter]);
+  useEffect(() => { loadCompanies(); }, []);
+
+  const resetSelector = () => {
+    setCompanyId(null);
+    setContactId(null);
+    setSelectorError("");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    const payload = {
-      customer_id: Number(form.customer_id),
+    setSelectorError("");
+    if (!editId && contactId === null) {
+      setSelectorError("会社と担当者を選択してください");
+      return;
+    }
+    // 新規作成時のみ company_id/contact_id を送信。編集時は変更不可なので含めない。
+    const basePayload = {
       deal_id: form.deal_id ? Number(form.deal_id) : null,
       order_number: form.order_number,
       total_amount: form.total_amount ? Number(form.total_amount) : null,
       status: form.status,
       notes: form.notes || null,
     };
+    const payload = editId
+      ? basePayload
+      : { ...basePayload, company_id: companyId, contact_id: contactId };
     try {
       if (editId) {
         await api.patch(`/orders/${editId}`, payload);
@@ -82,6 +102,7 @@ export default function OrdersPage() {
       setShowForm(false);
       setEditId(null);
       setForm(emptyForm);
+      resetSelector();
       loadOrders();
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました");
@@ -91,13 +112,15 @@ export default function OrdersPage() {
   const handleEdit = (o: Order) => {
     setEditId(o.id);
     setForm({
-      customer_id: String(o.customer_id),
       deal_id: o.deal_id ? String(o.deal_id) : "",
       order_number: o.order_number,
       total_amount: o.total_amount ? String(o.total_amount) : "",
       status: o.status,
       notes: o.notes || "",
     });
+    setCompanyId(o.company_id);
+    setContactId(o.contact_id);
+    setSelectorError("");
     setShowForm(true);
   };
 
@@ -114,16 +137,25 @@ export default function OrdersPage() {
   };
 
   const fmt = (n: number) => n.toLocaleString("ja-JP", { style: "currency", currency: "JPY" });
-  const customerName = (id: number) => {
-    const c = customers.find((c) => c.id === id);
-    return c ? customerLabel(c) : `ID:${id}`;
+  const companyName = (id: number | null) => {
+    if (!id) return "-";
+    const c = companies.find((c) => c.id === id);
+    return c ? `${c.name}（${c.company_code}）` : `#${id}`;
   };
 
   return (
     <div className="page">
       <div className="page-header">
         <h2>注文管理</h2>
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
+        <button
+          className="btn-primary"
+          onClick={() => {
+            setShowForm(true);
+            setEditId(null);
+            setForm(emptyForm);
+            resetSelector();
+          }}
+        >
           新規登録
         </button>
       </div>
@@ -142,13 +174,21 @@ export default function OrdersPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>{editId ? "注文編集" : "新規注文登録"}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>顧客 *</label>
-                <select required value={form.customer_id} onChange={(e) => setForm({ ...form, customer_id: e.target.value })}>
-                  <option value="">選択してください</option>
-                  {customers.map((c) => <option key={c.id} value={c.id}>{customerLabel(c)}</option>)}
-                </select>
-              </div>
+              <CompanyContactSelector
+                value={{ companyId, contactId }}
+                onChange={({ companyId: c, contactId: ct }) => {
+                  setCompanyId(c);
+                  setContactId(ct);
+                }}
+                required={!editId}
+                disabled={editId !== null}
+                error={selectorError}
+              />
+              {editId && (
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: -8 }}>
+                  ※ 注文の会社・担当者は作成後変更できません
+                </p>
+              )}
               <div className="form-group">
                 <label>注文番号 *</label>
                 <input required value={form.order_number} onChange={(e) => setForm({ ...form, order_number: e.target.value })} />
@@ -183,7 +223,7 @@ export default function OrdersPage() {
           <thead>
             <tr>
               <th>注文番号</th>
-              <th>顧客</th>
+              <th>会社</th>
               <th>合計金額</th>
               <th>ステータス</th>
               <th>登録日</th>
@@ -194,7 +234,7 @@ export default function OrdersPage() {
             {orders.map((o) => (
               <tr key={o.id}>
                 <td>{o.order_number}</td>
-                <td>{customerName(o.customer_id)}</td>
+                <td>{companyName(o.company_id)}</td>
                 <td>{o.total_amount ? fmt(o.total_amount) : "-"}</td>
                 <td><span className={`badge badge-${o.status}`}>{STATUS_LABELS[o.status] || o.status}</span></td>
                 <td>{new Date(o.created_at).toLocaleDateString("ja-JP")}</td>
