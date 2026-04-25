@@ -4,17 +4,22 @@
  * 変更履歴:
  *   2026-04-16: Phase 1拡張（deal_code/stage/probability/currency/assigned_to 追加、
  *     権限チェック連動）
+ *   2026-04-25: Phase 1-B-2 Step 5c-3 — 顧客セレクタを CompanyContactSelector
+ *     （company + contact）に置換。一覧表示は company_id ベースに変更。
  */
 
 import { useEffect, useState, FormEvent } from "react";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
+import CompanyContactSelector from "../components/CompanyContactSelector";
 import { usePermissions } from "../hooks/usePermissions";
 
 interface Deal {
   id: number;
   deal_code: string | null;
   customer_id: number | null;
+  company_id: number | null;
+  contact_id: number | null;
   lead_id: number | null;
   title: string;
   amount: number | null;
@@ -30,15 +35,11 @@ interface Deal {
   updated_at: string;
 }
 
-interface Customer {
+interface CompanyMini {
   id: number;
-  customer_code: string;
-  company_name: string | null;
-  billing_display_name: string | null;
+  company_code: string;
+  name: string;
 }
-/** 顧客の表示名: billing_display_name > company_name > customer_code */
-const customerLabel = (c: Customer): string =>
-  c.billing_display_name || c.company_name || c.customer_code;
 
 const STATUSES = ["open", "negotiating", "won", "lost", "on_hold"];
 const STATUS_LABELS: Record<string, string> = {
@@ -50,7 +51,7 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 const emptyForm = {
-  customer_id: "", title: "", amount: "", currency: "JPY",
+  title: "", amount: "", currency: "JPY",
   status: "open", stage: "open", probability: "10", lost_reason: "",
   assigned_to: "", expected_close_date: "", notes: "",
 };
@@ -58,11 +59,15 @@ const emptyForm = {
 export default function DealsPage() {
   const { hasPermission } = usePermissions();
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [companies, setCompanies] = useState<CompanyMini[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
+  // Step 5c-3: 顧客は (companyId, contactId) で管理。submit 時 backend が customer_id を逆引き
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [contactId, setContactId] = useState<number | null>(null);
+  const [selectorError, setSelectorError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Deal | null>(null);
@@ -79,20 +84,34 @@ export default function DealsPage() {
     }
   };
 
-  const loadCustomers = async () => {
+  // 一覧の「会社」列表示用（company_id → 会社名）
+  const loadCompanies = async () => {
     try {
-      const data = await api.get<Customer[]>("/customers?per_page=100");
-      setCustomers(data);
+      const data = await api.get<CompanyMini[]>("/companies?per_page=200");
+      setCompanies(data.map((c) => ({ id: c.id, company_code: c.company_code, name: c.name })));
     } catch { /* ignore */ }
   };
 
-  useEffect(() => { loadDeals(); loadCustomers(); }, [statusFilter]);
+  useEffect(() => { loadDeals(); }, [statusFilter]);
+  useEffect(() => { loadCompanies(); }, []);
+
+  const resetSelector = () => {
+    setCompanyId(null);
+    setContactId(null);
+    setSelectorError("");
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    setSelectorError("");
+    if (contactId === null) {
+      setSelectorError("会社と担当者を選択してください");
+      return;
+    }
     const payload: Record<string, unknown> = {
-      customer_id: Number(form.customer_id),
+      company_id: companyId,
+      contact_id: contactId,
       title: form.title,
       amount: form.amount ? Number(form.amount) : null,
       currency: form.currency,
@@ -113,6 +132,7 @@ export default function DealsPage() {
       setShowForm(false);
       setEditId(null);
       setForm(emptyForm);
+      resetSelector();
       loadDeals();
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました");
@@ -122,7 +142,6 @@ export default function DealsPage() {
   const handleEdit = (d: Deal) => {
     setEditId(d.id);
     setForm({
-      customer_id: d.customer_id != null ? String(d.customer_id) : "",
       title: d.title,
       amount: d.amount != null ? String(d.amount) : "",
       currency: d.currency || "JPY",
@@ -134,6 +153,9 @@ export default function DealsPage() {
       expected_close_date: d.expected_close_date || "",
       notes: d.notes || "",
     });
+    setCompanyId(d.company_id);
+    setContactId(d.contact_id);
+    setSelectorError("");
     setShowForm(true);
   };
 
@@ -157,10 +179,10 @@ export default function DealsPage() {
       return `${cur} ${n.toLocaleString()}`;
     }
   };
-  const customerName = (id: number | null) => {
+  const companyName = (id: number | null) => {
     if (!id) return "-";
-    const c = customers.find((c) => c.id === id);
-    return c ? customerLabel(c) : `ID:${id}`;
+    const c = companies.find((c) => c.id === id);
+    return c ? `${c.name}（${c.company_code}）` : `#${id}`;
   };
 
   return (
@@ -168,7 +190,15 @@ export default function DealsPage() {
       <div className="page-header">
         <h2>案件管理</h2>
         {hasPermission("deals.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
+          <button
+            className="btn-primary"
+            onClick={() => {
+              setShowForm(true);
+              setEditId(null);
+              setForm(emptyForm);
+              resetSelector();
+            }}
+          >
             新規登録
           </button>
         )}
@@ -188,12 +218,15 @@ export default function DealsPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>{editId ? "商談編集" : "新規商談登録"}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group"><label>顧客 *</label>
-                <select required value={form.customer_id} onChange={(e) => setForm({ ...form, customer_id: e.target.value })}>
-                  <option value="">選択してください</option>
-                  {customers.map((c) => <option key={c.id} value={c.id}>{customerLabel(c)}</option>)}
-                </select>
-              </div>
+              <CompanyContactSelector
+                value={{ companyId, contactId }}
+                onChange={({ companyId: c, contactId: ct }) => {
+                  setCompanyId(c);
+                  setContactId(ct);
+                }}
+                required
+                error={selectorError}
+              />
               <div className="form-group"><label>タイトル *</label>
                 <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
               </div>
@@ -251,7 +284,7 @@ export default function DealsPage() {
             <tr>
               <th>コード</th>
               <th>タイトル</th>
-              <th>顧客</th>
+              <th>会社</th>
               <th>金額</th>
               <th>ステージ</th>
               <th>確率</th>
@@ -264,7 +297,7 @@ export default function DealsPage() {
               <tr key={d.id}>
                 <td className="mono">{d.deal_code || "-"}</td>
                 <td>{d.title}</td>
-                <td>{customerName(d.customer_id)}</td>
+                <td>{companyName(d.company_id)}</td>
                 <td>{d.amount ? fmt(d.amount, d.currency) : "-"}</td>
                 <td>{d.stage ? (STAGE_LABELS[d.stage] || d.stage) : "-"}</td>
                 <td>{d.probability != null ? `${d.probability}%` : "-"}</td>
