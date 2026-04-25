@@ -4,11 +4,14 @@
  *
  * 変更履歴:
  *   2026-04-16: 初版作成（Phase 1）
+ *   2026-04-25: Phase 1-B-2 Step 5c-3 — 案件化モーダルの顧客セレクタを
+ *     CompanyContactSelector（company + contact）に置換。
  */
 
 import { useEffect, useState, FormEvent } from "react";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
+import CompanyContactSelector from "../components/CompanyContactSelector";
 import { usePermissions } from "../hooks/usePermissions";
 
 const LEAD_STATUSES = ["新規", "コンタクト中", "提案中", "案件化", "失注", "保留"];
@@ -36,15 +39,6 @@ interface Lead {
   updated_at: string;
 }
 
-interface Customer {
-  id: number;
-  customer_code: string;
-  company_name: string | null;
-  billing_display_name: string | null;
-}
-const customerLabel = (c: Customer): string =>
-  c.billing_display_name || c.company_name || c.customer_code;
-
 type FormState = {
   customer_name: string;
   company_name: string;
@@ -71,7 +65,6 @@ const emptyForm: FormState = {
 export default function LeadsPage() {
   const { hasPermission } = usePermissions();
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
@@ -80,7 +73,10 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
   const [convertTarget, setConvertTarget] = useState<Lead | null>(null);
-  const [convertForm, setConvertForm] = useState({ customer_id: "", title: "", amount: "" });
+  const [convertForm, setConvertForm] = useState({ title: "", amount: "" });
+  const [convertCompanyId, setConvertCompanyId] = useState<number | null>(null);
+  const [convertContactId, setConvertContactId] = useState<number | null>(null);
+  const [convertSelectorError, setConvertSelectorError] = useState("");
 
   const loadLeads = async () => {
     try {
@@ -94,17 +90,7 @@ export default function LeadsPage() {
     }
   };
 
-  const loadCustomers = async () => {
-    try {
-      const data = await api.get<Customer[]>("/customers?per_page=100");
-      setCustomers(data);
-    } catch {
-      // 顧客取得失敗は致命的ではない
-    }
-  };
-
   useEffect(() => { loadLeads(); }, [statusFilter]);
-  useEffect(() => { loadCustomers(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -172,17 +158,30 @@ export default function LeadsPage() {
     }
   };
 
+  const closeConvert = () => {
+    setConvertTarget(null);
+    setConvertForm({ title: "", amount: "" });
+    setConvertCompanyId(null);
+    setConvertContactId(null);
+    setConvertSelectorError("");
+  };
+
   const performConvert = async (e: FormEvent) => {
     e.preventDefault();
     if (!convertTarget) return;
+    setConvertSelectorError("");
+    if (convertContactId === null) {
+      setConvertSelectorError("会社と担当者を選択してください");
+      return;
+    }
     try {
       await api.post(`/leads/${convertTarget.id}/convert`, {
-        customer_id: Number(convertForm.customer_id),
+        company_id: convertCompanyId,
+        contact_id: convertContactId,
         title: convertForm.title,
         amount: convertForm.amount ? Number(convertForm.amount) : null,
       });
-      setConvertTarget(null);
-      setConvertForm({ customer_id: "", title: "", amount: "" });
+      closeConvert();
       loadLeads();
     } catch (e) {
       setError(e instanceof Error ? e.message : "案件化に失敗しました");
@@ -299,17 +298,20 @@ export default function LeadsPage() {
       )}
 
       {convertTarget && (
-        <div className="modal-overlay" onClick={() => setConvertTarget(null)}>
+        <div className="modal-overlay" onClick={closeConvert}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>リードを案件化</h3>
             <p>リード <strong>{convertTarget.customer_name}</strong> を案件に変換します。</p>
             <form onSubmit={performConvert}>
-              <div className="form-group"><label>紐付け顧客 *</label>
-                <select required value={convertForm.customer_id} onChange={(e) => setConvertForm({ ...convertForm, customer_id: e.target.value })}>
-                  <option value="">選択してください</option>
-                  {customers.map((c) => <option key={c.id} value={c.id}>{customerLabel(c)}</option>)}
-                </select>
-              </div>
+              <CompanyContactSelector
+                value={{ companyId: convertCompanyId, contactId: convertContactId }}
+                onChange={({ companyId, contactId }) => {
+                  setConvertCompanyId(companyId);
+                  setConvertContactId(contactId);
+                }}
+                required
+                error={convertSelectorError}
+              />
               <div className="form-group"><label>案件タイトル *</label>
                 <input required value={convertForm.title} onChange={(e) => setConvertForm({ ...convertForm, title: e.target.value })} />
               </div>
@@ -317,7 +319,7 @@ export default function LeadsPage() {
                 <input type="number" min="0" step="1" value={convertForm.amount} onChange={(e) => setConvertForm({ ...convertForm, amount: e.target.value })} />
               </div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setConvertTarget(null)}>キャンセル</button>
+                <button type="button" className="btn-secondary" onClick={closeConvert}>キャンセル</button>
                 <button type="submit" className="btn-primary">案件化する</button>
               </div>
             </form>
