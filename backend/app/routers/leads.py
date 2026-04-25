@@ -22,6 +22,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas.lead import LeadConvertRequest, LeadCreate, LeadResponse, LeadUpdate
 from app.services.audit import record_audit_log
+from app.services.customer_resolver import resolve_customer_id
 
 router = APIRouter()
 
@@ -377,27 +378,35 @@ async def convert_lead(
         # 早期409（UXのため）。完全な保証は下のUPDATEで行う。
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="このリードは既に案件化されています")
 
-    # 顧客存在確認（別テナントの顧客はsearch_pathで不可視 → 404）
-    cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": data.customer_id})
-    if not cust.first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
+    # Phase 1-B-2 Step 5c-3: customer_id 未指定時は contact_id から逆引き。
+    # 旧経路（customer_id 指定）は別テナントの顧客が search_path で不可視 → 404 検出。
+    customer_id = data.customer_id
+    if customer_id is None:
+        customer_id = await resolve_customer_id(db, data.contact_id, data.company_id)  # type: ignore[arg-type]
+    else:
+        cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": customer_id})
+        if not cust.first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
 
-    # 新案件作成（後続のクレームUPDATEが失敗した場合、例外でトランザクション全体がロールバックされる）
+    # 新案件作成。deals.company_id/contact_id にも新モデル経路を保存しておくと
+    # Step 5d で customer_id 列を drop してもデータ完整性が保たれる。
     deal_result = await db.execute(
         text("""
             INSERT INTO deals (
-                tenant_id, customer_id, lead_id, title, amount,
+                tenant_id, customer_id, company_id, contact_id, lead_id, title, amount,
                 currency, status, stage, probability, assigned_to, notes
             )
             VALUES (
-                :tenant_id, :customer_id, :lead_id, :title, :amount,
+                :tenant_id, :customer_id, :company_id, :contact_id, :lead_id, :title, :amount,
                 'JPY', 'open', 'open', 10, :assigned_to, :notes
             )
             RETURNING id
         """),
         {
             "tenant_id": tenant_id,
-            "customer_id": data.customer_id,
+            "customer_id": customer_id,
+            "company_id": data.company_id,
+            "contact_id": data.contact_id,
             "lead_id": lead_id,
             "title": data.title,
             "amount": data.amount,
@@ -443,7 +452,9 @@ async def convert_lead(
         action="create", table_name="deals", record_id=new_deal_id,
         new_data={
             "title": data.title,
-            "customer_id": data.customer_id,
+            "customer_id": customer_id,
+            "company_id": data.company_id,
+            "contact_id": data.contact_id,
             "lead_id": lead_id,
             "amount": str(data.amount) if data.amount is not None else None,
         },

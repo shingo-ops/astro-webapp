@@ -11,7 +11,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class OrderStatus(str, Enum):
@@ -25,8 +25,9 @@ class OrderStatus(str, Enum):
 
 
 class OrderCreate(BaseModel):
-    customer_id: int = Field(ge=1, description="顧客ID（旧モデル、Step 5d まで必須）")
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
+    # Phase 1-B-2 Step 5c-3: customer_id か contact_id どちらかは必須。
+    # 後者の場合 backend が _customer_migration_map で逆引き。
+    customer_id: int | None = Field(default=None, ge=1, description="顧客ID（旧モデル、Step 5d まで維持）")
     company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
     contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
     deal_id: int | None = Field(default=None, ge=1)
@@ -39,6 +40,12 @@ class OrderCreate(BaseModel):
     shipping_fee: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     shipping_country: str | None = Field(default=None, max_length=100)
     notes: str | None = Field(default=None, max_length=5000)
+
+    @model_validator(mode="after")
+    def _require_customer_or_contact(self) -> "OrderCreate":
+        if self.customer_id is None and self.contact_id is None:
+            raise ValueError("customer_id または contact_id のいずれかは必須です")
+        return self
 
 
 class OrderUpdate(BaseModel):
