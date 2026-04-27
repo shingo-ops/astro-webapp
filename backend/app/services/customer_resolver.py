@@ -24,6 +24,12 @@ async def resolve_customer_id(
 
     company_id も与えられた場合は contact が指定 company に所属しているかも検証する。
     マップに該当が無い場合は 404、所属不一致は 400。
+
+    PR #147 review F3 / migration 034:
+      `_customer_migration_map.new_contact_id` には UNIQUE 制約 `uniq_cmm_new_contact_id`
+      が migration 034 で付与されており、`.first()` の結果は決定的（最大 1 行）。
+      manual_merge / manual_override で 1 contact に 2 customers を紐づけようとしても
+      DB レベルの IntegrityError で防がれる。
     """
     row = (
         await db.execute(
