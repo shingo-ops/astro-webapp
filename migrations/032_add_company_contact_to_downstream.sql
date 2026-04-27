@@ -15,10 +15,13 @@
 --   - ADD COLUMN IF NOT EXISTS + UPDATE ... WHERE company_id IS NULL
 --   - pg_constraint NOT EXISTS 判定で FK 重複追加を回避
 --   - 再実行で no-op
+--   - **post-035 状態（customer_id 列 DROP 済）でも安全**:
+--     UPDATE 文を pg_attribute チェックで guard し、列が無ければ skip
 --
 -- 依存: migration 028-031（companies/contacts/_customer_migration_map 存在）
 --
 -- 作成日: 2026-04-24
+-- 改修日: 2026-04-27（post-035 hotfix: customer_id 列削除後の冪等性保証）
 
 DO $$
 DECLARE
@@ -57,14 +60,24 @@ BEGIN
         EXECUTE format('ALTER TABLE %I.deals ADD COLUMN IF NOT EXISTS contact_id INTEGER', schema_rec.nspname);
 
         -- backfill（company_id IS NULL の行のみ、再実行しても変化なし）
-        EXECUTE format($q$
-            UPDATE %I.deals d
-            SET company_id = m.new_company_id,
-                contact_id = m.new_contact_id
-            FROM %I._customer_migration_map m
-            WHERE d.customer_id = m.old_customer_id
-              AND d.company_id IS NULL
-        $q$, schema_rec.nspname, schema_rec.nspname);
+        -- post-035 状態では customer_id 列が無いので skip（後方互換 hotfix 2026-04-27）
+        IF EXISTS (
+            SELECT 1 FROM pg_attribute a
+            JOIN pg_class c ON c.oid = a.attrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = schema_rec.nspname
+              AND c.relname = 'deals' AND a.attname = 'customer_id'
+              AND NOT a.attisdropped
+        ) THEN
+            EXECUTE format($q$
+                UPDATE %I.deals d
+                SET company_id = m.new_company_id,
+                    contact_id = m.new_contact_id
+                FROM %I._customer_migration_map m
+                WHERE d.customer_id = m.old_customer_id
+                  AND d.company_id IS NULL
+            $q$, schema_rec.nspname, schema_rec.nspname);
+        END IF;
 
         -- FK 追加（NOT EXISTS で idempotent）
         IF NOT EXISTS (
@@ -98,14 +111,24 @@ BEGIN
             EXECUTE format('ALTER TABLE %I.orders ADD COLUMN IF NOT EXISTS company_id INTEGER', schema_rec.nspname);
             EXECUTE format('ALTER TABLE %I.orders ADD COLUMN IF NOT EXISTS contact_id INTEGER', schema_rec.nspname);
 
-            EXECUTE format($q$
-                UPDATE %I.orders o
-                SET company_id = m.new_company_id,
-                    contact_id = m.new_contact_id
-                FROM %I._customer_migration_map m
-                WHERE o.customer_id = m.old_customer_id
-                  AND o.company_id IS NULL
-            $q$, schema_rec.nspname, schema_rec.nspname);
+            -- post-035 状態では customer_id 列が無いので skip
+            IF EXISTS (
+                SELECT 1 FROM pg_attribute a
+                JOIN pg_class c ON c.oid = a.attrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = schema_rec.nspname
+                  AND c.relname = 'orders' AND a.attname = 'customer_id'
+                  AND NOT a.attisdropped
+            ) THEN
+                EXECUTE format($q$
+                    UPDATE %I.orders o
+                    SET company_id = m.new_company_id,
+                        contact_id = m.new_contact_id
+                    FROM %I._customer_migration_map m
+                    WHERE o.customer_id = m.old_customer_id
+                      AND o.company_id IS NULL
+                $q$, schema_rec.nspname, schema_rec.nspname);
+            END IF;
 
             IF NOT EXISTS (
                 SELECT 1 FROM pg_constraint
@@ -139,14 +162,24 @@ BEGIN
             EXECUTE format('ALTER TABLE %I.quotes ADD COLUMN IF NOT EXISTS company_id INTEGER', schema_rec.nspname);
             EXECUTE format('ALTER TABLE %I.quotes ADD COLUMN IF NOT EXISTS contact_id INTEGER', schema_rec.nspname);
 
-            EXECUTE format($q$
-                UPDATE %I.quotes q
-                SET company_id = m.new_company_id,
-                    contact_id = m.new_contact_id
-                FROM %I._customer_migration_map m
-                WHERE q.customer_id = m.old_customer_id
-                  AND q.company_id IS NULL
-            $q$, schema_rec.nspname, schema_rec.nspname);
+            -- post-035 状態では customer_id 列が無いので skip
+            IF EXISTS (
+                SELECT 1 FROM pg_attribute a
+                JOIN pg_class c ON c.oid = a.attrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = schema_rec.nspname
+                  AND c.relname = 'quotes' AND a.attname = 'customer_id'
+                  AND NOT a.attisdropped
+            ) THEN
+                EXECUTE format($q$
+                    UPDATE %I.quotes q
+                    SET company_id = m.new_company_id,
+                        contact_id = m.new_contact_id
+                    FROM %I._customer_migration_map m
+                    WHERE q.customer_id = m.old_customer_id
+                      AND q.company_id IS NULL
+                $q$, schema_rec.nspname, schema_rec.nspname);
+            END IF;
 
             IF NOT EXISTS (
                 SELECT 1 FROM pg_constraint
@@ -180,14 +213,24 @@ BEGIN
             EXECUTE format('ALTER TABLE %I.invoices ADD COLUMN IF NOT EXISTS company_id INTEGER', schema_rec.nspname);
             EXECUTE format('ALTER TABLE %I.invoices ADD COLUMN IF NOT EXISTS contact_id INTEGER', schema_rec.nspname);
 
-            EXECUTE format($q$
-                UPDATE %I.invoices i
-                SET company_id = m.new_company_id,
-                    contact_id = m.new_contact_id
-                FROM %I._customer_migration_map m
-                WHERE i.customer_id = m.old_customer_id
-                  AND i.company_id IS NULL
-            $q$, schema_rec.nspname, schema_rec.nspname);
+            -- post-035 状態では customer_id 列が無いので skip
+            IF EXISTS (
+                SELECT 1 FROM pg_attribute a
+                JOIN pg_class c ON c.oid = a.attrelid
+                JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = schema_rec.nspname
+                  AND c.relname = 'invoices' AND a.attname = 'customer_id'
+                  AND NOT a.attisdropped
+            ) THEN
+                EXECUTE format($q$
+                    UPDATE %I.invoices i
+                    SET company_id = m.new_company_id,
+                        contact_id = m.new_contact_id
+                    FROM %I._customer_migration_map m
+                    WHERE i.customer_id = m.old_customer_id
+                      AND i.company_id IS NULL
+                $q$, schema_rec.nspname, schema_rec.nspname);
+            END IF;
 
             IF NOT EXISTS (
                 SELECT 1 FROM pg_constraint
