@@ -56,11 +56,11 @@
      html.force-dark   → ダーク強制
      html.force-light  → ライト強制（OS が dark でも上書き）
      どちらも無い      → OS の prefers-color-scheme に従う
+
+   ※ :not(.force-light) は下の @media (prefers-color-scheme: dark) 内で
+     auto 適用判定として使うため、ここでは空ルールを置かずコメントだけにする
+     （PR #166 F6: 空 CSS ルール削除）。
 */
-:root.force-dark,
-:root:not(.force-light) {
-  /* この :not(.force-light) は OS dark mode 時の auto 適用判定用に @media 内で使う */
-}
 
 @media (prefers-color-scheme: dark) {
   :root:not(.force-light) {

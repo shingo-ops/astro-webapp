@@ -88,7 +88,7 @@ const statusLabel = (s: string): string => ({
 
 export default function StaffPage() {
   const { hasPermission } = usePermissions();
-  const { refresh: refreshUiPrefs } = useUiPrefs();
+  const { refresh: refreshUiPrefs, selfStaffId } = useUiPrefs();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -142,14 +142,17 @@ export default function StaffPage() {
     try {
       if (editId) await api.patch(`/staff/${editId}`, payload);
       else await api.post("/staff", payload);
+      // PR #166 F4: 自分の staff レコードを編集した時のみ UI prefs を refresh する。
+      // 他人を編集したケースでの不要な /staff/me 呼び出しを抑制し、かつ
+      // loadAll() と refreshUiPrefs() をシーケンシャル await にしてレースを防ぐ。
+      const editedSelf = editId !== null && selfStaffId !== null && editId === selfStaffId;
       setShowForm(false);
       setEditId(null);
       setForm(emptyForm);
-      loadAll();
-      // 自分のレコードを更新した可能性があるので UI prefs を再取得
-      // （他人のレコードを更新したケースでは無駄な API 呼び出しになるが、
-      //   /staff/me は軽量なので副作用なしと判断）
-      refreshUiPrefs();
+      await loadAll();
+      if (editedSelf) {
+        await refreshUiPrefs();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存に失敗しました");
     } finally {

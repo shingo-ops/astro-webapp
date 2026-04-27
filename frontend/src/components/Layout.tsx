@@ -21,7 +21,11 @@ import NavDropdown from "./NavDropdown";
 export default function Layout() {
   const { user, signOut } = useAuth();
   const { hasPermission, hasAny, loading: permsLoading } = usePermissions();
-  const { prefs } = useUiPrefs();
+  const { prefs, loading: uiPrefsLoading } = useUiPrefs();
+  // PR #166 F3: 権限・UI prefs どちらかが未確定の間は menu を出さない。
+  // 特に show_admin_menu はデフォルト true（コンテキストで「未紐づけ admin 救済」のため）
+  // のため、fetch 完了前にクリックされると空のドロップダウンが見えるリスクがあった。
+  const navLoading = permsLoading || uiPrefsLoading;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -58,8 +62,8 @@ export default function Layout() {
           （詰みを防ぐため。「サイドバー」の語義は GAS 移行後の 2 段ナビ全体を指す） */}
       <nav className="mainnav">
         <div className="mainnav-links">
-          {permsLoading ? (
-            <span className="topnav-loading">権限読込中...</span>
+          {navLoading ? (
+            <span className="topnav-loading">読込中...</span>
           ) : prefs.show_sidebar ? (
             <>
               {hasPermission("dashboard.view") && (

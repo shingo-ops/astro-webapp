@@ -62,6 +62,36 @@ async def test_get_my_staff_404_when_no_link(client, db_session):
 
 
 @pytest.mark.asyncio
+async def test_get_my_staff_deterministic_when_shared_email(client, db_session):
+    """
+    PR #166 round 1 fix (F1):
+    primary_email は UNIQUE 制約なし（migration 019: 共有アドレス運用許容）。
+    同じ email を持つ staff が複数存在する場合、`ORDER BY s.id ASC` により
+    最も小さい id を持つ staff が決定的に返ることを保証する。
+    """
+    await db_session.execute(text("""
+        INSERT INTO roles (id, tenant_id, name, color, priority, is_system)
+        VALUES (3, 999, 'shared', '#555555', 0, FALSE)
+    """))
+    # 同じ primary_email を持つ staff を 2 件投入（id=700, 701）
+    await db_session.execute(text("""
+        INSERT INTO staff (
+            id, tenant_id, staff_code, surname_jp, given_name_jp,
+            primary_email, role_id, status
+        ) VALUES
+            (701, 999, 'EMP-SHARE2', '佐藤', '次郎', 'test@example.com', 3, 'active'),
+            (700, 999, 'EMP-SHARE1', '佐藤', '一郎', 'test@example.com', 3, 'active')
+    """))
+    await db_session.commit()
+
+    # 複数回叩いても常に id=700（最小）が返ることを確認
+    for _ in range(3):
+        res = await client.get("/api/v1/staff/me")
+        assert res.status_code == 200, res.text
+        assert res.json()["id"] == 700
+
+
+@pytest.mark.asyncio
 async def test_get_my_staff_no_ui_preferences_returns_null(client, db_session):
     """staff_ui_preferences 行が存在しない場合は ui_preferences=null を返す"""
     await db_session.execute(text("""
