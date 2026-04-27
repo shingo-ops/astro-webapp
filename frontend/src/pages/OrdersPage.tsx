@@ -183,6 +183,7 @@ export default function OrdersPage() {
                 required={!editId}
                 disabled={editId !== null}
                 error={selectorError}
+                companies={companies}
               />
               {editId && (
                 <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: -8 }}>
