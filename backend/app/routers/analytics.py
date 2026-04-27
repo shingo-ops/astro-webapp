@@ -131,13 +131,15 @@ async def stalled_deals_report(
     total_open = total_result.scalar() or 0
 
     # 停滞案件
+    # NOTE: PostgreSQL の (CURRENT_DATE - timestamp::date) は INTEGER 日数を返す。
+    # SQLite 互換の julianday() は使わない（本番は PG のみ、SQLite テストは別件で baseline 故障中）。
     result = await db.execute(
         text("""
             SELECT id, title, company_id, amount, stage, status, updated_at,
-                   CAST(julianday('now') - julianday(updated_at) AS INTEGER) AS days_stalled
+                   (CURRENT_DATE - updated_at::date)::INTEGER AS days_stalled
             FROM deals
             WHERE status NOT IN ('won', 'lost')
-              AND (julianday('now') - julianday(updated_at)) >= :threshold
+              AND (CURRENT_DATE - updated_at::date) >= :threshold
             ORDER BY updated_at ASC
         """),
         {"threshold": threshold_days},
@@ -174,11 +176,11 @@ async def overdue_invoices_report(
     """支払期限超過の未入金請求書一覧"""
     result = await db.execute(text("""
         SELECT id, invoice_number, company_id, total_amount, currency, due_date,
-               CAST(julianday('now') - julianday(due_date) AS INTEGER) AS days_overdue
+               (CURRENT_DATE - due_date::date)::INTEGER AS days_overdue
         FROM invoices
         WHERE status IN ('issued', 'overdue')
           AND due_date IS NOT NULL
-          AND due_date < date('now')
+          AND due_date < CURRENT_DATE
         ORDER BY due_date ASC
     """))
     rows = result.mappings().all()
