@@ -599,22 +599,29 @@ async def merge_companies(
             detail="master_id と merge_id が同じです。同一会社をマージすることはできません。",
         )
 
-    # 1) master / merge 両方の存在確認（search_path により同テナント内でのみヒット）
-    master_res = await db.execute(
-        text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id FOR UPDATE"),
-        {"id": master_id},
+    # 1) master / merge 両方の存在確認（search_path により同テナント内でのみヒット）。
+    #    PR #164 round1 Minor 1: 並行マージのデッドロック回避のため、2行を canonical な
+    #    昇順 (id) で同一クエリ内にロックする。User A: master=10/merge=20、User B:
+    #    master=20/merge=10 を同時に投げても、両セッションとも 10→20 の順でロックを
+    #    取りに行くため、PostgreSQL の deadlock detector に頼らずデッドロックが起きない。
+    locked_res = await db.execute(
+        text(
+            f"SELECT {_COMPANY_COLUMNS} FROM companies "
+            "WHERE id IN (:m1, :m2) "
+            "ORDER BY id "
+            "FOR UPDATE"
+        ),
+        {"m1": master_id, "m2": merge_id},
     )
-    master_row = master_res.mappings().first()
+    locked_rows = locked_res.mappings().all()
+    rows_by_id = {r["id"]: r for r in locked_rows}
+    master_row = rows_by_id.get(master_id)
+    merge_row = rows_by_id.get(merge_id)
     if not master_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"master 会社 (id={master_id}) が見つかりません",
         )
-    merge_res = await db.execute(
-        text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id FOR UPDATE"),
-        {"id": merge_id},
-    )
-    merge_row = merge_res.mappings().first()
     if not merge_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -725,7 +732,8 @@ async def merge_companies(
 
     addr_dup_res = await db.execute(
         text(
-            "SELECT ma.id FROM company_addresses ma "
+            "SELECT ma.id, COALESCE(ma.branch_name, '') AS original_branch_name "
+            "FROM company_addresses ma "
             "WHERE ma.company_id = :merge AND EXISTS ("
             "  SELECT 1 FROM company_addresses x "
             "  WHERE x.company_id = :master "
@@ -735,9 +743,27 @@ async def merge_companies(
         ),
         {"master": master_id, "merge": merge_id},
     )
-    dup_ids = [row[0] for row in addr_dup_res.fetchall()]
-    for dup_id in dup_ids:
-        # branch_name の長さは VARCHAR(100)。suffix が付いて 100 を超える場合は切り詰める。
+    dup_records = [(row[0], row[1]) for row in addr_dup_res.fetchall()]
+    # PR #164 round1 Minor 4: branch_name は VARCHAR(100)。suffix 付けで 100 字を
+    # 超えると LEFT で切り詰められて元の支店名が不可逆に潰れる。再マージで suffix が
+    # 積み重なるケースも考えて、切り詰めが発生したら audit_log に元 branch_name を
+    # 残し、運用ログにも警告を出して気づけるようにする。
+    branch_name_truncations: list[dict] = []
+    for dup_id, original_branch in dup_records:
+        combined = f"{original_branch}{suffix}"
+        if len(combined) > 100:
+            branch_name_truncations.append({
+                "address_id": dup_id,
+                "original_branch_name": original_branch,
+                "suffix": suffix,
+                "stored_branch_name": combined[:100],
+                "dropped_chars": len(combined) - 100,
+            })
+            logger.warning(
+                "merge_companies: branch_name が VARCHAR(100) を超えたため切り詰め "
+                "(master=%d, merge=%d, address_id=%d, original=%r, dropped=%d 文字)",
+                master_id, merge_id, dup_id, original_branch, len(combined) - 100,
+            )
         await db.execute(
             text(
                 "UPDATE company_addresses "
@@ -768,13 +794,42 @@ async def merge_companies(
         {"merge": merge_id},
     )
 
-    # 8) merge 元 company を削除。CASCADE で残った副テーブル（既に空のはず）も整理される。
+    # 8) Forward-compat defensive guard (PR #164 round1 Major 1):
+    #    Phase 1-B-2 の移行期に作られた `_customer_migration_map.new_company_id` は
+    #    `REFERENCES companies(id)` (ON DELETE NO ACTION) を持つため、本表が残存している
+    #    環境では merge 元 company の DELETE が 23503 で必ず失敗する。
+    #    本番では migration 036 が deploy.yml 経由で全テナントに適用済みのため map は
+    #    既に DROP 済み（よって本コードは no-op になるはず）だが、ロールバック後の
+    #    一時的な再生成・別環境の pre-036 状態など、map が残っているケースに備えて
+    #    DELETE 直前に「行が存在すれば new_company_id を master に付け替える」防御を入れる。
+    #    `pg_tables` で物理存在を確認してから UPDATE することで、map が無い環境では
+    #    無駄な SQL を発行しない。
+    map_exists_res = await db.execute(
+        text(
+            "SELECT 1 FROM pg_tables "
+            "WHERE schemaname = current_schema() AND tablename = '_customer_migration_map'"
+        )
+    )
+    if map_exists_res.scalar() is not None:
+        await db.execute(
+            text(
+                "UPDATE _customer_migration_map "
+                "SET new_company_id = :master "
+                "WHERE new_company_id = :merge"
+            ),
+            {"master": master_id, "merge": merge_id},
+        )
+
+    # 9) merge 元 company を削除。CASCADE で残った副テーブル（既に空のはず）も整理される。
     #    deals/orders/quotes/invoices/contacts/addresses/channels は全て master に移動済み。
+    #    `_customer_migration_map` も step 8 で付け替え済み（map が存在する環境のみ）。
     try:
         await db.execute(text("DELETE FROM companies WHERE id = :id"), {"id": merge_id})
     except IntegrityError as e:
-        # 想定外: 把握していない FK 参照が残っていた場合。トランザクションは get_db で
-        # rollback されるので、付け替えも全て巻き戻る。
+        # 想定外: 把握していない FK 参照が残っていた場合。明示 rollback で他 endpoint
+        # (create_company / delete_company) と流儀を揃える。get_db でも保険的に rollback
+        # されるが、ここで明示的に呼ぶことで以降に commit が紛れ込んだ場合の事故を防げる。
+        await db.rollback()
         logger.error(
             "merge_companies: 想定外の FK 参照で merge 元の DELETE に失敗 "
             "(master=%d, merge=%d): %s", master_id, merge_id, e.orig,
@@ -787,7 +842,7 @@ async def merge_companies(
             ),
         )
 
-    # 9) master の status が pending_dedup_review なら active に昇格
+    # 10) master の status が pending_dedup_review なら active に昇格
     promoted = False
     if master_row["status"] == "pending_dedup_review":
         await db.execute(
@@ -796,7 +851,7 @@ async def merge_companies(
         )
         promoted = True
 
-    # 10) 監査ログ記録
+    # 11) 監査ログ記録
     #     - master 側: action=update, 副テーブル diff（new = master_old + merge_final 全部 added）
     #       + _merge メタデータ（merge_id / 件数 / 理由）
     #     - merge 元: action=delete, old_data に最終状態（本体 + 副テーブル）
@@ -804,6 +859,11 @@ async def merge_companies(
     sub_diff = build_subtable_diff(master_old_subs, master_new_subs)
 
     reason = data.reason if data and data.reason else None
+    # PR #164 round1 Minor 2: master 側の audit log は update_company と同じ流儀で
+    # `new_data` のトップレベルに変更後カラムを直接載せる。merge は本体カラムを
+    # status の active 昇格以外いじらないため、promoted=True のときだけ status を
+    # 上乗せする。これで old_data (status='pending_dedup_review') と対称な diff が
+    # audit log 閲覧 UI 側で読める。
     master_audit_payload: dict = {
         "_merge": {
             "merge_id": merge_id,
@@ -822,6 +882,11 @@ async def merge_companies(
             "status_promoted_to_active": promoted,
         },
     }
+    if promoted:
+        master_audit_payload["status"] = "active"
+    # PR #164 round1 Minor 4: branch_name 切り詰めが発生したら _merge に痕跡を残す。
+    if branch_name_truncations:
+        master_audit_payload["_merge"]["branch_name_truncations"] = branch_name_truncations
     if sub_diff:
         master_audit_payload["_subtables"] = sub_diff
 
@@ -854,7 +919,7 @@ async def merge_companies(
     await db.commit()
     await invalidate_dashboard_cache(tenant_id)
 
-    # 11) commit 後の SELECT 前に tenant コンテキストを再設定
+    # 12) commit 後の SELECT 前に tenant コンテキストを再設定
     await reset_tenant_context(db, tenant_id)
     fetched = await db.execute(
         text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id"),

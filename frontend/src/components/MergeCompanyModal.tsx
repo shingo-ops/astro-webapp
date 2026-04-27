@@ -34,52 +34,88 @@ interface Props {
   onCancel: () => void;
 }
 
+// バックエンド `/companies` の per_page 上限。テナント保有会社が PER_PAGE_CAP を
+// 超えても master 候補が確実に見つかるよう、検索文字が入っている間はサーバー側
+// search を使う（PR #164 round1 Major 2 対応）。
+const PER_PAGE_CAP = 100;
+const SEARCH_DEBOUNCE_MS = 250;
+
 export default function MergeCompanyModal({ open, source, onMerged, onCancel }: Props) {
   const [candidates, setCandidates] = useState<CompanyOption[]>([]);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<CompanyOption | null>(null);
   const [reason, setReason] = useState("");
   const [stage, setStage] = useState<"select" | "confirm">("select");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // PR #164 round1 Major 2: 全件 100 ヒット時の silent failure 警告
+  const [resultsCapped, setResultsCapped] = useState(false);
 
-  // モーダルを開いた直後に master 候補一覧をロード
+  // PR #164 round1 Major 2: 旧実装は per_page=100 で初回1回だけロードして
+  // クライアント側で includes フィルタ。テナント保有会社が 101 件以上になると
+  // 101 件目以降が候補リストに永遠に出てこない silent failure が起きる。
+  // 修正: 初回ロード（空 query）と、search 入力時のサーバー側 search 再 fetch を
+  // 両方サポートする二段構成。検索時は debounce 250ms で round-trip を抑制する。
   useEffect(() => {
     if (!open) return;
-    setSearch("");
+    // モーダル open 時のみ全状態を初期化
     setSelectedId(null);
+    setSelectedSnapshot(null);
     setReason("");
     setStage("select");
     setError(null);
-    setLoading(true);
-    api
-      .get<CompanyOption[]>(`/companies?per_page=100`)
-      .then((rows) => {
-        // 自分自身 + archived を除外。pending_dedup_review 同士のマージは許容
-        // （重複の両方が候補登録されているケース）。ただし backend 側で master が
-        // archived だと 409 を返すので archived はリスト時点で外しておく。
-        const filtered = rows.filter(
-          (r) => r.id !== source.id && r.status !== "archived",
-        );
-        setCandidates(filtered);
-      })
-      .catch((e: unknown) => {
-        setError(e instanceof Error ? e.message : "会社一覧の取得に失敗しました");
-      })
-      .finally(() => setLoading(false));
-  }, [open, source.id]);
+  }, [open]);
 
-  const filteredCandidates = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return candidates;
-    return candidates.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) || c.company_code.toLowerCase().includes(q),
-    );
-  }, [candidates, search]);
+  useEffect(() => {
+    if (!open) return;
+    const q = search.trim();
+    let cancelled = false;
+    const handle = window.setTimeout(() => {
+      setLoading(true);
+      const path = q
+        ? `/companies?per_page=${PER_PAGE_CAP}&search=${encodeURIComponent(q)}`
+        : `/companies?per_page=${PER_PAGE_CAP}`;
+      api
+        .get<CompanyOption[]>(path)
+        .then((rows) => {
+          if (cancelled) return;
+          // 自分自身 + archived を除外。pending_dedup_review 同士のマージは許容
+          // （重複の両方が候補登録されているケース）。ただし backend 側で master が
+          // archived だと 409 を返すので archived はリスト時点で外しておく。
+          const filtered = rows.filter(
+            (r) => r.id !== source.id && r.status !== "archived",
+          );
+          setCandidates(filtered);
+          setResultsCapped(rows.length >= PER_PAGE_CAP);
+        })
+        .catch((e: unknown) => {
+          if (cancelled) return;
+          setError(e instanceof Error ? e.message : "会社一覧の取得に失敗しました");
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, q ? SEARCH_DEBOUNCE_MS : 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [open, source.id, search]);
 
-  const selected = candidates.find((c) => c.id === selectedId) || null;
+  // 検索文字列が変わって候補リストから消えても、選択済 master を維持できるように
+  // クリック時にスナップショットを保持しておく（再 fetch で消えても confirm 画面で参照可能）。
+  const selected = useMemo(() => {
+    const fromList = candidates.find((c) => c.id === selectedId) || null;
+    if (fromList) return fromList;
+    if (selectedSnapshot && selectedSnapshot.id === selectedId) return selectedSnapshot;
+    return null;
+  }, [candidates, selectedId, selectedSnapshot]);
+
+  // server-side search を使うため、表示はそのまま candidates を出すだけ。
+  // 旧 useMemo フィルタは不要。
+  const filteredCandidates = candidates;
 
   const handleConfirmSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -121,12 +157,27 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
               <label>マージ先（master）の会社を選択</label>
               <input
                 type="text"
-                placeholder="会社名 / 会社コードで絞り込み"
+                placeholder="会社名 / 会社コードで絞り込み（サーバー検索）"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                disabled={loading}
               />
             </div>
+            {resultsCapped && (
+              <div
+                style={{
+                  background: "#fff3cd",
+                  border: "1px solid #ffeeba",
+                  padding: 8,
+                  borderRadius: 4,
+                  marginTop: 8,
+                  fontSize: "0.85em",
+                  color: "#856404",
+                }}
+              >
+                候補が {PER_PAGE_CAP} 件に達しました。目的の会社が下のリストに無い場合は、
+                会社名 / 会社コードで絞り込んでください（サーバー側で再検索されます）。
+              </div>
+            )}
 
             <div
               style={{
@@ -157,7 +208,10 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                     {filteredCandidates.map((c) => (
                       <tr
                         key={c.id}
-                        onClick={() => setSelectedId(c.id)}
+                        onClick={() => {
+                          setSelectedId(c.id);
+                          setSelectedSnapshot(c);
+                        }}
                         style={{
                           cursor: "pointer",
                           background: c.id === selectedId ? "#fff3cd" : undefined,
@@ -168,7 +222,10 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                             type="radio"
                             name="master-candidate"
                             checked={c.id === selectedId}
-                            onChange={() => setSelectedId(c.id)}
+                            onChange={() => {
+                              setSelectedId(c.id);
+                              setSelectedSnapshot(c);
+                            }}
                           />
                         </td>
                         <td>{c.company_code}</td>
