@@ -8,6 +8,8 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-16: 初版作成（Phase 1）
+  2026-04-27: Phase 1-B-2 Step 5d — リード変換時の旧 customer_id 経路撤去
+    （resolver / customer 経路廃止、company_id + contact_id を唯一の正に）
 """
 
 from decimal import Decimal
@@ -22,7 +24,6 @@ from app.database import get_db
 from app.models import User
 from app.schemas.lead import LeadConvertRequest, LeadCreate, LeadResponse, LeadUpdate
 from app.services.audit import record_audit_log
-from app.services.customer_resolver import resolve_customer_id
 
 router = APIRouter()
 
@@ -378,33 +379,35 @@ async def convert_lead(
         # 早期409（UXのため）。完全な保証は下のUPDATEで行う。
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="このリードは既に案件化されています")
 
-    # Phase 1-B-2 Step 5c-3: customer_id 未指定時は contact_id から逆引き。
-    # 旧経路（customer_id 指定）は別テナントの顧客が search_path で不可視 → 404 検出。
-    customer_id = data.customer_id
-    if customer_id is None:
-        customer_id = await resolve_customer_id(db, data.contact_id, data.company_id)  # type: ignore[arg-type]
-    else:
-        cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": customer_id})
-        if not cust.first():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
+    # Step 5d: contact / company の存在 + 所属一致確認のみ
+    contact_check = await db.execute(
+        text("SELECT company_id FROM contacts WHERE id = :id"),
+        {"id": data.contact_id},
+    )
+    contact_row = contact_check.first()
+    if not contact_row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された担当者が見つかりません")
+    if contact_row[0] != data.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="指定された担当者は指定会社に所属していません",
+        )
 
-    # 新案件作成。deals.company_id/contact_id にも新モデル経路を保存しておくと
-    # Step 5d で customer_id 列を drop してもデータ完整性が保たれる。
+    # 新案件作成（company_id + contact_id ベース）
     deal_result = await db.execute(
         text("""
             INSERT INTO deals (
-                tenant_id, customer_id, company_id, contact_id, lead_id, title, amount,
+                tenant_id, company_id, contact_id, lead_id, title, amount,
                 currency, status, stage, probability, assigned_to, notes
             )
             VALUES (
-                :tenant_id, :customer_id, :company_id, :contact_id, :lead_id, :title, :amount,
+                :tenant_id, :company_id, :contact_id, :lead_id, :title, :amount,
                 'JPY', 'open', 'open', 10, :assigned_to, :notes
             )
             RETURNING id
         """),
         {
             "tenant_id": tenant_id,
-            "customer_id": customer_id,
             "company_id": data.company_id,
             "contact_id": data.contact_id,
             "lead_id": lead_id,
@@ -452,7 +455,6 @@ async def convert_lead(
         action="create", table_name="deals", record_id=new_deal_id,
         new_data={
             "title": data.title,
-            "customer_id": customer_id,
             "company_id": data.company_id,
             "contact_id": data.contact_id,
             "lead_id": lead_id,

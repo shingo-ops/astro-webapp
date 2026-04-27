@@ -5,6 +5,8 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-17: 初版作成（Phase 2）
+  2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id を撤去し、
+    company_id / contact_id を必須化（新 B2B モデル唯一の正）
 """
 
 from datetime import date, datetime
@@ -31,10 +33,9 @@ class InvoiceItemInput(BaseModel):
 
 
 class InvoiceCreate(BaseModel):
-    customer_id: int = Field(ge=1, description="顧客ID（旧モデル、Step 5d まで必須）")
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
-    company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
-    contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
+    """請求書登録リクエスト（Step 5d 以降は company_id + contact_id 必須）"""
+    company_id: int = Field(ge=1, description="会社ID")
+    contact_id: int = Field(ge=1, description="担当者ID")
     currency: str = Field(default="JPY", max_length=10)
     shipping_fee: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     tax_amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
@@ -72,13 +73,17 @@ class InvoiceItemResponse(BaseModel):
 
 
 class InvoiceResponse(BaseModel):
+    """請求書情報レスポンス。
+
+    Note: `contact_id` は Step 5d 以降必須にする方針だが、PR α merge 直後は
+    legacy 行が DB に残るため Optional のまま。PR γ (resolver 撤去) と同
+    タイミングで `contact_id: int` 必須に昇格する。
+    """
     id: int
     invoice_number: str | None
     quote_id: int | None
-    customer_id: int
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
-    company_id: int | None = None
-    contact_id: int | None = None
+    company_id: int
+    contact_id: int | None = None  # PR γ で `int` 必須化予定
     currency: str
     subtotal: Decimal | None
     shipping_fee: Decimal | None

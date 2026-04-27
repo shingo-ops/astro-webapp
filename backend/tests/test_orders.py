@@ -1,16 +1,24 @@
-"""注文管理API（orders）のテスト"""
+"""注文管理API（orders）のテスト
+
+Phase 1-B-2 Step 5d 以降は会社 + 担当者 (company_id + contact_id) を必須とする。
+"""
 
 import pytest
 
 
-async def _create_customer(client, name="注文テスト顧客"):
-    res = await client.post("/api/v1/customers", json={"company_name": name})
-    return res.json()["id"]
+async def _create_company_contact(client, company_name="注文テスト顧客"):
+    co = await client.post("/api/v1/companies", json={"name": company_name})
+    company_id = co.json()["id"]
+    ct = await client.post("/api/v1/contacts", json={
+        "company_id": company_id,
+        "display_name": f"{company_name}の担当",
+    })
+    return company_id, ct.json()["id"]
 
 
-async def _create_deal(client, customer_id, title="注文テスト案件"):
+async def _create_deal(client, company_id, contact_id, title="注文テスト案件"):
     res = await client.post("/api/v1/deals", json={
-        "customer_id": customer_id, "title": title,
+        "company_id": company_id, "contact_id": contact_id, "title": title,
     })
     return res.json()["id"]
 
@@ -20,11 +28,12 @@ class TestOrdersCRUD:
 
     async def test_create_order(self, client):
         """注文を新規作成できる"""
-        customer_id = await _create_customer(client)
-        deal_id = await _create_deal(client, customer_id)
+        company_id, contact_id = await _create_company_contact(client)
+        deal_id = await _create_deal(client, company_id, contact_id)
 
         res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id,
+            "company_id": company_id,
+            "contact_id": contact_id,
             "deal_id": deal_id,
             "order_number": "ORD-001",
             "total_amount": 500000,
@@ -35,14 +44,16 @@ class TestOrdersCRUD:
         assert data["order_number"] == "ORD-001"
         assert float(data["total_amount"]) == 500000.0
         assert data["status"] == "pending"
-        assert data["customer_id"] == customer_id
+        assert data["company_id"] == company_id
+        assert data["contact_id"] == contact_id
         assert data["deal_id"] == deal_id
 
     async def test_create_order_without_deal(self, client):
         """案件なしでも注文を作成できる"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id,
+            "company_id": company_id,
+            "contact_id": contact_id,
             "order_number": "ORD-NODEAL",
             "total_amount": 10000,
         })
@@ -51,30 +62,35 @@ class TestOrdersCRUD:
 
     async def test_create_order_duplicate_number(self, client):
         """注文番号の重複は409"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         await client.post("/api/v1/orders", json={
-            "customer_id": customer_id,
+            "company_id": company_id,
+            "contact_id": contact_id,
             "order_number": "ORD-DUP",
         })
         res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id,
+            "company_id": company_id,
+            "contact_id": contact_id,
             "order_number": "ORD-DUP",
         })
         assert res.status_code == 409
 
-    async def test_create_order_invalid_customer(self, client):
-        """存在しない顧客IDは400"""
+    async def test_create_order_invalid_contact(self, client):
+        """存在しない担当者IDは400"""
+        company_id, _ = await _create_company_contact(client)
         res = await client.post("/api/v1/orders", json={
-            "customer_id": 99999,
+            "company_id": company_id,
+            "contact_id": 99999,
             "order_number": "ORD-INVALID",
         })
         assert res.status_code == 400
 
     async def test_create_order_invalid_deal(self, client):
         """存在しない案件IDは400"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id,
+            "company_id": company_id,
+            "contact_id": contact_id,
             "deal_id": 99999,
             "order_number": "ORD-BADDEAL",
         })
@@ -82,12 +98,14 @@ class TestOrdersCRUD:
 
     async def test_list_orders(self, client):
         """注文一覧を取得できる"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         await client.post("/api/v1/orders", json={
-            "customer_id": customer_id, "order_number": "ORD-LIST-1",
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-LIST-1",
         })
         await client.post("/api/v1/orders", json={
-            "customer_id": customer_id, "order_number": "ORD-LIST-2",
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-LIST-2",
         })
 
         res = await client.get("/api/v1/orders")
@@ -96,13 +114,15 @@ class TestOrdersCRUD:
 
     async def test_list_orders_filter_by_status(self, client):
         """ステータスでフィルタリングできる"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         await client.post("/api/v1/orders", json={
-            "customer_id": customer_id, "order_number": "ORD-PEND",
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-PEND",
             "status": "pending",
         })
         await client.post("/api/v1/orders", json={
-            "customer_id": customer_id, "order_number": "ORD-CONF",
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-CONF",
             "status": "confirmed",
         })
 
@@ -112,9 +132,10 @@ class TestOrdersCRUD:
 
     async def test_get_order(self, client):
         """注文詳細を取得できる"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         create_res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id, "order_number": "ORD-DETAIL",
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-DETAIL",
         })
         order_id = create_res.json()["id"]
 
@@ -124,9 +145,10 @@ class TestOrdersCRUD:
 
     async def test_update_order_status(self, client):
         """注文ステータスを更新できる"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         create_res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id, "order_number": "ORD-UPD",
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-UPD",
         })
         order_id = create_res.json()["id"]
 
@@ -138,9 +160,10 @@ class TestOrdersCRUD:
 
     async def test_update_order_with_amount_and_status(self, client):
         """Decimal(total_amount)とEnum(status)を同時更新できる（asyncpg encoder対策の回帰テスト）"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         create_res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id, "order_number": "ORD-UPD-FULL",
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-UPD-FULL",
         })
         order_id = create_res.json()["id"]
 
@@ -157,9 +180,10 @@ class TestOrdersCRUD:
 
     async def test_delete_order(self, client):
         """注文を削除できる"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         create_res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id, "order_number": "ORD-DEL",
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-DEL",
         })
         order_id = create_res.json()["id"]
 
@@ -175,14 +199,14 @@ class TestOrdersValidation:
 
     async def test_create_without_order_number(self, client):
         """注文番号なしは422"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id,
+            "company_id": company_id, "contact_id": contact_id,
         })
         assert res.status_code == 422
 
-    async def test_create_without_customer_id(self, client):
-        """顧客IDなしは422"""
+    async def test_create_without_company_or_contact(self, client):
+        """会社/担当者IDなしは422"""
         res = await client.post("/api/v1/orders", json={
             "order_number": "ORD-NOCUST",
         })
@@ -190,9 +214,10 @@ class TestOrdersValidation:
 
     async def test_negative_amount(self, client):
         """負の金額は422"""
-        customer_id = await _create_customer(client)
+        company_id, contact_id = await _create_company_contact(client)
         res = await client.post("/api/v1/orders", json={
-            "customer_id": customer_id,
+            "company_id": company_id,
+            "contact_id": contact_id,
             "order_number": "ORD-NEG",
             "total_amount": -500,
         })

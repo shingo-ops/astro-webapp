@@ -5,13 +5,15 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-17: 初版作成（Phase 2）
+  2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id を撤去し、
+    company_id / contact_id を必須化（新 B2B モデル唯一の正）
 """
 
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 class QuoteStatus(str, Enum):
@@ -31,12 +33,10 @@ class QuoteItemInput(BaseModel):
 
 
 class QuoteCreate(BaseModel):
+    """見積登録リクエスト（Step 5d 以降は company_id + contact_id 必須）"""
     deal_id: int | None = Field(default=None, ge=1)
-    # Phase 1-B-2 Step 5c-3: customer_id か contact_id どちらかは必須。
-    # 後者の場合 backend が _customer_migration_map で逆引き。
-    customer_id: int | None = Field(default=None, ge=1, description="顧客ID（旧モデル、Step 5d まで維持）")
-    company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
-    contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
+    company_id: int = Field(ge=1, description="会社ID")
+    contact_id: int = Field(ge=1, description="担当者ID")
     currency: str = Field(default="JPY", max_length=10)
     shipping_fee: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     tax_amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
@@ -46,12 +46,6 @@ class QuoteCreate(BaseModel):
     notes: str | None = Field(default=None, max_length=5000)
     validity_days: int = Field(default=30, ge=1, le=365)
     items: list[QuoteItemInput] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def _require_customer_or_contact(self) -> "QuoteCreate":
-        if self.customer_id is None and self.contact_id is None:
-            raise ValueError("customer_id または contact_id のいずれかは必須です")
-        return self
 
 
 class QuoteUpdate(BaseModel):
@@ -78,13 +72,17 @@ class QuoteItemResponse(BaseModel):
 
 
 class QuoteResponse(BaseModel):
+    """見積情報レスポンス。
+
+    Note: `contact_id` は Step 5d 以降必須にする方針だが、PR α merge 直後は
+    legacy 行が DB に残るため Optional のまま。PR γ (resolver 撤去) と同
+    タイミングで `contact_id: int` 必須に昇格する。
+    """
     id: int
     quote_code: str | None
     deal_id: int | None
-    customer_id: int
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
-    company_id: int | None = None
-    contact_id: int | None = None
+    company_id: int
+    contact_id: int | None = None  # PR γ で `int` 必須化予定
     currency: str
     subtotal: Decimal | None
     shipping_fee: Decimal | None

@@ -7,6 +7,10 @@ ERP連携API（Phase 5）。
 
 変更履歴:
   2026-04-17: 初版作成（Phase 5 — 同期ログ管理 + エクスポート基盤）
+  2026-04-27: Phase 1-B-2 Step 5d — invoices→customers JOIN を invoices→companies JOIN に置換
+  2026-04-27 (round 1 review fix): Reviewer Major 2 — `company_addresses` JOIN に
+    `AND ba.is_default = TRUE` を追加。multi-branch 顧客（例: Card Galaxy LTD =
+    Essex + Preston）で 1 invoice が複数行に膨らむ事故を防止。
 """
 
 import csv
@@ -80,19 +84,21 @@ async def export_invoices_for_erp(
     log_id = log_result.scalar_one()
 
     try:
-        # 請求書 + 明細をフラット化
-        # 顧客名は billing_display_name → billing住所の name → company_name の優先順位で取得
+        # 請求書 + 明細をフラット化（Step 5d: companies JOIN ベース）
+        # 顧客名は company.billing_display_name → company_addresses.name → company.name の優先順位
         result = await db.execute(text("""
             SELECT i.invoice_number, i.currency, i.status,
                    i.issued_at, i.due_date, i.paid_at,
                    i.payment_method, i.total_amount, i.amount_jpy,
-                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
-                   c.company_name AS company,
+                   COALESCE(co.billing_display_name, ba.name, co.name) AS customer_name,
+                   co.name AS company,
                    ii.product_name, ii.quantity, ii.unit_price, ii.subtotal
             FROM invoices i
-            JOIN customers c ON c.id = i.customer_id
-            LEFT JOIN customer_addresses ba
-                   ON ba.customer_id = c.id AND ba.address_type = 'billing'
+            JOIN companies co ON co.id = i.company_id
+            LEFT JOIN company_addresses ba
+                   ON ba.company_id = co.id
+                  AND ba.address_type = 'billing'
+                  AND ba.is_default = TRUE
             JOIN invoice_items ii ON ii.invoice_id = i.id
             WHERE i.status != 'voided'
             ORDER BY i.id, ii.sort_order
