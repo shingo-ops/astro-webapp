@@ -32,6 +32,7 @@ from app.schemas.company import (
     CompanyAddressInput,
     CompanyAddressResponse,
     CompanyCreate,
+    CompanyMergeRequest,
     CompanyResponse,
     CompanyUpdate,
 )
@@ -533,3 +534,331 @@ async def delete_company(
             detail="この会社には関連する商談・注文・見積・請求書・担当者があるため削除できません。先に関連データを削除してください。",
         )
     await invalidate_dashboard_cache(tenant_id)
+
+
+# ========== 重複マージ（A-4: PR #145 + #152 follow-up） ==========
+#
+# 設計メモ:
+#   旧 routers/duplicates.py の merge_customers は customers.id 空間の値を
+#   companies.id 空間に流し込むデータ破壊バグ（PR #152 round 1 Major 1）を抱えていた。
+#   companies (Phase 1-B-2 移行で独立採番) ベースで再実装し、副テーブル付け替えと
+#   merge 元 company の DELETE を 1 トランザクションで完結させる。
+#
+# トランザクション境界:
+#   - get_db() の AsyncSession は 1 リクエスト 1 セッション（commit はエンドポイント末尾）。
+#   - 途中で例外を投げた場合は database.py の get_db で rollback されるため、
+#     部分的な付け替えが残ることはない。
+#
+# 監査ログ:
+#   - master 側: action=update, _subtables に「全副テーブル added」+ _merge に
+#     {merge_id, merge_company_code, reason, reassigned_*} を記録（差分の意味付け）。
+#   - merge 元: action=delete, old_data に最終状態（副テーブル含む）を記録。
+#
+# 制約:
+#   - master_id == merge_id → 400
+#   - 片方でも存在しない（同テナント外含む） → 404 （search_path で隔離されるため
+#     クロステナント参照は SQL レベルで NULL row になる）
+#   - master が status='archived' → 409（混乱回避。archived はゴミ箱扱い）
+#   - merge 元 company の status は問わない（archived でも吸収できる方が運用上ラク）
+
+
+@router.post(
+    "/companies/{master_id}/merge",
+    response_model=CompanyResponse,
+    dependencies=[Depends(require_permission("customers.delete"))],
+)
+async def merge_companies(
+    master_id: int,
+    merge_id: int = Query(..., description="マージ元の会社 id（吸収されて削除される側）"),
+    data: CompanyMergeRequest | None = None,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """会社の重複マージ（merge 元 → master へ全副テーブルを付け替え、merge 元を削除）。
+
+    認可:
+        `customers.delete` 権限が必要（merge は実質 merge 元の DELETE を含むため）。
+
+    パラメータ:
+        master_id: 残す側（master）の会社 id。
+        merge_id: 吸収されて削除される側の会社 id。query parameter。
+        data: 任意 body。`reason` を渡すと audit_logs に判断根拠を残せる。
+
+    戻り値:
+        master 会社の最新状態（CompanyResponse）。
+
+    エラー:
+        - 400: master_id == merge_id（自己マージ）
+        - 404: master / merge のいずれかがテナント内に存在しない
+        - 409: master が archived（混乱回避）
+    """
+    if master_id == merge_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="master_id と merge_id が同じです。同一会社をマージすることはできません。",
+        )
+
+    # 1) master / merge 両方の存在確認（search_path により同テナント内でのみヒット）
+    master_res = await db.execute(
+        text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id FOR UPDATE"),
+        {"id": master_id},
+    )
+    master_row = master_res.mappings().first()
+    if not master_row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"master 会社 (id={master_id}) が見つかりません",
+        )
+    merge_res = await db.execute(
+        text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id FOR UPDATE"),
+        {"id": merge_id},
+    )
+    merge_row = merge_res.mappings().first()
+    if not merge_row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"merge 会社 (id={merge_id}) が見つかりません",
+        )
+
+    # 2) safety: master が archived ならマージ不可
+    if master_row["status"] == "archived":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="master 会社が archived 状態のため、マージ先として使用できません。先に master を active に戻してください。",
+        )
+
+    # 3) 副テーブルのスナップショット（master の old / merge の最終状態の両方）。
+    #    audit_log 用。merge 元側は DELETE で消えるので必ず先に取る。
+    master_old_subs = await _snapshot_company_subtables(db, master_id)
+    merge_final_subs = await _snapshot_company_subtables(db, merge_id)
+
+    # 4) 商談 / 注文 / 見積 / 請求書 の company_id を merge → master に付け替え。
+    #    deals/orders/quotes/invoices の company_id FK は ON DELETE 指定なし (NO ACTION)
+    #    のため、付け替えずに company を DELETE すると 23503 で失敗する。
+    reassigned_deals = (await db.execute(
+        text("UPDATE deals SET company_id = :master WHERE company_id = :merge"),
+        {"master": master_id, "merge": merge_id},
+    )).rowcount or 0
+    reassigned_orders = (await db.execute(
+        text("UPDATE orders SET company_id = :master WHERE company_id = :merge"),
+        {"master": master_id, "merge": merge_id},
+    )).rowcount or 0
+    reassigned_quotes = (await db.execute(
+        text("UPDATE quotes SET company_id = :master WHERE company_id = :merge"),
+        {"master": master_id, "merge": merge_id},
+    )).rowcount or 0
+    reassigned_invoices = (await db.execute(
+        text("UPDATE invoices SET company_id = :master WHERE company_id = :merge"),
+        {"master": master_id, "merge": merge_id},
+    )).rowcount or 0
+
+    # 5) contacts.company_id を付け替え。
+    #    contacts は ON DELETE CASCADE のため、付け替えなければ company DELETE で
+    #    巻き込まれて消える。先に master へ移管する。
+    #    is_primary_contact は (company_id) WHERE is_primary_contact=TRUE の部分UNIQUE
+    #    INDEX があるため、master に既に primary がある状態で merge 元 primary を
+    #    そのまま移すと UNIQUE 違反になる。merge 元 primary は is_primary_contact=FALSE
+    #    に降格したうえで移管する（master 側の primary を維持するのが運用上自然）。
+    has_master_primary_res = await db.execute(
+        text("SELECT 1 FROM contacts WHERE company_id = :cid AND is_primary_contact = TRUE LIMIT 1"),
+        {"cid": master_id},
+    )
+    master_has_primary = has_master_primary_res.scalar() is not None
+    if master_has_primary:
+        await db.execute(
+            text(
+                "UPDATE contacts SET is_primary_contact = FALSE "
+                "WHERE company_id = :merge AND is_primary_contact = TRUE"
+            ),
+            {"merge": merge_id},
+        )
+    reassigned_contacts = (await db.execute(
+        text("UPDATE contacts SET company_id = :master WHERE company_id = :merge"),
+        {"master": master_id, "merge": merge_id},
+    )).rowcount or 0
+
+    # 6) company_addresses を付け替え。
+    #    company_addresses には (company_id, address_type, branch_name) の自然な一意性
+    #    制約は無いが、IS DEFAULT は (company_id, address_type) WHERE is_default=TRUE
+    #    の部分UNIQUE INDEX で保護される。master に既に既定がある状態で merge 元の
+    #    既定をそのまま移管すると UNIQUE 違反になるため、merge 元側を非既定に降格して
+    #    から付け替える。branch_name の重複は許容（merge 元の支店として残す）。
+    master_default_billing_res = await db.execute(
+        text(
+            "SELECT 1 FROM company_addresses "
+            "WHERE company_id = :cid AND address_type = 'billing' AND is_default = TRUE LIMIT 1"
+        ),
+        {"cid": master_id},
+    )
+    master_has_default_billing = master_default_billing_res.scalar() is not None
+    master_default_delivery_res = await db.execute(
+        text(
+            "SELECT 1 FROM company_addresses "
+            "WHERE company_id = :cid AND address_type = 'delivery' AND is_default = TRUE LIMIT 1"
+        ),
+        {"cid": master_id},
+    )
+    master_has_default_delivery = master_default_delivery_res.scalar() is not None
+
+    if master_has_default_billing:
+        await db.execute(
+            text(
+                "UPDATE company_addresses SET is_default = FALSE "
+                "WHERE company_id = :merge AND address_type = 'billing' AND is_default = TRUE"
+            ),
+            {"merge": merge_id},
+        )
+    if master_has_default_delivery:
+        await db.execute(
+            text(
+                "UPDATE company_addresses SET is_default = FALSE "
+                "WHERE company_id = :merge AND address_type = 'delivery' AND is_default = TRUE"
+            ),
+            {"merge": merge_id},
+        )
+
+    # branch_name は重複可。同じ branch_name が master 側にあれば識別を保つために
+    # suffix を付ける（merge 元 company_code を末尾につけて運用者が起源を追えるように）。
+    merge_company_code = merge_row["company_code"]
+    suffix = f" (merged from {merge_company_code})"
+
+    addr_dup_res = await db.execute(
+        text(
+            "SELECT ma.id FROM company_addresses ma "
+            "WHERE ma.company_id = :merge AND EXISTS ("
+            "  SELECT 1 FROM company_addresses x "
+            "  WHERE x.company_id = :master "
+            "    AND x.address_type = ma.address_type "
+            "    AND COALESCE(x.branch_name, '') = COALESCE(ma.branch_name, '')"
+            ")"
+        ),
+        {"master": master_id, "merge": merge_id},
+    )
+    dup_ids = [row[0] for row in addr_dup_res.fetchall()]
+    for dup_id in dup_ids:
+        # branch_name の長さは VARCHAR(100)。suffix が付いて 100 を超える場合は切り詰める。
+        await db.execute(
+            text(
+                "UPDATE company_addresses "
+                "SET branch_name = LEFT(COALESCE(branch_name, '') || :suffix, 100) "
+                "WHERE id = :id"
+            ),
+            {"suffix": suffix, "id": dup_id},
+        )
+
+    moved_addresses = (await db.execute(
+        text("UPDATE company_addresses SET company_id = :master WHERE company_id = :merge"),
+        {"master": master_id, "merge": merge_id},
+    )).rowcount or 0
+
+    # 7) company_sales_channels を merge → master に追加（PK = (company_id, channel) のため
+    #    INSERT ... SELECT ON CONFLICT DO NOTHING で重複は弾く）。merge 元の行は
+    #    company DELETE 時に CASCADE で消えるので明示削除は不要だが、視認性のため明示削除する。
+    moved_channels = (await db.execute(
+        text(
+            "INSERT INTO company_sales_channels (company_id, channel) "
+            "SELECT :master, channel FROM company_sales_channels WHERE company_id = :merge "
+            "ON CONFLICT (company_id, channel) DO NOTHING"
+        ),
+        {"master": master_id, "merge": merge_id},
+    )).rowcount or 0
+    await db.execute(
+        text("DELETE FROM company_sales_channels WHERE company_id = :merge"),
+        {"merge": merge_id},
+    )
+
+    # 8) merge 元 company を削除。CASCADE で残った副テーブル（既に空のはず）も整理される。
+    #    deals/orders/quotes/invoices/contacts/addresses/channels は全て master に移動済み。
+    try:
+        await db.execute(text("DELETE FROM companies WHERE id = :id"), {"id": merge_id})
+    except IntegrityError as e:
+        # 想定外: 把握していない FK 参照が残っていた場合。トランザクションは get_db で
+        # rollback されるので、付け替えも全て巻き戻る。
+        logger.error(
+            "merge_companies: 想定外の FK 参照で merge 元の DELETE に失敗 "
+            "(master=%d, merge=%d): %s", master_id, merge_id, e.orig,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "merge 元会社を削除できませんでした（想定外の関連レコードが残存しています）。"
+                "管理者に連絡してください。"
+            ),
+        )
+
+    # 9) master の status が pending_dedup_review なら active に昇格
+    promoted = False
+    if master_row["status"] == "pending_dedup_review":
+        await db.execute(
+            text("UPDATE companies SET status = 'active', updated_at = NOW() WHERE id = :id"),
+            {"id": master_id},
+        )
+        promoted = True
+
+    # 10) 監査ログ記録
+    #     - master 側: action=update, 副テーブル diff（new = master_old + merge_final 全部 added）
+    #       + _merge メタデータ（merge_id / 件数 / 理由）
+    #     - merge 元: action=delete, old_data に最終状態（本体 + 副テーブル）
+    master_new_subs = await _snapshot_company_subtables(db, master_id)
+    sub_diff = build_subtable_diff(master_old_subs, master_new_subs)
+
+    reason = data.reason if data and data.reason else None
+    master_audit_payload: dict = {
+        "_merge": {
+            "merge_id": merge_id,
+            "merge_company_code": merge_company_code,
+            "merge_company_name": merge_row["name"],
+            "reason": reason,
+            "reassigned": {
+                "contacts": reassigned_contacts,
+                "deals": reassigned_deals,
+                "orders": reassigned_orders,
+                "quotes": reassigned_quotes,
+                "invoices": reassigned_invoices,
+                "addresses": moved_addresses,
+                "sales_channels": moved_channels,
+            },
+            "status_promoted_to_active": promoted,
+        },
+    }
+    if sub_diff:
+        master_audit_payload["_subtables"] = sub_diff
+
+    await record_audit_log(
+        db=db, tenant_id=tenant_id, user_id=current_user.id,
+        action="update", table_name="companies", record_id=master_id,
+        old_data=dict(master_row), new_data=master_audit_payload,
+    )
+
+    # merge 元の最終状態を delete log に残す。副テーブルの中身は既に master へ移動済みのため、
+    # snapshot は移動「前」の状態（merge_final_subs）を記録する。
+    merge_old_data: dict = dict(merge_row)
+    merge_sub_diff = build_subtable_diff(
+        merge_final_subs,
+        {"company_addresses": [], "company_sales_channels": []},
+    )
+    if merge_sub_diff:
+        merge_old_data["_subtables"] = merge_sub_diff
+    merge_old_data["_merge"] = {
+        "merged_into_company_id": master_id,
+        "merged_into_company_code": master_row["company_code"],
+        "reason": reason,
+    }
+    await record_audit_log(
+        db=db, tenant_id=tenant_id, user_id=current_user.id,
+        action="delete", table_name="companies", record_id=merge_id,
+        old_data=merge_old_data,
+    )
+
+    await db.commit()
+    await invalidate_dashboard_cache(tenant_id)
+
+    # 11) commit 後の SELECT 前に tenant コンテキストを再設定
+    await reset_tenant_context(db, tenant_id)
+    fetched = await db.execute(
+        text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id"),
+        {"id": master_id},
+    )
+    row = fetched.mappings().first()
+    return await _compose_response(db, dict(row))

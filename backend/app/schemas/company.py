@@ -169,3 +169,19 @@ class CompanyResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ========== 重複マージ（A-4: PR #145 + #152 follow-up） ==========
+
+
+class CompanyMergeRequest(BaseModel):
+    """会社の重複マージリクエスト本体。
+
+    `master_id` / `merge_id` は URL / query で指定するため body には含めない。
+    `reason` は監査ログ (audit_logs) に残す任意のテキスト（運用者の判断根拠を後から追える）。
+    """
+    reason: str | None = Field(
+        default=None,
+        max_length=500,
+        description="マージ判断の根拠（任意）。audit_logs.new_data._merge.reason に記録される",
+    )

@@ -478,10 +478,10 @@ export default function ContactsPage() {
                     <button
                       type="button"
                       disabled
-                      title="マージ機能は A-4 (merge_customers 再設計) で実装予定です"
+                      title="担当者単位のマージは将来実装予定です（会社単位のマージは会社詳細ページから利用可能）"
                       style={{ opacity: 0.6, cursor: "not-allowed" }}
                     >
-                      重複としてマージ（A-4 で実装予定）
+                      重複としてマージ（担当者単位は未実装）
                     </button>
                   </div>
                 </div>

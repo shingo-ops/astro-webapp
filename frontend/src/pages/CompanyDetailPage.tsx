@@ -17,6 +17,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
+import MergeCompanyModal from "../components/MergeCompanyModal";
 import { usePermissions } from "../hooks/usePermissions";
 
 const PHONE_RE = /^(\+?\d{10,15}|0\d{9,10})$/;
@@ -187,6 +188,8 @@ export default function CompanyDetailPage() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const canEdit = hasPermission("customers.update");
+  // A-4: 会社マージは customers.delete 権限相当（merge 元の DELETE を含むため）
+  const canMerge = hasPermission("customers.delete");
 
   const [company, setCompany] = useState<Company | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -216,6 +219,8 @@ export default function CompanyDetailPage() {
   // PR #145 Q2: pending_dedup_review 解消フロー
   const [dedupConfirmOpen, setDedupConfirmOpen] = useState(false);
   const [dedupSubmitting, setDedupSubmitting] = useState(false);
+  // A-4: 重複としてマージ
+  const [mergeModalOpen, setMergeModalOpen] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -556,9 +561,8 @@ export default function CompanyDetailPage() {
           )}
 
           {/* PR #145 Q2: pending_dedup_review 解消セクション。
-              status が pending_dedup_review のときのみ表示。マージ機能は A-4 で実装予定のため
-              現時点では disabled プレースホルダーとして並べる（重複候補を判断したいオペレータが
-              「これは別会社」を即座に確定できるよう「別会社として確定」だけ実 enabled） */}
+              status が pending_dedup_review のときのみ表示。
+              「別会社として確定」(active 化) と A-4 で実装した「重複としてマージ」の 2 択を提示する。 */}
           {canEdit && company.status === "pending_dedup_review" && (
             <div className="dedup-resolve-section">
               <h3>重複確認待ちを解消</h3>
@@ -578,11 +582,18 @@ export default function CompanyDetailPage() {
                 </button>
                 <button
                   type="button"
-                  disabled
-                  title="マージ機能は A-4 (merge_customers 再設計) で実装予定です"
-                  style={{ opacity: 0.6, cursor: "not-allowed" }}
+                  className="btn-danger"
+                  onClick={() => setMergeModalOpen(true)}
+                  disabled={!canMerge || dedupSubmitting || basicDirty}
+                  title={
+                    !canMerge
+                      ? "マージには customers.delete 権限が必要です"
+                      : basicDirty
+                        ? "未保存の変更があります。先に基本情報を保存してください"
+                        : "既存の会社にマージして本会社を削除します"
+                  }
                 >
-                  重複としてマージ（A-4 で実装予定）
+                  重複としてマージ
                 </button>
               </div>
             </div>
@@ -813,6 +824,18 @@ export default function CompanyDetailPage() {
         confirmLabel="active に変更"
         onConfirm={handleResolveAsDistinct}
         onCancel={() => setDedupConfirmOpen(false)}
+      />
+
+      {/* A-4: 重複マージモーダル。本会社を merge 元として、master を選んで吸収させる */}
+      <MergeCompanyModal
+        open={mergeModalOpen}
+        source={{ id: company.id, name: company.name, company_code: company.company_code }}
+        onMerged={(masterId) => {
+          setMergeModalOpen(false);
+          // 本会社は削除済みなので master の詳細ページに遷移する
+          navigate(`/companies/${masterId}`);
+        }}
+        onCancel={() => setMergeModalOpen(false)}
       />
     </div>
   );
