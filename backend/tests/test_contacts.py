@@ -149,3 +149,60 @@ class TestContactsCRUD:
         res = await client.delete(f"/api/v1/contacts/{contact_id}")
         assert res.status_code == 204
         assert (await client.get(f"/api/v1/contacts/{contact_id}")).status_code == 404
+
+
+class TestContactPendingDedupReviewResolution:
+    """PR #145 Q2: contacts の pending_dedup_review 解消フロー smoke。
+
+    contacts には DB CHECK 制約はないが、ContactStatus enum に
+    pending_dedup_review を追加したため backend は受領する。
+    UI 側の「別人として確定」ボタンが叩く PATCH 経路を保護する。
+    """
+
+    async def _create_company(self, client, name: str = "会社A") -> int:
+        res = await client.post("/api/v1/companies", json={"name": name})
+        assert res.status_code == 201
+        return res.json()["id"]
+
+    async def test_create_contact_with_pending_dedup_review(self, client):
+        """status='pending_dedup_review' で担当者を新規登録できる"""
+        company_id = await self._create_company(client, "重複候補会社")
+        res = await client.post("/api/v1/contacts", json={
+            "company_id": company_id,
+            "display_name": "重複候補担当",
+            "status": "pending_dedup_review",
+        })
+        assert res.status_code == 201, res.text
+        assert res.json()["status"] == "pending_dedup_review"
+
+    async def test_resolve_contact_to_active(self, client):
+        """pending_dedup_review → active に PATCH で更新できる"""
+        company_id = await self._create_company(client, "解消対象会社")
+        create = await client.post("/api/v1/contacts", json={
+            "company_id": company_id,
+            "display_name": "解消対象",
+            "status": "pending_dedup_review",
+        })
+        contact_id = create.json()["id"]
+        res = await client.patch(f"/api/v1/contacts/{contact_id}", json={
+            "status": "active",
+        })
+        assert res.status_code == 200, res.text
+        assert res.json()["status"] == "active"
+
+    async def test_resolve_does_not_touch_other_fields(self, client):
+        """status だけの PATCH は他フィールドを変更しない"""
+        company_id = await self._create_company(client, "保護会社")
+        create = await client.post("/api/v1/contacts", json={
+            "company_id": company_id,
+            "display_name": "保護対象",
+            "primary_email": "keep@example.com",
+            "status": "pending_dedup_review",
+        })
+        contact_id = create.json()["id"]
+        await client.patch(f"/api/v1/contacts/{contact_id}", json={"status": "active"})
+        got = await client.get(f"/api/v1/contacts/{contact_id}")
+        data = got.json()
+        assert data["status"] == "active"
+        assert data["display_name"] == "保護対象"
+        assert data["primary_email"] == "keep@example.com"

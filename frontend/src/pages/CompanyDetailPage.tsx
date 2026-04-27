@@ -17,6 +17,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
+import MergeCompanyModal from "../components/MergeCompanyModal";
 import { usePermissions } from "../hooks/usePermissions";
 
 const PHONE_RE = /^(\+?\d{10,15}|0\d{9,10})$/;
@@ -187,6 +188,8 @@ export default function CompanyDetailPage() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const canEdit = hasPermission("customers.update");
+  // A-4: 会社マージは customers.delete 権限相当（merge 元の DELETE を含むため）
+  const canMerge = hasPermission("customers.delete");
 
   const [company, setCompany] = useState<Company | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -212,6 +215,12 @@ export default function CompanyDetailPage() {
   const [addrPhoneError, setAddrPhoneError] = useState<string | null>(null);
   // Step 5c-2 反省: モーダル内エラーは modal header に表示しないと overlay で隠れる
   const [addrModalError, setAddrModalError] = useState<string | null>(null);
+
+  // PR #145 Q2: pending_dedup_review 解消フロー
+  const [dedupConfirmOpen, setDedupConfirmOpen] = useState(false);
+  const [dedupSubmitting, setDedupSubmitting] = useState(false);
+  // A-4: 重複としてマージ
+  const [mergeModalOpen, setMergeModalOpen] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -383,6 +392,25 @@ export default function CompanyDetailPage() {
     }
   };
 
+  // PR #145 Q2: 「別会社として確定」 — status を pending_dedup_review → active に戻す。
+  // audit_log への記録は backend の update_company が自動で行う（A-2 PR #162）。
+  // マージ判断（A-4）で消す道とは別経路で、独立した会社として承認する操作。
+  const handleResolveAsDistinct = async () => {
+    if (!company) return;
+    setError("");
+    setDedupSubmitting(true);
+    try {
+      await api.patch(`/companies/${company.id}`, { status: "active" });
+      setDedupConfirmOpen(false);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ステータス更新に失敗しました");
+      setDedupConfirmOpen(false);
+    } finally {
+      setDedupSubmitting(false);
+    }
+  };
+
   const handleAddressDelete = async () => {
     if (!company || !addrDeleteTarget) return;
     try {
@@ -529,6 +557,45 @@ export default function CompanyDetailPage() {
               <button type="submit" className="btn-primary" disabled={!basicDirty || basicSubmitting}>
                 {basicSubmitting ? "保存中..." : "基本情報を保存"}
               </button>
+            </div>
+          )}
+
+          {/* PR #145 Q2: pending_dedup_review 解消セクション。
+              status が pending_dedup_review のときのみ表示。
+              「別会社として確定」(active 化) と A-4 で実装した「重複としてマージ」の 2 択を提示する。 */}
+          {canEdit && company.status === "pending_dedup_review" && (
+            <div className="dedup-resolve-section">
+              <h3>重複確認待ちを解消</h3>
+              <p>
+                この会社は重複候補として暫定登録されています。
+                データを確認したうえで、別会社として独立させるか、既存会社へマージするか判断してください。
+              </p>
+              <div className="dedup-resolve-actions">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => setDedupConfirmOpen(true)}
+                  disabled={dedupSubmitting || basicDirty}
+                  title={basicDirty ? "未保存の変更があります。先に基本情報を保存してください" : ""}
+                >
+                  別会社として確定（active 化）
+                </button>
+                <button
+                  type="button"
+                  className="btn-danger"
+                  onClick={() => setMergeModalOpen(true)}
+                  disabled={!canMerge || dedupSubmitting || basicDirty}
+                  title={
+                    !canMerge
+                      ? "マージには customers.delete 権限が必要です"
+                      : basicDirty
+                        ? "未保存の変更があります。先に基本情報を保存してください"
+                        : "既存の会社にマージして本会社を削除します"
+                  }
+                >
+                  重複としてマージ
+                </button>
+              </div>
             </div>
           )}
         </form>
@@ -747,6 +814,28 @@ export default function CompanyDetailPage() {
         confirmLabel="削除"
         onConfirm={handleAddressDelete}
         onCancel={() => setAddrDeleteTarget(null)}
+      />
+
+      {/* PR #145 Q2: 別会社として確定の確認ダイアログ */}
+      <ConfirmModal
+        open={dedupConfirmOpen}
+        title="重複確認待ちの解消"
+        message={`「${company.name}」を別会社として確定し、ステータスを active に変更しますか？\n\n（マージではなく、独立した会社として承認します。この操作は audit_logs に記録されます）`}
+        confirmLabel="active に変更"
+        onConfirm={handleResolveAsDistinct}
+        onCancel={() => setDedupConfirmOpen(false)}
+      />
+
+      {/* A-4: 重複マージモーダル。本会社を merge 元として、master を選んで吸収させる */}
+      <MergeCompanyModal
+        open={mergeModalOpen}
+        source={{ id: company.id, name: company.name, company_code: company.company_code }}
+        onMerged={(masterId) => {
+          setMergeModalOpen(false);
+          // 本会社は削除済みなので master の詳細ページに遷移する
+          navigate(`/companies/${masterId}`);
+        }}
+        onCancel={() => setMergeModalOpen(false)}
       />
     </div>
   );

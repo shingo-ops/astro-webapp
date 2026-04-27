@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 """
-重複検知・マージAPI。
+重複検知API（customers ベース）。
 
-顧客/リードの重複候補を検出し、マスターレコードにマージする。
+顧客の重複候補を検出する読み取り専用 API。
+旧来 customers テーブル直下の手作業マージ画面 (CustomersPage) 用に残している。
 
 検出ルール:
   1. メールアドレス完全一致
@@ -11,23 +12,25 @@ from __future__ import annotations
   3. 会社名＋名前のレーベンシュタイン類似度
 
 変更履歴:
-  2026-04-17: 初版作成（Phase 3）
+  2026-04-17: 初版作成（Phase 3）。
   2026-04-27: Phase 1-B-2 Step 5d — merge_customers の関連レコード付け替えを
     customer_id ベースから company_id ベースに切替。
-    （旧 customer_id 列は Step 5d 以降コードから書き込まれず、PR β migration 035
-    で物理削除予定。customers/duplicates 検出ロジック自体は customers テーブル
-    本体を残している関係で従来通り customers ベースのままとする。）
   2026-04-27 (round 1 review fix): Reviewer Major 1 — `master_id` / `merge_id` を
     `customers.id` のまま `UPDATE deals SET company_id = :customer_id` していた
     データ破壊バグを発見。新 B2B モデル (companies) ベースで再実装するまで
-    一時的に 501 Not Implemented で無効化する。
+    一時的に 501 Not Implemented で無効化。
+  2026-04-27 (A-4 / PR #145+#152 follow-up): 重複マージ機能を companies ベースで
+    再設計し `POST /companies/{master_id}/merge` (routers/companies.py) として
+    再実装した。本ルーターからは旧 `merge_customers` エンドポイントを撤去。
+    検出 (`GET /customers/duplicates`) は引き続き customers テーブル直下の重複
+    候補を返す（旧 UI の互換維持）。
 """
 
 import re
 from difflib import SequenceMatcher
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,19 +62,6 @@ class DuplicateMatch(BaseModel):
 
 class DuplicatesResponse(BaseModel):
     duplicates: list[DuplicateMatch]
-
-
-class MergeRequest(BaseModel):
-    merge_ids: list[int] = Field(min_length=1)
-
-
-class MergeResponse(BaseModel):
-    master_id: int
-    merged_count: int
-    reassigned_deals: int
-    reassigned_orders: int
-    reassigned_quotes: int
-    reassigned_invoices: int
 
 
 @router.get(
@@ -152,36 +142,6 @@ async def find_customer_duplicates(
     return DuplicatesResponse(duplicates=duplicates)
 
 
-@router.post(
-    "/customers/{master_id}/merge",
-    response_model=MergeResponse,
-    dependencies=[Depends(require_permission("customers.update"))],
-)
-async def merge_customers(
-    master_id: int,
-    data: MergeRequest,
-    db: AsyncSession = Depends(get_db),
-    tenant_id: int = Depends(get_current_tenant),
-    current_user: User = Depends(get_current_user),
-):
-    """重複顧客のマージ（Phase 1-B-2 Step 5d で一時無効化）。
-
-    Reviewer round 1 で「`master_id` / `merge_id` は `customers.id` の値だが、
-    UPDATE 文では `deals.company_id = :customer_id` のように別 ID 空間の値を
-    そのまま代入していた」というデータ破壊バグが指摘された。
-
-    新 B2B モデル (companies / contacts) では「重複マージ」は会社単位 or
-    担当者単位で別エンドポイント (`POST /companies/{master}/merge` / `POST
-    /contacts/{master}/merge` 等) として再設計する必要があるため、本エンドポイント
-    は 501 Not Implemented で即時 reject する。
-
-    再設計までは利用頻度の低い手動マージ機能を一時封鎖し、誤った会社の
-    deals/orders/quotes/invoices が付け替えられる事故を防ぐ。
-    """
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail=(
-            "Phase 1-B-2 Step 5d で重複マージ機能は再設計中。"
-            "新 B2B モデル (companies) ベースで再実装するまで一時的に無効化"
-        ),
-    )
+# 重複「マージ」エンドポイントは companies ベースで再設計され、
+# `POST /api/v1/companies/{master_id}/merge` (routers/companies.py) に移管された。
+# 旧 `POST /api/v1/customers/{master_id}/merge` は撤去済み。

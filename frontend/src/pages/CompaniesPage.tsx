@@ -344,10 +344,20 @@ export default function CompaniesPage() {
     }
   };
 
+  // PR #145 Q2: pending_dedup_review の件数を一覧サマリで提示し、解消フローへの導線を強める
+  const pendingDedupCount = companies.filter((c) => c.status === "pending_dedup_review").length;
+
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>会社管理（新 B2B モデル）</h1>
+        <h1>
+          会社管理（新 B2B モデル）
+          {pendingDedupCount > 0 && (
+            <span className="dedup-summary" title="status が pending_dedup_review の会社の数">
+              重複確認待ち: {pendingDedupCount} 件
+            </span>
+          )}
+        </h1>
         <div className="page-header-actions">
           <input
             type="text"
@@ -396,7 +406,11 @@ export default function CompaniesPage() {
               <tr><td colSpan={7} style={{ textAlign: "center", padding: "1rem" }}>会社が登録されていません</td></tr>
             ) : (
               companies.map((c) => (
-                <tr key={c.id}>
+                <tr
+                  key={c.id}
+                  className={c.status === "pending_dedup_review" ? "row-pending-dedup" : ""}
+                  title={c.status === "pending_dedup_review" ? "重複確認待ち。詳細ページから解消できます" : ""}
+                >
                   <td>{c.company_code}</td>
                   <td>
                     {/* 詳細ページへ: multi_branch 住所編集 / 担当者タブ / 販売チャネル */}

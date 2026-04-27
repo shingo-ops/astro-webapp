@@ -762,6 +762,64 @@
 .badge-lost, .badge-cancelled { background: #fed7d7; color: #9b2c2c; }
 .badge-on_hold, .badge-shipped { background: #e9d8fd; color: #553c9a; }
 
+/* PR #145 Q2: pending_dedup_review の status badge と行ハイライト
+   companies / contacts の <span class="status-badge status-pending_dedup_review">
+   と <tr class="row-pending-dedup"> から参照される */
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+.status-badge.status-active { background: #c6f6d5; color: #276749; }
+.status-badge.status-inactive { background: #e2e8f0; color: var(--text-muted); }
+.status-badge.status-archived { background: #cbd5e0; color: #2d3748; }
+.status-badge.status-pending_dedup_review { background: #fefcbf; color: #975a16; }
+
+.row-pending-dedup td {
+  background: #fffbeb;
+  border-left: 3px solid #ecc94b;
+}
+.data-table tr.row-pending-dedup:hover td {
+  background: #fef3c7;
+}
+
+.dedup-resolve-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: #fffbeb;
+  border: 1px solid #ecc94b;
+  border-radius: 8px;
+}
+.dedup-resolve-section h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: #975a16;
+}
+.dedup-resolve-section p {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.dedup-resolve-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dedup-summary {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  background: #fefcbf;
+  color: #975a16;
+  font-weight: 500;
+}
+
 /* --- Modal --- */
 .modal-overlay {
   position: fixed;

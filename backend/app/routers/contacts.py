@@ -43,7 +43,40 @@ from app.schemas.contact import (
     ContactResponse,
     ContactUpdate,
 )
-from app.services.audit import record_audit_log
+from app.services.audit import (
+    build_subtable_diff,
+    record_audit_log,
+    snapshot_subtable_rows,
+)
+
+# 副テーブル diff のスナップショット対象列（id / *_at は audit.diff_rows 内で除外）。
+# 明示列指定にして、新カラム追加時の意図しない diff ノイズを防ぐ。
+_AUDIT_EMAIL_COLUMNS = ["email", "purpose"]
+_AUDIT_DISCORD_COLUMNS = [
+    "is_joined", "channel_id", "user_id", "invoice_webhook", "shipment_webhook",
+]
+_AUDIT_CHANNEL_COLUMNS = ["channel", "purpose", "is_primary"]
+
+
+async def _snapshot_contact_subtables(db: AsyncSession, contact_id: int) -> dict[str, object]:
+    """audit_log 用に contact の副テーブルをスナップショットする。
+
+    PR #145 F9: companies/contacts の副テーブル変更が audit_logs に記録されない問題の対応。
+
+    contact_discord は 1:1 のため list ではなく単一 dict（または None）として扱う。
+    """
+    discord_rows = await snapshot_subtable_rows(
+        db, "contact_discord", "contact_id", contact_id, _AUDIT_DISCORD_COLUMNS,
+    )
+    return {
+        "contact_emails": await snapshot_subtable_rows(
+            db, "contact_emails", "contact_id", contact_id, _AUDIT_EMAIL_COLUMNS,
+        ),
+        "contact_discord": discord_rows[0] if discord_rows else None,
+        "contact_contact_channels": await snapshot_subtable_rows(
+            db, "contact_contact_channels", "contact_id", contact_id, _AUDIT_CHANNEL_COLUMNS,
+        ),
+    }
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -412,10 +445,20 @@ async def create_contact(
         )
         row = fetched.mappings().first()
 
+        # PR #145 F9: 副テーブルの初期状態を _subtables.* にスナップショット
+        new_subs_snapshot = await _snapshot_contact_subtables(db, new_id)
+        new_data_payload: dict = data.model_dump(exclude_none=True, mode="json")
+        sub_diff = build_subtable_diff(
+            {"contact_emails": [], "contact_discord": None, "contact_contact_channels": []},
+            new_subs_snapshot,
+        )
+        if sub_diff:
+            new_data_payload["_subtables"] = sub_diff
+
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="create", table_name="contacts", record_id=new_id,
-            new_data=data.model_dump(exclude_none=True, mode="json"),
+            new_data=new_data_payload,
         )
         await db.commit()
     except IntegrityError as e:
@@ -450,6 +493,9 @@ async def update_contact(
     old_row = old_result.mappings().first()
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="担当者が見つかりません")
+
+    # PR #145 F9: 副テーブルの old スナップショットを _replace_* 前に取得
+    old_subs_snapshot = await _snapshot_contact_subtables(db, contact_id)
 
     update_data = data.model_dump(exclude_unset=True, mode="python")
     if not update_data:
@@ -492,10 +538,19 @@ async def update_contact(
         discord_model = ContactDiscordInput(**discord) if discord else None
         await _upsert_discord(db, contact_id, discord_model)
 
+    # PR #145 F9: 副テーブル変更後の new スナップショットと old から diff を組み立てる。
+    # 変更されていない副テーブルは old/new 同一で diff_* が None を返すため _subtables から省かれる。
+    new_subs_snapshot = await _snapshot_contact_subtables(db, contact_id)
+    sub_diff = build_subtable_diff(old_subs_snapshot, new_subs_snapshot)
+
+    new_data_payload: dict = data.model_dump(exclude_unset=True, mode="json")
+    if sub_diff:
+        new_data_payload["_subtables"] = sub_diff
+
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,
         action="update", table_name="contacts", record_id=contact_id,
-        old_data=dict(old_row), new_data=data.model_dump(exclude_unset=True, mode="json"),
+        old_data=dict(old_row), new_data=new_data_payload,
     )
     await db.commit()
     await invalidate_dashboard_cache(tenant_id)
@@ -530,12 +585,22 @@ async def delete_contact(
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="担当者が見つかりません")
 
+    # PR #145 F9: 副テーブルも CASCADE で消える前にスナップショットを取って old_data に含める
+    old_subs_snapshot = await _snapshot_contact_subtables(db, contact_id)
+    sub_diff = build_subtable_diff(
+        old_subs_snapshot,
+        {"contact_emails": [], "contact_discord": None, "contact_contact_channels": []},
+    )
+    old_data_payload: dict = dict(old_row)
+    if sub_diff:
+        old_data_payload["_subtables"] = sub_diff
+
     try:
         await db.execute(text("DELETE FROM contacts WHERE id = :id"), {"id": contact_id})
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="delete", table_name="contacts", record_id=contact_id,
-            old_data=dict(old_row),
+            old_data=old_data_payload,
         )
         await db.commit()
     except IntegrityError:

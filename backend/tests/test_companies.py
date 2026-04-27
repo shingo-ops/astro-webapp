@@ -138,3 +138,59 @@ class TestCompaniesCRUD:
             "company_code": "CO-DUP-01",
         })
         assert res2.status_code == 409
+
+
+class TestPendingDedupReviewResolution:
+    """PR #145 Q2: pending_dedup_review の手動解消フロー smoke。
+
+    backend は既に `update_company` で status を任意の有効値に書き換えできるが、
+    UI 側で「別会社として確定」ボタンが叩く PATCH 経路を回帰テストで保護する。
+    """
+
+    async def test_create_with_pending_dedup_review_status(self, client):
+        """status='pending_dedup_review' で会社を新規登録できる（CHECK 制約 OK 確認）"""
+        res = await client.post("/api/v1/companies", json={
+            "name": "重複候補会社",
+            "status": "pending_dedup_review",
+        })
+        assert res.status_code == 201, res.text
+        assert res.json()["status"] == "pending_dedup_review"
+
+    async def test_resolve_to_active(self, client):
+        """pending_dedup_review → active に PATCH で更新できる（解消フロー）"""
+        create = await client.post("/api/v1/companies", json={
+            "name": "解消対象",
+            "status": "pending_dedup_review",
+        })
+        company_id = create.json()["id"]
+        res = await client.patch(f"/api/v1/companies/{company_id}", json={
+            "status": "active",
+        })
+        assert res.status_code == 200, res.text
+        assert res.json()["status"] == "active"
+
+    async def test_other_fields_intact_after_resolve(self, client):
+        """status だけの PATCH は副テーブル（住所・販売チャネル）を巻き込まない"""
+        create = await client.post("/api/v1/companies", json={
+            "name": "副テーブル保護",
+            "status": "pending_dedup_review",
+            "addresses": [{"address_type": "billing", "name": "請求", "is_default": True}],
+            "sales_channels": ["EC"],
+        })
+        company_id = create.json()["id"]
+        await client.patch(f"/api/v1/companies/{company_id}", json={"status": "active"})
+        got = await client.get(f"/api/v1/companies/{company_id}")
+        data = got.json()
+        assert data["status"] == "active"
+        assert len(data["addresses"]) == 1
+        assert data["addresses"][0]["name"] == "請求"
+        assert data["sales_channels"] == ["EC"]
+
+    async def test_invalid_status_rejected(self, client):
+        """未知の status 値は 422 で拒否される（enum バリデーション）"""
+        create = await client.post("/api/v1/companies", json={"name": "不正値"})
+        company_id = create.json()["id"]
+        res = await client.patch(f"/api/v1/companies/{company_id}", json={
+            "status": "totally_invalid",
+        })
+        assert res.status_code == 422
