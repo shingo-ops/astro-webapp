@@ -24,6 +24,17 @@ async def resolve_customer_id(
 
     company_id も与えられた場合は contact が指定 company に所属しているかも検証する。
     マップに該当が無い場合は 404、所属不一致は 400。
+
+    本関数は SELECT のみで、IntegrityError を投げる側ではない（PR #150 review M3）。
+
+    PR #147 review F3 / migration 034:
+      `_customer_migration_map.new_contact_id` には UNIQUE 制約 `uniq_cmm_new_contact_id`
+      が migration 034 で付与されており、`.first()` の結果は決定的（最大 1 行）。
+      もし将来 manual_merge / manual_override 等で 1 contact に 2 customers を
+      紐づけようとした場合、その INSERT/UPDATE は上流の UPSERT 経路
+      （例: `migrate_companies_contacts_from_customers.py`、または将来の管理画面 API）で
+      DB レベルの IntegrityError として捕捉される。
+      本 resolver はその構造的保証の恩恵を受けて、`.first()` の非決定性を回避できる。
     """
     row = (
         await db.execute(

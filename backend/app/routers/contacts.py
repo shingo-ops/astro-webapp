@@ -251,12 +251,21 @@ async def list_contacts(
         params["company_id"] = company_id
 
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+    # PR #147 review F5: company_id 絞り込み時は CompanyContactSelector のドロップダウンで
+    # 主担当を先頭に表示する UX 期待があるため、is_primary_contact DESC を最優先にしつつ、
+    # 同じ primary フラグ内では最新更新順を維持する。company_id 絞り込みなしの一覧は従来どおり
+    # 更新順（ORDER BY updated_at DESC）。
+    order_sql = (
+        "ORDER BY is_primary_contact DESC, updated_at DESC"
+        if company_id is not None
+        else "ORDER BY updated_at DESC"
+    )
     result = await db.execute(
         text(f"""
             SELECT {_CONTACT_COLUMNS}
             FROM contacts
             {where_sql}
-            ORDER BY updated_at DESC
+            {order_sql}
             LIMIT :limit OFFSET :offset
         """),
         params,

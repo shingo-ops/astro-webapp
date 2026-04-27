@@ -6,6 +6,11 @@
  *     権限チェック連動）
  *   2026-04-25: Phase 1-B-2 Step 5c-3 — 顧客セレクタを CompanyContactSelector
  *     （company + contact）に置換。一覧表示は company_id ベースに変更。
+ *   2026-04-27: PR #147 review follow-up
+ *     - F2: レガシー deal（company_id NULL）編集時の UX 改善
+ *       - 既存 contact_id がある場合はその contact の company を初期値表示
+ *       - レガシー deal を編集中である旨を注記
+ *     - F6: companies 一覧をセレクタに props で渡し API 重複コールを解消
  */
 
 import { useEffect, useState, FormEvent } from "react";
@@ -71,6 +76,8 @@ export default function DealsPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Deal | null>(null);
+  // PR #147 F2: レガシー deal（company_id NULL）編集中フラグ。注記表示に使用。
+  const [editingLegacyDeal, setEditingLegacyDeal] = useState(false);
 
   const loadDeals = async () => {
     try {
@@ -99,6 +106,7 @@ export default function DealsPage() {
     setCompanyId(null);
     setContactId(null);
     setSelectorError("");
+    setEditingLegacyDeal(false);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -139,7 +147,7 @@ export default function DealsPage() {
     }
   };
 
-  const handleEdit = (d: Deal) => {
+  const handleEdit = async (d: Deal) => {
     setEditId(d.id);
     setForm({
       title: d.title,
@@ -153,8 +161,28 @@ export default function DealsPage() {
       expected_close_date: d.expected_close_date || "",
       notes: d.notes || "",
     });
-    setCompanyId(d.company_id);
-    setContactId(d.contact_id);
+    // PR #147 F2: レガシー deal（company_id NULL）の編集 UX 改善。
+    // - company_id NULL かつ contact_id 有りの場合は、その contact から company を逆引きし
+    //   初期値として埋める（backend 側でも自動補完する保険があるが、UI 上で見える方が安全）。
+    // - company/contact 共に NULL の場合はユーザーに「会社と担当者を選んでください」を促す。
+    const isLegacy = d.company_id == null;
+    setEditingLegacyDeal(isLegacy);
+    if (isLegacy && d.contact_id != null) {
+      try {
+        const contact = await api.get<{ company_id: number | null }>(
+          `/contacts/${d.contact_id}`,
+        );
+        setCompanyId(contact.company_id);
+        setContactId(d.contact_id);
+      } catch {
+        // 取得失敗時はそのまま空で表示（ユーザーに再選択させる）
+        setCompanyId(null);
+        setContactId(null);
+      }
+    } else {
+      setCompanyId(d.company_id);
+      setContactId(d.contact_id);
+    }
     setSelectorError("");
     setShowForm(true);
   };
@@ -226,7 +254,19 @@ export default function DealsPage() {
                 }}
                 required
                 error={selectorError}
+                companies={companies}
               />
+              {editingLegacyDeal && (
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "var(--text-secondary)",
+                    marginTop: -8,
+                  }}
+                >
+                  ※ この商談は旧モデル（会社未設定）で作成されています。会社・担当者を確認してから保存してください。
+                </p>
+              )}
               <div className="form-group"><label>タイトル *</label>
                 <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
               </div>

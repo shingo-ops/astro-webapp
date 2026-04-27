@@ -130,6 +130,15 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/033_drop_companies_is_individual.sql
 
+            # Phase 1-B-2 Step 5c-3 follow-up (PR #150 / F3):
+            #   _customer_migration_map.new_contact_id に UNIQUE 制約追加。
+            #   customer_resolver.resolve_customer_id_from_contact() の決定性を
+            #   DB レベルで構造的に保証する。重複データがあれば WARNING で SKIP し
+            #   制約は付与されない（運用フォロー要）。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/034_add_unique_new_contact_id_to_customer_migration_map.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

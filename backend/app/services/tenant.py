@@ -355,17 +355,20 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_new_one_primary_per_contact
 --     本テーブル存在中は companies/contacts の DELETE が FK で block されるが、
 --     これは Step 3-4 の段階移行中の誤削除を防ぐための意図的挙動。
 --     Step 5 で本テーブルごと drop したら解除される。
+-- 注: new_contact_id の UNIQUE 制約は migration 034 と等価（PR #150 review M1）。
+--     resolver の `.first()` 非決定性を DB レベルで構造的に解消する目的。
+--     migration 013 の defensive 慣習（bootstrap への backport）と揃えている。
 CREATE TABLE IF NOT EXISTS {schema}._customer_migration_map (
     old_customer_id INTEGER PRIMARY KEY,
     new_company_id INTEGER NOT NULL REFERENCES {schema}.companies(id),
-    new_contact_id INTEGER NOT NULL REFERENCES {schema}.contacts(id),
+    new_contact_id INTEGER NOT NULL UNIQUE REFERENCES {schema}.contacts(id),
     migration_method VARCHAR(30) NOT NULL,
     migrated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     notes TEXT,
     CHECK (migration_method IN ('auto_single','auto_multi_branch','manual_merge','manual_override'))
 );
 CREATE INDEX IF NOT EXISTS idx_cmm_new_company_id ON {schema}._customer_migration_map (new_company_id);
-CREATE INDEX IF NOT EXISTS idx_cmm_new_contact_id ON {schema}._customer_migration_map (new_contact_id);
+-- new_contact_id の検索 INDEX は UNIQUE 制約の暗黙 INDEX で代替されるため明示作成しない。
 
 -- Discord連携（任意、使う顧客のみ1行）
 CREATE TABLE IF NOT EXISTS {schema}.customer_discord (
