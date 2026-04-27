@@ -12,17 +12,23 @@ class TestCustomerDeleteConstraint:
     """顧客削除時のFK保護"""
 
     async def test_delete_customer_with_deal_returns_409(self, client):
-        """関連商談がある顧客は削除できず、409とわかりやすいメッセージを返す"""
+        """関連商談がある顧客は削除できず、409とわかりやすいメッセージを返す。
+
+        Step 5d 以降は customers と deals が直接リンクしなくなる。
+        本テストは customers 側に直接の依存がない（deals.customer_id 列は撤去済）
+        ことを確認する形に変更し、PR β migration 035 適用後は customers の DELETE
+        は customers 配下の副テーブル CASCADE のみで完結する。
+        """
         cust = await client.post(
             "/api/v1/customers",
             json={"company_name": "関連データ付き顧客"},
         )
         customer_id = cust.json()["id"]
-        await client.post("/api/v1/deals", json={"customer_id": customer_id, "title": "関連商談"})
 
+        # Step 5d: 旧 customer_id 列が deals から撤去済のため、関連商談を作る経路は
+        # company/contact 側に切替済。customers 単体の削除は CASCADE で正常完了する。
         res = await client.delete(f"/api/v1/customers/{customer_id}")
-        assert res.status_code == 409
-        assert "関連" in res.json()["detail"]
+        assert res.status_code == 204
 
 
 class TestCustomersCRUD:
