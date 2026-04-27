@@ -35,7 +35,37 @@ from app.schemas.company import (
     CompanyResponse,
     CompanyUpdate,
 )
-from app.services.audit import record_audit_log
+from app.services.audit import (
+    build_subtable_diff,
+    record_audit_log,
+    snapshot_subtable_rows,
+    snapshot_subtable_scalars,
+)
+
+# 副テーブル diff のスナップショット対象列。id / *_at は audit.diff_rows 内で除外される
+# が、明示的に欲しい列だけ取得することでログサイズを抑制し、新列追加時の意図しない
+# diff ノイズも防ぐ。
+_AUDIT_ADDRESS_COLUMNS = [
+    "address_type", "branch_name", "name", "email", "telephone", "tax_id",
+    "address_line_1", "address_line_2", "address_line_3",
+    "city", "state", "zip", "country_code", "is_default",
+]
+
+
+async def _snapshot_company_subtables(db: AsyncSession, company_id: int) -> dict[str, object]:
+    """audit_log 用に company の副テーブルをスナップショットする。
+
+    PR #145 F9: companies/contacts の副テーブル変更が audit_logs に記録されない問題の対応。
+    update / delete 時の old / new 比較に使う。
+    """
+    return {
+        "company_addresses": await snapshot_subtable_rows(
+            db, "company_addresses", "company_id", company_id, _AUDIT_ADDRESS_COLUMNS,
+        ),
+        "company_sales_channels": await snapshot_subtable_scalars(
+            db, "company_sales_channels", "company_id", company_id, "channel",
+        ),
+    }
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -327,10 +357,21 @@ async def create_company(
         )
         row = fetched.mappings().first()
 
+        # PR #145 F9: 副テーブルの初期状態を _subtables.* にスナップショット
+        new_subs_snapshot = await _snapshot_company_subtables(db, new_id)
+        new_data_payload: dict = data.model_dump(exclude_none=True, mode="json")
+        # create 時は added のみで表現（removed は常に空のため省略）
+        sub_diff = build_subtable_diff(
+            {"company_addresses": [], "company_sales_channels": []},
+            new_subs_snapshot,
+        )
+        if sub_diff:
+            new_data_payload["_subtables"] = sub_diff
+
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="create", table_name="companies", record_id=new_id,
-            new_data=data.model_dump(exclude_none=True, mode="json"),
+            new_data=new_data_payload,
         )
         await db.commit()
     except IntegrityError as e:
@@ -366,6 +407,9 @@ async def update_company(
     old_row = old_result.mappings().first()
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="会社が見つかりません")
+
+    # PR #145 F9: 副テーブルの old スナップショットを _replace_* 前に取得
+    old_subs_snapshot = await _snapshot_company_subtables(db, company_id)
 
     update_data = data.model_dump(exclude_unset=True, mode="python")
     if not update_data:
@@ -413,10 +457,20 @@ async def update_company(
     if sales_channels is not None:
         await _replace_sales_channels(db, company_id, sales_channels)
 
+    # PR #145 F9: 副テーブル変更後の new スナップショットを取得して diff を組み立てる。
+    # _replace_* が呼ばれていない副テーブルでも old/new 同一なら diff_rows/diff_scalars が None
+    # を返すので _subtables には含まれない（無駄なノイズなし）。
+    new_subs_snapshot = await _snapshot_company_subtables(db, company_id)
+    sub_diff = build_subtable_diff(old_subs_snapshot, new_subs_snapshot)
+
+    new_data_payload: dict = data.model_dump(exclude_unset=True, mode="json")
+    if sub_diff:
+        new_data_payload["_subtables"] = sub_diff
+
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,
         action="update", table_name="companies", record_id=company_id,
-        old_data=dict(old_row), new_data=data.model_dump(exclude_unset=True, mode="json"),
+        old_data=dict(old_row), new_data=new_data_payload,
     )
     await db.commit()
     await invalidate_dashboard_cache(tenant_id)
@@ -454,12 +508,22 @@ async def delete_company(
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="会社が見つかりません")
 
+    # PR #145 F9: 副テーブルも CASCADE で消える前にスナップショットを取って old_data に含める
+    old_subs_snapshot = await _snapshot_company_subtables(db, company_id)
+    sub_diff = build_subtable_diff(
+        old_subs_snapshot,
+        {"company_addresses": [], "company_sales_channels": []},
+    )
+    old_data_payload: dict = dict(old_row)
+    if sub_diff:
+        old_data_payload["_subtables"] = sub_diff
+
     try:
         await db.execute(text("DELETE FROM companies WHERE id = :id"), {"id": company_id})
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="delete", table_name="companies", record_id=company_id,
-            old_data=dict(old_row),
+            old_data=old_data_payload,
         )
         await db.commit()
     except IntegrityError:
