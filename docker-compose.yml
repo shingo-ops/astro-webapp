@@ -197,6 +197,43 @@ services:
     networks:
       - backnet
 
+  # ============================================================
+  # Discord Gateway Worker (ADR-009 M2: Skeleton)
+  # ============================================================
+  # WebSocket 常駐プロセス。per-tenant Bot Token を環境変数経由で受け取り
+  # READY/heartbeat ログのみ出力する skeleton 段階。
+  # M3 で MESSAGE_CREATE → raw_webhook_events ingestion を追加予定。
+  discord-gateway:
+    build: ./backend
+    command: python -m app.discord_gateway.main
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DISCORD_GATEWAY_LOG_LEVEL=${DISCORD_GATEWAY_LOG_LEVEL:-INFO}
+      # per-tenant Bot Token（ADR-009 5-3）
+      # 形式: DISCORD_BOT_TOKEN_<TENANT_ID>=<token>
+      # tenant_004 = HIGH LIFE JPN
+      - DISCORD_BOT_TOKEN_4=${DISCORD_BOT_TOKEN_4:-}
+      - DISCORD_TENANT_CODE_4=${DISCORD_TENANT_CODE_4:-highlife-jpn}
+    # M2 では Redis に触らないため depends_on は不要。M4 で Redis Pub/Sub
+    # 利用開始時に condition: service_healthy で復活させる。
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=16M
+    networks:
+      - backnet
+
   # Redisキャッシュ
   redis:
     image: redis:7-alpine
