@@ -249,10 +249,88 @@ async def update_deal(
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="商談が見つかりません")
 
-    update_data = data.model_dump(exclude_unset=True)
-    update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLUMNS}
+    raw_update = data.model_dump(exclude_unset=True)
+    update_data = {k: v for k, v in raw_update.items() if k in _UPDATABLE_COLUMNS}
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
+
+    # Phase 1-B-2 Step 5c-3 (PR #147 review F1):
+    # PATCH 経路でも company_id / contact_id / customer_id の整合性を検証する。
+    # create_deal と同等のチェックを行い、不整合な書き換えで customer_id ↔ company_id/contact_id
+    # の食い違いを生まないようにする。Step 5d で customer_id 列が drop されると本ブロックは不要になる。
+    has_company_update = "company_id" in raw_update
+    has_contact_update = "contact_id" in raw_update
+    has_customer_update = "customer_id" in raw_update
+
+    if has_company_update or has_contact_update or has_customer_update:
+        # 更新後に成立する想定の (company_id, contact_id, customer_id) を計算
+        target_company_id = raw_update["company_id"] if has_company_update else old_row["company_id"]
+        target_contact_id = raw_update["contact_id"] if has_contact_update else old_row["contact_id"]
+
+        # contact_id が NULL でない場合: 存在 + 当該テナント + company 所属を確認
+        if target_contact_id is not None:
+            contact_check = await db.execute(
+                text("SELECT company_id FROM contacts WHERE id = :id"),
+                {"id": target_contact_id},
+            )
+            contact_row = contact_check.first()
+            if not contact_row:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="指定された担当者が見つかりません",
+                )
+            if target_company_id is not None and contact_row[0] != target_company_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="指定された担当者は指定会社に所属していません",
+                )
+            # 明示的に company_id を更新しなかったが、contact 側が別 company に紐付いていた場合は
+            # contact.company_id を採用する（deal レベルでの不整合を避ける）
+            if target_company_id is None and contact_row[0] is not None:
+                update_data["company_id"] = contact_row[0]
+                target_company_id = contact_row[0]
+
+        # company_id のみ更新するケース（contact_id 未指定）でも会社の存在検証は行う
+        elif target_company_id is not None and has_company_update:
+            company_check = await db.execute(
+                text("SELECT id FROM companies WHERE id = :id"),
+                {"id": target_company_id},
+            )
+            if not company_check.first():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="指定された会社が見つかりません",
+                )
+
+        # customer_id を明示指定した場合は存在確認（テナント外は search_path で不可視 → 404）
+        if has_customer_update and update_data.get("customer_id") is not None:
+            cust_check = await db.execute(
+                text("SELECT id FROM customers WHERE id = :id"),
+                {"id": update_data["customer_id"]},
+            )
+            if not cust_check.first():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="指定された顧客が見つかりません",
+                )
+        else:
+            # customer_id が明示指定されていない & contact_id が変わる場合は resolver で再解決して書き戻す。
+            # これにより Step 5d 直前まで customer_id が deal の company/contact と一貫した値を保つ。
+            if has_contact_update and target_contact_id is not None and target_contact_id != old_row["contact_id"]:
+                resolved = await resolve_customer_id(db, target_contact_id, target_company_id)
+                update_data["customer_id"] = resolved
+
+    # lead_id を更新する場合は存在確認（指定された場合のみ、NULL クリアは許容）
+    if "lead_id" in raw_update and raw_update["lead_id"] is not None:
+        lead_check = await db.execute(
+            text("SELECT id FROM leads WHERE id = :id"),
+            {"id": raw_update["lead_id"]},
+        )
+        if not lead_check.first():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="指定されたリードが見つかりません",
+            )
 
     # Enum型の値を文字列に変換
     for key in ("status", "stage", "currency"):
