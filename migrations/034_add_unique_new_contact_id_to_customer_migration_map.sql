@@ -35,8 +35,9 @@ DO $$
 DECLARE
     schema_rec RECORD;
     duplicate_count INTEGER;
-    applied_count INTEGER := 0;
-    skipped_count INTEGER := 0;
+    applied_new INTEGER := 0;          -- 今回新規に UNIQUE 制約を追加した件数
+    skipped_existing INTEGER := 0;     -- 既に UNIQUE 制約が存在し no-op だった件数
+    skipped_duplicate INTEGER := 0;    -- 重複データがあり追加できなかった件数
 BEGIN
     FOR schema_rec IN
         SELECT nspname FROM pg_namespace
@@ -62,7 +63,7 @@ BEGIN
         ) THEN
             RAISE NOTICE 'migration 034: %: uniq_cmm_new_contact_id 既に存在、skip',
                 schema_rec.nspname;
-            applied_count := applied_count + 1;
+            skipped_existing := skipped_existing + 1;
             CONTINUE;
         END IF;
 
@@ -84,7 +85,7 @@ BEGIN
                 ' 検出 SQL: SELECT new_contact_id, array_agg(old_customer_id), COUNT(*)'
                 ' FROM %I._customer_migration_map GROUP BY new_contact_id HAVING COUNT(*) > 1;',
                 schema_rec.nspname, duplicate_count, schema_rec.nspname;
-            skipped_count := skipped_count + 1;
+            skipped_duplicate := skipped_duplicate + 1;
             CONTINUE;
         END IF;
 
@@ -102,12 +103,14 @@ BEGIN
             schema_rec.nspname
         );
 
-        applied_count := applied_count + 1;
+        applied_new := applied_new + 1;
         RAISE NOTICE 'migration 034: %: uniq_cmm_new_contact_id 追加完了',
             schema_rec.nspname;
     END LOOP;
-    RAISE NOTICE 'migration 034: 完了。適用 % テナント、スキップ % テナント',
-        applied_count, skipped_count;
+    -- 完了サマリ。VPS 適用ログを grep で判定する場合に区別できるよう 3 バケツに分離。
+    -- (PR #150 review M2)
+    RAISE NOTICE 'migration 034: 完了。新規追加 % テナント、既存検出 % テナント、重複SKIP % テナント',
+        applied_new, skipped_existing, skipped_duplicate;
 END $$;
 
 -- =====================================================================
