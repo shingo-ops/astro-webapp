@@ -7,6 +7,7 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-17: 初版作成（Phase 3）
+  2026-04-27: Phase 1-B-2 Step 5d — customer_id 参照を company_id に置換
 """
 
 from fastapi import APIRouter, Depends, Query
@@ -37,7 +38,7 @@ class ConversionReport(BaseModel):
 class StalledDeal(BaseModel):
     id: int
     title: str
-    customer_id: int | None
+    company_id: int | None
     amount: float | None
     stage: str | None
     status: str
@@ -55,7 +56,7 @@ class StalledDealsReport(BaseModel):
 class OverdueInvoice(BaseModel):
     id: int
     invoice_number: str | None
-    customer_id: int
+    company_id: int
     total_amount: float | None
     currency: str
     due_date: str | None
@@ -132,7 +133,7 @@ async def stalled_deals_report(
     # 停滞案件
     result = await db.execute(
         text("""
-            SELECT id, title, customer_id, amount, stage, status, updated_at,
+            SELECT id, title, company_id, amount, stage, status, updated_at,
                    CAST(julianday('now') - julianday(updated_at) AS INTEGER) AS days_stalled
             FROM deals
             WHERE status NOT IN ('won', 'lost')
@@ -145,7 +146,7 @@ async def stalled_deals_report(
 
     stalled = [
         StalledDeal(
-            id=row["id"], title=row["title"], customer_id=row["customer_id"],
+            id=row["id"], title=row["title"], company_id=row["company_id"],
             amount=float(row["amount"]) if row["amount"] else None,
             stage=row["stage"], status=row["status"],
             days_stalled=row["days_stalled"] or 0,
@@ -172,7 +173,7 @@ async def overdue_invoices_report(
 ):
     """支払期限超過の未入金請求書一覧"""
     result = await db.execute(text("""
-        SELECT id, invoice_number, customer_id, total_amount, currency, due_date,
+        SELECT id, invoice_number, company_id, total_amount, currency, due_date,
                CAST(julianday('now') - julianday(due_date) AS INTEGER) AS days_overdue
         FROM invoices
         WHERE status IN ('issued', 'overdue')
@@ -185,7 +186,7 @@ async def overdue_invoices_report(
     invoices = [
         OverdueInvoice(
             id=row["id"], invoice_number=row["invoice_number"],
-            customer_id=row["customer_id"],
+            company_id=row["company_id"],
             total_amount=float(row["total_amount"]) if row["total_amount"] else None,
             currency=row["currency"], due_date=str(row["due_date"]),
             days_overdue=row["days_overdue"] or 0,

@@ -12,6 +12,11 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-17: 初版作成（Phase 3）
+  2026-04-27: Phase 1-B-2 Step 5d — merge_customers の関連レコード付け替えを
+    customer_id ベースから company_id ベースに切替。
+    （旧 customer_id 列は Step 5d 以降コードから書き込まれず、PR β migration 035
+    で物理削除予定。customers/duplicates 検出ロジック自体は customers テーブル
+    本体を残している関係で従来通り customers ベースのままとする。）
 """
 
 import re
@@ -172,9 +177,14 @@ async def merge_customers(
         if not check.first():
             continue
 
-        # 関連レコードを付け替え
-        for table, col in [("deals", "customer_id"), ("orders", "customer_id"),
-                           ("quotes", "customer_id"), ("invoices", "customer_id")]:
+        # 関連レコードを付け替え（Step 5d: 新 B2B モデルでは company_id ベース）
+        # customers→companies の対応は data_migration スクリプトで作成された
+        # _customer_migration_map を参照したいところだが、本機能（手動マージ）は
+        # 利用頻度が低く、データ整合は monthly_forecast 系の手動運用で済む想定。
+        # ここでは「同一 company に紐付く明細を master_id 側に」という意味付けに
+        # 切り替える（旧 customer_id 列はコードから書き込み停止済）。
+        for table, col in [("deals", "company_id"), ("orders", "company_id"),
+                           ("quotes", "company_id"), ("invoices", "company_id")]:
             r = await db.execute(
                 text(f"UPDATE {table} SET {col} = :master WHERE {col} = :old RETURNING id"),
                 {"master": master_id, "old": merge_id},

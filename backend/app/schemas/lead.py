@@ -5,13 +5,15 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-16: 初版作成（Phase 1）
+  2026-04-27: Phase 1-B-2 Step 5d — リード変換時の旧 customer_id を撤去し、
+    company_id / contact_id を必須化（新 B2B モデル唯一の正）
 """
 
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.base import validate_phone, validate_email_loose
 
@@ -136,19 +138,10 @@ class LeadResponse(BaseModel):
 
 
 class LeadConvertRequest(BaseModel):
-    """リード→案件変換リクエスト"""
-    # Phase 1-B-2 Step 5c-3: customer_id か contact_id どちらかは必須。
-    # 後者の場合 backend が _customer_migration_map で逆引き。
-    customer_id: int | None = Field(default=None, ge=1, description="既存顧客ID（旧モデル）")
-    company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
-    contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
+    """リード→案件変換リクエスト（Step 5d 以降は company_id + contact_id 必須）"""
+    company_id: int = Field(ge=1, description="会社ID")
+    contact_id: int = Field(ge=1, description="担当者ID")
     title: str = Field(min_length=1, max_length=255, description="案件タイトル")
     amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     assigned_to: int | None = Field(default=None, ge=1, description="担当者（省略時はリードの担当者を引き継ぐ）")
     notes: str | None = Field(default=None, max_length=5000)
-
-    @model_validator(mode="after")
-    def _require_customer_or_contact(self) -> "LeadConvertRequest":
-        if self.customer_id is None and self.contact_id is None:
-            raise ValueError("customer_id または contact_id のいずれかは必須です")
-        return self

@@ -7,11 +7,12 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-17: Phase 2拡張（配送情報、invoice_id、ステータス拡張）
+  2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id 系統撤去
+    （resolver / customer 経路廃止、company_id + contact_id を唯一の正に）
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
@@ -20,19 +21,18 @@ from app.database import get_db
 from app.models import User
 from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse
 from app.services.audit import record_audit_log
-from app.services.customer_resolver import resolve_customer_id
 
 router = APIRouter()
 
 _SELECT_COLS = """
-    id, customer_id, company_id, contact_id, deal_id, invoice_id, order_number,
+    id, company_id, contact_id, deal_id, invoice_id, order_number,
     total_amount, currency, status,
     shipping_carrier, shipping_fee, tracking_number,
     shipped_at, delivered_at, shipping_country,
     notes, created_at, updated_at
 """
 
-# customer_id / company_id / contact_id / deal_id / invoice_id は作成後の変更を禁止（FK整合性保護）
+# company_id / contact_id / deal_id / invoice_id は作成後の変更を禁止（FK整合性保護）
 _UPDATABLE_COLUMNS = {
     "order_number", "total_amount", "currency", "status",
     "shipping_carrier", "shipping_fee", "tracking_number",
@@ -46,7 +46,6 @@ async def list_orders(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
-    customer_id: int | None = Query(default=None),
     company_id: int | None = Query(default=None),
     contact_id: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
@@ -61,10 +60,6 @@ async def list_orders(
     if status_filter:
         conditions.append("status = :status")
         params["status"] = status_filter
-    if customer_id:
-        conditions.append("customer_id = :customer_id")
-        params["customer_id"] = customer_id
-    # Phase 1-B-2 Step 5b-2: 新モデル filter
     if company_id:
         conditions.append("company_id = :company_id")
         params["company_id"] = company_id
@@ -116,31 +111,19 @@ async def create_order(
     current_user: User = Depends(get_current_user),
 ):
     """注文を登録する"""
-    # Phase 1-B-2 Step 5c-3: customer_id 未指定時は contact_id から逆引き
-    customer_id = data.customer_id
-    if customer_id is None:
-        customer_id = await resolve_customer_id(db, data.contact_id, data.company_id)  # type: ignore[arg-type]
-    else:
-        cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": customer_id})
-        if not cust.first():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された顧客が存在しません")
-        if data.contact_id is not None:
-            contact_check = await db.execute(
-                text("SELECT company_id FROM contacts WHERE id = :id"),
-                {"id": data.contact_id},
-            )
-            contact_row = contact_check.first()
-            if not contact_row:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された担当者が存在しません")
-            if data.company_id is not None and contact_row[0] != data.company_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="指定された担当者は指定会社に所属していません",
-                )
-        elif data.company_id is not None:
-            company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
-            if not company_check.first():
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された会社が存在しません")
+    # Step 5d: contact / company の存在 + 所属一致確認のみ
+    contact_check = await db.execute(
+        text("SELECT company_id FROM contacts WHERE id = :id"),
+        {"id": data.contact_id},
+    )
+    contact_row = contact_check.first()
+    if not contact_row:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された担当者が存在しません")
+    if contact_row[0] != data.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="指定された担当者は指定会社に所属していません",
+        )
 
     # 商談の存在確認（指定された場合）
     if data.deal_id:
@@ -159,12 +142,12 @@ async def create_order(
     result = await db.execute(
         text(f"""
             INSERT INTO orders (
-                tenant_id, customer_id, company_id, contact_id, deal_id, invoice_id, order_number,
+                tenant_id, company_id, contact_id, deal_id, invoice_id, order_number,
                 total_amount, currency, status,
                 shipping_carrier, shipping_fee, shipping_country, notes
             )
             VALUES (
-                :tenant_id, :customer_id, :company_id, :contact_id, :deal_id, :invoice_id, :order_number,
+                :tenant_id, :company_id, :contact_id, :deal_id, :invoice_id, :order_number,
                 :total_amount, :currency, :status,
                 :shipping_carrier, :shipping_fee, :shipping_country, :notes
             )
@@ -172,7 +155,6 @@ async def create_order(
         """),
         {
             "tenant_id": tenant_id,
-            "customer_id": customer_id,
             "company_id": data.company_id,
             "contact_id": data.contact_id,
             "deal_id": data.deal_id,

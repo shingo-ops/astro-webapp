@@ -3,21 +3,23 @@ from __future__ import annotations
 """
 商談（deals）テーブル用Pydanticスキーマ。
 
-テナントスキーマの deals テーブル定義（Phase 1拡張版）:
-  id, tenant_id, deal_code, customer_id, lead_id, title, amount,
+テナントスキーマの deals テーブル定義:
+  id, tenant_id, deal_code, company_id, contact_id, lead_id, title, amount,
   currency, status, stage, probability, lost_reason, assigned_to,
   expected_close_date, notes, created_at, updated_at
 
 変更履歴:
   2026-04-16: Phase 1拡張（deal_code, lead_id, assigned_to, stage,
     probability, lost_reason, currency を追加）
+  2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id を撤去し、
+    company_id / contact_id を必須化（新 B2B モデル唯一の正）
 """
 
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 class DealStatus(str, Enum):
@@ -46,13 +48,9 @@ class Currency(str, Enum):
 
 
 class DealCreate(BaseModel):
-    """商談登録リクエスト"""
-    # Phase 1-B-2 Step 5c-3: 新モデル送信時は customer_id を未指定にできる
-    # （backend が contact_id から _customer_migration_map で逆引き）。
-    # 旧経路（customer_id 単体）も Step 5d まで維持する。
-    customer_id: int | None = Field(default=None, ge=1, description="顧客ID（旧モデル、Step 5d まで維持）")
-    company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
-    contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
+    """商談登録リクエスト（Step 5d 以降は company_id + contact_id 必須）"""
+    company_id: int = Field(ge=1, description="会社ID")
+    contact_id: int = Field(ge=1, description="担当者ID")
     lead_id: int | None = Field(default=None, ge=1, description="変換元リードID")
     title: str = Field(min_length=1, max_length=255, description="商談タイトル")
     amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2, description="金額")
@@ -65,17 +63,9 @@ class DealCreate(BaseModel):
     expected_close_date: date | None = Field(default=None, description="成約予定日")
     notes: str | None = Field(default=None, max_length=5000, description="備考")
 
-    @model_validator(mode="after")
-    def _require_customer_or_contact(self) -> "DealCreate":
-        if self.customer_id is None and self.contact_id is None:
-            raise ValueError("customer_id または contact_id のいずれかは必須です")
-        return self
-
 
 class DealUpdate(BaseModel):
     """商談更新リクエスト（部分更新）"""
-    customer_id: int | None = Field(default=None, ge=1)
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
     company_id: int | None = Field(default=None, ge=1)
     contact_id: int | None = Field(default=None, ge=1)
     lead_id: int | None = Field(default=None, ge=1)
@@ -95,9 +85,7 @@ class DealResponse(BaseModel):
     """商談情報レスポンス"""
     id: int
     deal_code: str | None
-    customer_id: int | None
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
-    company_id: int | None = None
+    company_id: int
     contact_id: int | None = None
     lead_id: int | None
     title: str

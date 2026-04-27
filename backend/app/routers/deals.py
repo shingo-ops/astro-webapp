@@ -8,6 +8,8 @@ from __future__ import annotations
 変更履歴:
   2026-04-16: Phase 1拡張（deal_code, lead_id, stage, probability,
     currency, assigned_to, lost_reason 追加、require_permission統合）
+  2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id 系統撤去
+    （resolver / customer 経路廃止、company_id + contact_id を唯一の正に）
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -21,19 +23,18 @@ from app.database import get_db
 from app.models import User
 from app.schemas.deal import DealCreate, DealUpdate, DealResponse
 from app.services.audit import record_audit_log
-from app.services.customer_resolver import resolve_customer_id
 
 router = APIRouter()
 
 _DEAL_COLUMNS = """
-    id, deal_code, customer_id, company_id, contact_id, lead_id,
+    id, deal_code, company_id, contact_id, lead_id,
     title, amount, currency,
     status, stage, probability, lost_reason, assigned_to,
     expected_close_date, notes, created_at, updated_at
 """
 
 _UPDATABLE_COLUMNS = {
-    "customer_id", "company_id", "contact_id", "lead_id",
+    "company_id", "contact_id", "lead_id",
     "title", "amount", "currency",
     "status", "stage", "probability", "lost_reason", "assigned_to",
     "expected_close_date", "notes",
@@ -50,7 +51,6 @@ async def list_deals(
     per_page: int = Query(default=20, ge=1, le=100),
     status_filter: str | None = Query(default=None, alias="status"),
     stage: str | None = Query(default=None),
-    customer_id: int | None = Query(default=None),
     company_id: int | None = Query(default=None),
     contact_id: int | None = Query(default=None),
     assigned_to: int | None = Query(default=None),
@@ -69,10 +69,6 @@ async def list_deals(
     if stage:
         conditions.append("stage = :stage")
         params["stage"] = stage
-    if customer_id:
-        conditions.append("customer_id = :customer_id")
-        params["customer_id"] = customer_id
-    # Phase 1-B-2 Step 5b-2: 新モデルの filter
     if company_id:
         conditions.append("company_id = :company_id")
         params["company_id"] = company_id
@@ -134,34 +130,19 @@ async def create_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談を登録する（deal_codeは自動採番）"""
-    # Phase 1-B-2 Step 5c-3: customer_id 未指定時は (contact_id) から逆引き。
-    # 同時に contacts/companies の存在確認と所属一致検証も resolver 内で完了する。
-    customer_id = data.customer_id
-    if customer_id is None:
-        customer_id = await resolve_customer_id(db, data.contact_id, data.company_id)  # type: ignore[arg-type]
-    else:
-        # 旧経路: customer_id 指定時の存在確認（別テナントは search_path で不可視 → 404）
-        cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": customer_id})
-        if not cust.first():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された顧客が見つかりません")
-        # company_id/contact_id を併送した場合は整合性確認（Step 5b-2 互換）
-        if data.contact_id is not None:
-            contact_check = await db.execute(
-                text("SELECT company_id FROM contacts WHERE id = :id"),
-                {"id": data.contact_id},
-            )
-            contact_row = contact_check.first()
-            if not contact_row:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された担当者が見つかりません")
-            if data.company_id is not None and contact_row[0] != data.company_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="指定された担当者は指定会社に所属していません",
-                )
-        elif data.company_id is not None:
-            company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
-            if not company_check.first():
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された会社が見つかりません")
+    # Step 5d: contact / company の存在 + 所属一致確認のみ
+    contact_check = await db.execute(
+        text("SELECT company_id FROM contacts WHERE id = :id"),
+        {"id": data.contact_id},
+    )
+    contact_row = contact_check.first()
+    if not contact_row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された担当者が見つかりません")
+    if contact_row[0] != data.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="指定された担当者は指定会社に所属していません",
+        )
 
     # リード存在確認（指定時のみ）
     if data.lead_id is not None:
@@ -172,13 +153,13 @@ async def create_deal(
     result = await db.execute(
         text("""
             INSERT INTO deals (
-                tenant_id, customer_id, company_id, contact_id, lead_id,
+                tenant_id, company_id, contact_id, lead_id,
                 title, amount, currency,
                 status, stage, probability, lost_reason, assigned_to,
                 expected_close_date, notes
             )
             VALUES (
-                :tenant_id, :customer_id, :company_id, :contact_id, :lead_id,
+                :tenant_id, :company_id, :contact_id, :lead_id,
                 :title, :amount, :currency,
                 :status, :stage, :probability, :lost_reason, :assigned_to,
                 :expected_close_date, :notes
@@ -187,7 +168,6 @@ async def create_deal(
         """),
         {
             "tenant_id": tenant_id,
-            "customer_id": customer_id,
             "company_id": data.company_id,
             "contact_id": data.contact_id,
             "lead_id": data.lead_id,
@@ -254,20 +234,14 @@ async def update_deal(
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="更新するフィールドを指定してください")
 
-    # Phase 1-B-2 Step 5c-3 (PR #147 review F1):
-    # PATCH 経路でも company_id / contact_id / customer_id の整合性を検証する。
-    # create_deal と同等のチェックを行い、不整合な書き換えで customer_id ↔ company_id/contact_id
-    # の食い違いを生まないようにする。Step 5d で customer_id 列が drop されると本ブロックは不要になる。
+    # company_id / contact_id の整合性検証（Step 5d 以降）
     has_company_update = "company_id" in raw_update
     has_contact_update = "contact_id" in raw_update
-    has_customer_update = "customer_id" in raw_update
 
-    if has_company_update or has_contact_update or has_customer_update:
-        # 更新後に成立する想定の (company_id, contact_id, customer_id) を計算
+    if has_company_update or has_contact_update:
         target_company_id = raw_update["company_id"] if has_company_update else old_row["company_id"]
         target_contact_id = raw_update["contact_id"] if has_contact_update else old_row["contact_id"]
 
-        # contact_id が NULL でない場合: 存在 + 当該テナント + company 所属を確認
         if target_contact_id is not None:
             contact_check = await db.execute(
                 text("SELECT company_id FROM contacts WHERE id = :id"),
@@ -284,13 +258,10 @@ async def update_deal(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="指定された担当者は指定会社に所属していません",
                 )
-            # 明示的に company_id を更新しなかったが、contact 側が別 company に紐付いていた場合は
-            # contact.company_id を採用する（deal レベルでの不整合を避ける）
+            # company_id を明示更新せず contact のみ更新 → contact 側の company_id を採用
             if target_company_id is None and contact_row[0] is not None:
                 update_data["company_id"] = contact_row[0]
-                target_company_id = contact_row[0]
 
-        # company_id のみ更新するケース（contact_id 未指定）でも会社の存在検証は行う
         elif target_company_id is not None and has_company_update:
             company_check = await db.execute(
                 text("SELECT id FROM companies WHERE id = :id"),
@@ -301,33 +272,6 @@ async def update_deal(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="指定された会社が見つかりません",
                 )
-
-        # customer_id を明示指定した場合は存在確認（テナント外は search_path で不可視 → 404）。
-        # PR #147 review N4: ここで意図的に「customer_id ↔ company_id/contact_id」の整合性
-        # 検証はスキップしている。理由は次の 2 つ:
-        #   (a) Step 5c-3 時点では旧 API クライアント互換のため、明示送信された customer_id は
-        #       「呼び出し元が責任を持って正しい値を送っている」前提で受け入れる（旧経路互換）。
-        #   (b) 現在 frontend (DealsPage.handleSubmit) は edit 経路で customer_id を送信しない
-        #       ため、本ブランチに到達するのは外部 API クライアント / プログラマティック PATCH 経由のみ。
-        # Step 5d で customer_id 列が drop されればこのスキップ経路は永久に消える。
-        # 厳密化したい場合は has_customer_update and has_contact_update のときだけ
-        # resolver で逆引きして update_data["customer_id"] != resolved なら 400 にする手もある。
-        if has_customer_update and update_data.get("customer_id") is not None:
-            cust_check = await db.execute(
-                text("SELECT id FROM customers WHERE id = :id"),
-                {"id": update_data["customer_id"]},
-            )
-            if not cust_check.first():
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="指定された顧客が見つかりません",
-                )
-        else:
-            # customer_id が明示指定されていない & contact_id が変わる場合は resolver で再解決して書き戻す。
-            # これにより Step 5d 直前まで customer_id が deal の company/contact と一貫した値を保つ。
-            if has_contact_update and target_contact_id is not None and target_contact_id != old_row["contact_id"]:
-                resolved = await resolve_customer_id(db, target_contact_id, target_company_id)
-                update_data["customer_id"] = resolved
 
     # lead_id を更新する場合は存在確認（指定された場合のみ、NULL クリアは許容）
     if "lead_id" in raw_update and raw_update["lead_id"] is not None:
