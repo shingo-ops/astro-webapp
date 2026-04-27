@@ -350,25 +350,10 @@ CREATE INDEX IF NOT EXISTS idx_ccc_new_channel ON {schema}.contact_contact_chann
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_new_one_primary_per_contact
     ON {schema}.contact_contact_channels (contact_id) WHERE is_primary = TRUE;
 
--- Phase 1-B-2 の移行マップ（Step 3 で埋まる）
--- 注: new_company_id/new_contact_id の FK は ON DELETE 未指定（NO ACTION）。
---     本テーブル存在中は companies/contacts の DELETE が FK で block されるが、
---     これは Step 3-4 の段階移行中の誤削除を防ぐための意図的挙動。
---     Step 5 で本テーブルごと drop したら解除される。
--- 注: new_contact_id の UNIQUE 制約は migration 034 と等価（PR #150 review M1）。
---     resolver の `.first()` 非決定性を DB レベルで構造的に解消する目的。
---     migration 013 の defensive 慣習（bootstrap への backport）と揃えている。
-CREATE TABLE IF NOT EXISTS {schema}._customer_migration_map (
-    old_customer_id INTEGER PRIMARY KEY,
-    new_company_id INTEGER NOT NULL REFERENCES {schema}.companies(id),
-    new_contact_id INTEGER NOT NULL UNIQUE REFERENCES {schema}.contacts(id),
-    migration_method VARCHAR(30) NOT NULL,
-    migrated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    notes TEXT,
-    CHECK (migration_method IN ('auto_single','auto_multi_branch','manual_merge','manual_override'))
-);
-CREATE INDEX IF NOT EXISTS idx_cmm_new_company_id ON {schema}._customer_migration_map (new_company_id);
--- new_contact_id の検索 INDEX は UNIQUE 制約の暗黙 INDEX で代替されるため明示作成しない。
+-- Phase 1-B-2 Step 5d / PR γ:
+--   _customer_migration_map は migration 036 で DROP 済。
+--   新テナント作成時は本テーブル不要のため CREATE TABLE ブロックを撤去した。
+--   過去履歴: migration 031 で追加 → migration 034 で UNIQUE 付与 → migration 036 で DROP。
 
 -- Discord連携（任意、使う顧客のみ1行）
 CREATE TABLE IF NOT EXISTS {schema}.customer_discord (
@@ -412,9 +397,8 @@ CREATE TABLE IF NOT EXISTS {schema}.deals (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
     deal_code VARCHAR(20),
-    customer_id INTEGER REFERENCES {schema}.customers(id),
-    -- Phase 1-B-2 Step 4: 新 B2B モデル（company + contact）への移行カラム
-    -- customer_id と両立、Step 5 で customer_id を drop する予定
+    -- Phase 1-B-2 Step 5d / PR γ: 旧 customer_id 列は migration 035 で DROP 済。
+    --   新テナント作成時も customer_id 列を作らない（新 B2B モデル唯一の正）。
     -- CONSTRAINT 名は migration 032 と合わせる（verify の FK 存在 check が新旧テナントで揃うように）
     company_id INTEGER CONSTRAINT fk_deals_company REFERENCES {schema}.companies(id),
     contact_id INTEGER CONSTRAINT fk_deals_contact REFERENCES {schema}.contacts(id),
@@ -490,8 +474,7 @@ END $$;
 CREATE TABLE IF NOT EXISTS {schema}.orders (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
-    customer_id INTEGER REFERENCES {schema}.customers(id),
-    -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
+    -- Phase 1-B-2 Step 5d / PR γ: 旧 customer_id 列は migration 035 で DROP 済。
     company_id INTEGER CONSTRAINT fk_orders_company REFERENCES {schema}.companies(id),
     contact_id INTEGER CONSTRAINT fk_orders_contact REFERENCES {schema}.contacts(id),
     deal_id INTEGER REFERENCES {schema}.deals(id),
@@ -814,8 +797,7 @@ CREATE TABLE IF NOT EXISTS {schema}.quotes (
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
     quote_code VARCHAR(20),
     deal_id INTEGER REFERENCES {schema}.deals(id),
-    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id),
-    -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
+    -- Phase 1-B-2 Step 5d / PR γ: 旧 customer_id 列は migration 035 で DROP 済。
     company_id INTEGER CONSTRAINT fk_quotes_company REFERENCES {schema}.companies(id),
     contact_id INTEGER CONSTRAINT fk_quotes_contact REFERENCES {schema}.contacts(id),
     currency VARCHAR(10) DEFAULT 'JPY',
@@ -856,8 +838,7 @@ CREATE TABLE IF NOT EXISTS {schema}.invoices (
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
     invoice_number VARCHAR(30),
     quote_id INTEGER REFERENCES {schema}.quotes(id),
-    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id),
-    -- Phase 1-B-2 Step 4: 新 B2B モデルへの移行カラム（customer_id と両立）
+    -- Phase 1-B-2 Step 5d / PR γ: 旧 customer_id 列は migration 035 で DROP 済。
     company_id INTEGER CONSTRAINT fk_invoices_company REFERENCES {schema}.companies(id),
     contact_id INTEGER CONSTRAINT fk_invoices_contact REFERENCES {schema}.contacts(id),
     currency VARCHAR(10) DEFAULT 'JPY',
@@ -1009,7 +990,7 @@ ALTER TABLE {schema}.company_sales_channels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_discord ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_contact_channels ENABLE ROW LEVEL SECURITY;
-ALTER TABLE {schema}._customer_migration_map ENABLE ROW LEVEL SECURITY;
+-- Phase 1-B-2 Step 5d / PR γ: _customer_migration_map は migration 036 で DROP 済。
 """
 
 # テナント分離ポリシー（DO $$ ... END $$ ブロックは1ステートメントとして実行する。
@@ -1238,14 +1219,8 @@ BEGIN
                   AND ct.tenant_id = current_setting('app.tenant_id', true)::INTEGER
             ));
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_migration_map' AND schemaname = '{schema_raw}') THEN
-        CREATE POLICY tenant_isolation_customer_migration_map ON {schema}._customer_migration_map
-            USING (EXISTS (
-                SELECT 1 FROM {schema}.companies c
-                WHERE c.id = _customer_migration_map.new_company_id
-                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
-            ));
-    END IF;
+    -- Phase 1-B-2 Step 5d / PR γ: tenant_isolation_customer_migration_map policy は
+    -- migration 036 で _customer_migration_map テーブルごと削除されるため撤去済。
 END $$
 """
 
