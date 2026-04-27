@@ -5,13 +5,15 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-17: Phase 2拡張（配送情報、ステータス拡張、invoice_id追加）
+  2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id を撤去し、
+    company_id / contact_id を必須化（新 B2B モデル唯一の正）
 """
 
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 
 class OrderStatus(str, Enum):
@@ -25,11 +27,9 @@ class OrderStatus(str, Enum):
 
 
 class OrderCreate(BaseModel):
-    # Phase 1-B-2 Step 5c-3: customer_id か contact_id どちらかは必須。
-    # 後者の場合 backend が _customer_migration_map で逆引き。
-    customer_id: int | None = Field(default=None, ge=1, description="顧客ID（旧モデル、Step 5d まで維持）")
-    company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
-    contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
+    """注文登録リクエスト（Step 5d 以降は company_id + contact_id 必須）"""
+    company_id: int = Field(ge=1, description="会社ID")
+    contact_id: int = Field(ge=1, description="担当者ID")
     deal_id: int | None = Field(default=None, ge=1)
     invoice_id: int | None = Field(default=None, ge=1)
     order_number: str = Field(min_length=1, max_length=100)
@@ -41,18 +41,11 @@ class OrderCreate(BaseModel):
     shipping_country: str | None = Field(default=None, max_length=100)
     notes: str | None = Field(default=None, max_length=5000)
 
-    @model_validator(mode="after")
-    def _require_customer_or_contact(self) -> "OrderCreate":
-        if self.customer_id is None and self.contact_id is None:
-            raise ValueError("customer_id または contact_id のいずれかは必須です")
-        return self
-
 
 class OrderUpdate(BaseModel):
-    # 注意: customer_id / company_id / contact_id / deal_id / invoice_id は
+    # 注意: company_id / contact_id / deal_id / invoice_id は
     # 作成後の変更を禁止（FK 整合性保護ポリシー）。router の _UPDATABLE_COLUMNS にも含まない。
     # schema にも出さないことで API コントラクトと router 挙動を一致させる。
-    customer_id: int | None = Field(default=None, ge=1)
     deal_id: int | None = Field(default=None, ge=1)
     invoice_id: int | None = Field(default=None, ge=1)
     order_number: str | None = Field(default=None, min_length=1, max_length=100)
@@ -67,11 +60,15 @@ class OrderUpdate(BaseModel):
 
 
 class OrderResponse(BaseModel):
+    """注文情報レスポンス。
+
+    Note: `contact_id` は Step 5d 以降必須にする方針だが、PR α merge 直後は
+    legacy 行が DB に残るため Optional のまま。PR γ (resolver 撤去) と同
+    タイミングで `contact_id: int` 必須に昇格する。
+    """
     id: int
-    customer_id: int
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル
-    company_id: int | None = None
-    contact_id: int | None = None
+    company_id: int
+    contact_id: int | None = None  # PR γ で `int` 必須化予定
     deal_id: int | None
     invoice_id: int | None
     order_number: str

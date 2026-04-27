@@ -358,13 +358,12 @@ async def setup_test_db(test_engine):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
-        # 案件テーブル（Phase 1拡張版）
+        # 案件テーブル（Step 5d: 旧 customer_id 列削除済）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS deals (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tenant_id INTEGER NOT NULL DEFAULT 999,
                 deal_code VARCHAR(20),
-                customer_id INTEGER REFERENCES customers(id),
                 company_id INTEGER REFERENCES companies(id),
                 contact_id INTEGER REFERENCES contacts(id),
                 lead_id INTEGER REFERENCES leads(id),
@@ -382,12 +381,11 @@ async def setup_test_db(test_engine):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
-        # 注文テーブル（Phase 2拡張版）
+        # 注文テーブル（Step 5d: 旧 customer_id 列削除済）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tenant_id INTEGER NOT NULL DEFAULT 999,
-                customer_id INTEGER REFERENCES customers(id),
                 company_id INTEGER REFERENCES companies(id),
                 contact_id INTEGER REFERENCES contacts(id),
                 deal_id INTEGER REFERENCES deals(id),
@@ -541,8 +539,7 @@ async def setup_test_db(test_engine):
                 tenant_id INTEGER NOT NULL DEFAULT 999,
                 quote_code VARCHAR(20),
                 deal_id INTEGER REFERENCES deals(id),
-                customer_id INTEGER NOT NULL REFERENCES customers(id),
-                company_id INTEGER REFERENCES companies(id),
+                company_id INTEGER NOT NULL REFERENCES companies(id),
                 contact_id INTEGER REFERENCES contacts(id),
                 currency VARCHAR(10) DEFAULT 'JPY',
                 subtotal NUMERIC(15, 2) DEFAULT 0,
@@ -580,8 +577,7 @@ async def setup_test_db(test_engine):
                 tenant_id INTEGER NOT NULL DEFAULT 999,
                 invoice_number VARCHAR(30),
                 quote_id INTEGER REFERENCES quotes(id),
-                customer_id INTEGER NOT NULL REFERENCES customers(id),
-                company_id INTEGER REFERENCES companies(id),
+                company_id INTEGER NOT NULL REFERENCES companies(id),
                 contact_id INTEGER REFERENCES contacts(id),
                 currency VARCHAR(10) DEFAULT 'JPY',
                 subtotal NUMERIC(15, 2) DEFAULT 0,

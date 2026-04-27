@@ -1,8 +1,8 @@
 /**
  * Phase 1-B-2 Step 5c-3: 会社 + 担当者 連動セレクタ。
  *
- * deals/quotes/orders/leads.convert の各フォームで顧客（旧 customer_id）の代わりに
- * (company_id, contact_id) を選択させるための共通コンポーネント。
+ * deals/quotes/orders/leads.convert の各フォームで顧客（会社+担当者）を選択させるための
+ * 共通コンポーネント。
  *
  * 動作:
  *   1. 初回マウントで /api/v1/companies?per_page=200 を取得（companies prop が渡されない時のみ）
@@ -11,8 +11,8 @@
  *   4. initialFromSearchParams=true なら ?company_id=N からの遷移で初期値を復元
  *   5. error prop で submit 時の検証メッセージを表示
  *
- * backend は Step 5c-3 で customer_id 未指定時に contact_id から _customer_migration_map で
- * 逆引きするため、本コンポーネントの返す (company_id, contact_id) のみで送信できる。
+ * Step 5d 以降、backend は (company_id, contact_id) のみを受け取り、旧 customer_id 系統は
+ * 完全に撤去済み。本コンポーネントの返す (company_id, contact_id) のみで送信する。
  *
  * 変更履歴:
  *   2026-04-25: Phase 1-B-2 Step 5c-3 — 新設
@@ -21,6 +21,7 @@
  *     - F6: companies を props で受け取れるようにし、親で読み込んだ一覧を共有可能に
  *     - F7: companies ロード後に value.companyId が一覧に存在しない場合は警告表示し、
  *       contacts API のエラーと「0 件」を区別して表示
+ *   2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id 系統が撤去されたためコメント更新。
  */
 
 import { useEffect, useRef, useState } from "react";

@@ -11,18 +11,26 @@ import pytest
 class TestCustomerDeleteConstraint:
     """顧客削除時のFK保護"""
 
-    async def test_delete_customer_with_deal_returns_409(self, client):
-        """関連商談がある顧客は削除できず、409とわかりやすいメッセージを返す"""
+    async def test_delete_customer_after_step5d_no_longer_blocks_on_deals(self, client):
+        """Step 5d 以降は customers と deals が直接リンクしないので、
+        旧来の「商談紐付き顧客は 409 で削除拒否」ルールは消える。
+
+        本テストでは customers 単体の削除が 204 で完結することを確認する。
+        旧テスト名 `test_delete_customer_with_deal_returns_409` は実装と乖離したため
+        Reviewer round 1 (Minor 3) 指摘でリネーム。
+
+        PR γ (del_customer API 撤去) で本テストごと削除予定。
+        """
         cust = await client.post(
             "/api/v1/customers",
             json={"company_name": "関連データ付き顧客"},
         )
         customer_id = cust.json()["id"]
-        await client.post("/api/v1/deals", json={"customer_id": customer_id, "title": "関連商談"})
 
+        # Step 5d: 旧 customer_id 列が deals から撤去済のため、関連商談を作る経路は
+        # company/contact 側に切替済。customers 単体の削除は CASCADE で正常完了する。
         res = await client.delete(f"/api/v1/customers/{customer_id}")
-        assert res.status_code == 409
-        assert "関連" in res.json()["detail"]
+        assert res.status_code == 204
 
 
 class TestCustomersCRUD:

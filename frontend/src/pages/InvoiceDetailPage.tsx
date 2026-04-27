@@ -24,7 +24,8 @@ interface InvoiceDetail {
   id: number;
   invoice_number: string | null;
   quote_id: number | null;
-  customer_id: number;
+  // Step 5d: 旧 customer_id を撤去、company_id を必須化
+  company_id: number;
   currency: string;
   subtotal: number | null;
   shipping_fee: number | null;

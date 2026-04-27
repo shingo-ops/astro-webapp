@@ -6,6 +6,12 @@
 
 変更履歴:
   2026-04-16: Phase 1拡張（リードCSV出力＋顧客/商談の拡張カラム対応）
+  2026-04-27: Phase 1-B-2 Step 5d — deals/orders/quotes/invoices の JOIN を
+    customers → companies / customer_addresses → company_addresses に置換
+  2026-04-27 (round 1 review fix): Reviewer Major 2 — `company_addresses` は
+    `branch_name` で 1:N（partial UNIQUE は `is_default = TRUE` のみ）。
+    multi-branch 顧客（例: Card Galaxy LTD = Essex + Preston）で 1 invoice/deal
+    が 2 行に膨らむのを防ぐため、JOIN 条件に `AND ba.is_default = TRUE` を追加。
 """
 
 import csv
@@ -77,13 +83,14 @@ EXPORT_QUERIES = {
     "deals": {
         "query": """
             SELECT d.id, d.deal_code,
-                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
+                   COALESCE(co.billing_display_name, ba.name, co.name) AS customer_name,
                    d.title, d.amount,
                    d.currency, d.status, d.stage, d.probability,
                    d.expected_close_date, d.notes, d.created_at, d.updated_at
             FROM deals d
-            LEFT JOIN customers c ON d.customer_id = c.id
-            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
+            LEFT JOIN companies co ON d.company_id = co.id
+            LEFT JOIN company_addresses ba ON ba.company_id = co.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
             ORDER BY d.id
         """,
         "headers": [
@@ -95,13 +102,14 @@ EXPORT_QUERIES = {
     "orders": {
         "query": """
             SELECT o.id,
-                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
+                   COALESCE(co.billing_display_name, ba.name, co.name) AS customer_name,
                    o.order_number, o.total_amount,
                    o.currency, o.status, o.shipping_carrier, o.tracking_number,
                    o.notes, o.created_at, o.updated_at
             FROM orders o
-            LEFT JOIN customers c ON o.customer_id = c.id
-            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
+            LEFT JOIN companies co ON o.company_id = co.id
+            LEFT JOIN company_addresses ba ON ba.company_id = co.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
             ORDER BY o.id
         """,
         "headers": [
@@ -125,12 +133,13 @@ EXPORT_QUERIES = {
     "quotes": {
         "query": """
             SELECT q.id, q.quote_code,
-                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
+                   COALESCE(co.billing_display_name, ba.name, co.name) AS customer_name,
                    q.currency, q.subtotal, q.shipping_fee, q.total_amount,
                    q.status, q.validity_date, q.notes, q.created_at
             FROM quotes q
-            LEFT JOIN customers c ON q.customer_id = c.id
-            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
+            LEFT JOIN companies co ON q.company_id = co.id
+            LEFT JOIN company_addresses ba ON ba.company_id = co.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
             ORDER BY q.id
         """,
         "headers": [
@@ -141,13 +150,14 @@ EXPORT_QUERIES = {
     "invoices": {
         "query": """
             SELECT i.id, i.invoice_number,
-                   COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
+                   COALESCE(co.billing_display_name, ba.name, co.name) AS customer_name,
                    i.currency, i.subtotal, i.shipping_fee, i.total_amount,
                    i.amount_jpy, i.payment_method, i.status,
                    i.issued_at, i.due_date, i.paid_at, i.notes, i.created_at
             FROM invoices i
-            LEFT JOIN customers c ON i.customer_id = c.id
-            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
+            LEFT JOIN companies co ON i.company_id = co.id
+            LEFT JOIN company_addresses ba ON ba.company_id = co.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
             ORDER BY i.id
         """,
         "headers": [

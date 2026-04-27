@@ -12,7 +12,8 @@ import { api } from "../lib/api";
 interface Invoice {
   id: number;
   invoice_number: string | null;
-  customer_id: number;
+  // Step 5d: 旧 customer_id を撤去、company_id を必須化
+  company_id: number;
   currency: string;
   total_amount: number | null;
   amount_jpy: number | null;

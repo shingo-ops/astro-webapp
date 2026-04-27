@@ -5,8 +5,8 @@ import CompanyContactSelector from "../components/CompanyContactSelector";
 
 interface Order {
   id: number;
-  customer_id: number;
-  company_id: number | null;
+  // Step 5d: 旧 customer_id を撤去、company_id を必須化
+  company_id: number;
   contact_id: number | null;
   deal_id: number | null;
   order_number: string;
@@ -28,8 +28,8 @@ const STATUS_LABELS: Record<string, string> = {
   pending: "保留", confirmed: "確定", shipped: "出荷済", delivered: "納品済", cancelled: "キャンセル",
 };
 
-// 注文の (customer_id, company_id, contact_id) は作成後変更不可（backend OrderUpdate にも含まれない）
-// ため、編集モードではセレクタを disabled にする。
+// 注文の (company_id, contact_id) は作成後変更不可（backend OrderUpdate にも含まれない）
+// ため、編集モードではセレクタを disabled にする。Step 5d で旧 customer_id 経路は撤去済。
 const emptyForm = { deal_id: "", order_number: "", total_amount: "", status: "pending", notes: "" };
 
 export default function OrdersPage() {
