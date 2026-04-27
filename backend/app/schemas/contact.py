@@ -27,6 +27,11 @@ class ContactStatus(str, Enum):
     active = "active"
     inactive = "inactive"
     archived = "archived"
+    # PR #145 Q2: contacts は CHECK 制約こそ持たないが、companies と揃えて
+    # pending_dedup_review を Pydantic enum として正式に許容する。
+    # 重複候補として暫定投入された担当者を UI から「別人として確定」操作で
+    # active に戻す解消フローのため。
+    pending_dedup_review = "pending_dedup_review"
 
 
 # ========== 副テーブル ==========
