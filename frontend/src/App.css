@@ -378,6 +378,13 @@
   padding: 0;
 }
 
+/* B-1: show_sidebar=false の時、main を最大限ワイドに使う。
+   現状の .main-content-top は既に flex:1 で横幅いっぱいだが、
+   将来サイドバーを実装した際の hook として class を予約しておく。 */
+.main-content-top--full {
+  /* 現時点では同等。サイドバー実装時に max-width: none / margin-left: 0 を入れる予定 */
+}
+
 /* --- Layout (旧サイドバー型、互換維持) --- */
 .layout {
   display: flex;

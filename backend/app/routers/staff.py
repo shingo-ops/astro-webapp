@@ -125,6 +125,64 @@ async def _replace_additional_emails(
         )
 
 
+@router.get("/staff/me", response_model=StaffResponse)
+async def get_my_staff(
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    現在ログイン中ユーザの staff レコードを返す。
+
+    ロジック:
+      users.email と staff.primary_email の一致で staff を引く。
+      共有メール運用（migration 019: primary_email に UNIQUE 制約なし）に対応するため
+      `ORDER BY s.id ASC` で決定性を担保し、最も古い staff レコードを返す。
+      見つからなければ 404 を返す。
+
+    実装メモ:
+      当初は firebase_uid 経路を主、email を fallback として設計したが、
+      `User` モデル（app/models.py）に `firebase_uid` カラムが無いため
+      `getattr(current_user, "firebase_uid", None)` は常に None を返し、
+      firebase_uid 経路は dead code になっていた（PR #166 review F1）。
+      `User` モデル側に firebase_uid を追加する改修は本 PR スコープ外のため、
+      経路を削除して email 一意路線に揃え、決定性は `ORDER BY` で確保する。
+      将来 `users.firebase_uid` を実装する場合は別 PR でこのエンドポイントに
+      経路を再導入する（その際は `ORDER BY` も維持）。
+
+    アクセス制御:
+      自分の情報を取得する API なので staff.view 権限は不要。
+      get_current_user / get_current_tenant のみで十分。
+      （B-1 軽量スコープ: ui_preferences 反映のため全ユーザがアクセスできる必要がある）
+    """
+    user_email = getattr(current_user, "email", None)
+
+    row = None
+    if user_email:
+        # primary_email の一致で staff を引く。
+        # primary_email は UNIQUE 制約なし（共有アドレス運用許容）のため、
+        # ORDER BY s.id ASC で決定性を担保する（最も古い staff を返す）。
+        result = await db.execute(
+            text(f"""
+                SELECT {_STAFF_COLS}
+                FROM staff s
+                LEFT JOIN roles r ON r.id = s.role_id
+                WHERE s.primary_email = :email
+                ORDER BY s.id ASC
+                LIMIT 1
+            """),
+            {"email": user_email},
+        )
+        row = result.mappings().first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="現在のユーザに紐づく staff レコードが見つかりません",
+        )
+    return await _compose(db, dict(row))
+
+
 @router.get("/staff", response_model=list[StaffResponse],
             dependencies=[Depends(require_permission("staff.view"))])
 async def list_staff(

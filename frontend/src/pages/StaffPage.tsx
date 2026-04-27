@@ -9,6 +9,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
+import { useUiPrefs } from "../contexts/UiPrefsContext";
 
 interface StaffUIPreferences {
   dark_mode: boolean;
@@ -87,6 +88,7 @@ const statusLabel = (s: string): string => ({
 
 export default function StaffPage() {
   const { hasPermission } = usePermissions();
+  const { refresh: refreshUiPrefs, selfStaffId } = useUiPrefs();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -140,10 +142,17 @@ export default function StaffPage() {
     try {
       if (editId) await api.patch(`/staff/${editId}`, payload);
       else await api.post("/staff", payload);
+      // PR #166 F4: 自分の staff レコードを編集した時のみ UI prefs を refresh する。
+      // 他人を編集したケースでの不要な /staff/me 呼び出しを抑制し、かつ
+      // loadAll() と refreshUiPrefs() をシーケンシャル await にしてレースを防ぐ。
+      const editedSelf = editId !== null && selfStaffId !== null && editId === selfStaffId;
       setShowForm(false);
       setEditId(null);
       setForm(emptyForm);
-      loadAll();
+      await loadAll();
+      if (editedSelf) {
+        await refreshUiPrefs();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存に失敗しました");
     } finally {

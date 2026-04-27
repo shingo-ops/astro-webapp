@@ -48,8 +48,22 @@
   --row-hover: #edf2f7;
 }
 
+/* ダーク変数の定義。下記のいずれかが当たればダーク化する:
+   ① ユーザが明示的に dark_mode=true を選択した（html.force-dark）
+   ② OS の prefers-color-scheme=dark かつ ユーザが明示的にライトを選んでいない（html:not(.force-light)）
+
+   優先順位:
+     html.force-dark   → ダーク強制
+     html.force-light  → ライト強制（OS が dark でも上書き）
+     どちらも無い      → OS の prefers-color-scheme に従う
+
+   ※ :not(.force-light) は下の @media (prefers-color-scheme: dark) 内で
+     auto 適用判定として使うため、ここでは空ルールを置かずコメントだけにする
+     （PR #166 F6: 空 CSS ルール削除）。
+*/
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.force-light) {
     /* 背景: slate系ベースのダーク */
     --bg-primary: #0f172a;
     --bg-surface: #1e293b;
@@ -94,6 +108,45 @@
     /* テーブル */
     --row-hover: #2d3b52;
   }
+}
+
+/* ユーザ明示のダークモード（OS設定に関わらず適用） */
+:root.force-dark {
+  --bg-primary: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-subtle: #243046;
+  --bg-hover: #334155;
+  --bg-active: #475569;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --border: #334155;
+  --border-strong: #475569;
+
+  --accent: #818cf8;
+  --accent-hover: #6366f1;
+  --link: #93c5fd;
+  --link-active-bg: #1e3a8a;
+
+  --nav-brand-bg: #0b1c33;
+  --nav-brand-text: #f1f5f9;
+  --nav-brand-accent: #f59e0b;
+  --nav-search-bg: #1e3a5f;
+
+  --danger: #f87171;
+  --danger-bg: #4c1d1d;
+  --danger-text: #fecaca;
+  --warning-bg: #3d2f0c;
+  --warning-text: #fde68a;
+  --success-bg: #14432b;
+  --success-text: #bbf7d0;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  --row-hover: #2d3b52;
 }
 
 * {
