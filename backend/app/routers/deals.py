@@ -302,7 +302,16 @@ async def update_deal(
                     detail="指定された会社が見つかりません",
                 )
 
-        # customer_id を明示指定した場合は存在確認（テナント外は search_path で不可視 → 404）
+        # customer_id を明示指定した場合は存在確認（テナント外は search_path で不可視 → 404）。
+        # PR #147 review N4: ここで意図的に「customer_id ↔ company_id/contact_id」の整合性
+        # 検証はスキップしている。理由は次の 2 つ:
+        #   (a) Step 5c-3 時点では旧 API クライアント互換のため、明示送信された customer_id は
+        #       「呼び出し元が責任を持って正しい値を送っている」前提で受け入れる（旧経路互換）。
+        #   (b) 現在 frontend (DealsPage.handleSubmit) は edit 経路で customer_id を送信しない
+        #       ため、本ブランチに到達するのは外部 API クライアント / プログラマティック PATCH 経由のみ。
+        # Step 5d で customer_id 列が drop されればこのスキップ経路は永久に消える。
+        # 厳密化したい場合は has_customer_update and has_contact_update のときだけ
+        # resolver で逆引きして update_data["customer_id"] != resolved なら 400 にする手もある。
         if has_customer_update and update_data.get("customer_id") is not None:
             cust_check = await db.execute(
                 text("SELECT id FROM customers WHERE id = :id"),

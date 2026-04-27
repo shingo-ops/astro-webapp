@@ -89,6 +89,28 @@ class TestContactsCRUD:
         names = sorted(c["display_name"] for c in res.json())
         assert names == ["A", "B"]
 
+    async def test_list_company_filter_primary_first(self, client):
+        """PR #147 review F5: /contacts?company_id=N で is_primary_contact=TRUE が先頭"""
+        company_id = await self._create_company(client, "主担当先頭テスト")
+        # 先に普通の contact を作成（updated_at が古くなる）
+        await client.post("/api/v1/contacts", json={
+            "company_id": company_id, "display_name": "サブ担当",
+        })
+        # その後で is_primary_contact=TRUE の contact を作成
+        await client.post("/api/v1/contacts", json={
+            "company_id": company_id, "display_name": "主担当", "is_primary_contact": True,
+        })
+        # さらに別の通常 contact（更新が一番新しい）
+        await client.post("/api/v1/contacts", json={
+            "company_id": company_id, "display_name": "新サブ",
+        })
+        res = await client.get("/api/v1/contacts", params={"company_id": company_id})
+        assert res.status_code == 200
+        data = res.json()
+        # primary が必ず先頭に来る（updated_at よりも is_primary_contact DESC が優先）
+        assert data[0]["is_primary_contact"] is True
+        assert data[0]["display_name"] == "主担当"
+
     async def test_company_contacts_endpoint(self, client):
         company_id = await self._create_company(client, "配下担当者")
         await client.post("/api/v1/contacts", json={
