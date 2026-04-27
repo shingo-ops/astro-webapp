@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { UiPrefsProvider } from "./contexts/UiPrefsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
@@ -36,6 +37,7 @@ import "./App.css";
 function App() {
   return (
     <AuthProvider>
+      <UiPrefsProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -97,6 +99,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+      </UiPrefsProvider>
     </AuthProvider>
   );
 }

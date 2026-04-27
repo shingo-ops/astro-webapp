@@ -920,12 +920,14 @@ async def client(db_session):
         "app.routers.leads", "app.routers.teams", "app.routers.roles",
         "app.routers.products", "app.routers.shipping", "app.routers.quotes",
         "app.routers.invoices", "app.routers.suppliers", "app.routers.purchase_orders",
-        "app.routers.duplicates", "app.routers.notifications",
+        "app.routers.notifications",
         "app.routers.staff_reports", "app.routers.archives",
         "app.routers.shifts", "app.routers.buddy", "app.routers.badges",
         "app.routers.erp",
         # Phase 1-B-2 Step 5b-1: 新 routers
         "app.routers.companies", "app.routers.contacts",
+        # Phase 1-B-1 wiring (B-1): /staff/me 追加に伴うスタッフ系テスト
+        "app.routers.staff",
     ]
     with ExitStack() as stack:
         for target in _audit_targets:

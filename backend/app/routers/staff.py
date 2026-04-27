@@ -125,6 +125,65 @@ async def _replace_additional_emails(
         )
 
 
+@router.get("/staff/me", response_model=StaffResponse)
+async def get_my_staff(
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    現在ログイン中ユーザの staff レコードを返す。
+
+    ロジック:
+      ① staff.firebase_uid が users.firebase_uid と一致する行を検索
+      ② 見つからなければ users.email と staff.primary_email でフォールバック検索
+         （Phase 1 移行期で firebase_uid 紐づけ未完のスタッフ救済）
+      ③ それでも見つからなければ 404 を返す
+
+    アクセス制御:
+      自分の情報を取得する API なので staff.view 権限は不要。
+      get_current_user / get_current_tenant のみで十分。
+      （B-1 軽量スコープ: ui_preferences 反映のため全ユーザがアクセスできる必要がある）
+    """
+    firebase_uid = getattr(current_user, "firebase_uid", None)
+    user_email = getattr(current_user, "email", None)
+
+    row = None
+    if firebase_uid:
+        result = await db.execute(
+            text(f"""
+                SELECT {_STAFF_COLS}
+                FROM staff s
+                LEFT JOIN roles r ON r.id = s.role_id
+                WHERE s.firebase_uid = :fbuid
+                LIMIT 1
+            """),
+            {"fbuid": firebase_uid},
+        )
+        row = result.mappings().first()
+
+    if row is None and user_email:
+        # フォールバック: primary_email の一致で staff を引く
+        result = await db.execute(
+            text(f"""
+                SELECT {_STAFF_COLS}
+                FROM staff s
+                LEFT JOIN roles r ON r.id = s.role_id
+                WHERE s.primary_email = :email
+                LIMIT 1
+            """),
+            {"email": user_email},
+        )
+        row = result.mappings().first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="現在のユーザに紐づく staff レコードが見つかりません",
+        )
+    return await _compose(db, dict(row))
+
+
 @router.get("/staff", response_model=list[StaffResponse],
             dependencies=[Depends(require_permission("staff.view"))])
 async def list_staff(

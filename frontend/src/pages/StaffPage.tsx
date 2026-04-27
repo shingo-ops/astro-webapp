@@ -9,6 +9,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
+import { useUiPrefs } from "../contexts/UiPrefsContext";
 
 interface StaffUIPreferences {
   dark_mode: boolean;
@@ -87,6 +88,7 @@ const statusLabel = (s: string): string => ({
 
 export default function StaffPage() {
   const { hasPermission } = usePermissions();
+  const { refresh: refreshUiPrefs } = useUiPrefs();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -144,6 +146,10 @@ export default function StaffPage() {
       setEditId(null);
       setForm(emptyForm);
       loadAll();
+      // 自分のレコードを更新した可能性があるので UI prefs を再取得
+      // （他人のレコードを更新したケースでは無駄な API 呼び出しになるが、
+      //   /staff/me は軽量なので副作用なしと判断）
+      refreshUiPrefs();
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存に失敗しました");
     } finally {
