@@ -226,7 +226,12 @@ export default function ContactsPage() {
     try {
       await api.patch(`/contacts/${dedupConfirmTarget.id}`, { status: "active" });
       setDedupConfirmTarget(null);
-      loadContacts();
+      // PR #163 Reviewer round 1 Minor 2: 一覧再読込を await してから
+      // dedupSubmitting を解除する（companies 側 CompanyDetailPage と統一）。
+      // 旧コード `loadContacts()` は floating promise になっており、再読込中に
+      // 再度ボタンを押されたり画面遷移されたりするとタイミング依存で
+      // 件数バッジが古いままになることがあった。
+      await loadContacts();
     } catch (e) {
       setError(e instanceof Error ? e.message : "ステータス更新に失敗しました");
       setDedupConfirmTarget(null);
@@ -237,6 +242,30 @@ export default function ContactsPage() {
 
   // pending_dedup_review の件数（フィルタ済み一覧内）
   const pendingDedupCount = contacts.filter((c) => c.status === "pending_dedup_review").length;
+
+  // PR #163 Reviewer round 1 Minor 3: 編集モーダル内の dedup 解消ボタンの dirty 検知。
+  // companies 側 CompanyDetailPage:574 の `disabled={dedupSubmitting || basicDirty}` と同じく、
+  // フォームに未保存の変更があるときは「別人として確定」ボタンを disabled + tooltip で
+  // 明示的に防ぐ。ベースラインは「現在編集中の contact 行」の値、差分は status 以外の
+  // 編集可能フィールド（解消ボタンを押すと status は別 PATCH で active になるため
+  // status 自体は dirty 比較に含めない）。
+  const editingContact = editId !== null ? contacts.find((c) => c.id === editId) || null : null;
+  const formDirtyExceptStatus = (() => {
+    if (!editingContact) return false;
+    const norm = (v: string | null | undefined) => (v ?? "").trim();
+    return (
+      String(editingContact.company_id) !== form.company_id ||
+      norm(editingContact.surname) !== norm(form.surname) ||
+      norm(editingContact.given_name) !== norm(form.given_name) ||
+      norm(editingContact.display_name) !== norm(form.display_name) ||
+      norm(editingContact.job_title) !== norm(form.job_title) ||
+      norm(editingContact.department) !== norm(form.department) ||
+      Boolean(editingContact.is_primary_contact) !== form.is_primary_contact ||
+      norm(editingContact.primary_email) !== norm(form.primary_email) ||
+      norm(editingContact.primary_phone) !== norm(form.primary_phone) ||
+      norm(editingContact.notes) !== norm(form.notes)
+    );
+  })();
 
   return (
     <div className="page-container">
@@ -423,16 +452,26 @@ export default function ContactsPage() {
                     別人として独立させるか、既存担当者へマージするか判断してください。
                   </p>
                   <div className="dedup-resolve-actions">
+                    {/* PR #163 Reviewer round 1 Minor 3: 編集モーダル内のフォームに
+                        未保存変更がある状態で「別人として確定」ボタンを押すと、解消 PATCH
+                        と未保存変更の関係が混乱するため、companies 側 CompanyDetailPage と
+                        同じく dirty 状態のときは disabled + tooltip で明示的に防ぐ。 */}
                     <button
                       type="button"
                       className="btn-primary"
                       onClick={() => {
-                        // 編集中の担当者を解消対象として扱う。フォーム未保存変更があれば中断。
+                        // 編集中の担当者を解消対象として扱う。dirty 時は disabled で防ぐので
+                        // ここに来た時点でフォームは clean。
                         const target = contacts.find((c) => c.id === editId) || null;
                         if (!target) return;
                         setDedupConfirmTarget(target);
                       }}
-                      disabled={dedupSubmitting}
+                      disabled={dedupSubmitting || formDirtyExceptStatus}
+                      title={
+                        formDirtyExceptStatus
+                          ? "未保存の変更があります。先に「更新」を保存するか、変更を破棄してください"
+                          : ""
+                      }
                     >
                       別人として確定（active 化）
                     </button>

@@ -27,10 +27,12 @@ class ContactStatus(str, Enum):
     active = "active"
     inactive = "inactive"
     archived = "archived"
-    # PR #145 Q2: contacts は CHECK 制約こそ持たないが、companies と揃えて
-    # pending_dedup_review を Pydantic enum として正式に許容する。
-    # 重複候補として暫定投入された担当者を UI から「別人として確定」操作で
-    # active に戻す解消フローのため。
+    # PR #145 Q2 / PR #163: contacts.status の CHECK 制約は当初 3 値
+    # ('active','inactive','archived') のみだったが、PR #163 で companies と揃えて
+    # pending_dedup_review を Pydantic enum として正式に許容するとともに、
+    # migration 037 で DB 側の CHECK 制約にも 'pending_dedup_review' を追加した。
+    # これにより、重複候補として暫定投入された担当者を UI の「別人として確定」操作で
+    # active に戻す解消フローが本番 PostgreSQL でも 500 にならず動く。
     pending_dedup_review = "pending_dedup_review"
 
 
