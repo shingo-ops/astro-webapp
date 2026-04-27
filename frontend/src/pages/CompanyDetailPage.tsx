@@ -213,6 +213,10 @@ export default function CompanyDetailPage() {
   // Step 5c-2 反省: モーダル内エラーは modal header に表示しないと overlay で隠れる
   const [addrModalError, setAddrModalError] = useState<string | null>(null);
 
+  // PR #145 Q2: pending_dedup_review 解消フロー
+  const [dedupConfirmOpen, setDedupConfirmOpen] = useState(false);
+  const [dedupSubmitting, setDedupSubmitting] = useState(false);
+
   const load = async () => {
     if (!id) return;
     try {
@@ -383,6 +387,25 @@ export default function CompanyDetailPage() {
     }
   };
 
+  // PR #145 Q2: 「別会社として確定」 — status を pending_dedup_review → active に戻す。
+  // audit_log への記録は backend の update_company が自動で行う（A-2 PR #162）。
+  // マージ判断（A-4）で消す道とは別経路で、独立した会社として承認する操作。
+  const handleResolveAsDistinct = async () => {
+    if (!company) return;
+    setError("");
+    setDedupSubmitting(true);
+    try {
+      await api.patch(`/companies/${company.id}`, { status: "active" });
+      setDedupConfirmOpen(false);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ステータス更新に失敗しました");
+      setDedupConfirmOpen(false);
+    } finally {
+      setDedupSubmitting(false);
+    }
+  };
+
   const handleAddressDelete = async () => {
     if (!company || !addrDeleteTarget) return;
     try {
@@ -529,6 +552,39 @@ export default function CompanyDetailPage() {
               <button type="submit" className="btn-primary" disabled={!basicDirty || basicSubmitting}>
                 {basicSubmitting ? "保存中..." : "基本情報を保存"}
               </button>
+            </div>
+          )}
+
+          {/* PR #145 Q2: pending_dedup_review 解消セクション。
+              status が pending_dedup_review のときのみ表示。マージ機能は A-4 で実装予定のため
+              現時点では disabled プレースホルダーとして並べる（重複候補を判断したいオペレータが
+              「これは別会社」を即座に確定できるよう「別会社として確定」だけ実 enabled） */}
+          {canEdit && company.status === "pending_dedup_review" && (
+            <div className="dedup-resolve-section">
+              <h3>重複確認待ちを解消</h3>
+              <p>
+                この会社は重複候補として暫定登録されています。
+                データを確認したうえで、別会社として独立させるか、既存会社へマージするか判断してください。
+              </p>
+              <div className="dedup-resolve-actions">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => setDedupConfirmOpen(true)}
+                  disabled={dedupSubmitting || basicDirty}
+                  title={basicDirty ? "未保存の変更があります。先に基本情報を保存してください" : ""}
+                >
+                  別会社として確定（active 化）
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  title="マージ機能は A-4 (merge_customers 再設計) で実装予定です"
+                  style={{ opacity: 0.6, cursor: "not-allowed" }}
+                >
+                  重複としてマージ（A-4 で実装予定）
+                </button>
+              </div>
             </div>
           )}
         </form>
@@ -747,6 +803,16 @@ export default function CompanyDetailPage() {
         confirmLabel="削除"
         onConfirm={handleAddressDelete}
         onCancel={() => setAddrDeleteTarget(null)}
+      />
+
+      {/* PR #145 Q2: 別会社として確定の確認ダイアログ */}
+      <ConfirmModal
+        open={dedupConfirmOpen}
+        title="重複確認待ちの解消"
+        message={`「${company.name}」を別会社として確定し、ステータスを active に変更しますか？\n\n（マージではなく、独立した会社として承認します。この操作は audit_logs に記録されます）`}
+        confirmLabel="active に変更"
+        onConfirm={handleResolveAsDistinct}
+        onCancel={() => setDedupConfirmOpen(false)}
       />
     </div>
   );

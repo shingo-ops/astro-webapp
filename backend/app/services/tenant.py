@@ -268,8 +268,11 @@ CREATE TABLE IF NOT EXISTS {schema}.contacts (
     is_primary_contact BOOLEAN NOT NULL DEFAULT FALSE,
     primary_email VARCHAR(255),
     primary_phone VARCHAR(50),
+    -- PR #163 (PR #145 残課題 Q2): pending_dedup_review 解消フローのため
+    -- companies.status と CHECK 制約を揃える（migration 037 で既存テナントには
+    -- backport 済）。新テナント作成時は最初からこの 4 値を許容する。
     status VARCHAR(20) NOT NULL DEFAULT 'active'
-        CHECK (status IN ('active','inactive','archived')),
+        CHECK (status IN ('active','inactive','archived','pending_dedup_review')),
     notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
