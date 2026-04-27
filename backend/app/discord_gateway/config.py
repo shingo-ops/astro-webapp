@@ -31,7 +31,7 @@ def load_tenant_bot_configs() -> list[TenantBotConfig]:
         tenant_id = int(suffix)
         tenant_code = os.environ.get(
             f"DISCORD_TENANT_CODE_{tenant_id}",
-            f"tenant_{tenant_id:03d}",
+            f"tenant_{tenant_id}",
         )
         configs.append(
             TenantBotConfig(

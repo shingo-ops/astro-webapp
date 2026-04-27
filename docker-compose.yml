@@ -214,9 +214,8 @@ services:
       # tenant_004 = HIGH LIFE JPN
       - DISCORD_BOT_TOKEN_4=${DISCORD_BOT_TOKEN_4:-}
       - DISCORD_TENANT_CODE_4=${DISCORD_TENANT_CODE_4:-highlife-jpn}
-    depends_on:
-      redis:
-        condition: service_healthy
+    # M2 では Redis に触らないため depends_on は不要。M4 で Redis Pub/Sub
+    # 利用開始時に condition: service_healthy で復活させる。
     restart: unless-stopped
     deploy:
       resources:

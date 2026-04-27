@@ -359,6 +359,7 @@ M1 ─→ M2 ─→ M3 ─→ M4 ─→ M5 ─→ M6
 - [x] Q1, Q2, Q4, Q5 に回答（2026-04-28）
 - [ ] Q3, Q6, Q7（着手後の各マイルストーン時に確認継続）
 - [ ] Discord Bot Token が取得され Bitwarden に格納（**しんごさん側 M1 タスク**）
+- [ ] **Discord Developer Portal で Privileged Intents を ON**（Bot 設定画面の `MESSAGE CONTENT INTENT` と `SERVER MEMBERS INTENT`）。100 ギルド以下なら申請不要だが、Portal トグル自体は guild 数無関係に必須。OFF のまま接続すると `PrivilegedIntentsRequired` で READY が出ない
 - [x] VPS メモリ余剰 200 MB 確保確認（available 418 MB、2026-04-28 計測）
 - [ ] swap 2 GB ファイル追加（M2 着手前、burst 時 OOM 対策）
 - [ ] テスト Discord ギルド（HIGH LIFE JPN とは別）の準備（**しんごさん側 M1 タスク**）
