@@ -84,16 +84,14 @@ class DealUpdate(BaseModel):
 class DealResponse(BaseModel):
     """商談情報レスポンス。
 
-    Note: `contact_id` は API contract 上は Step 5d 以降必須にする方針だが、
-    PR α (Step 5d-α) merge 直後は legacy 行が DB に残るため Optional のまま。
-    PR β (migration 035 適用) で legacy 行が解消し、PR γ (resolver 撤去) と
-    同タイミングで `contact_id: int` 必須に昇格する。それまでは
-    `_compose_response` 経由で `None` が返り得る。
+    Note: PR γ (Step 5d 最終クリーンアップ) で `contact_id: int` 必須に昇格。
+    migration 035 で legacy 行 (contact_id IS NULL) は precondition で 0 件保証。
+    新規 INSERT は schemas でも `contact_id: int = Field(ge=1)` を強制する。
     """
     id: int
     deal_code: str | None
     company_id: int
-    contact_id: int | None = None  # PR γ で `int` 必須化予定
+    contact_id: int
     lead_id: int | None
     title: str
     amount: Decimal | None
