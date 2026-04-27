@@ -20,6 +20,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse
 from app.services.audit import record_audit_log
+from app.services.customer_resolver import resolve_customer_id
 
 router = APIRouter()
 
@@ -115,30 +116,31 @@ async def create_order(
     current_user: User = Depends(get_current_user),
 ):
     """注文を登録する"""
-    # 顧客の存在確認
-    cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": data.customer_id})
-    if not cust.first():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された顧客が存在しません")
-
-    # Phase 1-B-2 Step 5b-2: company_id/contact_id 指定時の存在確認
-    # 両方指定時は contact が company に所属しているかも検証（reviewer Major 1 対応）
-    if data.contact_id is not None:
-        contact_check = await db.execute(
-            text("SELECT company_id FROM contacts WHERE id = :id"),
-            {"id": data.contact_id},
-        )
-        contact_row = contact_check.first()
-        if not contact_row:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された担当者が存在しません")
-        if data.company_id is not None and contact_row[0] != data.company_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="指定された担当者は指定会社に所属していません",
+    # Phase 1-B-2 Step 5c-3: customer_id 未指定時は contact_id から逆引き
+    customer_id = data.customer_id
+    if customer_id is None:
+        customer_id = await resolve_customer_id(db, data.contact_id, data.company_id)  # type: ignore[arg-type]
+    else:
+        cust = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": customer_id})
+        if not cust.first():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された顧客が存在しません")
+        if data.contact_id is not None:
+            contact_check = await db.execute(
+                text("SELECT company_id FROM contacts WHERE id = :id"),
+                {"id": data.contact_id},
             )
-    elif data.company_id is not None:
-        company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
-        if not company_check.first():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された会社が存在しません")
+            contact_row = contact_check.first()
+            if not contact_row:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された担当者が存在しません")
+            if data.company_id is not None and contact_row[0] != data.company_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="指定された担当者は指定会社に所属していません",
+                )
+        elif data.company_id is not None:
+            company_check = await db.execute(text("SELECT id FROM companies WHERE id = :id"), {"id": data.company_id})
+            if not company_check.first():
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された会社が存在しません")
 
     # 商談の存在確認（指定された場合）
     if data.deal_id:
@@ -170,7 +172,7 @@ async def create_order(
         """),
         {
             "tenant_id": tenant_id,
-            "customer_id": data.customer_id,
+            "customer_id": customer_id,
             "company_id": data.company_id,
             "contact_id": data.contact_id,
             "deal_id": data.deal_id,

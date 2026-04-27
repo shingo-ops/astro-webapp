@@ -4,20 +4,15 @@
  *
  * 変更履歴:
  *   2026-04-17: 初版作成（Phase 2）
+ *   2026-04-25: Phase 1-B-2 Step 5c-3 — 顧客セレクタを CompanyContactSelector
+ *     （company + contact）に置換。
  */
 
 import { useEffect, useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
+import CompanyContactSelector from "../components/CompanyContactSelector";
 
-interface Customer {
-  id: number;
-  customer_code: string;
-  company_name: string | null;
-  billing_display_name: string | null;
-}
-const customerLabel = (c: Customer): string =>
-  c.billing_display_name || c.company_name || c.customer_code;
 interface Product { id: number; product_code: string | null; name_ja: string; unit_price: number | null; weight: number | null; quantity: number; }
 
 interface LineItem {
@@ -30,9 +25,10 @@ interface LineItem {
 
 export default function QuoteCreatePage() {
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [customerId, setCustomerId] = useState("");
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  const [contactId, setContactId] = useState<number | null>(null);
+  const [selectorError, setSelectorError] = useState("");
   const [currency, setCurrency] = useState("JPY");
   const [shippingFee, setShippingFee] = useState("");
   const [taxAmount, setTaxAmount] = useState("");
@@ -42,7 +38,6 @@ export default function QuoteCreatePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get<Customer[]>("/customers?per_page=200").then(setCustomers).catch(() => {});
     api.get<Product[]>("/products?per_page=200&status=active").then(setProducts).catch(() => {});
   }, []);
 
@@ -83,16 +78,18 @@ export default function QuoteCreatePage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!customerId) { setError("顧客を選択してください"); return; }
+    setError("");
+    setSelectorError("");
+    if (contactId === null) { setSelectorError("会社と担当者を選択してください"); return; }
     if (items.some((i) => !i.product_name || i.unit_price <= 0)) {
       setError("各明細行に商品名と単価を入力してください");
       return;
     }
     setSaving(true);
-    setError("");
     try {
       await api.post("/quotes", {
-        customer_id: Number(customerId),
+        company_id: companyId,
+        contact_id: contactId,
         currency,
         shipping_fee: shipping || null,
         tax_amount: tax || null,
@@ -122,13 +119,18 @@ export default function QuoteCreatePage() {
       {error && <div className="error-message">{error}</div>}
 
       <form onSubmit={handleSubmit} style={{ background: "var(--bg-surface)", padding: 24, borderRadius: 8, boxShadow: "var(--shadow-sm)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
-          <div className="form-group"><label>顧客 *</label>
-            <select required value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-              <option value="">選択してください</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{customerLabel(c)}</option>)}
-            </select>
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+          <CompanyContactSelector
+            value={{ companyId, contactId }}
+            onChange={({ companyId: c, contactId: ct }) => {
+              setCompanyId(c);
+              setContactId(ct);
+            }}
+            required
+            error={selectorError}
+          />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
           <div className="form-group"><label>通貨</label>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
               <option value="JPY">JPY</option>

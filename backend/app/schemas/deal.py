@@ -17,7 +17,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class DealStatus(str, Enum):
@@ -47,9 +47,10 @@ class Currency(str, Enum):
 
 class DealCreate(BaseModel):
     """商談登録リクエスト"""
-    customer_id: int = Field(ge=1, description="顧客ID（旧モデル、Step 5d まで必須）")
-    # Phase 1-B-2 Step 5b-2: 新 B2B モデル（company + contact）の移行フィールド
-    # 互換性のため当面 optional。frontend は Step 5c で移行する
+    # Phase 1-B-2 Step 5c-3: 新モデル送信時は customer_id を未指定にできる
+    # （backend が contact_id から _customer_migration_map で逆引き）。
+    # 旧経路（customer_id 単体）も Step 5d まで維持する。
+    customer_id: int | None = Field(default=None, ge=1, description="顧客ID（旧モデル、Step 5d まで維持）")
     company_id: int | None = Field(default=None, ge=1, description="会社ID（新モデル）")
     contact_id: int | None = Field(default=None, ge=1, description="担当者ID（新モデル）")
     lead_id: int | None = Field(default=None, ge=1, description="変換元リードID")
@@ -63,6 +64,12 @@ class DealCreate(BaseModel):
     assigned_to: int | None = Field(default=None, ge=1, description="担当者ユーザーID")
     expected_close_date: date | None = Field(default=None, description="成約予定日")
     notes: str | None = Field(default=None, max_length=5000, description="備考")
+
+    @model_validator(mode="after")
+    def _require_customer_or_contact(self) -> "DealCreate":
+        if self.customer_id is None and self.contact_id is None:
+            raise ValueError("customer_id または contact_id のいずれかは必須です")
+        return self
 
 
 class DealUpdate(BaseModel):
