@@ -60,9 +60,15 @@ class OrderUpdate(BaseModel):
 
 
 class OrderResponse(BaseModel):
+    """注文情報レスポンス。
+
+    Note: `contact_id` は Step 5d 以降必須にする方針だが、PR α merge 直後は
+    legacy 行が DB に残るため Optional のまま。PR γ (resolver 撤去) と同
+    タイミングで `contact_id: int` 必須に昇格する。
+    """
     id: int
     company_id: int
-    contact_id: int | None = None
+    contact_id: int | None = None  # PR γ で `int` 必須化予定
     deal_id: int | None
     invoice_id: int | None
     order_number: str

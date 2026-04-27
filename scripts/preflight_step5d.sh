@@ -13,6 +13,11 @@
 #   4. 全テナントの _customer_migration_map で「old_customer_id を deals.customer_id 等で
 #      参照している件数」と「new_contact_id を deals.contact_id 等で参照している件数」が
 #      一致すること（= contact_id ベースで全部書き換わっている保証）
+#   5. company_addresses で (company_id, address_type, is_default=TRUE) が
+#      2 件以上ある company が無いこと（= reports.py / erp.py の JOIN に
+#      AND ba.is_default = TRUE を入れる前提が成立しているか）
+#      ※ migration 030 の partial UNIQUE で保証されているはずだが、本番反映前の
+#         念のためチェック。multi-branch 検出も兼ねる。
 #
 # 使い方（VPS 上で）:
 #   bash /opt/astro-webapp/scripts/preflight_step5d.sh \
@@ -89,6 +94,23 @@ for SCHEMA in $TENANTS; do
             FAIL_COUNT=$((FAIL_COUNT + 1))
         else
             echo "[PASS] ${SCHEMA} uniq_cmm_new_contact_id 制約あり"
+        fi
+    fi
+
+    # 5. company_addresses で is_default = TRUE が
+    #    (company_id, address_type) ごとに 2 件以上ある company の検出
+    #    （reports.py / erp.py の JOIN が AND ba.is_default = TRUE で 1 行に絞れる前提が成立しているか）
+    EXISTS=$("${PSQL[@]}" -c "SELECT 1 FROM pg_tables WHERE schemaname='${SCHEMA}' AND tablename='company_addresses'")
+    if [[ -n "$EXISTS" ]]; then
+        check "$SCHEMA" \
+            "SELECT COUNT(*) FROM (SELECT company_id, address_type FROM company_addresses WHERE is_default = TRUE GROUP BY company_id, address_type HAVING COUNT(*) > 1) d" \
+            "company_addresses (company_id, address_type, is_default=TRUE) 重複" 0
+
+        # 参考情報: multi-branch を持つ company の件数を表示（FAIL 判定はしない）
+        MULTI_BRANCH=$("${PSQL[@]}" -c "SELECT COUNT(*) FROM (SELECT company_id FROM ${SCHEMA}.company_addresses GROUP BY company_id, address_type HAVING COUNT(*) > 1) d")
+        MULTI_BRANCH=${MULTI_BRANCH// /}
+        if [[ "$MULTI_BRANCH" -gt 0 ]]; then
+            echo "[INFO] ${SCHEMA} multi-branch を持つ (company, address_type) 組み合わせ: ${MULTI_BRANCH} 件（branch_name で 1:N）"
         fi
     fi
 

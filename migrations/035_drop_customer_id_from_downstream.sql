@@ -12,8 +12,9 @@
 --      （違反があれば FAIL。033 と同じ defensive な作法）
 --   2. company_id を NOT NULL 化（deals/orders は元々 nullable、quotes/invoices は元々 NOT NULL）
 --   3. customer_id 列を DROP（FK 制約と暗黙 INDEX も連動して消える）
---   4. _customer_migration_map テーブルを DROP（resolver 撤去とセット）
---      ※ 037 など別 migration に分けることも検討（FU-2 / round 2 でも 037 提案あり）
+--   ※ _customer_migration_map テーブルの DROP は migration 036 に分離している
+--     （035 が一定期間安定し、resolver 撤去 PR γ が main 反映されてから 036 を流す運用）。
+--     035 単体では _customer_migration_map は残存する。
 --
 -- 破壊的:
 --   - customer_id 列を物理削除する。rollback には DOWN migration（末尾のコメント）が必要。

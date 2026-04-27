@@ -17,6 +17,10 @@ from __future__ import annotations
     （旧 customer_id 列は Step 5d 以降コードから書き込まれず、PR β migration 035
     で物理削除予定。customers/duplicates 検出ロジック自体は customers テーブル
     本体を残している関係で従来通り customers ベースのままとする。）
+  2026-04-27 (round 1 review fix): Reviewer Major 1 — `master_id` / `merge_id` を
+    `customers.id` のまま `UPDATE deals SET company_id = :customer_id` していた
+    データ破壊バグを発見。新 B2B モデル (companies) ベースで再実装するまで
+    一時的に 501 Not Implemented で無効化する。
 """
 
 import re
@@ -30,7 +34,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
 from app.database import get_db
 from app.models import User
-from app.services.audit import record_audit_log
 
 router = APIRouter()
 
@@ -161,65 +164,24 @@ async def merge_customers(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    """重複顧客をマスターレコードにマージする"""
-    # マスター存在確認
-    master = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": master_id})
-    if not master.first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="マスター顧客が見つかりません")
+    """重複顧客のマージ（Phase 1-B-2 Step 5d で一時無効化）。
 
-    reassigned = {"deals": 0, "orders": 0, "quotes": 0, "invoices": 0}
-    merged = 0
+    Reviewer round 1 で「`master_id` / `merge_id` は `customers.id` の値だが、
+    UPDATE 文では `deals.company_id = :customer_id` のように別 ID 空間の値を
+    そのまま代入していた」というデータ破壊バグが指摘された。
 
-    for merge_id in data.merge_ids:
-        if merge_id == master_id:
-            continue
-        check = await db.execute(text("SELECT id FROM customers WHERE id = :id"), {"id": merge_id})
-        if not check.first():
-            continue
+    新 B2B モデル (companies / contacts) では「重複マージ」は会社単位 or
+    担当者単位で別エンドポイント (`POST /companies/{master}/merge` / `POST
+    /contacts/{master}/merge` 等) として再設計する必要があるため、本エンドポイント
+    は 501 Not Implemented で即時 reject する。
 
-        # 関連レコードを付け替え（Step 5d: 新 B2B モデルでは company_id ベース）
-        # customers→companies の対応は data_migration スクリプトで作成された
-        # _customer_migration_map を参照したいところだが、本機能（手動マージ）は
-        # 利用頻度が低く、データ整合は monthly_forecast 系の手動運用で済む想定。
-        # ここでは「同一 company に紐付く明細を master_id 側に」という意味付けに
-        # 切り替える（旧 customer_id 列はコードから書き込み停止済）。
-        for table, col in [("deals", "company_id"), ("orders", "company_id"),
-                           ("quotes", "company_id"), ("invoices", "company_id")]:
-            r = await db.execute(
-                text(f"UPDATE {table} SET {col} = :master WHERE {col} = :old RETURNING id"),
-                {"master": master_id, "old": merge_id},
-            )
-            count = len(r.fetchall())
-            reassigned[table] = reassigned.get(table, 0) + count
-
-        # マージ元を archived ステータスに。
-        # 手動 archived と区別する必要がある場合は audit_log の action='merge' +
-        # new_data.reassigned で判定する（shipping_note を流用するのは設計ミスマッチ）。
-        # TODO: CHECK 制約に 'merged' を追加する migration 023 を別PRで検討、
-        #       または customers.merge_master_id NULL 許容列を別PRで追加。
-        await db.execute(
-            text("""
-                UPDATE customers
-                SET status = 'archived',
-                    updated_at = NOW()
-                WHERE id = :id
-            """),
-            {"id": merge_id},
-        )
-        merged += 1
-
-    await record_audit_log(
-        db=db, tenant_id=tenant_id, user_id=current_user.id,
-        action="merge", table_name="customers", record_id=master_id,
-        new_data={"merged_ids": data.merge_ids, "reassigned": reassigned},
-    )
-    await db.commit()
-
-    return MergeResponse(
-        master_id=master_id,
-        merged_count=merged,
-        reassigned_deals=reassigned["deals"],
-        reassigned_orders=reassigned["orders"],
-        reassigned_quotes=reassigned["quotes"],
-        reassigned_invoices=reassigned["invoices"],
+    再設計までは利用頻度の低い手動マージ機能を一時封鎖し、誤った会社の
+    deals/orders/quotes/invoices が付け替えられる事故を防ぐ。
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=(
+            "Phase 1-B-2 Step 5d で重複マージ機能は再設計中。"
+            "新 B2B モデル (companies) ベースで再実装するまで一時的に無効化"
+        ),
     )

@@ -72,11 +72,17 @@ class QuoteItemResponse(BaseModel):
 
 
 class QuoteResponse(BaseModel):
+    """見積情報レスポンス。
+
+    Note: `contact_id` は Step 5d 以降必須にする方針だが、PR α merge 直後は
+    legacy 行が DB に残るため Optional のまま。PR γ (resolver 撤去) と同
+    タイミングで `contact_id: int` 必須に昇格する。
+    """
     id: int
     quote_code: str | None
     deal_id: int | None
     company_id: int
-    contact_id: int | None = None
+    contact_id: int | None = None  # PR γ で `int` 必須化予定
     currency: str
     subtotal: Decimal | None
     shipping_fee: Decimal | None

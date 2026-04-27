@@ -73,11 +73,17 @@ class InvoiceItemResponse(BaseModel):
 
 
 class InvoiceResponse(BaseModel):
+    """請求書情報レスポンス。
+
+    Note: `contact_id` は Step 5d 以降必須にする方針だが、PR α merge 直後は
+    legacy 行が DB に残るため Optional のまま。PR γ (resolver 撤去) と同
+    タイミングで `contact_id: int` 必須に昇格する。
+    """
     id: int
     invoice_number: str | None
     quote_id: int | None
     company_id: int
-    contact_id: int | None = None
+    contact_id: int | None = None  # PR γ で `int` 必須化予定
     currency: str
     subtotal: Decimal | None
     shipping_fee: Decimal | None

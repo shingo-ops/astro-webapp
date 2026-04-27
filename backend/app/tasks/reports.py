@@ -8,6 +8,10 @@
   2026-04-16: Phase 1拡張（リードCSV出力＋顧客/商談の拡張カラム対応）
   2026-04-27: Phase 1-B-2 Step 5d — deals/orders/quotes/invoices の JOIN を
     customers → companies / customer_addresses → company_addresses に置換
+  2026-04-27 (round 1 review fix): Reviewer Major 2 — `company_addresses` は
+    `branch_name` で 1:N（partial UNIQUE は `is_default = TRUE` のみ）。
+    multi-branch 顧客（例: Card Galaxy LTD = Essex + Preston）で 1 invoice/deal
+    が 2 行に膨らむのを防ぐため、JOIN 条件に `AND ba.is_default = TRUE` を追加。
 """
 
 import csv
@@ -85,7 +89,8 @@ EXPORT_QUERIES = {
                    d.expected_close_date, d.notes, d.created_at, d.updated_at
             FROM deals d
             LEFT JOIN companies co ON d.company_id = co.id
-            LEFT JOIN company_addresses ba ON ba.company_id = co.id AND ba.address_type = 'billing'
+            LEFT JOIN company_addresses ba ON ba.company_id = co.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
             ORDER BY d.id
         """,
         "headers": [
@@ -103,7 +108,8 @@ EXPORT_QUERIES = {
                    o.notes, o.created_at, o.updated_at
             FROM orders o
             LEFT JOIN companies co ON o.company_id = co.id
-            LEFT JOIN company_addresses ba ON ba.company_id = co.id AND ba.address_type = 'billing'
+            LEFT JOIN company_addresses ba ON ba.company_id = co.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
             ORDER BY o.id
         """,
         "headers": [
@@ -132,7 +138,8 @@ EXPORT_QUERIES = {
                    q.status, q.validity_date, q.notes, q.created_at
             FROM quotes q
             LEFT JOIN companies co ON q.company_id = co.id
-            LEFT JOIN company_addresses ba ON ba.company_id = co.id AND ba.address_type = 'billing'
+            LEFT JOIN company_addresses ba ON ba.company_id = co.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
             ORDER BY q.id
         """,
         "headers": [
@@ -149,7 +156,8 @@ EXPORT_QUERIES = {
                    i.issued_at, i.due_date, i.paid_at, i.notes, i.created_at
             FROM invoices i
             LEFT JOIN companies co ON i.company_id = co.id
-            LEFT JOIN company_addresses ba ON ba.company_id = co.id AND ba.address_type = 'billing'
+            LEFT JOIN company_addresses ba ON ba.company_id = co.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
             ORDER BY i.id
         """,
         "headers": [

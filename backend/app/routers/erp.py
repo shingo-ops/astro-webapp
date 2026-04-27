@@ -8,6 +8,9 @@ ERP連携API（Phase 5）。
 変更履歴:
   2026-04-17: 初版作成（Phase 5 — 同期ログ管理 + エクスポート基盤）
   2026-04-27: Phase 1-B-2 Step 5d — invoices→customers JOIN を invoices→companies JOIN に置換
+  2026-04-27 (round 1 review fix): Reviewer Major 2 — `company_addresses` JOIN に
+    `AND ba.is_default = TRUE` を追加。multi-branch 顧客（例: Card Galaxy LTD =
+    Essex + Preston）で 1 invoice が複数行に膨らむ事故を防止。
 """
 
 import csv
@@ -93,7 +96,9 @@ async def export_invoices_for_erp(
             FROM invoices i
             JOIN companies co ON co.id = i.company_id
             LEFT JOIN company_addresses ba
-                   ON ba.company_id = co.id AND ba.address_type = 'billing'
+                   ON ba.company_id = co.id
+                  AND ba.address_type = 'billing'
+                  AND ba.is_default = TRUE
             JOIN invoice_items ii ON ii.invoice_id = i.id
             WHERE i.status != 'voided'
             ORDER BY i.id, ii.sort_order
