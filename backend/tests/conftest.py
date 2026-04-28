@@ -48,6 +48,18 @@ async def test_engine():
         sqlite3.register_adapter(Decimal, lambda d: float(d))
         # SQLite は FK 制約がデフォルト OFF。ON DELETE CASCADE と 409 テストのために ON にする
         dbapi_conn.execute("PRAGMA foreign_keys = ON")
+        # SQLite の LIKE をデフォルトで case-insensitive 化
+        # （アプリ側で ILIKE を使うクエリのテスト時互換性のため）
+        dbapi_conn.execute("PRAGMA case_sensitive_like = OFF")
+
+    # ILIKE は PostgreSQL 専用。SQLite で実行されるテストのために LIKE に置換する。
+    # 識別子・文字列リテラル中の "ILIKE" は出ない前提（SQL DSL 上の比較演算子のみ）。
+    # retval=True を付けて (statement, parameters) を返すと SQLAlchemy が rewrite を採用する。
+    @event.listens_for(engine.sync_engine, "before_cursor_execute", retval=True)
+    def rewrite_ilike_for_sqlite(conn, cursor, statement, parameters, context, executemany):
+        if "ILIKE" in statement:
+            statement = statement.replace(" ILIKE ", " LIKE ").replace("\nILIKE ", "\nLIKE ")
+        return statement, parameters
 
     yield engine
     await engine.dispose()
