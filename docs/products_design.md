@@ -2,17 +2,20 @@
 
 | 項目 | 内容 |
 |------|------|
-| ステータス | **Proposed**（2026-04-27 起草、しんごさんレビュー待ち） |
+| ステータス | **Implemented (M-MVP)**（2026-04-28 Q4/Q5/Q9 確定 → migration 038 + router/schema/UI 拡張完了。M3/M4 は Q1/Q3/Q6 解消後） |
 | 起草者 | 開発パートナー（Claude Code 経由） |
 | 起草日 | 2026-04-27 |
-| 関連ロードマップ | 仕様書 第8章 8-1（Phase 1-C: 商品マスタ、未着手、2-3日） |
+| M-MVP 実装日 | 2026-04-28（PR #173 + 修正 PR、main `4352aef` で本番反映済） |
+| 関連ロードマップ | 仕様書 第8章 8-1（Phase 1-C: 商品マスタ、M-MVP 完了、M3/M4 残） |
 | 関連未確定事項 | 仕様書 第8章 8-3「商品マスタ #24 の列構成と、在庫管理（SCM出力同期 #22・集計同期 #23）との関係整理」 |
 | 関連 ADR | ADR-008 Supplier Intelligence（normalized_products / product_supplier_mappings の上位設計） |
 | 関連設計書 | `jarvis_crm_system_overview.docx` 第5章 5-1、第6章 6-2/6-4/6-6、第8章 |
 | 関連実装 | `backend/app/routers/products.py` (264行)、`backend/app/schemas/product.py`、`migrations/005_add_phase2_tenant_tables.sql` (L22-41)、`migrations/007_add_phase3_tenant_tables.sql` (suppliers, purchase_order_items.product_id FK)、`frontend/src/pages/ProductsPage.tsx` (250行) |
 | 対象フェーズ | Phase 1-C（顧客マスタ・担当者マスタの後、Phase 2 ルックアップ群の前） |
 | 対象テナント | tenant_004 (highlife-jpn) のみ（test-corp は空） |
-| 本書のスコープ | **設計のみ**。実コード変更・migration 追加・commit/push なし。実装は別セッション。 |
+| 本書のスコープ | **設計 + M-MVP 実装記録**（M-MVP は実装済、M3/M4 は設計記述のみ） |
+| 実装 commit | migration 038 / router & schema / UI 拡張: PR #173 (`d34473d`)、PR #173 review fix: `59e9cab`、PR #175 develop→main: `4352aef` |
+| Q4/Q5/Q9 確定 | 2026-04-28 セッションで shingo さんから YES 受領（per-tenant Bot ADR と同セッション） |
 
 ---
 
@@ -20,8 +23,8 @@
 
 - 既存 `products` テーブル（Phase 2 で migration 005 にて投入済、CRUD 完備、本番 tenant_004 で稼働中）は**そのまま温存**し、Phase 1-C は **段階的拡張（additive migration）** で実施する。
 - 本設計の **核心は「決定版スキーマの確定」ではなく「決定版スキーマを確定するために何を聞くべきか」の整理**である。仕様書の Phase 1-C 記述は ロードマップ1行＋未確定事項1件のみで、実装に十分な情報を欠く。
-- 結論として、本書は **設計を Q1〜Q9 のブロッカー解消後まで保留**し、実装着手は **しんごさんから #24 商品マスタ実物の列ヘッダー一覧（または列見本）の提供を受けた後**とする。Phase 1-B-2 (ADR 相当) と同じく「設計のみ・実装は別セッション」体制を取る。
-- ただし、**しんごさんの確認待ちの間にも実装可能な「中間着地点 (M-MVP)」**を本書末尾に提示する：既存 products に「為替表示・廃番フラグ・画像 URL・JAN/型番」など TCG B2B 輸出で確実に必要な少数列を additive 追加し、`product_inventory` / `product_supplier_mappings` は ADR-008 (Supplier Intelligence) と統合して別フェーズに送る案。
+- **2026-04-28 アップデート**: しんごさんから Q4 / Q5 / Q9 の確定回答を受領、**M-MVP（migration 038 + 11 列追加 + DELETE 409 + UI 拡張）を実装し本番反映完了**（PR #173, main `4352aef`）。残る Q1 / Q3 / Q6 が解消され次第 M3 (`product_inventory`) / M4 (`product_supplier_mappings`) に着手する。
+- 既存 products に「為替表示・廃番フラグ・画像 URL・JAN/型番」など TCG B2B 輸出で確実に必要な少数列を additive 追加した（実装済）。`product_inventory` / `product_supplier_mappings` は ADR-008 (Supplier Intelligence) と統合して別フェーズ（M3/M4）に送る方針も維持。
 
 ---
 
@@ -420,6 +423,12 @@ migration 042 等で `permissions` マスタに以下を追加（仕様書 §3-2
 ---
 
 ## 11. しんごさんへの未確定事項リスト（Q1〜Q9）
+
+**2026-04-28 時点ステータス**:
+- ✅ **Q4 / Q5 / Q9: 解消済**（YES 受領 → M-MVP 実装、PR #173 / main `4352aef`）
+- ⏳ **Q1 / Q3 / Q6: 未解消**（M3 / M4 着手のブロッカー）
+- ⏳ Q2 / Q7 / Q8: 中優先度（M3 着手時に再確認可）
+
 
 | # | 質問 | ブロックする M | 想定回答パターン |
 |---|---|---|---|
