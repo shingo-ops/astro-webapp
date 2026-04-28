@@ -167,6 +167,18 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/037_add_pending_dedup_review_to_contacts_check.sql
 
+            # Phase 1-C M-MVP (Q4 / Q5 / Q9 確定 / 2026-04-28):
+            #   products テーブルに TCG B2B 輸出向け 11 列を追加。
+            #     jan_code / card_number / expansion_code / rarity / language
+            #     unit_price_usd / unit_price_eur / image_url
+            #     is_archived / archived_at / supplier_default_id
+            #   全列 NULL 許可（既存データへの影響なし）。
+            #   PARTIAL UNIQUE 索引 2 本（product_code / jan_code）+ 検索用索引 3 本。
+            #   ADD COLUMN IF NOT EXISTS / CREATE INDEX IF NOT EXISTS で再実行 no-op。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/038_add_products_phase1c_columns.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

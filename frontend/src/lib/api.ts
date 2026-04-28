@@ -5,7 +5,23 @@
  * 変更履歴:
  *   2026-04-17: デプロイ直後の一時的な 502/503/504 エラーで画面が崩れる問題対策として
  *     GET/HEAD リクエストの自動リトライ（指数バックオフ）を追加
+ *   2026-04-28: ApiError クラスを追加し、4xx エラー時の構造化レスポンス
+ *     （例: 409 の詳細 dict）を呼び出し側で参照できるようにした（Phase 1-C M-MVP Q9）
  */
+
+export class ApiError extends Error {
+  status: number;
+  // FastAPI HTTPException が detail に dict を渡した場合の構造化情報
+  // 例: 409 で {id, name_ja, blocking_references, detail} を返したいとき
+  responseDetail: unknown;
+
+  constructor(message: string, status: number, responseDetail: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.responseDetail = responseDetail;
+  }
+}
 
 import { auth } from "./firebase";
 
@@ -59,7 +75,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail || `HTTP ${res.status}`);
+        const detail = body?.detail;
+        // detail が文字列ならそのままメッセージ、dict なら detail フィールドを優先
+        const message =
+          typeof detail === "string"
+            ? detail
+            : detail?.detail || `HTTP ${res.status}`;
+        throw new ApiError(message, res.status, detail);
       }
       if (res.status === 204) return undefined as T;
       return res.json();

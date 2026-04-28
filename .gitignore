@@ -60,3 +60,8 @@ sheets/
 
 # Claude Code エージェント（reviewer/evaluator等）のローカル成果物
 .claude-pipeline/
+
+# salesanchor.jp 静的サイト（独立プロジェクトのコンテンツ、VPS-local 管理）
+# nginx/docker-compose の設定だけ repo 管理、コンテンツは追跡しない
+www/salesanchor/*
+!www/salesanchor/.gitkeep
