@@ -10,6 +10,8 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./certbot/www:/var/www/certbot:ro
+      # salesanchor.jp 静的サイト（Production-only、コンテンツは VPS-local 管理）
+      - ./www/salesanchor:/var/www/salesanchor:ro
       - ./certbot/conf:/etc/letsencrypt:ro
     restart: unless-stopped
     healthcheck:
