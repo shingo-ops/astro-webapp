@@ -15,7 +15,6 @@ import os
 # app.database が import される前に DATABASE_URL を SQLite に差し替える
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
-import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -25,12 +24,9 @@ from sqlalchemy import text, event
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# pytest-asyncio 0.25+ で event_loop fixture の上書きは deprecated。
+# pytest.ini の asyncio_default_fixture_loop_scope = session で
+# session-scoped fixture が同じイベントループを共有できるようにしている。
 
 
 @pytest_asyncio.fixture(scope="session")

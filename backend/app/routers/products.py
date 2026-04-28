@@ -246,7 +246,12 @@ async def update_product(
 
 # 削除時に検査する下流テーブルの allowlist。
 # 識別子は文字列リテラルのみ、tenant スキーマは search_path から解決される。
-# M3/M4 で product_inventory / product_supplier_mappings が増えたら追記する。
+#
+# TODO(M3 / docs/products_design.md §5-2): product_inventory を追加する。
+#   - 在庫履歴があれば削除拒否がポリシー（履歴は監査証跡）
+#   - product_inventory.product_id への参照を 'product_inventory' エントリで検出
+# TODO(M4 / docs/products_design.md §5-3): product_supplier_mappings を追加する。
+#   - 仕入先マッピングがあれば削除拒否（CASCADE は危険）
 _DOWNSTREAM_TABLES_TO_CHECK = (
     "quote_items",
     "invoice_items",
@@ -318,6 +323,15 @@ async def delete_product(
 
     blocking = await _check_product_references(db, product_id)
     if blocking:
+        # PR #173 review Minor 6 follow-up: 失敗 DELETE 試行も audit_log に残す。
+        # 「誰がいつ削除を試みたが下流参照で拒否された」を運用側で追えるようにする。
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=current_user.id,
+            action="delete_blocked", table_name="products", record_id=product_id,
+            old_data=dict(old_row),
+            new_data={"blocking_references": blocking, "result": "409_conflict"},
+        )
+        await db.commit()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
@@ -351,6 +365,18 @@ async def delete_product(
             "delete_product IntegrityError fallback: tenant=%d product=%d err=%s",
             tenant_id, product_id, exc.orig,
         )
+        # IntegrityError fallback も監査ログに残す（参照先未特定で拒否された記録）
+        try:
+            await record_audit_log(
+                db=db, tenant_id=tenant_id, user_id=current_user.id,
+                action="delete_blocked", table_name="products", record_id=product_id,
+                old_data=dict(old_row),
+                new_data={"blocking_references": ["unknown"], "result": "409_integrity_error"},
+            )
+            await db.commit()
+        except Exception:
+            # audit log 自体の失敗で 500 を返さない（ベストエフォート）
+            await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
