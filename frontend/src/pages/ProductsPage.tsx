@@ -406,8 +406,12 @@ export default function ProductsPage() {
         title="削除できません"
         message={
           <>
-            <strong>{archiveBlocked?.name_ja}</strong> は以下のテーブルから参照されています:
-            <ul>{archiveBlocked?.blocking_references.map((r) => <li key={r}>{r}</li>)}</ul>
+            <strong>{archiveBlocked?.name_ja}</strong> は下流テーブルから参照されています:
+            {archiveBlocked && archiveBlocked.blocking_references.length > 0 ? (
+              <ul>{archiveBlocked.blocking_references.map((r) => <li key={r}>{r}</li>)}</ul>
+            ) : (
+              <p style={{ color: "var(--text-secondary)" }}>（参照先未特定）</p>
+            )}
             物理削除の代わりに <strong>アーカイブ</strong>（is_archived=true）を実行しますか？
             <br />
             アーカイブすると一覧から非表示になりますが、過去の参照は維持されます。

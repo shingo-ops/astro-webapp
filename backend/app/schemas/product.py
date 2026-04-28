@@ -15,7 +15,21 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+def _validate_image_url(value: str | None) -> str | None:
+    """image_url は http/https のみ許可（PR #173 review Minor 5 対応）。
+
+    XSS / SSRF リスク低減のため javascript:/data:/file: 等のスキームを拒否する。
+    None / 空文字列はそのまま通過。
+    """
+    if value is None or value == "":
+        return value
+    lower = value.strip().lower()
+    if not (lower.startswith("http://") or lower.startswith("https://")):
+        raise ValueError("image_url は http:// または https:// で始まる URL のみ許可されます")
+    return value
 
 
 class ProductStatus(str, Enum):
@@ -48,6 +62,11 @@ class ProductCreate(BaseModel):
     is_archived: bool = Field(default=False)
     supplier_default_id: int | None = None
 
+    @field_validator("image_url")
+    @classmethod
+    def _check_image_url_create(cls, v: str | None) -> str | None:
+        return _validate_image_url(v)
+
 
 class ProductUpdate(BaseModel):
     name_ja: str | None = Field(default=None, min_length=1, max_length=255)
@@ -73,6 +92,11 @@ class ProductUpdate(BaseModel):
     image_url: str | None = Field(default=None, max_length=500)
     is_archived: bool | None = None
     supplier_default_id: int | None = None
+
+    @field_validator("image_url")
+    @classmethod
+    def _check_image_url_update(cls, v: str | None) -> str | None:
+        return _validate_image_url(v)
 
 
 class ProductResponse(BaseModel):

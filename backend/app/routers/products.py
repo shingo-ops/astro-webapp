@@ -14,9 +14,14 @@ from __future__ import annotations
               - PATCH で is_archived=true → archived_at 自動設定
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
 from app.cache import invalidate_dashboard_cache
@@ -239,30 +244,45 @@ async def update_product(
     return ProductResponse(**row)
 
 
+# 削除時に検査する下流テーブルの allowlist。
+# 識別子は文字列リテラルのみ、tenant スキーマは search_path から解決される。
+# M3/M4 で product_inventory / product_supplier_mappings が増えたら追記する。
+_DOWNSTREAM_TABLES_TO_CHECK = (
+    "quote_items",
+    "invoice_items",
+    "purchase_order_items",
+)
+
+
 async def _check_product_references(
     db: AsyncSession, product_id: int
 ) -> list[str]:
     """指定 product_id を参照している下流テーブルのリストを返す。
 
-    ADR-008 / Phase 1-C M-MVP Q9: FK 参照ありの場合は物理削除せず 409 を返す。
+    Phase 1-C M-MVP Q9: FK 参照ありの場合は物理削除せず 409 を返す。
+
+    実装方針（PR #173 review Major 1 対応）:
+        - テーブル存在チェックは to_regclass で先取り（search_path 配下の存在確認）
+        - 例外握り潰しを廃止、DB 例外は呼び出し側に伝播
+        - 識別子はモジュール定数 _DOWNSTREAM_TABLES_TO_CHECK の allowlist のみ使用
     """
     blocking: list[str] = []
-    checks = [
-        ("quote_items", "SELECT EXISTS(SELECT 1 FROM quote_items WHERE product_id = :id LIMIT 1)"),
-        ("invoice_items", "SELECT EXISTS(SELECT 1 FROM invoice_items WHERE product_id = :id LIMIT 1)"),
-        (
-            "purchase_order_items",
-            "SELECT EXISTS(SELECT 1 FROM purchase_order_items WHERE product_id = :id LIMIT 1)",
-        ),
-    ]
-    for table, sql in checks:
-        try:
-            result = await db.execute(text(sql), {"id": product_id})
-            if result.scalar():
-                blocking.append(table)
-        except Exception:
-            # 該当テーブルが未投入のテナントは無視（idempotent）
+    for table in _DOWNSTREAM_TABLES_TO_CHECK:
+        # search_path 配下のテーブル存在確認。未投入テナントは無音 SKIP（dangling FK にはならない）
+        exists_result = await db.execute(
+            text("SELECT to_regclass(:qname) IS NOT NULL"),
+            {"qname": table},
+        )
+        if not exists_result.scalar():
             continue
+
+        # 識別子は allowlist 確定済、:id だけバインド
+        result = await db.execute(
+            text(f"SELECT EXISTS(SELECT 1 FROM {table} WHERE product_id = :id)"),
+            {"id": product_id},
+        )
+        if result.scalar():
+            blocking.append(table)
     return blocking
 
 
@@ -313,13 +333,39 @@ async def delete_product(
             },
         )
 
-    await db.execute(text("DELETE FROM products WHERE id = :id"), {"id": product_id})
-    await record_audit_log(
-        db=db, tenant_id=tenant_id, user_id=current_user.id,
-        action="delete", table_name="products", record_id=product_id,
-        old_data=dict(old_row),
-    )
-    await db.commit()
+    # PR #173 review Major 2 対応: _check_product_references の網羅漏れ
+    # （M3/M4 で増える FK や allowlist 外の下流参照）に備え、IntegrityError を
+    # キャッチして同じ 409 構造で返す + rollback で aborted transaction を
+    # 残さない。
+    try:
+        await db.execute(text("DELETE FROM products WHERE id = :id"), {"id": product_id})
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=current_user.id,
+            action="delete", table_name="products", record_id=product_id,
+            old_data=dict(old_row),
+        )
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        logger.warning(
+            "delete_product IntegrityError fallback: tenant=%d product=%d err=%s",
+            tenant_id, product_id, exc.orig,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "id": product_id,
+                "name_ja": old_row["name_ja"],
+                "is_archived": bool(old_row.get("is_archived")),
+                # _check_product_references で検出できなかった参照
+                "blocking_references": ["unknown"],
+                "detail": (
+                    "下流参照があるため物理削除できません（参照先未特定）。"
+                    "is_archived=true で論理削除（アーカイブ）を推奨します"
+                ),
+            },
+        )
+
     await invalidate_dashboard_cache(tenant_id)
 
 
