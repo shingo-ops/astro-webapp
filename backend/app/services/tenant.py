@@ -749,6 +749,7 @@ FROM {schema}.bots;
 -- === Phase 2: 販売・財務プロセス ===
 
 -- 商品マスタ
+-- 2026-04-28 (Phase 1-C M-MVP / migration 038): TCG 輸出向け 11 列追加
 CREATE TABLE IF NOT EXISTS {schema}.products (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
@@ -764,9 +765,28 @@ CREATE TABLE IF NOT EXISTS {schema}.products (
     weight NUMERIC(10, 3),
     notes TEXT,
     release_date DATE,
+    -- Phase 1-C M-MVP（2026-04-28、migration 038 同等）
+    jan_code VARCHAR(20),
+    card_number VARCHAR(50),
+    expansion_code VARCHAR(20),
+    rarity VARCHAR(20),
+    language VARCHAR(10),
+    unit_price_usd NUMERIC(15, 2),
+    unit_price_eur NUMERIC(15, 2),
+    image_url VARCHAR(500),
+    is_archived BOOLEAN DEFAULT FALSE,
+    archived_at TIMESTAMPTZ,
+    supplier_default_id INTEGER,  -- FK は新テナント作成順序の都合で後付け
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- products 索引（migration 038 同等）
+CREATE UNIQUE INDEX IF NOT EXISTS uq_products_tenant_code ON {schema}.products (tenant_id, product_code) WHERE product_code IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_products_tenant_jan ON {schema}.products (tenant_id, jan_code) WHERE jan_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_products_archived ON {schema}.products (is_archived);
+CREATE INDEX IF NOT EXISTS idx_products_card_number ON {schema}.products (card_number) WHERE card_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_products_expansion ON {schema}.products (expansion_code) WHERE expansion_code IS NOT NULL;
 
 -- 配送ゾーン
 CREATE TABLE IF NOT EXISTS {schema}.shipping_zones (
@@ -900,6 +920,21 @@ CREATE TABLE IF NOT EXISTS {schema}.suppliers (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- products.supplier_default_id の FK を suppliers 作成後に付与
+-- （Phase 1-C M-MVP / 2026-04-28）
+DO $supplier_fk$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conrelid = '{schema}.products'::regclass
+          AND conname = 'fk_products_supplier_default'
+    ) THEN
+        ALTER TABLE {schema}.products
+        ADD CONSTRAINT fk_products_supplier_default
+        FOREIGN KEY (supplier_default_id) REFERENCES {schema}.suppliers(id);
+    END IF;
+END $supplier_fk$;
 
 CREATE TABLE IF NOT EXISTS {schema}.purchase_orders (
     id SERIAL PRIMARY KEY,
