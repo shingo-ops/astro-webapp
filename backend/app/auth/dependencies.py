@@ -179,6 +179,19 @@ async def get_current_tenant(
     return safe_id
 
 
+def _dialect_supports_search_path(db: AsyncSession) -> bool:
+    """PostgreSQL 系のみ SET search_path / SET app.tenant_id をサポートする。
+
+    pytest は SQLite (aiosqlite) で実行されるため、SET 構文は syntax error になる。
+    本判定で SQLite 系（および bind 不明）を検出して no-op に倒す。
+    """
+    bind = db.get_bind() if hasattr(db, "get_bind") else None
+    if bind is None:
+        bind = getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    return name.startswith("postgresql")
+
+
 async def reset_tenant_context(db: AsyncSession, tenant_id: int) -> None:
     """
     トランザクションコミット後にテナントコンテキスト（search_path + app.tenant_id）
@@ -194,7 +207,12 @@ async def reset_tenant_context(db: AsyncSession, tenant_id: int) -> None:
         await db.commit()
         await reset_tenant_context(db, tenant_id)
         # ここからテナントスキーマのテーブルに対して再度クエリ可能
+
+    SQLite は SET 構文を解釈できないため、本関数は dialect が postgresql 系の場合のみ
+    SET を実行する（pytest 環境での no-op 化）。
     """
+    if not _dialect_supports_search_path(db):
+        return
     safe_id = int(tenant_id)
     schema_name = f"tenant_{safe_id:03d}"
     await db.execute(text(f"SET search_path = {schema_name}, public"))
