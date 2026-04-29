@@ -30,7 +30,8 @@ export default function LoginPage() {
         <h1 className="sr-only">SalesAnchor</h1>
         <img
           src="/logo.png"
-          alt="SalesAnchor"
+          alt=""
+          aria-hidden="true"
           className="login-logo"
         />
         <p className="login-subtitle">ログイン</p>
