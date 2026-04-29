@@ -8,7 +8,7 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
   ],
-  build: {
-    format: 'file',
-  },
+  // build.format はデフォルト 'directory' のまま（dist/privacy/index.html）
+  // 既存 nginx の try_files ルール（PR #172, #184）と整合させ、
+  // /privacy /terms /data-deletion のクリーンURLを 200 で返すため
 });
