@@ -19,7 +19,7 @@
  */
 
 // ===== 設定 =====
-const REPO = "shingo-ops/astro-webapp";  // GitHubリポジトリ
+const REPO = "shingo-ops/salesanchor";  // GitHubリポジトリ
 
 // GitHub Personal Access Token はスクリプトプロパティから取得（ハードコード禁止）
 // 設定方法: プロジェクトの設定 > スクリプトプロパティ > GITHUB_TOKEN を追加

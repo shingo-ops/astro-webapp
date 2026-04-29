@@ -390,12 +390,12 @@ M1 ─→ M2 ─→ M3 ─→ M4 ─→ M5 ─→ M6
 - `jarvis_crm_system_overview.docx` 第4-4「外部連携サービスの全体マップ」、第8-2「緊急で起草すべき ADR」
 - `jarvis_crm_staff_roles_bots_design.docx` 第4章「bot 管理（bots）」
 - `migrate_staff_roles_bots.md` 第3-5節「bots テーブル定義」
-- `astro-webapp/migrations/020_create_bots_and_senders_view.sql`
-- `astro-webapp/migrations/022_staff_bots_rls_policies.sql`
-- `astro-webapp/migrations/024_add_staff_bots_permissions.sql`
-- `astro-webapp/backend/app/routers/bots.py`
-- `astro-webapp/backend/app/routers/webhook.py`（Meta Messenger ingestion の参考実装）
-- `astro-webapp/docs/B-11_credential_management_policy.md`（トークンローテーション）
+- `salesanchor/migrations/020_create_bots_and_senders_view.sql`
+- `salesanchor/migrations/022_staff_bots_rls_policies.sql`
+- `salesanchor/migrations/024_add_staff_bots_permissions.sql`
+- `salesanchor/backend/app/routers/bots.py`
+- `salesanchor/backend/app/routers/webhook.py`（Meta Messenger ingestion の参考実装）
+- `salesanchor/docs/B-11_credential_management_policy.md`（トークンローテーション）
 
 ---
 

@@ -22,7 +22,7 @@ VPS上には**ダミーファイル**（`{}`のみ）が配置されています
 ```bash
 # 現状確認
 ssh ubuntu@49.212.137.46
-cat astro-webapp/firebase-credentials.json
+cat salesanchor/firebase-credentials.json
 # → {} （ダミー）
 ```
 
@@ -62,7 +62,7 @@ cat astro-webapp/firebase-credentials.json
 
 ```bash
 # Mac側で実行
-scp ~/Downloads/sales-ops-with-claude-XXXXXXXXXX.json ubuntu@49.212.137.46:/home/ubuntu/astro-webapp/firebase-credentials.json
+scp ~/Downloads/sales-ops-with-claude-XXXXXXXXXX.json ubuntu@49.212.137.46:/home/ubuntu/salesanchor/firebase-credentials.json
 ```
 
 #### 方法2: catでコピペ転送
@@ -74,7 +74,7 @@ cat ~/Downloads/sales-ops-with-claude-XXXXXXXXXX.json
 
 # VPS側
 ssh ubuntu@49.212.137.46
-cat > /home/ubuntu/astro-webapp/firebase-credentials.json << 'EOF'
+cat > /home/ubuntu/salesanchor/firebase-credentials.json << 'EOF'
 （コピーした内容を貼り付け）
 EOF
 ```
@@ -83,8 +83,8 @@ EOF
 
 ```bash
 ssh ubuntu@49.212.137.46
-chmod 600 /home/ubuntu/astro-webapp/firebase-credentials.json
-ls -la /home/ubuntu/astro-webapp/firebase-credentials.json
+chmod 600 /home/ubuntu/salesanchor/firebase-credentials.json
+ls -la /home/ubuntu/salesanchor/firebase-credentials.json
 # -rw------- 1 ubuntu ubuntu XXXX Apr  XX XX:XX firebase-credentials.json
 ```
 
@@ -92,7 +92,7 @@ ls -la /home/ubuntu/astro-webapp/firebase-credentials.json
 
 ```bash
 ssh ubuntu@49.212.137.46
-cd astro-webapp
+cd salesanchor
 docker compose restart backend celery-worker celery-beat
 ```
 
@@ -218,13 +218,13 @@ docker compose logs backend --tail=30
 # 1. GCPコンソールで新しい鍵を発行（Phase 1の手順を再実行）
 
 # 2. VPSに配置（既存ファイルを上書き）
-scp new-credentials.json ubuntu@49.212.137.46:/home/ubuntu/astro-webapp/firebase-credentials.json
+scp new-credentials.json ubuntu@49.212.137.46:/home/ubuntu/salesanchor/firebase-credentials.json
 
 # 3. 権限設定
-ssh ubuntu@49.212.137.46 "chmod 600 /home/ubuntu/astro-webapp/firebase-credentials.json"
+ssh ubuntu@49.212.137.46 "chmod 600 /home/ubuntu/salesanchor/firebase-credentials.json"
 
 # 4. バックエンド再起動
-ssh ubuntu@49.212.137.46 "cd astro-webapp && docker compose restart backend celery-worker celery-beat"
+ssh ubuntu@49.212.137.46 "cd salesanchor && docker compose restart backend celery-worker celery-beat"
 
 # 5. 動作確認後、GCPコンソールで古い鍵を削除
 ```

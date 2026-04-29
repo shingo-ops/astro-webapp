@@ -48,7 +48,7 @@ docker compose exec postgres psql -U myapp_user -d myapp_db -c \
 
 ```bash
 # Collaborator一覧（GitHub CLI使用）
-gh api repos/shingo-ops/astro-webapp/collaborators --jq '.[].login'
+gh api repos/shingo-ops/salesanchor/collaborators --jq '.[].login'
 ```
 
 **確認事項:**

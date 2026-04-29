@@ -7,7 +7,7 @@
 ## 1. プロジェクト構成
 
 ```
-astro-webapp/
+salesanchor/
 ├── backend/              ← FastAPI (Python 3.12)
 │   ├── app/
 │   │   ├── main.py           ← FastAPIアプリ本体・ルーター登録
@@ -290,7 +290,7 @@ GitHub Actions の自動デプロイではマイグレーション SQL は実行
 # VPS側で実行
 ssh ubuntu@49.212.137.46
 
-cd /home/ubuntu/astro-webapp
+cd /home/ubuntu/salesanchor
 
 # 例: 新しいマイグレーション適用
 docker compose exec -T postgres psql -U jarvis -d jarvis_db < migrations/004_your_migration.sql
@@ -307,7 +307,7 @@ docker compose exec backend python /app/scripts/your_migration.py
 | 項目 | 値 |
 |------|-----|
 | 本番URL | https://jarvis-claude.uk |
-| GitHub | https://github.com/shingo-ops/astro-webapp |
+| GitHub | https://github.com/shingo-ops/salesanchor |
 | VPS | さくらVPS 49.212.137.46 (Ubuntu 24.04, 1GB RAM) |
 | DB | PostgreSQL 16（マルチテナント・スキーマ分離） |
 | 認証 | Firebase Authentication + MFA |
