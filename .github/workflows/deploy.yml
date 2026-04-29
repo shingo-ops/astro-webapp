@@ -10,6 +10,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ============================================
+      # LP (lp/) build + rsync to VPS
+      # 静的サイト salesanchor.jp の本体（Astro 4 で 4 ページ生成）
+      # ============================================
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: lp/package-lock.json
+
+      - name: Build LP
+        run: |
+          cd lp
+          npm ci
+          npm run build
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add VPS to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rsync LP build to VPS
+        run: |
+          rsync -avz --delete \
+            lp/dist/ \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/ubuntu/salesanchor/www/salesanchor/
+
+      # ============================================
+      # 既存: VPS 上で git pull + docker compose up + migrations
+      # ============================================
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
