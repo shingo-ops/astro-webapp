@@ -20,6 +20,7 @@ celery_app = Celery(
     backend=CELERY_RESULT_BACKEND,
     include=[
         "app.tasks.dashboard",
+        "app.tasks.data_deletion",
         "app.tasks.maintenance",
         "app.tasks.reports",
     ],

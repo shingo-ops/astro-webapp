@@ -1,0 +1,168 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const apiBase = 'https://api.salesanchor.jp/api/v1/meta';
+---
+
+<BaseLayout
+  title="削除ステータス確認"
+  description="SalesAnchor のデータ削除リクエストの処理状況を確認するページです。"
+  noindex={true}
+>
+  <article class="prose prose-slate max-w-3xl mx-auto px-4 py-12">
+    <h1>削除ステータス確認</h1>
+    <p><small>Deletion Status</small></p>
+
+    <p class="text-base text-gray-700">
+      確認コード（<code>DEL-YYYYMMDD-xxxx</code>）を含む URL でアクセスすると、削除リクエストの処理状況が表示されます。
+    </p>
+    <p><small>Visit this page with a confirmation code (DEL-YYYYMMDD-xxxx) in the URL to check the status of your deletion request.</small></p>
+
+    <div id="status-card" class="not-prose mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <p class="text-gray-500" id="status-loading">読み込み中… / Loading…</p>
+    </div>
+
+    <h2 class="mt-12">お問い合わせ / Contact</h2>
+    <p>
+      ご不明な点は <a href="mailto:support@salesanchor.jp">support@salesanchor.jp</a>
+      までお気軽にお問い合わせください。
+    </p>
+    <p><small>For questions, please contact <a href="mailto:support@salesanchor.jp">support@salesanchor.jp</a>.</small></p>
+  </article>
+
+  <script is:inline define:vars={{ apiBase }}>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code') || '';
+      const card = document.getElementById('status-card');
+
+      function render(html) {
+        card.innerHTML = html;
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      const codeRe = /^DEL-\d{8}-[a-f0-9]{8}$/;
+      if (!code || !codeRe.test(code)) {
+        render(
+          '<p class="text-red-600">' +
+            '無効な確認コードです / Invalid confirmation code' +
+            '</p>' +
+            '<p class="mt-2 text-sm text-gray-600">' +
+            'URL に <code>?code=DEL-YYYYMMDD-xxxx</code> を含めてアクセスしてください。' +
+            '</p>'
+        );
+        return;
+      }
+
+      const url = apiBase + '/deletion-status?code=' + encodeURIComponent(code);
+
+      fetch(url, { headers: { Accept: 'application/json' } })
+        .then(function (res) {
+          if (res.status === 404) {
+            return res.json().then(function () {
+              render(
+                '<h3 class="font-semibold text-red-600">確認コードが見つかりません</h3>' +
+                  '<p class="mt-2 text-sm text-gray-600">' +
+                  'コード: <code>' +
+                  escapeHtml(code) +
+                  '</code></p>' +
+                  '<p class="mt-2 text-sm text-gray-600">' +
+                  'コードが正しいかご確認のうえ、お問い合わせください。' +
+                  '</p>'
+              );
+            });
+          }
+          if (!res.ok) {
+            return res.json().then(function () {
+              render(
+                '<h3 class="font-semibold text-red-600">エラーが発生しました</h3>' +
+                  '<p class="mt-2 text-sm text-gray-600">' +
+                  'HTTP ' +
+                  res.status +
+                  '</p>' +
+                  '<p class="mt-2 text-sm text-gray-600">時間をおいて再度お試しください。</p>'
+              );
+            });
+          }
+          return res.json().then(function (data) {
+            const statusLabels = {
+              received: '受付済み / Received',
+              verifying: '本人確認中 / Verifying',
+              processing: '処理中 / Processing',
+              completed: '完了 / Completed',
+              failed: '処理失敗 / Failed',
+              rejected: '却下 / Rejected',
+            };
+            const statusJa = statusLabels[data.status] || data.status;
+
+            const fmt = function (iso) {
+              if (!iso) return '—';
+              try {
+                const d = new Date(iso);
+                return d.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+              } catch (e) {
+                return iso;
+              }
+            };
+
+            render(
+              '<dl class="space-y-3 text-sm">' +
+                '<div class="flex flex-col sm:flex-row sm:gap-4">' +
+                '<dt class="font-semibold text-gray-900 sm:w-40">確認コード</dt>' +
+                '<dd><code>' +
+                escapeHtml(data.confirmation_code) +
+                '</code></dd>' +
+                '</div>' +
+                '<div class="flex flex-col sm:flex-row sm:gap-4">' +
+                '<dt class="font-semibold text-gray-900 sm:w-40">ステータス</dt>' +
+                '<dd class="font-semibold ' +
+                (data.status === 'completed'
+                  ? 'text-green-600'
+                  : data.status === 'failed' || data.status === 'rejected'
+                  ? 'text-red-600'
+                  : 'text-blue-600') +
+                '">' +
+                escapeHtml(statusJa) +
+                '</dd>' +
+                '</div>' +
+                '<div class="flex flex-col sm:flex-row sm:gap-4">' +
+                '<dt class="font-semibold text-gray-900 sm:w-40">受付日時</dt>' +
+                '<dd>' +
+                escapeHtml(fmt(data.requested_at)) +
+                '</dd>' +
+                '</div>' +
+                '<div class="flex flex-col sm:flex-row sm:gap-4">' +
+                '<dt class="font-semibold text-gray-900 sm:w-40">処理開始日時</dt>' +
+                '<dd>' +
+                escapeHtml(fmt(data.started_at)) +
+                '</dd>' +
+                '</div>' +
+                '<div class="flex flex-col sm:flex-row sm:gap-4">' +
+                '<dt class="font-semibold text-gray-900 sm:w-40">完了日時</dt>' +
+                '<dd>' +
+                escapeHtml(fmt(data.completed_at)) +
+                '</dd>' +
+                '</div>' +
+                '</dl>'
+            );
+          });
+        })
+        .catch(function (err) {
+          render(
+            '<h3 class="font-semibold text-red-600">通信エラー / Network Error</h3>' +
+              '<p class="mt-2 text-sm text-gray-600">' +
+              escapeHtml(err.message || 'Unknown error') +
+              '</p>'
+          );
+        });
+    })();
+  </script>
+</BaseLayout>
