@@ -20,7 +20,7 @@ from app.routers import reports
 from app.routers import leads
 from app.routers import teams
 from app.routers import roles
-from app.routers import webhook
+from app.routers import meta, webhook
 from app.routers import products
 from app.routers import shipping
 from app.routers import quotes
@@ -64,7 +64,7 @@ allowed_origins = [
     o.strip()
     for o in os.getenv(
         "ALLOWED_ORIGINS",
-        "https://jarvis-claude.uk,https://app.salesanchor.jp",
+        "https://jarvis-claude.uk,https://app.salesanchor.jp,https://salesanchor.jp",
     ).split(",")
     if o.strip()
 ]
@@ -87,6 +87,8 @@ app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 # Meta Webhook（認証不要 - Metaのサーバーからアクセスされる）
 app.include_router(webhook.router, prefix="/api/v1", tags=["webhook"])
+# Meta Data Deletion Callback + Status API（認証不要 - 公開エンドポイント）
+app.include_router(meta.router, prefix="/api/v1", tags=["meta"])
 
 # --- 認証必須なルーター（デフォルトで認証が強制される） ---
 # dependencies=[Depends(get_current_tenant)] により、
