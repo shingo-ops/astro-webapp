@@ -111,10 +111,14 @@ services:
         VITE_GCP_PROJECT_ID: ${VITE_GCP_PROJECT_ID}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 8080 || exit 1"]
+      # localhost が IPv6 (::1) に解決され nginx の IPv4-only listen と
+      # ミスマッチするケースで unhealthy になる問題を回避するため
+      # 127.0.0.1 を明示し、wget で実応答も併せて確認する。
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:8080/ || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 15s
     deploy:
       resources:
         limits:
