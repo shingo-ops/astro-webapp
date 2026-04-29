@@ -27,7 +27,12 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>Jarvis CRM</h1>
+        <h1 className="sr-only">SalesAnchor</h1>
+        <img
+          src="/logo.png"
+          alt="SalesAnchor"
+          className="login-logo"
+        />
         <p className="login-subtitle">ログイン</p>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
