@@ -6,13 +6,18 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Meta Blue 系統（#1877F2 を 500 に置く Salesforce / Meta Business Suite 寄り）
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          900: '#1e3a8a',
+          50: '#e7f3ff',
+          100: '#d0e8ff',
+          200: '#a8d2ff',
+          300: '#6bb6ff',
+          400: '#2e94ff',
+          500: '#1877f2',
+          600: '#166fe5',
+          700: '#1463cc',
+          800: '#1158b5',
+          900: '#0e498f',
         },
       },
       fontFamily: {
