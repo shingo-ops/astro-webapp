@@ -30,7 +30,7 @@
 --
 -- 想定適用順序（重要）:
 --   1) backend / frontend から customer_id 経路を削除した PR を main マージ → 本番反映
---   2) 本番 VPS で `astro-webapp/scripts/preflight_step5d.sh` を実行（後述）
+--   2) 本番 VPS で `salesanchor/scripts/preflight_step5d.sh` を実行（後述）
 --   3) 全テナントで preflight が PASS したら、本 migration 035 を適用
 --
 -- 作成日: 2026-04-27 (DRAFT)
