@@ -1,5 +1,5 @@
 /* ============================================================
-   Jarvis CRM - Application Styles
+   SalesAnchor - Application Styles
    ============================================================ */
 
 /* --- Top Nav Layout (GAS互換 2段ナビ) --- */
@@ -517,6 +517,27 @@
   text-align: center;
   color: var(--text-primary);
   margin: 0 0 4px;
+}
+
+/* SalesAnchor brand logo (login top) */
+.login-logo {
+  display: block;
+  margin: 0 auto 12px;
+  max-width: 280px;
+  height: auto;
+}
+
+/* スクリーンリーダーのみに見せる（SEO/A11y で h1 を残しつつ視覚的にはロゴ画像で訴求） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 .login-subtitle {
