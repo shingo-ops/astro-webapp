@@ -14,6 +14,8 @@ python-jose[cryptography]==3.3.0
 httpx==0.28.1
 redis[hiredis]>=5.0.0
 celery[redis]>=5.4.0
+# Meta Data Deletion Callback の Form パース用（B1）
+python-multipart==0.0.20
 # Discord Gateway worker (ADR-009)
 discord.py==2.4.0
 # テスト用
