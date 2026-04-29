@@ -42,16 +42,41 @@ sudo ls /etc/letsencrypt/live/api.salesanchor.jp/
 
 **もし「No such file or directory」が出たら**: certbot で証明書発行が必要。下記 1-2-A を実施。
 
-#### 1-2-A. 証明書発行（必要な場合のみ）
+#### 1-2-A. 証明書発行（必要な場合のみ、デッドロック回避手順あり）
+
+⚠️ **重要**: PR #184 が既にマージされて nginx.conf に新ドメインの `ssl_certificate` 行が含まれた状態だと、443 リッスン → cert 無し → nginx 起動失敗 → certbot も叩けない、というデッドロックが起きます。
+
+**手順**: ssl 関連行を一旦コメントアウトして HTTP のみで起動 → certbot 発行 → 復活、の 2 段階で進めます。
 
 ```
 cd /home/ubuntu/salesanchor
+```
+
+`nginx/nginx.conf` の以下のブロック内の `ssl_certificate` / `ssl_certificate_key` の 2 行をコメントアウト + `listen 443 ssl;` を一旦削除（or HTTP リダイレクトの 80 ブロックだけ残す）:
+- `app.salesanchor.jp` の HTTPS server block（line 165 付近〜）
+- `api.salesanchor.jp` の HTTPS server block（line 240 付近〜）
+
+```
+docker compose up -d --no-deps nginx
+```
+
+certbot で発行（HTTP-01 challenge は :80 経由）:
+
+```
 docker compose run --rm certbot certonly --webroot -w /var/www/certbot -d app.salesanchor.jp
 ```
 
 ```
 docker compose run --rm certbot certonly --webroot -w /var/www/certbot -d api.salesanchor.jp
 ```
+
+成功したら `nginx/nginx.conf` のコメントアウト行を元に戻し、再度 nginx を recreate:
+
+```
+docker compose up -d --no-deps nginx
+```
+
+**事前にしんごさんが certbot で発行済みなら、この手順は不要**。1-3 へ進む。
 
 ### 1-3. .env の ALLOWED_ORIGINS 更新
 
@@ -178,6 +203,11 @@ docker compose up -d --no-deps nginx
   - 即停止 → 旧ドメインの DNS をやめる + nginx server block を削除
   - 永続 301 → `return 301 https://app.salesanchor.jp$request_uri;` に変更
 - [ ] **VITE_API_URL 環境変数の追加検討**: 現状 frontend は相対パス `/api/v1` で動くので不要。将来的に API ドメインを完全分離するなら追加
+
+### 旧ドメイン停止前のチェックリスト（jarvis-claude.uk を停止する場合のみ）
+- [ ] **Nginx Exporter のターゲット URL** 確認: 旧 `jarvis-claude.uk/nginx_status` を叩いている場合は新ドメイン側に `/nginx_status` location を追加 or Exporter URL を `localhost:80` 経由に切替
+- [ ] **B-04 / B-06 / DEVELOPMENT_GUIDE_FOR_SHINGO.md** など docs の `jarvis-claude.uk` 参照を一括更新（別 PR）
+- [ ] **Cloudflare 設定**（B-06）が新ドメインに不要なら無効化、必要なら DNS 移行
 
 ### Meta App Review 関連の連動作業
 - [ ] **C3: Webhook URL 切替**（しんごさん作業、Meta Developer Dashboard）

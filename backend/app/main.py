@@ -60,10 +60,14 @@ app = FastAPI(
 )
 
 # CORS設定（本番では特定のオリジンのみ許可）
-allowed_origins = os.getenv(
-    "ALLOWED_ORIGINS",
-    "https://jarvis-claude.uk,https://app.salesanchor.jp",
-).split(",")
+allowed_origins = [
+    o.strip()
+    for o in os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://jarvis-claude.uk,https://app.salesanchor.jp",
+    ).split(",")
+    if o.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
