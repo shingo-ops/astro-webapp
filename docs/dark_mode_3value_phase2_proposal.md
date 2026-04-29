@@ -13,7 +13,7 @@
 ## 0. TL;DR
 
 - **問題**: 現状 `staff_ui_preferences.dark_mode` は boolean（true/false 固定）。「OS 設定に従う」auto モードが選べない
-- **CSS は既に対応済**: `index.css:52-58` で `force-dark` / `force-light` / 何も無し（=auto）の 3-state を実装済
+- **CSS は既に対応済**: `index.css:52-66` で `force-dark` / `force-light` / 何も無し（=auto）の 3-state を実装済
 - **本提案**: DB を VARCHAR に変更（または新規列追加）し、ユーザーが auto を明示選択可能にする
 - **後回し理由**: 現状の boolean 運用に致命的問題なし、機能追加（B-2 M3 / B-3 M3/M4）の優先度が高い
 
@@ -130,11 +130,11 @@ ALTER TABLE {schema}.staff_ui_preferences
 
 ## 8. 関連ファイル（実装時の参考）
 
-- `frontend/src/index.css:52-65` — CSS 3-state 対応済の証拠
+- `frontend/src/index.css:52-66` — CSS 3-state 対応済の証拠（`@media (prefers-color-scheme: dark)` の前まで）
 - `frontend/src/contexts/UiPrefsContext.tsx:131-146` — class 適用 useEffect
-- `backend/app/schemas/staff.py:30` — Pydantic `dark_mode: bool = False`
-- `backend/app/services/tenant.py:663` — DB schema `dark_mode BOOLEAN NOT NULL DEFAULT FALSE`
-- `migrations/019_create_staff_tables.sql:97` — 元の DB 定義
+- `backend/app/schemas/staff.py:26` — Pydantic `dark_mode: bool = False`
+- `backend/app/services/tenant.py:659` — DB schema `dark_mode BOOLEAN NOT NULL DEFAULT FALSE`
+- `migrations/019_create_staff_tables.sql:93` — 元の DB 定義
 
 ## 9. メモ
 

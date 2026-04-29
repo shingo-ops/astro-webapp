@@ -1,7 +1,17 @@
 """
 しんごさん向け Discord Bot セットアップ手順書（docx 生成スクリプト）
+
+用途: docs/B-2_discord_setup_guide_for_shingo.docx を再生成する
+実行場所: Mac 側（または python-docx が入った任意の環境）
+使い方: PYENV_VERSION=3.11.1 python scripts/build_shingo_guide.py
+        （または python -m pip install python-docx 済の任意の Python で）
+前提: python-docx>=1.0 が pip install 済であること
+出力: docs/B-2_discord_setup_guide_for_shingo.docx を上書き
+
 2026-04-28 セッション成果として作成。
 """
+from pathlib import Path
+
 from docx import Document
 from docx.shared import Pt, RGBColor, Cm, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -9,7 +19,9 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 
-OUT_PATH = "/Users/hitoshi/Documents/副業/業務委託/しんごさん/CRMシステム/astro-webapp/docs/B-2_discord_setup_guide_for_shingo.docx"
+# scripts/ の親（リポジトリルート）から docs/<出力> を組み立てる
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+OUT_PATH = str(_REPO_ROOT / "docs" / "B-2_discord_setup_guide_for_shingo.docx")
 
 
 def add_shading(cell, color_hex: str) -> None:
