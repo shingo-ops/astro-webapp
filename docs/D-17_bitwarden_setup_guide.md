@@ -65,7 +65,7 @@ Bitwardenは「会社の金庫」のようなものです:
 #### 外部サービス系
 | 項目 | フォルダ |
 |------|---------|
-| GitHub（shingo-ops/astro-webapp） | External/GitHub |
+| GitHub（shingo-ops/salesanchor） | External/GitHub |
 | GitHub Personal Access Token | External/GitHub |
 | Cloudflare アカウント | External/Cloudflare |
 | Cloudflare API トークン | External/Cloudflare |

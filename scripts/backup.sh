@@ -1,16 +1,16 @@
 #!/bin/bash
 # PostgreSQL 日次バックアップスクリプト
-# cronで毎日深夜3:00に実行: 0 3 * * * /home/ubuntu/astro-webapp/scripts/backup.sh
+# cronで毎日深夜3:00に実行: 0 3 * * * /home/ubuntu/salesanchor/scripts/backup.sh
 #
 # 使い方:
-#   手動実行: bash /home/ubuntu/astro-webapp/scripts/backup.sh
-#   リストア: bash /home/ubuntu/astro-webapp/scripts/restore.sh <バックアップファイル>
+#   手動実行: bash /home/ubuntu/salesanchor/scripts/backup.sh
+#   リストア: bash /home/ubuntu/salesanchor/scripts/restore.sh <バックアップファイル>
 
 set -euo pipefail
 
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/home/ubuntu/backups/postgres"
-COMPOSE_FILE="/home/ubuntu/astro-webapp/docker-compose.yml"
+COMPOSE_FILE="/home/ubuntu/salesanchor/docker-compose.yml"
 DB_USER="${POSTGRES_USER:-jarvis}"
 DB_NAME="${POSTGRES_DB:-jarvis_db}"
 RETENTION_DAYS=30

@@ -22,7 +22,7 @@ jobs:
             echo "Starting deployment..."
             echo "============================================"
 
-            cd /home/ubuntu/astro-webapp
+            cd /home/ubuntu/salesanchor
 
             echo "Step 1: Pulling latest code from GitHub..."
             git pull origin main
