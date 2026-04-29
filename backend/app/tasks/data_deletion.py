@@ -33,9 +33,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").replace(
     "postgresql+asyncpg://", "postgresql://"
 )
 
+# F8: モジュールレベル singleton で再利用（呼び出しごとに作成しない）
+_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+_SessionLocal = sessionmaker(_engine)
+
 
 def _get_sync_engine():
-    return create_engine(DATABASE_URL, echo=False)
+    """互換性維持用（既存の他モジュールで参照されている場合に備えて残す）。"""
+    return _engine
 
 
 def _list_tenant_schemas(session) -> list[str]:
@@ -74,8 +79,7 @@ def process_data_deletion(request_id: str) -> dict:
     Returns:
         dict: 処理サマリ {request_id, status, deleted_counts: {tenant: count}, ...}
     """
-    engine = _get_sync_engine()
-    Session = sessionmaker(engine)
+    Session = _SessionLocal
 
     # 1) ログを取得 + status='processing' に更新
     with Session() as session:
@@ -107,12 +111,14 @@ def process_data_deletion(request_id: str) -> dict:
 
     # 2) end_user (Meta) なら全テナントの meta_messages を sender_id で削除
     deleted_counts: dict[str, int] = {}
+    total_tenants_searched = 0
     error_message: str | None = None
 
     if user_type == "end_user" and identifier_value:
         with Session() as session:
             try:
                 schemas = _list_tenant_schemas(session)
+                total_tenants_searched = len(schemas)
                 for schema in schemas:
                     count = _delete_meta_messages_in_tenant(
                         session, schema, identifier_value
@@ -129,7 +135,10 @@ def process_data_deletion(request_id: str) -> dict:
         logger.info(f"[data_deletion] user_type=user request handled manually: {request_id}")
 
     # 3) ログを完了状態に更新
+    # F4: data_items_deleted のスキーマを SQL コメントと整合させる
+    #     {"meta_messages": <total>, "tenants_searched": <total>, "by_tenant": {...}}
     final_status = "failed" if error_message else "completed"
+    total_messages = sum(deleted_counts.values())
     with Session() as session:
         session.execute(
             text("""
@@ -144,8 +153,9 @@ def process_data_deletion(request_id: str) -> dict:
             {
                 "status": final_status,
                 "data_items": json.dumps({
-                    "meta_messages_by_tenant": deleted_counts,
-                    "tenants_searched": len(deleted_counts),
+                    "meta_messages": total_messages,
+                    "tenants_searched": total_tenants_searched,
+                    "by_tenant": deleted_counts,
                 }),
                 "err": error_message,
                 "rid": request_id,

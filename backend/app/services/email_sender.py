@@ -30,6 +30,11 @@ logger = logging.getLogger(__name__)
 DATABASE_URL = os.getenv("DATABASE_URL", "").replace(
     "postgresql+asyncpg://", "postgresql://"
 )
+_PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://salesanchor.jp")
+
+# F8: モジュールレベル singleton で engine 再利用
+_engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+_SessionLocal = sessionmaker(_engine)
 
 
 def _smtp_configured() -> bool:
@@ -79,8 +84,7 @@ def send_deletion_completion_email(request_id: str) -> None:
     Meta callback flow ではエンドユーザーのメールは未取得 → 送信スキップ。
     email channel flow（手動）では identifier_value にメールアドレスが入る想定 → 送信。
     """
-    engine = create_engine(DATABASE_URL, echo=False)
-    Session = sessionmaker(engine)
+    Session = _SessionLocal
 
     with Session() as session:
         row = session.execute(
@@ -146,7 +150,7 @@ def send_deletion_completion_email(request_id: str) -> None:
 ・削除項目: {data_items_deleted or '監査ログご参照'}
 
 【状況確認URL】
-https://salesanchor.jp/deletion-status?code={code}
+{_PUBLIC_BASE_URL}/deletion-status?code={code}
 
 30日以内にバックアップからも完全削除されます。
 
@@ -161,7 +165,7 @@ Your data deletion request (Case #{rid}) has been completed.
 - Deleted items: see audit log
 
 [Status URL]
-https://salesanchor.jp/deletion-status?code={code}
+{_PUBLIC_BASE_URL}/deletion-status?code={code}
 
 Full deletion from backups will complete within 30 days.
 ---------------------------------------------

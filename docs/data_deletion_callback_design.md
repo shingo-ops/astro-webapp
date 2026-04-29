@@ -14,6 +14,7 @@
 | # | 項目 | 仕様書 v1.0 | 本実装での扱い |
 |---|---|---|---|
 | **D-1** | Callback URL ドメイン | `https://salesanchor.jp/api/v1/meta/data-deletion` | **`https://api.salesanchor.jp/api/v1/meta/data-deletion` に変更** ⚠️ |
+| **D-9** | レスポンス形式 | docx §2.3 は **unquoted JSON** (`{ url: '...', code: '...' }`) を template literal 生成 | **標準 JSON** (`{"url": "...", "confirmation_code": "..."}`) で実装 — Meta 公式現行ドキュメントは標準 JSON を要求しており、リジェクトリスクが低い |
 | **D-2** | Status ページ URL | `https://salesanchor.jp/deletion-status?code=...` | 仕様書通り（LP 側、Astro 静的ページ） |
 | **D-3** | 検証アルゴリズム | HMAC-SHA256 (App Secret) | 仕様書通り（既存 `webhook.py` と同じ） |
 | **D-4** | レスポンス形式 | unquoted JSON（template literal で手動生成） | 仕様書通り |
@@ -70,6 +71,13 @@ Meta Platform                     api.salesanchor.jp                salesanchor.
 **ファイル**: `migrations/039_create_data_deletion_logs.sql`
 
 仕様書 §5.1 のスキーマをそのまま実装。`public` schema 配下（テナント横断のため）、idempotent (`CREATE TABLE IF NOT EXISTS`)。
+
+**確認コードと受付 ID の生成形式**:
+
+- `request_id`: `REQ-YYYYMMDD-XXXXXX`（XXXXXX は `secrets.token_hex(3)` = 6 桁の `[a-f0-9]`）
+- `confirmation_code`: `DEL-YYYYMMDD-XXXXXXXX`（XXXXXXXX は `secrets.token_hex(4)` = 8 桁の `[a-f0-9]`）
+
+正規表現バリデーション: `^DEL-\d{8}-[a-f0-9]{8}$`（生成形式に厳密に一致）
 
 ```sql
 CREATE TABLE IF NOT EXISTS public.data_deletion_logs (

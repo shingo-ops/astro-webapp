@@ -18,11 +18,13 @@ import logging
 import os
 import re
 import secrets
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Form, HTTPException, Query
-from fastapi.responses import Response
+from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query
+from fastapi.responses import JSONResponse
+
 from sqlalchemy import text
 
 from app.database import AsyncSessionLocal
@@ -31,7 +33,10 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 _PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://salesanchor.jp")
-_CONFIRMATION_CODE_RE = re.compile(r"^DEL-\d{8}-[A-Za-z0-9]+$")
+# 生成側 (secrets.token_hex(4)) は 8 桁の [a-f0-9] のみ生成するため厳密化
+_CONFIRMATION_CODE_RE = re.compile(r"^DEL-\d{8}-[a-f0-9]{8}$")
+# signed_request の鮮度検証窓（秒）。Meta は通常即時送ってくるため 5 分で十分
+_SIGNED_REQUEST_MAX_AGE_SECONDS = 300
 
 
 # ───────────────────────────────────────
@@ -88,6 +93,24 @@ def parse_signed_request(signed_request: str, app_secret: str) -> Optional[dict]
     if not payload.get("user_id"):
         return None
 
+    # F2: replay 攻撃対策 — issued_at が 5 分以内であること
+    issued_at = payload.get("issued_at")
+    if not isinstance(issued_at, int):
+        return None
+    age = time.time() - issued_at
+    # 過去 5 分以内、かつ 1 分先までは clock skew で許容
+    if age > _SIGNED_REQUEST_MAX_AGE_SECONDS or age < -60:
+        logger.warning(
+            "[meta-data-deletion] signed_request out of freshness window: "
+            f"age={age:.1f}s"
+        )
+        return None
+
+    # 将来 Meta が expires フィールドを送ってきた場合の追加検証
+    expires = payload.get("expires")
+    if isinstance(expires, int) and expires < time.time():
+        return None
+
     return payload
 
 
@@ -104,22 +127,45 @@ def _generate_codes(now: datetime) -> tuple[str, str]:
 # Meta Platform から signed_request を受信
 # ───────────────────────────────────────
 
+def _enqueue_deletion_task(request_id: str) -> None:
+    """
+    Celery task を BackgroundTasks 経由でバックグラウンド実行する関数。
+    Redis publish が degrade した時に同期 enqueue がブロックして
+    Meta 3 秒 SLA を破るリスクを回避する（F3 対策）。
+    """
+    try:
+        # 関数内 import: 循環 import 回避
+        from app.tasks.data_deletion import process_data_deletion
+        process_data_deletion.delay(request_id)
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"[meta-data-deletion] enqueue failed for {request_id}: {e}",
+            exc_info=True,
+        )
+
+
 @router.post("/meta/data-deletion")
 async def data_deletion_callback(
+    background_tasks: BackgroundTasks,
     signed_request: str = Form(""),
 ):
     """
     Meta Data Deletion Callback。
 
     1. signed_request を HMAC-SHA256 検証（App Secret = META_APP_SECRET）
-    2. payload から user_id を取得
-    3. data_deletion_logs に INSERT (status='received')
-    4. Celery task で非同期に削除処理を enqueue
-    5. Meta 仕様の unquoted JSON で応答（3 秒以内）
+    2. issued_at を 5 分以内チェック（replay 攻撃対策、F2）
+    3. payload から user_id を取得
+    4. data_deletion_logs に INSERT (status='received')
+    5. BackgroundTasks で Celery enqueue を非同期化（F3）
+    6. 標準 JSON で応答（3 秒以内、F1）
 
-    Meta 仕様の unquoted JSON:
-        { url: '...', confirmation_code: '...' }
-    （標準 JSON ではなく JS オブジェクトリテラル形式。spec docx §2.3）
+    レスポンス形式（標準 JSON）:
+        {"url": "...", "confirmation_code": "..."}
+
+    注: docx v1.0 §2.3 は unquoted JSON 形式を推奨していたが、Meta 公式の現行
+    ドキュメントは標準 JSON を要求しているため標準 JSON で実装。万一 Meta 公式
+    "Test Data Deletion Callback" で reject されたら docx の手順に従って
+    template literal 生成にフォールバック。
     """
     app_secret = os.getenv("META_APP_SECRET", "")
     if not app_secret:
@@ -159,20 +205,17 @@ async def data_deletion_callback(
         )
         await session.commit()
 
-    # Celery task で非同期に削除処理（メール送信含む）
-    # import を関数内にする: 循環 import 回避、Meta callback は最低限の依存で動く
-    try:
-        from app.tasks.data_deletion import process_data_deletion
-        process_data_deletion.delay(request_id)
-    except Exception as e:  # noqa: BLE001
-        # 監査ログ記録は成功しているので Meta への応答は成功とする
-        # 削除処理失敗は監査ログ status から手動リカバリ可能
-        logger.error(f"[meta-data-deletion] enqueue failed: {e}", exc_info=True)
+    # BackgroundTasks で Celery enqueue を非同期化（F3: 3 秒 SLA 保護）
+    background_tasks.add_task(_enqueue_deletion_task, request_id)
 
-    # Meta 仕様の unquoted JSON 応答（template literal 相当）
+    # F1: 標準 JSON 応答（JSONResponse は keys/values を自動エスケープ + Content-Type 自動設定）
     status_url = f"{_PUBLIC_BASE_URL}/deletion-status?code={confirmation_code}"
-    body = f"{{ url: '{status_url}', confirmation_code: '{confirmation_code}' }}"
-    return Response(content=body, media_type="application/json")
+    return JSONResponse(
+        content={
+            "url": status_url,
+            "confirmation_code": confirmation_code,
+        }
+    )
 
 
 # ───────────────────────────────────────
@@ -212,12 +255,16 @@ async def deletion_status(code: str = Query(..., min_length=10, max_length=64)):
     if row is None:
         raise HTTPException(status_code=404, detail="Confirmation code not found")
 
-    return {
-        "confirmation_code": row[0],
-        "channel": row[1],
-        "user_type": row[2],
-        "status": row[3],
-        "requested_at": row[4].isoformat() if row[4] else None,
-        "started_at": row[5].isoformat() if row[5] else None,
-        "completed_at": row[6].isoformat() if row[6] else None,
-    }
+    # F6: 中間プロキシ / CDN によるキャッシュで status 古い値が永遠に返るのを防ぐ
+    return JSONResponse(
+        content={
+            "confirmation_code": row[0],
+            "channel": row[1],
+            "user_type": row[2],
+            "status": row[3],
+            "requested_at": row[4].isoformat() if row[4] else None,
+            "started_at": row[5].isoformat() if row[5] else None,
+            "completed_at": row[6].isoformat() if row[6] else None,
+        },
+        headers={"Cache-Control": "no-store"},
+    )
