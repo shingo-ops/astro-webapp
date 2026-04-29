@@ -35,7 +35,7 @@ jobs:
             echo "allow_empty_manual_map=${{ inputs.allow_empty_manual_map }}"
             echo "============================================"
 
-            cd /home/ubuntu/astro-webapp
+            cd /home/ubuntu/salesanchor
 
             # sheets/ は gitignore されているため、リポジトリ側からは来ない。
             # 手動マージ判定 CSV を workflow 内で書き出す（内容は PR #107/#109 で合意済み）。

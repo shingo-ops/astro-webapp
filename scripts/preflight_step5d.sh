@@ -20,7 +20,7 @@
 #         念のためチェック。multi-branch 検出も兼ねる。
 #
 # 使い方（VPS 上で）:
-#   bash /opt/astro-webapp/scripts/preflight_step5d.sh \
+#   bash /home/ubuntu/salesanchor/scripts/preflight_step5d.sh \
 #       postgres://crmuser:PASS@127.0.0.1:5432/crm_db
 #
 # 終了ステータス:

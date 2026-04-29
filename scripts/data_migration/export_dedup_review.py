@@ -2,12 +2,12 @@
 """
 Phase 1-B-2 手動レビュー用 CSV エクスポート。
 
-astro-webapp/sheets/customers_master.csv の全 52件について、
+salesanchor/sheets/customers_master.csv の全 52件について、
 自動名寄せ結果（正規化キー・重複グループ・個人顧客判定）を付与した
 レビュー CSV を出力する。しんごさんが Excel で開いて修正欄に記入する。
 
 出力:
-    astro-webapp/sheets/dedup_review_output.csv
+    salesanchor/sheets/dedup_review_output.csv
 
 実行方法:
     python3 scripts/data_migration/export_dedup_review.py

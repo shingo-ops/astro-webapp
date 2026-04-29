@@ -24,7 +24,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd /home/ubuntu/astro-webapp
+            cd /home/ubuntu/salesanchor
 
             docker cp scripts astro-webapp-backend-1:/app/
             docker exec -u root astro-webapp-backend-1 chmod -R a+rX /app/scripts

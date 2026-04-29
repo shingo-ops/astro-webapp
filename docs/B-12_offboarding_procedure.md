@@ -41,10 +41,10 @@ docker compose exec postgres psql -U myapp_user -d myapp_db -c \
 
 ```bash
 # Collaboratorから削除
-gh api -X DELETE repos/shingo-ops/astro-webapp/collaborators/<GitHubユーザー名>
+gh api -X DELETE repos/shingo-ops/salesanchor/collaborators/<GitHubユーザー名>
 
 # 確認
-gh api repos/shingo-ops/astro-webapp/collaborators --jq '.[].login'
+gh api repos/shingo-ops/salesanchor/collaborators --jq '.[].login'
 ```
 
 ### 4. Firebase / GCPプロジェクトからの削除

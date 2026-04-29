@@ -3,11 +3,11 @@
 # 障害時にバックアップからデータベースを復元する
 #
 # 使い方:
-#   bash /home/ubuntu/astro-webapp/scripts/restore.sh /home/ubuntu/backups/postgres/jarvis_db_20260410_030000.sql.gz
+#   bash /home/ubuntu/salesanchor/scripts/restore.sh /home/ubuntu/backups/postgres/jarvis_db_20260410_030000.sql.gz
 
 set -euo pipefail
 
-COMPOSE_FILE="/home/ubuntu/astro-webapp/docker-compose.yml"
+COMPOSE_FILE="/home/ubuntu/salesanchor/docker-compose.yml"
 DB_USER="${POSTGRES_USER:-jarvis}"
 DB_NAME="${POSTGRES_DB:-jarvis_db}"
 
