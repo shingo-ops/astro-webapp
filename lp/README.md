@@ -87,9 +87,16 @@ rsync -avz --delete dist/ ubuntu@49.212.137.46:/var/www/salesanchor/
 
 `docker compose up -d --no-deps nginx` で反映。
 
+## og-image の再生成
+
+`lp/public/og-image.png` は暫定ロゴ + テキストの簡易版（Meta Blue 系統、1200×630、PNG）。デザインを差し替えたい場合は `lp/scripts/og-image.html` を編集 → ヘッドレスブラウザで 1200×630 ビューポートにレンダリング → スクリーンショット保存、で再生成できます。Playwright / Puppeteer / 手動ブラウザの開発者ツールいずれの方法でも可。
+
+Meta App Review 通過後に正式デザインへ差し替え予定。
+
 ## TODO
 
-- [ ] og-image.png 作成（1200×630, ロゴ + キャッチコピー）
+- [x] og-image.png 作成（1200×630, ロゴ + キャッチコピーの暫定版）
+- [ ] og-image を正式デザインに差し替え（Meta App Review 通過後）
 - [ ] 4 ページの本文を `【...】` プレースホルダから実コンテンツに差し替え
 - [ ] Lighthouse でパフォーマンス・アクセシビリティ・SEO を 90 点以上に
 - [ ] GitHub Actions deploy ジョブ追加
