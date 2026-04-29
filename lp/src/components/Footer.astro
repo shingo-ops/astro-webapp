@@ -1,0 +1,50 @@
+---
+const year = new Date().getFullYear();
+
+const legalLinks = [
+  { href: '/privacy', label: 'プライバシーポリシー' },
+  { href: '/terms', label: '利用規約' },
+  { href: '/data-deletion', label: 'データ削除について' },
+];
+---
+
+<footer class="bg-gray-50 border-t border-gray-200">
+  <div class="max-w-6xl mx-auto px-4 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div>
+        <p class="font-bold text-brand-900 text-lg">SalesAnchor</p>
+        <p class="mt-2 text-sm text-gray-600">
+          TCG 輸出業者のための統合 CRM
+        </p>
+      </div>
+
+      <div>
+        <p class="font-semibold text-gray-900 text-sm">運営者情報</p>
+        <ul class="mt-2 space-y-1 text-sm text-gray-600">
+          <li>HIGH LIFE JPN</li>
+          <li>代表: Shingo Tanizawa</li>
+          <li>連絡先: support@salesanchor.jp</li>
+        </ul>
+      </div>
+
+      <div>
+        <p class="font-semibold text-gray-900 text-sm">リーガル</p>
+        <ul class="mt-2 space-y-1">
+          {
+            legalLinks.map((link) => (
+              <li>
+                <a href={link.href} class="text-sm text-gray-600 hover:text-brand-600 no-underline">
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-12 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
+      &copy; {year} HIGH LIFE JPN. All rights reserved.
+    </div>
+  </div>
+</footer>

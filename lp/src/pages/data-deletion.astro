@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="データ削除について"
+  description="SalesAnchor で扱う個人情報の削除リクエスト方法をご案内します。Meta 経由・メール経由の 2 通りに対応。"
+>
+  <article class="prose prose-slate max-w-3xl mx-auto px-4 py-12">
+    <h1>データ削除について</h1>
+
+    <p class="lead text-lg text-gray-700">
+      SalesAnchor は、お客様のご請求に応じて速やかに個人情報を削除します。
+    </p>
+
+    <h2>削除リクエストの 2 つの方法</h2>
+
+    <h3>方法 1: Meta（Facebook / Instagram）経由</h3>
+    <p>
+      Facebook / Instagram のアプリ設定から SalesAnchor との連携を解除すると、
+      自動的に削除リクエストが SalesAnchor に届きます。
+    </p>
+    <ol>
+      <li>
+        Facebook の場合: 設定 → セキュリティとログイン → アプリとウェブサイト
+        → SalesAnchor を選択 → 「削除」
+      </li>
+      <li>
+        Instagram の場合: 設定 → セキュリティ → アプリとウェブサイト
+        → SalesAnchor を選択 → 「削除」
+      </li>
+    </ol>
+    <p>
+      削除リクエストを受信後、確認コード（<code>DEL-YYYYMMDD-xxxx</code>）を発行し、
+      30 日以内に削除を完了します。
+    </p>
+
+    <h3>方法 2: メール経由</h3>
+    <p>
+      <a href="mailto:support@salesanchor.jp?subject=データ削除リクエスト">
+        support@salesanchor.jp
+      </a>
+      宛に「データ削除リクエスト」と明記してメールをお送りください。
+    </p>
+    <p>必要な情報:</p>
+    <ul>
+      <li>お名前</li>
+      <li>削除を希望するアカウント情報（メールアドレス・電話番号など）</li>
+      <li>SalesAnchor を利用していたサービス（Messenger / Instagram / LINE 等）</li>
+    </ul>
+
+    <h2>削除完了の確認方法</h2>
+    <p>
+      確認コードを受け取った場合、以下のページで進捗を確認できます。
+    </p>
+    <p>
+      <a href="https://api.salesanchor.jp/deletion-status">
+        https://api.salesanchor.jp/deletion-status?code=【お客様の確認コード】
+      </a>
+    </p>
+
+    <h2>削除されるデータ</h2>
+    <ul>
+      <li>会話履歴（Messenger / Instagram / LINE / Discord / メール）</li>
+      <li>連絡先情報（氏名・電話番号・メール・住所）</li>
+      <li>注文履歴（個人を特定できる情報）</li>
+      <li>取引にひもづく問い合わせ・サポート履歴</li>
+    </ul>
+
+    <h2>削除されないデータ</h2>
+    <ul>
+      <li>法令により保管が義務付けられているデータ（請求書・税務記録 等）</li>
+      <li>個人を特定できない統計データ・集計データ</li>
+    </ul>
+
+    <h2>削除完了までの期間</h2>
+    <p>
+      原則として削除リクエスト受領から <strong>30 日以内</strong> に完了します。
+      法令上の保管義務がある情報は、義務期間経過後に自動削除されます。
+    </p>
+
+    <h2>お問い合わせ</h2>
+    <p>
+      ご不明な点は、<a href="mailto:support@salesanchor.jp">support@salesanchor.jp</a>
+      までお気軽にお問い合わせください。
+    </p>
+  </article>
+</BaseLayout>
