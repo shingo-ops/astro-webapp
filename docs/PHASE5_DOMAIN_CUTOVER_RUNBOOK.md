@@ -26,21 +26,28 @@ ssh ubuntu@49.212.137.46
 
 ### 1-2. SSL 証明書の存在確認
 
-新ドメインの証明書ディレクトリが存在することを確認:
+⚠️ **重要**: 証明書はホストの `/etc/letsencrypt/live/` ではなく、**`/home/ubuntu/salesanchor/certbot/conf/live/`** に格納されています（docker-compose.yml の `./certbot/conf:/etc/letsencrypt` bind mount により、コンテナ内ではのみ `/etc/letsencrypt` に見える）。
+
+ホスト側で確認する場合:
 
 ```
-sudo ls /etc/letsencrypt/live/app.salesanchor.jp/
+sudo ls /home/ubuntu/salesanchor/certbot/conf/live/
 ```
 
-期待される出力: `cert.pem  chain.pem  fullchain.pem  privkey.pem  README`
+期待される出力（4 ドメイン分のディレクトリ）:
+```
+README  api.salesanchor.jp  app.salesanchor.jp  jarvis-claude.uk  salesanchor.jp
+```
+
+または certbot コンテナで `certificates` サブコマンド（最も信頼できる方法）:
 
 ```
-sudo ls /etc/letsencrypt/live/api.salesanchor.jp/
+docker compose run --rm certbot certificates
 ```
 
-同上が表示されれば OK。
+各証明書の有効期限まで確認できる。
 
-**もし「No such file or directory」が出たら**: certbot で証明書発行が必要。下記 1-2-A を実施。
+**もし新ドメインの証明書が存在しない場合**: certbot で発行が必要。下記 1-2-A を実施。
 
 #### 1-2-A. 証明書発行（必要な場合のみ、デッドロック回避手順あり）
 
