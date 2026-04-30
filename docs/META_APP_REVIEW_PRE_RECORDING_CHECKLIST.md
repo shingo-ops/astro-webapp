@@ -167,7 +167,7 @@ docker compose logs backend | grep -i "webhook" | tail -20
 
 ## C. テストアカウント / テストデータ準備
 
-### C-1. SalesAnchor アカウント
+### C-1. Sales Anchor アカウント
 
 - [ ] `review@salesanchor.jp` (Owner ロール) を本番 DB に作成済
   ```sql
@@ -192,7 +192,7 @@ docker compose logs backend | grep -i "webhook" | tail -20
 ```
 [D-1 = 撮影前日]
 1. Test User 2 (Sender) → Test Page Messenger で DM 送信: "Test message for human agent tag scene"
-2. SalesAnchor Inbox に着信確認
+2. Sales Anchor Inbox に着信確認
 3. 何もしないで放置
 
 [D = 撮影当日 / 25h 経過後]
@@ -239,7 +239,7 @@ ORDER BY id DESC LIMIT 1;
 - [ ] DevTools 閉じる
 - [ ] 履歴・自動入力候補をクリア（撮影中に Email 候補ポップアップを防ぐ）
 - [ ] 開く必要のあるタブ:
-  - SalesAnchor (`https://app.salesanchor.jp/login`)
+  - Sales Anchor (`https://app.salesanchor.jp/login`)
   - Messenger Web (`https://www.messenger.com`)
   - Instagram Web (`https://www.instagram.com`)
   - Meta Developer Portal (撮影中に開く前提)

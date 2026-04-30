@@ -96,6 +96,33 @@ export interface SendMessageResponse {
 export type PlatformFilter = "all" | "messenger" | "instagram";
 
 // ---------------------------------------------------------------------------
+// 表示ヘルパ（Phase 1-E F24-S5: platform 推論を一箇所に集約）
+// ---------------------------------------------------------------------------
+
+/**
+ * lead 情報と conversation 情報から platform を推論する。
+ *
+ * GET /messages レスポンスの `lead.platform` を最優先、なければ会話一覧の
+ * `conversation.platform` を fallback する。両方とも null なら null を返す。
+ *
+ * Phase 1-E F24-S5: InboxPage の `messagesData?.lead?.platform || selectedConversation?.platform`
+ * 散在を解消するため lib/messages.ts に集約。
+ */
+export function inferPlatform(
+  lead: { platform: string | null } | null | undefined,
+  conversation: { platform: string | null } | null | undefined,
+): string | null {
+  return lead?.platform ?? conversation?.platform ?? null;
+}
+
+/** platform 値を表示ラベルに正規化。 */
+export function platformLabel(p: string | null): string {
+  if (p === "messenger") return "Messenger";
+  if (p === "instagram") return "Instagram";
+  return p || "—";
+}
+
+// ---------------------------------------------------------------------------
 // API ヘルパ
 // ---------------------------------------------------------------------------
 

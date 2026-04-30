@@ -1,0 +1,272 @@
+{
+  "messenger_within_24h": {
+    "messages": [
+      {
+        "id": 9001,
+        "platform": "messenger",
+        "sender_id": "PSID-sender-001",
+        "sender_name": "Taro Sender",
+        "message_text": "Hello, I'd like to ask about your products.",
+        "direction": "inbound",
+        "message_id": "mid.messenger.001",
+        "recipient_id": "PAGE-100",
+        "messaging_type": null,
+        "message_tag": null,
+        "sent_by_staff_id": null,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": null,
+        "seen_by_staff_id": null,
+        "created_at": "2026-04-30T10:55:00+00:00"
+      }
+    ],
+    "lead": {
+      "id": 5001,
+      "lead_code": "LEAD-2026-0501",
+      "customer_name": "Taro Sender",
+      "platform": "messenger",
+      "source": "messenger"
+    },
+    "messaging_window": {
+      "last_inbound_at": "2026-04-30T10:55:00+00:00",
+      "expires_at": "2026-05-01T10:55:00+00:00",
+      "can_send_response": true,
+      "requires_human_agent_tag": false,
+      "can_send_at_all": true
+    }
+  },
+  "messenger_after_send": {
+    "messages": [
+      {
+        "id": 9001,
+        "platform": "messenger",
+        "sender_id": "PSID-sender-001",
+        "sender_name": "Taro Sender",
+        "message_text": "Hello, I'd like to ask about your products.",
+        "direction": "inbound",
+        "message_id": "mid.messenger.001",
+        "recipient_id": "PAGE-100",
+        "messaging_type": null,
+        "message_tag": null,
+        "sent_by_staff_id": null,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": "2026-04-30T11:00:00+00:00",
+        "seen_by_staff_id": 1,
+        "created_at": "2026-04-30T10:55:00+00:00"
+      },
+      {
+        "id": 9002,
+        "platform": "messenger",
+        "sender_id": "PAGE-100",
+        "sender_name": "HIGH LIFE JPN Test Page",
+        "message_text": "Hi! Thank you for reaching out. Our products are listed on our website. Could you share which category interests you?",
+        "direction": "outbound",
+        "message_id": "mid.messenger.002",
+        "recipient_id": "PSID-sender-001",
+        "messaging_type": "RESPONSE",
+        "message_tag": null,
+        "sent_by_staff_id": 1,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": null,
+        "seen_by_staff_id": null,
+        "created_at": "2026-04-30T11:01:00+00:00"
+      }
+    ],
+    "lead": {
+      "id": 5001,
+      "lead_code": "LEAD-2026-0501",
+      "customer_name": "Taro Sender",
+      "platform": "messenger",
+      "source": "messenger"
+    },
+    "messaging_window": {
+      "last_inbound_at": "2026-04-30T10:55:00+00:00",
+      "expires_at": "2026-05-01T10:55:00+00:00",
+      "can_send_response": true,
+      "requires_human_agent_tag": false,
+      "can_send_at_all": true
+    }
+  },
+  "instagram_within_24h": {
+    "messages": [
+      {
+        "id": 9101,
+        "platform": "instagram",
+        "sender_id": "IG-sender-001",
+        "sender_name": "Hanako Insta",
+        "message_text": "Hi, do you ship internationally?",
+        "direction": "inbound",
+        "message_id": "mid.instagram.001",
+        "recipient_id": "IG-BIZ-200",
+        "messaging_type": null,
+        "message_tag": null,
+        "sent_by_staff_id": null,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": null,
+        "seen_by_staff_id": null,
+        "created_at": "2026-04-30T10:50:00+00:00"
+      }
+    ],
+    "lead": {
+      "id": 5002,
+      "lead_code": "LEAD-2026-0502",
+      "customer_name": "Hanako Insta",
+      "platform": "instagram",
+      "source": "instagram"
+    },
+    "messaging_window": {
+      "last_inbound_at": "2026-04-30T10:50:00+00:00",
+      "expires_at": "2026-05-01T10:50:00+00:00",
+      "can_send_response": true,
+      "requires_human_agent_tag": false,
+      "can_send_at_all": true
+    }
+  },
+  "instagram_after_send": {
+    "messages": [
+      {
+        "id": 9101,
+        "platform": "instagram",
+        "sender_id": "IG-sender-001",
+        "sender_name": "Hanako Insta",
+        "message_text": "Hi, do you ship internationally?",
+        "direction": "inbound",
+        "message_id": "mid.instagram.001",
+        "recipient_id": "IG-BIZ-200",
+        "messaging_type": null,
+        "message_tag": null,
+        "sent_by_staff_id": null,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": "2026-04-30T11:00:00+00:00",
+        "seen_by_staff_id": 1,
+        "created_at": "2026-04-30T10:50:00+00:00"
+      },
+      {
+        "id": 9102,
+        "platform": "instagram",
+        "sender_id": "IG-BIZ-200",
+        "sender_name": "@highlifejpn_test",
+        "message_text": "Yes! We ship to over 30 countries. Please share your country and we'll provide shipping options.",
+        "direction": "outbound",
+        "message_id": "mid.instagram.002",
+        "recipient_id": "IG-sender-001",
+        "messaging_type": "RESPONSE",
+        "message_tag": null,
+        "sent_by_staff_id": 1,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": null,
+        "seen_by_staff_id": null,
+        "created_at": "2026-04-30T11:02:00+00:00"
+      }
+    ],
+    "lead": {
+      "id": 5002,
+      "lead_code": "LEAD-2026-0502",
+      "customer_name": "Hanako Insta",
+      "platform": "instagram",
+      "source": "instagram"
+    },
+    "messaging_window": {
+      "last_inbound_at": "2026-04-30T10:50:00+00:00",
+      "expires_at": "2026-05-01T10:50:00+00:00",
+      "can_send_response": true,
+      "requires_human_agent_tag": false,
+      "can_send_at_all": true
+    }
+  },
+  "human_agent_tag_window": {
+    "messages": [
+      {
+        "id": 9201,
+        "platform": "messenger",
+        "sender_id": "PSID-late-001",
+        "sender_name": "Late Reply Customer",
+        "message_text": "Are your products still in stock?",
+        "direction": "inbound",
+        "message_id": "mid.late.001",
+        "recipient_id": "PAGE-100",
+        "messaging_type": null,
+        "message_tag": null,
+        "sent_by_staff_id": null,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": null,
+        "seen_by_staff_id": null,
+        "created_at": "2026-04-29T08:00:00+00:00"
+      }
+    ],
+    "lead": {
+      "id": 5003,
+      "lead_code": "LEAD-2026-0503",
+      "customer_name": "Late Reply Customer",
+      "platform": "messenger",
+      "source": "messenger"
+    },
+    "messaging_window": {
+      "last_inbound_at": "2026-04-29T08:00:00+00:00",
+      "expires_at": "2026-04-30T08:00:00+00:00",
+      "can_send_response": false,
+      "requires_human_agent_tag": true,
+      "can_send_at_all": true
+    }
+  },
+  "human_agent_tag_after_send": {
+    "messages": [
+      {
+        "id": 9201,
+        "platform": "messenger",
+        "sender_id": "PSID-late-001",
+        "sender_name": "Late Reply Customer",
+        "message_text": "Are your products still in stock?",
+        "direction": "inbound",
+        "message_id": "mid.late.001",
+        "recipient_id": "PAGE-100",
+        "messaging_type": null,
+        "message_tag": null,
+        "sent_by_staff_id": null,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": "2026-04-30T11:00:00+00:00",
+        "seen_by_staff_id": 1,
+        "created_at": "2026-04-29T08:00:00+00:00"
+      },
+      {
+        "id": 9202,
+        "platform": "messenger",
+        "sender_id": "PAGE-100",
+        "sender_name": "HIGH LIFE JPN Test Page",
+        "message_text": "Sorry for the late reply! Our team had a one-day off. Are you still interested in our products?",
+        "direction": "outbound",
+        "message_id": "mid.late.002",
+        "recipient_id": "PSID-late-001",
+        "messaging_type": "MESSAGE_TAG",
+        "message_tag": "HUMAN_AGENT",
+        "sent_by_staff_id": 1,
+        "error_code": null,
+        "error_message": null,
+        "seen_at": null,
+        "seen_by_staff_id": null,
+        "created_at": "2026-04-30T11:05:00+00:00"
+      }
+    ],
+    "lead": {
+      "id": 5003,
+      "lead_code": "LEAD-2026-0503",
+      "customer_name": "Late Reply Customer",
+      "platform": "messenger",
+      "source": "messenger"
+    },
+    "messaging_window": {
+      "last_inbound_at": "2026-04-29T08:00:00+00:00",
+      "expires_at": "2026-04-30T08:00:00+00:00",
+      "can_send_response": false,
+      "requires_human_agent_tag": true,
+      "can_send_at_all": true
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "empty": {
+    "channels": []
+  },
+  "with_high_life_jpn": {
+    "channels": [
+      {
+        "page_id": "100000000000100",
+        "page_name": "HIGH LIFE JPN Test Page",
+        "instagram_business_account_id": "17841400000000200",
+        "instagram_username": "highlifejpn_test",
+        "is_active": true,
+        "connected_at": "2026-04-30T10:30:00+00:00",
+        "page_token_expires_at": "2026-06-29T10:30:00+00:00",
+        "connected_by_staff_id": 1,
+        "connected_by_staff_name": "E2E Test User"
+      }
+    ]
+  }
+}

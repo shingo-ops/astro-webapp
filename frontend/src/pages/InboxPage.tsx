@@ -36,8 +36,10 @@ import {
   MessagingWindow,
   PlatformFilter,
   getMessages,
+  inferPlatform,
   listConversations,
   markRead as apiMarkRead,
+  platformLabel as libPlatformLabel,
   sendMessage,
 } from "../lib/messages";
 
@@ -83,11 +85,8 @@ function formatAbsolute(iso: string | null): string {
   });
 }
 
-function platformLabel(p: string | null): string {
-  if (p === "messenger") return "Messenger";
-  if (p === "instagram") return "Instagram";
-  return p || "—";
-}
+// Phase 1-E F24-S5: lib/messages.ts の libPlatformLabel に集約。後方互換のため alias 維持。
+const platformLabel = libPlatformLabel;
 
 function platformBadgeStyle(p: string | null): React.CSSProperties {
   if (p === "messenger") {
@@ -200,10 +199,17 @@ export default function InboxPage() {
 
   // ---------------------------------------------------------------------------
   // 10s polling（会話リスト + 選択中メッセージ）
+  // Phase 1-E F13-S5: 送信成功直後の loadMessages と polling の二重取得を回避するため、
+  // 送信時に skipNextPollRef = true を立て、次の 1 回だけ polling を skip する
   // ---------------------------------------------------------------------------
+  const skipNextPollRef = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => {
+      if (skipNextPollRef.current) {
+        skipNextPollRef.current = false;
+        return;
+      }
       loadConversations();
       if (selectedLeadId !== null) {
         loadMessages(selectedLeadId);
@@ -266,6 +272,8 @@ export default function InboxPage() {
       });
       setDraft("");
       // 成功直後に即座にメッセージ再取得（楽観的更新ではなく確実な再描画）
+      // Phase 1-E F13-S5: 直後の polling 1 回を skip して二重取得を回避
+      skipNextPollRef.current = true;
       await loadMessages(selectedLeadId);
       // 会話リストも更新（最終メッセージ要約 / 並び順反映）
       loadConversations();
@@ -512,10 +520,10 @@ export default function InboxPage() {
                       padding: "2px 6px",
                       borderRadius: 3,
                       border: "1px solid",
-                      ...platformBadgeStyle(messagesData?.lead?.platform || selectedConversation?.platform || null),
+                      ...platformBadgeStyle(inferPlatform(messagesData?.lead, selectedConversation)),
                     }}
                   >
-                    {platformLabel(messagesData?.lead?.platform || selectedConversation?.platform || null)}
+                    {platformLabel(inferPlatform(messagesData?.lead, selectedConversation))}
                   </span>
                 </div>
               </div>
@@ -556,6 +564,11 @@ export default function InboxPage() {
               )}
               {messagesData?.messages.map(msg => {
                 const outbound = msg.direction === "outbound";
+                // Phase 1-E F12-S5: error_code が設定されたメッセージは送信失敗扱い
+                // (現状の Sprint 5 実装では送信失敗時に INSERT しない設計だが、
+                // 将来 retry queue 化したとき or 既存 error_code 列を持つ
+                // メッセージへの defensive UI として赤枠を表示する)
+                const failed = !!msg.error_code;
                 return (
                   <div
                     key={msg.id}
@@ -565,20 +578,30 @@ export default function InboxPage() {
                     }}
                   >
                     <div
+                      role={failed ? "alert" : undefined}
                       style={{
                         maxWidth: "70%",
                         padding: "8px 12px",
                         borderRadius: 12,
-                        background: outbound ? "#1a73e8" : "#f1f3f4",
-                        color: outbound ? "#fff" : "var(--text-primary, #202124)",
+                        background: failed
+                          ? "#fdecea"
+                          : outbound ? "#1a73e8" : "#f1f3f4",
+                        color: failed
+                          ? "#a50e0e"
+                          : outbound ? "#fff" : "var(--text-primary, #202124)",
                         borderTopRightRadius: outbound ? 4 : 12,
                         borderTopLeftRadius: outbound ? 12 : 4,
+                        border: failed ? "2px solid #a50e0e" : "none",
                         wordBreak: "break-word",
                         whiteSpace: "pre-wrap",
                       }}
-                      title={formatAbsolute(msg.created_at)}
+                      title={
+                        failed
+                          ? `送信失敗: ${msg.error_code}${msg.error_message ? ` — ${msg.error_message}` : ""}`
+                          : formatAbsolute(msg.created_at)
+                      }
                     >
-                      {msg.message_tag && (
+                      {msg.message_tag && !failed && (
                         <div
                           style={{
                             fontSize: "0.7rem",
@@ -588,6 +611,17 @@ export default function InboxPage() {
                           }}
                         >
                           {msg.message_tag === "HUMAN_AGENT" ? "Human Agent" : msg.message_tag}
+                        </div>
+                      )}
+                      {failed && (
+                        <div
+                          style={{
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                            marginBottom: 4,
+                          }}
+                        >
+                          ⚠ 送信失敗 ({msg.error_code})
                         </div>
                       )}
                       <div>{msg.message_text || "(本文なし)"}</div>

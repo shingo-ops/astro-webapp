@@ -241,6 +241,28 @@ OAuth 接続イベント (`meta.connect.start`, `meta.connect.callback`, `meta.c
 |---|---|---|
 | `frontend/src/lib/messages.ts` | 5 | 会話・メッセージ・送信 API のラッパ集約 |
 
+### 6-2. OAuth callback URL パラメータ仕様（Phase 1-E F22-S3 で明文化）
+
+`OAuthCallbackPage` (`/channels/oauth/callback`) は backend の callback endpoint
+からの redirect query parameter を解釈して、`/channels?status=...` に再 navigate する。
+
+| status | 追加パラメータ | 意味 | UI 挙動 |
+|---|---|---|---|
+| `connected` | `page_name`, `count` | 全 Page 接続成功 | 緑バナー「N 件接続成功」 |
+| `partial` | `succeeded`, `failed`, `failed_pages` | 一部 Page で接続失敗 | 黄バナー「N 件成功 / N 件失敗」+ 失敗 Page 名 |
+| `error` | `reason` | OAuth フロー全体が失敗 | 赤バナー、reason の英文を日本語マップで表示 |
+
+**reason 値の例**:
+- `state_mismatch`: CSRF state token 不一致
+- `no_pages`: `/me/accounts` 結果が空（Page 管理権限なし）
+- `meta_api_error`: Graph API 呼び出し失敗
+- `internal_error`: 予期しない例外
+
+URL は `history.replaceState` で即座にクリーンアップされ、ブラウザバック時に
+処理が再実行されない設計（StrictMode 二重マウント対策の `inFlight` ref と併用）。
+
+実装: `frontend/src/pages/OAuthCallbackPage.tsx`
+
 ---
 
 ## 7. テスト一覧
