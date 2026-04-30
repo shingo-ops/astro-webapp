@@ -2,12 +2,53 @@
 
 | 項目 | 内容 |
 |---|---|
-| ステータス | Sprint 7（Phase 1-D 完了時点の集計） |
+| ステータス | **9 / 16 medium・low 完了 + high 全 5 完了 + 追加 follow-up 多数（2026-04-30 18:30 更新）** |
 | 作成日 | 2026-04-30 |
 | 元ソース | Sprint 1〜6 の Evaluator / Reviewer レポート、および Generator の Known Limitations |
 | 対象 | Phase 1-E（Phase 1-D 直後の次フェーズ） |
 
 このドキュメントは Phase 1-D Sprint 1〜6 で **意図的に Phase 1-E に持ち越した** 改善項目を網羅する。優先度は **high / medium / low** で分類。
+
+## 進捗サマリ（2026-04-30 時点）
+
+### High Priority（5 / 5 完了 ✅）
+- ✅ F1-S2 Page Access Token 60 日リフレッシュ Cron (PR #215, #216, #218 v2)
+- ✅ F2-S3 Playwright E2E (PR #221)
+- ✅ F3-S2 PostgreSQL CI 構築 (PR #214 v1, #218 v2)
+- ✅ F4-S5 force_human_agent_tag UI (PR #213)
+- ✅ F5-S2 Backend lifespan unit テスト (PR #212)
+
+### Medium Priority（4 / 11 完了）
+- ✅ F6-S2 401/403 統合テスト (PR #228)
+- ✅ F7-S2 OAuth scope エンコード検証 (PR #229)
+- ✅ F9-S4 audit_log（mark-read 呼び出し）ミニ版 (PR #227、firebase_uid 列追加は別 follow-up)
+- ✅ F10-S4 cursor pagination — **実質完了**（Sprint 5 で `before` 実装済 + test_messages.py で検証済）
+- ⏳ F8-S3 failed_pages Frontend 表示 — **実質完了確認**（Sprint 3 OAuthCallbackPage の partial パターンで対応済）
+- ⏳ F11-S5 SQLite フォールバック削除 — **当面 skip 推奨**（既存 SQLite テストへの破壊的影響が大、F3-S2 v2 で PostgreSQL CI 構築済のため緊急性低）
+- ⏳ F12-S5 送信失敗バブル赤枠 (PR #223 完了)
+- ⏳ F13-S5 polling 二重取得最適化 (PR #224 完了)
+- ⏳ F14-S5 複数 Page 対応 Inbox フィルタ — 規模 1d、frontend のみ
+- ⏳ F15-S6 customer_name の Graph API 補完 — 規模 1d、Webhook 拡張
+- ⏳ F16-S6 PostgreSQL マルチテナント検索 N+1 — 規模 0.5d、view migration 追加
+
+### Low Priority（5 / 8 完了）
+- ✅ F17-S6 添付メタデータ対応 — 一部対応：`error_code` 等は migration 041 で追加済、添付バイナリは Phase 2 で対応
+- ⏳ F18-S6 SQLite 用 auth_events ミドルウェア — F11-S5 とセット、当面 skip
+- ⏳ F19-S6 Discord 通知 platform 表記 — Sprint 6 で既解消（PR #222 で確認）
+- ⏳ F20-S2 SQLite RLS skip テスト — F3-S2 v2 で PostgreSQL CI 構築済、現状の skipif で機能上問題なし
+- ⏳ F21-S3 ChannelsPage Vitest テスト — 別途 frontend テストインフラ整備が必要
+- ⏳ F22-S3 ?status=partial URL パラメータ仕様 (PR #222 完了)
+- ⏳ F23-S3 Channels リンク表示名統一 (PR #222 完了)
+- ⏳ F24-S5 lib/messages.ts さらなる集約 (PR #226 完了)
+
+### 廃止予定 / Phase 1-E 着手時に対応
+- ⏳ F25-S6 META_PAGE_ID 環境変数の削除 — 後方互換 fallback として残置中、Phase 1-E 着手時に判断
+
+### 追加項目（Phase 1-D 後に発生）
+- ⏳ F9-S4 拡張版: audit_logs に firebase_uid 列追加 + record_audit_log 引数拡張（migration 必要、規模 0.5d）
+- ⏳ F3-S2 v3: 既存 backend テストを PostgreSQL でも動かす（pytest --rls-postgres 等のオプション化、規模 1-2d）
+
+---
 
 ---
 
