@@ -556,6 +556,11 @@ export default function InboxPage() {
               )}
               {messagesData?.messages.map(msg => {
                 const outbound = msg.direction === "outbound";
+                // Phase 1-E F12-S5: error_code が設定されたメッセージは送信失敗扱い
+                // (現状の Sprint 5 実装では送信失敗時に INSERT しない設計だが、
+                // 将来 retry queue 化したとき or 既存 error_code 列を持つ
+                // メッセージへの defensive UI として赤枠を表示する)
+                const failed = !!msg.error_code;
                 return (
                   <div
                     key={msg.id}
@@ -565,20 +570,30 @@ export default function InboxPage() {
                     }}
                   >
                     <div
+                      role={failed ? "alert" : undefined}
                       style={{
                         maxWidth: "70%",
                         padding: "8px 12px",
                         borderRadius: 12,
-                        background: outbound ? "#1a73e8" : "#f1f3f4",
-                        color: outbound ? "#fff" : "var(--text-primary, #202124)",
+                        background: failed
+                          ? "#fdecea"
+                          : outbound ? "#1a73e8" : "#f1f3f4",
+                        color: failed
+                          ? "#a50e0e"
+                          : outbound ? "#fff" : "var(--text-primary, #202124)",
                         borderTopRightRadius: outbound ? 4 : 12,
                         borderTopLeftRadius: outbound ? 12 : 4,
+                        border: failed ? "2px solid #a50e0e" : "none",
                         wordBreak: "break-word",
                         whiteSpace: "pre-wrap",
                       }}
-                      title={formatAbsolute(msg.created_at)}
+                      title={
+                        failed
+                          ? `送信失敗: ${msg.error_code}${msg.error_message ? ` — ${msg.error_message}` : ""}`
+                          : formatAbsolute(msg.created_at)
+                      }
                     >
-                      {msg.message_tag && (
+                      {msg.message_tag && !failed && (
                         <div
                           style={{
                             fontSize: "0.7rem",
@@ -588,6 +603,17 @@ export default function InboxPage() {
                           }}
                         >
                           {msg.message_tag === "HUMAN_AGENT" ? "Human Agent" : msg.message_tag}
+                        </div>
+                      )}
+                      {failed && (
+                        <div
+                          style={{
+                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                            marginBottom: 4,
+                          }}
+                        >
+                          ⚠ 送信失敗 ({msg.error_code})
                         </div>
                       )}
                       <div>{msg.message_text || "(本文なし)"}</div>
