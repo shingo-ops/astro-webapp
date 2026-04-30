@@ -22,6 +22,7 @@ celery_app = Celery(
         "app.tasks.dashboard",
         "app.tasks.data_deletion",
         "app.tasks.maintenance",
+        "app.tasks.refresh_meta_tokens",
         "app.tasks.reports",
     ],
 )
@@ -52,5 +53,10 @@ celery_app.conf.beat_schedule = {
     "archive-old-audit-logs": {
         "task": "app.tasks.maintenance.archive_audit_logs",
         "schedule": crontab(hour=4, minute=0),
+    },
+    # Meta Page Access Token を毎日AM3:00 JSTにリフレッシュ（Phase 1-E F1-S2）
+    "refresh-meta-page-tokens": {
+        "task": "app.tasks.refresh_meta_tokens.refresh_all_meta_page_tokens",
+        "schedule": crontab(hour=3, minute=0),
     },
 }
