@@ -708,3 +708,159 @@ async def list_channels(
         for row in rows
     ]
     return {"channels": channels}
+
+
+# ---------------------------------------------------------------------------
+# GET /conversations — 会話一覧（spec §5-3）
+# ---------------------------------------------------------------------------
+
+
+def _parse_iso_to_aware(value) -> Optional[datetime]:
+    """datetime / 文字列 / None → tz-aware datetime（UTC 仮定）に正規化。
+
+    SQLite は TIMESTAMP 列を str で返すことがあるため、両方扱えるようにする。
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+    # 文字列パース
+    s = str(value).strip()
+    if not s:
+        return None
+    # SQLite の "2026-04-30 12:00:00+00:00" 形式を ISO 形式に寄せる
+    s_iso = s.replace(" ", "T", 1)
+    try:
+        dt = datetime.fromisoformat(s_iso)
+    except ValueError:
+        # "+00:00" 等が無いケースは UTC 仮定
+        try:
+            dt = datetime.fromisoformat(s_iso + "+00:00")
+        except ValueError:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _compute_window_expires(last_inbound_at: Optional[datetime]) -> Optional[str]:
+    """last_inbound_at + 24h を ISO 文字列で返す（None 入力なら None）。"""
+    if last_inbound_at is None:
+        return None
+    return (last_inbound_at + timedelta(hours=24)).isoformat()
+
+
+@router.get(
+    "/conversations",
+    dependencies=[Depends(require_permission("messaging.view"))],
+)
+async def list_conversations(
+    platform: str = Query("all", pattern="^(all|messenger|instagram)$"),
+    unread_only: bool = Query(False),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    tenant_id: int = Depends(get_current_tenant),
+    db: AsyncSession = Depends(get_db),
+):
+    """会話一覧（lead 単位で集約）を返す（spec §5-3）。
+
+    返却フィールド:
+        lead_id, lead_code, customer_name, platform, page_id,
+        last_message_text, last_message_at, last_message_direction,
+        unread_count, messaging_window_expires_at
+
+    並び順: `last_message_at DESC`（最新会話が先）。
+    pagination: limit/offset。Spec §5-3 では cursor も触れるが、MVP は offset 方式で十分。
+
+    tenant 分離は RLS（PostgreSQL 本番）と SQL の WHERE 句（SQLite テスト）の
+    両方で実施。
+
+    `unread_only=true` の場合、unread_count > 0 の会話のみ返す。
+    `platform` は messenger / instagram / all（既定 all）。
+
+    実装メモ:
+        - meta_messages の DISTINCT lead_id 集約 → 各 lead の最新メッセージ + 未読数
+          を 1 クエリで返すため、相関サブクエリを使う。SQLite / PostgreSQL 双方で
+          動く ANSI 互換の書き方に留める（CTE / window function は使わない）。
+        - leads は LEFT JOIN（meta_messages.lead_id が NULL の行は出さないため
+          INNER で十分だが、leads が削除済の場合 customer_name=NULL で出すため
+          LEFT JOIN しておく）。
+    """
+    where_clauses = ["mm.tenant_id = :tenant_id"]
+    params: dict = {"tenant_id": tenant_id, "limit": limit, "offset": offset}
+
+    if platform != "all":
+        where_clauses.append("mm.platform = :platform")
+        params["platform"] = platform
+
+    where_sql = " AND ".join(where_clauses)
+
+    # 各 lead_id ごとに最新 meta_messages 行を SELECT する。
+    # 相関サブクエリで「同 lead_id の最新 created_at」を引いてくるが、
+    # 単純化のため lead_id ごとに max(created_at) でフィルタする。
+    # NULL lead_id（leads に紐付いていない孤立メッセージ）は除外。
+    sql = f"""
+        SELECT
+            l.id                AS lead_id,
+            l.lead_code         AS lead_code,
+            l.customer_name     AS customer_name,
+            mm.platform         AS platform,
+            mm.message_text     AS last_message_text,
+            mm.direction        AS last_message_direction,
+            mm.created_at       AS last_message_at,
+            (SELECT COUNT(1) FROM meta_messages mm2
+             WHERE mm2.lead_id = mm.lead_id
+               AND mm2.tenant_id = :tenant_id
+               AND mm2.direction = 'inbound'
+               AND mm2.seen_at IS NULL
+            ) AS unread_count,
+            (SELECT MAX(mm3.created_at) FROM meta_messages mm3
+             WHERE mm3.lead_id = mm.lead_id
+               AND mm3.tenant_id = :tenant_id
+               AND mm3.direction = 'inbound'
+            ) AS last_inbound_at
+        FROM meta_messages mm
+        LEFT JOIN leads l ON l.id = mm.lead_id
+        WHERE {where_sql}
+          AND mm.lead_id IS NOT NULL
+          AND mm.created_at = (
+              SELECT MAX(mm_inner.created_at) FROM meta_messages mm_inner
+              WHERE mm_inner.lead_id = mm.lead_id
+                AND mm_inner.tenant_id = :tenant_id
+          )
+        ORDER BY mm.created_at DESC, l.id DESC
+        LIMIT :limit OFFSET :offset
+    """
+
+    try:
+        result = await db.execute(text(sql), params)
+        rows = result.mappings().all()
+    except Exception as e:
+        logger.error("list_conversations 失敗: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="会話一覧の取得に失敗しました",
+        )
+
+    conversations: list[dict] = []
+    for row in rows:
+        unread_count = int(row.get("unread_count") or 0)
+        if unread_only and unread_count <= 0:
+            continue
+        last_inbound_at = _parse_iso_to_aware(row.get("last_inbound_at"))
+        conversations.append({
+            "lead_id": row["lead_id"],
+            "lead_code": row["lead_code"],
+            "customer_name": row["customer_name"],
+            "platform": row["platform"],
+            "last_message_text": row["last_message_text"],
+            "last_message_at": _format_dt(row["last_message_at"]),
+            "last_message_direction": row["last_message_direction"],
+            "unread_count": unread_count,
+            "messaging_window_expires_at": _compute_window_expires(last_inbound_at),
+        })
+
+    return {"conversations": conversations, "next_cursor": None}
