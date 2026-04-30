@@ -18,6 +18,9 @@ celery[redis]>=5.4.0
 python-multipart==0.0.20
 # Discord Gateway worker (ADR-009)
 discord.py==2.4.0
+# Phase 1-D: Fernet 暗号化（Meta Page Access Token の保管）
+# python-jose[cryptography] が transitive に持ち込むが、用途が異なるため直接依存として明示
+cryptography>=42.0.0,<46.0.0
 # テスト用
 pytest==8.3.5
 pytest-asyncio==0.25.3
