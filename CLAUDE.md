@@ -7,6 +7,13 @@
 - 直接 `develop` や `main` にはコミットしないこと
 - feature ブランチの作業が完了したら、必要に応じて `gh pr create` でPRを作成し、レビュー後に `develop` へマージする
 
+### develop → main も PR 経由（必須）
+
+- **develop → main も必ず PR 経由でマージ**する（直 push 禁止）
+- 私（Claude）の作業: `gh pr create --base main --head develop` で PR を作成、しんごさんがマージ
+- main の Branch Protection (Ruleset) で物理的に強制（`docs/BRANCH_PROTECTION_SETUP.md` 参照）
+- 緊急時は admin (しんごさん) のみ bypass 可、bypass 使用は同 doc の §4 に記録すること
+
 ## Git運用ルール
 
 ### 作業開始時
