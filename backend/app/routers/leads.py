@@ -12,7 +12,9 @@ from __future__ import annotations
     （resolver / customer 経路廃止、company_id + contact_id を唯一の正に）
 """
 
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
@@ -465,3 +467,281 @@ async def convert_lead(
     await invalidate_dashboard_cache(tenant_id)
 
     return LeadResponse(**row)
+
+
+# ---------------------------------------------------------------------------
+# Phase 1-D Sprint 4: メッセージ取得 + 既読マーク
+# ---------------------------------------------------------------------------
+#
+# spec §5-4 / §5-6 に従い、Inbox の右ペインで使う endpoints をここに定義する。
+#
+# 設計判断:
+#   - meta_inbox.py（OAuth / Channels）と分離した本ファイルに置く理由は spec §8-2:
+#     "leads.py の既存 CRUD を維持しつつメッセージ周りも leads ドメインに含める"。
+#     URL も /leads/{id}/messages 系列で統一できる。
+#   - SQLite テスト互換を保つため、SQLite に存在しない PostgreSQL 専用機能は
+#     使わない（本 endpoint は単純な SELECT / UPDATE のみ）。
+#   - tenant 分離は RLS（PostgreSQL）に加えて WHERE 句でも tenant_id を必須にし、
+#     SQLite テストでも他テナント漏れを防ぐ。
+
+# 24h / 7d は spec §3-3, §5-4 の messaging window
+_MESSAGING_WINDOW_RESPONSE_HOURS = 24
+_MESSAGING_WINDOW_HUMAN_AGENT_DAYS = 7
+
+
+def _meta_msg_format_dt(value) -> Optional[str]:
+    """meta_messages の datetime / 文字列 / None を ISO 文字列に正規化。
+
+    meta_inbox.py._format_dt と同じ仕様だが、循環 import を避けるため別関数で持つ。
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return str(value)
+
+
+def _meta_msg_parse_aware(value) -> Optional[datetime]:
+    """datetime / 文字列 / None → tz-aware datetime（UTC 仮定）。"""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+    s = str(value).strip()
+    if not s:
+        return None
+    s_iso = s.replace(" ", "T", 1)
+    try:
+        dt = datetime.fromisoformat(s_iso)
+    except ValueError:
+        try:
+            dt = datetime.fromisoformat(s_iso + "+00:00")
+        except ValueError:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _compute_messaging_window(last_inbound_at: Optional[datetime]) -> dict:
+    """spec §5-4 の messaging_window 構造体を組み立てる。
+
+    返却 keys: last_inbound_at, expires_at, can_send_response,
+              requires_human_agent_tag, can_send_at_all
+    """
+    if last_inbound_at is None:
+        # inbound 履歴なし → 24h ルール上は送信不可（Meta 仕様）
+        return {
+            "last_inbound_at": None,
+            "expires_at": None,
+            "can_send_response": False,
+            "requires_human_agent_tag": False,
+            "can_send_at_all": False,
+        }
+    now = datetime.now(timezone.utc)
+    elapsed = now - last_inbound_at
+    expires_at = last_inbound_at + timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
+    can_send_response = elapsed <= timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
+    requires_human_agent = (
+        elapsed > timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
+        and elapsed <= timedelta(days=_MESSAGING_WINDOW_HUMAN_AGENT_DAYS)
+    )
+    can_send_at_all = elapsed <= timedelta(days=_MESSAGING_WINDOW_HUMAN_AGENT_DAYS)
+    return {
+        "last_inbound_at": last_inbound_at.isoformat(),
+        "expires_at": expires_at.isoformat(),
+        "can_send_response": bool(can_send_response),
+        "requires_human_agent_tag": bool(requires_human_agent),
+        "can_send_at_all": bool(can_send_at_all),
+    }
+
+
+@router.get(
+    "/leads/{lead_id}/messages",
+    dependencies=[Depends(require_permission("messaging.view"))],
+)
+async def list_lead_messages(
+    lead_id: int,
+    before: Optional[int] = Query(default=None, description="この id より小さい meta_messages.id を取得"),
+    limit: int = Query(default=50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """指定 lead のメッセージ一覧 + lead 概要 + messaging_window を返す（spec §5-4）。
+
+    並び順: 古い順（created_at ASC, id ASC）— Inbox UI で上から古い順表示するため。
+    pagination: `before=<id>` で『その id より古い id』に絞る（無限スクロール用途）。
+
+    エラー:
+        - lead が同テナントに存在しない → 404
+    """
+    # lead 存在 + tenant 確認（RLS が PostgreSQL でテナント分離するが、SQLite では
+    # WHERE で tenant_id を必須にする）
+    lead_result = await db.execute(
+        text(f"SELECT {_LEAD_COLUMNS} FROM leads WHERE id = :id AND tenant_id = :tenant_id"),
+        {"id": lead_id, "tenant_id": tenant_id},
+    )
+    lead_row = lead_result.mappings().first()
+    if not lead_row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="リードが見つかりません",
+        )
+
+    # messages 取得
+    where = ["lead_id = :lead_id", "tenant_id = :tenant_id"]
+    params: dict = {"lead_id": lead_id, "tenant_id": tenant_id, "limit": limit}
+    if before is not None:
+        where.append("id < :before")
+        params["before"] = before
+    where_sql = " AND ".join(where)
+
+    msg_result = await db.execute(
+        text(f"""
+            SELECT
+                id, platform, sender_id, sender_name, message_text, direction,
+                message_id, recipient_id, messaging_type, message_tag,
+                sent_by_staff_id, error_code, error_message,
+                seen_at, seen_by_staff_id,
+                created_at
+            FROM meta_messages
+            WHERE {where_sql}
+            ORDER BY created_at ASC, id ASC
+            LIMIT :limit
+        """),
+        params,
+    )
+    msg_rows = msg_result.mappings().all()
+
+    messages = [
+        {
+            "id": r["id"],
+            "platform": r["platform"],
+            "sender_id": r["sender_id"],
+            "sender_name": r["sender_name"],
+            "message_text": r["message_text"],
+            "direction": r["direction"],
+            "message_id": r["message_id"],
+            "recipient_id": r["recipient_id"],
+            "messaging_type": r["messaging_type"],
+            "message_tag": r["message_tag"],
+            "sent_by_staff_id": r["sent_by_staff_id"],
+            "error_code": r["error_code"],
+            "error_message": r["error_message"],
+            "seen_at": _meta_msg_format_dt(r["seen_at"]),
+            "seen_by_staff_id": r["seen_by_staff_id"],
+            "created_at": _meta_msg_format_dt(r["created_at"]),
+        }
+        for r in msg_rows
+    ]
+
+    # platform は messages 末尾の最新値を採用（pagination 対象外）
+    latest_platform: Optional[str] = None
+    if messages:
+        latest_platform = messages[-1]["platform"]
+    else:
+        plat_q = await db.execute(
+            text(
+                "SELECT platform FROM meta_messages "
+                "WHERE lead_id = :lead_id AND tenant_id = :tenant_id "
+                "ORDER BY created_at DESC, id DESC LIMIT 1"
+            ),
+            {"lead_id": lead_id, "tenant_id": tenant_id},
+        )
+        plat_row = plat_q.first()
+        if plat_row:
+            latest_platform = plat_row[0]
+
+    # last_inbound_at（messaging_window 用）— pagination の影響を受けないように
+    # フィルタ無しで再クエリ
+    inbound_q = await db.execute(
+        text(
+            "SELECT MAX(created_at) FROM meta_messages "
+            "WHERE lead_id = :lead_id AND tenant_id = :tenant_id "
+            "AND direction = 'inbound'"
+        ),
+        {"lead_id": lead_id, "tenant_id": tenant_id},
+    )
+    last_inbound_raw = inbound_q.scalar()
+    last_inbound_at = _meta_msg_parse_aware(last_inbound_raw)
+
+    return {
+        "messages": messages,
+        "lead": {
+            "id": lead_row["id"],
+            "lead_code": lead_row["lead_code"],
+            "customer_name": lead_row["customer_name"],
+            "platform": latest_platform,
+            "source": lead_row["source"],
+        },
+        "messaging_window": _compute_messaging_window(last_inbound_at),
+    }
+
+
+@router.post(
+    "/leads/{lead_id}/messages/mark-read",
+    dependencies=[Depends(require_permission("messaging.view"))],
+)
+async def mark_lead_messages_read(
+    lead_id: int,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """指定 lead の inbound 未読メッセージに seen_at を設定（spec §5-6）。
+
+    動作:
+        - direction='inbound' AND seen_at IS NULL の行に seen_at=NOW(),
+          seen_by_staff_id=<current> を UPDATE
+        - 該当 lead が同テナントに無い場合は 404
+
+    返却: { "marked_count": N }
+
+    Meta 側 mark_seen Send API は呼ばない（DB のみで管理）。Meta 既読同期は
+    out of scope（spec §5-6 注記）。
+    """
+    lead_q = await db.execute(
+        text("SELECT id FROM leads WHERE id = :id AND tenant_id = :tenant_id"),
+        {"id": lead_id, "tenant_id": tenant_id},
+    )
+    if lead_q.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="リードが見つかりません",
+        )
+
+    # 現 staff の解決（user.email → staff.id）
+    staff_id: Optional[int] = None
+    if current_user.email:
+        try:
+            sr = await db.execute(
+                text("SELECT id FROM staff WHERE primary_email = :email "
+                     "ORDER BY id ASC LIMIT 1"),
+                {"email": current_user.email},
+            )
+            row = sr.first()
+            if row:
+                staff_id = int(row[0])
+        except Exception:
+            staff_id = None
+
+    upd = await db.execute(
+        text("""
+            UPDATE meta_messages
+            SET seen_at = NOW(),
+                seen_by_staff_id = :staff_id
+            WHERE lead_id = :lead_id
+              AND tenant_id = :tenant_id
+              AND direction = 'inbound'
+              AND seen_at IS NULL
+        """),
+        {"lead_id": lead_id, "tenant_id": tenant_id, "staff_id": staff_id},
+    )
+    marked = int(upd.rowcount or 0)
+
+    await db.commit()
+
+    return {"marked_count": marked}
