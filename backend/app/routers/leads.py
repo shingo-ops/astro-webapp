@@ -26,6 +26,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas.lead import LeadConvertRequest, LeadCreate, LeadResponse, LeadUpdate
 from app.services.audit import record_audit_log
+from app.services import messaging_window as mw
 
 router = APIRouter()
 
@@ -485,8 +486,8 @@ async def convert_lead(
 #     SQLite テストでも他テナント漏れを防ぐ。
 
 # 24h / 7d は spec §3-3, §5-4 の messaging window
-_MESSAGING_WINDOW_RESPONSE_HOURS = 24
-_MESSAGING_WINDOW_HUMAN_AGENT_DAYS = 7
+# Sprint 5 で `app.services.messaging_window` に切り出した。本ファイルでは
+# `mw.compute_window(...)` を呼ぶラッパだけ残す（Sprint 4 Reviewer F5 対応）。
 
 
 def _meta_msg_format_dt(value) -> Optional[str]:
@@ -528,34 +529,10 @@ def _meta_msg_parse_aware(value) -> Optional[datetime]:
 def _compute_messaging_window(last_inbound_at: Optional[datetime]) -> dict:
     """spec §5-4 の messaging_window 構造体を組み立てる。
 
-    返却 keys: last_inbound_at, expires_at, can_send_response,
-              requires_human_agent_tag, can_send_at_all
+    Sprint 5 で `app.services.messaging_window.compute_window` に実装を移譲。
+    本関数は後方互換のための薄いラッパ（既存呼び出し元の API は変えない）。
     """
-    if last_inbound_at is None:
-        # inbound 履歴なし → 24h ルール上は送信不可（Meta 仕様）
-        return {
-            "last_inbound_at": None,
-            "expires_at": None,
-            "can_send_response": False,
-            "requires_human_agent_tag": False,
-            "can_send_at_all": False,
-        }
-    now = datetime.now(timezone.utc)
-    elapsed = now - last_inbound_at
-    expires_at = last_inbound_at + timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
-    can_send_response = elapsed <= timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
-    requires_human_agent = (
-        elapsed > timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
-        and elapsed <= timedelta(days=_MESSAGING_WINDOW_HUMAN_AGENT_DAYS)
-    )
-    can_send_at_all = elapsed <= timedelta(days=_MESSAGING_WINDOW_HUMAN_AGENT_DAYS)
-    return {
-        "last_inbound_at": last_inbound_at.isoformat(),
-        "expires_at": expires_at.isoformat(),
-        "can_send_response": bool(can_send_response),
-        "requires_human_agent_tag": bool(requires_human_agent),
-        "can_send_at_all": bool(can_send_at_all),
-    }
+    return mw.compute_window(last_inbound_at)
 
 
 @router.get(
