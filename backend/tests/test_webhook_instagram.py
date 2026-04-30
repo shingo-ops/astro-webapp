@@ -470,6 +470,53 @@ async def test_get_tenant_id_by_page_db_takes_priority_over_env(db_session, monk
 
 
 @pytest.mark.asyncio
+async def test_get_tenant_id_by_page_env_fallback_works_after_search_aborts_session(
+    db_session, monkeypatch,
+):
+    """Phase 1-E F26 regression:
+    PostgreSQL 本番では `_search_tenant_meta_config` が SET search_path を発行し、
+    対象スキーマに `tenant_meta_config` が無いと session が aborted state に陥る。
+    aborted state では後続の SELECT が全て失敗するため、refactor 前は env fallback
+    内で再度呼ぶ `_list_active_tenant_ids` が空を返し、tenant_id を確定できなかった。
+
+    refactor 後は `_get_tenant_id_by_page` 冒頭で `_list_active_tenant_ids` を 1 回
+    呼んで結果をローカル変数に保持するので、aborted state でも env fallback が動く。
+    本テストは「`_search_tenant_meta_config` 後に list 呼び出しが失敗しても fallback が
+    機能する」ことをモックで擬似的に検証する。
+    """
+    from app.routers import webhook as wh
+
+    monkeypatch.setenv("META_PAGE_ID", "PAGE-LEGACY")
+
+    # `_search_tenant_meta_config` の "後" だけ `_list_active_tenant_ids` が空を返すように
+    # 仕込む。先頭での 1 回目（_get_tenant_id_by_page 由来）は本物を実行 → [999]。
+    # その後 `_search_tenant_meta_config` 内 / fallback 経路で呼ばれた場合は空 [] に。
+    original_list = wh._list_active_tenant_ids
+    original_search = wh._search_tenant_meta_config
+    state = {"search_done": False}
+
+    async def list_with_abort(db):
+        if state["search_done"]:
+            return []
+        return await original_list(db)
+
+    async def search_then_mark(db, *, column, value):
+        try:
+            return await original_search(db, column=column, value=value)
+        finally:
+            state["search_done"] = True
+
+    monkeypatch.setattr(wh, "_list_active_tenant_ids", list_with_abort)
+    monkeypatch.setattr(wh, "_search_tenant_meta_config", search_then_mark)
+
+    tenant_id = await wh._get_tenant_id_by_page(db_session, "PAGE-LEGACY")
+
+    # refactor で先に取得した [999] が env fallback に再利用されるため 999 が返る。
+    # refactor 前のコードはここで None になっていた（aborted state で再取得が空のため）。
+    assert tenant_id == 999
+
+
+@pytest.mark.asyncio
 async def test_get_tenant_id_by_ig_account_returns_tenant_when_match(db_session):
     from app.routers import webhook as wh
 

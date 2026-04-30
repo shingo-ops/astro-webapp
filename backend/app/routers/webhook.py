@@ -155,9 +155,19 @@ async def _get_tenant_id_by_page(db: AsyncSession, page_id: str) -> Optional[int
       2) META_PAGE_ID env と一致するなら最初の active tenant の id（後方互換 fallback）
 
     spec §5-7 「既存 META_PAGE_ID 環境変数照合は後方互換 fallback として残す」に対応。
+
+    Phase 1-E F26 fix: `_search_tenant_meta_config` は schema 切替で SET search_path を発行し、
+    対象スキーマに `tenant_meta_config` が無いと PostgreSQL session が aborted state に陥る。
+    その後で `_list_active_tenant_ids` を呼んでも空 list が返り、env fallback が動かなくなる。
+    そのため active tenants の取得は **search_path 切替前**に済ませて値を保持しておく。
     """
     if not page_id:
         return None
+
+    # 0) active tenants を先に取得（schema 切替前なので transaction は clean）。
+    #    env fallback で必要だが、_search_tenant_meta_config 実行後は session が
+    #    aborted state になっている可能性があり、後から取り直すと空が返ってしまう。
+    tenant_ids = await _list_active_tenant_ids(db)
 
     # 1) DB 由来（Sprint 6 で追加された主経路）
     tid = await _search_tenant_meta_config(db, column="page_id", value=page_id)
@@ -166,9 +176,8 @@ async def _get_tenant_id_by_page(db: AsyncSession, page_id: str) -> Optional[int
 
     # 2) 後方互換 fallback: META_PAGE_ID env と一致した場合のみ
     env_page_id = _meta_page_id_env()
-    if env_page_id and page_id == env_page_id:
-        tenant_ids = await _list_active_tenant_ids(db)
-        return tenant_ids[0] if tenant_ids else None
+    if env_page_id and page_id == env_page_id and tenant_ids:
+        return tenant_ids[0]
 
     return None
 
