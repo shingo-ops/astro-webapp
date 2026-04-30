@@ -111,10 +111,16 @@ async def _search_tenant_meta_config(
             return int(row[0])
     except Exception:
         # 該当 schema にテーブルが見えなければ tenant 横断検索へフォールバック。
+        # PostgreSQL では失敗クエリで session が aborted state になるため、
+        # 次の SELECT 系を実行する前に必ず rollback してクリーンに戻す。
         logging.debug(
             "[Meta] tenant_meta_config flat 検索失敗、tenant 横断検索へ",
             exc_info=True,
         )
+        try:
+            await db.rollback()
+        except Exception:
+            logging.debug("[Meta] flat 検索失敗後の rollback 失敗", exc_info=True)
 
     # PostgreSQL 本番: 全 active tenant をループしてそれぞれの schema で検索。
     # MVP 期はテナント数 <= 5 を想定、N+1 問題は許容。
@@ -138,10 +144,18 @@ async def _search_tenant_meta_config(
             if row:
                 return int(row[0])
         except Exception:
-            # この schema には tenant_meta_config が無い / アクセス不可 → 次のテナントへ
+            # この schema には tenant_meta_config が無い / アクセス不可 → 次のテナントへ。
+            # 失敗クエリで PG session が aborted state になるため、次のループの
+            # `SET search_path` を実行可能にするために必ず rollback する。
             logging.debug(
                 "[Meta] schema=%s tenant_meta_config 検索失敗", schema, exc_info=True,
             )
+            try:
+                await db.rollback()
+            except Exception:
+                logging.debug(
+                    "[Meta] schema=%s 検索失敗後の rollback 失敗", schema, exc_info=True,
+                )
             continue
     return None
 
@@ -156,10 +170,12 @@ async def _get_tenant_id_by_page(db: AsyncSession, page_id: str) -> Optional[int
 
     spec §5-7 「既存 META_PAGE_ID 環境変数照合は後方互換 fallback として残す」に対応。
 
-    Phase 1-E F26 fix: `_search_tenant_meta_config` は schema 切替で SET search_path を発行し、
-    対象スキーマに `tenant_meta_config` が無いと PostgreSQL session が aborted state に陥る。
-    その後で `_list_active_tenant_ids` を呼んでも空 list が返り、env fallback が動かなくなる。
-    そのため active tenants の取得は **search_path 切替前**に済ませて値を保持しておく。
+    Phase 1-E F26 fix:
+      `_search_tenant_meta_config` 内の各 `except` で `await db.rollback()` を行うため、
+      復帰後のセッションは clean な状態で戻る（呼び出し側の `process_messenger_event`
+      が後続で `SET search_path` を投げても aborted state ではない）。
+      ただし rollback 自体が万一失敗するケースに備え、active tenants の取得は
+      **search_path 切替前**に済ませて値を保持しておく（env fallback の保険）。
     """
     if not page_id:
         return None
