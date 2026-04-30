@@ -402,6 +402,178 @@ async def subscribe_page_to_app(
     return list(fields)
 
 
+async def send_messenger_message(
+    *,
+    page_access_token: str,
+    recipient_id: str,
+    text: str,
+    messaging_type: str = "RESPONSE",
+    tag: Optional[str] = None,
+    page_id: str = "me",
+    client: Optional[httpx.AsyncClient] = None,
+) -> dict[str, Any]:
+    """Messenger Send API でテキストメッセージを送信する（spec §3-3 / §5-5）。
+
+    `POST /v19.0/{page_id}/messages?access_token=...`
+    body:
+        recipient: {"id": <PSID>}
+        message:   {"text": <text>}
+        messaging_type: 'RESPONSE' | 'MESSAGE_TAG' | 'UPDATE'
+        tag:        'HUMAN_AGENT' 等（messaging_type=MESSAGE_TAG のときのみ）
+
+    Returns:
+        {"recipient_id": "<PSID>", "message_id": "mid-xxx"}
+
+    Page Access Token は **str のまま受け取る**（呼び出し側で復号済み前提）。
+    """
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    if not recipient_id:
+        raise ValueError("recipient_id is required")
+    if not text:
+        raise ValueError("text is required")
+    if messaging_type not in ("RESPONSE", "MESSAGE_TAG", "UPDATE"):
+        raise ValueError(f"invalid messaging_type: {messaging_type}")
+
+    pid = page_id or "me"
+    url = f"{graph_base_url()}/{pid}/messages"
+    body: dict[str, Any] = {
+        "messaging_type": messaging_type,
+        "recipient": {"id": recipient_id},
+        "message": {"text": text},
+    }
+    if tag:
+        body["tag"] = tag
+
+    # Send API は application/json を期待するため、専用の JSON ヘルパを使う。
+    # 内部 `_request` は data を form-encoded で送るのでここでは使わない。
+    response = await _send_messages_json(
+        url=url,
+        access_token=page_access_token,
+        body=body,
+        client=client,
+    )
+    return {
+        "recipient_id": response.get("recipient_id") or recipient_id,
+        "message_id": response.get("message_id"),
+    }
+
+
+async def send_instagram_message(
+    *,
+    page_access_token: str,
+    ig_user_id: str,
+    recipient_id: str,
+    text: str,
+    messaging_type: str = "RESPONSE",
+    tag: Optional[str] = None,
+    client: Optional[httpx.AsyncClient] = None,
+) -> dict[str, Any]:
+    """Instagram Messaging API でテキストメッセージを送信する。
+
+    `POST /v19.0/{ig_user_id}/messages?access_token=<page_access_token>`
+
+    Instagram は「Page に紐づく IG Business Account ID」をパスに使う。
+    Messenger と Instagram で必須 body は同じ構造（recipient.id / message.text /
+    messaging_type / tag）だが endpoint パスのみ異なる。
+    """
+    if not ig_user_id:
+        raise ValueError("ig_user_id is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    if not recipient_id:
+        raise ValueError("recipient_id is required")
+    if not text:
+        raise ValueError("text is required")
+    if messaging_type not in ("RESPONSE", "MESSAGE_TAG", "UPDATE"):
+        raise ValueError(f"invalid messaging_type: {messaging_type}")
+
+    url = f"{graph_base_url()}/{ig_user_id}/messages"
+    body: dict[str, Any] = {
+        "messaging_type": messaging_type,
+        "recipient": {"id": recipient_id},
+        "message": {"text": text},
+    }
+    if tag:
+        body["tag"] = tag
+
+    response = await _send_messages_json(
+        url=url,
+        access_token=page_access_token,
+        body=body,
+        client=client,
+    )
+    return {
+        "recipient_id": response.get("recipient_id") or recipient_id,
+        "message_id": response.get("message_id"),
+    }
+
+
+async def _send_messages_json(
+    *,
+    url: str,
+    access_token: str,
+    body: dict[str, Any],
+    client: Optional[httpx.AsyncClient],
+    timeout: float = _DEFAULT_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """Send API 専用の JSON body POST 実装。
+
+    `_request` は `data=` を form-encoded で送るが、Send API は `application/json`
+    を期待するためこちらを使う。例外階層は `_request` と同等。
+    """
+    own_client = client is None
+    try:
+        if own_client:
+            client = httpx.AsyncClient(timeout=timeout)
+        try:
+            response = await client.request(
+                "POST",
+                url,
+                params={"access_token": access_token},
+                json=body,
+            )
+        finally:
+            if own_client:
+                await client.aclose()
+    except httpx.TimeoutException as e:
+        raise MetaGraphTimeoutError(f"Meta Send API timeout: POST {url}") from e
+    except httpx.HTTPError as e:
+        raise MetaGraphTransportError(
+            f"Meta Send API transport error: POST {url}: {e}"
+        ) from e
+
+    try:
+        rbody = response.json()
+    except ValueError as e:
+        raise MetaGraphTransportError(
+            f"Meta Send API returned non-JSON body (status={response.status_code})"
+        ) from e
+
+    if isinstance(rbody, dict) and "error" in rbody:
+        err = rbody["error"] or {}
+        raise MetaGraphAPIError(
+            err.get("message") or "Meta Send API error (no message)",
+            status_code=response.status_code,
+            error_type=err.get("type"),
+            error_code=err.get("code"),
+            error_subcode=err.get("error_subcode"),
+            fbtrace_id=err.get("fbtrace_id"),
+        )
+
+    if response.status_code >= 400:
+        raise MetaGraphTransportError(
+            f"Meta Send API HTTP {response.status_code} (no error payload)"
+        )
+
+    if not isinstance(rbody, dict):
+        raise MetaGraphTransportError(
+            f"Meta Send API returned non-dict JSON ({type(rbody).__name__})"
+        )
+
+    return rbody
+
+
 async def unsubscribe_page_from_app(
     page_id: str,
     page_access_token: str,
@@ -440,4 +612,6 @@ __all__ = [
     "get_instagram_business_account",
     "subscribe_page_to_app",
     "unsubscribe_page_from_app",
+    "send_messenger_message",
+    "send_instagram_message",
 ]

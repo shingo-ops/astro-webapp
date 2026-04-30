@@ -12,11 +12,13 @@ from __future__ import annotations
     （resolver / customer 経路廃止、company_id + contact_id を唯一の正に）
 """
 
+import logging
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,8 +27,12 @@ from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
 from app.schemas.lead import LeadConvertRequest, LeadCreate, LeadResponse, LeadUpdate
+from app.services import encryption, meta_graph
+from app.services import messaging_window as mw
 from app.services.audit import record_audit_log
+from app.services.meta_graph import MetaGraphAPIError, MetaGraphError
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 _LEAD_COLUMNS = """
@@ -485,8 +491,8 @@ async def convert_lead(
 #     SQLite テストでも他テナント漏れを防ぐ。
 
 # 24h / 7d は spec §3-3, §5-4 の messaging window
-_MESSAGING_WINDOW_RESPONSE_HOURS = 24
-_MESSAGING_WINDOW_HUMAN_AGENT_DAYS = 7
+# Sprint 5 で `app.services.messaging_window` に切り出した。本ファイルでは
+# `mw.compute_window(...)` を呼ぶラッパだけ残す（Sprint 4 Reviewer F5 対応）。
 
 
 def _meta_msg_format_dt(value) -> Optional[str]:
@@ -528,34 +534,10 @@ def _meta_msg_parse_aware(value) -> Optional[datetime]:
 def _compute_messaging_window(last_inbound_at: Optional[datetime]) -> dict:
     """spec §5-4 の messaging_window 構造体を組み立てる。
 
-    返却 keys: last_inbound_at, expires_at, can_send_response,
-              requires_human_agent_tag, can_send_at_all
+    Sprint 5 で `app.services.messaging_window.compute_window` に実装を移譲。
+    本関数は後方互換のための薄いラッパ（既存呼び出し元の API は変えない）。
     """
-    if last_inbound_at is None:
-        # inbound 履歴なし → 24h ルール上は送信不可（Meta 仕様）
-        return {
-            "last_inbound_at": None,
-            "expires_at": None,
-            "can_send_response": False,
-            "requires_human_agent_tag": False,
-            "can_send_at_all": False,
-        }
-    now = datetime.now(timezone.utc)
-    elapsed = now - last_inbound_at
-    expires_at = last_inbound_at + timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
-    can_send_response = elapsed <= timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
-    requires_human_agent = (
-        elapsed > timedelta(hours=_MESSAGING_WINDOW_RESPONSE_HOURS)
-        and elapsed <= timedelta(days=_MESSAGING_WINDOW_HUMAN_AGENT_DAYS)
-    )
-    can_send_at_all = elapsed <= timedelta(days=_MESSAGING_WINDOW_HUMAN_AGENT_DAYS)
-    return {
-        "last_inbound_at": last_inbound_at.isoformat(),
-        "expires_at": expires_at.isoformat(),
-        "can_send_response": bool(can_send_response),
-        "requires_human_agent_tag": bool(requires_human_agent),
-        "can_send_at_all": bool(can_send_at_all),
-    }
+    return mw.compute_window(last_inbound_at)
 
 
 @router.get(
@@ -745,3 +727,409 @@ async def mark_lead_messages_read(
     await db.commit()
 
     return {"marked_count": marked}
+
+
+# ---------------------------------------------------------------------------
+# Phase 1-D Sprint 5: メッセージ送信
+# ---------------------------------------------------------------------------
+#
+# spec §5-5 / §3-3 に従い、Inbox の右ペインから返信を Meta に送る endpoint を実装する。
+#
+# フロー:
+#   1. lead_id が同テナントに存在するか確認（404）
+#   2. text のバリデーション（空 / 長すぎ → 400）
+#   3. last_inbound_at 取得 → messaging_window.compute_state で 24h/7d 判定
+#      - EXPIRED / NO_INBOUND → 400
+#      - WITHIN_24H or WITHIN_HUMAN_AGENT → (messaging_type, tag) 決定
+#      - force_human_agent_tag=True で 24h 以内でも HUMAN_AGENT に上書き（spec §5-5）
+#   4. tenant_meta_config から該当 Page の access_token を Fernet 復号
+#      - platform=messenger → page_id ベースで解決
+#      - platform=instagram → ig_business_account_id ベースで解決
+#   5. Meta Send API 呼び出し（Messenger: /me/messages, Instagram: /{ig_user_id}/messages）
+#      - エラー → meta_messages に書かず 502 返却 + audit_log
+#      - 成功 → meta_messages に direction='outbound' で INSERT
+#   6. 返却: {id, message_id, messaging_type, message_tag, sent_at}
+
+# Meta テキストメッセージの最大長（Send API 制約）。spec で明記なし、Meta Docs ベース。
+_MESSAGE_TEXT_MAX_LEN = 2000
+
+
+class _SendMessageRequest(BaseModel):
+    """spec §5-5 リクエスト body。"""
+    text: str = Field(min_length=1, max_length=_MESSAGE_TEXT_MAX_LEN)
+    force_human_agent_tag: bool = False
+
+
+def _extract_recipient_id(source: Optional[str], inbound_sender_id: Optional[str]) -> Optional[str]:
+    """送信先 PSID / IGSID を決める。
+
+    優先順:
+      1) leads.source が `messenger:PSID` / `instagram:IGSID` 形式ならコロン後を採用
+      2) 直近 inbound メッセージの sender_id を fallback で使用
+
+    inbound 履歴ベースが最も堅牢（OAuth 接続前の旧 lead でも source が空のケースに対応）。
+    """
+    if source and ":" in source:
+        prefix, _, value = source.partition(":")
+        if prefix in ("messenger", "instagram") and value:
+            return value
+    if inbound_sender_id:
+        return inbound_sender_id
+    return None
+
+
+def _decode_token_blob(value) -> str:
+    """tenant_meta_config.page_access_token_encrypted を str に変換。
+
+    BYTEA / memoryview / bytes / str いずれにも対応。
+    """
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return bytes(value).decode("ascii")
+    return str(value)
+
+
+@router.post(
+    "/leads/{lead_id}/messages",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("messaging.send"))],
+)
+async def send_lead_message(
+    lead_id: int,
+    payload: _SendMessageRequest,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """指定 lead に Meta 経由でメッセージを送信する（spec §5-5）。
+
+    `messaging_window` を再評価し、24h/7d ルールに沿って `messaging_type` /
+    `message_tag` を自動セット。送信成功時は meta_messages に
+    `direction='outbound'` で記録、失敗時は記録しない（リトライは MVP 範囲外）。
+
+    エラー:
+        400: text 不正 / 7d 超過 / inbound 履歴なし / platform が messenger/instagram でない
+        404: lead が同テナントに存在しない
+        409: 同 Page の `tenant_meta_config` が見つからない（OAuth 未接続）
+        502: Meta Send API がエラー / タイムアウト
+    """
+    # ----- (1) lead 存在 + tenant 確認 -----
+    lead_q = await db.execute(
+        text(f"SELECT {_LEAD_COLUMNS} FROM leads "
+             "WHERE id = :id AND tenant_id = :tenant_id"),
+        {"id": lead_id, "tenant_id": tenant_id},
+    )
+    lead_row = lead_q.mappings().first()
+    if not lead_row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="リードが見つかりません",
+        )
+
+    text_body = payload.text.strip()
+    if not text_body:
+        # 空白のみは拒否（max_length は Pydantic で済み）
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="本文が空です",
+        )
+
+    # ----- (2) 直近 inbound 取得 + platform 推論 -----
+    inbound_q = await db.execute(
+        text("""
+            SELECT created_at, sender_id, platform
+            FROM meta_messages
+            WHERE lead_id = :lead_id
+              AND tenant_id = :tenant_id
+              AND direction = 'inbound'
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+        """),
+        {"lead_id": lead_id, "tenant_id": tenant_id},
+    )
+    inbound_row = inbound_q.first()
+    if inbound_row is None:
+        last_inbound_at = None
+        inbound_sender_id = None
+        inbound_platform = None
+    else:
+        last_inbound_at = _meta_msg_parse_aware(inbound_row[0])
+        inbound_sender_id = inbound_row[1]
+        inbound_platform = inbound_row[2]
+
+    # platform 推論: 直近 inbound > leads.source プレフィクス > エラー
+    platform = inbound_platform
+    source_str = lead_row.get("source") if hasattr(lead_row, "get") else lead_row["source"]
+    if not platform and source_str:
+        if isinstance(source_str, str) and ":" in source_str:
+            prefix = source_str.split(":", 1)[0]
+            if prefix in ("messenger", "instagram"):
+                platform = prefix
+    if platform not in ("messenger", "instagram"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="このリードはメタ系の会話ではないため送信できません",
+        )
+
+    # ----- (3) messaging window 判定 -----
+    state = mw.compute_state(last_inbound_at)
+    messaging_type, message_tag = mw.messaging_type_for_state(
+        state, force_human_agent_tag=payload.force_human_agent_tag,
+    )
+    if messaging_type is None:
+        # EXPIRED or NO_INBOUND → 送信不可
+        if state == mw.WindowState.EXPIRED:
+            detail = "メッセージウィンドウを超過しています（受信から 7 日以上経過）"
+        else:
+            detail = "受信履歴がないため送信できません（最初のメッセージは顧客側からの必要があります）"
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+        )
+
+    # ----- (4) recipient_id 解決 -----
+    recipient_id = _extract_recipient_id(source_str, inbound_sender_id)
+    if not recipient_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="送信先 ID が解決できません（lead.source / 受信履歴がいずれも未設定）",
+        )
+
+    # ----- (5) tenant_meta_config から Page Access Token を復号 -----
+    if platform == "messenger":
+        token_q = await db.execute(
+            text("""
+                SELECT id, page_id, page_access_token_encrypted, instagram_business_account_id
+                FROM tenant_meta_config
+                WHERE tenant_id = :tenant_id AND is_active = TRUE
+                ORDER BY connected_at DESC, id DESC
+                LIMIT 1
+            """),
+            {"tenant_id": tenant_id},
+        )
+    else:
+        # instagram: ig_business_account_id がセットされている行を優先
+        token_q = await db.execute(
+            text("""
+                SELECT id, page_id, page_access_token_encrypted, instagram_business_account_id
+                FROM tenant_meta_config
+                WHERE tenant_id = :tenant_id
+                  AND is_active = TRUE
+                  AND instagram_business_account_id IS NOT NULL
+                ORDER BY connected_at DESC, id DESC
+                LIMIT 1
+            """),
+            {"tenant_id": tenant_id},
+        )
+    config_row = token_q.first()
+    if config_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="送信に使う Meta 接続が見つかりません（Channels 設定で接続してください）",
+        )
+    config_id, page_id_for_send, encrypted_token_blob, ig_business_id = (
+        int(config_row[0]),
+        config_row[1],
+        config_row[2],
+        config_row[3],
+    )
+    try:
+        page_access_token = encryption.decrypt(_decode_token_blob(encrypted_token_blob))
+    except encryption.EncryptionError as e:
+        logger.error("Page Access Token 復号失敗: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="保存トークンの復号に失敗しました（鍵不一致の可能性）",
+        )
+
+    # ----- (6) Meta Send API 呼び出し -----
+    meta_error_payload: Optional[dict] = None
+    try:
+        if platform == "messenger":
+            send_result = await meta_graph.send_messenger_message(
+                page_access_token=page_access_token,
+                recipient_id=recipient_id,
+                text=text_body,
+                messaging_type=messaging_type,
+                tag=message_tag,
+                # Send API は /me/messages でも可だが、複数 Page 接続時の安全性のため page_id 明示
+                page_id=str(page_id_for_send) if page_id_for_send else "me",
+            )
+        else:  # instagram
+            if not ig_business_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Instagram Business Account が紐づいていません",
+                )
+            send_result = await meta_graph.send_instagram_message(
+                page_access_token=page_access_token,
+                ig_user_id=str(ig_business_id),
+                recipient_id=recipient_id,
+                text=text_body,
+                messaging_type=messaging_type,
+                tag=message_tag,
+            )
+    except MetaGraphAPIError as e:
+        meta_error_payload = e.to_audit_dict()
+        logger.warning("Meta Send API error for lead %s: %s", lead_id, e.error_type)
+        await _record_send_audit_safely(
+            db, tenant_id=tenant_id, user_id=current_user.id,
+            action="meta_message_send_failed", record_id=config_id,
+            new_data={
+                "lead_id": lead_id,
+                "platform": platform,
+                "messaging_type": messaging_type,
+                "message_tag": message_tag,
+                "meta_error": meta_error_payload,
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "detail": "Meta Send API がエラーを返しました",
+                "error_code": e.error_code,
+                "error_type": e.error_type,
+            },
+        )
+    except MetaGraphError as e:
+        logger.warning("Meta Send transport error for lead %s: %s", lead_id, e)
+        await _record_send_audit_safely(
+            db, tenant_id=tenant_id, user_id=current_user.id,
+            action="meta_message_send_failed", record_id=config_id,
+            new_data={
+                "lead_id": lead_id,
+                "platform": platform,
+                "messaging_type": messaging_type,
+                "message_tag": message_tag,
+                "transport_error": str(e),
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Meta Send API への接続に失敗しました",
+        )
+
+    # ----- (7) sent_by_staff_id 解決（mark-read と同パターン） -----
+    sent_by_staff_id: Optional[int] = None
+    if current_user.email:
+        try:
+            sr = await db.execute(
+                text("SELECT id FROM staff WHERE primary_email = :email "
+                     "ORDER BY id ASC LIMIT 1"),
+                {"email": current_user.email},
+            )
+            row = sr.first()
+            if row:
+                sent_by_staff_id = int(row[0])
+        except Exception:
+            sent_by_staff_id = None
+
+    # ----- (8) meta_messages に outbound 行 INSERT -----
+    sender_id = page_id_for_send if platform == "messenger" else (ig_business_id or page_id_for_send)
+    insert_result = await db.execute(
+        text("""
+            INSERT INTO meta_messages (
+                tenant_id, lead_id, platform, sender_id, message_text,
+                direction, message_id, recipient_id,
+                messaging_type, message_tag, sent_by_staff_id, created_at
+            )
+            VALUES (
+                :tenant_id, :lead_id, :platform, :sender_id, :text,
+                'outbound', :message_id, :recipient_id,
+                :messaging_type, :message_tag, :sent_by_staff_id, NOW()
+            )
+            RETURNING id, created_at
+        """),
+        {
+            "tenant_id": tenant_id,
+            "lead_id": lead_id,
+            "platform": platform,
+            "sender_id": str(sender_id) if sender_id is not None else None,
+            "text": text_body,
+            "message_id": send_result.get("message_id"),
+            "recipient_id": recipient_id,
+            "messaging_type": messaging_type,
+            "message_tag": message_tag,
+            "sent_by_staff_id": sent_by_staff_id,
+        },
+    )
+    new_row = insert_result.first()
+    if new_row is None:
+        # RETURNING 非対応の SQLite 古バージョンへの保険
+        await db.execute(
+            text("""
+                INSERT INTO meta_messages (
+                    tenant_id, lead_id, platform, sender_id, message_text,
+                    direction, message_id, recipient_id,
+                    messaging_type, message_tag, sent_by_staff_id, created_at
+                )
+                VALUES (
+                    :tenant_id, :lead_id, :platform, :sender_id, :text,
+                    'outbound', :message_id, :recipient_id,
+                    :messaging_type, :message_tag, :sent_by_staff_id, NOW()
+                )
+            """),
+            {
+                "tenant_id": tenant_id,
+                "lead_id": lead_id,
+                "platform": platform,
+                "sender_id": str(sender_id) if sender_id is not None else None,
+                "text": text_body,
+                "message_id": send_result.get("message_id"),
+                "recipient_id": recipient_id,
+                "messaging_type": messaging_type,
+                "message_tag": message_tag,
+                "sent_by_staff_id": sent_by_staff_id,
+            },
+        )
+        # last_insert_rowid で id を取得
+        last_id_row = await db.execute(text("SELECT last_insert_rowid(), CURRENT_TIMESTAMP"))
+        new_id_row = last_id_row.first()
+        new_id = int(new_id_row[0]) if new_id_row else 0
+        new_created_at = new_id_row[1] if new_id_row else None
+    else:
+        new_id = int(new_row[0])
+        new_created_at = new_row[1]
+
+    await _record_send_audit_safely(
+        db, tenant_id=tenant_id, user_id=current_user.id,
+        action="meta_message_sent", record_id=new_id,
+        new_data={
+            "lead_id": lead_id,
+            "platform": platform,
+            "messaging_type": messaging_type,
+            "message_tag": message_tag,
+            "message_id": send_result.get("message_id"),
+        },
+    )
+
+    await db.commit()
+
+    return {
+        "id": new_id,
+        "message_id": send_result.get("message_id"),
+        "messaging_type": messaging_type,
+        "message_tag": message_tag,
+        "sent_at": _meta_msg_format_dt(new_created_at),
+        "lead_id": lead_id,
+        "platform": platform,
+    }
+
+
+async def _record_send_audit_safely(
+    db: AsyncSession,
+    *,
+    tenant_id: int,
+    user_id: int,
+    action: str,
+    record_id: int,
+    new_data: dict,
+) -> None:
+    """Send 経路の audit_log 記録の例外を握りつぶす（送信本体を守る）。"""
+    try:
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=user_id,
+            action=action, table_name="meta_messages", record_id=record_id,
+            new_data=new_data,
+        )
+    except Exception:
+        logger.warning("audit_log 記録に失敗（無視して継続）", exc_info=True)

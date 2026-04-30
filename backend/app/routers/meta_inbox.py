@@ -823,7 +823,9 @@ async def list_conversations(
                AND mm3.direction = 'inbound'
             ) AS last_inbound_at
         FROM meta_messages mm
-        LEFT JOIN leads l ON l.id = mm.lead_id
+        LEFT JOIN leads l
+            ON l.id = mm.lead_id
+           AND l.tenant_id = mm.tenant_id  -- 防御的多重化: 将来 schema 共有化された際の保険
         WHERE {where_sql}
           AND mm.lead_id IS NOT NULL
           AND mm.created_at = (
