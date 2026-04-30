@@ -47,7 +47,7 @@ ALTER TABLE {schema}.meta_messages
     ADD COLUMN IF NOT EXISTS seen_by_staff_id  INTEGER REFERENCES {schema}.staff(id);
 
 -- === インデックス ===
--- 会話別メッセージ取得（GET /leads/{id}/messages）のホットパス
+-- 会話別メッセージ取得（GET /leads/<id>/messages）のホットパス
 CREATE INDEX IF NOT EXISTS idx_meta_messages_lead_created
     ON {schema}.meta_messages (lead_id, created_at DESC);
 
