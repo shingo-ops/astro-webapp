@@ -1,0 +1,443 @@
+from __future__ import annotations
+
+"""
+Meta Graph API クライアント（Phase 1-D Sprint 2）。
+
+OAuth code → 短期/長期 User Access Token 交換、Page 一覧取得、
+subscribed_apps 登録/解除、Instagram Business Account 取得など、
+Phase 1-D で必要な Graph API 呼び出しを薄いラッパとして提供する。
+
+たとえ話:
+  「Meta というお役所の窓口に書類を出しに行く受付係」。
+  各受付窓口（endpoint）でフォーマットが違うので、各専用関数を用意して
+  我々のアプリ側からは統一した戻り値・例外で扱えるようにする。
+
+設計判断:
+  - httpx (async) を直接使用。リトライなし（Sprint 5 で再考）
+  - timeout=10 秒、Meta 側遅延を許容しつつ FastAPI worker を縛らない
+  - 例外階層:
+      MetaGraphError                      … 全 Graph API 例外の基底
+        ├─ MetaGraphAPIError              … Meta から返ったエラー（type/code/message を保持）
+        ├─ MetaGraphTimeoutError          … タイムアウト
+        └─ MetaGraphTransportError        … ネットワーク / 5xx / JSON parse 失敗
+  - "happy path" は dict / 構造体 (TypedDict 風 dict) で返却
+  - Page Access Token などの secret 値は **str のまま** 返却。呼び出し側で
+    暗号化・ロギング除外を行う責務を持つ
+  - `META_GRAPH_API_VERSION` 環境変数（既定 `v19.0`）でバージョンをスイッチ
+
+参考:
+  spec §6-3 トークン交換シーケンス
+  https://developers.facebook.com/docs/messenger-platform/reference/send-api
+  https://developers.facebook.com/docs/graph-api/reference/page/subscribed_apps/
+"""
+
+import logging
+import os
+from typing import Any, Optional
+
+import httpx
+
+
+logger = logging.getLogger(__name__)
+
+
+_DEFAULT_TIMEOUT_SECONDS = 10.0
+_GRAPH_BASE_URL = "https://graph.facebook.com"
+_DEFAULT_SUBSCRIBED_FIELDS = (
+    "messages",
+    "messaging_postbacks",
+    "message_deliveries",
+    "message_reads",
+    "messaging_referrals",
+)
+
+
+# ---------------------------------------------------------------------------
+# 例外階層
+# ---------------------------------------------------------------------------
+
+
+class MetaGraphError(Exception):
+    """Meta Graph API クライアントの基底例外。"""
+
+
+class MetaGraphAPIError(MetaGraphError):
+    """Meta から返却されたエラーレスポンス（4xx 系で `error` フィールドを持つもの）。
+
+    Attributes:
+        status_code: HTTP ステータスコード
+        error_type: Meta `error.type`（例: `OAuthException`, `GraphMethodException`）
+        error_code: Meta `error.code`（数値、例: 100, 190）
+        error_subcode: Meta `error.error_subcode`
+        message: Meta `error.message`（PII を含み得るのでログ前に sanitize すること）
+        fbtrace_id: Meta のトレース ID（サポート問い合わせ用）
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int,
+        error_type: Optional[str] = None,
+        error_code: Optional[int] = None,
+        error_subcode: Optional[int] = None,
+        fbtrace_id: Optional[str] = None,
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.error_type = error_type
+        self.error_code = error_code
+        self.error_subcode = error_subcode
+        self.message = message
+        self.fbtrace_id = fbtrace_id
+
+    def to_audit_dict(self) -> dict[str, Any]:
+        """audit_logs に書く際の安全な dict（PII を最小化）。"""
+        return {
+            "status_code": self.status_code,
+            "error_type": self.error_type,
+            "error_code": self.error_code,
+            "error_subcode": self.error_subcode,
+            "fbtrace_id": self.fbtrace_id,
+        }
+
+
+class MetaGraphTimeoutError(MetaGraphError):
+    """Meta Graph API がタイムアウトした。"""
+
+
+class MetaGraphTransportError(MetaGraphError):
+    """ネットワーク失敗 / 5xx / JSON parse 失敗 など、Meta が形式上のエラーを返さなかったケース。"""
+
+
+# ---------------------------------------------------------------------------
+# 設定
+# ---------------------------------------------------------------------------
+
+
+def graph_api_version() -> str:
+    """環境変数 `META_GRAPH_API_VERSION`（既定 `v19.0`）。"""
+    return os.getenv("META_GRAPH_API_VERSION", "v19.0")
+
+
+def graph_base_url() -> str:
+    """`https://graph.facebook.com/v19.0` を返す。"""
+    return f"{_GRAPH_BASE_URL}/{graph_api_version()}"
+
+
+def _app_id() -> str:
+    value = os.getenv("META_APP_ID", "")
+    if not value:
+        raise MetaGraphError("環境変数 META_APP_ID が未設定です")
+    return value
+
+
+def _app_secret() -> str:
+    value = os.getenv("META_APP_SECRET", "")
+    if not value:
+        raise MetaGraphError("環境変数 META_APP_SECRET が未設定です")
+    return value
+
+
+# ---------------------------------------------------------------------------
+# 内部 HTTP ラッパ
+# ---------------------------------------------------------------------------
+
+
+async def _request(
+    method: str,
+    url: str,
+    *,
+    params: Optional[dict[str, Any]] = None,
+    data: Optional[dict[str, Any]] = None,
+    client: Optional[httpx.AsyncClient] = None,
+    timeout: float = _DEFAULT_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
+    """共通の HTTP 呼び出しラッパ。
+
+    - 4xx で `{"error": {...}}` を返したら `MetaGraphAPIError`
+    - timeout は `MetaGraphTimeoutError`
+    - その他のネットワーク失敗 / JSON parse 失敗は `MetaGraphTransportError`
+    - 2xx かつ JSON object なら dict を返す（list を返す API は MVP では使わない）
+
+    `client` 引数を受け取るのはテスト時に MockTransport を差し込むため。
+    本番経路では新規 AsyncClient を `with` 文で開閉する。
+    """
+    own_client = client is None
+    try:
+        if own_client:
+            client = httpx.AsyncClient(timeout=timeout)
+        try:
+            response = await client.request(method, url, params=params, data=data)
+        finally:
+            if own_client:
+                await client.aclose()
+    except httpx.TimeoutException as e:
+        raise MetaGraphTimeoutError(f"Meta Graph API timeout: {method} {url}") from e
+    except httpx.HTTPError as e:
+        raise MetaGraphTransportError(
+            f"Meta Graph API transport error: {method} {url}: {e}"
+        ) from e
+
+    # JSON parse
+    try:
+        body = response.json()
+    except ValueError as e:
+        raise MetaGraphTransportError(
+            f"Meta Graph API returned non-JSON body (status={response.status_code})"
+        ) from e
+
+    # Meta のエラー応答は status >= 400 もしくは body に "error" キーを含む
+    if isinstance(body, dict) and "error" in body:
+        err = body["error"] or {}
+        raise MetaGraphAPIError(
+            err.get("message") or "Meta Graph API error (no message)",
+            status_code=response.status_code,
+            error_type=err.get("type"),
+            error_code=err.get("code"),
+            error_subcode=err.get("error_subcode"),
+            fbtrace_id=err.get("fbtrace_id"),
+        )
+
+    if response.status_code >= 400:
+        raise MetaGraphTransportError(
+            f"Meta Graph API HTTP {response.status_code} (no error payload)"
+        )
+
+    if not isinstance(body, dict):
+        raise MetaGraphTransportError(
+            f"Meta Graph API returned non-dict JSON ({type(body).__name__})"
+        )
+
+    return body
+
+
+# ---------------------------------------------------------------------------
+# 公開関数（Sprint 2 で実装するもののみ）
+# ---------------------------------------------------------------------------
+
+
+async def exchange_code_for_short_token(
+    code: str,
+    redirect_uri: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> str:
+    """OAuth 認可コードを短期 User Access Token に交換する。
+
+    Returns:
+        短期 User Access Token 文字列
+    """
+    if not code:
+        raise ValueError("code is required")
+    if not redirect_uri:
+        raise ValueError("redirect_uri is required")
+
+    url = f"{graph_base_url()}/oauth/access_token"
+    body = await _request(
+        "GET",
+        url,
+        params={
+            "client_id": _app_id(),
+            "client_secret": _app_secret(),
+            "redirect_uri": redirect_uri,
+            "code": code,
+        },
+        client=client,
+    )
+    token = body.get("access_token")
+    if not token or not isinstance(token, str):
+        raise MetaGraphTransportError(
+            "Meta /oauth/access_token did not return access_token"
+        )
+    return token
+
+
+async def exchange_short_token_for_long_token(
+    short_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> dict[str, Any]:
+    """短期 User Access Token を長期トークン（約 60 日）に交換する。
+
+    Returns:
+        {
+            "access_token": "<long-token>",
+            "expires_in": 5183944,   # 残秒数（おおよそ 60 日）
+            "token_type": "bearer",  # ある場合のみ
+        }
+    """
+    if not short_token:
+        raise ValueError("short_token is required")
+    url = f"{graph_base_url()}/oauth/access_token"
+    body = await _request(
+        "GET",
+        url,
+        params={
+            "grant_type": "fb_exchange_token",
+            "client_id": _app_id(),
+            "client_secret": _app_secret(),
+            "fb_exchange_token": short_token,
+        },
+        client=client,
+    )
+    token = body.get("access_token")
+    if not token or not isinstance(token, str):
+        raise MetaGraphTransportError(
+            "Meta /oauth/access_token (fb_exchange_token) did not return access_token"
+        )
+    expires_in = body.get("expires_in")
+    return {
+        "access_token": token,
+        "expires_in": expires_in if isinstance(expires_in, int) else None,
+        "token_type": body.get("token_type"),
+    }
+
+
+async def list_user_pages(
+    user_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> list[dict[str, Any]]:
+    """`/me/accounts` で接続ユーザーの管理する Page 一覧を取得する。
+
+    Returns:
+        list of {"id", "name", "access_token", "instagram_business_account": {...} or None}
+
+    `access_token` は **Page Access Token**。User の長期化を経ているため
+    Meta の仕様により Page Token も実質長期となる（公式: User token 長期化 → Page token 長期化）。
+    """
+    if not user_access_token:
+        raise ValueError("user_access_token is required")
+    url = f"{graph_base_url()}/me/accounts"
+    body = await _request(
+        "GET",
+        url,
+        params={
+            "fields": "id,name,access_token,instagram_business_account",
+            "access_token": user_access_token,
+        },
+        client=client,
+    )
+    data = body.get("data", [])
+    if not isinstance(data, list):
+        raise MetaGraphTransportError("Meta /me/accounts did not return a list")
+    out: list[dict[str, Any]] = []
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        out.append(
+            {
+                "id": item.get("id"),
+                "name": item.get("name"),
+                "access_token": item.get("access_token"),
+                "instagram_business_account": item.get("instagram_business_account"),
+            }
+        )
+    return out
+
+
+async def get_instagram_business_account(
+    page_id: str,
+    page_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> Optional[dict[str, Any]]:
+    """Page に紐づく Instagram Business Account を取得する。
+
+    紐付けがなければ None を返す。
+
+    Returns:
+        {"id": "<ig-business-id>", "username": "<ig-username>"} or None
+    """
+    if not page_id:
+        raise ValueError("page_id is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    url = f"{graph_base_url()}/{page_id}"
+    body = await _request(
+        "GET",
+        url,
+        params={
+            "fields": "instagram_business_account{id,username}",
+            "access_token": page_access_token,
+        },
+        client=client,
+    )
+    iba = body.get("instagram_business_account")
+    if not iba or not isinstance(iba, dict):
+        return None
+    return {"id": iba.get("id"), "username": iba.get("username")}
+
+
+async def subscribe_page_to_app(
+    page_id: str,
+    page_access_token: str,
+    *,
+    subscribed_fields: Optional[tuple[str, ...]] = None,
+    client: Optional[httpx.AsyncClient] = None,
+) -> list[str]:
+    """Page を本 App の subscribed_apps に登録する（webhook 受信開始）。
+
+    Returns:
+        登録した subscribed_fields のリスト
+    """
+    if not page_id:
+        raise ValueError("page_id is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    fields = tuple(subscribed_fields) if subscribed_fields else _DEFAULT_SUBSCRIBED_FIELDS
+    url = f"{graph_base_url()}/{page_id}/subscribed_apps"
+    body = await _request(
+        "POST",
+        url,
+        params={"access_token": page_access_token},
+        data={"subscribed_fields": ",".join(fields)},
+        client=client,
+    )
+    if not body.get("success", False):
+        raise MetaGraphTransportError(
+            f"Meta /{page_id}/subscribed_apps did not return success=true"
+        )
+    return list(fields)
+
+
+async def unsubscribe_page_from_app(
+    page_id: str,
+    page_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> bool:
+    """Page を本 App の subscribed_apps から解除する。
+
+    Returns:
+        success=true なら True
+    """
+    if not page_id:
+        raise ValueError("page_id is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    url = f"{graph_base_url()}/{page_id}/subscribed_apps"
+    body = await _request(
+        "DELETE",
+        url,
+        params={"access_token": page_access_token},
+        client=client,
+    )
+    return bool(body.get("success", False))
+
+
+__all__ = [
+    "MetaGraphError",
+    "MetaGraphAPIError",
+    "MetaGraphTimeoutError",
+    "MetaGraphTransportError",
+    "graph_api_version",
+    "graph_base_url",
+    "exchange_code_for_short_token",
+    "exchange_short_token_for_long_token",
+    "list_user_pages",
+    "get_instagram_business_account",
+    "subscribe_page_to_app",
+    "unsubscribe_page_from_app",
+]
