@@ -74,6 +74,12 @@ services:
       - META_APP_ID=${META_APP_ID:-}
       - META_OAUTH_REDIRECT_URI=${META_OAUTH_REDIRECT_URI:-}
       - META_GRAPH_API_VERSION=${META_GRAPH_API_VERSION:-v19.0}
+      # Phase 2 Webhook 後方互換 fallback: webhook.py の _get_tenant_id_by_page で
+      # tenant_meta_config 検索失敗時に env と一致した page_id を fallback で
+      # 最初の active tenant に紐付ける。OAuth 接続完了後 (tenant_meta_config に
+      # データ投入後) は不要だが、過渡期に必要 (spec §5-7 / Sprint 6 設計)。
+      - META_PAGE_ID=${META_PAGE_ID:-}
+      - META_PAGE_ACCESS_TOKEN=${META_PAGE_ACCESS_TOKEN:-}
       - ENFORCE_METADATA_FERNET_KEY=${ENFORCE_METADATA_FERNET_KEY:-}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-}
     volumes:
