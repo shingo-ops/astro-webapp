@@ -125,6 +125,9 @@ export default function InboxPage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  // Phase 1-E F4-S5: 24h 以内でも明示的に Human Agent Tag を付与する toggle
+  // backend は force_human_agent_tag を spec §5-5 で受付済（Sprint 5）
+  const [forceHumanAgentTag, setForceHumanAgentTag] = useState(false);
 
   // メッセージ末尾への自動スクロール用 ref
   const messageListRef = useRef<HTMLDivElement | null>(null);
@@ -257,7 +260,10 @@ export default function InboxPage() {
     setSendError("");
     setSending(true);
     try {
-      await sendMessage(selectedLeadId, { text: trimmedDraft });
+      await sendMessage(selectedLeadId, {
+        text: trimmedDraft,
+        force_human_agent_tag: forceHumanAgentTag || undefined,
+      });
       setDraft("");
       // 成功直後に即座にメッセージ再取得（楽観的更新ではなく確実な再描画）
       await loadMessages(selectedLeadId);
@@ -274,7 +280,7 @@ export default function InboxPage() {
     } finally {
       setSending(false);
     }
-  }, [sendDisabled, selectedLeadId, trimmedDraft, loadMessages, loadConversations]);
+  }, [sendDisabled, selectedLeadId, trimmedDraft, forceHumanAgentTag, loadMessages, loadConversations]);
 
   /** Enter で送信、Shift+Enter で改行（chat UX 標準）。日本語 IME 変換中は無視。 */
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -611,6 +617,30 @@ export default function InboxPage() {
             >
               {messagingWindow && (
                 <MessagingWindowBanner messagingWindow={messagingWindow} />
+              )}
+              {/* Phase 1-E F4-S5: Human Agent Tag 強制付与 toggle
+                  WITHIN_24H 時のみ意味があるオプション。24h 超は自動で HUMAN_AGENT 適用済 */}
+              {messagingWindow?.can_send_response && (
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: "0.8rem",
+                    marginBottom: 8,
+                    cursor: "pointer",
+                    color: forceHumanAgentTag ? "#a45a00" : "var(--text-secondary, #666)",
+                  }}
+                  title="ON にすると 24h 以内でも MESSAGE_TAG=HUMAN_AGENT で送信されます（運用回避用）"
+                >
+                  <input
+                    type="checkbox"
+                    checked={forceHumanAgentTag}
+                    onChange={e => setForceHumanAgentTag(e.target.checked)}
+                    disabled={sending}
+                  />
+                  Human Agent Tag を強制付与{forceHumanAgentTag ? "（次の送信に適用）" : ""}
+                </label>
               )}
               {sendError && (
                 <div
