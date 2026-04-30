@@ -1,0 +1,121 @@
+name: Backend Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+      - 'migrations/**'
+      - '.github/workflows/test.yml'
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - 'backend/**'
+      - 'migrations/**'
+      - '.github/workflows/test.yml'
+
+jobs:
+  pytest:
+    name: pytest (SQLite + PostgreSQL RLS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: jarvis
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: jarvis_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jarvis -d jarvis_test_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate Fernet key for tests
+        id: fernet
+        run: |
+          KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if pg_isready -h localhost -U jarvis -d jarvis_test_db; then
+              echo "PostgreSQL ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "PostgreSQL did not become ready in time"
+          exit 1
+        env:
+          PGPASSWORD: testpass
+
+      - name: Run pytest (full suite + PostgreSQL RLS)
+        working-directory: backend
+        env:
+          # Phase 1-D Sprint 2 で導入した Fernet 鍵
+          METADATA_FERNET_KEY: ${{ steps.fernet.outputs.key }}
+          # Webhook / OAuth 周辺で必要な環境変数（テスト用ダミー値）
+          META_VERIFY_TOKEN: ci-test-verify-token
+          META_APP_SECRET: ci-test-app-secret
+          META_APP_ID: ci-test-app-id
+          META_OAUTH_REDIRECT_URI: https://test.example.com/channels/oauth/callback
+          # ENFORCE_METADATA_FERNET_KEY=1 で lifespan の fail-fast を有効化
+          ENFORCE_METADATA_FERNET_KEY: "1"
+          # Phase 1-E F3-S2: PostgreSQL RLS テスト有効化
+          # tests/test_rls_tenant_meta_config.py が pytest.skipif でこの env を見て skip 解除する
+          RLS_TEST_DATABASE_URL: postgresql+asyncpg://jarvis:testpass@localhost:5432/jarvis_test_db
+          # Redis（既存 OAuth state ストレージ等で利用）
+          REDIS_URL: redis://localhost:6379/0
+          # FastAPI lifespan 内でアクセスするため
+          ENVIRONMENT: test
+        run: |
+          pytest -q --tb=short
+
+      - name: Report PostgreSQL RLS test execution
+        if: always()
+        working-directory: backend
+        env:
+          RLS_TEST_DATABASE_URL: postgresql+asyncpg://jarvis:testpass@localhost:5432/jarvis_test_db
+          METADATA_FERNET_KEY: ${{ steps.fernet.outputs.key }}
+          META_VERIFY_TOKEN: ci-test-verify-token
+          META_APP_SECRET: ci-test-app-secret
+        run: |
+          echo "=== Phase 1-E F3-S2: PostgreSQL RLS テスト確認 ==="
+          pytest tests/test_rls_tenant_meta_config.py -v --tb=short || true
