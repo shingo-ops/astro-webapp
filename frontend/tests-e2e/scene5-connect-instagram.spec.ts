@@ -44,7 +44,7 @@ test.describe("Scene 5: Connect Instagram", () => {
 
     await page.goto("/channels");
     await expect(
-      page.getByRole("heading", { name: "Channels（メッセージ連携）" }),
+      page.getByRole("heading", { name: "Channels（Meta連携）" }),
     ).toBeVisible({ timeout: 20_000 });
 
     // Page カード見出し

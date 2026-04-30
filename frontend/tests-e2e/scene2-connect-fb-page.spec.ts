@@ -44,7 +44,7 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
 
     // ページ見出し
     await expect(
-      page.getByRole("heading", { name: "Channels（メッセージ連携）" }),
+      page.getByRole("heading", { name: "Channels（Meta連携）" }),
     ).toBeVisible({ timeout: 20_000 });
 
     // 0 件 onboarding（空 state）
@@ -101,7 +101,7 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
 
     await page.goto("/channels");
     await expect(
-      page.getByRole("heading", { name: "Channels（メッセージ連携）" }),
+      page.getByRole("heading", { name: "Channels（Meta連携）" }),
     ).toBeVisible({ timeout: 20_000 });
 
     // 接続ボタンを押す（ヘッダ側を click）
