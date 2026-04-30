@@ -36,8 +36,10 @@ import {
   MessagingWindow,
   PlatformFilter,
   getMessages,
+  inferPlatform,
   listConversations,
   markRead as apiMarkRead,
+  platformLabel as libPlatformLabel,
   sendMessage,
 } from "../lib/messages";
 
@@ -83,11 +85,8 @@ function formatAbsolute(iso: string | null): string {
   });
 }
 
-function platformLabel(p: string | null): string {
-  if (p === "messenger") return "Messenger";
-  if (p === "instagram") return "Instagram";
-  return p || "—";
-}
+// Phase 1-E F24-S5: lib/messages.ts の libPlatformLabel に集約。後方互換のため alias 維持。
+const platformLabel = libPlatformLabel;
 
 function platformBadgeStyle(p: string | null): React.CSSProperties {
   if (p === "messenger") {
@@ -521,10 +520,10 @@ export default function InboxPage() {
                       padding: "2px 6px",
                       borderRadius: 3,
                       border: "1px solid",
-                      ...platformBadgeStyle(messagesData?.lead?.platform || selectedConversation?.platform || null),
+                      ...platformBadgeStyle(inferPlatform(messagesData?.lead, selectedConversation)),
                     }}
                   >
-                    {platformLabel(messagesData?.lead?.platform || selectedConversation?.platform || null)}
+                    {platformLabel(inferPlatform(messagesData?.lead, selectedConversation))}
                   </span>
                 </div>
               </div>
