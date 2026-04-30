@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 """
-Meta Inbox（Phase 1-D）の OAuth 接続 / 切断 endpoints。
+Meta Inbox（Phase 1-D）の OAuth 接続 / 切断 / Channels 一覧 endpoints。
 
-本ルーターは Sprint 2 の範囲として OAuth 接続 + 切断 + Graph API 経由の
-subscribed_apps 操作のみを担当する。
-- Channels 一覧 (`GET /meta/channels`) は Sprint 3 で追加
+本ルーターのカバー範囲:
+- Sprint 2: OAuth 接続 + 切断 + Graph API 経由の subscribed_apps 操作
+- Sprint 3: `GET /meta/channels` 接続済み Page 一覧（本コミットで追加）
 - 会話 / メッセージ送受信 endpoints は Sprint 4 / 5 で追加
 - Instagram webhook 拡張は Sprint 6 で webhook.py を改修
 
 既存 `app/routers/meta.py` は Data Deletion 専用のため、本ルーターは別ファイル
 として分離している（spec §8-3）。
 
-参考: spec §5-1, §6（OAuth フロー詳細）
+参考: spec §5-1, §5-2, §6（OAuth フロー詳細）
 """
 
 import logging
@@ -599,3 +599,112 @@ async def connect_delete(
         "is_active": False,
         "meta_unsubscribe_ok": unsubscribe_ok,
     }
+
+
+# ---------------------------------------------------------------------------
+# GET /meta/channels — 接続済み Page 一覧（spec §5-2）
+# ---------------------------------------------------------------------------
+
+
+def _format_dt(value) -> Optional[str]:
+    """datetime / 文字列 / None を ISO8601 文字列に正規化する。
+
+    SQLite の TIMESTAMP 列は str で返ることがあるためそのまま、
+    PostgreSQL は datetime で返るので isoformat() する。
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return str(value)
+
+
+@router.get(
+    "/meta/channels",
+    dependencies=[Depends(require_permission("channels.view"))],
+)
+async def list_channels(
+    include_inactive: bool = Query(False, description="切断済 (is_active=FALSE) を含める"),
+    current_user: User = Depends(get_current_user),
+    tenant_id: int = Depends(get_current_tenant),
+    db: AsyncSession = Depends(get_db),
+):
+    """接続済み Page / Instagram の一覧を返す（spec §5-2）。
+
+    返却フィールド:
+        page_id, page_name, instagram_business_account_id, instagram_username,
+        is_active, connected_at, page_token_expires_at,
+        connected_by_staff_id, connected_by_staff_name
+
+    **Page Access Token は絶対に返さない**（DB 内で Fernet 暗号化されたまま）。
+
+    並び順: `connected_at DESC`（新しい順）。
+    `?include_inactive=true` で切断済も含める（既定 false）。
+
+    tenant 分離は RLS（PostgreSQL 本番）と SQL の WHERE 句（SQLite テスト）の
+    両方で実施。SQLite では `tenant_id = :tenant_id` を必須にすることで
+    テスト環境でも他テナント行が漏れないようにしている。
+    """
+    where_clauses = ["tmc.tenant_id = :tenant_id"]
+    if not include_inactive:
+        where_clauses.append("tmc.is_active = TRUE")
+    where_sql = " AND ".join(where_clauses)
+
+    # staff の表示名は `surname_jp` + ' ' + `given_name_jp` を結合（migration 019 のスキーマ）
+    # staff テーブルが存在しないテストフィクスチャでも壊れないよう LEFT JOIN + fallback
+    sql = f"""
+        SELECT
+            tmc.page_id,
+            tmc.page_name,
+            tmc.instagram_business_account_id,
+            tmc.instagram_username,
+            tmc.is_active,
+            tmc.connected_at,
+            tmc.page_token_expires_at,
+            tmc.connected_by_staff_id,
+            COALESCE(s.surname_jp || ' ' || s.given_name_jp, s.primary_email) AS staff_name
+        FROM tenant_meta_config tmc
+        LEFT JOIN staff s ON s.id = tmc.connected_by_staff_id
+        WHERE {where_sql}
+        ORDER BY tmc.connected_at DESC, tmc.id DESC
+    """
+    try:
+        result = await db.execute(text(sql), {"tenant_id": tenant_id})
+        rows = result.fetchall()
+    except Exception:
+        # staff テーブルが存在しないなど DB スキーマが部分的なケースの fallback
+        # （staff_name 抜きで再試行）
+        logger.warning("list_channels: staff JOIN 失敗、staff_name なしで再試行")
+        sql_fallback = f"""
+            SELECT
+                tmc.page_id,
+                tmc.page_name,
+                tmc.instagram_business_account_id,
+                tmc.instagram_username,
+                tmc.is_active,
+                tmc.connected_at,
+                tmc.page_token_expires_at,
+                tmc.connected_by_staff_id,
+                NULL AS staff_name
+            FROM tenant_meta_config tmc
+            WHERE {where_sql}
+            ORDER BY tmc.connected_at DESC, tmc.id DESC
+        """
+        result = await db.execute(text(sql_fallback), {"tenant_id": tenant_id})
+        rows = result.fetchall()
+
+    channels = [
+        {
+            "page_id": row[0],
+            "page_name": row[1],
+            "instagram_business_account_id": row[2],
+            "instagram_username": row[3],
+            "is_active": bool(row[4]),
+            "connected_at": _format_dt(row[5]),
+            "page_token_expires_at": _format_dt(row[6]),
+            "connected_by_staff_id": row[7],
+            "connected_by_staff_name": row[8],
+        }
+        for row in rows
+    ]
+    return {"channels": channels}
