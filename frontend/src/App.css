@@ -1,5 +1,5 @@
 /* ============================================================
-   SalesAnchor - Application Styles
+   Sales Anchor - Application Styles
    ============================================================ */
 
 /* --- Top Nav Layout (GAS互換 2段ナビ) --- */
@@ -519,7 +519,7 @@
   margin: 0 0 4px;
 }
 
-/* SalesAnchor brand logo (login top) */
+/* Sales Anchor brand logo (login top) */
 .login-logo {
   display: block;
   margin: 0 auto 12px;

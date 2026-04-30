@@ -27,7 +27,7 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1 className="sr-only">SalesAnchor</h1>
+        <h1 className="sr-only">Sales Anchor</h1>
         <img
           src="/logo.png"
           alt=""
