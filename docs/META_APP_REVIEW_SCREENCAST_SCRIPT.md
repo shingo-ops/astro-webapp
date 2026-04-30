@@ -395,16 +395,16 @@ FPS: 60
 | 秒 | 操作 |
 |---|---|
 | 6:30 | Meta Developer Portal を開く（`developers.facebook.com/apps/<APP_ID>/settings/basic/`） |
-| 6:34 | 「Data Deletion Request URL」設定欄を表示。値: `https://salesanchor.jp/api/v1/meta/data-deletion-callback` |
+| 6:34 | 「Data Deletion Request URL」設定欄を表示。値: `https://api.salesanchor.jp/api/v1/meta/data-deletion` |
 | 6:42 | Meta が公開している Data Deletion テストツール（あるいは curl で代替）から POST を送信: |
 |  | ```bash``` |
-|  | ```curl -X POST https://salesanchor.jp/api/v1/meta/data-deletion-callback \``` |
+|  | ```curl -X POST https://api.salesanchor.jp/api/v1/meta/data-deletion \``` |
 |  | ```  -d "signed_request=..."``` |
 |  | ```  ``` |
-| 6:54 | レスポンスとして `{"url": "https://salesanchor.jp/data-deletion/status/<token>", "confirmation_code": "..."}` が返る |
+| 6:54 | レスポンスとして `{"url": "https://salesanchor.jp/deletion-status?code=DEL-YYYYMMDD-xxxx", "confirmation_code": "DEL-YYYYMMDD-xxxx"}` が返る（`DEL-YYYYMMDD-xxxx` は実装の confirmation code 形式 `_CONFIRMATION_CODE_RE`） |
 | 7:00 | 上記 URL をブラウザで開く |
 | 7:04 | Status Page が表示される: |
-|  | - Confirmation Code: `xxxxx` |
+|  | - Confirmation Code: `DEL-YYYYMMDD-xxxx`（例: `DEL-20260430-a3f2`） |
 |  | - Status: `pending` → `processing` → `completed`（リアルタイム更新） |
 |  | - 削除予定データの説明（Meta 経由で受信した DM、紐づく lead 情報） |
 | 7:18 | Status が `completed` になり、削除完了メールが発行されたことを示す（事前に SMTP 設定済の場合） |

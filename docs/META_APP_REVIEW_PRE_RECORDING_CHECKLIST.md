@@ -47,8 +47,8 @@
 - [ ] App Domain: `salesanchor.jp`, `app.salesanchor.jp`
 - [ ] Privacy Policy URL: `https://salesanchor.jp/privacy`（Phase 5 で稼働中）
 - [ ] Terms of Service URL: `https://salesanchor.jp/terms`
-- [ ] Data Deletion Request URL: `https://salesanchor.jp/api/v1/meta/data-deletion-callback`
-- [ ] User Data Deletion Status URL Pattern: `https://salesanchor.jp/data-deletion/status/{token}`
+- [ ] Data Deletion Request URL: `https://api.salesanchor.jp/api/v1/meta/data-deletion`（B1-B7 で本番稼働中、`api.salesanchor.jp` サブドメインに注意）
+- [ ] User Data Deletion Status URL Pattern: `https://salesanchor.jp/deletion-status?code={confirmation_code}`（confirmation code 形式: `DEL-YYYYMMDD-xxxx`）
 
 ### A-2. Facebook Login 設定
 
@@ -216,7 +216,7 @@ ORDER BY id DESC LIMIT 1;
 
 - [ ] Meta Developer Portal の `Data Deletion Callback` 設定が正しい
 - [ ] curl テスト用の signed_request サンプルを Bitwarden に保管
-- [ ] テスト送信 → Status Page が `https://salesanchor.jp/data-deletion/status/<token>` で開けるか事前確認
+- [ ] テスト送信 → Status Page が `https://salesanchor.jp/deletion-status?code=<confirmation_code>` で開けるか事前確認（confirmation_code は `DEL-YYYYMMDD-xxxx` 形式、レスポンスの `confirmation_code` フィールドをそのまま利用）
 - [ ] SMTP 設定済（任意）。設定済なら完了メールも撮影に含められる
 
 ---
