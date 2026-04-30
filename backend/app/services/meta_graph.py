@@ -294,6 +294,62 @@ async def exchange_short_token_for_long_token(
     }
 
 
+async def refresh_page_access_token(
+    current_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> dict[str, Any]:
+    """既存の長期 Page Access Token を再延長する（Phase 1-E F1-S2）。
+
+    Meta の Graph API では `grant_type=fb_exchange_token` を使うことで、
+    まだ有効な長期トークンをもう一度長期化（≒ 60 日延長）できる。仕組みとしては
+    `exchange_short_token_for_long_token` と同じエンドポイントを叩くが、用途が
+    「短期 → 長期」ではなく「長期 → 長期（再延長）」である点だけが違う。
+
+    呼び出し側（`app.tasks.refresh_meta_tokens`）の責務:
+      - DB から Fernet 復号した平文 token を渡す
+      - 戻り値の `access_token` を再び Fernet 暗号化して保存する
+      - `expires_in` から `page_token_expires_at` を計算して保存する
+      - 失敗時の audit_logs 記録 / is_active 制御
+
+    Returns:
+        {
+            "access_token": "<refreshed-long-token>",
+            "expires_in": 5183944 | None,
+            "token_type": "bearer" | None,
+        }
+
+    Raises:
+        ValueError: current_token が空
+        MetaGraphError サブクラス: Meta 側エラー（呼び出し側で audit すること）
+    """
+    if not current_token:
+        raise ValueError("current_token is required")
+    url = f"{graph_base_url()}/oauth/access_token"
+    body = await _request(
+        "GET",
+        url,
+        params={
+            "grant_type": "fb_exchange_token",
+            "client_id": _app_id(),
+            "client_secret": _app_secret(),
+            "fb_exchange_token": current_token,
+        },
+        client=client,
+    )
+    token = body.get("access_token")
+    if not token or not isinstance(token, str):
+        raise MetaGraphTransportError(
+            "Meta /oauth/access_token (refresh) did not return access_token"
+        )
+    expires_in = body.get("expires_in")
+    return {
+        "access_token": token,
+        "expires_in": expires_in if isinstance(expires_in, int) else None,
+        "token_type": body.get("token_type"),
+    }
+
+
 async def list_user_pages(
     user_access_token: str,
     *,
@@ -608,6 +664,7 @@ __all__ = [
     "graph_base_url",
     "exchange_code_for_short_token",
     "exchange_short_token_for_long_token",
+    "refresh_page_access_token",
     "list_user_pages",
     "get_instagram_business_account",
     "subscribe_page_to_app",
