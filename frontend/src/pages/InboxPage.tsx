@@ -1,12 +1,12 @@
 /**
- * Inbox ページ（Phase 1-D Sprint 4）。
+ * Inbox ページ（Phase 1-D Sprint 4 / Sprint 5）。
  *
  * 既存 `/lead-chat` の ComingSoonPage を置き換える。Messenger / Instagram の
- * メッセージ表示部分を担当する 2 ペイン構成。
+ * メッセージ表示 + 返信送信を担当する 2 ペイン構成。
  *
- * 仕様: spec §5-3 / §5-4 / §5-6 / §7-2
+ * 仕様: spec §5-3 / §5-4 / §5-5 / §5-6 / §7-2
  *
- * 主な機能（Sprint 4 範囲）:
+ * 主な機能:
  *  - 左ペイン: GET /api/v1/conversations の会話リスト
  *      - platform フィルタ（all / messenger / instagram）
  *      - unread_only トグル
@@ -14,88 +14,32 @@
  *  - 右ペイン: 選択中 lead の GET /api/v1/leads/{id}/messages
  *      - direction で吹き出し位置切替（inbound 左 / outbound 右）
  *      - 24h messaging window のバナー（緑/黄/赤）
- *      - 送信フォーム（送信ボタンは disabled、Sprint 5 で機能追加予定）
+ *      - 返信送信フォーム（Sprint 5 で追加）
+ *          - Enter で送信、Shift+Enter で改行
+ *          - 送信中 loading、成功で textarea クリア + メッセージ再取得
+ *          - 7d 超過時は disabled、24h-7d 時は HUMAN_AGENT 注記
  *      - lead 切替時に POST /messages/mark-read で既読化
  *  - 10 秒 polling（会話リスト + 選択中メッセージ）
  *  - URL ?lead_id=XXX で deep link
  *
- * Sprint 5 で実装:
- *  - 送信機能（POST /api/v1/leads/{id}/messages）
- *  - 送信エラー時のメッセージバブル赤枠
- *
  * 変更履歴:
- *   2026-04-30: Phase 1-D Sprint 4 初版
+ *   2026-04-30: Sprint 4 初版（送信ボタン disabled）
+ *   2026-04-30: Sprint 5 — lib/messages.ts ヘルパ経由に切替 + 送信機能 enable
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ApiError, api } from "../lib/api";
-
-// ---------------------------------------------------------------------------
-// 型定義
-// ---------------------------------------------------------------------------
-
-interface Conversation {
-  lead_id: number;
-  lead_code: string | null;
-  customer_name: string | null;
-  platform: "messenger" | "instagram" | string;
-  last_message_text: string | null;
-  last_message_at: string | null;
-  last_message_direction: "inbound" | "outbound" | string;
-  unread_count: number;
-  messaging_window_expires_at: string | null;
-}
-
-interface ConversationsResponse {
-  conversations: Conversation[];
-  next_cursor: string | null;
-}
-
-interface Message {
-  id: number;
-  platform: string;
-  sender_id: string | null;
-  sender_name: string | null;
-  message_text: string | null;
-  direction: "inbound" | "outbound" | string;
-  message_id: string | null;
-  recipient_id: string | null;
-  messaging_type: string | null;
-  message_tag: string | null;
-  sent_by_staff_id: number | null;
-  error_code: string | null;
-  error_message: string | null;
-  seen_at: string | null;
-  seen_by_staff_id: number | null;
-  created_at: string | null;
-}
-
-interface MessagingWindow {
-  last_inbound_at: string | null;
-  expires_at: string | null;
-  can_send_response: boolean;
-  requires_human_agent_tag: boolean;
-  can_send_at_all: boolean;
-}
-
-interface MessagesResponse {
-  messages: Message[];
-  lead: {
-    id: number;
-    lead_code: string | null;
-    customer_name: string | null;
-    platform: string | null;
-    source: string | null;
-  };
-  messaging_window: MessagingWindow;
-}
-
-interface MarkReadResponse {
-  marked_count: number;
-}
-
-type PlatformFilter = "all" | "messenger" | "instagram";
+import { ApiError } from "../lib/api";
+import {
+  Conversation,
+  MessagesResponse,
+  MessagingWindow,
+  PlatformFilter,
+  getMessages,
+  listConversations,
+  markRead as apiMarkRead,
+  sendMessage,
+} from "../lib/messages";
 
 // ---------------------------------------------------------------------------
 // 設定
@@ -177,8 +121,10 @@ export default function InboxPage() {
   const [msgLoading, setMsgLoading] = useState(false);
   const [msgError, setMsgError] = useState("");
 
-  // 入力欄（Sprint 4 では送信不可だが UI は表示）
+  // 入力欄
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   // メッセージ末尾への自動スクロール用 ref
   const messageListRef = useRef<HTMLDivElement | null>(null);
@@ -190,13 +136,10 @@ export default function InboxPage() {
   const loadConversations = useCallback(async () => {
     setConvError("");
     try {
-      const params = new URLSearchParams();
-      if (platformFilter !== "all") params.set("platform", platformFilter);
-      if (unreadOnly) params.set("unread_only", "true");
-      const qs = params.toString();
-      const data = await api.get<ConversationsResponse>(
-        `/conversations${qs ? `?${qs}` : ""}`,
-      );
+      const data = await listConversations({
+        platform: platformFilter,
+        unread_only: unreadOnly,
+      });
       setConversations(data.conversations || []);
     } catch (e) {
       const msg = e instanceof ApiError
@@ -212,7 +155,7 @@ export default function InboxPage() {
     setMsgError("");
     setMsgLoading(true);
     try {
-      const data = await api.get<MessagesResponse>(`/leads/${leadId}/messages`);
+      const data = await getMessages(leadId);
       setMessagesData(data);
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) {
@@ -231,11 +174,8 @@ export default function InboxPage() {
 
   const markRead = useCallback(async (leadId: number) => {
     try {
-      const res = await api.post<MarkReadResponse>(
-        `/leads/${leadId}/messages/mark-read`,
-        {},
-      );
-      // ローカル状態の unread_count も即座に 0 にする（次の polling でも 0 のはず）
+      const res = await apiMarkRead(leadId);
+      // ローカル状態の unread_count も即座に 0 にする
       if (res.marked_count > 0) {
         setConversations(prev =>
           prev.map(c => c.lead_id === leadId ? { ...c, unread_count: 0 } : c)
@@ -276,6 +216,7 @@ export default function InboxPage() {
   const selectLead = useCallback((leadId: number) => {
     setSelectedLeadId(leadId);
     setDraft("");
+    setSendError("");
     // URL クエリ反映（deep link 維持）
     const params = new URLSearchParams(searchParams);
     params.set("lead_id", String(leadId));
@@ -302,6 +243,48 @@ export default function InboxPage() {
   }, [messagesData]);
 
   // ---------------------------------------------------------------------------
+  // 送信（Sprint 5）
+  // ---------------------------------------------------------------------------
+
+  const messagingWindow = messagesData?.messaging_window;
+  const canSend = !!messagingWindow?.can_send_at_all;
+  const trimmedDraft = draft.trim();
+  // 入力が空 / 送信中 / 7d 超 / lead 未選択 のとき送信ボタン disabled
+  const sendDisabled = sending || !canSend || trimmedDraft.length === 0 || selectedLeadId === null;
+
+  const submitSend = useCallback(async () => {
+    if (sendDisabled || selectedLeadId === null) return;
+    setSendError("");
+    setSending(true);
+    try {
+      await sendMessage(selectedLeadId, { text: trimmedDraft });
+      setDraft("");
+      // 成功直後に即座にメッセージ再取得（楽観的更新ではなく確実な再描画）
+      await loadMessages(selectedLeadId);
+      // 会話リストも更新（最終メッセージ要約 / 並び順反映）
+      loadConversations();
+    } catch (e) {
+      if (e instanceof ApiError) {
+        setSendError(e.message || "送信に失敗しました");
+      } else if (e instanceof Error) {
+        setSendError(e.message);
+      } else {
+        setSendError("送信に失敗しました");
+      }
+    } finally {
+      setSending(false);
+    }
+  }, [sendDisabled, selectedLeadId, trimmedDraft, loadMessages, loadConversations]);
+
+  /** Enter で送信、Shift+Enter で改行（chat UX 標準）。日本語 IME 変換中は無視。 */
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      submitSend();
+    }
+  }, [submitSend]);
+
+  // ---------------------------------------------------------------------------
   // 描画
   // ---------------------------------------------------------------------------
 
@@ -317,7 +300,6 @@ export default function InboxPage() {
         display: "flex",
         gap: 0,
         height: "calc(100vh - 80px)",
-        // overflow を hidden にして、内側のペインで scroll する
         overflow: "hidden",
       }}
     >
@@ -466,7 +448,7 @@ export default function InboxPage() {
                     {conv.last_message_direction === "outbound" && (
                       <span style={{ color: "#666" }}>あなた: </span>
                     )}
-                    {conv.last_message_text || "（メッセージなし）"}
+                    {conv.last_message_text || "(メッセージなし)"}
                   </div>
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted, #999)" }}>
                     {relativeTime(conv.last_message_at)}
@@ -602,7 +584,7 @@ export default function InboxPage() {
                           {msg.message_tag === "HUMAN_AGENT" ? "Human Agent" : msg.message_tag}
                         </div>
                       )}
-                      <div>{msg.message_text || "（本文なし）"}</div>
+                      <div>{msg.message_text || "(本文なし)"}</div>
                       <div
                         style={{
                           fontSize: "0.7rem",
@@ -627,15 +609,38 @@ export default function InboxPage() {
                 background: "var(--bg-secondary, #fafafa)",
               }}
             >
-              {messagesData?.messaging_window && (
-                <MessagingWindowBanner messagingWindow={messagesData.messaging_window} />
+              {messagingWindow && (
+                <MessagingWindowBanner messagingWindow={messagingWindow} />
+              )}
+              {sendError && (
+                <div
+                  className="error"
+                  role="alert"
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 4,
+                    background: "#fdecea",
+                    color: "#a50e0e",
+                    border: "1px solid #a50e0e",
+                    fontSize: "0.8rem",
+                    marginBottom: 8,
+                  }}
+                >
+                  送信エラー: {sendError}
+                </div>
               )}
               <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
                 <textarea
                   value={draft}
                   onChange={e => setDraft(e.target.value)}
-                  placeholder="返信を入力（送信機能は Sprint 5 で追加予定）"
+                  onKeyDown={handleKeyDown}
+                  placeholder={
+                    canSend
+                      ? "返信を入力（Enter で送信、Shift+Enter で改行）"
+                      : "メッセージウィンドウを超過しているため送信できません"
+                  }
                   rows={2}
+                  disabled={!canSend || sending}
                   style={{
                     flex: 1,
                     padding: 8,
@@ -644,15 +649,23 @@ export default function InboxPage() {
                     fontFamily: "inherit",
                     fontSize: "0.9rem",
                     resize: "vertical",
+                    background: !canSend ? "#f5f5f5" : "white",
                   }}
                 />
                 <button
                   type="button"
                   className="btn-primary"
-                  disabled
-                  title="送信機能は Sprint 5 で実装予定です"
+                  onClick={submitSend}
+                  disabled={sendDisabled}
+                  title={
+                    !canSend
+                      ? "メッセージウィンドウを超過しているため送信できません"
+                      : trimmedDraft.length === 0
+                        ? "本文を入力してください"
+                        : "送信（Enter）"
+                  }
                 >
-                  送信（準備中）
+                  {sending ? "送信中..." : "送信"}
                 </button>
               </div>
             </div>
@@ -683,7 +696,7 @@ function MessagingWindowBanner({ messagingWindow }: { messagingWindow: Messaging
   } else if (!messagingWindow.can_send_at_all) {
     color = { bg: "#fdecea", fg: "#a50e0e", border: "#a50e0e" };
     text = messagingWindow.last_inbound_at
-      ? "メッセージウィンドウを超過しています（受信から 7 日以上経過）。返信できません。"
+      ? "メッセージウィンドウを超過しています(受信から 7 日以上経過)。返信できません。"
       : "受信履歴がありません。Meta の仕様により最初のメッセージは顧客側から送信される必要があります。";
   } else {
     // 念のため fallback
