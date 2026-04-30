@@ -200,10 +200,17 @@ export default function InboxPage() {
 
   // ---------------------------------------------------------------------------
   // 10s polling（会話リスト + 選択中メッセージ）
+  // Phase 1-E F13-S5: 送信成功直後の loadMessages と polling の二重取得を回避するため、
+  // 送信時に skipNextPollRef = true を立て、次の 1 回だけ polling を skip する
   // ---------------------------------------------------------------------------
+  const skipNextPollRef = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => {
+      if (skipNextPollRef.current) {
+        skipNextPollRef.current = false;
+        return;
+      }
       loadConversations();
       if (selectedLeadId !== null) {
         loadMessages(selectedLeadId);
@@ -266,6 +273,8 @@ export default function InboxPage() {
       });
       setDraft("");
       // 成功直後に即座にメッセージ再取得（楽観的更新ではなく確実な再描画）
+      // Phase 1-E F13-S5: 直後の polling 1 回を skip して二重取得を回避
+      skipNextPollRef.current = true;
       await loadMessages(selectedLeadId);
       // 会話リストも更新（最終メッセージ要約 / 並び順反映）
       loadConversations();
