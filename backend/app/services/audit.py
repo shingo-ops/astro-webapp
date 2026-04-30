@@ -306,13 +306,16 @@ async def record_audit_log(
     old_json = json.dumps(old_data, ensure_ascii=False, default=str) if old_data else None
     new_json = json.dumps(new_data, ensure_ascii=False, default=str) if new_data else None
 
+    # Phase 1-E F9-S4: SQLite テスト互換のため CAST(... AS jsonb) を外す。
+    # PostgreSQL の jsonb 列は TEXT を自動で jsonb に変換するため安全。
+    # SQLite では TEXT として保存される（型は緩い）。
     await db.execute(
         text(f"""
             INSERT INTO {schema_name}.audit_logs
                 (tenant_id, user_id, action, table_name, record_id, old_data, new_data)
             VALUES
                 (:tenant_id, :user_id, :action, :table_name, :record_id,
-                 CAST(:old_data AS jsonb), CAST(:new_data AS jsonb))
+                 :old_data, :new_data)
         """),
         {
             "tenant_id": tenant_id,

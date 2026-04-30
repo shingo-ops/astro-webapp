@@ -724,6 +724,31 @@ async def mark_lead_messages_read(
     )
     marked = int(upd.rowcount or 0)
 
+    # Phase 1-E F9-S4 (Sprint 4 Reviewer F2): mark-read アクションを audit_log に記録。
+    # 既読化の事実を残す。失敗時はログのみ（ユーザー操作は中断しない）。
+    # firebase_uid 列追加は別 follow-up（F9-S4 拡張版）。現状は user_id (DB id) のみ。
+    if marked > 0:
+        try:
+            await record_audit_log(
+                db=db,
+                tenant_id=tenant_id,
+                user_id=current_user.id,
+                action="mark_messages_read",
+                table_name="meta_messages",
+                record_id=lead_id,
+                new_data={
+                    "marked_count": marked,
+                    "lead_id": lead_id,
+                    "staff_id": staff_id,
+                },
+            )
+        except Exception:
+            # audit_logs テーブル不在 (テスト環境) や DB 障害でも機能を止めない
+            logger.exception(
+                "audit_log 記録失敗 (mark_messages_read), lead_id=%s",
+                lead_id,
+            )
+
     await db.commit()
 
     return {"marked_count": marked}
