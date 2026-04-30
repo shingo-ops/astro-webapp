@@ -69,6 +69,7 @@ services:
       - MFA_REQUIRED=${MFA_REQUIRED:-true}
       - META_VERIFY_TOKEN=${META_VERIFY_TOKEN:-}
       - META_APP_SECRET=${META_APP_SECRET:-}
+      - METADATA_FERNET_KEY=${METADATA_FERNET_KEY:-}
     volumes:
       - ./firebase-credentials.json:/app/firebase-credentials.json:ro
     depends_on:
