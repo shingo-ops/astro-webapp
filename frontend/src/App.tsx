@@ -31,6 +31,8 @@ import BadgesPage from "./pages/BadgesPage";
 import ERPPage from "./pages/ERPPage";
 import StaffPage from "./pages/StaffPage";
 import BotsPage from "./pages/BotsPage";
+import ChannelsPage from "./pages/ChannelsPage";
+import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import "./App.css";
 
@@ -91,6 +93,11 @@ function App() {
               <Route path="/suppliers" element={<SuppliersPage />} />
               <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
               <Route path="/shifts" element={<ShiftsPage />} />
+
+              {/* Phase 1-D Sprint 3: Meta Inbox 接続管理 */}
+              <Route path="/channels" element={<ChannelsPage />} />
+              {/* Facebook OAuth dialog からの redirect_uri。code/state を backend へ送信し /channels に戻す */}
+              <Route path="/channels/oauth/callback" element={<OAuthCallbackPage />} />
 
               {/* 設定 */}
               <Route path="/settings" element={<NotificationsPage />} />
