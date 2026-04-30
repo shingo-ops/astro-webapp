@@ -67,10 +67,22 @@ jobs:
             git pull origin main
 
             echo "Step 2: Setting Meta Webhook environment variables..."
+            # 既存値があれば上書きしない（しんごさんが VPS で手動設定した値を尊重）。
+            # VPS が再構築されたとき GitHub Secrets から自動復元する目的。
             grep -q "META_VERIFY_TOKEN" .env 2>/dev/null || \
               echo "META_VERIFY_TOKEN=${{ secrets.META_VERIFY_TOKEN }}" >> .env
             grep -q "META_APP_SECRET" .env 2>/dev/null || \
               echo "META_APP_SECRET=${{ secrets.META_APP_SECRET }}" >> .env
+            # Phase 1-D Sprint 2: OAuth backend で必要
+            grep -q "META_APP_ID" .env 2>/dev/null || \
+              echo "META_APP_ID=${{ secrets.META_APP_ID }}" >> .env
+            grep -q "META_OAUTH_REDIRECT_URI" .env 2>/dev/null || \
+              echo "META_OAUTH_REDIRECT_URI=${{ secrets.META_OAUTH_REDIRECT_URI }}" >> .env
+            # Phase 1-D Sprint 1: tenant_meta_config の Page Access Token Fernet 暗号化鍵
+            # 鍵紛失リスクが極めて高い (DB 内の token が永久に復号不能になる) ため、
+            # GitHub Secrets と Bitwarden の二重保管が望ましい。
+            grep -q "METADATA_FERNET_KEY" .env 2>/dev/null || \
+              echo "METADATA_FERNET_KEY=${{ secrets.METADATA_FERNET_KEY }}" >> .env
 
             echo "Step 3: Rebuilding and restarting containers..."
             docker compose up -d --build
