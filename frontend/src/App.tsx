@@ -33,6 +33,7 @@ import StaffPage from "./pages/StaffPage";
 import BotsPage from "./pages/BotsPage";
 import ChannelsPage from "./pages/ChannelsPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
+import InboxPage from "./pages/InboxPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import "./App.css";
 
@@ -63,7 +64,8 @@ function App() {
               {/* Step 5c-2: 会社詳細ページ（multi_branch 住所編集 + 担当者タブ） */}
               <Route path="/companies/:id" element={<CompanyDetailPage />} />
               <Route path="/contacts" element={<ContactsPage />} />
-              <Route path="/lead-chat" element={<ComingSoonPage title="リードチャット" description="Meta統合メッセージ受信トレイ（Webhook基盤実装済み、UI開発中）" />} />
+              {/* Phase 1-D Sprint 4: Meta Inbox UI（左ペイン会話 + 右ペインメッセージ） */}
+              <Route path="/lead-chat" element={<InboxPage />} />
               <Route path="/archive" element={<ArchivesPage />} />
 
               {/* 在庫 */}
