@@ -1,0 +1,94 @@
+/**
+ * Scene 1: Intro — SalesAnchor Dashboard Overview
+ *
+ * 撮影台本対応: docs/META_APP_REVIEW_SCREENCAST_SCRIPT.md §2 (0:00–0:30)
+ *
+ * 目的:
+ *   - LoginPage の DOM 要素（Email / Password / ログインボタン）が描画される
+ *   - 認証 bypass 後、Dashboard ('/') が KPI を伴って表示される
+ *   - 上段ブランドバー + 主要メニュー（リード / 在庫 / 管理 / その他）が描画される
+ *
+ * 見せ場（撮影台本との対応）:
+ *   - 0:02–0:10  Email/Password 入力フォームが映る → LoginPage DOM
+ *   - 0:12       Dashboard 表示 → "ダッシュボード" 見出し + KPI カード
+ *   - 0:18–0:25  メインナビ上の Inbox / Channels / Leads / Customers ハイライト
+ */
+
+import { expect, test } from "@playwright/test";
+import { installAuthBypass } from "./utils/auth";
+import { mockApi } from "./utils/api-mock";
+import { commonMocks } from "./utils/common-mocks";
+import { loadFixture } from "./utils/fixtures";
+
+const dashboardFixture = loadFixture<{ customer_count: number }>("mock-dashboard.json");
+
+test.describe("Scene 1: Dashboard Overview", () => {
+  test("LoginPage は Email / Password / ログインボタンが見える", async ({ page }) => {
+    // 0:02–0:10 のフレーム: 認証前のログイン画面（Firebase auth bypass 不要）
+    await page.goto("/login");
+
+    await expect(page.getByLabel("メールアドレス")).toBeVisible();
+    await expect(page.getByLabel("パスワード")).toBeVisible();
+    await expect(page.getByRole("button", { name: "ログイン" })).toBeVisible();
+  });
+
+  test("認証済 user は Dashboard を見られ、KPI が描画される", async ({ page }) => {
+    await installAuthBypass(page);
+    await mockApi(page, {
+      ...commonMocks(),
+      "GET /dashboard": dashboardFixture,
+    });
+
+    // 0:12 の Dashboard 描画
+    await page.goto("/");
+
+    // h2 "ダッシュボード"
+    await expect(page.getByRole("heading", { name: "ダッシュボード" })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    // 顧客数 KPI（営業セクション）
+    await expect(page.getByText("顧客数")).toBeVisible();
+    // KPI 値が fixture と一致
+    const customerCount = await page
+      .locator(".kpi-card", { hasText: "顧客数" })
+      .locator(".kpi-value")
+      .innerText();
+    expect(customerCount.trim()).toBe(String(dashboardFixture.customer_count));
+
+    // コンバージョン率 / 成約金額 KPI も存在
+    await expect(page.getByText("コンバージョン率")).toBeVisible();
+    await expect(page.getByText("成約金額")).toBeVisible();
+  });
+
+  test("0:18–0:25: メインナビにダッシュボード / リード / 管理メニューが出ている", async ({
+    page,
+  }) => {
+    await installAuthBypass(page);
+    await mockApi(page, {
+      ...commonMocks(),
+      "GET /dashboard": dashboardFixture,
+    });
+
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "ダッシュボード" })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    // Layout の `<nav class="mainnav">` 内に主要メニュー要素がある
+    const nav = page.locator("nav.mainnav");
+    await expect(nav).toBeVisible();
+
+    // 撮影台本 0:18-0:25 で言及される項目をナビから検出
+    // - Dashboard: NavLink "ダッシュボード"
+    // - リード / 管理: NavDropdown 親 button (label + caret "▾"）として描画
+    await expect(nav.getByRole("link", { name: "ダッシュボード" })).toBeVisible();
+    // NavDropdown は <button>label ▾</button> 構造。 name が "リード ▾" を含む
+    await expect(
+      nav.getByRole("button", { name: /リード/ }),
+    ).toBeVisible();
+    await expect(
+      nav.getByRole("button", { name: /管理/ }),
+    ).toBeVisible();
+  });
+});
