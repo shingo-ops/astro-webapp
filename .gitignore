@@ -65,3 +65,8 @@ sheets/
 # nginx/docker-compose の設定だけ repo 管理、コンテンツは追跡しない
 www/salesanchor/*
 !www/salesanchor/.gitkeep
+
+# Playwright E2E (Phase 1-E F2-S3)
+frontend/test-results/
+frontend/playwright-report/
+frontend/playwright/.cache/

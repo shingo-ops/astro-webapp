@@ -1,0 +1,38 @@
+{
+  "conversations": [
+    {
+      "lead_id": 5001,
+      "lead_code": "LEAD-2026-0501",
+      "customer_name": "Taro Sender",
+      "platform": "messenger",
+      "last_message_text": "Hello, I'd like to ask about your products.",
+      "last_message_at": "2026-04-30T10:55:00+00:00",
+      "last_message_direction": "inbound",
+      "unread_count": 1,
+      "messaging_window_expires_at": "2026-05-01T10:55:00+00:00"
+    },
+    {
+      "lead_id": 5002,
+      "lead_code": "LEAD-2026-0502",
+      "customer_name": "Hanako Insta",
+      "platform": "instagram",
+      "last_message_text": "Hi, do you ship internationally?",
+      "last_message_at": "2026-04-30T10:50:00+00:00",
+      "last_message_direction": "inbound",
+      "unread_count": 1,
+      "messaging_window_expires_at": "2026-05-01T10:50:00+00:00"
+    },
+    {
+      "lead_id": 5003,
+      "lead_code": "LEAD-2026-0503",
+      "customer_name": "Late Reply Customer",
+      "platform": "messenger",
+      "last_message_text": "Are your products still in stock?",
+      "last_message_at": "2026-04-29T08:00:00+00:00",
+      "last_message_direction": "inbound",
+      "unread_count": 0,
+      "messaging_window_expires_at": "2026-04-30T08:00:00+00:00"
+    }
+  ],
+  "next_cursor": null
+}
