@@ -70,3 +70,6 @@ www/salesanchor/*
 frontend/test-results/
 frontend/playwright-report/
 frontend/playwright/.cache/
+
+# しんごさんローカル専用（commit 禁止）
+docs/LP_BASELAYOUT_TAILWIND_SPEC.md

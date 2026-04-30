@@ -205,7 +205,7 @@ function notifyDiscord_(title, issueUrl, data) {
       { name: "該当ページ", value: data.page || "-", inline: true },
       { name: "報告者", value: data.reporter || "-", inline: true },
     ],
-    footer: { text: "Jarvis CRM フィードバック" },
+    footer: { text: "Sales Anchor フィードバック" },
     timestamp: new Date().toISOString(),
   };
 

@@ -13,7 +13,7 @@
 
 ## 1. ハイライト
 
-- **Inbox UI が動く**: Messenger と Instagram DM を SalesAnchor の Inbox 1 画面で受信・返信できるようになる
+- **Inbox UI が動く**: Messenger と Instagram DM を Sales Anchor の Inbox 1 画面で受信・返信できるようになる
 - **OAuth 接続 UI**: しんごさんが UI 上で Facebook Page を接続・切断できる（環境変数直書きから卒業）
 - **24h ルール自動判定**: メッセージ送信時、Meta の 24h メッセージング窓を自動判定。24h 以内 = `RESPONSE`、24h-7d = `MESSAGE_TAG (HUMAN_AGENT)`、7d 超 = 送信不可
 - **Page Access Token 暗号化**: Fernet で暗号化して DB に保存、API レスポンスにも含めない（PII 保護）

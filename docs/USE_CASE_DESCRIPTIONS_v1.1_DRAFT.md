@@ -14,7 +14,7 @@
 
 | 章 | 変更内容 | 根拠 |
 |---|---|---|
-| **全体** | `SalesAnchor` → `Sales Anchor`（スペース付き）に統一 | しんごさん 2026-04-30 確定（PR #195 で frontend / LP 統一済） |
+| **全体** | `Sales Anchor` → `Sales Anchor`（スペース付き）に統一 | しんごさん 2026-04-30 確定（PR #195 で frontend / LP 統一済） |
 | **§3.1 pages_messaging** | Human Agent Tag 部分を §3.7 に分離（参照リンク追加） | Master Checklist v1.1 §11.1 |
 | **§3.6 instagram_manage_messages** | Advanced Access 申請理由を強化、または段階申請オプション追記 | Master Checklist v1.1 §11.3 |
 | **§3.7 Human Agent Tag (新設)** | Permission ではなく Feature として独立記述 | Master Checklist v1.1 §11.1 |
