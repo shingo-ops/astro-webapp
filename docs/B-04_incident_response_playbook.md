@@ -1,6 +1,6 @@
 # インシデント対応 Playbook
 
-## 対象: Jarvis CRM（jarvis-claude.uk）
+## 対象: Sales Anchor（jarvis-claude.uk）
 ## 最終更新: 2026-04-06
 
 ---

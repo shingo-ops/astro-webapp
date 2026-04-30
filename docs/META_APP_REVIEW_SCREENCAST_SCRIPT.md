@@ -56,7 +56,7 @@ FPS: 60
 
 撮影前に以下が準備済であること（詳細は `META_APP_REVIEW_PRE_RECORDING_CHECKLIST.md`）：
 
-- SalesAnchor: `review@salesanchor.jp` (Owner ロール) + 仮パスワード
+- Sales Anchor: `review@salesanchor.jp` (Owner ロール) + 仮パスワード
 - Test Facebook User: Meta Developer Portal の Test Mode で作成（Page admin 権限）
 - Test Facebook Page: `HIGH LIFE JPN Test Page`（リアルな Page 名）
 - Test Instagram Business Account: 上記 Page にリンク済
@@ -75,7 +75,7 @@ FPS: 60
 
 | # | 開始 | 終了 | 長さ | テーマ | 申請 Permission |
 |---|---|---|---|---|---|
-| 1 | 0:00 | 0:30 | 30 秒 | Intro: SalesAnchor dashboard overview | (前提) |
+| 1 | 0:00 | 0:30 | 30 秒 | Intro: Sales Anchor dashboard overview | (前提) |
 | 2 | 0:30 | 1:30 | 60 秒 | Connect Facebook Page via OAuth | `pages_show_list`, `pages_manage_metadata` |
 | 3 | 1:30 | 2:30 | 60 秒 | Incoming Messenger message arrives in inbox | `pages_read_engagement` |
 | 4 | 2:30 | 3:30 | 60 秒 | Sales rep replies to Messenger message | `pages_messaging` |
@@ -88,10 +88,10 @@ FPS: 60
 
 ---
 
-## 2. シーン 1: Intro — SalesAnchor Dashboard Overview
+## 2. シーン 1: Intro — Sales Anchor Dashboard Overview
 
 **時間**: 0:00 - 0:30（30 秒）
-**目的**: SalesAnchor が B2B SaaS CRM であり、Messenger/Instagram の受信箱（Inbox）が CRM のリードと紐づいて統合管理されることを冒頭で示す。
+**目的**: Sales Anchor が B2B SaaS CRM であり、Messenger/Instagram の受信箱（Inbox）が CRM のリードと紐づいて統合管理されることを冒頭で示す。
 
 ### 2-1. 画面操作
 
@@ -107,7 +107,7 @@ FPS: 60
 
 ### 2-2. 英語ナレーション
 
-> "Welcome to SalesAnchor, a B2B SaaS CRM platform for Japanese small and mid-sized businesses. Sales reps manage leads, deals, and customer conversations all in one place. In this video, we will demonstrate how SalesAnchor integrates Facebook Messenger and Instagram Direct Messages into the CRM inbox, so sales reps can reply to customer inquiries from a single screen."
+> "Welcome to Sales Anchor, a B2B SaaS CRM platform for Japanese small and mid-sized businesses. Sales reps manage leads, deals, and customer conversations all in one place. In this video, we will demonstrate how Sales Anchor integrates Facebook Messenger and Instagram Direct Messages into the CRM inbox, so sales reps can reply to customer inquiries from a single screen."
 
 (約 55 単語 / 25 秒)
 
@@ -149,7 +149,7 @@ FPS: 60
 | 0:54 | `HIGH LIFE JPN Test Page` を選択 → 「次へ」 |
 | 0:58 | Instagram Business Account 連携確認画面（IG アカウント選択） → 「次へ」 |
 | 1:02 | アクセス許可確認画面で「完了」 |
-| 1:06 | SalesAnchor の `/channels/oauth/callback` にリダイレクト |
+| 1:06 | Sales Anchor の `/channels/oauth/callback` にリダイレクト |
 | 1:10 | コールバック処理中ローディング → Channels 一覧に `HIGH LIFE JPN Test Page` が表示される |
 | 1:18 | Page カードの「Active」バッジ、`page_token_expires_at`（2 ヶ月後）を確認 |
 | 1:25 | 完了 |
@@ -180,17 +180,17 @@ FPS: 60
 ## 4. シーン 3: Incoming Messenger Message Arrives in Inbox
 
 **時間**: 1:30 - 2:30（60 秒）
-**目的**: `pages_read_engagement` を実演。送信側（別 Test User）から Messenger DM を送り、SalesAnchor Inbox に届くまでを示す。
+**目的**: `pages_read_engagement` を実演。送信側（別 Test User）から Messenger DM を送り、Sales Anchor Inbox に届くまでを示す。
 
-### 4-1. 画面操作（画面分割: 左 SalesAnchor / 右 Messenger）
+### 4-1. 画面操作（画面分割: 左 Sales Anchor / 右 Messenger）
 
 | 秒 | 操作 |
 |---|---|
-| 1:30 | SalesAnchor のサイドバーで「Inbox」をクリック → `/lead-chat` 遷移 |
+| 1:30 | Sales Anchor のサイドバーで「Inbox」をクリック → `/lead-chat` 遷移 |
 | 1:34 | Inbox 画面が表示される（左ペイン: 会話リスト、右ペイン: メッセージ表示エリア） |
 | 1:38 | カーソルを Messenger ウィンドウ（別画面）に移動。Messenger Web で `HIGH LIFE JPN Test Page` 宛にメッセージを書く: `Hello, I'd like to ask about your products.` |
 | 1:50 | 送信ボタンクリック |
-| 1:53 | SalesAnchor 側に戻る。10 秒以内（最大 polling 周期）に左ペインに新しい会話が出現 |
+| 1:53 | Sales Anchor 側に戻る。10 秒以内（最大 polling 周期）に左ペインに新しい会話が出現 |
 | 2:03 | 会話に未読バッジ（"1"）が表示される |
 | 2:06 | 会話をクリック → 右ペインに `Hello, I'd like to ask about your products.` が inbound バブルで表示 |
 | 2:12 | platform バッジ「Messenger」が確認できる |
@@ -225,7 +225,7 @@ FPS: 60
 **時間**: 2:30 - 3:30（60 秒）
 **目的**: `pages_messaging` を実演。Inbox 右ペインの返信フォームから Messenger 返信送信、相手側 Messenger に届くまでを示す。
 
-### 5-1. 画面操作（画面分割: 左 SalesAnchor / 右 Messenger）
+### 5-1. 画面操作（画面分割: 左 Sales Anchor / 右 Messenger）
 
 | 秒 | 操作 |
 |---|---|
@@ -237,8 +237,8 @@ FPS: 60
 | 3:00 | 送信者（"You" or staff name）と送信時刻が表示 |
 | 3:04 | カーソルを Messenger ウィンドウに切替 |
 | 3:08 | Sender 側 Messenger に同じテキストの新着メッセージが表示される |
-| 3:14 | 配信時刻が SalesAnchor 側送信時刻とほぼ一致することを示す |
-| 3:22 | SalesAnchor に戻り、メッセージ履歴に inbound と outbound が時系列で並んでいることを確認 |
+| 3:14 | 配信時刻が Sales Anchor 側送信時刻とほぼ一致することを示す |
+| 3:22 | Sales Anchor に戻り、メッセージ履歴に inbound と outbound が時系列で並んでいることを確認 |
 | 3:28 | 完了 |
 
 ### 5-2. 英語ナレーション
@@ -265,7 +265,7 @@ FPS: 60
 ## 6. シーン 5: Connect Instagram Business Account
 
 **時間**: 3:30 - 4:30（60 秒）
-**目的**: `instagram_basic` を実演。シーン 2 で接続した Page にリンクされた Instagram Business Account が SalesAnchor に表示されることを示す。
+**目的**: `instagram_basic` を実演。シーン 2 で接続した Page にリンクされた Instagram Business Account が Sales Anchor に表示されることを示す。
 
 ### 6-1. 画面操作
 
@@ -288,7 +288,7 @@ FPS: 60
 
 ### 6-2. 英語ナレーション
 
-> "When we connected the Facebook Page, we also gained access to its linked Instagram Business Account through the instagram_basic permission. SalesAnchor automatically discovered the Instagram username and business account ID, and stored them alongside the Page. The connected channel card shows both Messenger and Instagram details in one place. Admins can see when each channel was connected, which subscribed fields are active, and disconnect at any time. This unified view is the foundation for Instagram messaging."
+> "When we connected the Facebook Page, we also gained access to its linked Instagram Business Account through the instagram_basic permission. Sales Anchor automatically discovered the Instagram username and business account ID, and stored them alongside the Page. The connected channel card shows both Messenger and Instagram details in one place. Admins can see when each channel was connected, which subscribed fields are active, and disconnect at any time. This unified view is the foundation for Instagram messaging."
 
 (約 80 単語 / 55 秒)
 
@@ -310,13 +310,13 @@ FPS: 60
 **時間**: 4:30 - 5:30（60 秒）
 **目的**: `instagram_manage_messages` を実演。Instagram DM 受信→ Inbox 表示 → 返信送信 → Instagram 側受信までを示す。
 
-### 7-1. 画面操作（画面分割: 左 SalesAnchor / 右 Instagram モバイル風 UI）
+### 7-1. 画面操作（画面分割: 左 Sales Anchor / 右 Instagram モバイル風 UI）
 
 | 秒 | 操作 |
 |---|---|
 | 4:30 | サイドバーで「Inbox」 → クリック |
 | 4:33 | 別ウィンドウで Instagram Web/Mobile を Sender 側で開いておき、`@highlifejpn_test` 宛に DM 送信: `Hi, do you ship internationally?` |
-| 4:44 | SalesAnchor Inbox 左ペインに新しい会話が出現（最大 10 秒）。**platform バッジが「Instagram」** であることを強調表示 |
+| 4:44 | Sales Anchor Inbox 左ペインに新しい会話が出現（最大 10 秒）。**platform バッジが「Instagram」** であることを強調表示 |
 | 4:52 | 会話をクリック → 右ペインに inbound バブルで `Hi, do you ship internationally?` 表示 |
 | 4:56 | 24h バナー表示確認 |
 | 5:00 | 返信フォームに `Yes! We ship to over 30 countries. Please share your country and we'll provide shipping options.` を入力 |
@@ -367,7 +367,7 @@ FPS: 60
 
 ### 8-2. 英語ナレーション
 
-> "Sometimes a sales rep replies later than 24 hours after the customer's last message. Standard messaging would be blocked, but Meta provides the Human Agent Tag for cases where a real person needs to respond outside the standard window. SalesAnchor detects the elapsed time, automatically updates the banner, and applies messaging_type MESSAGE_TAG with the HUMAN_AGENT tag when the rep clicks Send. The customer receives the reply within Meta's allowed timeframe, and the message metadata clearly records that the Human Agent Tag was used. After 7 days, even Human Agent Tag cannot be used, and the send button becomes disabled."
+> "Sometimes a sales rep replies later than 24 hours after the customer's last message. Standard messaging would be blocked, but Meta provides the Human Agent Tag for cases where a real person needs to respond outside the standard window. Sales Anchor detects the elapsed time, automatically updates the banner, and applies messaging_type MESSAGE_TAG with the HUMAN_AGENT tag when the rep clicks Send. The customer receives the reply within Meta's allowed timeframe, and the message metadata clearly records that the Human Agent Tag was used. After 7 days, even Human Agent Tag cannot be used, and the send button becomes disabled."
 
 (約 105 単語 / 55 秒)
 
@@ -390,7 +390,7 @@ FPS: 60
 **時間**: 6:30 - 7:30（60 秒）
 **目的**: Meta が必須要件としている Data Deletion Callback（B1-B7 で実装済、Phase 5 で稼働中）の動作を示す。Meta 審査担当はこれを必ず確認するため、必須シーン。
 
-### 9-1. 画面操作（画面分割: 左 Meta Developer Portal / 右 SalesAnchor Status Page）
+### 9-1. 画面操作（画面分割: 左 Meta Developer Portal / 右 Sales Anchor Status Page）
 
 | 秒 | 操作 |
 |---|---|
@@ -412,7 +412,7 @@ FPS: 60
 
 ### 9-2. 英語ナレーション
 
-> "Meta requires every app to provide a Data Deletion Callback. SalesAnchor's callback URL is registered in the Meta Developer Portal. When a user requests data deletion, Meta sends a signed request to our endpoint. We validate the signature, log the request, asynchronously delete all data associated with that user — Messenger and Instagram messages, leads, and audit log entries — and return a confirmation code with a public status page. The status page lets the user track the deletion in real time, and we send a completion email when finished. This complete flow is required by Meta's Platform Terms and is fully implemented in our app."
+> "Meta requires every app to provide a Data Deletion Callback. Sales Anchor's callback URL is registered in the Meta Developer Portal. When a user requests data deletion, Meta sends a signed request to our endpoint. We validate the signature, log the request, asynchronously delete all data associated with that user — Messenger and Instagram messages, leads, and audit log entries — and return a confirmation code with a public status page. The status page lets the user track the deletion in real time, and we send a completion email when finished. This complete flow is required by Meta's Platform Terms and is fully implemented in our app."
 
 (約 105 単語 / 55 秒)
 
@@ -437,7 +437,7 @@ FPS: 60
 
 ### 10-1. クロージング（オプション）
 
-- 動画の最後に 5 秒ほど SalesAnchor のロゴ + テキスト「Thank you for reviewing.」を表示する案
+- 動画の最後に 5 秒ほど Sales Anchor のロゴ + テキスト「Thank you for reviewing.」を表示する案
 - 字幕焼き込み: 全シーンの英語ナレーションを SRT で別途用意し、ハードサブで焼き込む
 
 ### 10-2. 編集ツール候補

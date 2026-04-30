@@ -2,7 +2,7 @@
 
 ## 概要
 
-Jarvis CRMはFirebase Authentication（Google Identity Platform）を認証基盤として使用します。
+Sales AnchorはFirebase Authentication（Google Identity Platform）を認証基盤として使用します。
 バックエンドAPIがFirebase IDトークンを検証するため、サービスアカウントキー（firebase-credentials.json）が必要です。
 
 ## たとえ話で理解する
