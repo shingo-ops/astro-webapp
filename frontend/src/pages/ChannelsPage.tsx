@@ -214,7 +214,7 @@ export default function ChannelsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Channels（メッセージ連携）</h2>
+        <h2>Channels（Meta連携）</h2>
         {canManage && (
           <button
             className="btn-primary"
