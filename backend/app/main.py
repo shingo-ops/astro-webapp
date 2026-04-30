@@ -21,6 +21,8 @@ from app.routers import leads
 from app.routers import teams
 from app.routers import roles
 from app.routers import meta, webhook
+from app.routers import meta_inbox  # Phase 1-D Sprint 2: OAuth 接続バックエンド
+from app.services import encryption as _encryption  # Phase 1-D Sprint 2: lifespan fail-fast
 from app.routers import products
 from app.routers import shipping
 from app.routers import quotes
@@ -43,8 +45,31 @@ from app.routers import bots
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
 
 
+# Phase 1-D Sprint 2: METADATA_FERNET_KEY のチェックを startup で必須にするか
+# 環境変数で切り替えられるようにする。本番では `ENFORCE_METADATA_FERNET_KEY=1` を
+# 推奨。テストや既存環境のローリング更新時に startup を壊さないため、
+# 既定では「鍵が無い場合は warning ログのみ」にする。
+def _fernet_fail_fast_enforced() -> bool:
+    flag = os.getenv("ENFORCE_METADATA_FERNET_KEY", "").strip().lower()
+    return flag in ("1", "true", "yes", "on")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Phase 1-D Sprint 2: Fernet 鍵を起動時に検証してキャッシュ。
+    # 鍵が壊れていれば lru_cache が呼ばれた瞬間に EncryptionConfigurationError。
+    # ENFORCE_METADATA_FERNET_KEY=1 のときは startup を失敗させる。
+    try:
+        _encryption._get_default_fernet()  # type: ignore[attr-defined]
+    except _encryption.EncryptionConfigurationError as e:
+        if _fernet_fail_fast_enforced():
+            raise
+        # 既定挙動: warning だけ出して起動継続（既存環境への破壊的変更を避ける）
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "METADATA_FERNET_KEY の検証に失敗しました（Meta OAuth 系統は無効化されます）: %s", e
+        )
+
     await init_redis()
     yield
     await close_redis()
@@ -213,6 +238,11 @@ app.include_router(
 )
 app.include_router(
     bots.router, prefix="/api/v1", tags=["bots"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Phase 1-D Sprint 2: Meta Inbox OAuth 接続バックエンド
+app.include_router(
+    meta_inbox.router, prefix="/api/v1", tags=["meta-inbox"],
     dependencies=[Depends(get_current_tenant)],
 )
 

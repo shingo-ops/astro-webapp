@@ -69,6 +69,13 @@ services:
       - MFA_REQUIRED=${MFA_REQUIRED:-true}
       - META_VERIFY_TOKEN=${META_VERIFY_TOKEN:-}
       - META_APP_SECRET=${META_APP_SECRET:-}
+      - METADATA_FERNET_KEY=${METADATA_FERNET_KEY:-}
+      # Phase 1-D Sprint 2: OAuth 接続 (Facebook Login)
+      - META_APP_ID=${META_APP_ID:-}
+      - META_OAUTH_REDIRECT_URI=${META_OAUTH_REDIRECT_URI:-}
+      - META_GRAPH_API_VERSION=${META_GRAPH_API_VERSION:-v19.0}
+      - ENFORCE_METADATA_FERNET_KEY=${ENFORCE_METADATA_FERNET_KEY:-}
+      - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-}
     volumes:
       - ./firebase-credentials.json:/app/firebase-credentials.json:ro
     depends_on:
