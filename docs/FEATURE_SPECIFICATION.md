@@ -1,4 +1,4 @@
-# Jarvis CRM 機能仕様書
+# Sales Anchor 機能仕様書
 
 > 旧システム（Google Apps Script版）の全機能を棚卸しし、新システム（FastAPI + React）への移植計画を定義する。
 

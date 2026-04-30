@@ -1,4 +1,4 @@
-# Zero Trust ポリシー - Jarvis CRM
+# Zero Trust ポリシー - Sales Anchor
 
 ## 1. Zero Trust の原則
 

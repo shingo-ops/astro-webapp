@@ -42,7 +42,7 @@ Bitwardenは「会社の金庫」のようなものです:
 少人数（2人まで）なら**Free Organization**で十分です。
 
 1. ログイン後、左メニュー「組織」→「新しい組織を作成」
-2. 組織名: `Jarvis CRM Team`
+2. 組織名: `Sales Anchor Team`
 3. プラン: `Free`（2ユーザーまで）
 4. 「送信」
 
@@ -85,7 +85,7 @@ Bitwardenは「会社の金庫」のようなものです:
 ### Phase 4: フォルダ構造（推奨）
 
 ```
-Jarvis CRM Team
+Sales Anchor Team
 ├── Infra/
 │   ├── Sakura          # さくらVPSコンパネ・sudoパス
 │   ├── SSH             # SSH秘密鍵

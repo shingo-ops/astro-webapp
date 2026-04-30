@@ -7,7 +7,7 @@
 | 対象 | VPS (.env) / docker-compose.yml / GitHub Actions |
 | 関連 | `.env.example`, `docker-compose.yml`, `docs/PHASE_1D_META_INBOX_OVERVIEW.md` |
 
-このドキュメントは SalesAnchor が利用する環境変数を **用途・必須/任意・生成手順・運用注意** とともにまとめたもの。新規メンバーが VPS に環境を立てる際のリファレンスとして利用する。
+このドキュメントは Sales Anchor が利用する環境変数を **用途・必須/任意・生成手順・運用注意** とともにまとめたもの。新規メンバーが VPS に環境を立てる際のリファレンスとして利用する。
 
 ---
 

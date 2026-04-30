@@ -1,7 +1,7 @@
-# Jarvis CRM セキュリティ強化対策レポート（統合版）
+# Sales Anchor セキュリティ強化対策レポート（統合版）
 
 **作成日**: 2026-04-13
-**対象**: Jarvis CRM (https://jarvis-claude.uk)
+**対象**: Sales Anchor (https://jarvis-claude.uk)
 **ステータス**: 静的解析CIのみ実装済み、その他は**待機状態**（いつでも実装可能）
 **目的**: 今日のセッションで議論したセキュリティ強化対策を、いつでも実装に移せる形で一元化する
 
@@ -68,7 +68,7 @@ Step 5: 外部業者による第三者監査（§7）
 
 ---
 
-## 2. Jarvis CRM の攻撃面マップ
+## 2. Sales Anchor の攻撃面マップ
 
 ```
                   [攻撃者]
@@ -164,7 +164,7 @@ name: security-auditor
 description: FastAPI/React/Postgres 構成の脆弱性を専門に診断
 tools: Read, Grep, Glob, Bash
 ---
-あなたは Jarvis CRM 専属のセキュリティ監査人です。
+あなたは Sales Anchor 専属のセキュリティ監査人です。
 重点項目:
 - tenant_id 検証漏れ（マルチテナント分離破壊）
 - IDOR (Insecure Direct Object Reference)
@@ -307,7 +307,7 @@ nmap -A -p- <ステージングVPSのIP>
 
 ### 5-2. 対象とする攻撃パターン
 
-| 攻撃 | Jarvis CRM での具体例 |
+| 攻撃 | Sales Anchor での具体例 |
 |------|---------------------|
 | **IDOR** | `/api/customers/123` を `/api/customers/124` に変えて他テナントのデータが見える |
 | **テナント分離破壊** | tenant_id を改ざんして他社のデータにアクセス |

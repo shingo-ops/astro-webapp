@@ -1,4 +1,4 @@
-# アクセス制御ポリシー - Jarvis CRM
+# アクセス制御ポリシー - Sales Anchor
 
 ## 変更履歴
 
