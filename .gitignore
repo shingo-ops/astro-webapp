@@ -65,3 +65,6 @@ sheets/
 # nginx/docker-compose の設定だけ repo 管理、コンテンツは追跡しない
 www/salesanchor/*
 !www/salesanchor/.gitkeep
+
+# しんごさんローカル専用（commit 禁止）
+docs/LP_BASELAYOUT_TAILWIND_SPEC.md
