@@ -983,6 +983,35 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_meta_messages_message_id_unique
 CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_meta_source_unique
     ON {schema}.leads (source)
     WHERE source LIKE 'messenger:%' OR source LIKE 'instagram:%';
+
+-- Phase 1-D Sprint 1 / migration 040: Meta OAuth 接続情報（Page / IG Business Account）
+-- 同じ DDL は migrations/040_create_tenant_meta_config.sql にも置いてあり、
+-- 既存テナントへの後付けはそちらの SQL を使う。新規テナントはこの本ブロックで自動作成される。
+CREATE TABLE IF NOT EXISTS {schema}.tenant_meta_config (
+    id                              SERIAL PRIMARY KEY,
+    tenant_id                       INTEGER NOT NULL DEFAULT {tenant_id},
+    page_id                         VARCHAR(50) NOT NULL,
+    page_name                       VARCHAR(200) NOT NULL,
+    page_access_token_encrypted     BYTEA NOT NULL,
+    page_token_expires_at           TIMESTAMPTZ,
+    instagram_business_account_id   VARCHAR(50),
+    instagram_username              VARCHAR(100),
+    subscribed_fields               JSONB,
+    connected_by_staff_id           INTEGER REFERENCES {schema}.staff(id),
+    connected_at                    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_token_refreshed_at         TIMESTAMPTZ,
+    is_active                       BOOLEAN NOT NULL DEFAULT TRUE,
+    deactivated_at                  TIMESTAMPTZ,
+    notes                           TEXT,
+    created_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tenant_meta_config_active_page
+    ON {schema}.tenant_meta_config (tenant_id, page_id)
+    WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_tenant_meta_config_ig_id
+    ON {schema}.tenant_meta_config (instagram_business_account_id)
+    WHERE instagram_business_account_id IS NOT NULL;
 """
 
 # RLS有効化のALTER TABLE群（;で安全に分割可能）
@@ -1011,6 +1040,8 @@ ALTER TABLE {schema}.purchase_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.purchase_order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.meta_messages ENABLE ROW LEVEL SECURITY;
+-- Phase 1-D Sprint 1: Meta OAuth 接続情報
+ALTER TABLE {schema}.tenant_meta_config ENABLE ROW LEVEL SECURITY;
 -- Phase 1 再設計の新テーブル
 ALTER TABLE {schema}.customer_addresses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.customer_sales_channels ENABLE ROW LEVEL SECURITY;
@@ -1147,6 +1178,11 @@ BEGIN
     -- Meta Messaging
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_meta_messages' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_meta_messages ON {schema}.meta_messages
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
+    -- Phase 1-D Sprint 1: tenant_meta_config（Page / IG OAuth 接続情報）
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_tenant_meta_config' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_tenant_meta_config ON {schema}.tenant_meta_config
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
     END IF;
     -- Phase 1 再設計: customer 副テーブル群
