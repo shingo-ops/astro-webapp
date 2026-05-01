@@ -18,7 +18,7 @@
 - ✅ F4-S5 force_human_agent_tag UI (PR #213)
 - ✅ F5-S2 Backend lifespan unit テスト (PR #212)
 
-### Medium Priority（4 / 11 完了）
+### Medium Priority（5 / 11 完了）
 - ✅ F6-S2 401/403 統合テスト (PR #228)
 - ✅ F7-S2 OAuth scope エンコード検証 (PR #229)
 - ✅ F9-S4 audit_log（mark-read 呼び出し）ミニ版 (PR #227、firebase_uid 列追加は別 follow-up)
@@ -29,7 +29,7 @@
 - ⏳ F13-S5 polling 二重取得最適化 (PR #224 完了)
 - ⏳ F14-S5 複数 Page 対応 Inbox フィルタ — 規模 1d、frontend のみ
 - ⏳ F15-S6 customer_name の Graph API 補完 — 規模 1d、Webhook 拡張
-- ⏳ F16-S6 PostgreSQL マルチテナント検索 N+1 — 規模 0.5d、view migration 追加
+- ✅ F16-S6 PostgreSQL マルチテナント検索 N+1 解消（migration 043+044 + webhook.py 改修、2026-05-01）
 
 ### Low Priority（5 / 8 完了）
 - ✅ F17-S6 添付メタデータ対応 — 一部対応：`error_code` 等は migration 041 で追加済、添付バイナリは Phase 2 で対応
@@ -202,13 +202,18 @@
 - **対応**: Webhook 受信時に Graph API `/{psid}?fields=name` を呼んで lead.customer_name を更新（Page Scoped User の name は Permission `pages_messaging` で取得可能）
 - **工数目安**: 1d
 
-### F16-S6. PostgreSQL マルチテナント検索 N+1 解消
+### F16-S6. PostgreSQL マルチテナント検索 N+1 解消 ✅ 完了 (2026-05-01)
 
 - **元 Sprint**: 6 (Reviewer F4)
 - **問題**: webhook.py で active 全テナントを順次 SELECT して page_id 逆引き。テナント数 N で線形
-- **対応**: `meta_page_routing` view を public schema に作成、page_id → (tenant_id, schema) を 1 回で解決
+- **対応**: `public.meta_page_routing` 表 + 各 tenant schema トリガで自動同期、page_id → tenant_id を 1 クエリ O(1) で解決
+- **実装**:
+  - migration 043: `public.meta_page_routing` 公開ルーティング表 + 部分 index 2 件
+  - migration 044: 各 tenant schema 配置のトリガ関数（INSERT/UPDATE/DELETE → 公開表へ同期）+ 既存行の backfill
+  - `scripts/migrate_meta_page_routing.py`: 全 active テナントへの一括適用
+  - `backend/app/routers/webhook.py:_search_tenant_meta_config`: 公開表 1 クエリ参照、SQLite テスト用に flat フォールバック維持
+  - `tests/test_webhook_instagram.py`: regression test 2 件追加（routing 表優先 + flat フォールバック）
 - **工数目安**: 1d
-- **依存**: 各テナント schema 統合管理（既存）
 
 ---
 

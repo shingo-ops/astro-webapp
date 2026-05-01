@@ -5,11 +5,15 @@ Meta Webhook 受信 router（Phase 1-D Sprint 6 で Instagram 対応 + tenant_me
   - Phase 2 で Messenger 受信 → meta_messages 記録 + Discord 通知の最小実装が完了
   - Sprint 1 で `tenant_meta_config` テーブルを新設（page_id / instagram_business_account_id を保持）
   - Sprint 4 で `meta_messages` を拡張（recipient_id / messaging_type / 送信者 / エラー / 既読系）
-  - **Sprint 6（本ファイル）** で:
+  - **Sprint 6** で:
       1. Instagram object（entry[].messaging[] / entry[].changes[].value.messages[]）の受信に対応
       2. テナント特定を **環境変数 META_PAGE_ID 直読み** から **DB tenant_meta_config 参照** に置換
          （META_PAGE_ID は後方互換 fallback として残す）
       3. Messenger と Instagram の DB 書き込みパスを `_persist_meta_message` ヘルパーに共通化
+  - **Phase 1-E F16-S6（本改修）** で:
+      テナント逆引き経路を「全テナント schema 順次切替（N+1）」から
+      `public.meta_page_routing` 1 クエリ参照（O(1)）に置換。
+      migration 043 + 044 のトリガで tenant_meta_config 変更を public 表へ自動同期。
 
 設計判断:
   - 既存 endpoint `POST /api/v1/webhook/messenger` を Messenger / Instagram 兼用に拡張
@@ -82,10 +86,15 @@ async def _search_tenant_meta_config(
 ) -> Optional[int]:
     """tenant_meta_config を column=value で逆引きして tenant_id を返す。
 
-    PostgreSQL 本番では tenant_meta_config が per-tenant スキーマに配置されているため、
-    public.tenants の active テナントを順に search_path 切替して検索する。
-    SQLite テストでは search_path 設定が no-op になり、フラットな
-    `tenant_meta_config` テーブルが直接見える前提（RLS なし）。
+    Phase 1-E F16-S6 改修:
+      Sprint 6 までは active 全テナントを順次 search_path 切替して検索していた（N+1）。
+      本改修で `public.meta_page_routing`（migration 043 + 044 のトリガ同期表）を 1 クエリで
+      参照する形に変更。テナント数 N に関わらず O(1) ルックアップ。
+
+    フォールバック順:
+      1) PostgreSQL 本番: `public.meta_page_routing` を 1 クエリで検索（O(1)）
+      2) SQLite テスト: `public.meta_page_routing` が無いので `tenant_meta_config` を直接検索
+         （単一スキーマ・RLS なしのテスト前提）
 
     column は固定キー（"page_id" / "instagram_business_account_id"）のみ許容。
     SQL injection 防止のためホワイトリストでバリデーションする。
@@ -94,7 +103,38 @@ async def _search_tenant_meta_config(
     if column not in allowed:
         raise ValueError(f"unsupported column: {column}")
 
-    # まず単一スキーマ前提（SQLite テスト + 単一テナント運用）で素朴に検索する。
+    # 1) PostgreSQL 本番: 公開ルーティング表で 1-shot 逆引き
+    try:
+        result = await db.execute(
+            text(f"""
+                SELECT tenant_id
+                FROM public.meta_page_routing
+                WHERE {column} = :v AND is_active = TRUE
+                ORDER BY tenant_id
+                LIMIT 1
+            """),
+            {"v": value},
+        )
+        row = result.first()
+        if row:
+            return int(row[0])
+        # routing 表は存在するが該当行なし → トリガで同期されているはずなので None 確定
+        return None
+    except Exception:
+        # routing 表が存在しない（SQLite テスト or migration 043 未適用）
+        # → flat フォールバックへ。PG では aborted state を rollback で復帰させる。
+        logging.debug(
+            "[Meta] meta_page_routing 参照失敗、flat tenant_meta_config へフォールバック",
+            exc_info=True,
+        )
+        try:
+            await db.rollback()
+        except Exception:
+            logging.debug(
+                "[Meta] meta_page_routing 参照失敗後の rollback 失敗", exc_info=True
+            )
+
+    # 2) SQLite テストパス: フラットな tenant_meta_config を直接検索
     try:
         result = await db.execute(
             text(f"""
@@ -110,53 +150,14 @@ async def _search_tenant_meta_config(
         if row:
             return int(row[0])
     except Exception:
-        # 該当 schema にテーブルが見えなければ tenant 横断検索へフォールバック。
-        # PostgreSQL では失敗クエリで session が aborted state になるため、
-        # 次の SELECT 系を実行する前に必ず rollback してクリーンに戻す。
         logging.debug(
-            "[Meta] tenant_meta_config flat 検索失敗、tenant 横断検索へ",
-            exc_info=True,
+            "[Meta] tenant_meta_config flat 検索失敗", exc_info=True,
         )
         try:
             await db.rollback()
         except Exception:
             logging.debug("[Meta] flat 検索失敗後の rollback 失敗", exc_info=True)
 
-    # PostgreSQL 本番: 全 active tenant をループしてそれぞれの schema で検索。
-    # MVP 期はテナント数 <= 5 を想定、N+1 問題は許容。
-    tenant_ids = await _list_active_tenant_ids(db)
-    for tid in tenant_ids:
-        schema = f"tenant_{tid:03d}"
-        try:
-            await db.execute(text(f"SET search_path = {schema}, public"))
-            await db.execute(text(f"SET app.tenant_id = '{tid}'"))
-            result = await db.execute(
-                text(f"""
-                    SELECT tenant_id
-                    FROM tenant_meta_config
-                    WHERE {column} = :v AND is_active = TRUE
-                    ORDER BY id
-                    LIMIT 1
-                """),
-                {"v": value},
-            )
-            row = result.first()
-            if row:
-                return int(row[0])
-        except Exception:
-            # この schema には tenant_meta_config が無い / アクセス不可 → 次のテナントへ。
-            # 失敗クエリで PG session が aborted state になるため、次のループの
-            # `SET search_path` を実行可能にするために必ず rollback する。
-            logging.debug(
-                "[Meta] schema=%s tenant_meta_config 検索失敗", schema, exc_info=True,
-            )
-            try:
-                await db.rollback()
-            except Exception:
-                logging.debug(
-                    "[Meta] schema=%s 検索失敗後の rollback 失敗", schema, exc_info=True,
-                )
-            continue
     return None
 
 
