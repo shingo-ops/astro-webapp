@@ -357,6 +357,7 @@ async def _persist_meta_message(
     message_id: Optional[str],
     timestamp: Any,
     has_attachments: bool,
+    page_id: Optional[str] = None,
 ) -> Optional[int]:
     """leads upsert + meta_messages INSERT を共通化する Sprint 6 ヘルパー。
 
@@ -441,12 +442,12 @@ async def _persist_meta_message(
             INSERT INTO meta_messages (
                 tenant_id, lead_id, platform,
                 sender_id, message_text, direction, raw_payload,
-                message_id
+                message_id, page_id
             )
             VALUES (
                 :tenant_id, :lead_id, :platform,
                 :sender_id, :message_text, 'inbound', :raw_payload,
-                :message_id
+                :message_id, :page_id
             )
             ON CONFLICT (message_id) WHERE message_id IS NOT NULL
             DO NOTHING
@@ -460,6 +461,7 @@ async def _persist_meta_message(
             "message_text": message_text,
             "message_id": message_id,
             "raw_payload": raw_payload,
+            "page_id": page_id,
         },
     )
     msg_inserted_id = ins.scalar_one_or_none()
@@ -519,6 +521,12 @@ async def process_messenger_event(body: dict) -> None:
                 await db.execute(text(f"SET search_path = {schema}, public"))
                 await db.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
 
+                # Phase 1-E F14-S5: meta_messages.page_id を埋める
+                # Messenger: entry.id = Page ID
+                # Instagram: entry.id = IG Business Account ID（Page ID とは別物）
+                #            → 当面 NULL のまま保存（IG 対応は follow-up F14-FU1）
+                page_id_for_message = entry_id if platform == "messenger" else None
+
                 for m in messages:
                     msg_id = await _persist_meta_message(
                         db,
@@ -529,6 +537,7 @@ async def process_messenger_event(body: dict) -> None:
                         message_id=m["message_id"],
                         timestamp=m["timestamp"],
                         has_attachments=m["has_attachments"],
+                        page_id=page_id_for_message,
                     )
                     if msg_id is None:
                         logging.info(

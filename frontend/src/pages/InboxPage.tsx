@@ -114,6 +114,12 @@ export default function InboxPage() {
   const [convError, setConvError] = useState("");
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
+  // Phase 1-E F14-S5: Page フィルタ（複数 Page 接続時の絞り込み）
+  // 空文字 = "すべての Page"。URL ?page_id= でも初期値を読み取る
+  const initialPageId = searchParams.get("page_id") || "";
+  const [pageIdFilter, setPageIdFilter] = useState<string>(initialPageId);
+  // 会話一覧から自動抽出した既知の page_id 集合（フィルタなしの結果から作る）
+  const [availablePageIds, setAvailablePageIds] = useState<string[]>([]);
 
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(initialLeadId);
   const [messagesData, setMessagesData] = useState<MessagesResponse | null>(null);
@@ -138,9 +144,11 @@ export default function InboxPage() {
   const loadConversations = useCallback(async () => {
     setConvError("");
     try {
+      // Phase 1-E F14-S5: page_id フィルタは backend へ転送
       const data = await listConversations({
         platform: platformFilter,
         unread_only: unreadOnly,
+        page_id: pageIdFilter || undefined,
       });
       setConversations(data.conversations || []);
     } catch (e) {
@@ -151,7 +159,25 @@ export default function InboxPage() {
     } finally {
       setConvLoading(false);
     }
-  }, [platformFilter, unreadOnly]);
+  }, [platformFilter, unreadOnly, pageIdFilter]);
+
+  // Phase 1-E F14-S5: ドロップダウン用に既知 page_id 一覧を初回のみ取得
+  // フィルタ変更で選択肢が消えないよう、無条件・フィルタなしの fetch を使う
+  useEffect(() => {
+    let cancelled = false;
+    listConversations({}).then(data => {
+      if (cancelled) return;
+      const ids = Array.from(
+        new Set(
+          (data.conversations || [])
+            .map(c => c.page_id)
+            .filter((p): p is string => !!p),
+        ),
+      ).sort();
+      setAvailablePageIds(ids);
+    }).catch(() => {/* ドロップダウンは無くても致命的ではないので無視 */});
+    return () => { cancelled = true; };
+  }, []);
 
   const loadMessages = useCallback(async (leadId: number) => {
     setMsgError("");
@@ -229,6 +255,20 @@ export default function InboxPage() {
     // URL クエリ反映（deep link 維持）
     const params = new URLSearchParams(searchParams);
     params.set("lead_id", String(leadId));
+    setSearchParams(params, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Phase 1-E F14-S5: Page フィルタ変更時に URL を更新
+  const onPageFilterChange = useCallback((value: string) => {
+    setPageIdFilter(value);
+    setSelectedLeadId(null);
+    const params = new URLSearchParams(searchParams);
+    if (value) {
+      params.set("page_id", value);
+    } else {
+      params.delete("page_id");
+    }
+    params.delete("lead_id");
     setSearchParams(params, { replace: true });
   }, [searchParams, setSearchParams]);
 
@@ -343,6 +383,31 @@ export default function InboxPage() {
               </button>
             ))}
           </div>
+          {/* Phase 1-E F14-S5: 複数 Page 接続時のみドロップダウンを表示 */}
+          {availablePageIds.length > 1 && (
+            <div style={{ marginBottom: 8 }}>
+              <select
+                value={pageIdFilter}
+                onChange={e => onPageFilterChange(e.target.value)}
+                aria-label="Page で絞り込み"
+                style={{
+                  width: "100%",
+                  padding: "4px 6px",
+                  fontSize: "0.85rem",
+                  borderRadius: 4,
+                  border: "1px solid var(--border-color, #ccc)",
+                  background: "white",
+                }}
+              >
+                <option value="">すべての Page</option>
+                {availablePageIds.map(pid => (
+                  <option key={pid} value={pid}>
+                    Page: {pid}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", cursor: "pointer" }}>
             <input
               type="checkbox"

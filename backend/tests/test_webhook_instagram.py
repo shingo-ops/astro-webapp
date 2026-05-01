@@ -64,7 +64,7 @@ _LEADS_DDL = """
     )
 """
 
-# Sprint 4 で migration 041 により拡張された meta_messages（recipient_id 等）を反映
+# Sprint 4 migration 041 + Phase 1-E F14-S5 migration 045（page_id 列）を反映
 _META_MESSAGES_DDL = """
     CREATE TABLE meta_messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,6 +85,7 @@ _META_MESSAGES_DDL = """
         error_message TEXT,
         seen_at TIMESTAMP,
         seen_by_staff_id INTEGER,
+        page_id VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 """
@@ -850,17 +851,54 @@ async def test_process_event_messenger_inbound_persists_record(db_session, webho
     await wh.process_messenger_event(body)
 
     res = await db_session.execute(text(
-        "SELECT platform, message_text FROM meta_messages WHERE message_id = 'mid-msg-100'"
+        "SELECT platform, message_text, page_id FROM meta_messages "
+        "WHERE message_id = 'mid-msg-100'"
     ))
     row = res.mappings().first()
     assert row is not None
     assert row["platform"] == "messenger"
     assert row["message_text"] == "Hello"
+    # Phase 1-E F14-S5: Messenger は entry.id を page_id として保存
+    assert row["page_id"] == "PAGE-A"
 
     res = await db_session.execute(text(
         "SELECT source FROM leads WHERE source = 'messenger:PSID-100'"
     ))
     assert res.scalar() == "messenger:PSID-100"
+
+
+@pytest.mark.asyncio
+async def test_process_event_instagram_persists_with_null_page_id(
+    db_session, webhook_env,
+):
+    """Phase 1-E F14-S5: Instagram 受信時は page_id を NULL で保存（IG account ID は別物のため）。"""
+    from app.routers import webhook as wh
+
+    await _insert_tenant_meta_config(
+        db_session, tenant_id=999, page_id="PAGE-A",
+        ig_business_account_id="IG-BIZ-X",
+    )
+
+    body = {
+        "object": "instagram",
+        "entry": [{
+            "id": "IG-BIZ-X",
+            "messaging": [{
+                "sender": {"id": "IGSID-200"},
+                "timestamp": 1714400000,
+                "message": {"mid": "mid-ig-200", "text": "Hi IG"},
+            }],
+        }],
+    }
+    await wh.process_messenger_event(body)
+
+    res = await db_session.execute(text(
+        "SELECT platform, page_id FROM meta_messages WHERE message_id = 'mid-ig-200'"
+    ))
+    row = res.mappings().first()
+    assert row is not None
+    assert row["platform"] == "instagram"
+    assert row["page_id"] is None  # IG は当面 NULL（F14-FU1 で対応予定）
 
 
 @pytest.mark.asyncio

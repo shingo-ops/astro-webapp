@@ -759,6 +759,7 @@ def _compute_window_expires(last_inbound_at: Optional[datetime]) -> Optional[str
 async def list_conversations(
     platform: str = Query("all", pattern="^(all|messenger|instagram)$"),
     unread_only: bool = Query(False),
+    page_id: Optional[str] = Query(None, max_length=50),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
@@ -778,8 +779,11 @@ async def list_conversations(
     tenant 分離は RLS（PostgreSQL 本番）と SQL の WHERE 句（SQLite テスト）の
     両方で実施。
 
-    `unread_only=true` の場合、unread_count > 0 の会話のみ返す。
-    `platform` は messenger / instagram / all（既定 all）。
+    フィルタ:
+        - `unread_only=true`: unread_count > 0 の会話のみ
+        - `platform`: messenger / instagram / all（既定 all）
+        - `page_id`: Phase 1-E F14-S5 で追加。指定すると meta_messages.page_id 一致のみ
+          （Messenger 限定。IG メッセージは page_id NULL のため除外される）
 
     実装メモ:
         - meta_messages の DISTINCT lead_id 集約 → 各 lead の最新メッセージ + 未読数
@@ -796,6 +800,11 @@ async def list_conversations(
         where_clauses.append("mm.platform = :platform")
         params["platform"] = platform
 
+    # Phase 1-E F14-S5: 複数 Page 接続時の Page 別フィルタ
+    if page_id:
+        where_clauses.append("mm.page_id = :page_id")
+        params["page_id"] = page_id
+
     where_sql = " AND ".join(where_clauses)
 
     # 各 lead_id ごとに最新 meta_messages 行を SELECT する。
@@ -808,6 +817,7 @@ async def list_conversations(
             l.lead_code         AS lead_code,
             l.customer_name     AS customer_name,
             mm.platform         AS platform,
+            mm.page_id          AS page_id,
             mm.message_text     AS last_message_text,
             mm.direction        AS last_message_direction,
             mm.created_at       AS last_message_at,
@@ -858,6 +868,7 @@ async def list_conversations(
             "lead_code": row["lead_code"],
             "customer_name": row["customer_name"],
             "platform": row["platform"],
+            "page_id": row.get("page_id"),
             "last_message_text": row["last_message_text"],
             "last_message_at": _format_dt(row["last_message_at"]),
             "last_message_direction": row["last_message_direction"],
