@@ -868,14 +868,15 @@ async def test_process_event_messenger_inbound_persists_record(db_session, webho
 
 
 @pytest.mark.asyncio
-async def test_process_event_instagram_persists_with_null_page_id(
+async def test_process_event_instagram_resolves_parent_page_id(
     db_session, webhook_env,
 ):
-    """Phase 1-E F14-S5: Instagram 受信時は page_id を NULL で保存（IG account ID は別物のため）。"""
+    """Phase 1-E F14-FU1: Instagram 受信時は IG account ID から親 Page ID を逆引きして
+    meta_messages.page_id を埋める。"""
     from app.routers import webhook as wh
 
     await _insert_tenant_meta_config(
-        db_session, tenant_id=999, page_id="PAGE-A",
+        db_session, tenant_id=999, page_id="PAGE-PARENT-X",
         ig_business_account_id="IG-BIZ-X",
     )
 
@@ -898,7 +899,45 @@ async def test_process_event_instagram_persists_with_null_page_id(
     row = res.mappings().first()
     assert row is not None
     assert row["platform"] == "instagram"
-    assert row["page_id"] is None  # IG は当面 NULL（F14-FU1 で対応予定）
+    # F14-FU1: IG account ID から親 Page ID が解決される
+    assert row["page_id"] == "PAGE-PARENT-X"
+
+
+@pytest.mark.asyncio
+async def test_process_event_instagram_page_id_null_when_no_mapping(
+    db_session, webhook_env,
+):
+    """Phase 1-E F14-FU1: tenant_meta_config に該当 ig_business_account_id が無ければ
+    page_id は NULL で保存（webhook 自体は落とさない）。"""
+    from app.routers import webhook as wh
+
+    # IG-BIZ-X を登録しない。代わりに別の IG（IG-OTHER）で登録しておくことで
+    # webhook が tenant 解決経路（page_id fallback）に進む状況を作る。
+    await _insert_tenant_meta_config(
+        db_session, tenant_id=999, page_id="IG-NOT-A-PAGE-RELATIVE",
+    )
+
+    body = {
+        "object": "instagram",
+        "entry": [{
+            "id": "IG-NOT-A-PAGE-RELATIVE",
+            "messaging": [{
+                "sender": {"id": "IGSID-300"},
+                "timestamp": 1714400000,
+                "message": {"mid": "mid-ig-300", "text": "Hi"},
+            }],
+        }],
+    }
+    await wh.process_messenger_event(body)
+
+    res = await db_session.execute(text(
+        "SELECT page_id FROM meta_messages WHERE message_id = 'mid-ig-300'"
+    ))
+    row = res.first()
+    assert row is not None
+    # IG account → page_id 逆引き失敗（page_id 列の値は IG account と一致しない）
+    # → NULL のまま
+    assert row[0] is None
 
 
 @pytest.mark.asyncio
@@ -1071,9 +1110,12 @@ async def test_new_lead_customer_name_updated_when_graph_api_returns_name(
         db_session, tenant_id=999, page_id="PAGE-A",
     )
 
-    # Graph API 由来の name を返すモック
-    async def fake_resolve(db, sender_id):
+    # Graph API 由来の name を返すモック（F15-FU1 で page_id 引数追加）
+    captured_page_id = {}
+
+    async def fake_resolve(db, sender_id, page_id=None):
         assert sender_id == "PSID-NAME-1"
+        captured_page_id["value"] = page_id
         return "山田 太郎"
 
     monkeypatch.setattr(wh, "_resolve_lead_name_via_graph", fake_resolve)
@@ -1095,6 +1137,8 @@ async def test_new_lead_customer_name_updated_when_graph_api_returns_name(
         "SELECT customer_name FROM leads WHERE source = 'messenger:PSID-NAME-1'"
     ))
     assert res.scalar() == "山田 太郎"
+    # Phase 1-E F15-FU1: 受信元 Page ID が graph 解決に渡される
+    assert captured_page_id["value"] == "PAGE-A"
 
 
 @pytest.mark.asyncio
@@ -1108,7 +1152,7 @@ async def test_new_lead_keeps_default_name_when_graph_api_returns_none(
         db_session, tenant_id=999, page_id="PAGE-A",
     )
 
-    async def fake_resolve_none(db, sender_id):
+    async def fake_resolve_none(db, sender_id, page_id=None):
         return None
 
     monkeypatch.setattr(wh, "_resolve_lead_name_via_graph", fake_resolve_none)
@@ -1152,7 +1196,7 @@ async def test_existing_lead_does_not_trigger_graph_api(
 
     call_count = {"n": 0}
 
-    async def fake_resolve_count(db, sender_id):
+    async def fake_resolve_count(db, sender_id, page_id=None):
         call_count["n"] += 1
         return "別人"
 

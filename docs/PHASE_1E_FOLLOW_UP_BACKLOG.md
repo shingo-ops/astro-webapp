@@ -47,6 +47,9 @@
 ### 追加項目（Phase 1-D 後に発生）
 - ⏳ F9-S4 拡張版: audit_logs に firebase_uid 列追加 + record_audit_log 引数拡張（migration 必要、規模 0.5d）
 - ⏳ F3-S2 v3: 既存 backend テストを PostgreSQL でも動かす（pytest --rls-postgres 等のオプション化、規模 1-2d）
+- ✅ F14-FU1 + F15-FU1 + F15-FU2: IG page_id 解決 + Graph API token 正しい選択 + get_user_name 単体テスト（2026-05-01）
+- ⏳ F16-FU1: migration 044 SECURITY DEFINER 関数の `SET search_path = pg_catalog, public` 追加（PR #236 Reviewer F1、defense-in-depth、規模 0.25d）
+- ⏳ F16-FU2: 新規テナント onboard スクリプトに migration 044 の per-tenant 適用を組み込む（PR #236 Reviewer F4、規模 0.25d）
 
 ---
 
