@@ -1,6 +1,7 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { firebaseErrorMessage } from "../lib/firebaseErrorMessage";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,7 +19,9 @@ export default function LoginPage() {
       await signIn(email, password);
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ログインに失敗しました");
+      // Phase 1-E M-DYN-1: Firebase の生エラー文字列を日本語メッセージに変換
+      // (旧実装は err.message をそのまま表示し "Firebase: Error (auth/invalid-credential)." が UI に出ていた)
+      setError(firebaseErrorMessage(err));
     } finally {
       setLoading(false);
     }

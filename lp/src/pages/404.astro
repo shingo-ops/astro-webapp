@@ -1,0 +1,44 @@
+---
+// Phase 1-E UI スモークテスト M-DYN-2 (2026-05-02): 専用 404 ページ
+// 旧挙動: nginx fallback で存在しないパスがすべて LP HTML(200) を返していた (soft 404)
+// 新挙動: Astro の 404.astro でビルドされた 404.html を返す。
+//   nginx の try_files が見つからないパスでこのファイルにフォールバックする
+//   (Astro 公式パターン: https://docs.astro.build/en/basics/astro-pages/#custom-404-error-page)
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="ページが見つかりません"
+  description="お探しのページが見つかりませんでした。Sales Anchor のホームに戻るか、URL をご確認ください。"
+>
+  <article class="prose prose-slate max-w-3xl mx-auto px-4 py-16 text-center">
+    <h1 class="text-6xl font-bold text-slate-300 mb-2">404</h1>
+    <h2 class="text-2xl font-semibold mb-4">ページが見つかりません</h2>
+    <p class="mb-2">お探しのページは見つかりませんでした。URL が正しいかご確認ください。</p>
+    <p class="text-sm text-slate-500 mb-8">The page you are looking for could not be found.</p>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+      <a
+        href="/"
+        class="inline-block px-6 py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-700 transition-colors"
+      >
+        ホームへ戻る / Back to Home
+      </a>
+      <a
+        href="mailto:support@salesanchor.jp"
+        class="inline-block px-6 py-3 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors"
+      >
+        サポートに連絡 / Contact Support
+      </a>
+    </div>
+
+    <p class="mt-12 text-sm text-slate-500">
+      よくアクセスされるページ / Common pages:
+    </p>
+    <ul class="text-sm text-slate-600 mt-2 space-y-1 list-none p-0">
+      <li><a href="/privacy/" class="text-blue-600 hover:underline">プライバシーポリシー</a></li>
+      <li><a href="/terms/" class="text-blue-600 hover:underline">利用規約</a></li>
+      <li><a href="/data-deletion/" class="text-blue-600 hover:underline">データ削除のお申し込み</a></li>
+      <li><a href="https://app.salesanchor.jp" class="text-blue-600 hover:underline">ログイン</a></li>
+    </ul>
+  </article>
+</BaseLayout>
