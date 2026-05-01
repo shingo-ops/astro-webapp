@@ -32,6 +32,7 @@ from app.services.meta_graph import (
     exchange_code_for_short_token,
     exchange_short_token_for_long_token,
     get_instagram_business_account,
+    get_user_name,
     graph_api_version,
     graph_base_url,
     list_user_pages,
@@ -428,3 +429,73 @@ async def test_subscribe_empty_args_raise():
         await subscribe_page_to_app("", "token")
     with pytest.raises(ValueError):
         await subscribe_page_to_app("page", "")
+
+
+# ---------------------------------------------------------------------------
+# Phase 1-E F15-S6 / F15-FU2: get_user_name (Page Scoped User → 表示名)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_user_name_happy_path():
+    """正常系: Graph API が name を返したらそのまま返す + 正しいパス・パラメータ。"""
+    captured: dict[str, Any] = {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        captured["url"] = str(req.url)
+        captured["params"] = dict(req.url.params)
+        return _ok({"name": "山田 太郎", "id": "PSID-1"})
+
+    async with _make_client(handler) as client:
+        name = await get_user_name("PSID-1", "page-token-xyz", client=client)
+
+    assert name == "山田 太郎"
+    assert "/v19.0/PSID-1" in captured["url"]
+    assert captured["params"]["fields"] == "name"
+    assert captured["params"]["access_token"] == "page-token-xyz"
+
+
+@pytest.mark.asyncio
+async def test_get_user_name_returns_none_when_name_missing():
+    """name フィールドが空 / 欠落なら None を返す。"""
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _ok({"id": "PSID-1"})  # name 欠落
+
+    async with _make_client(handler) as client:
+        name = await get_user_name("PSID-1", "page-token", client=client)
+    assert name is None
+
+
+@pytest.mark.asyncio
+async def test_get_user_name_returns_none_when_name_is_empty_string():
+    """name が空文字なら None。"""
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _ok({"name": "", "id": "PSID-1"})
+
+    async with _make_client(handler) as client:
+        name = await get_user_name("PSID-1", "page-token", client=client)
+    assert name is None
+
+
+@pytest.mark.asyncio
+async def test_get_user_name_propagates_graph_api_error():
+    """Meta が error を返したら MetaGraphAPIError が伝播（呼び出し側で握り潰す前提）。"""
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _err(403, {
+            "message": "Permissions error",
+            "type": "OAuthException",
+            "code": 200,
+        })
+
+    async with _make_client(handler) as client:
+        with pytest.raises(MetaGraphAPIError) as exc:
+            await get_user_name("PSID-1", "bad-token", client=client)
+    assert exc.value.error_code == 200
+
+
+@pytest.mark.asyncio
+async def test_get_user_name_empty_args_raise():
+    with pytest.raises(ValueError):
+        await get_user_name("", "token")
+    with pytest.raises(ValueError):
+        await get_user_name("PSID-1", "")

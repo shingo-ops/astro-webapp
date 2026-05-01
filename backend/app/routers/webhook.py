@@ -171,6 +171,65 @@ async def _get_tenant_id_by_ig_account(
     )
 
 
+async def _resolve_page_id_for_ig(
+    db: AsyncSession, ig_business_account_id: str,
+) -> Optional[str]:
+    """Phase 1-E F14-FU1: IG Business Account ID から親 Page ID を逆引きする。
+
+    `tenant_meta_config` の同一行に `page_id` と `instagram_business_account_id` が
+    紐づいている前提（migration 040）。受信した IG メッセージに対しても Page フィルタが
+    効くように、meta_messages.page_id を Page ID で埋めるための前段処理。
+
+    呼び出し前提:
+      - search_path 切替「前」（public.meta_page_routing 経由で 1-shot 解決）
+      - 失敗時は None（webhook を落とさず、IG は page_id NULL のまま記録）
+    """
+    if not ig_business_account_id:
+        return None
+    # PostgreSQL 本番: public.meta_page_routing で 1 クエリ参照
+    try:
+        result = await db.execute(
+            text(
+                "SELECT page_id FROM public.meta_page_routing "
+                "WHERE instagram_business_account_id = :ig AND is_active = TRUE "
+                "ORDER BY tenant_id LIMIT 1"
+            ),
+            {"ig": ig_business_account_id},
+        )
+        row = result.first()
+        if row and row[0]:
+            return str(row[0])
+        return None
+    except Exception:
+        logging.debug(
+            "[Meta] meta_page_routing 参照失敗（IG page_id 解決）", exc_info=True,
+        )
+        try:
+            await db.rollback()
+        except Exception:
+            pass
+
+    # SQLite テスト: フラット tenant_meta_config を直接検索
+    try:
+        result = await db.execute(
+            text(
+                "SELECT page_id FROM tenant_meta_config "
+                "WHERE instagram_business_account_id = :ig AND is_active = TRUE "
+                "ORDER BY id LIMIT 1"
+            ),
+            {"ig": ig_business_account_id},
+        )
+        row = result.first()
+        return str(row[0]) if row and row[0] else None
+    except Exception:
+        logging.debug("[Meta] flat tenant_meta_config 参照失敗（IG page_id 解決）", exc_info=True)
+        try:
+            await db.rollback()
+        except Exception:
+            pass
+        return None
+
+
 # ─────────────────────────────────────────────
 # GET /api/v1/webhook/messenger
 # Meta Webhook URL検証（認証不要、Messenger / Instagram 共用）
@@ -303,15 +362,25 @@ def _iter_inbound_messages(
 async def _resolve_lead_name_via_graph(
     db: AsyncSession,
     sender_id: str,
+    page_id: Optional[str] = None,
 ) -> Optional[str]:
     """Phase 1-E F15-S6: Page Scoped User ID から Graph API 経由で表示名を取得する。
+
+    Phase 1-E F15-FU1: 複数 Page 接続時の token 取り違えを防ぐため、page_id 指定で
+    `tenant_meta_config` を絞り込む。
 
     呼び出し前提:
       - search_path がテナント schema に設定済み（tenant_meta_config を直接参照）
       - 失敗（権限不足、ネットワーク、復号失敗）は webhook 全体を落とさず None を返す
 
+    Args:
+      sender_id: Page Scoped User ID（PSID/IGSID）
+      page_id: メッセージ受信元の Page ID。None の場合は最初の active 行を選ぶ
+               （旧挙動。複数 Page テナントでは間違える可能性あり）
+
     フロー:
       1. tenant_meta_config から page_access_token_encrypted を取得
+         （page_id 指定なら page_id でフィルタ、なければ ORDER BY id LIMIT 1）
       2. Fernet で復号
       3. Graph API `/{psid}?fields=name` を呼び出し
       4. 取得した name を返す（取れなければ None）
@@ -319,14 +388,25 @@ async def _resolve_lead_name_via_graph(
     if not sender_id:
         return None
     try:
-        result = await db.execute(
-            text(
-                "SELECT page_access_token_encrypted "
-                "FROM tenant_meta_config "
-                "WHERE is_active = TRUE "
-                "ORDER BY id LIMIT 1"
+        if page_id:
+            result = await db.execute(
+                text(
+                    "SELECT page_access_token_encrypted "
+                    "FROM tenant_meta_config "
+                    "WHERE page_id = :page_id AND is_active = TRUE "
+                    "ORDER BY id LIMIT 1"
+                ),
+                {"page_id": page_id},
             )
-        )
+        else:
+            result = await db.execute(
+                text(
+                    "SELECT page_access_token_encrypted "
+                    "FROM tenant_meta_config "
+                    "WHERE is_active = TRUE "
+                    "ORDER BY id LIMIT 1"
+                )
+            )
         row = result.first()
         if row is None:
             return None
@@ -414,9 +494,12 @@ async def _persist_meta_message(
             await db.commit()
             await reset_tenant_context(db, tenant_id)
 
-            # Phase 1-E F15-S6: 新規 lead の customer_name を Graph API 由来の実名で更新。
+            # Phase 1-E F15-S6 + F15-FU1: 新規 lead の customer_name を Graph API 由来の
+            # 実名で更新。複数 Page 接続テナントで token を取り違えないよう page_id を渡す。
             # 失敗時はデフォルト名（"Messenger User" / "Instagram User"）のまま続行。
-            resolved_name = await _resolve_lead_name_via_graph(db, sender_id)
+            resolved_name = await _resolve_lead_name_via_graph(
+                db, sender_id, page_id=page_id,
+            )
             if resolved_name:
                 await db.execute(
                     text("UPDATE leads SET customer_name = :name WHERE id = :id"),
@@ -517,15 +600,18 @@ async def process_messenger_event(body: dict) -> None:
                     )
                     continue
 
+                # Phase 1-E F14-S5 + F14-FU1: meta_messages.page_id を埋める
+                # Messenger: entry.id = Page ID をそのまま使う
+                # Instagram: entry.id = IG Business Account ID なので tenant_meta_config
+                #            経由で親 Page ID を逆引き（search_path 切替前に実施）
+                if platform == "messenger":
+                    page_id_for_message: Optional[str] = entry_id
+                else:
+                    page_id_for_message = await _resolve_page_id_for_ig(db, entry_id)
+
                 schema = f"tenant_{tenant_id:03d}"
                 await db.execute(text(f"SET search_path = {schema}, public"))
                 await db.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
-
-                # Phase 1-E F14-S5: meta_messages.page_id を埋める
-                # Messenger: entry.id = Page ID
-                # Instagram: entry.id = IG Business Account ID（Page ID とは別物）
-                #            → 当面 NULL のまま保存（IG 対応は follow-up F14-FU1）
-                page_id_for_message = entry_id if platform == "messenger" else None
 
                 for m in messages:
                     msg_id = await _persist_meta_message(
