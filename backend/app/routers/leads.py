@@ -1050,32 +1050,39 @@ async def send_lead_message(
 
     # ----- (8) meta_messages に outbound 行 INSERT -----
     sender_id = page_id_for_send if platform == "messenger" else (ig_business_id or page_id_for_send)
+    # Phase 1-E F14-S5: outbound 行も page_id を埋める（Page フィルタ適用時に
+    # 送信直後の会話が一覧から消えないようにする）
+    # Messenger: tenant_meta_config 由来の page_id_for_send を保存
+    # Instagram: 当面 NULL（inbound IG と整合、F14-FU1 で対応）
+    page_id_for_message = page_id_for_send if platform == "messenger" else None
+    insert_params = {
+        "tenant_id": tenant_id,
+        "lead_id": lead_id,
+        "platform": platform,
+        "sender_id": str(sender_id) if sender_id is not None else None,
+        "text": text_body,
+        "message_id": send_result.get("message_id"),
+        "recipient_id": recipient_id,
+        "messaging_type": messaging_type,
+        "message_tag": message_tag,
+        "sent_by_staff_id": sent_by_staff_id,
+        "page_id": page_id_for_message,
+    }
     insert_result = await db.execute(
         text("""
             INSERT INTO meta_messages (
                 tenant_id, lead_id, platform, sender_id, message_text,
                 direction, message_id, recipient_id,
-                messaging_type, message_tag, sent_by_staff_id, created_at
+                messaging_type, message_tag, sent_by_staff_id, page_id, created_at
             )
             VALUES (
                 :tenant_id, :lead_id, :platform, :sender_id, :text,
                 'outbound', :message_id, :recipient_id,
-                :messaging_type, :message_tag, :sent_by_staff_id, NOW()
+                :messaging_type, :message_tag, :sent_by_staff_id, :page_id, NOW()
             )
             RETURNING id, created_at
         """),
-        {
-            "tenant_id": tenant_id,
-            "lead_id": lead_id,
-            "platform": platform,
-            "sender_id": str(sender_id) if sender_id is not None else None,
-            "text": text_body,
-            "message_id": send_result.get("message_id"),
-            "recipient_id": recipient_id,
-            "messaging_type": messaging_type,
-            "message_tag": message_tag,
-            "sent_by_staff_id": sent_by_staff_id,
-        },
+        insert_params,
     )
     new_row = insert_result.first()
     if new_row is None:
@@ -1085,26 +1092,15 @@ async def send_lead_message(
                 INSERT INTO meta_messages (
                     tenant_id, lead_id, platform, sender_id, message_text,
                     direction, message_id, recipient_id,
-                    messaging_type, message_tag, sent_by_staff_id, created_at
+                    messaging_type, message_tag, sent_by_staff_id, page_id, created_at
                 )
                 VALUES (
                     :tenant_id, :lead_id, :platform, :sender_id, :text,
                     'outbound', :message_id, :recipient_id,
-                    :messaging_type, :message_tag, :sent_by_staff_id, NOW()
+                    :messaging_type, :message_tag, :sent_by_staff_id, :page_id, NOW()
                 )
             """),
-            {
-                "tenant_id": tenant_id,
-                "lead_id": lead_id,
-                "platform": platform,
-                "sender_id": str(sender_id) if sender_id is not None else None,
-                "text": text_body,
-                "message_id": send_result.get("message_id"),
-                "recipient_id": recipient_id,
-                "messaging_type": messaging_type,
-                "message_tag": message_tag,
-                "sent_by_staff_id": sent_by_staff_id,
-            },
+            insert_params,
         )
         # last_insert_rowid で id を取得
         last_id_row = await db.execute(text("SELECT last_insert_rowid(), CURRENT_TIMESTAMP"))

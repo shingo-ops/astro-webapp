@@ -383,8 +383,9 @@ export default function InboxPage() {
               </button>
             ))}
           </div>
-          {/* Phase 1-E F14-S5: 複数 Page 接続時のみドロップダウンを表示 */}
-          {availablePageIds.length > 1 && (
+          {/* Phase 1-E F14-S5: 複数 Page 接続時、または URL deep link で page_id 指定時に表示。
+              deep link 着地直後は availablePageIds がまだ空なので、フィルタ値そのものでも判定する。 */}
+          {(availablePageIds.length > 1 || !!pageIdFilter) && (
             <div style={{ marginBottom: 8 }}>
               <select
                 value={pageIdFilter}

@@ -106,6 +106,7 @@ _META_MESSAGES_DDL = """
         error_message TEXT,
         seen_at TIMESTAMP,
         seen_by_staff_id INTEGER,
+        page_id VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 """
@@ -644,13 +645,13 @@ async def test_send_success_inserts_outbound_meta_message(app_client, db_session
     # outbound 1 件、各列が埋まっていること
     res = await db_session.execute(text("""
         SELECT direction, message_text, recipient_id, messaging_type,
-               message_tag, message_id, platform, sender_id
+               message_tag, message_id, platform, sender_id, page_id
         FROM meta_messages
         WHERE lead_id = 1 AND direction = 'outbound'
     """))
     row = res.first()
     assert row is not None
-    direction, message_text, recipient_id, messaging_type, message_tag, message_id, platform, sender_id = row
+    direction, message_text, recipient_id, messaging_type, message_tag, message_id, platform, sender_id, page_id = row
     assert direction == "outbound"
     assert message_text == "Hello"
     assert recipient_id == "PSID-1"
@@ -659,6 +660,8 @@ async def test_send_success_inserts_outbound_meta_message(app_client, db_session
     assert message_id == "mid-success"
     assert platform == "messenger"
     assert sender_id == "page-1"
+    # Phase 1-E F14-S5: outbound Messenger も page_id を埋める（Page フィルタの一貫性）
+    assert page_id == "page-1"
 
 
 @pytest.mark.asyncio
