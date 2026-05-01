@@ -517,6 +517,81 @@ async def test_get_tenant_id_by_page_env_fallback_works_after_search_aborts_sess
 
 
 @pytest.mark.asyncio
+async def test_search_tenant_meta_config_prefers_meta_page_routing(
+    db_session, monkeypatch,
+):
+    """Phase 1-E F16-S6 regression:
+    `_search_tenant_meta_config` は最初に `public.meta_page_routing`（migration 043+044
+    で同期される公開ルーティング表）を 1 クエリで参照する。テナント数 N に依存しない
+    O(1) 逆引きが成立することをモックで検証。
+
+    本テストでは `db.execute` をラップして、
+      1. 最初の SELECT が `public.meta_page_routing` を含むこと
+      2. routing 表が値を返した場合、フラットの `tenant_meta_config` への 2 回目クエリは
+         発行されないこと
+    を確認する。
+    """
+    from app.routers import webhook as wh
+    from sqlalchemy.engine import Result
+    from unittest.mock import MagicMock
+
+    queries: list[str] = []
+    original_execute = db_session.execute
+
+    async def execute_recorder(stmt, *args, **kwargs):
+        sql = str(stmt) if hasattr(stmt, "compile") else stmt.text
+        queries.append(sql)
+        # 1 回目（meta_page_routing）には tenant_id=42 を返すモック Result を返す
+        if "meta_page_routing" in sql:
+            mock_result = MagicMock(spec=Result)
+            mock_result.first.return_value = (42,)
+            return mock_result
+        return await original_execute(stmt, *args, **kwargs)
+
+    monkeypatch.setattr(db_session, "execute", execute_recorder)
+
+    tenant_id = await wh._search_tenant_meta_config(
+        db_session, column="page_id", value="PAGE-X",
+    )
+
+    assert tenant_id == 42, "meta_page_routing からの値が返っていない"
+    # 1 クエリで完了（フラット tenant_meta_config への 2 回目クエリなし）
+    routing_queries = [q for q in queries if "meta_page_routing" in q]
+    flat_queries = [
+        q for q in queries
+        if "tenant_meta_config" in q and "meta_page_routing" not in q
+    ]
+    assert len(routing_queries) == 1, (
+        f"meta_page_routing への参照が 1 回ではない: {len(routing_queries)} 回"
+    )
+    assert len(flat_queries) == 0, (
+        "meta_page_routing が値を返したのに flat tenant_meta_config も参照している: "
+        f"{flat_queries}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_search_tenant_meta_config_falls_back_when_routing_table_missing(
+    db_session, monkeypatch,
+):
+    """Phase 1-E F16-S6 regression:
+    `public.meta_page_routing` が存在しない環境（SQLite テスト or migration 043 未適用 PG）
+    では、フラットな `tenant_meta_config` への直接検索にフォールバックする。
+    """
+    from app.routers import webhook as wh
+
+    # SQLite では public.meta_page_routing は存在しない → 自然に flat フォールバックされる
+    await _insert_tenant_meta_config(
+        db_session, tenant_id=777, page_id="PAGE-Y",
+    )
+
+    tenant_id = await wh._search_tenant_meta_config(
+        db_session, column="page_id", value="PAGE-Y",
+    )
+    assert tenant_id == 777
+
+
+@pytest.mark.asyncio
 async def test_get_tenant_id_by_ig_account_returns_tenant_when_match(db_session):
     from app.routers import webhook as wh
 
