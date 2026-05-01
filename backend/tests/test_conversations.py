@@ -81,7 +81,7 @@ async def engine():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
-        # meta_messages（migration 012 + 041 を SQLite 用に縮小、Sprint 4 で参照する列）
+        # meta_messages（migration 012 + 041 + 045 (F14-S5 page_id) を SQLite 用に縮小）
         await conn.execute(text("""
             CREATE TABLE meta_messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,6 +102,7 @@ async def engine():
                 error_message TEXT,
                 seen_at TIMESTAMP,
                 seen_by_staff_id INTEGER,
+                page_id VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
@@ -192,18 +193,21 @@ async def _insert_lead(db_session, *, lead_id: int, tenant_id: int = 999,
 async def _insert_message(db_session, *, lead_id: int, tenant_id: int = 999,
                           platform: str = "messenger", direction: str = "inbound",
                           message_text: str = "Hello", sender_id: str = "PSID-1",
+                          page_id: str | None = None,
                           created_at: str | None = None,
                           seen_at: str | None = None):
     await db_session.execute(text("""
         INSERT INTO meta_messages
-            (tenant_id, lead_id, platform, sender_id, message_text, direction, created_at, seen_at)
+            (tenant_id, lead_id, platform, sender_id, message_text, direction,
+             page_id, created_at, seen_at)
         VALUES
             (:tenant_id, :lead_id, :platform, :sender_id, :text, :direction,
-             COALESCE(:created_at, CURRENT_TIMESTAMP), :seen_at)
+             :page_id, COALESCE(:created_at, CURRENT_TIMESTAMP), :seen_at)
     """), {
         "tenant_id": tenant_id, "lead_id": lead_id,
         "platform": platform, "sender_id": sender_id,
         "text": message_text, "direction": direction,
+        "page_id": page_id,
         "created_at": created_at, "seen_at": seen_at,
     })
     await db_session.commit()
@@ -337,6 +341,69 @@ async def test_list_conversations_filters_by_platform(app_client, db_session):
     resp_msgr = await app_client.get("/api/v1/conversations?platform=messenger")
     names_msgr = [c["customer_name"] for c in resp_msgr.json()["conversations"]]
     assert names_msgr == ["MsngrUser"]
+
+
+@pytest.mark.asyncio
+async def test_list_conversations_returns_page_id_field(app_client, db_session):
+    """Phase 1-E F14-S5: レスポンスに page_id フィールドが含まれる。"""
+    await _insert_lead(db_session, lead_id=1, customer_name="A")
+    await _insert_message(
+        db_session, lead_id=1, platform="messenger", page_id="PAGE-001",
+        created_at="2026-04-30 09:00:00+00:00",
+    )
+
+    resp = await app_client.get("/api/v1/conversations")
+    convs = resp.json()["conversations"]
+    assert len(convs) == 1
+    assert convs[0]["page_id"] == "PAGE-001"
+
+
+@pytest.mark.asyncio
+async def test_list_conversations_filters_by_page_id(app_client, db_session):
+    """Phase 1-E F14-S5: page_id クエリで該当 Page のみに絞り込む。"""
+    await _insert_lead(db_session, lead_id=1, customer_name="UserOnPageA")
+    await _insert_lead(db_session, lead_id=2, customer_name="UserOnPageB")
+    await _insert_lead(db_session, lead_id=3, customer_name="UserOnPageA2")
+    await _insert_message(
+        db_session, lead_id=1, page_id="PAGE-A",
+        created_at="2026-04-30 09:00:00+00:00",
+    )
+    await _insert_message(
+        db_session, lead_id=2, page_id="PAGE-B",
+        created_at="2026-04-30 10:00:00+00:00",
+    )
+    await _insert_message(
+        db_session, lead_id=3, page_id="PAGE-A",
+        created_at="2026-04-30 11:00:00+00:00",
+    )
+
+    resp_a = await app_client.get("/api/v1/conversations?page_id=PAGE-A")
+    names_a = sorted(c["customer_name"] for c in resp_a.json()["conversations"])
+    assert names_a == ["UserOnPageA", "UserOnPageA2"]
+
+    resp_b = await app_client.get("/api/v1/conversations?page_id=PAGE-B")
+    names_b = [c["customer_name"] for c in resp_b.json()["conversations"]]
+    assert names_b == ["UserOnPageB"]
+
+
+@pytest.mark.asyncio
+async def test_list_conversations_page_id_filter_excludes_null(app_client, db_session):
+    """Phase 1-E F14-S5: page_id 指定時、page_id NULL の行（IG メッセージ）は除外される。"""
+    await _insert_lead(db_session, lead_id=1, customer_name="MsngrWithPage")
+    await _insert_lead(db_session, lead_id=2, customer_name="IGNoPage")
+    await _insert_message(
+        db_session, lead_id=1, platform="messenger", page_id="PAGE-A",
+        created_at="2026-04-30 09:00:00+00:00",
+    )
+    # IG: page_id=NULL
+    await _insert_message(
+        db_session, lead_id=2, platform="instagram", page_id=None,
+        created_at="2026-04-30 10:00:00+00:00",
+    )
+
+    resp = await app_client.get("/api/v1/conversations?page_id=PAGE-A")
+    names = [c["customer_name"] for c in resp.json()["conversations"]]
+    assert names == ["MsngrWithPage"]
 
 
 @pytest.mark.asyncio
