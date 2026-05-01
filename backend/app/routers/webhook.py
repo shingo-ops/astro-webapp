@@ -8,12 +8,18 @@ Meta Webhook 受信 router（Phase 1-D Sprint 6 で Instagram 対応 + tenant_me
   - **Sprint 6** で:
       1. Instagram object（entry[].messaging[] / entry[].changes[].value.messages[]）の受信に対応
       2. テナント特定を **環境変数 META_PAGE_ID 直読み** から **DB tenant_meta_config 参照** に置換
-         （META_PAGE_ID は後方互換 fallback として残す）
+         （META_PAGE_ID は当時は後方互換 fallback として残置）
       3. Messenger と Instagram の DB 書き込みパスを `_persist_meta_message` ヘルパーに共通化
-  - **Phase 1-E F16-S6（本改修）** で:
+  - **Phase 1-E F16-S6** で:
       テナント逆引き経路を「全テナント schema 順次切替（N+1）」から
       `public.meta_page_routing` 1 クエリ参照（O(1)）に置換。
       migration 043 + 044 のトリガで tenant_meta_config 変更を public 表へ自動同期。
+  - **Phase 1-E F25-S6** で:
+      META_PAGE_ID env fallback を削除。F16 routing 表化により本番経路の安定性が
+      確保され、後方互換 fallback は不要に。
+  - **Phase 1-E F15-S6** で:
+      新規 lead 作成時に Graph API `/{psid}?fields=name` を呼び customer_name を
+      実名へ置換。失敗時は既定名（"Messenger User" / "Instagram User"）のまま続行。
 
 設計判断:
   - 既存 endpoint `POST /api/v1/webhook/messenger` を Messenger / Instagram 兼用に拡張
@@ -21,11 +27,11 @@ Meta Webhook 受信 router（Phase 1-D Sprint 6 で Instagram 対応 + tenant_me
   - `entry[].messaging[]` と `entry[].changes[]` 両フォーマットを受理
     （Meta は object='instagram' に対しても messaging[] 形式で送ってくることがある）
   - HMAC 検証は両プラットフォームで同一（X-Hub-Signature-256）
-  - tenant_id 特定優先順位:
-      1) Messenger: tenant_meta_config.page_id == entry.id
-         Instagram: tenant_meta_config.instagram_business_account_id == entry.id
-            （見つからなければ tenant_meta_config.page_id == entry.id でも fallback 検索）
-      2) META_PAGE_ID env と一致する Messenger イベントのみ env fallback で active tenant 取得
+  - tenant_id 特定:
+      Messenger: tenant_meta_config.page_id == entry.id
+      Instagram: tenant_meta_config.instagram_business_account_id == entry.id
+        （見つからなければ tenant_meta_config.page_id == entry.id でも fallback 検索）
+      （F25-S6 で META_PAGE_ID env fallback を撤去済）
 """
 
 import hashlib
@@ -43,6 +49,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import reset_tenant_context
 from app.database import AsyncSessionLocal
 from app.routers.notifications import send_discord_notification
+from app.services import encryption, meta_graph
 
 router = APIRouter()
 
@@ -50,32 +57,6 @@ router = APIRouter()
 # ─────────────────────────────────────────────
 # テナント特定ヘルパー（Sprint 6: tenant_meta_config 参照に置換）
 # ─────────────────────────────────────────────
-
-
-def _meta_page_id_env() -> str:
-    """環境変数 META_PAGE_ID を都度読みする。
-
-    Sprint 6 まではモジュールロード時に一度だけ読んでいたが、
-    テストや設定変更時に runtime で env を切り替えられる方が運用しやすい。
-    後方互換 fallback 専用なので、空文字なら fallback 自体を発動させない。
-    """
-    return os.getenv("META_PAGE_ID", "")
-
-
-async def _list_active_tenant_ids(db: AsyncSession) -> list[int]:
-    """public.tenants から is_active=TRUE のテナント ID を昇順で返す。
-
-    PostgreSQL 本番では `public.tenants` を直接参照する。テスト（SQLite）では
-    schema 概念がないため `public.tenants` ビュー / ATTACH ベースで同名アクセス可能。
-    """
-    try:
-        result = await db.execute(
-            text("SELECT id FROM public.tenants WHERE is_active = true ORDER BY id")
-        )
-        return [int(r[0]) for r in result.all()]
-    except Exception:
-        logging.debug("[Meta] public.tenants 取得失敗", exc_info=True)
-        return []
 
 
 async def _search_tenant_meta_config(
@@ -164,39 +145,15 @@ async def _search_tenant_meta_config(
 async def _get_tenant_id_by_page(db: AsyncSession, page_id: str) -> Optional[int]:
     """page_id から tenant_id を取得する（Messenger / Instagram 共通の Page ベース逆引き）。
 
-    優先順位:
-      1) tenant_meta_config.page_id（is_active=TRUE）に一致する行があればその tenant_id
-         （PostgreSQL では active 全テナントスキーマを順次検索）
-      2) META_PAGE_ID env と一致するなら最初の active tenant の id（後方互換 fallback）
-
-    spec §5-7 「既存 META_PAGE_ID 環境変数照合は後方互換 fallback として残す」に対応。
-
-    Phase 1-E F26 fix:
-      `_search_tenant_meta_config` 内の各 `except` で `await db.rollback()` を行うため、
-      復帰後のセッションは clean な状態で戻る（呼び出し側の `process_messenger_event`
-      が後続で `SET search_path` を投げても aborted state ではない）。
-      ただし rollback 自体が万一失敗するケースに備え、active tenants の取得は
-      **search_path 切替前**に済ませて値を保持しておく（env fallback の保険）。
+    Phase 1-E F25-S6 改修:
+      これまで `META_PAGE_ID` 環境変数の後方互換 fallback を備えていたが、
+      Phase 1-D Sprint 6 で `tenant_meta_config` 主経路 + Phase 1-E F16-S6 で
+      `public.meta_page_routing` 高速化が完了したため、env fallback は不要に。
+      実装も大幅に簡素化。
     """
     if not page_id:
         return None
-
-    # 0) active tenants を先に取得（schema 切替前なので transaction は clean）。
-    #    env fallback で必要だが、_search_tenant_meta_config 実行後は session が
-    #    aborted state になっている可能性があり、後から取り直すと空が返ってしまう。
-    tenant_ids = await _list_active_tenant_ids(db)
-
-    # 1) DB 由来（Sprint 6 で追加された主経路）
-    tid = await _search_tenant_meta_config(db, column="page_id", value=page_id)
-    if tid is not None:
-        return tid
-
-    # 2) 後方互換 fallback: META_PAGE_ID env と一致した場合のみ
-    env_page_id = _meta_page_id_env()
-    if env_page_id and page_id == env_page_id and tenant_ids:
-        return tenant_ids[0]
-
-    return None
+    return await _search_tenant_meta_config(db, column="page_id", value=page_id)
 
 
 async def _get_tenant_id_by_ig_account(
@@ -343,6 +300,53 @@ def _iter_inbound_messages(
                 }
 
 
+async def _resolve_lead_name_via_graph(
+    db: AsyncSession,
+    sender_id: str,
+) -> Optional[str]:
+    """Phase 1-E F15-S6: Page Scoped User ID から Graph API 経由で表示名を取得する。
+
+    呼び出し前提:
+      - search_path がテナント schema に設定済み（tenant_meta_config を直接参照）
+      - 失敗（権限不足、ネットワーク、復号失敗）は webhook 全体を落とさず None を返す
+
+    フロー:
+      1. tenant_meta_config から page_access_token_encrypted を取得
+      2. Fernet で復号
+      3. Graph API `/{psid}?fields=name` を呼び出し
+      4. 取得した name を返す（取れなければ None）
+    """
+    if not sender_id:
+        return None
+    try:
+        result = await db.execute(
+            text(
+                "SELECT page_access_token_encrypted "
+                "FROM tenant_meta_config "
+                "WHERE is_active = TRUE "
+                "ORDER BY id LIMIT 1"
+            )
+        )
+        row = result.first()
+        if row is None:
+            return None
+        token_blob = row[0]
+        if isinstance(token_blob, (bytes, bytearray, memoryview)):
+            token_str = bytes(token_blob).decode("ascii")
+        else:
+            token_str = str(token_blob)
+        page_access_token = encryption.decrypt(token_str)
+    except Exception:
+        logging.debug("[Meta] page_access_token 取得/復号失敗", exc_info=True)
+        return None
+
+    try:
+        return await meta_graph.get_user_name(sender_id, page_access_token)
+    except Exception:
+        logging.debug("[Meta] Graph API user name 取得失敗", exc_info=True)
+        return None
+
+
 async def _persist_meta_message(
     db: AsyncSession,
     *,
@@ -408,6 +412,17 @@ async def _persist_meta_message(
             )
             await db.commit()
             await reset_tenant_context(db, tenant_id)
+
+            # Phase 1-E F15-S6: 新規 lead の customer_name を Graph API 由来の実名で更新。
+            # 失敗時はデフォルト名（"Messenger User" / "Instagram User"）のまま続行。
+            resolved_name = await _resolve_lead_name_via_graph(db, sender_id)
+            if resolved_name:
+                await db.execute(
+                    text("UPDATE leads SET customer_name = :name WHERE id = :id"),
+                    {"name": resolved_name, "id": lead_id},
+                )
+                await db.commit()
+                await reset_tenant_context(db, tenant_id)
         else:
             sel = await db.execute(
                 text("SELECT id FROM leads WHERE source = :source LIMIT 1"),

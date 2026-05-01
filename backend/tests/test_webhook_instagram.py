@@ -432,88 +432,11 @@ async def test_get_tenant_id_by_page_ignores_inactive_row(db_session):
     assert tenant_id is None
 
 
-@pytest.mark.asyncio
-async def test_get_tenant_id_by_page_falls_back_to_env(db_session, monkeypatch):
-    """tenant_meta_config に該当行が無く、META_PAGE_ID env と一致するときは
-    public.tenants の最初の active テナントを返す（後方互換 fallback）。"""
-    from app.routers import webhook as wh
-
-    monkeypatch.setenv("META_PAGE_ID", "PAGE-LEGACY")
-    tenant_id = await wh._get_tenant_id_by_page(db_session, "PAGE-LEGACY")
-    assert tenant_id == 999  # _TENANTS_DDL で fixture が 999 を投入済
-
-
-@pytest.mark.asyncio
-async def test_get_tenant_id_by_page_env_fallback_does_not_match_other_page(
-    db_session, monkeypatch,
-):
-    from app.routers import webhook as wh
-
-    monkeypatch.setenv("META_PAGE_ID", "PAGE-LEGACY")
-    # env と一致しない page_id は fallback でも見つからない
-    tenant_id = await wh._get_tenant_id_by_page(db_session, "PAGE-X")
-    assert tenant_id is None
-
-
-@pytest.mark.asyncio
-async def test_get_tenant_id_by_page_db_takes_priority_over_env(db_session, monkeypatch):
-    """DB に行があれば env fallback は使わない（=DB が常に優先）。"""
-    from app.routers import webhook as wh
-
-    monkeypatch.setenv("META_PAGE_ID", "PAGE-A")
-    await _insert_tenant_meta_config(
-        db_session, tenant_id=777, page_id="PAGE-A",
-    )
-    # public.tenants には 999 だけがあるが、tenant_meta_config 由来の 777 が返る
-    tenant_id = await wh._get_tenant_id_by_page(db_session, "PAGE-A")
-    assert tenant_id == 777
-
-
-@pytest.mark.asyncio
-async def test_get_tenant_id_by_page_env_fallback_works_after_search_aborts_session(
-    db_session, monkeypatch,
-):
-    """Phase 1-E F26 regression:
-    PostgreSQL 本番では `_search_tenant_meta_config` が SET search_path を発行し、
-    対象スキーマに `tenant_meta_config` が無いと session が aborted state に陥る。
-    aborted state では後続の SELECT が全て失敗するため、refactor 前は env fallback
-    内で再度呼ぶ `_list_active_tenant_ids` が空を返し、tenant_id を確定できなかった。
-
-    refactor 後は `_get_tenant_id_by_page` 冒頭で `_list_active_tenant_ids` を 1 回
-    呼んで結果をローカル変数に保持するので、aborted state でも env fallback が動く。
-    本テストは「`_search_tenant_meta_config` 後に list 呼び出しが失敗しても fallback が
-    機能する」ことをモックで擬似的に検証する。
-    """
-    from app.routers import webhook as wh
-
-    monkeypatch.setenv("META_PAGE_ID", "PAGE-LEGACY")
-
-    # `_search_tenant_meta_config` の "後" だけ `_list_active_tenant_ids` が空を返すように
-    # 仕込む。先頭での 1 回目（_get_tenant_id_by_page 由来）は本物を実行 → [999]。
-    # その後 `_search_tenant_meta_config` 内 / fallback 経路で呼ばれた場合は空 [] に。
-    original_list = wh._list_active_tenant_ids
-    original_search = wh._search_tenant_meta_config
-    state = {"search_done": False}
-
-    async def list_with_abort(db):
-        if state["search_done"]:
-            return []
-        return await original_list(db)
-
-    async def search_then_mark(db, *, column, value):
-        try:
-            return await original_search(db, column=column, value=value)
-        finally:
-            state["search_done"] = True
-
-    monkeypatch.setattr(wh, "_list_active_tenant_ids", list_with_abort)
-    monkeypatch.setattr(wh, "_search_tenant_meta_config", search_then_mark)
-
-    tenant_id = await wh._get_tenant_id_by_page(db_session, "PAGE-LEGACY")
-
-    # refactor で先に取得した [999] が env fallback に再利用されるため 999 が返る。
-    # refactor 前のコードはここで None になっていた（aborted state で再取得が空のため）。
-    assert tenant_id == 999
+# Phase 1-E F25-S6 で META_PAGE_ID env fallback が削除されたため、
+# 旧 test_get_tenant_id_by_page_falls_back_to_env / *_env_fallback_does_not_match_other_page /
+# *_db_takes_priority_over_env / *_env_fallback_works_after_search_aborts_session は廃止。
+# F26 regression は F16 で routing 表化されアボートシナリオ自体が消滅したため
+# 不要になった。
 
 
 @pytest.mark.asyncio
@@ -634,20 +557,8 @@ async def test_search_tenant_meta_config_rejects_unknown_column(db_session):
         )
 
 
-@pytest.mark.asyncio
-async def test_list_active_tenant_ids_returns_active_only(db_session):
-    """`public.tenants` から is_active=TRUE のテナントだけ返す。"""
-    from app.routers import webhook as wh
-
-    # fixture が tenant 999 を投入済（is_active=1）
-    # 追加で is_active=0 のテナント 888 を入れる
-    await db_session.execute(text(
-        "INSERT INTO public.tenants (id, name, is_active) VALUES (888, 'Inactive', 0)"
-    ))
-    await db_session.commit()
-
-    ids = await wh._list_active_tenant_ids(db_session)
-    assert ids == [999]
+# Phase 1-E F25-S6: `_list_active_tenant_ids` は env fallback でしか使われていなかった
+# ため、env fallback 削除と同時にこの helper も削除。テストも廃止。
 
 
 # ---------------------------------------------------------------------------
@@ -1086,32 +997,9 @@ async def test_process_event_skips_when_tenant_unknown(db_session, webhook_env, 
     assert res.scalar() == 0
 
 
-@pytest.mark.asyncio
-async def test_process_event_uses_env_fallback_when_db_empty(
-    db_session, webhook_env, monkeypatch,
-):
-    """tenant_meta_config が空でも META_PAGE_ID env 一致なら処理続行。"""
-    from app.routers import webhook as wh
-
-    monkeypatch.setenv("META_PAGE_ID", "PAGE-LEGACY")
-
-    body = {
-        "object": "page",
-        "entry": [{
-            "id": "PAGE-LEGACY",
-            "messaging": [{
-                "sender": {"id": "PSID-LEGACY"},
-                "timestamp": 1,
-                "message": {"mid": "mid-legacy", "text": "legacy"},
-            }],
-        }],
-    }
-    await wh.process_messenger_event(body)
-
-    res = await db_session.execute(text(
-        "SELECT platform FROM meta_messages WHERE message_id = 'mid-legacy'"
-    ))
-    assert res.scalar() == "messenger"
+# Phase 1-E F25-S6: META_PAGE_ID env fallback 削除に伴い、env fallback 経由の
+# process_messenger_event 経路は無くなった。test_process_event_uses_env_fallback_when_db_empty
+# は廃止（DB 空のときは tenant 特定失敗で warning ログ + skip するのが正しい挙動）。
 
 
 @pytest.mark.asyncio
@@ -1124,3 +1012,131 @@ async def test_process_event_ignores_unknown_object_type(db_session, webhook_env
 
     res = await db_session.execute(text("SELECT COUNT(*) FROM meta_messages"))
     assert res.scalar() == 0
+
+
+# ---------------------------------------------------------------------------
+# Phase 1-E F15-S6: customer_name の Graph API 補完
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_new_lead_customer_name_updated_when_graph_api_returns_name(
+    db_session, webhook_env, monkeypatch,
+):
+    """Phase 1-E F15-S6 regression:
+    新規 lead 作成時、`_resolve_lead_name_via_graph` が name を返すと
+    `leads.customer_name` がその name で UPDATE される（PSID 文字列のままにならない）。
+    """
+    from app.routers import webhook as wh
+
+    await _insert_tenant_meta_config(
+        db_session, tenant_id=999, page_id="PAGE-A",
+    )
+
+    # Graph API 由来の name を返すモック
+    async def fake_resolve(db, sender_id):
+        assert sender_id == "PSID-NAME-1"
+        return "山田 太郎"
+
+    monkeypatch.setattr(wh, "_resolve_lead_name_via_graph", fake_resolve)
+
+    body = {
+        "object": "page",
+        "entry": [{
+            "id": "PAGE-A",
+            "messaging": [{
+                "sender": {"id": "PSID-NAME-1"},
+                "timestamp": 1714400000,
+                "message": {"mid": "mid-name-1", "text": "Hi"},
+            }],
+        }],
+    }
+    await wh.process_messenger_event(body)
+
+    res = await db_session.execute(text(
+        "SELECT customer_name FROM leads WHERE source = 'messenger:PSID-NAME-1'"
+    ))
+    assert res.scalar() == "山田 太郎"
+
+
+@pytest.mark.asyncio
+async def test_new_lead_keeps_default_name_when_graph_api_returns_none(
+    db_session, webhook_env, monkeypatch,
+):
+    """Phase 1-E F15-S6: Graph API が None / 失敗時は既定名のまま続行する（webhook を落とさない）。"""
+    from app.routers import webhook as wh
+
+    await _insert_tenant_meta_config(
+        db_session, tenant_id=999, page_id="PAGE-A",
+    )
+
+    async def fake_resolve_none(db, sender_id):
+        return None
+
+    monkeypatch.setattr(wh, "_resolve_lead_name_via_graph", fake_resolve_none)
+
+    body = {
+        "object": "page",
+        "entry": [{
+            "id": "PAGE-A",
+            "messaging": [{
+                "sender": {"id": "PSID-NONAME"},
+                "timestamp": 1714400000,
+                "message": {"mid": "mid-noname", "text": "Hi"},
+            }],
+        }],
+    }
+    await wh.process_messenger_event(body)
+
+    res = await db_session.execute(text(
+        "SELECT customer_name FROM leads WHERE source = 'messenger:PSID-NONAME'"
+    ))
+    assert res.scalar() == "Messenger User"
+
+
+@pytest.mark.asyncio
+async def test_existing_lead_does_not_trigger_graph_api(
+    db_session, webhook_env, monkeypatch,
+):
+    """Phase 1-E F15-S6: 既存 lead（source 一致行が DB に存在）には Graph API を呼ばない。
+    （新規作成時のみ補完。再受信のたびに API を叩いて Rate Limit を浪費しない）"""
+    from app.routers import webhook as wh
+
+    await _insert_tenant_meta_config(
+        db_session, tenant_id=999, page_id="PAGE-A",
+    )
+    # 既存の lead を入れておく
+    await db_session.execute(text("""
+        INSERT INTO leads (id, tenant_id, customer_name, source, type, status, lead_code)
+        VALUES (5001, 999, '既存さん', 'messenger:PSID-EXISTING', 'Inbound', '新規', 'LD-05001')
+    """))
+    await db_session.commit()
+
+    call_count = {"n": 0}
+
+    async def fake_resolve_count(db, sender_id):
+        call_count["n"] += 1
+        return "別人"
+
+    monkeypatch.setattr(wh, "_resolve_lead_name_via_graph", fake_resolve_count)
+
+    body = {
+        "object": "page",
+        "entry": [{
+            "id": "PAGE-A",
+            "messaging": [{
+                "sender": {"id": "PSID-EXISTING"},
+                "timestamp": 1714400000,
+                "message": {"mid": "mid-existing", "text": "Hi"},
+            }],
+        }],
+    }
+    await wh.process_messenger_event(body)
+
+    # 既存 lead は customer_name が変わらない
+    res = await db_session.execute(text(
+        "SELECT customer_name FROM leads WHERE id = 5001"
+    ))
+    assert res.scalar() == "既存さん"
+    # Graph API も呼ばれていない
+    assert call_count["n"] == 0

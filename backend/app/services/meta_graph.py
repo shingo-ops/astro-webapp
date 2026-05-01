@@ -426,6 +426,39 @@ async def get_instagram_business_account(
     return {"id": iba.get("id"), "username": iba.get("username")}
 
 
+async def get_user_name(
+    psid: str,
+    page_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> Optional[str]:
+    """Page Scoped User ID（PSID / IGSID）から表示名を取得する。
+
+    Phase 1-E F15-S6: Webhook 受信時に新規作成された lead の customer_name を
+    実名で埋めるために使用。`pages_messaging` 権限のもとで取得可能。
+
+    エラー時（権限不足、無効な ID、タイムアウト等）は MetaGraph* 例外が伝播するため、
+    呼び出し側で握りつぶすこと（webhook 全体を落とさない）。
+
+    Returns:
+        ユーザー表示名（取得不能なら None）
+    """
+    if not psid:
+        raise ValueError("psid is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    body = await _request(
+        "GET",
+        f"{graph_base_url()}/{psid}",
+        params={"fields": "name", "access_token": page_access_token},
+        client=client,
+    )
+    name = body.get("name")
+    if not name or not isinstance(name, str):
+        return None
+    return name
+
+
 async def subscribe_page_to_app(
     page_id: str,
     page_access_token: str,

@@ -18,7 +18,7 @@
 - ✅ F4-S5 force_human_agent_tag UI (PR #213)
 - ✅ F5-S2 Backend lifespan unit テスト (PR #212)
 
-### Medium Priority（5 / 11 完了）
+### Medium Priority（6 / 11 完了）
 - ✅ F6-S2 401/403 統合テスト (PR #228)
 - ✅ F7-S2 OAuth scope エンコード検証 (PR #229)
 - ✅ F9-S4 audit_log（mark-read 呼び出し）ミニ版 (PR #227、firebase_uid 列追加は別 follow-up)
@@ -28,7 +28,7 @@
 - ⏳ F12-S5 送信失敗バブル赤枠 (PR #223 完了)
 - ⏳ F13-S5 polling 二重取得最適化 (PR #224 完了)
 - ⏳ F14-S5 複数 Page 対応 Inbox フィルタ — 規模 1d、frontend のみ
-- ⏳ F15-S6 customer_name の Graph API 補完 — 規模 1d、Webhook 拡張
+- ✅ F15-S6 customer_name の Graph API 補完 — Webhook 受信時に `/{psid}?fields=name` で実名更新（2026-05-01）
 - ✅ F16-S6 PostgreSQL マルチテナント検索 N+1 解消（migration 043+044 + webhook.py 改修、2026-05-01）
 
 ### Low Priority（5 / 8 完了）
@@ -42,7 +42,7 @@
 - ⏳ F24-S5 lib/messages.ts さらなる集約 (PR #226 完了)
 
 ### 廃止予定 / Phase 1-E 着手時に対応
-- ⏳ F25-S6 META_PAGE_ID 環境変数の削除 — 後方互換 fallback として残置中、Phase 1-E 着手時に判断
+- ✅ F25-S6 META_PAGE_ID 環境変数の削除 — webhook.py の env fallback と `_meta_page_id_env` / `_list_active_tenant_ids` 削除（2026-05-01）
 
 ### 追加項目（Phase 1-D 後に発生）
 - ⏳ F9-S4 拡張版: audit_logs に firebase_uid 列追加 + record_audit_log 引数拡張（migration 必要、規模 0.5d）
@@ -195,11 +195,17 @@
 - **対応**: InboxPage に Page 選択ドロップダウン追加、`?page_id=` クエリで絞込
 - **工数目安**: 1d
 
-### F15-S6. customer_name の Graph API 補完
+### F15-S6. customer_name の Graph API 補完 ✅ 完了 (2026-05-01)
 
 - **元 Sprint**: 4, 6 (Reviewer F2)
 - **問題**: 受信メッセージから自動作成された lead の customer_name が PSID/IGSID 文字列のまま
 - **対応**: Webhook 受信時に Graph API `/{psid}?fields=name` を呼んで lead.customer_name を更新（Page Scoped User の name は Permission `pages_messaging` で取得可能）
+- **実装**:
+  - `backend/app/services/meta_graph.py`: `get_user_name(psid, page_access_token)` ヘルパー追加
+  - `backend/app/routers/webhook.py`: `_resolve_lead_name_via_graph()` 追加 + `_persist_meta_message` の新規 lead 作成直後に呼び出し
+  - 失敗時はデフォルト名（"Messenger User" / "Instagram User"）のまま続行（webhook を落とさない）
+  - 既存 lead（再受信）には Graph API を呼ばない（Rate Limit 浪費回避）
+  - regression test 3 件追加
 - **工数目安**: 1d
 
 ### F16-S6. PostgreSQL マルチテナント検索 N+1 解消 ✅ 完了 (2026-05-01)
@@ -280,11 +286,14 @@
 
 ## 4. 廃止予定 / Phase 1-E 着手時に対応
 
-### F25-S6. META_PAGE_ID 環境変数の削除
+### F25-S6. META_PAGE_ID 環境変数の削除 ✅ 完了 (2026-05-01)
 
 - **元 Sprint**: spec §14 Q6
 - **問題**: Phase 1-D 完了後の fallback として残置中
-- **対応**: Phase 1-E 着手時に webhook.py / meta_inbox.py の参照を削除、.env.example からも削除
+- **対応**:
+  - `backend/app/routers/webhook.py`: `_meta_page_id_env()` と `_list_active_tenant_ids()` 削除、`_get_tenant_id_by_page` を `_search_tenant_meta_config` の thin wrapper に簡素化
+  - `tests/test_webhook_instagram.py`: env fallback 関連 4 テスト削除（F26 regression test 含む — F16 routing 化で aborted state シナリオが消滅）
+  - VPS の `META_PAGE_ID` 環境変数自体は無害な dead value として残置可（docker-compose.yml の宣言も将来削除）
 - **工数目安**: 0.25d
 
 ---
