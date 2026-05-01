@@ -18,7 +18,7 @@
 - ✅ F4-S5 force_human_agent_tag UI (PR #213)
 - ✅ F5-S2 Backend lifespan unit テスト (PR #212)
 
-### Medium Priority（6 / 11 完了）
+### Medium Priority（7 / 11 完了）
 - ✅ F6-S2 401/403 統合テスト (PR #228)
 - ✅ F7-S2 OAuth scope エンコード検証 (PR #229)
 - ✅ F9-S4 audit_log（mark-read 呼び出し）ミニ版 (PR #227、firebase_uid 列追加は別 follow-up)
@@ -27,7 +27,7 @@
 - ⏳ F11-S5 SQLite フォールバック削除 — **当面 skip 推奨**（既存 SQLite テストへの破壊的影響が大、F3-S2 v2 で PostgreSQL CI 構築済のため緊急性低）
 - ⏳ F12-S5 送信失敗バブル赤枠 (PR #223 完了)
 - ⏳ F13-S5 polling 二重取得最適化 (PR #224 完了)
-- ⏳ F14-S5 複数 Page 対応 Inbox フィルタ — 規模 1d、frontend のみ
+- ✅ F14-S5 複数 Page 対応 Inbox フィルタ（migration 045 + webhook + /conversations + InboxPage、Messenger 対応、IG は F14-FU1 へ、2026-05-01）
 - ✅ F15-S6 customer_name の Graph API 補完 — Webhook 受信時に `/{psid}?fields=name` で実名更新（2026-05-01）
 - ✅ F16-S6 PostgreSQL マルチテナント検索 N+1 解消（migration 043+044 + webhook.py 改修、2026-05-01）
 
@@ -188,12 +188,21 @@
 - **対応**: 楽観的 UI に `pendingId` を入れ、polling 結果で重複検出時にマージ
 - **工数目安**: 0.5d
 
-### F14-S5. 複数 Page 対応 Inbox フィルタ
+### F14-S5. 複数 Page 対応 Inbox フィルタ ✅ 完了 (2026-05-01)
 
 - **元 Sprint**: 5 (Evaluator I2)
 - **問題**: 1 テナントで複数 Page 接続済の場合、Inbox は全 Page の会話を統合表示。Page ごとフィルタ未実装
 - **対応**: InboxPage に Page 選択ドロップダウン追加、`?page_id=` クエリで絞込
+- **実装**:
+  - migration 045: `meta_messages.page_id VARCHAR(50)` 列追加 + 部分 index `(tenant_id, page_id)`
+  - `scripts/migrate_meta_messages_page_id.py`: 全 active テナント一括適用
+  - `backend/app/routers/webhook.py`: `_persist_meta_message` に `page_id` 引数を追加。Messenger は `entry.id` を保存、IG は当面 NULL（F14-FU1 で対応）
+  - `backend/app/routers/meta_inbox.py`: `/conversations` エンドポイントに `?page_id=` フィルタ追加 + レスポンスに `page_id` フィールド追加
+  - `frontend/src/lib/messages.ts`: `Conversation.page_id` 型追加 + `listConversations` filter 拡張
+  - `frontend/src/pages/InboxPage.tsx`: Page 選択ドロップダウン + URL `?page_id=` 同期（複数 Page 接続時のみ表示）
+  - regression test 5 件追加（backend conversation 3 + webhook 2）
 - **工数目安**: 1d
+- **follow-up F14-FU1**: IG 受信時の page_id 解決（`tenant_meta_config.instagram_business_account_id` から page_id を引く、F15-FU1 とセット可能）
 
 ### F15-S6. customer_name の Graph API 補完 ✅ 完了 (2026-05-01)
 

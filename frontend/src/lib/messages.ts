@@ -23,6 +23,8 @@ export interface Conversation {
   lead_code: string | null;
   customer_name: string | null;
   platform: "messenger" | "instagram" | string;
+  /** Phase 1-E F14-S5: Messenger 受信のみ Page ID。IG は当面 null */
+  page_id: string | null;
   last_message_text: string | null;
   last_message_at: string | null;
   last_message_direction: "inbound" | "outbound" | string;
@@ -132,7 +134,12 @@ export function platformLabel(p: string | null): string {
  * @param filter - { platform, unread_only } のサブセット
  */
 export async function listConversations(
-  filter: { platform?: PlatformFilter; unread_only?: boolean } = {},
+  filter: {
+    platform?: PlatformFilter;
+    unread_only?: boolean;
+    /** Phase 1-E F14-S5: Page ID で絞り込み（指定時、IG メッセージは除外される） */
+    page_id?: string;
+  } = {},
 ): Promise<ConversationsResponse> {
   const params = new URLSearchParams();
   if (filter.platform && filter.platform !== "all") {
@@ -140,6 +147,9 @@ export async function listConversations(
   }
   if (filter.unread_only) {
     params.set("unread_only", "true");
+  }
+  if (filter.page_id) {
+    params.set("page_id", filter.page_id);
   }
   const qs = params.toString();
   return api.get<ConversationsResponse>(
