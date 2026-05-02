@@ -31,7 +31,12 @@
     -e ALLOW_TEST_USER_CREATE=1 \\
     -e DELETE_MODE=1 \\
     -e TEST_EMAIL=claude-tester@salesanchor.jp \\
+    -e TEST_TENANT_CODE=test-corp \\
     backend python /app/scripts/setup_single_test_user.py
+
+  注意: 削除モードでも TEST_TENANT_CODE が必須。
+  既存ユーザーの tenant_id が指定 tenant と一致しない場合は中断する
+  （email 一致のみの誤削除を防ぐ）。
 
 前提:
   - firebase-credentials.json がコンテナ内 /app に存在
@@ -223,7 +228,15 @@ async def _assign_role(conn, user_id: int, role_id: int) -> None:
     logger.info("DB: user_roles 付与 (user_id=%d, role_id=%d)", user_id, role_id)
 
 
-async def _delete_user_record(conn, user_id: int) -> None:
+async def _delete_user_record(
+    conn, user_id: int, tenant_id: int, schema_name: str,
+) -> None:
+    """user_roles → users の順で削除する。
+    PR #250 Reviewer F5: user_roles は per-tenant schema 配下で RLS が掛かっているため、
+    `SET app.tenant_id` を先に発行しないと行が見えず、結果として孤児行が残る。
+    """
+    await conn.execute(text(f"SET search_path = {schema_name}, public"))
+    await conn.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
     await conn.execute(
         text("DELETE FROM user_roles WHERE user_id = :uid"),
         {"uid": user_id},
@@ -232,7 +245,7 @@ async def _delete_user_record(conn, user_id: int) -> None:
         text("DELETE FROM public.users WHERE id = :uid"),
         {"uid": user_id},
     )
-    logger.info("DB: ユーザー削除完了 (id=%d)", user_id)
+    logger.info("DB: ユーザー削除完了 (id=%d, tenant_id=%d)", user_id, tenant_id)
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +254,19 @@ async def _delete_user_record(conn, user_id: int) -> None:
 
 
 async def _run_create() -> None:
+    """新規テストユーザー作成。
+
+    PR #250 Reviewer F2/F3 修正: Firebase ↔ DB の順序を以下に固定し
+    半端 commit / 孤児行が残らないようにする:
+
+      1. すべての pre-check (env / tenant / domain / DB 既存 / Firebase 既存 / role)
+      2. Firebase create_user
+      3. DB INSERT (失敗時は Firebase ユーザーを補償削除)
+      4. tenant_id クレーム設定
+
+    DB トランザクションは 1 つの `engine.begin()` ブロックで囲む（失敗時 rollback）。
+    Firebase 失敗は補償削除をしないが、上記 #1 で重複チェックを通すため再実行で復旧可能。
+    """
     from app.auth.utils import hash_password
 
     email = _require_env("TEST_EMAIL")
@@ -269,68 +295,106 @@ async def _run_create() -> None:
         logger.info("=== 単発テストユーザー作成開始 ===")
         logger.info("email=%s tenant=%s role=%s", email, tenant_code, crm_role)
 
+        # ----- (1) Pre-check: tenant / DB 既存 / Firebase 既存 / role -----
         tenant_id = await _resolve_tenant_id(engine, tenant_code)
         schema_name = f"tenant_{tenant_id:03d}"
 
-        async with engine.begin() as conn:
-            existing = await _user_exists(conn, email)
-            if existing:
-                user_id, existing_tenant_id = existing
-                if not allow_overwrite:
+        async with engine.connect() as conn:
+            db_existing = await _user_exists(conn, email)
+            role_id = await _resolve_role_id(conn, tenant_id, schema_name, crm_role)
+
+        if role_id is None:
+            logger.error(
+                "tenant=%s に CRM ロール '%s' が存在しません。先に roles を seed してください。",
+                tenant_code, crm_role,
+            )
+            sys.exit(1)
+
+        firebase_existing_uid = _firebase_get_existing_uid(email)
+
+        # 既存検知時の方針判定（DB / Firebase いずれかでも既存なら、明示許可なしは中断）
+        if db_existing or firebase_existing_uid:
+            if not allow_overwrite:
+                if db_existing:
+                    user_id, existing_tenant_id = db_existing
                     logger.error(
-                        "email=%s の既存ユーザー (id=%d, tenant_id=%d) が見つかりました。"
+                        "email=%s の既存ユーザー (DB: id=%d tenant_id=%d) が見つかりました。"
                         " 上書きするには ALLOW_OVERWRITE_PASSWORD=1 を付けて再実行してください。",
                         email, user_id, existing_tenant_id,
                     )
-                    sys.exit(1)
-                logger.warning(
-                    "ALLOW_OVERWRITE_PASSWORD=1 が指定されているため既存ユーザーのパスワードを上書きします (id=%d)",
-                    user_id,
-                )
-                password_hash = hash_password(password)
-                await conn.execute(
-                    text(
-                        "UPDATE public.users SET password_hash = :hash, is_active = TRUE "
-                        "WHERE id = :id"
-                    ),
-                    {"hash": password_hash, "id": user_id},
-                )
-            else:
-                # 新規作成パス
-                role_id = await _resolve_role_id(conn, tenant_id, schema_name, crm_role)
-                if role_id is None:
+                if firebase_existing_uid:
                     logger.error(
-                        "tenant=%s に CRM ロール '%s' が存在しません。先に roles を seed してください。",
-                        tenant_code, crm_role,
+                        "Firebase 側に email=%s が既存です (uid=%s)。"
+                        " 上書きするには ALLOW_OVERWRITE_PASSWORD=1 を付けて再実行してください。",
+                        email, firebase_existing_uid,
+                    )
+                sys.exit(1)
+            # 既存ユーザーが本番テナントに紐付いている場合は absolutely refuse
+            if db_existing:
+                _user_id, existing_tenant_id = db_existing
+                if existing_tenant_id != tenant_id:
+                    logger.error(
+                        "email=%s は別テナント (tenant_id=%d) に既存です。"
+                        " 取り違え事故防止のため本スクリプトでは上書き対象外です。",
+                        email, existing_tenant_id,
                     )
                     sys.exit(1)
-                password_hash = hash_password(password)
-                user_id = await _create_user_record(
-                    conn,
-                    tenant_id=tenant_id,
-                    email=email,
-                    display_name=display_name,
-                    password_hash=password_hash,
-                )
-                await _assign_role(conn, user_id, role_id)
 
-        # Firebase
-        existing_uid = _firebase_get_existing_uid(email)
-        if existing_uid:
-            if allow_overwrite:
-                _firebase_update_password(existing_uid, password)
-            else:
-                logger.error(
-                    "Firebase 側に email=%s が既存です (uid=%s)。"
-                    " 上書きするには ALLOW_OVERWRITE_PASSWORD=1 を付けて再実行してください。",
-                    email, existing_uid,
-                )
-                sys.exit(1)
-            uid = existing_uid
+        password_hash = hash_password(password)
+
+        # ----- (2/3) Firebase 作成 (or 上書き) → DB INSERT 補償付き -----
+        if firebase_existing_uid:
+            _firebase_update_password(firebase_existing_uid, password)
+            uid = firebase_existing_uid
+            firebase_was_created = False
         else:
             uid = _firebase_create_user(email, password, display_name)
+            firebase_was_created = True
 
-        # tenant_id クレーム設定
+        try:
+            async with engine.begin() as conn:
+                if db_existing:
+                    user_id, _ = db_existing
+                    logger.warning(
+                        "ALLOW_OVERWRITE_PASSWORD=1 で既存ユーザー (id=%d) のパスワードを上書きします",
+                        user_id,
+                    )
+                    await conn.execute(
+                        text(
+                            "UPDATE public.users SET password_hash = :hash, is_active = TRUE "
+                            "WHERE id = :id"
+                        ),
+                        {"hash": password_hash, "id": user_id},
+                    )
+                else:
+                    user_id = await _create_user_record(
+                        conn,
+                        tenant_id=tenant_id,
+                        email=email,
+                        display_name=display_name,
+                        password_hash=password_hash,
+                    )
+                    # role 付与（_resolve_role_id で SET 済みだが新トランザクションのため再 SET）
+                    await conn.execute(text(f"SET search_path = {schema_name}, public"))
+                    await conn.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
+                    await _assign_role(conn, user_id, role_id)
+        except Exception:
+            # DB 側で失敗したら、本実行で新規作成した Firebase user を補償削除
+            if firebase_was_created:
+                logger.warning(
+                    "DB 操作失敗のため新規 Firebase user uid=%s を補償削除します",
+                    uid,
+                )
+                try:
+                    _firebase_delete_user(uid)
+                except Exception as compensate_err:
+                    logger.error(
+                        "Firebase 補償削除も失敗 (uid=%s): %s",
+                        uid, compensate_err,
+                    )
+            raise
+
+        # ----- (4) tenant_id クレーム設定 -----
         firebase_auth.set_custom_user_claims(uid, {"tenant_id": tenant_id})
         logger.info("Firebase: tenant_id=%d クレーム設定完了 (uid=%s)", tenant_id, uid)
 
@@ -345,7 +409,14 @@ async def _run_create() -> None:
 
 
 async def _run_delete() -> None:
+    """単発テストユーザー削除。
+
+    PR #250 Reviewer F1 修正:
+      - TEST_TENANT_CODE を必須化（本番テナント refuse + tenant_id 検証で email 一致のみの誤削除を防ぐ）
+      - 既存 user の tenant_id が一致しない場合は中断
+    """
     email = _require_env("TEST_EMAIL")
+    tenant_code = _require_env("TEST_TENANT_CODE")
 
     if email.endswith("@treasureislandjp.com"):
         logger.error("本番ドメインのユーザー削除は本スクリプトでは実行できません。")
@@ -360,13 +431,28 @@ async def _run_delete() -> None:
 
     engine = create_async_engine(db_url, echo=False)
     try:
-        logger.info("=== 単発テストユーザー削除開始 (email=%s) ===", email)
+        logger.info(
+            "=== 単発テストユーザー削除開始 (email=%s, tenant=%s) ===",
+            email, tenant_code,
+        )
+
+        # 本番テナント refuse + 存在確認（_resolve_tenant_id 内で sys.exit する）
+        tenant_id = await _resolve_tenant_id(engine, tenant_code)
+        schema_name = f"tenant_{tenant_id:03d}"
 
         async with engine.begin() as conn:
             existing = await _user_exists(conn, email)
             if existing:
-                user_id, _tid = existing
-                await _delete_user_record(conn, user_id)
+                user_id, existing_tenant_id = existing
+                if existing_tenant_id != tenant_id:
+                    logger.error(
+                        "email=%s の既存ユーザーは別テナント (tenant_id=%d) に紐付いています。"
+                        " 取り違え事故防止のため削除を中断します。"
+                        " 正しい TEST_TENANT_CODE を指定してください。",
+                        email, existing_tenant_id,
+                    )
+                    sys.exit(1)
+                await _delete_user_record(conn, user_id, tenant_id, schema_name)
             else:
                 logger.info("DB に該当ユーザーなし、スキップ")
 
