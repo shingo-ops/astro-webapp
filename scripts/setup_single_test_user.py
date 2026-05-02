@@ -290,7 +290,8 @@ async def _create_staff_record(
         {
             "tid": tenant_id,
             "uid": user_id,
-            "code": f"EMP-PENDING-{uuid.uuid4().hex[:12]}",
+            # PR #254 Re-review F4: staff_code VARCHAR(20) のため "EMP-P-" + hex[:12] = 18 文字に収める
+            "code": f"EMP-P-{uuid.uuid4().hex[:12]}",
             "sjp": surname_jp,
             "gjp": given_name_jp,
             "email": email,
