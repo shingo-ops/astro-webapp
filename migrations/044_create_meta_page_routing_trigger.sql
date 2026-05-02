@@ -13,6 +13,12 @@
 --   - DELETE → 該当行を public から削除
 --   - 末尾で既存行を backfill（再適用時は ON CONFLICT で no-op）
 --
+-- セキュリティ (F16-FU1, 2026-05-03):
+--   SECURITY DEFINER 関数は `SET search_path = pg_catalog, public` を明示し、
+--   呼び出し側 search_path に依存せず常に決まったスキーマを参照する。
+--   これにより、呼び出し側が search_path を細工した場合の権限昇格 / hijacking を遮断する
+--   （PostgreSQL 公式推奨パターン: defense-in-depth）。
+--
 -- 関連:
 --   migrations/043_create_meta_page_routing.sql
 --   migrations/040_create_tenant_meta_config.sql
@@ -24,6 +30,7 @@
 --
 -- 変更履歴:
 --   2026-05-01: 初版（Phase 1-E Follow-up F16-S6）
+--   2026-05-03: F16-FU1 — SECURITY DEFINER 関数に SET search_path 追加（defense-in-depth）
 -- ============================================================================
 
 -- === 同期トリガ関数 ===
@@ -31,6 +38,7 @@ CREATE OR REPLACE FUNCTION {schema}.sync_meta_page_routing()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = pg_catalog, public
 AS $sync_mpr$
 BEGIN
     IF (TG_OP = 'DELETE') THEN

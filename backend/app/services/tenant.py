@@ -1299,6 +1299,59 @@ END $$
 """
 
 
+# Phase 1-E F16-FU2 (2026-05-03): 新規テナント作成時に migration 044 と同等のトリガを
+# 自動セットアップする。既存テナントへの適用は `scripts/migrate_meta_page_routing.py`
+# 側が担当し、本関数は **新規テナント onboard 経路** からの呼び出しでのみ動く。
+#
+# migration 044 とのコード重複だが、ファイル読み込みベースより inline 定数の方が
+# 既存パターン（_TENANT_TABLES_SQL / _RLS_*_SQL）と一貫性がある。
+# F16-FU1 の `SET search_path = pg_catalog, public` も含めた版を保持する。
+_META_PAGE_ROUTING_TRIGGER_SQL = """
+CREATE OR REPLACE FUNCTION {schema}.sync_meta_page_routing()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $sync_mpr$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        DELETE FROM public.meta_page_routing
+        WHERE tenant_id = OLD.tenant_id
+          AND config_id = OLD.id;
+        RETURN OLD;
+    END IF;
+
+    INSERT INTO public.meta_page_routing (
+        tenant_id, config_id, schema_name,
+        page_id, instagram_business_account_id, is_active, updated_at
+    )
+    VALUES (
+        NEW.tenant_id,
+        NEW.id,
+        '{schema_raw}',
+        NEW.page_id,
+        NEW.instagram_business_account_id,
+        NEW.is_active,
+        NOW()
+    )
+    ON CONFLICT (tenant_id, config_id) DO UPDATE SET
+        schema_name                     = EXCLUDED.schema_name,
+        page_id                         = EXCLUDED.page_id,
+        instagram_business_account_id   = EXCLUDED.instagram_business_account_id,
+        is_active                       = EXCLUDED.is_active,
+        updated_at                      = NOW();
+
+    RETURN NEW;
+END;
+$sync_mpr$;
+
+DROP TRIGGER IF EXISTS trg_sync_meta_page_routing ON {schema}.tenant_meta_config;
+CREATE TRIGGER trg_sync_meta_page_routing
+    AFTER INSERT OR UPDATE OR DELETE ON {schema}.tenant_meta_config
+    FOR EACH ROW EXECUTE FUNCTION {schema}.sync_meta_page_routing();
+"""
+
+
 async def _assign_permissions_to_role(
     db: AsyncSession,
     schema_name: str,
@@ -1439,6 +1492,15 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
 
     # 4. システムロール（オーナー/メンバー）をシード
     await seed_system_roles(db, safe_id, schema_name)
+
+    # 5. F16-FU2: meta_page_routing 同期トリガをセットアップ
+    # 既存テナントへの適用は scripts/migrate_meta_page_routing.py が担当する。
+    # 新規テナントは public.meta_page_routing 表 (migration 043) が既に存在する前提。
+    trigger_sql = _META_PAGE_ROUTING_TRIGGER_SQL.format(
+        schema=schema_name,
+        schema_raw=schema_name,
+    )
+    await _execute_statements_preserving_do_blocks(db, trigger_sql)
 
     # commitは呼び出し元で行う（監査ログ等と一括でcommitするため）
     return schema_name
