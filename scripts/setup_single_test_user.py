@@ -255,17 +255,34 @@ async def _create_staff_record(
     )
     row = existing.first()
     if row:
-        logger.info("DB: staff は既存 (id=%d) のため作成 skip", int(row[0]))
-        return int(row[0])
+        existing_id = int(row[0])
+        logger.info("DB: staff は既存 (id=%d) のため作成 skip", existing_id)
+        # PR #254 Reviewer F3: 既存 staff でも staff_ui_preferences 行が無い可能性
+        # （古いバージョンで作られた等）に備えて UI prefs 初期化を打つ。
+        await conn.execute(
+            text(
+                "INSERT INTO staff_ui_preferences (staff_id) "
+                "VALUES (:sid) ON CONFLICT DO NOTHING"
+            ),
+            {"sid": existing_id},
+        )
+        return existing_id
 
+    # surname_jp / given_name_jp は NOT NULL 制約。display_name を可能なら半角スペース等で
+    # 分割、ダメなら全体を surname_jp に入れて given_name_jp はダミー文字で埋める。
+    parts = display_name.replace("　", " ").split(" ", 1)
+    surname_jp = parts[0][:50] if parts else "Test"
+    given_name_jp = (parts[1][:50] if len(parts) >= 2 else "User")
     result = await conn.execute(
         text("""
             INSERT INTO staff (
                 tenant_id, user_id, staff_code,
+                surname_jp, given_name_jp,
                 primary_email, role_id, status, firebase_uid
             )
             VALUES (
                 :tid, :uid, :code,
+                :sjp, :gjp,
                 :email, :rid, 'active', :fbuid
             )
             RETURNING id
@@ -274,19 +291,30 @@ async def _create_staff_record(
             "tid": tenant_id,
             "uid": user_id,
             "code": f"EMP-PENDING-{uuid.uuid4().hex[:12]}",
+            "sjp": surname_jp,
+            "gjp": given_name_jp,
             "email": email,
             "rid": role_id,
             "fbuid": firebase_uid,
         },
     )
     staff_id = int(result.scalar_one())
-    # staff_code を EMP-XXXXX に更新（create_staff API と同パターン）
+    # staff_code を EMP-XXXXX に更新（routers/staff.py の create_staff と同 2 段パターン）
     await conn.execute(
         text("UPDATE staff SET staff_code = :code WHERE id = :id"),
         {"code": f"EMP-{staff_id:05d}", "id": staff_id},
     )
+    # PR #254 Reviewer F2: staff_ui_preferences 行も初期化（DEFAULT 値で）。
+    # routers/staff.py の create_staff は _upsert_ui_prefs を必ず呼ぶ慣行と揃える。
+    await conn.execute(
+        text(
+            "INSERT INTO staff_ui_preferences (staff_id) "
+            "VALUES (:sid) ON CONFLICT DO NOTHING"
+        ),
+        {"sid": staff_id},
+    )
     logger.info(
-        "DB: staff INSERT 完了 (id=%d, code=EMP-%05d, user_id=%d, role_id=%d)",
+        "DB: staff INSERT 完了 (id=%d, code=EMP-%05d, user_id=%d, role_id=%d) + ui_prefs 初期化",
         staff_id, staff_id, user_id, role_id,
     )
     return staff_id
