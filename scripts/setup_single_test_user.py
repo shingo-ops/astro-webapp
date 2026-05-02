@@ -46,6 +46,7 @@
 
 変更履歴:
   2026-05-02: 初版（オプション B、Claude post-login スモークテスト用）
+  2026-05-03: m1 staff レコードも作成（/staff/me 404 解消）
 """
 from __future__ import annotations
 
@@ -53,6 +54,7 @@ import asyncio
 import logging
 import os
 import sys
+import uuid
 from pathlib import Path
 
 _APP_ROOT = Path(__file__).resolve().parent.parent
@@ -228,15 +230,109 @@ async def _assign_role(conn, user_id: int, role_id: int) -> None:
     logger.info("DB: user_roles 付与 (user_id=%d, role_id=%d)", user_id, role_id)
 
 
+async def _create_staff_record(
+    conn,
+    *,
+    tenant_id: int,
+    user_id: int,
+    email: str,
+    display_name: str,
+    role_id: int,
+    firebase_uid: str,
+) -> int:
+    """Phase 1-E m1 (post-login スモークテスト発見): per-tenant `staff` テーブルにも
+    レコードを作成して `/staff/me` が 404 を返さないようにする。
+
+    呼び出し前提:
+      - `SET search_path = {schema}, public` 済み
+      - role_id がそのテナントに存在する
+
+    冪等性: 既存 staff レコードがあれば（同 primary_email）skip。
+    """
+    existing = await conn.execute(
+        text("SELECT id FROM staff WHERE primary_email = :email"),
+        {"email": email},
+    )
+    row = existing.first()
+    if row:
+        logger.info("DB: staff は既存 (id=%d) のため作成 skip", int(row[0]))
+        return int(row[0])
+
+    result = await conn.execute(
+        text("""
+            INSERT INTO staff (
+                tenant_id, user_id, staff_code,
+                primary_email, role_id, status, firebase_uid
+            )
+            VALUES (
+                :tid, :uid, :code,
+                :email, :rid, 'active', :fbuid
+            )
+            RETURNING id
+        """),
+        {
+            "tid": tenant_id,
+            "uid": user_id,
+            "code": f"EMP-PENDING-{uuid.uuid4().hex[:12]}",
+            "email": email,
+            "rid": role_id,
+            "fbuid": firebase_uid,
+        },
+    )
+    staff_id = int(result.scalar_one())
+    # staff_code を EMP-XXXXX に更新（create_staff API と同パターン）
+    await conn.execute(
+        text("UPDATE staff SET staff_code = :code WHERE id = :id"),
+        {"code": f"EMP-{staff_id:05d}", "id": staff_id},
+    )
+    logger.info(
+        "DB: staff INSERT 完了 (id=%d, code=EMP-%05d, user_id=%d, role_id=%d)",
+        staff_id, staff_id, user_id, role_id,
+    )
+    return staff_id
+
+
+async def _delete_staff_record(conn, email: str) -> int:
+    """staff レコードを削除（user_roles・users 削除より前に呼ぶ。
+    staff_emails / staff_ui_preferences は staff_id への外部キーで CASCADE 削除される想定だが、
+    そうでない場合は明示削除が必要）。
+    """
+    # 関連テーブルがあれば先に削除（CASCADE 設定不明の場合の保険）
+    existing = await conn.execute(
+        text("SELECT id FROM staff WHERE primary_email = :email"),
+        {"email": email},
+    )
+    row = existing.first()
+    if not row:
+        return 0
+    staff_id = int(row[0])
+    await conn.execute(
+        text("DELETE FROM staff_emails WHERE staff_id = :sid"),
+        {"sid": staff_id},
+    )
+    await conn.execute(
+        text("DELETE FROM staff_ui_preferences WHERE staff_id = :sid"),
+        {"sid": staff_id},
+    )
+    await conn.execute(
+        text("DELETE FROM staff WHERE id = :sid"),
+        {"sid": staff_id},
+    )
+    logger.info("DB: staff 関連削除完了 (staff_id=%d)", staff_id)
+    return staff_id
+
+
 async def _delete_user_record(
-    conn, user_id: int, tenant_id: int, schema_name: str,
+    conn, user_id: int, tenant_id: int, schema_name: str, email: str,
 ) -> None:
-    """user_roles → users の順で削除する。
+    """staff → user_roles → users の順で削除する。
     PR #250 Reviewer F5: user_roles は per-tenant schema 配下で RLS が掛かっているため、
     `SET app.tenant_id` を先に発行しないと行が見えず、結果として孤児行が残る。
+    Phase 1-E m1: staff 系テーブルも削除対象に追加。
     """
     await conn.execute(text(f"SET search_path = {schema_name}, public"))
     await conn.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
+    await _delete_staff_record(conn, email)
     await conn.execute(
         text("DELETE FROM user_roles WHERE user_id = :uid"),
         {"uid": user_id},
@@ -378,6 +474,16 @@ async def _run_create() -> None:
                     await conn.execute(text(f"SET search_path = {schema_name}, public"))
                     await conn.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
                     await _assign_role(conn, user_id, role_id)
+                    # Phase 1-E m1: per-tenant staff レコードも作成（/staff/me 404 解消）
+                    await _create_staff_record(
+                        conn,
+                        tenant_id=tenant_id,
+                        user_id=user_id,
+                        email=email,
+                        display_name=display_name,
+                        role_id=role_id,
+                        firebase_uid=uid,
+                    )
         except Exception:
             # DB 側で失敗したら、本実行で新規作成した Firebase user を補償削除
             if firebase_was_created:
@@ -452,7 +558,7 @@ async def _run_delete() -> None:
                         email, existing_tenant_id,
                     )
                     sys.exit(1)
-                await _delete_user_record(conn, user_id, tenant_id, schema_name)
+                await _delete_user_record(conn, user_id, tenant_id, schema_name, email)
             else:
                 logger.info("DB に該当ユーザーなし、スキップ")
 
