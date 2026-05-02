@@ -1520,28 +1520,56 @@ async def _execute_statements_preserving_do_blocks(db: AsyncSession, sql: str) -
 
 def _split_sql_preserving_do_blocks(sql: str) -> list[str]:
     """
-    DO $$ ... END $$ ブロック内の ; を保持したまま SQL をステートメント単位に分割する。
+    DO $$ ... END $$ や CREATE FUNCTION ... AS $tag$ ... $tag$ 等の
+    dollar-quoted ブロック内の ; を保持したまま SQL をステートメント単位に分割する。
 
-    単純に ";" で split すると、DO $$ 内部の ; が文末と誤認されて
-    SQL が壊れる。$$ ペアを検出して「ブロック内」か判定する。
+    単純に ";" で split すると、ブロック内部の ; が文末と誤認されて SQL が壊れる。
+    PostgreSQL の dollar quoting は `$$` だけでなく `$tag$ ... $tag$` の named tag
+    形式もサポートする（例: `AS $sync_mpr$ ... $sync_mpr$`）。
+
+    PR #256 Reviewer F1 修正:
+      旧版は `$$` ペアしか認識せず、F16-FU2 で導入した `$sync_mpr$` を含む
+      `_META_PAGE_ROUTING_TRIGGER_SQL` を分割すると関数本体内の `;` が文末扱いされ
+      `unterminated dollar-quoted string` エラーになっていた。
+      `scripts/migrate_meta_page_routing.py` の同名関数で既に named tag 対応版が
+      動作実績ありのため、その実装をこちらに移植する。
     """
-    result: list[str] = []
-    buffer: list[str] = []
-    in_dollar_block = False
+    statements: list[str] = []
+    buf: list[str] = []
     i = 0
+    in_dollar = False
+    dollar_tag = ""
+
     while i < len(sql):
-        if sql[i:i + 2] == "$$":
-            in_dollar_block = not in_dollar_block
-            buffer.append("$$")
-            i += 2
-            continue
-        ch = sql[i]
-        if ch == ";" and not in_dollar_block:
-            result.append("".join(buffer))
-            buffer = []
+        if sql[i] == "$":
+            # `$tag$` 形式（tag は英数字 + アンダースコア、`$$` は tag 空）の境界検出
+            j = i + 1
+            while j < len(sql) and (sql[j].isalnum() or sql[j] == "_"):
+                j += 1
+            if j < len(sql) and sql[j] == "$":
+                tag = sql[i : j + 1]  # `$...$`
+                if not in_dollar:
+                    in_dollar = True
+                    dollar_tag = tag
+                    buf.append(tag)
+                    i = j + 1
+                    continue
+                elif tag == dollar_tag:
+                    in_dollar = False
+                    dollar_tag = ""
+                    buf.append(tag)
+                    i = j + 1
+                    continue
+                # ブロック内で別 tag に出会った場合（ネスト）は通常 SQL では稀。
+                # そのまま文字として buffer に積む。
+
+        if sql[i] == ";" and not in_dollar:
+            statements.append("".join(buf))
+            buf = []
         else:
-            buffer.append(ch)
+            buf.append(sql[i])
         i += 1
-    if buffer:
-        result.append("".join(buffer))
-    return result
+
+    if buf:
+        statements.append("".join(buf))
+    return statements
