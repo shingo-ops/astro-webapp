@@ -68,3 +68,57 @@ class TestSplitSqlPreservingDoBlocks:
         sql = "DO $$ SELECT 1; $$; SELECT 2;"
         result = [s.strip() for s in _split_sql_preserving_do_blocks(sql) if s.strip()]
         assert len(result) == 2
+
+    def test_named_dollar_tag_function_body(self):
+        """PR #256 Reviewer F1 regression:
+        CREATE FUNCTION ... AS $sync_mpr$ ... $sync_mpr$ の named tag 内部のセミコロンは
+        分割されない（$$ だけでなく $tag$ 形式も dollar quoting 境界として認識する）。
+        """
+        sql = """
+        CREATE OR REPLACE FUNCTION foo.bar()
+        RETURNS TRIGGER
+        LANGUAGE plpgsql
+        SECURITY DEFINER
+        SET search_path = pg_catalog, public
+        AS $sync_mpr$
+        BEGIN
+            IF (TG_OP = 'DELETE') THEN
+                DELETE FROM public.target WHERE id = OLD.id;
+                RETURN OLD;
+            END IF;
+            INSERT INTO public.target (id) VALUES (NEW.id);
+            RETURN NEW;
+        END;
+        $sync_mpr$;
+        DROP TRIGGER IF EXISTS trg ON foo.source;
+        CREATE TRIGGER trg AFTER INSERT ON foo.source
+            FOR EACH ROW EXECUTE FUNCTION foo.bar();
+        """
+        result = [s.strip() for s in _split_sql_preserving_do_blocks(sql) if s.strip()]
+        # 期待: 関数定義 + DROP TRIGGER + CREATE TRIGGER の 3 ステートメント
+        assert len(result) == 3, (
+            f"Expected 3 statements, got {len(result)}: {[r[:50] for r in result]}"
+        )
+        # 関数定義に内部のセミコロンが保持されている
+        assert "RETURN OLD" in result[0]
+        assert "RETURN NEW" in result[0]
+        assert "END" in result[0]
+        # 2 番目は DROP TRIGGER
+        assert result[1].startswith("DROP TRIGGER")
+        # 3 番目は CREATE TRIGGER
+        assert result[2].startswith("CREATE TRIGGER")
+
+    def test_different_named_tags_are_independent(self):
+        """異なる named tag は別の境界として独立認識される。
+        $fn$ ブロック内の $supplier_fk$ は同 tag ではないので無視される。
+        """
+        sql = """
+        DO $fn$ BEGIN PERFORM 1; END $fn$;
+        DO $supplier_fk$ BEGIN PERFORM 2; END $supplier_fk$;
+        SELECT 3;
+        """
+        result = [s.strip() for s in _split_sql_preserving_do_blocks(sql) if s.strip()]
+        assert len(result) == 3
+        assert "fn" in result[0]
+        assert "supplier_fk" in result[1]
+        assert "SELECT 3" in result[2]
