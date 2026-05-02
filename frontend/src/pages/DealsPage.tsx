@@ -94,7 +94,8 @@ export default function DealsPage() {
   // 一覧の「会社」列表示用（company_id → 会社名）
   const loadCompanies = async () => {
     try {
-      const data = await api.get<CompanyMini[]>("/companies?per_page=200");
+      // backend `/companies` は per_page le=100 制約のため 100 を上限に揃える
+      const data = await api.get<CompanyMini[]>("/companies?per_page=100");
       setCompanies(data.map((c) => ({ id: c.id, company_code: c.company_code, name: c.name })));
     } catch { /* ignore */ }
   };

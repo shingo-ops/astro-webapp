@@ -5,7 +5,7 @@
  * 共通コンポーネント。
  *
  * 動作:
- *   1. 初回マウントで /api/v1/companies?per_page=200 を取得（companies prop が渡されない時のみ）
+ *   1. 初回マウントで /api/v1/companies?per_page=100 を取得（companies prop が渡されない時のみ）
  *   2. company を選ぶと /api/v1/contacts?company_id=N&per_page=100 で contact を読み直す
  *   3. company を変更すると contactId は null にリセット
  *   4. initialFromSearchParams=true なら ?company_id=N からの遷移で初期値を復元
@@ -101,7 +101,7 @@ export default function CompanyContactSelector({
   useEffect(() => {
     if (useExternalCompanies) return;
     api
-      .get<CompanyMini[]>("/companies?per_page=200")
+      .get<CompanyMini[]>("/companies?per_page=100")
       .then((data) =>
         setInternalCompanies(
           data.map((c) => ({ id: c.id, company_code: c.company_code, name: c.name })),
