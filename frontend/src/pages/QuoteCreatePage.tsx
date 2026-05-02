@@ -38,7 +38,8 @@ export default function QuoteCreatePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get<Product[]>("/products?per_page=200&status=active").then(setProducts).catch(() => {});
+    // backend `/products` は per_page le=100 制約のため 100 を上限に揃える
+    api.get<Product[]>("/products?per_page=100&status=active").then(setProducts).catch(() => {});
   }, []);
 
   const addItem = () => {
