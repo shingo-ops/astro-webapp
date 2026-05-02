@@ -1299,6 +1299,59 @@ END $$
 """
 
 
+# Phase 1-E F16-FU2 (2026-05-03): 新規テナント作成時に migration 044 と同等のトリガを
+# 自動セットアップする。既存テナントへの適用は `scripts/migrate_meta_page_routing.py`
+# 側が担当し、本関数は **新規テナント onboard 経路** からの呼び出しでのみ動く。
+#
+# migration 044 とのコード重複だが、ファイル読み込みベースより inline 定数の方が
+# 既存パターン（_TENANT_TABLES_SQL / _RLS_*_SQL）と一貫性がある。
+# F16-FU1 の `SET search_path = pg_catalog, public` も含めた版を保持する。
+_META_PAGE_ROUTING_TRIGGER_SQL = """
+CREATE OR REPLACE FUNCTION {schema}.sync_meta_page_routing()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $sync_mpr$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        DELETE FROM public.meta_page_routing
+        WHERE tenant_id = OLD.tenant_id
+          AND config_id = OLD.id;
+        RETURN OLD;
+    END IF;
+
+    INSERT INTO public.meta_page_routing (
+        tenant_id, config_id, schema_name,
+        page_id, instagram_business_account_id, is_active, updated_at
+    )
+    VALUES (
+        NEW.tenant_id,
+        NEW.id,
+        '{schema_raw}',
+        NEW.page_id,
+        NEW.instagram_business_account_id,
+        NEW.is_active,
+        NOW()
+    )
+    ON CONFLICT (tenant_id, config_id) DO UPDATE SET
+        schema_name                     = EXCLUDED.schema_name,
+        page_id                         = EXCLUDED.page_id,
+        instagram_business_account_id   = EXCLUDED.instagram_business_account_id,
+        is_active                       = EXCLUDED.is_active,
+        updated_at                      = NOW();
+
+    RETURN NEW;
+END;
+$sync_mpr$;
+
+DROP TRIGGER IF EXISTS trg_sync_meta_page_routing ON {schema}.tenant_meta_config;
+CREATE TRIGGER trg_sync_meta_page_routing
+    AFTER INSERT OR UPDATE OR DELETE ON {schema}.tenant_meta_config
+    FOR EACH ROW EXECUTE FUNCTION {schema}.sync_meta_page_routing();
+"""
+
+
 async def _assign_permissions_to_role(
     db: AsyncSession,
     schema_name: str,
@@ -1440,6 +1493,15 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
     # 4. システムロール（オーナー/メンバー）をシード
     await seed_system_roles(db, safe_id, schema_name)
 
+    # 5. F16-FU2: meta_page_routing 同期トリガをセットアップ
+    # 既存テナントへの適用は scripts/migrate_meta_page_routing.py が担当する。
+    # 新規テナントは public.meta_page_routing 表 (migration 043) が既に存在する前提。
+    trigger_sql = _META_PAGE_ROUTING_TRIGGER_SQL.format(
+        schema=schema_name,
+        schema_raw=schema_name,
+    )
+    await _execute_statements_preserving_do_blocks(db, trigger_sql)
+
     # commitは呼び出し元で行う（監査ログ等と一括でcommitするため）
     return schema_name
 
@@ -1458,28 +1520,56 @@ async def _execute_statements_preserving_do_blocks(db: AsyncSession, sql: str) -
 
 def _split_sql_preserving_do_blocks(sql: str) -> list[str]:
     """
-    DO $$ ... END $$ ブロック内の ; を保持したまま SQL をステートメント単位に分割する。
+    DO $$ ... END $$ や CREATE FUNCTION ... AS $tag$ ... $tag$ 等の
+    dollar-quoted ブロック内の ; を保持したまま SQL をステートメント単位に分割する。
 
-    単純に ";" で split すると、DO $$ 内部の ; が文末と誤認されて
-    SQL が壊れる。$$ ペアを検出して「ブロック内」か判定する。
+    単純に ";" で split すると、ブロック内部の ; が文末と誤認されて SQL が壊れる。
+    PostgreSQL の dollar quoting は `$$` だけでなく `$tag$ ... $tag$` の named tag
+    形式もサポートする（例: `AS $sync_mpr$ ... $sync_mpr$`）。
+
+    PR #256 Reviewer F1 修正:
+      旧版は `$$` ペアしか認識せず、F16-FU2 で導入した `$sync_mpr$` を含む
+      `_META_PAGE_ROUTING_TRIGGER_SQL` を分割すると関数本体内の `;` が文末扱いされ
+      `unterminated dollar-quoted string` エラーになっていた。
+      `scripts/migrate_meta_page_routing.py` の同名関数で既に named tag 対応版が
+      動作実績ありのため、その実装をこちらに移植する。
     """
-    result: list[str] = []
-    buffer: list[str] = []
-    in_dollar_block = False
+    statements: list[str] = []
+    buf: list[str] = []
     i = 0
+    in_dollar = False
+    dollar_tag = ""
+
     while i < len(sql):
-        if sql[i:i + 2] == "$$":
-            in_dollar_block = not in_dollar_block
-            buffer.append("$$")
-            i += 2
-            continue
-        ch = sql[i]
-        if ch == ";" and not in_dollar_block:
-            result.append("".join(buffer))
-            buffer = []
+        if sql[i] == "$":
+            # `$tag$` 形式（tag は英数字 + アンダースコア、`$$` は tag 空）の境界検出
+            j = i + 1
+            while j < len(sql) and (sql[j].isalnum() or sql[j] == "_"):
+                j += 1
+            if j < len(sql) and sql[j] == "$":
+                tag = sql[i : j + 1]  # `$...$`
+                if not in_dollar:
+                    in_dollar = True
+                    dollar_tag = tag
+                    buf.append(tag)
+                    i = j + 1
+                    continue
+                elif tag == dollar_tag:
+                    in_dollar = False
+                    dollar_tag = ""
+                    buf.append(tag)
+                    i = j + 1
+                    continue
+                # ブロック内で別 tag に出会った場合（ネスト）は通常 SQL では稀。
+                # そのまま文字として buffer に積む。
+
+        if sql[i] == ";" and not in_dollar:
+            statements.append("".join(buf))
+            buf = []
         else:
-            buffer.append(ch)
+            buf.append(sql[i])
         i += 1
-    if buffer:
-        result.append("".join(buffer))
-    return result
+
+    if buf:
+        statements.append("".join(buf))
+    return statements
