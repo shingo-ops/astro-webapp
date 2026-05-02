@@ -58,13 +58,17 @@ export default function Layout() {
       </header>
 
       {/* === 下段: 白ナビゲーションバー ===
-          show_sidebar=false の場合はリンク群を畳むが、ユーザー情報＋ログアウトは残す
-          （詰みを防ぐため。「サイドバー」の語義は GAS 移行後の 2 段ナビ全体を指す） */}
+          2026-05-02 hotfix:
+            旧実装は `show_sidebar=false` でメニューリンク群を完全に空にしていたため、
+            「サイドバー表示」を OFF にしたユーザーが /staff へ自力で戻れず詰む UX trap が
+            発生していた（Shingo さんが highlife-jpn 本番で踏んだ）。
+            本修正でゲートを撤廃し、permission ベースで常時メニューを表示する。
+            `show_sidebar` toggle は将来的に削除予定（後続 PR で deprecate）。 */}
       <nav className="mainnav">
         <div className="mainnav-links">
           {navLoading ? (
             <span className="topnav-loading">読込中...</span>
-          ) : prefs.show_sidebar ? (
+          ) : (
             <>
               {hasPermission("dashboard.view") && (
                 <NavLink to="/" end className="mainnav-link">ダッシュボード</NavLink>
@@ -133,9 +137,6 @@ export default function Layout() {
                 <NavLink to="/templates">テンプレート管理</NavLink>
               </NavDropdown>
             </>
-          ) : (
-            // show_sidebar=false: リンクは出さず空のまま（左寄せの空 div）
-            null
           )}
         </div>
         <div className="mainnav-user">
