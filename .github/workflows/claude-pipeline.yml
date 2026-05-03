@@ -17,7 +17,7 @@ jobs:
 
       - name: Notify Discord (Start)
         run: |
-          curl -H "Content-Type: application/json" -X POST -d '{"content": "🚀 **ADRの更新を検知**\nパートナーのMaxプラン権限でClaudeが解析を開始します..."}' ${{ secrets.DISCORD_WEBHOOK }}
+          curl -H "Content-Type: application/json" -X POST -d '{"content": "🚀 **ADRの更新を検知**\nパートナーのMaxプラン権限でClaudeが解析を開始します..."}' ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
 
       - name: Run Claude Code
         run: |
