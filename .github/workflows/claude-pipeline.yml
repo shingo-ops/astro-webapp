@@ -21,14 +21,18 @@ jobs:
 
       - name: Run Claude Code
         run: |
-          # 変更されたADRファイルを特定
-          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep 'ADR-' | tr '\n' ' ')
-          
-          if [ -n "$CHANGED_FILES" ]; then
-            # HitoshiさんのMacでログイン済みのMaxアカウントを使用して実行
-            claude "新しく更新された ${CHANGED_FILES} を読み取り、内容のレビューと実装を行ってください。成果は feedback.md に追記して。" --yes
-          fi
+         # 1. 念のため最新版のClaude Codeをその場でインストール（確実性を高めます）
+          npm install -g @anthropic-ai/claude-code@latest
 
+         # 2. 変更されたADRファイルを特定
+          CHANGED_FILES=$(git diff --name-only HEAD^ HEAD | grep 'ADR-' | tr '\n' ' ')
+
+          if [ -n "$CHANGED_FILES" ]; then
+            # 3. 'npx' を使って直接パッケージを叩き、--yes オプションを先頭に置きます
+            # これにより、ローカルのパスの問題を回避できます
+            npx @anthropic-ai/claude-code --yes "新しく更新された ${CHANGED_FILES} を読み取り、内容のレビューと実装を行ってください。成果は feedback.md に追記して。"
+          fi
+          
       - name: Commit and Push
         run: |
           git config --local user.email "action@github.com"
