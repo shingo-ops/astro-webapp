@@ -39,4 +39,4 @@ jobs:
 
       - name: Notify Discord (Success)
         run: |
-          curl -H "Content-Type: application/json" -X POST -d '{"content": "✅ **Claude Maxの作業が完了しました！**\nリポジトリを確認してください。"}' ${{ secrets.DISCORD_WEBHOOK }}
+          curl -H "Content-Type: application/json" -X POST -d '{"content": "✅ **Claude Maxの作業が完了しました！**\nリポジトリを確認してください。"}' ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
