@@ -26,7 +26,7 @@ jobs:
           
           if [ -n "$CHANGED_FILES" ]; then
             # HitoshiさんのMacでログイン済みのMaxアカウントを使用して実行
-            claude -y "新しく更新された ${CHANGED_FILES} を読み取り、内容のレビューと実装を行ってください。成果は feedback.md に追記して。"
+            claude "新しく更新された ${CHANGED_FILES} を読み取り、内容のレビューと実装を行ってください。成果は feedback.md に追記して。" --yes
           fi
 
       - name: Commit and Push
