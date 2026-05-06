@@ -4,25 +4,80 @@ on:
   workflow_dispatch:
     inputs:
       adr_files:
-        description: '実装対象のADRファイル（スペース区切り。例: ADR-013.md docs/adr/ADR-014.md）'
-        required: true
+        description: '実装対象のADRファイル（手動指定時。スペース区切り）'
+        required: false
         type: string
+  push:
+    branches:
+      - develop
+    paths:
+      - 'docs/adr/ADR-*.md'
 
 permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: claude-pipeline-${{ github.sha }}
+  cancel-in-progress: false
+
 jobs:
   claude-worker:
     runs-on: self-hosted
-    if: github.actor == 'shingo-ops' || github.actor == 'Hikky-dev'
+    if: github.actor == 'shingo-ops' || github.actor == 'Hikky-dev' || github.actor == 'Claude-Max-Worker'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect ADR files (push event)
+        if: github.event_name == 'push'
+        id: detect
+        run: |
+          set -e
+          # github.event.before/after を使って差分を取る
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.event.after }}"
+
+          # 初回push or force-push対策
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            CHANGED_FILES=$(git ls-tree -r --name-only "$AFTER" | grep -E '^docs/adr/ADR-.*\.md$' || true)
+          else
+            CHANGED_FILES=$(git diff --name-only --diff-filter=A "$BEFORE" "$AFTER" | grep -E '^docs/adr/ADR-.*\.md$' || true)
+          fi
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No new ADR files detected. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 改行をスペースに変換して1行に
+          ADR_FILES=$(echo "$CHANGED_FILES" | tr '\n' ' ' | sed 's/ $//')
+          echo "Detected ADR files: $ADR_FILES"
+          echo "adr_files=$ADR_FILES" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve ADR files
+        id: resolve
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ADR_FILES="${{ inputs.adr_files }}"
+            if [ -z "$ADR_FILES" ]; then
+              echo "adr_files input is empty"
+              exit 1
+            fi
+          else
+            ADR_FILES="${{ steps.detect.outputs.adr_files }}"
+          fi
+          echo "adr_files=$ADR_FILES" >> "$GITHUB_OUTPUT"
 
       - name: Validate ADR paths
+        if: steps.detect.outputs.skip != 'true'
         env:
-          ADR_FILES: ${{ inputs.adr_files }}
+          ADR_FILES: ${{ steps.resolve.outputs.adr_files }}
         run: |
           set -e
           if [ -z "$ADR_FILES" ]; then
@@ -46,17 +101,27 @@ jobs:
           echo "Validated: $ADR_FILES"
 
       - name: Notify Discord (Start)
+        if: steps.detect.outputs.skip != 'true'
         env:
-          ADR_FILES: ${{ inputs.adr_files }}
+          ADR_FILES: ${{ steps.resolve.outputs.adr_files }}
+          TRIGGER: ${{ github.event_name }}
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
         run: |
-          PAYLOAD=$(jq -nc --arg files "$ADR_FILES" \
-            '{content: ("🔨 **手動トリガーでADR実装開始**\nファイル: " + $files)}')
+          if [ "$TRIGGER" = "push" ]; then
+            ICON="🚀"
+            MODE="自動起動"
+          else
+            ICON="🔨"
+            MODE="手動トリガー"
+          fi
+          PAYLOAD=$(jq -nc --arg files "$ADR_FILES" --arg icon "$ICON" --arg mode "$MODE" \
+            '{content: ($icon + " **" + $mode + "でADR実装開始**\nファイル: " + $files)}')
           curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
 
       - name: Run Claude Code
+        if: steps.detect.outputs.skip != 'true'
         env:
-          ADR_FILES: ${{ inputs.adr_files }}
+          ADR_FILES: ${{ steps.resolve.outputs.adr_files }}
         run: |
           set -e
           claude -p \
@@ -79,8 +144,9 @@ jobs:
           実装が完了したら、変更をコミットしてください。後続のステップが自動でPRを作成します。"
 
       - name: Commit, Push, and Open PR
+        if: steps.detect.outputs.skip != 'true'
         env:
-          ADR_FILES: ${{ inputs.adr_files }}
+          ADR_FILES: ${{ steps.resolve.outputs.adr_files }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
@@ -97,8 +163,7 @@ jobs:
           git commit -m "Auto-implementation for ADR by Claude Max"
           git push origin "$BRANCH_NAME"
 
-          # PR 本文を組み立て、PR を作成（auto-mergeはしない）
-          PR_BODY=$(printf 'Auto-generated implementation for the following ADR(s):\n\n```\n%s\n```\n\n**This PR is NOT auto-merged.** Web Claude (claude.ai) will verify the diff against AC, then Shingo will merge.' "$ADR_FILES")
+          PR_BODY=$(printf 'Auto-generated implementation for the following ADR(s):\n\n```\n%s\n```\n\n**This PR is NOT auto-merged.** Web Claude will verify the diff against AC, then Shingo will merge.' "$ADR_FILES")
           PR_URL=$(gh pr create \
             --base develop \
             --head "$BRANCH_NAME" \
@@ -110,7 +175,7 @@ jobs:
           echo "PR_NUM=$PR_NUM" >> "$GITHUB_ENV"
 
       - name: Notify Discord (Success)
-        if: success()
+        if: success() && steps.detect.outputs.skip != 'true'
         env:
           WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
         run: |
