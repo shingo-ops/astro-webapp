@@ -86,15 +86,30 @@ jobs:
           set -e
           git config user.email "action@github.com"
           git config user.name "Claude-Max-Worker"
+
+          # Stage any uncommitted changes Claude Code may have left
           git add -A
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
+          HAS_STAGED=0
+          git diff --cached --quiet || HAS_STAGED=1
+
+          # Also check for local commits Claude Code made but didn't push
+          UNPUSHED=$(git log origin/develop..HEAD --oneline 2>/dev/null | wc -l | tr -d ' ')
+
+          if [ "$HAS_STAGED" = "0" ] && [ "$UNPUSHED" = "0" ]; then
+            echo "No changes to commit or push"
             exit 0
           fi
+
           TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
           BRANCH_NAME="claude-impl/${TIMESTAMP}"
           git checkout -b "$BRANCH_NAME"
-          git commit -m "Auto-implementation for ADR by Claude Max"
+
+          # Commit only if there are staged changes
+          # (if Claude Code already committed, those commits carry over to the new branch)
+          if [ "$HAS_STAGED" = "1" ]; then
+            git commit -m "Auto-implementation for ADR by Claude Max"
+          fi
+
           git push origin "$BRANCH_NAME"
 
           # PR 本文を組み立て、PR を作成（auto-mergeはしない）

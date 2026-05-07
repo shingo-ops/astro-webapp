@@ -182,17 +182,36 @@ pushまで完了して初めて作業終了とすること。
 - **影響を最小化する**：変更は必要な箇所のみにとどめる。バグを新たに引き込まない。
 
 ---
-## 実装フロー（PROPOSAL-001暫定運用、2026-05-06〜）
+## 実装フロー（ADR-012: What/How 役割分担モデル）
 
-claude-pipeline.yml が起動された場合、本Claude Codeは以下の手順で実装する：
+> ADR-012 により正式採択。旧 PROPOSAL-001 暫定運用セクションを置き換える。
 
-1. ADR本文を読み取り、Acceptance Criteria（AC-XXX）を抽出する
-2. 既存コードベースとの整合性を確認する
-3. feature/shingo/adr-NNN-impl ブランチで実装する（pipeline側で自動作成）
-4. すべてのACを満たすことを確認する
-5. PRを作成（auto-mergeしない）
-6. ADR外の変更（リファクタリング等）はスコープに含めない
-7. 設計意図が不明な場合は questions/QXX.md で停止して相談する
+### 役割分担
 
-このフローはPROPOSAL-001合意後にADR-012として正式化される予定。
-それまでは暫定運用として、Hikky-devへ朝イチで報告。
+| 担当 | 役割 |
+|------|------|
+| **Shingo（PO）** | What の定義。「何を実現したいか」「なぜ必要か」「ユーザー価値」「事業判断」「優先順位」 |
+| **Web Claude（claude.ai）** | 壁打ち相手。アイディアを技術的に明確な要求（ADR）に翻訳する。事業上の見落とし・ユーザー観点を指摘 |
+| **パートナー Claude Code（Hikky-dev / GitHub Actions）** | How の判断と実装。技術選択・セキュリティ・テスト・既存コードとの統合をすべて自律的に決定 |
+
+### ADR の記述ルール
+
+ADR に**書く**もの: What（何を実現したいか）、Why（事業価値）、Scope 外（明示的除外）、事業上の制約
+
+ADR に**書かない**もの: 詳細な実装手順（How）、Invariants 網羅リスト、細かい技術仕様
+
+### ワークフロー（claude-pipeline.yml 起動時）
+
+1. Shingo がチャットで「○○を実現したい」と話す
+2. Web Claude が ADR（What/Why/Scope）に落とす
+3. Shingo が ADR を develop に push（Terminal Claude Code 経由）
+4. パートナー Claude Code が claude-pipeline.yml により自動起動し、実装 + PR 作成
+5. CI 緑なら Shingo が PR 本文とスコープを確認してマージ
+
+### マージ判断の基準（Shingo 向け）
+
+- PR タイトルと本文を読んで「これは頼んだことか？」を確認
+- CI が緑か確認
+- 技術的な正しさは CI とパートナーの判断に委ねる（Shingo が技術仕様の細部を確認しなくてよい）
+
+> 詳細は `docs/adr/ADR-012-what-how-separation.md` を参照。
