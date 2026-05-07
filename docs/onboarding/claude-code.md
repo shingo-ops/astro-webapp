@@ -100,6 +100,7 @@ git config user.email "<あなたのメール>"
 - **マルチテナント**: 本番は `tenant_code=highlife-jpn` のみ。`TENANT_CODE` 既定値の `test-corp` は空
 - **VPS コンテナ**: `/app` 書込不可、`/tmp` は tmpfs で `docker compose cp` 不可
 - **ドメイン**: `jarvis-claude.uk` 系の旧ドメインは独断削除禁止
+- **Self-hosted runner**: `actions/checkout` に必ず `with: token: ${{ secrets.PIPELINE_PAT }}` を指定（理由は `docs/ops/self-hosted-runner-credential-trap.md`）
 
 ---
 
