@@ -67,7 +67,7 @@ git config user.email "<あなたのメール>"
 | `planner` | 仕様の起案・既存仕様の精査 |
 | `generator` | 1スプリントずつ実装＋自己評価レポート |
 | `evaluator` | 実装を Playwright で検証、Pass/Fail 判定 |
-| `reviewer` | コード監査、APPROVE なら `gh pr merge --squash` |
+| `reviewer` | コード監査、APPROVE / CHANGES_REQUESTED 判定（**merge は実行しない**。merge は起票者が手動で `gh pr merge --squash --delete-branch`） |
 
 呼び出し例:
 - 「Planner で機能 X の仕様書を起こして」
@@ -83,12 +83,13 @@ git config user.email "<あなたのメール>"
 
 詳細は `<repo>/CLAUDE.md` の「ブランチ運用ルール」を読むこと。要点:
 
-1. `develop` から `feature/<author>/<topic>` を切る
-   - 例: `feature/morimoto/foo-bar`、`feature/shingo/adr-NNN-impl`、`feature/<your-handle>/<topic>`
+1. `develop` から `feature/morimoto/<topic>` を切る（`<topic>` は作業内容を英語で簡潔に）
+   - ADR pipeline 経由の自動実装は別途 `feature/shingo/adr-NNN-impl` が自動生成される
 2. 直接 `develop` / `main` にコミットしない
-3. PR は Reviewer エージェントを通してから `gh pr merge --squash --delete-branch`
-4. `develop → main` も必ず PR 経由（Branch Protection で物理ブロック）
-5. 不可逆操作（DROP TABLE / `rm -rf` / force-push 等）は **PO 確認必須**
+3. PR を起票 → **Reviewer エージェント** で審査
+4. Reviewer が APPROVE → **起票者が手動で `gh pr merge --squash --delete-branch`**（Reviewer 自体は merge しない、`.claude/agents/reviewer.md` のクリティカルルール9 参照）
+5. `develop → main` も必ず PR 経由（Branch Protection で物理ブロック）
+6. 不可逆操作（DROP TABLE / `rm -rf` / force-push 等）は **PO 確認必須**
 
 ---
 

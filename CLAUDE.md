@@ -14,7 +14,7 @@
 - **Jarvis CRM** — B2B SaaS CRM/ERP（HIGH LIFE JPN / Treasure Island JP）
 - ターゲット: 日本の越境 EC 事業者
 - 本番 URL: https://jarvis-claude.uk
-- 旧ドメインの扱いは `docs/DOMAIN_POLICY.md`（独断削除禁止）
+- 旧ドメイン（`jarvis-claude.uk` 系含む）は新ドメイン安定後に整理予定。**独断削除禁止、必ず PO 確認**
 
 ### スタック
 - Backend: Python 3.12 / FastAPI / SQLAlchemy 2.0 + asyncpg
@@ -36,11 +36,14 @@
 - コンテナ再起動で `/tmp` の中身は消える
 
 ### 仕様書の正本（2026-04-22 引き継ぎ）
+
+以下 3 冊は **PO 配布の docx ファイル** で、リポジトリには含まれない（個人情報・機密設計を含むため）。新規参画時は **PO（しんごさん）に共有依頼** すること。
+
 1. `jarvis_crm_system_overview.docx` — 全体俯瞰
 2. `jarvis_crm_customer_master_migration_design.docx` — 顧客マスタ
 3. `jarvis_crm_staff_roles_bots_design.docx` — 担当者・権限・bot
 
-古い設計書と齟齬する場合は **最新仕様を優先**、大きな判断は PO 確認。
+古い設計書（`CRM_引き継ぎレポート.docx`、`Jarvis_CRM_開発仕様書.docx`、進捗確認シート、フェーズ1セキュリティ基盤ガイド等）と齟齬する場合は **最新仕様を優先**、大きな判断は PO 確認。
 
 ### 設計判断は ADR 化
 - 仕様変更・スキーマ判断・運用ルールは `docs/adr/ADR-NNN-*.md` で起案
