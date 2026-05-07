@@ -118,7 +118,9 @@ async def main() -> None:
                 async with engine.begin() as conn:
                     await _exec(
                         conn,
-                        tmpl_046.format(schema=schema, schema_raw=schema, tenant_id=tid),
+                        tmpl_046.replace("{schema}", schema)
+                                .replace("{schema_raw}", schema)
+                                .replace("{tenant_id}", str(tid)),
                     )
                 logger.info(
                     "✓ %s (tenant_code=%s) leads 列追加 / lead_playbook 作成 / ccc.external_id 追加",
