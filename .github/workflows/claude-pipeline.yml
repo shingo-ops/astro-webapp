@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          # self-hosted runner の ~/.gitconfig credential helper へのフォールバック回避
+          token: ${{ secrets.PIPELINE_PAT }}
 
       - name: Validate ADR paths
         env:
