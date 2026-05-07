@@ -61,6 +61,14 @@ sheets/
 # Claude Code エージェント（reviewer/evaluator等）のローカル成果物
 .claude-pipeline/
 
+# Claude Code: allowlist 戦略
+# - `.claude/*` を一括 ignore し、チーム共有したい資産だけ `!` で取り戻す
+# - 将来 Claude Code が `.claude/` 配下に追加する任意のファイル（cache/, sessions/, history.jsonl 等）も自動的に除外される
+.claude/*
+!.claude/agents/
+!.claude/settings.json
+CLAUDE.local.md
+
 # salesanchor.jp 静的サイト（独立プロジェクトのコンテンツ、VPS-local 管理）
 # nginx/docker-compose の設定だけ repo 管理、コンテンツは追跡しない
 www/salesanchor/*

@@ -1,5 +1,70 @@
 # CLAUDE.md
 
+このファイルは **チーム共通の真実** のみを書く。個人の好み（口調・通知・キーバインド等）は各自の `~/.claude/CLAUDE.md` に置くこと。Claude Code の初期セットアップは `docs/onboarding/claude-code.md` を参照。
+
+---
+
+## プロジェクト前提
+
+### 登場人物
+- **しんごさん（GitHub: `shingo-ops`）** — プロダクトオーナー、運用、本番アクセス権限保持、ADR 起案
+- **Hikky-dev** — Claude Code 利用の開発担当（設計・実装・PR 起票）
+
+### 事業ドメイン
+- **Jarvis CRM / salesanchor** — B2B SaaS CRM/ERP（HIGH LIFE JPN / Treasure Island JP）
+- ターゲット: 日本の越境 EC 事業者
+- 本番 URL（正本は `README.md`）:
+  - App: https://app.salesanchor.jp/
+  - API: https://api.salesanchor.jp/
+  - LP: https://salesanchor.jp/
+- Legacy ドメイン: https://jarvis-claude.uk/（並行稼働、新ドメイン安定後に廃止予定）
+- **旧ドメインの独断削除禁止、必ず PO 確認**
+
+### スタック
+- Backend: Python 3.12 / FastAPI / SQLAlchemy 2.0 + asyncpg
+- Frontend: React 18 + TypeScript + Vite
+- LP: Astro
+- DB: PostgreSQL 16（マルチテナント・スキーマ分離設計）
+- Infra: Docker Compose / さくらVPS (49.212.137.46 / Ubuntu 24.04) / GitHub Actions
+
+### マルチテナント運用
+- 本番テナントは `tenant_code=highlife-jpn`（schema: `tenant_004`）
+- 既定値 `test-corp` は空テナントなので、移行 / バッチ実行時は **`TENANT_CODE=highlife-jpn` を明示**
+  - `gh workflow run run-*-migration.yml -f tenant_code=highlife-jpn`
+  - `docker exec -e TENANT_CODE=highlife-jpn ...`
+
+### VPS コンテナの落とし穴（過去事故あり）
+- `/app` 配下は appuser 権限で **書込不可** → スクリプトの出力先は `/tmp` を既定にする
+- `/tmp` は tmpfs マウント。`docker compose cp backend:/tmp/...` は **使えない**（`Could not find the file`）
+- ホストへの取り出しは `docker compose exec -T backend cat /tmp/xxx > host_file` 一択
+- コンテナ再起動で `/tmp` の中身は消える
+
+### 仕様書の正本（2026-04-22 引き継ぎ）
+
+以下 3 冊は **PO 配布の docx ファイル** で、リポジトリには含まれない（個人情報・機密設計を含むため）。新規参画時は **PO（しんごさん）に共有依頼** すること。
+
+1. `jarvis_crm_system_overview.docx` — 全体俯瞰
+2. `jarvis_crm_customer_master_migration_design.docx` — 顧客マスタ
+3. `jarvis_crm_staff_roles_bots_design.docx` — 担当者・権限・bot
+
+古い設計書（`CRM_引き継ぎレポート.docx`、`Jarvis_CRM_開発仕様書.docx`、進捗確認シート、フェーズ1セキュリティ基盤ガイド等）と齟齬する場合は **最新仕様を優先**、大きな判断は PO 確認。
+
+### 設計判断は ADR 化
+- 仕様変更・スキーマ判断・運用ルールは `docs/adr/ADR-NNN-*.md` で起案
+- ADR ドリブンの実装は `claude-pipeline.yml` で発火（本ファイル末尾「実装フロー」参照）
+- メモリやチャット履歴を「決定の根拠」として使わない
+
+### 不可逆操作は必ず PO 確認
+以下は事前に明示確認を取る:
+- DROP TABLE / 大量 DELETE
+- `rm -rf` / `git reset --hard`
+- `git push --force`（特に `main` / `develop`）
+- 本番 Docker volume 削除
+- secrets / credentials の変更
+- Cloudflare / Firebase Console 等の外部 GUI 操作
+
+---
+
 ## ブランチ運用ルール
 
 - 新しい機能についての作業を始める前に必ず `develop` から `feature/morimoto/` ブランチを作成すること
@@ -115,3 +180,38 @@ pushまで完了して初めて作業終了とすること。
 - **シンプル第一**：すべての変更をできる限りシンプルにする。影響するコードを最小限にする。
 - **手を抜かない**：根本原因を見つける。一時的な修正は避ける。シニアエンジニアの水準を保つ。
 - **影響を最小化する**：変更は必要な箇所のみにとどめる。バグを新たに引き込まない。
+
+---
+## 実装フロー（ADR-012: What/How 役割分担モデル）
+
+> ADR-012 により正式採択。旧 PROPOSAL-001 暫定運用セクションを置き換える。
+
+### 役割分担
+
+| 担当 | 役割 |
+|------|------|
+| **Shingo（PO）** | What の定義。「何を実現したいか」「なぜ必要か」「ユーザー価値」「事業判断」「優先順位」 |
+| **Web Claude（claude.ai）** | 壁打ち相手。アイディアを技術的に明確な要求（ADR）に翻訳する。事業上の見落とし・ユーザー観点を指摘 |
+| **パートナー Claude Code（Hikky-dev / GitHub Actions）** | How の判断と実装。技術選択・セキュリティ・テスト・既存コードとの統合をすべて自律的に決定 |
+
+### ADR の記述ルール
+
+ADR に**書く**もの: What（何を実現したいか）、Why（事業価値）、Scope 外（明示的除外）、事業上の制約
+
+ADR に**書かない**もの: 詳細な実装手順（How）、Invariants 網羅リスト、細かい技術仕様
+
+### ワークフロー（claude-pipeline.yml 起動時）
+
+1. Shingo がチャットで「○○を実現したい」と話す
+2. Web Claude が ADR（What/Why/Scope）に落とす
+3. Shingo が ADR を develop に push（Terminal Claude Code 経由）
+4. パートナー Claude Code が claude-pipeline.yml により自動起動し、実装 + PR 作成
+5. CI 緑なら Shingo が PR 本文とスコープを確認してマージ
+
+### マージ判断の基準（Shingo 向け）
+
+- PR タイトルと本文を読んで「これは頼んだことか？」を確認
+- CI が緑か確認
+- 技術的な正しさは CI とパートナーの判断に委ねる（Shingo が技術仕様の細部を確認しなくてよい）
+
+> 詳細は `docs/adr/ADR-012-what-how-separation.md` を参照。

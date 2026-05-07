@@ -239,6 +239,13 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/039_create_data_deletion_logs.sql
 
+            # ADR-015 段階分割 Phase 1: leads カラム追加 / lead_playbook テーブル新設 /
+            #   customer_contact_channels.external_id 追加
+            #   Pythonテンプレートランナー（{schema}プレースホルダを全テナントに展開）。
+            #   ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS で idempotent。
+            docker exec -e TENANT_CODE=highlife-jpn -w /app astro-webapp-backend-1 \
+              python scripts/migrate_adr015_lead_foundation.py
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
