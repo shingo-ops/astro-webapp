@@ -86,7 +86,9 @@ async def _exec(conn, sql: str) -> None:
     for stmt in _split_sql_preserving_do_blocks(sql):
         stmt = stmt.strip()
         if stmt:
-            await conn.execute(text(stmt))
+            # exec_driver_sql bypasses SQLAlchemy's bind-parameter parsing,
+            # avoiding false positives like `:true` in SQL comments (e.g. JSON examples).
+            await conn.exec_driver_sql(stmt)
 
 
 async def main() -> None:
