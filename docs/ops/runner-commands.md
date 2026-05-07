@@ -95,6 +95,9 @@ gh workflow run "Claude Max Auto-Pipeline (Partner Subscription)" \
 
 # 直前の dispatch 確認
 gh run list --workflow="Claude Max Auto-Pipeline (Partner Subscription)" --limit 1
+
+# dispatch 後にライブで進行をフォロー
+gh run watch <RUN_ID>
 ```
 
 ## 6. 再登録 / 改名手順
@@ -113,10 +116,11 @@ ps aux | grep "Runner.Worker" | grep -v grep   # 空であること
 runner-stop
 
 # Step 3: 旧登録解除
+# ※ 同一 registration token を Step 4 でも再利用できる（remove と register で 2 回消費可）
 cd ~/actions-runner
 ./config.sh remove --token <TOKEN>
 
-# Step 4: 新名で再登録
+# Step 4: 新名で再登録（Step 3 と同じ TOKEN でOK）
 ./config.sh \
   --url https://github.com/shingo-ops/salesanchor \
   --token <TOKEN> \
