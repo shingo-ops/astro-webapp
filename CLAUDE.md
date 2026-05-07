@@ -11,10 +11,14 @@
 - **Hikky-dev** — Claude Code 利用の開発担当（設計・実装・PR 起票）
 
 ### 事業ドメイン
-- **Jarvis CRM** — B2B SaaS CRM/ERP（HIGH LIFE JPN / Treasure Island JP）
+- **Jarvis CRM / salesanchor** — B2B SaaS CRM/ERP（HIGH LIFE JPN / Treasure Island JP）
 - ターゲット: 日本の越境 EC 事業者
-- 本番 URL: https://jarvis-claude.uk
-- 旧ドメイン（`jarvis-claude.uk` 系含む）は新ドメイン安定後に整理予定。**独断削除禁止、必ず PO 確認**
+- 本番 URL（正本は `README.md`）:
+  - App: https://app.salesanchor.jp/
+  - API: https://api.salesanchor.jp/
+  - LP: https://salesanchor.jp/
+- Legacy ドメイン: https://jarvis-claude.uk/（並行稼働、新ドメイン安定後に廃止予定）
+- **旧ドメインの独断削除禁止、必ず PO 確認**
 
 ### スタック
 - Backend: Python 3.12 / FastAPI / SQLAlchemy 2.0 + asyncpg
