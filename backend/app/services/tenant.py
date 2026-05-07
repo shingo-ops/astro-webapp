@@ -17,6 +17,9 @@ from __future__ import annotations
 
 変更履歴:
   2026-04-16: Phase 1対応（roles/leads/teams追加、system_rolesシード）
+  2026-05-07: ADR-015 段階分割 Phase 1 — leads にカルテ・AI 収集・返信速度・
+    次回アクション列を追加、lead_playbook 新設、customer_contact_channels に
+    external_id 追加（migration 046 と同じ列を新テナント作成時から備える）
 """
 
 import re
@@ -201,12 +204,14 @@ CREATE TABLE IF NOT EXISTS {schema}.customer_sales_channels (
 );
 
 -- 連絡ツール（Phase 1-B-1: 複数チャネル × 用途の多対多）
+-- ADR-015 §3: external_id は SNS プラットフォーム上のユーザー ID（既存顧客 dedup 用）
 CREATE TABLE IF NOT EXISTS {schema}.customer_contact_channels (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id) ON DELETE CASCADE,
     channel VARCHAR(30) NOT NULL,
     purpose VARCHAR(50),
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    external_id VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -215,6 +220,8 @@ CREATE INDEX IF NOT EXISTS idx_ccc_customer_id ON {schema}.customer_contact_chan
 CREATE INDEX IF NOT EXISTS idx_ccc_channel ON {schema}.customer_contact_channels (channel);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_one_primary_per_customer
     ON {schema}.customer_contact_channels (customer_id) WHERE is_primary = TRUE;
+CREATE INDEX IF NOT EXISTS idx_ccc_channel_external_id
+    ON {schema}.customer_contact_channels (channel, external_id) WHERE external_id IS NOT NULL;
 
 -- Phase 1-B-2: companies + contacts 階層（新テナントは最初から新構造）
 CREATE TABLE IF NOT EXISTS {schema}.companies (
@@ -371,6 +378,8 @@ CREATE TABLE IF NOT EXISTS {schema}.customer_discord (
 );
 
 -- リード管理
+-- ADR-015 §1〜§5 のカルテ・AI 収集・返信速度・次回アクション列を含める
+-- （migration 046 と同じ列を新テナント作成時から備える）
 CREATE TABLE IF NOT EXISTS {schema}.leads (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
@@ -391,9 +400,60 @@ CREATE TABLE IF NOT EXISTS {schema}.leads (
     assigned_to INTEGER,
     converted_deal_id INTEGER,
     notes TEXT,
+    -- ADR-015 §1/§2: AI 自動収集データ
+    country VARCHAR(100),
+    target_titles VARCHAR(500),
+    -- ADR-015 §3: 返信速度トラッキング
+    first_inquiry_at TIMESTAMPTZ,
+    first_response_at TIMESTAMPTZ,
+    first_response_seconds INTEGER,
+    -- ADR-015 §4: カルテ AI 補助対象
+    sales_form VARCHAR(50),
+    competitor_check BOOLEAN NOT NULL DEFAULT FALSE,
+    cs_memo TEXT,
+    per_order_amount NUMERIC(15, 2),
+    monthly_frequency NUMERIC(10, 2),
+    monthly_forecast_source VARCHAR(50),
+    -- ADR-015 §4: 営業担当が記入する列
+    challenge TEXT,
+    english_name VARCHAR(255),
+    meeting_impression VARCHAR(50),
+    meeting_memo TEXT,
+    -- ADR-015 §5: ダッシュボードの次回アクション
+    next_action VARCHAR(500),
+    next_action_date DATE,
+    -- ADR-015 §1/§2/§3: AI 収集ステート
+    ai_collection_state VARCHAR(20),
+    escalation_flag BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_leads_next_action_date
+    ON {schema}.leads (next_action_date) WHERE next_action_date IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_leads_ai_collection_state
+    ON {schema}.leads (ai_collection_state) WHERE ai_collection_state IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_leads_escalation_flag
+    ON {schema}.leads (escalation_flag) WHERE escalation_flag = TRUE;
+
+-- ADR-015 §7: テナント別 AI 対応プレイブック
+CREATE TABLE IF NOT EXISTS {schema}.lead_playbook (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
+    name VARCHAR(100) NOT NULL DEFAULT 'default',
+    greeting_message TEXT,
+    questions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    assignment_condition VARCHAR(50) NOT NULL DEFAULT 'all_required',
+    assignment_after_n_turns INTEGER,
+    assignment_message TEXT,
+    assignment_method VARCHAR(50) NOT NULL DEFAULT 'manual',
+    country_assignment_map JSONB,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (tenant_id, name)
+);
+CREATE INDEX IF NOT EXISTS idx_lead_playbook_active
+    ON {schema}.lead_playbook (tenant_id) WHERE is_active = TRUE;
 
 -- 商談データ
 CREATE TABLE IF NOT EXISTS {schema}.deals (
@@ -605,6 +665,11 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_ccc_new_updated_at' AND tgrelid = '{schema}.contact_contact_channels'::regclass) THEN
         CREATE TRIGGER trg_ccc_new_updated_at BEFORE UPDATE ON {schema}.contact_contact_channels
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    -- ADR-015 §7: lead_playbook の updated_at 自動更新
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_lead_playbook_updated_at' AND tgrelid = '{schema}.lead_playbook'::regclass) THEN
+        CREATE TRIGGER trg_lead_playbook_updated_at BEFORE UPDATE ON {schema}.lead_playbook
             FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
     END IF;
 END $$;
@@ -1059,6 +1124,8 @@ ALTER TABLE {schema}.company_sales_channels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_discord ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_contact_channels ENABLE ROW LEVEL SECURITY;
+-- ADR-015 §7: テナント別 AI 対応プレイブック
+ALTER TABLE {schema}.lead_playbook ENABLE ROW LEVEL SECURITY;
 -- Phase 1-B-2 Step 5d / PR γ: _customer_migration_map は migration 036 で DROP 済。
 """
 
@@ -1295,6 +1362,11 @@ BEGIN
     END IF;
     -- Phase 1-B-2 Step 5d / PR γ: tenant_isolation_customer_migration_map policy は
     -- migration 036 で _customer_migration_map テーブルごと削除されるため撤去済。
+    -- ADR-015 §7: テナント別 AI 対応プレイブック
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_lead_playbook' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_lead_playbook ON {schema}.lead_playbook
+            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
+    END IF;
 END $$
 """
 

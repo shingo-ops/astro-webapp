@@ -7,6 +7,9 @@ from __future__ import annotations
   2026-04-16: 初版作成（Phase 1）
   2026-04-27: Phase 1-B-2 Step 5d — リード変換時の旧 customer_id を撤去し、
     company_id / contact_id を必須化（新 B2B モデル唯一の正）
+  2026-05-07: ADR-015 §6 ステータス拡張（既存値は維持、新規 5 値を追加）。
+    questions/Q01-B「既存 LeadStatus は置き換えではなく拡張」「移行スクリプト
+    不要」の方針に従う。
 """
 
 from datetime import datetime
@@ -19,12 +22,19 @@ from app.schemas.base import validate_phone, validate_email_loose
 
 
 class LeadStatus(str, Enum):
+    # 既存値（migration 003 から運用中。後方互換のため維持）
     new = "新規"
     contacting = "コンタクト中"
     proposing = "提案中"
     converted = "案件化"
     lost = "失注"
     on_hold = "保留"
+    # ADR-015 §6 で追加（既存値を置き換えず拡張）
+    ai_collecting = "AI対応中"            # 新規リードで AI が Q1/Q2 を収集中
+    existing_customer = "既存顧客"          # 成約済み顧客（ルート営業対象）
+    follow_up_short = "追客（短期）"         # アーカイブ理由: 3 ヶ月以内に再アプローチ
+    follow_up_long = "追客（長期）"          # アーカイブ理由: 3 ヶ月以上先
+    out_of_scope = "対象外"                # アーカイブ理由: スパム / 無関係
 
 
 class LeadType(str, Enum):
