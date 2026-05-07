@@ -1,0 +1,111 @@
+# Claude Code セットアップガイド（Jarvis CRM / salesanchor 開発者向け）
+
+このドキュメントは、本リポジトリで Claude Code を使って開発するためのオンボーディング手順をまとめたもの。
+
+---
+
+## 1. 設定の3層構造を理解する
+
+Claude Code の設定は 3 層に分かれている。**チーム共通のものはリポジトリにコミットし、個人の好みはユーザーグローバルに置く** ─ この分離を守ること。
+
+| 層 | 場所 | Git | 中身 |
+|---|---|---|---|
+| ユーザーグローバル | `~/.claude/CLAUDE.md`<br>`~/.claude/settings.json` | ❌ コミットしない | 個人の好み・通知・キーバインド・auto-memory |
+| **プロジェクト共通** | `<repo>/CLAUDE.md`<br>`<repo>/.claude/settings.json`<br>`<repo>/.claude/agents/` | ✅ **コミット** | チーム前提・規約・専用エージェント |
+| プロジェクトローカル | `<repo>/.claude/settings.local.json`<br>`<repo>/CLAUDE.local.md` | ❌ gitignore | 個人の上書き分 |
+
+### やってはいけないこと
+- 個人の好み（口調・通知・コマンド改行ルール等）を `<repo>/CLAUDE.md` に書かない
+- VPS パスワード・API token・SSH鍵 を `CLAUDE.md` や `.claude/` に書かない（**1Password / Bitwarden 等の Vault に置く**）
+- auto-memory ディレクトリ（`~/.claude/projects/...`）の中身をリポにコピーしない（個人の試行錯誤履歴）
+
+---
+
+## 2. 初回セットアップ（パートナー / 新規参画者向け）
+
+### Step 1: Claude Code をインストール
+```bash
+npm install -g @anthropic-ai/claude-code
+# または公式案内 https://claude.com/claude-code を参照
+```
+
+### Step 2: リポジトリをクローン
+```bash
+git clone https://github.com/shingo-ops/salesanchor.git
+cd salesanchor
+```
+
+クローンするだけで `CLAUDE.md` と `.claude/` がチーム共通設定として自動的に効く。
+
+### Step 3: gh / git の認証
+```bash
+gh auth login          # GitHub CLI（PR 作成・レビューに必要）
+git config user.name  "<あなたの名前>"
+git config user.email "<あなたのメール>"
+```
+
+### Step 4: 個人ローカル設定（任意）
+個人の好み（口調・通知音声など）は `~/.claude/CLAUDE.md` に書く。本リポジトリの `CLAUDE.md` には触らない。
+
+このプロジェクト内だけの個人上書きが必要なら `.claude/settings.local.json` を作る（gitignore 済）。
+
+### Step 5: 必要な MCP サーバ（任意）
+- **context7** — 外部ライブラリのドキュメント参照（推奨）
+- **playwright** — E2E テスト・UI 検証で使用
+- **voicevox** — hitoshi の音声通知用（個人）
+
+設定方法は `claude mcp add` で各自登録。
+
+---
+
+## 3. リポジトリ専用エージェントの使い方
+
+`.claude/agents/` にチーム共通のサブエージェントが定義されている。
+
+| Agent | 役割 |
+|---|---|
+| `planner` | 仕様の起案・既存仕様の精査 |
+| `generator` | 1スプリントずつ実装＋自己評価レポート |
+| `evaluator` | 実装を Playwright で検証、Pass/Fail 判定 |
+| `reviewer` | コード監査、APPROVE / CHANGES_REQUESTED 判定（**merge は実行しない**。merge は起票者が手動で `gh pr merge --squash --delete-branch`） |
+
+呼び出し例:
+- 「Planner で機能 X の仕様書を起こして」
+- 「次のスプリント実装して」（Generator）
+- 「Evaluator 走らせて」
+- 「Reviewer 走らせて」 / 「PR #123 レビューして」
+
+詳しくは各 `.claude/agents/*.md` のフロントマターを参照。
+
+---
+
+## 4. 開発フロー（要点）
+
+詳細は `<repo>/CLAUDE.md` の「ブランチ運用ルール」を読むこと。要点:
+
+1. `develop` から `feature/morimoto/<topic>` を切る（`<topic>` は作業内容を英語で簡潔に）
+   - ADR pipeline 経由の自動実装は別途 `feature/shingo/adr-NNN-impl` が自動生成される
+2. 直接 `develop` / `main` にコミットしない
+3. PR を起票 → **Reviewer エージェント** で審査
+4. Reviewer が APPROVE → **起票者が手動で `gh pr merge --squash --delete-branch`**（Reviewer 自体は merge しない、`.claude/agents/reviewer.md` のクリティカルルール9 参照）
+5. `develop → main` も必ず PR 経由（Branch Protection で物理ブロック）
+6. 不可逆操作（DROP TABLE / `rm -rf` / force-push 等）は **PO 確認必須**
+
+---
+
+## 5. プロジェクト前提のクイックリファレンス
+
+`<repo>/CLAUDE.md` の「プロジェクト前提」を必ず読むこと。特に以下は事故の原因になりやすい:
+
+- **マルチテナント**: 本番は `tenant_code=highlife-jpn` のみ。`TENANT_CODE` 既定値の `test-corp` は空
+- **VPS コンテナ**: `/app` 書込不可、`/tmp` は tmpfs で `docker compose cp` 不可
+- **ドメイン**: `jarvis-claude.uk` 系の旧ドメインは独断削除禁止
+
+---
+
+## 6. 困った時
+
+- Claude Code 機能の質問: `/help`、または公式ドキュメント https://docs.claude.com/claude-code
+- 仕様の判断に迷ったら: PO（しんごさん）に質問してから着手
+- ADR 起案 / 大きな設計変更: `docs/adr/ADR-NNN-*.md` を起案
+- Reviewer の動きが期待と違う: `.claude/agents/reviewer.md` の Mode A / B を確認
