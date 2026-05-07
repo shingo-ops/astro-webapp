@@ -1,5 +1,63 @@
 # CLAUDE.md
 
+このファイルは **チーム共通の真実** のみを書く。個人の好み（口調・通知・キーバインド等）は各自の `~/.claude/CLAUDE.md` に置くこと。Claude Code の初期セットアップは `docs/onboarding/claude-code.md` を参照。
+
+---
+
+## プロジェクト前提
+
+### 登場人物
+- **しんごさん（GitHub: `shingo-ops`）** — プロダクトオーナー、運用、本番アクセス権限保持、ADR 起案
+- **Hikky-dev** — Claude Code 利用の開発担当（設計・実装・PR 起票）
+
+### 事業ドメイン
+- **Jarvis CRM** — B2B SaaS CRM/ERP（HIGH LIFE JPN / Treasure Island JP）
+- ターゲット: 日本の越境 EC 事業者
+- 本番 URL: https://jarvis-claude.uk
+- 旧ドメインの扱いは `docs/DOMAIN_POLICY.md`（独断削除禁止）
+
+### スタック
+- Backend: Python 3.12 / FastAPI / SQLAlchemy 2.0 + asyncpg
+- Frontend: React 18 + TypeScript + Vite
+- LP: Astro
+- DB: PostgreSQL 16（マルチテナント・スキーマ分離設計）
+- Infra: Docker Compose / さくらVPS (49.212.137.46 / Ubuntu 24.04) / GitHub Actions
+
+### マルチテナント運用
+- 本番テナントは `tenant_code=highlife-jpn`（schema: `tenant_004`）
+- 既定値 `test-corp` は空テナントなので、移行 / バッチ実行時は **`TENANT_CODE=highlife-jpn` を明示**
+  - `gh workflow run run-*-migration.yml -f tenant_code=highlife-jpn`
+  - `docker exec -e TENANT_CODE=highlife-jpn ...`
+
+### VPS コンテナの落とし穴（過去事故あり）
+- `/app` 配下は appuser 権限で **書込不可** → スクリプトの出力先は `/tmp` を既定にする
+- `/tmp` は tmpfs マウント。`docker compose cp backend:/tmp/...` は **使えない**（`Could not find the file`）
+- ホストへの取り出しは `docker compose exec -T backend cat /tmp/xxx > host_file` 一択
+- コンテナ再起動で `/tmp` の中身は消える
+
+### 仕様書の正本（2026-04-22 引き継ぎ）
+1. `jarvis_crm_system_overview.docx` — 全体俯瞰
+2. `jarvis_crm_customer_master_migration_design.docx` — 顧客マスタ
+3. `jarvis_crm_staff_roles_bots_design.docx` — 担当者・権限・bot
+
+古い設計書と齟齬する場合は **最新仕様を優先**、大きな判断は PO 確認。
+
+### 設計判断は ADR 化
+- 仕様変更・スキーマ判断・運用ルールは `docs/adr/ADR-NNN-*.md` で起案
+- ADR ドリブンの実装は `claude-pipeline.yml` で発火（本ファイル末尾「実装フロー」参照）
+- メモリやチャット履歴を「決定の根拠」として使わない
+
+### 不可逆操作は必ず PO 確認
+以下は事前に明示確認を取る:
+- DROP TABLE / 大量 DELETE
+- `rm -rf` / `git reset --hard`
+- `git push --force`（特に `main` / `develop`）
+- 本番 Docker volume 削除
+- secrets / credentials の変更
+- Cloudflare / Firebase Console 等の外部 GUI 操作
+
+---
+
 ## ブランチ運用ルール
 
 - 新しい機能についての作業を始める前に必ず `develop` から `feature/morimoto/` ブランチを作成すること
