@@ -43,8 +43,7 @@ export default function Layout() {
       {/* === 上段: ダークネイビーブランドバー === */}
       <header className="brandbar">
         <div className="brandbar-logo">
-          <span className="brandbar-icon">🔗</span>
-          <span>CRM</span>
+          <img src="/logo.png" alt="Sales Anchor" className="brandbar-logo-img" />
         </div>
         <form className="brandbar-search" onSubmit={handleSearch}>
           <input

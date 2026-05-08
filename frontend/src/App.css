@@ -39,6 +39,12 @@
   color: var(--nav-brand-accent);
 }
 
+.brandbar-logo-img {
+  height: 36px;
+  width: auto;
+  display: block;
+}
+
 .brandbar-search {
   flex: 1;
   display: flex;
