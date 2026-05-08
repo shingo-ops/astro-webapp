@@ -1,0 +1,58 @@
+name: Feedback Issue Triage (Phase α)
+
+# Phase α: `from-form` ラベル付き Issue を検知 → `triage-needed` ラベル + トリアージ要請コメント投稿。
+# Phase β: LLM 自動トリアージ（カテゴリ判定 → 適切な triage:* ラベル付与）
+# Phase γ: trivial-bug → draft PR 自動作成 / needs-adr → ADR draft 自動生成
+#
+# 詳細は docs/adr/ADR-019-feedback-loop-automation.md (TBD)
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  triage-comment:
+    # 発火条件:
+    #   - Issue 作成時に from-form ラベルが付いている (GAS から作成された場合)
+    #   - 既存 Issue に from-form ラベルが後付けされた (手動でフィードバック扱いに昇格)
+    if: |
+      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'from-form')) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'from-form')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Add triage-needed label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue edit "$ISSUE_NUM" --repo "$REPO" --add-label "triage-needed"
+
+      - name: Post triage request comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue comment "$ISSUE_NUM" --repo "$REPO" --body "$(cat <<'EOF'
+          ## 🔔 トリアージ要請
+
+          @shingo-ops @Hikky-dev
+
+          フィードバックフォーム経由で Issue が作成されました。`triage-needed` ラベルを自動付与しました。
+
+          以下のいずれかで判定し、ラベルを更新してください:
+
+          | 判定 | ラベル | 次アクション |
+          |---|---|---|
+          | 即修正可（軽微） | `triage:trivial` | 通常の PR で対応 |
+          | 設計判断必要 | `triage:needs-adr` | ADR 起案 → claude-pipeline で自動実装 |
+          | 調査必要 | `triage:investigation` | 担当者アサイン |
+          | 重複 | `triage:duplicate` | 関連 issue にリンクして close |
+          | 対応見送り | `triage:wontfix` | 理由コメント + close |
+
+          > **Phase β** で LLM 自動トリアージ実装予定（ADR-019 TBD）。現在はマニュアル運用。
+          EOF
+          )"
