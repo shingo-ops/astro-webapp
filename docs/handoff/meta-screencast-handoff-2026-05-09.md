@@ -12,7 +12,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 作業ブランチ | `recording/english-ui`（しんごさん作業中） |
+| 作業ブランチ | `recording/english-ui`（しんごさん作業中、origin に push 済 / SHA `40d289cc9` 時点）|
 | 方針 | Meta リジェクト事例調査により **UI 英語化が必要**と判明したため、英語化版で撮影 |
 | スコープ | テキスト置換のみ、機能は不変 |
 | ライフサイクル | 録画完了 → ブランチ削除 |
@@ -47,6 +47,10 @@
 | 8 | 6:30-7:30 | Data Deletion Callback demonstration | (Required by Meta) |
 
 **合計 7 分 30 秒、6 Permission + Human Agent Tag + Data Deletion 全カバー**
+
+> ⚠️ **シーン番号についての注意**: 上記は 8 行（Intro + 7 Permission/Feature）構成。既存台本 (`META_APP_REVIEW_SCREENCAST_SCRIPT.md`) のヘッダは「7 シーン × 平均 1 分」表記だが、本文の節は §2-§9 で 8 シーン構成。録画する側は **本文の 8 セクション** を基準に。
+>
+> ⚠️ **Scene 7 (Human Agent Tag) の運用**: Master Checklist では Human Agent Tag は **Business Verification 通過後の追加申請**となっている。初回 Meta App Review 提出時に録画含めるかは、しんごさんと申請戦略を擦り合わせて判断。BV 完了前の初回提出では Scene 7 を skip する選択肢もある。
 
 ### 2-3. バックエンド実装（参考、既に本番反映済）
 
@@ -84,9 +88,9 @@
 |---|---|---|
 | **Master Checklist v1.1** | `1ZsI_Q_U6z2P4L6lpxsmfc2bisdygMbOnrhyHWCgDpkA` | 全 6 セクション（A-F）の Master Checklist |
 | `data_deletion_instructions` v1.0 | `1dCf77semO4ioZ_Sp3hhFGz-Zp9-qfMwkDp53jOPnuWI` | B1-B6 実装の元仕様（HMAC、unquoted JSON 等） |
-| `privacy_policy_v12` v1.2 | （未取得） | LP /privacy 元仕様（既に LP 反映済）|
-| `terms_of_service` v1.0 | （未取得） | LP /terms 元仕様（既に LP 反映済）|
-| `use_case_descriptions` v1.0 | （未取得） | E1-E5 申請フォーム素材 |
+| `privacy_policy_v12` v1.2 | `1mHy_pcXrlZ41MUMSy9e5MIzJgvY0oLwzwQ45na9wsWw` | LP /privacy 元仕様（既に LP 反映済）|
+| `terms_of_service` v1.0 | `1NWp-kHGHUYj7s7VLTspjbb6B97ZR4_BGhJzSJMyHPd4` | LP /terms 元仕様（既に LP 反映済）|
+| `use_case_descriptions` v1.0 | `14wJpu80wRxM8T5q7JLeHARfeRmXgKD54niij-NOTHFM` | E1-E5 申請フォーム素材 |
 
 検索方法: `mcp__claude_ai_Google_Drive__search_files` で `title contains 'use_case'` 等
 
