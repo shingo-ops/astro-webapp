@@ -49,11 +49,11 @@ export default function Layout() {
         <form className="brandbar-search" onSubmit={handleSearch}>
           <input
             type="search"
-            placeholder="顧客名・リードIDで検索..."
+            placeholder="Search by customer name or lead ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button type="submit" aria-label="検索">🔍</button>
+          <button type="submit" aria-label="Search">🔍</button>
         </form>
       </header>
 
@@ -67,74 +67,74 @@ export default function Layout() {
       <nav className="mainnav">
         <div className="mainnav-links">
           {navLoading ? (
-            <span className="topnav-loading">読込中...</span>
+            <span className="topnav-loading">Loading...</span>
           ) : (
             <>
               {hasPermission("dashboard.view") && (
-                <NavLink to="/" end className="mainnav-link">ダッシュボード</NavLink>
+                <NavLink to="/" end className="mainnav-link">Dashboard</NavLink>
               )}
 
               <NavDropdown
-                label="リード"
+                label="Leads"
                 activePaths={["/lead-chat", "/leads", "/customers", "/companies", "/contacts", "/archive"]}
               >
-                {prefs.show_chat_menu && <NavLink to="/lead-chat">リードチャット</NavLink>}
-                {hasPermission("leads.view") && <NavLink to="/leads">新規顧客チャット</NavLink>}
-                {hasPermission("customers.view") && <NavLink to="/customers">ルート顧客チャット</NavLink>}
+                {prefs.show_chat_menu && <NavLink to="/lead-chat">Lead chat</NavLink>}
+                {hasPermission("leads.view") && <NavLink to="/leads">New customer chat</NavLink>}
+                {hasPermission("customers.view") && <NavLink to="/customers">Recurring customer chat</NavLink>}
                 {/* Phase 1-B-2 Step 5c-1: 新 B2B モデル（会社 + 担当者）。Step 5d で customers と統合予定 */}
-                {hasPermission("customers.view") && <NavLink to="/companies">会社管理（新）</NavLink>}
-                {hasPermission("customers.view") && <NavLink to="/contacts">担当者管理（新）</NavLink>}
-                <NavLink to="/archive">アーカイブ</NavLink>
+                {hasPermission("customers.view") && <NavLink to="/companies">Companies (new)</NavLink>}
+                {hasPermission("customers.view") && <NavLink to="/contacts">Contacts (new)</NavLink>}
+                <NavLink to="/archive">Archive</NavLink>
               </NavDropdown>
 
               {hasPermission("products.view") && (
-                <NavLink to="/inventory" className="mainnav-link">在庫</NavLink>
+                <NavLink to="/inventory" className="mainnav-link">Inventory</NavLink>
               )}
 
               {prefs.show_sales_menu && (
                 <NavDropdown
-                  label="見積・請求"
+                  label="Quotes & Invoices"
                   activePaths={["/quotes", "/invoices"]}
                 >
-                  {hasPermission("quotes.create") && <NavLink to="/quotes/new">見積もり作成</NavLink>}
-                  {hasPermission("quotes.view") && <NavLink to="/quotes">見積もり履歴</NavLink>}
-                  {hasPermission("invoices.view") && <NavLink to="/invoices">請求書管理</NavLink>}
+                  {hasPermission("quotes.create") && <NavLink to="/quotes/new">Create quote</NavLink>}
+                  {hasPermission("quotes.view") && <NavLink to="/quotes">Quote history</NavLink>}
+                  {hasPermission("invoices.view") && <NavLink to="/invoices">Invoices</NavLink>}
                 </NavDropdown>
               )}
 
-              <NavLink to="/reports" className="mainnav-link">レポート</NavLink>
+              <NavLink to="/reports" className="mainnav-link">Reports</NavLink>
               <NavLink to="/faq" className="mainnav-link">FAQ</NavLink>
 
               {prefs.show_admin_menu && (
                 <NavDropdown
-                  label="管理"
+                  label="Admin"
                   activePaths={["/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels"]}
                 >
-                  {hasPermission("deals.view") && <NavLink to="/deals">商談管理</NavLink>}
-                  {hasPermission("suppliers.view") && <NavLink to="/suppliers">仕入先管理</NavLink>}
-                  {hasPermission("purchase_orders.view") && <NavLink to="/purchase-orders">仕入注文</NavLink>}
-                  {hasPermission("staff.view") && <NavLink to="/staff">スタッフ管理</NavLink>}
-                  {hasPermission("bots.view") && <NavLink to="/bots">Bot管理</NavLink>}
-                  {hasPermission("teams.view") && <NavLink to="/teams">チーム管理</NavLink>}
-                  {hasPermission("shifts.view") && <NavLink to="/shifts">シフト管理</NavLink>}
-                  {hasAny("roles.view", "roles.create") && <NavLink to="/roles">権限管理</NavLink>}
-                  {hasPermission("erp.view") && <NavLink to="/data">データ管理</NavLink>}
+                  {hasPermission("deals.view") && <NavLink to="/deals">Deals</NavLink>}
+                  {hasPermission("suppliers.view") && <NavLink to="/suppliers">Suppliers</NavLink>}
+                  {hasPermission("purchase_orders.view") && <NavLink to="/purchase-orders">Purchase orders</NavLink>}
+                  {hasPermission("staff.view") && <NavLink to="/staff">Staff</NavLink>}
+                  {hasPermission("bots.view") && <NavLink to="/bots">Bots</NavLink>}
+                  {hasPermission("teams.view") && <NavLink to="/teams">Teams</NavLink>}
+                  {hasPermission("shifts.view") && <NavLink to="/shifts">Shifts</NavLink>}
+                  {hasAny("roles.view", "roles.create") && <NavLink to="/roles">Roles & permissions</NavLink>}
+                  {hasPermission("erp.view") && <NavLink to="/data">Data management</NavLink>}
                   {/* Phase 1-D Sprint 3: Meta Inbox 接続管理 */}
-                  {hasPermission("channels.view") && <NavLink to="/channels">Channels（Meta連携）</NavLink>}
+                  {hasPermission("channels.view") && <NavLink to="/channels">Channels (Meta)</NavLink>}
                 </NavDropdown>
               )}
 
               {prefs.show_settings_menu && (
-                <NavLink to="/settings" className="mainnav-link">設定</NavLink>
+                <NavLink to="/settings" className="mainnav-link">Settings</NavLink>
               )}
 
               <NavDropdown
-                label="その他"
+                label="More"
                 activePaths={["/knowledge", "/prompts", "/templates"]}
               >
                 {prefs.show_buddy_menu && hasPermission("buddy.view_own") && <NavLink to="/knowledge">Buddy</NavLink>}
-                {hasPermission("badges.view") && <NavLink to="/prompts">バッジ</NavLink>}
-                <NavLink to="/templates">テンプレート管理</NavLink>
+                {hasPermission("badges.view") && <NavLink to="/prompts">Badges</NavLink>}
+                <NavLink to="/templates">Templates</NavLink>
               </NavDropdown>
             </>
           )}
@@ -142,7 +142,7 @@ export default function Layout() {
         <div className="mainnav-user">
           <span className="mainnav-email">{user?.email}</span>
           <button className="btn-logout" onClick={() => setShowLogoutConfirm(true)}>
-            ログアウト
+            Sign out
           </button>
         </div>
       </nav>
@@ -153,9 +153,9 @@ export default function Layout() {
 
       <ConfirmModal
         open={showLogoutConfirm}
-        title="ログアウト"
-        message="ログアウトしますか？ 入力中のデータは失われます。"
-        confirmLabel="ログアウト"
+        title="Sign out"
+        message="Sign out now? Any unsaved input will be lost."
+        confirmLabel="Sign out"
         onConfirm={() => { setShowLogoutConfirm(false); signOut(); }}
         onCancel={() => setShowLogoutConfirm(false)}
       />

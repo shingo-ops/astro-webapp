@@ -54,14 +54,14 @@ type Banner =
 // OAuth callback の reason → 日本語の汎用マップ。
 // 具体的なエラー文言は backend の audit_log に残る前提で UI は短く統一する。
 const ERROR_REASON_MAP: Record<string, string> = {
-  user_denied: "Facebook で接続が拒否されました。再度お試しください。",
-  state_mismatch: "セキュリティトークンが一致しませんでした。再度接続をお試しください。",
-  state_expired: "接続セッションの有効期限が切れました。再度お試しください。",
-  meta_api_error: "Meta API エラーで接続できませんでした。少し時間を置いて再度お試しください。",
-  meta_timeout: "Meta API がタイムアウトしました。ネットワーク状態を確認してください。",
-  no_pages: "管理可能な Facebook Page が見つかりませんでした。Page を作成してから再度お試しください。",
-  permission_denied: "接続権限がありません。管理者にお問い合わせください。",
-  internal_error: "内部エラーが発生しました。サポートまでご連絡ください。",
+  user_denied: "The connection was denied on Facebook. Please try again.",
+  state_mismatch: "Security token mismatch. Please try connecting again.",
+  state_expired: "Your connection session has expired. Please try again.",
+  meta_api_error: "Couldn't connect due to a Meta API error. Please try again in a moment.",
+  meta_timeout: "The Meta API request timed out. Please check your network connection.",
+  no_pages: "No manageable Facebook Pages were found. Please create a Page and try again.",
+  permission_denied: "You don't have permission to connect channels. Please contact your administrator.",
+  internal_error: "An internal error occurred. Please contact support.",
 };
 
 function formatDate(iso: string | null): string {
@@ -69,7 +69,7 @@ function formatDate(iso: string | null): string {
   // ISO 文字列でも SQLite 由来の "2026-04-30 12:00:00+00:00" 文字列でも parse 可能
   const d = new Date(iso.replace(" ", "T"));
   if (isNaN(d.getTime())) return iso;
-  return d.toLocaleString("ja-JP", {
+  return d.toLocaleString("en-US", {
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit",
   });
@@ -107,18 +107,18 @@ export default function ChannelsPage() {
     if (statusParam === "connected") {
       const pageName = url.searchParams.get("page_name") || "";
       const text = pageName
-        ? `「${pageName}」の接続が完了しました。`
-        : "Page 接続が完了しました。";
+        ? `"${pageName}" connected successfully.`
+        : "Page connected successfully.";
       setBanner({ type: "success", text });
     } else if (statusParam === "partial") {
       const succeeded = url.searchParams.get("succeeded") || "0";
       const failedPagesRaw = url.searchParams.get("failed_pages") || "";
       const failedCount = url.searchParams.get("failed") || (failedPagesRaw ? String(failedPagesRaw.split(",").length) : "0");
-      const text = `${succeeded} 件の Page を接続しましたが、${failedCount} 件で失敗しました${failedPagesRaw ? `（${failedPagesRaw}）` : ""}。失敗した Page は再度接続をお試しください。`;
+      const text = `Connected ${succeeded} Page(s) but ${failedCount} failed${failedPagesRaw ? ` (${failedPagesRaw})` : ""}. Please retry the failed Pages.`;
       setBanner({ type: "warning", text });
     } else if (statusParam === "error") {
       const reason = url.searchParams.get("reason") || "internal_error";
-      const text = ERROR_REASON_MAP[reason] || `接続に失敗しました（reason: ${reason}）。`;
+      const text = ERROR_REASON_MAP[reason] || `Connection failed (reason: ${reason}).`;
       setBanner({ type: "error", text });
     }
 
@@ -135,7 +135,7 @@ export default function ChannelsPage() {
       const data = await api.get<ChannelsResponse>("/meta/channels");
       setChannels(data.channels || []);
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "取得に失敗しました");
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "Failed to load channels");
       setLoadError(msg);
     } finally {
       setLoading(false);
@@ -151,12 +151,12 @@ export default function ChannelsPage() {
     try {
       const data = await api.post<ConnectStartResponse>("/meta/connect/start", {});
       if (!data.auth_url) {
-        throw new Error("auth_url が取得できませんでした");
+        throw new Error("Failed to obtain auth_url");
       }
       // Facebook OAuth ダイアログへ遷移。state は backend が Redis に保存済み。
       window.location.href = data.auth_url;
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "接続を開始できませんでした");
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "Couldn't start the connection");
       setConnectError(msg);
       setConnecting(false);
     }
@@ -171,12 +171,12 @@ export default function ChannelsPage() {
       setDisconnectTarget(null);
       setBanner({
         type: "success",
-        text: `「${disconnectTarget.page_name}」を切断しました。`,
+        text: `Disconnected "${disconnectTarget.page_name}".`,
       });
       await loadChannels();
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "切断に失敗しました");
-      setBanner({ type: "error", text: `切断に失敗しました: ${msg}` });
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "Disconnect failed");
+      setBanner({ type: "error", text: `Disconnect failed: ${msg}` });
     } finally {
       setDisconnecting(false);
     }
@@ -214,14 +214,14 @@ export default function ChannelsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Channels（Meta連携）</h2>
+        <h2>Channels (Meta integration)</h2>
         {canManage && (
           <button
             className="btn-primary"
             onClick={handleConnect}
             disabled={connecting}
           >
-            {connecting ? "接続を開始中..." : "Facebook ページを接続"}
+            {connecting ? "Starting connection..." : "Connect a Facebook Page"}
           </button>
         )}
       </div>
@@ -243,7 +243,7 @@ export default function ChannelsPage() {
               fontSize: "1rem",
               lineHeight: 1,
             }}
-            aria-label="閉じる"
+            aria-label="Close"
           >
             ×
           </button>
@@ -256,20 +256,20 @@ export default function ChannelsPage() {
 
       {loadError && (
         <div className="error" style={{ marginBottom: 16 }}>
-          一覧の取得に失敗しました: {loadError}
+          Failed to load channels: {loadError}
           <button
             type="button"
             className="btn-sm"
             style={{ marginLeft: 8 }}
             onClick={loadChannels}
           >
-            再読み込み
+            Reload
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">Loading...</div>
       ) : channels.length === 0 ? (
         // ----- 空 state（onboarding CTA） -----
         <div
@@ -279,10 +279,10 @@ export default function ChannelsPage() {
             padding: "48px 24px",
           }}
         >
-          <h3 style={{ marginTop: 0 }}>まだ Facebook Page が接続されていません</h3>
+          <h3 style={{ marginTop: 0 }}>No Facebook Pages connected yet</h3>
           <p style={{ color: "var(--text-muted)", marginBottom: 24 }}>
-            Messenger と Instagram の DM を Sales Anchor の Inbox から
-            送受信するには、まず Facebook Page を接続してください。
+            To send and receive Messenger and Instagram DMs from the Sales Anchor
+            inbox, connect a Facebook Page first.
           </p>
           {canManage ? (
             <button
@@ -291,11 +291,11 @@ export default function ChannelsPage() {
               disabled={connecting}
               style={{ fontSize: "1rem", padding: "12px 24px" }}
             >
-              {connecting ? "接続を開始中..." : "Facebook ページを接続"}
+              {connecting ? "Starting connection..." : "Connect a Facebook Page"}
             </button>
           ) : (
             <p style={{ color: "var(--text-muted)" }}>
-              接続には <code>channels.manage</code> 権限が必要です。管理者にご相談ください。
+              Connecting requires the <code>channels.manage</code> permission. Please contact your administrator.
             </p>
           )}
         </div>
@@ -322,11 +322,11 @@ export default function ChannelsPage() {
                     <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{ch.page_name}</h3>
                     {ch.is_active ? (
                       <span className="badge" style={{ background: "#e6f4ea", color: "#137333" }}>
-                        接続中
+                        Connected
                       </span>
                     ) : (
                       <span className="badge" style={{ background: "#eee", color: "#666" }}>
-                        切断済
+                        Disconnected
                       </span>
                     )}
                   </div>
@@ -345,15 +345,15 @@ export default function ChannelsPage() {
                       </div>
                     )}
                     <div>
-                      <strong>接続日:</strong> {formatDate(ch.connected_at)}
-                      {ch.connected_by_staff_name && ` / 接続者: ${ch.connected_by_staff_name}`}
+                      <strong>Connected:</strong> {formatDate(ch.connected_at)}
+                      {ch.connected_by_staff_name && ` / by: ${ch.connected_by_staff_name}`}
                     </div>
                     {ch.page_token_expires_at && (
                       <div style={tokenWarn ? { color: "#a45a00", fontWeight: 600 } : undefined}>
-                        <strong>トークン有効期限:</strong> {formatDate(ch.page_token_expires_at)}
+                        <strong>Token expires:</strong> {formatDate(ch.page_token_expires_at)}
                         {expiresIn !== null && (
                           <span style={{ marginLeft: 6 }}>
-                            ({expiresIn >= 0 ? `残り ${expiresIn} 日` : `${-expiresIn} 日経過`})
+                            ({expiresIn >= 0 ? `${expiresIn} day(s) left` : `expired ${-expiresIn} day(s) ago`})
                           </span>
                         )}
                       </div>
@@ -367,7 +367,7 @@ export default function ChannelsPage() {
                       onClick={() => setDisconnectTarget(ch)}
                       disabled={disconnecting}
                     >
-                      切断
+                      Disconnect
                     </button>
                   )}
                 </div>
@@ -379,17 +379,17 @@ export default function ChannelsPage() {
 
       <ConfirmModal
         open={!!disconnectTarget}
-        title="Facebook Page を切断"
+        title="Disconnect Facebook Page"
         danger
-        confirmLabel={disconnecting ? "切断中..." : "切断する"}
+        confirmLabel={disconnecting ? "Disconnecting..." : "Disconnect"}
         message={
           <>
-            <strong>{disconnectTarget?.page_name}</strong> を切断します。
+            Disconnect <strong>{disconnectTarget?.page_name}</strong>?
             <br />
-            この Page 経由の Messenger / Instagram の受信はできなくなり、
-            Meta 側の <code>subscribed_apps</code> も解除されます。
+            Messenger and Instagram messages will no longer arrive through this Page,
+            and Meta's <code>subscribed_apps</code> will be unsubscribed.
             <br />
-            再接続するには再度 OAuth 認可が必要です。
+            Reconnecting will require going through OAuth again.
           </>
         }
         onConfirm={performDisconnect}
