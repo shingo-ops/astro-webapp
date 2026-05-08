@@ -65,21 +65,21 @@ function relativeTime(iso: string | null): string {
   const d = parseDate(iso);
   if (!d) return "—";
   const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (diffSec < 60) return "たった今";
+  if (diffSec < 60) return "just now";
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}分前`;
+  if (diffMin < 60) return `${diffMin}m ago`;
   const diffHour = Math.floor(diffMin / 60);
-  if (diffHour < 24) return `${diffHour}時間前`;
+  if (diffHour < 24) return `${diffHour}h ago`;
   const diffDay = Math.floor(diffHour / 24);
-  if (diffDay < 7) return `${diffDay}日前`;
-  return d.toLocaleDateString("ja-JP", { month: "2-digit", day: "2-digit" });
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return d.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit" });
 }
 
 /** `2026-04-30 14:25` 形式の絶対時刻（吹き出しの hover タイトル用）。 */
 function formatAbsolute(iso: string | null): string {
   const d = parseDate(iso);
   if (!d) return "—";
-  return d.toLocaleString("ja-JP", {
+  return d.toLocaleString("en-US", {
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit",
   });
@@ -154,7 +154,7 @@ export default function InboxPage() {
     } catch (e) {
       const msg = e instanceof ApiError
         ? e.message
-        : e instanceof Error ? e.message : "会話一覧の取得に失敗しました";
+        : e instanceof Error ? e.message : "Failed to load conversations";
       setConvError(msg);
     } finally {
       setConvLoading(false);
@@ -187,11 +187,11 @@ export default function InboxPage() {
       setMessagesData(data);
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) {
-        setMsgError("リードが見つかりませんでした。");
+        setMsgError("Lead not found.");
       } else {
         const msg = e instanceof ApiError
           ? e.message
-          : e instanceof Error ? e.message : "メッセージの取得に失敗しました";
+          : e instanceof Error ? e.message : "Failed to load messages";
         setMsgError(msg);
       }
       setMessagesData(null);
@@ -319,11 +319,11 @@ export default function InboxPage() {
       loadConversations();
     } catch (e) {
       if (e instanceof ApiError) {
-        setSendError(e.message || "送信に失敗しました");
+        setSendError(e.message || "Send failed");
       } else if (e instanceof Error) {
         setSendError(e.message);
       } else {
-        setSendError("送信に失敗しました");
+        setSendError("Send failed");
       }
     } finally {
       setSending(false);
@@ -369,7 +369,7 @@ export default function InboxPage() {
         }}
       >
         <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-color, #e0e0e0)" }}>
-          <h2 style={{ margin: "0 0 12px 0", fontSize: "1.1rem" }}>受信トレイ</h2>
+          <h2 style={{ margin: "0 0 12px 0", fontSize: "1.1rem" }}>Inbox</h2>
           <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
             {(["all", "messenger", "instagram"] as PlatformFilter[]).map(p => (
               <button
@@ -379,7 +379,7 @@ export default function InboxPage() {
                 onClick={() => setPlatformFilter(p)}
                 style={{ fontSize: "0.8rem" }}
               >
-                {p === "all" ? "すべて" : platformLabel(p)}
+                {p === "all" ? "All" : platformLabel(p)}
               </button>
             ))}
           </div>
@@ -390,7 +390,7 @@ export default function InboxPage() {
               <select
                 value={pageIdFilter}
                 onChange={e => onPageFilterChange(e.target.value)}
-                aria-label="Page で絞り込み"
+                aria-label="Filter by Page"
                 style={{
                   width: "100%",
                   padding: "4px 6px",
@@ -400,7 +400,7 @@ export default function InboxPage() {
                   background: "white",
                 }}
               >
-                <option value="">すべての Page</option>
+                <option value="">All Pages</option>
                 {availablePageIds.map(pid => (
                   <option key={pid} value={pid}>
                     Page: {pid}
@@ -415,7 +415,7 @@ export default function InboxPage() {
               checked={unreadOnly}
               onChange={e => setUnreadOnly(e.target.checked)}
             />
-            未読のみ表示
+            Show unread only
           </label>
         </div>
 
@@ -429,25 +429,25 @@ export default function InboxPage() {
                 style={{ marginLeft: 8 }}
                 onClick={() => loadConversations()}
               >
-                再読み込み
+                Reload
               </button>
             </div>
           )}
           {convLoading ? (
             <div className="loading" style={{ padding: 16, textAlign: "center", color: "var(--text-muted)" }}>
-              読み込み中...
+              Loading...
             </div>
           ) : conversations.length === 0 ? (
             <div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>
               {unreadOnly
-                ? "未読の会話はありません"
-                : "まだメッセージがありません。"}
+                ? "No unread conversations"
+                : "No messages yet."}
               <br />
               {!unreadOnly && (
                 <span style={{ fontSize: "0.8rem" }}>
-                  Facebook Page を接続するには{" "}
-                  <a href="/channels">Channels 設定</a>
-                  {" "}を確認してください。
+                  To connect a Facebook Page, see{" "}
+                  <a href="/channels">Channels settings</a>
+                  .
                 </span>
               )}
             </div>
@@ -526,9 +526,9 @@ export default function InboxPage() {
                     }}
                   >
                     {conv.last_message_direction === "outbound" && (
-                      <span style={{ color: "#666" }}>あなた: </span>
+                      <span style={{ color: "#666" }}>You: </span>
                     )}
-                    {conv.last_message_text || "(メッセージなし)"}
+                    {conv.last_message_text || "(no message)"}
                   </div>
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted, #999)" }}>
                     {relativeTime(conv.last_message_at)}
@@ -554,7 +554,7 @@ export default function InboxPage() {
               textAlign: "center",
             }}
           >
-            左のリストから会話を選択してください。
+            Select a conversation from the list on the left.
           </div>
         ) : (
           <>
@@ -598,7 +598,7 @@ export default function InboxPage() {
                 className="btn-sm"
                 style={{ fontSize: "0.8rem" }}
               >
-                リード詳細
+                Lead details
               </a>
             </header>
 
@@ -617,7 +617,7 @@ export default function InboxPage() {
             >
               {msgLoading && !messagesData && (
                 <div className="loading" style={{ textAlign: "center", color: "var(--text-muted)" }}>
-                  読み込み中...
+                  Loading...
                 </div>
               )}
               {msgError && (
@@ -625,7 +625,7 @@ export default function InboxPage() {
               )}
               {messagesData && messagesData.messages.length === 0 && !msgError && (
                 <div style={{ textAlign: "center", color: "var(--text-muted, #888)", padding: 32 }}>
-                  まだメッセージはありません。
+                  No messages yet.
                 </div>
               )}
               {messagesData?.messages.map(msg => {
@@ -663,7 +663,7 @@ export default function InboxPage() {
                       }}
                       title={
                         failed
-                          ? `送信失敗: ${msg.error_code}${msg.error_message ? ` — ${msg.error_message}` : ""}`
+                          ? `Send failed: ${msg.error_code}${msg.error_message ? ` — ${msg.error_message}` : ""}`
                           : formatAbsolute(msg.created_at)
                       }
                     >
@@ -687,10 +687,10 @@ export default function InboxPage() {
                             marginBottom: 4,
                           }}
                         >
-                          ⚠ 送信失敗 ({msg.error_code})
+                          ⚠ Send failed ({msg.error_code})
                         </div>
                       )}
-                      <div>{msg.message_text || "(本文なし)"}</div>
+                      <div>{msg.message_text || "(no body)"}</div>
                       <div
                         style={{
                           fontSize: "0.7rem",
@@ -731,7 +731,7 @@ export default function InboxPage() {
                     cursor: "pointer",
                     color: forceHumanAgentTag ? "#a45a00" : "var(--text-secondary, #666)",
                   }}
-                  title="ON にすると 24h 以内でも MESSAGE_TAG=HUMAN_AGENT で送信されます（運用回避用）"
+                  title="When ON, messages are sent with MESSAGE_TAG=HUMAN_AGENT even within the 24h window (escape hatch)."
                 >
                   <input
                     type="checkbox"
@@ -739,7 +739,7 @@ export default function InboxPage() {
                     onChange={e => setForceHumanAgentTag(e.target.checked)}
                     disabled={sending}
                   />
-                  Human Agent Tag を強制付与{forceHumanAgentTag ? "（次の送信に適用）" : ""}
+                  Force Human Agent Tag{forceHumanAgentTag ? " (will apply on next send)" : ""}
                 </label>
               )}
               {sendError && (
@@ -756,7 +756,7 @@ export default function InboxPage() {
                     marginBottom: 8,
                   }}
                 >
-                  送信エラー: {sendError}
+                  Send error: {sendError}
                 </div>
               )}
               <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
@@ -766,8 +766,8 @@ export default function InboxPage() {
                   onKeyDown={handleKeyDown}
                   placeholder={
                     canSend
-                      ? "返信を入力（Enter で送信、Shift+Enter で改行）"
-                      : "メッセージウィンドウを超過しているため送信できません"
+                      ? "Type a reply (Enter to send, Shift+Enter for newline)"
+                      : "Outside the messaging window — replies are disabled"
                   }
                   rows={2}
                   disabled={!canSend || sending}
@@ -789,13 +789,13 @@ export default function InboxPage() {
                   disabled={sendDisabled}
                   title={
                     !canSend
-                      ? "メッセージウィンドウを超過しているため送信できません"
+                      ? "Outside the messaging window — replies are disabled"
                       : trimmedDraft.length === 0
-                        ? "本文を入力してください"
-                        : "送信（Enter）"
+                        ? "Please enter a message"
+                        : "Send (Enter)"
                   }
                 >
-                  {sending ? "送信中..." : "送信"}
+                  {sending ? "Sending..." : "Send"}
                 </button>
               </div>
             </div>
@@ -819,19 +819,19 @@ function MessagingWindowBanner({ messagingWindow }: { messagingWindow: Messaging
 
   if (messagingWindow.can_send_response) {
     color = { bg: "#e6f4ea", fg: "#137333", border: "#137333" };
-    text = "通常返信ウィンドウ内（24 時間以内）。返信は RESPONSE タイプで送信されます。";
+    text = "Within the standard reply window (24 hours). Messages will be sent as RESPONSE type.";
   } else if (messagingWindow.requires_human_agent_tag) {
     color = { bg: "#fff4e5", fg: "#a45a00", border: "#a45a00" };
-    text = "24 時間を超過しています。返信は Human Agent Tag 付きで送信されます（24 時間〜7 日以内）。";
+    text = "More than 24 hours since the last inbound message. Replies will be sent with a Human Agent Tag (24h–7d window).";
   } else if (!messagingWindow.can_send_at_all) {
     color = { bg: "#fdecea", fg: "#a50e0e", border: "#a50e0e" };
     text = messagingWindow.last_inbound_at
-      ? "メッセージウィンドウを超過しています(受信から 7 日以上経過)。返信できません。"
-      : "受信履歴がありません。Meta の仕様により最初のメッセージは顧客側から送信される必要があります。";
+      ? "Outside the messaging window (over 7 days since the last inbound message). Replies are disabled."
+      : "No inbound history. Per Meta's policy, the customer must send the first message.";
   } else {
     // 念のため fallback
     color = { bg: "#eee", fg: "#333", border: "#999" };
-    text = "メッセージング状態を確認中...";
+    text = "Checking messaging status...";
   }
 
   return (
