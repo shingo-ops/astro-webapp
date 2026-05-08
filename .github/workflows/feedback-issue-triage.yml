@@ -8,16 +8,16 @@ name: Feedback Issue Triage (Phase α)
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
 jobs:
   triage-comment:
-    # 発火条件:
-    #   - Issue 作成時に from-form ラベルが付いている (GAS から作成された場合)
-    #   - 既存 Issue に from-form ラベルが後付けされた (手動でフィードバック扱いに昇格)
-    if: |
-      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'from-form')) ||
-      (github.event.action == 'labeled' && github.event.label.name == 'from-form')
+    # 発火条件: Issue 作成時に from-form ラベルが付いている（GAS から作成された場合）
+    # NOTE: GAS の createIssue は title/body/labels を1リクエストで送信し、
+    # GitHub は `opened`（labels 含む）と `labeled`（per label）の両イベントを配信する。
+    # `types` を `[opened]` のみに絞ることで重複発火（コメント二重投稿）を防ぐ。
+    # 既存 Issue への `from-form` 後付けケースは Phase β でカバー予定。
+    if: contains(github.event.issue.labels.*.name, 'from-form')
     runs-on: ubuntu-latest
     permissions:
       issues: write
