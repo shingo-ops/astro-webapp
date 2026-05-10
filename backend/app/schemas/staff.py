@@ -60,6 +60,10 @@ class StaffCreate(BaseModel):
     status: StaffStatus = StaffStatus.active
     firebase_uid: str | None = Field(default=None, max_length=128)
     user_id: int | None = None
+    is_employee: bool = Field(
+        default=False,
+        description="社員/役員フラグ。True の場合は ADR-021 Phase 5 報酬計算で全ロール 0 円扱い。",
+    )
     ui_preferences: StaffUIPreferences | None = None
     additional_emails: list[StaffEmailInput] = Field(default_factory=list, description="副メール（EMP-00005問題対応）")
 
@@ -85,6 +89,10 @@ class StaffUpdate(BaseModel):
     status: StaffStatus | None = None
     firebase_uid: str | None = Field(default=None, max_length=128)
     user_id: int | None = None
+    is_employee: bool | None = Field(
+        default=None,
+        description="社員/役員フラグ。True の場合は ADR-021 Phase 5 報酬計算で全ロール 0 円扱い。",
+    )
     ui_preferences: StaffUIPreferences | None = None
     # None=触らない、[]=全削除、[...]=置換
     additional_emails: list[StaffEmailInput] | None = None
@@ -112,6 +120,10 @@ class StaffResponse(BaseModel):
     role_name: str | None = None
     status: str
     firebase_uid: str | None
+    is_employee: bool = Field(
+        default=False,
+        description="社員/役員フラグ。True の場合は ADR-021 Phase 5 報酬計算で全ロール 0 円扱い。",
+    )
     emails: list[str] = Field(default_factory=list)
     ui_preferences: StaffUIPreferences | None = None
     created_at: datetime

@@ -35,6 +35,8 @@ import ChannelsPage from "./pages/ChannelsPage";
 import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 import InboxPage from "./pages/InboxPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
+// ADR-021 Phase 5 / Sprint 5: 担当者報酬計算 MVP
+import CommissionSettingsPage from "./pages/CommissionSettingsPage";
 import "./App.css";
 
 function App() {
@@ -87,6 +89,8 @@ function App() {
               {/* 管理 */}
               <Route path="/deals" element={<DealsPage />} />
               <Route path="/orders" element={<OrdersPage />} />
+              {/* ADR-021 Phase 5 / Sprint 5: 報酬設定（テナント別 rate 編集） */}
+              <Route path="/commission-settings" element={<CommissionSettingsPage />} />
               <Route path="/staff" element={<StaffPage />} />
               <Route path="/bots" element={<BotsPage />} />
               <Route path="/teams" element={<TeamsPage />} />

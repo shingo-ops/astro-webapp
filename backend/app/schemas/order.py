@@ -7,6 +7,10 @@ from __future__ import annotations
   2026-04-17: Phase 2拡張（配送情報、ステータス拡張、invoice_id追加）
   2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id を撤去し、
     company_id / contact_id を必須化（新 B2B モデル唯一の正）
+  2026-05-11: ADR-021 Phase 1 / Sprint 1 — 受注一覧 MVP に伴い
+    OrderListResponse / OrderGroupCountsResponse を追加
+    （JOIN 結果の company_name / contact_display_name と
+     ステータスごとの集計件数を表現するための薄い拡張）
 """
 
 from datetime import datetime
@@ -85,3 +89,26 @@ class OrderResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class OrderListResponse(OrderResponse):
+    """注文一覧用レスポンス。
+
+    ADR-021 Sprint 1: GET /orders から returns. JOIN で取得した
+    company.name / contact.display_name を一覧表示用に同梱する。
+    JOIN 失敗（FK 切れ / 削除済 etc.）の保険として null 許容。
+    """
+    company_name: str | None = None
+    contact_display_name: str | None = None
+
+
+class OrderGroupCountsResponse(BaseModel):
+    """ステータスごとの受注件数 + 合計。
+
+    ADR-021 Sprint 1: GET /orders/group-counts から returns.
+    `counts` は OrderStatus enum 全値をキーとして含み、件数 0 のステータスも
+    0 で返す（フロントエンドのバッジ実装が undefined を気にしなくて済む）。
+    `?search=` 指定時はその検索条件下での集計を返す（一覧と件数バッジの連動）。
+    """
+    counts: dict[str, int]
+    total: int

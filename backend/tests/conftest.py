@@ -293,6 +293,7 @@ async def setup_test_db(test_engine):
                 role_id INTEGER NOT NULL,
                 status VARCHAR(20) NOT NULL DEFAULT 'active',
                 firebase_uid VARCHAR(128) UNIQUE,
+                is_employee BOOLEAN NOT NULL DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (tenant_id, staff_code)
@@ -411,6 +412,135 @@ async def setup_test_db(test_engine):
                 notes TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        # ADR-021 Sprint 2: 売上情報テーブル（migration 047）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_financials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL UNIQUE
+                    REFERENCES orders(id) ON DELETE CASCADE,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                revenue_amount NUMERIC(14, 2) DEFAULT 0,
+                purchase_cost NUMERIC(14, 2) DEFAULT 0,
+                purchase_shipping NUMERIC(14, 2) DEFAULT 0,
+                paypal_fee NUMERIC(14, 2) DEFAULT 0,
+                wise_fee NUMERIC(14, 2) DEFAULT 0,
+                exchange_fee NUMERIC(14, 2) DEFAULT 0,
+                outsource_fee NUMERIC(14, 2) DEFAULT 0,
+                packing_fee NUMERIC(14, 2) DEFAULT 0,
+                ad_cost NUMERIC(14, 2) DEFAULT 0,
+                return_fee NUMERIC(14, 2) DEFAULT 0,
+                refund_amount NUMERIC(14, 2) DEFAULT 0,
+                commission_base_amount NUMERIC(14, 2) DEFAULT 0,
+                tax_refund NUMERIC(14, 2) DEFAULT 0,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        # ADR-021 Sprint 4: 仕入情報テーブル（migration 049）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_purchase_details (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL UNIQUE
+                    REFERENCES orders(id) ON DELETE CASCADE,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                purchase_staff TEXT,
+                purchase_date DATE,
+                transaction_no TEXT,
+                supplier_name TEXT,
+                supplier_url TEXT,
+                purchase_amount NUMERIC(14, 2) DEFAULT 0,
+                purchase_quantity INTEGER DEFAULT 0,
+                purchase_total NUMERIC(14, 2) DEFAULT 0,
+                purchase_shipping NUMERIC(14, 2) DEFAULT 0,
+                carrier_name TEXT,
+                waybill_no TEXT,
+                purchase_note TEXT,
+                purchase_status TEXT NOT NULL DEFAULT ''
+                    CHECK (purchase_status IN ('', 'confirmed')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        # ADR-021 Sprint 3: 発送情報テーブル（migration 048）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_shipping_details (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL UNIQUE
+                    REFERENCES orders(id) ON DELETE CASCADE,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                recipient_name VARCHAR(255),
+                phone VARCHAR(50),
+                email VARCHAR(255),
+                tax_number VARCHAR(100),
+                address1 VARCHAR(255),
+                address2 VARCHAR(255),
+                address3 VARCHAR(255),
+                city VARCHAR(100),
+                state_code VARCHAR(20),
+                zip_code VARCHAR(50),
+                country_code VARCHAR(10),
+                length_cm NUMERIC(8, 2),
+                width_cm NUMERIC(8, 2),
+                height_cm NUMERIC(8, 2),
+                weight_kg NUMERIC(8, 3),
+                volume_g NUMERIC(10, 2),
+                box_count INTEGER,
+                packing_memo TEXT,
+                packing_type VARCHAR(50),
+                inspection_status VARCHAR(50),
+                item_description VARCHAR(500),
+                item_price_usd NUMERIC(12, 2),
+                exchange_rate NUMERIC(12, 6),
+                hs_code VARCHAR(50),
+                tax_id VARCHAR(100),
+                fedex_id VARCHAR(100),
+                carrier VARCHAR(20)
+                    CHECK (carrier IS NULL OR carrier IN ('elogi', 'fedex', 'dhl', 'yamato', 'other')),
+                ship_method VARCHAR(50),
+                ship_date DATE,
+                tracking_number VARCHAR(200),
+                est_shipping_fee NUMERIC(12, 2),
+                label_issued_at TIMESTAMP,
+                pickup_requested_at TIMESTAMP,
+                shipped_at TIMESTAMP,
+                notified_at TIMESTAMP,
+                ship_memo TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        # ADR-021 Sprint 5: テナント別報酬計算設定（migration 050）
+        # SQLite には JSONB が無いので TEXT に JSON 文字列で保存する。
+        # 本番 PG では JSONB だがアプリ側のシリアライズ/パースで吸収する。
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS tenant_commission_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                commission_rates TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (tenant_id)
+            )
+        """))
+        # ADR-021 Sprint 5: 受注ごとの報酬（migration 050）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_commissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL
+                    REFERENCES orders(id) ON DELETE CASCADE,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                role TEXT NOT NULL
+                    CHECK (role IN ('sales','order','ship','purchase','trouble')),
+                staff_id INTEGER REFERENCES staff(id) ON DELETE SET NULL,
+                calculated_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+                calculated_at TIMESTAMP,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (order_id, role)
             )
         """))
         # 監査ログテーブル
@@ -774,6 +904,11 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM purchase_order_items"))
         await conn.execute(text("DELETE FROM purchase_orders"))
         await conn.execute(text("DELETE FROM suppliers"))
+        await conn.execute(text("DELETE FROM order_commissions"))
+        await conn.execute(text("DELETE FROM tenant_commission_settings"))
+        await conn.execute(text("DELETE FROM order_shipping_details"))
+        await conn.execute(text("DELETE FROM order_purchase_details"))
+        await conn.execute(text("DELETE FROM order_financials"))
         await conn.execute(text("DELETE FROM orders"))
         await conn.execute(text("DELETE FROM products"))
         await conn.execute(text("DELETE FROM deals"))
@@ -925,6 +1060,12 @@ async def client(db_session):
     from contextlib import ExitStack
     _audit_targets = [
         "app.routers.customers", "app.routers.deals", "app.routers.orders",
+        "app.routers.order_financials",
+        "app.routers.order_shipping_details",
+        "app.routers.order_purchase_details",
+        # ADR-021 Sprint 5: 報酬計算 MVP
+        "app.routers.tenant_commission_settings",
+        "app.routers.order_commissions",
         "app.routers.leads", "app.routers.teams", "app.routers.roles",
         "app.routers.products", "app.routers.shipping", "app.routers.quotes",
         "app.routers.invoices", "app.routers.suppliers", "app.routers.purchase_orders",
