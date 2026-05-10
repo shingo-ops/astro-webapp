@@ -413,6 +413,31 @@ async def setup_test_db(test_engine):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
+        # ADR-021 Sprint 2: 売上情報テーブル（migration 047）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_financials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL UNIQUE
+                    REFERENCES orders(id) ON DELETE CASCADE,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                revenue_amount NUMERIC(14, 2) DEFAULT 0,
+                purchase_cost NUMERIC(14, 2) DEFAULT 0,
+                purchase_shipping NUMERIC(14, 2) DEFAULT 0,
+                paypal_fee NUMERIC(14, 2) DEFAULT 0,
+                wise_fee NUMERIC(14, 2) DEFAULT 0,
+                exchange_fee NUMERIC(14, 2) DEFAULT 0,
+                outsource_fee NUMERIC(14, 2) DEFAULT 0,
+                packing_fee NUMERIC(14, 2) DEFAULT 0,
+                ad_cost NUMERIC(14, 2) DEFAULT 0,
+                return_fee NUMERIC(14, 2) DEFAULT 0,
+                refund_amount NUMERIC(14, 2) DEFAULT 0,
+                commission_base_amount NUMERIC(14, 2) DEFAULT 0,
+                tax_refund NUMERIC(14, 2) DEFAULT 0,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
         # 監査ログテーブル
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS audit_logs (
@@ -774,6 +799,7 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM purchase_order_items"))
         await conn.execute(text("DELETE FROM purchase_orders"))
         await conn.execute(text("DELETE FROM suppliers"))
+        await conn.execute(text("DELETE FROM order_financials"))
         await conn.execute(text("DELETE FROM orders"))
         await conn.execute(text("DELETE FROM products"))
         await conn.execute(text("DELETE FROM deals"))
@@ -925,6 +951,7 @@ async def client(db_session):
     from contextlib import ExitStack
     _audit_targets = [
         "app.routers.customers", "app.routers.deals", "app.routers.orders",
+        "app.routers.order_financials",
         "app.routers.leads", "app.routers.teams", "app.routers.roles",
         "app.routers.products", "app.routers.shipping", "app.routers.quotes",
         "app.routers.invoices", "app.routers.suppliers", "app.routers.purchase_orders",
