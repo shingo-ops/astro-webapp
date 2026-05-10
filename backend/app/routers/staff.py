@@ -31,6 +31,7 @@ _STAFF_COLS = """
     s.id, s.tenant_id, s.user_id, s.staff_code, s.surname_jp, s.given_name_jp,
     s.surname_kana, s.given_name_kana, s.surname_en, s.given_name_en,
     s.primary_email, s.discord_user_id, s.role_id, s.status, s.firebase_uid,
+    s.is_employee,
     s.created_at, s.updated_at,
     r.name AS role_name
 """
@@ -38,7 +39,7 @@ _STAFF_COLS = """
 _UPDATABLE = {
     "surname_jp", "given_name_jp", "surname_kana", "given_name_kana",
     "surname_en", "given_name_en", "primary_email", "discord_user_id",
-    "role_id", "status", "firebase_uid", "user_id",
+    "role_id", "status", "firebase_uid", "user_id", "is_employee",
 }
 
 
@@ -261,12 +262,12 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
                     tenant_id, user_id, staff_code,
                     surname_jp, given_name_jp, surname_kana, given_name_kana,
                     surname_en, given_name_en, primary_email, discord_user_id,
-                    role_id, status, firebase_uid
+                    role_id, status, firebase_uid, is_employee
                 ) VALUES (
                     :tid, :uid, :code,
                     :sjp, :gjp, :sk, :gk,
                     :sen, :gen, :email, :did,
-                    :rid, :st, :fbuid
+                    :rid, :st, :fbuid, :is_emp
                 )
                 RETURNING id
             """),
@@ -278,6 +279,7 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
                 "email": data.primary_email, "did": data.discord_user_id,
                 "rid": data.role_id, "st": data.status.value,
                 "fbuid": data.firebase_uid,
+                "is_emp": bool(data.is_employee),
             },
         )
         new_id = result.scalar_one()

@@ -107,7 +107,7 @@ export default function Layout() {
               {prefs.show_admin_menu && (
                 <NavDropdown
                   label="管理"
-                  activePaths={["/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels"]}
+                  activePaths={["/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings"]}
                 >
                   {hasPermission("deals.view") && <NavLink to="/deals">商談管理</NavLink>}
                   {hasPermission("suppliers.view") && <NavLink to="/suppliers">仕入先管理</NavLink>}
@@ -118,6 +118,8 @@ export default function Layout() {
                   {hasPermission("shifts.view") && <NavLink to="/shifts">シフト管理</NavLink>}
                   {hasAny("roles.view", "roles.create") && <NavLink to="/roles">権限管理</NavLink>}
                   {hasPermission("erp.view") && <NavLink to="/data">データ管理</NavLink>}
+                  {/* ADR-021 Phase 5 / Sprint 5: 報酬計算 設定 */}
+                  {hasPermission("orders.view") && <NavLink to="/commission-settings">報酬設定</NavLink>}
                   {/* Phase 1-D Sprint 3: Meta Inbox 接続管理 */}
                   {hasPermission("channels.view") && <NavLink to="/channels">Channels（Meta連携）</NavLink>}
                 </NavDropdown>
