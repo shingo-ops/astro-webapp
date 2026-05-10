@@ -9,7 +9,16 @@ from __future__ import annotations
   2026-04-17: Phase 2拡張（配送情報、invoice_id、ステータス拡張）
   2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id 系統撤去
     （resolver / customer 経路廃止、company_id + contact_id を唯一の正に）
+  2026-05-11: ADR-021 Phase 1 / Sprint 1 — 受注一覧 MVP
+    - GET /orders に search / sort_by / sort_order を追加し、
+      companies / contacts への LEFT JOIN で会社名・担当者名を返す
+    - GET /orders/group-counts を新設（OrderStatus 全値の件数 + 合計）
+    DB スキーマは据え置き、JOIN クエリのみ拡張。multi-tenant は
+    既存の require_permission + get_current_tenant + tenant スキーマ
+    分離で担保（このモジュールは tenant スキーマ内 SQL のみ叩く）。
 """
+
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
@@ -19,10 +28,49 @@ from app.auth.dependencies import get_current_user, get_current_tenant, require_
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
-from app.schemas.order import OrderCreate, OrderUpdate, OrderResponse
+from app.schemas.order import (
+    OrderCreate,
+    OrderUpdate,
+    OrderResponse,
+    OrderListResponse,
+    OrderGroupCountsResponse,
+    OrderStatus,
+)
 from app.services.audit import record_audit_log
 
 router = APIRouter()
+
+# ADR-021 Sprint 1: ソート許可カラムのホワイトリスト。
+# 値はそのまま ORDER BY 句に埋め込まれるため、拡張時は SQL injection 対策
+# として必ずこの enum 越しに通すこと（クエリパラメータの直挿入禁止）。
+_SORTABLE_COLUMNS = {"created_at", "updated_at", "total_amount", "status"}
+
+# 検索キーワードのサニタイズ用パターン。
+# psycopg のパラメータ化バインディングで SQL injection は防げるが、
+# ILIKE の特殊文字（% と _）は意図しない 0/全件マッチを生むのでエスケープする。
+# また NUL バイト等の制御文字は弾く（PostgreSQL がエラーを返す前段で除去）。
+_LIKE_ESCAPE_RE = re.compile(r"([\\%_])")
+
+
+def _sanitize_search(keyword: str | None) -> str | None:
+    """search キーワードを ILIKE 用にサニタイズする。
+
+    - 前後空白除去
+    - 空文字 / None は None を返す（条件未指定として扱う）
+    - 制御文字（\\x00 等）は除去
+    - LIKE のメタ文字 (%, _, \\) はエスケープ
+    """
+    if not keyword:
+        return None
+    cleaned = keyword.strip()
+    if not cleaned:
+        return None
+    # 制御文字除去（NUL や ESC など）
+    cleaned = "".join(ch for ch in cleaned if ch.isprintable() or ch == " ")
+    if not cleaned:
+        return None
+    # LIKE メタ文字エスケープ
+    return _LIKE_ESCAPE_RE.sub(r"\\\1", cleaned)
 
 _SELECT_COLS = """
     id, company_id, contact_id, deal_id, invoice_id, order_number,
@@ -40,7 +88,41 @@ _UPDATABLE_COLUMNS = {
 }
 
 
-@router.get("/orders", response_model=list[OrderResponse],
+def _build_orders_filters(
+    status_filter: str | None,
+    company_id: int | None,
+    contact_id: int | None,
+    search: str | None,
+) -> tuple[list[str], dict]:
+    """list_orders / orders_group_counts で共通の WHERE 条件を組み立てる。
+
+    返り値: (conditions, params)
+    """
+    conditions: list[str] = []
+    params: dict = {}
+    if status_filter:
+        conditions.append("o.status = :status")
+        params["status"] = status_filter
+    if company_id:
+        conditions.append("o.company_id = :company_id")
+        params["company_id"] = company_id
+    if contact_id:
+        conditions.append("o.contact_id = :contact_id")
+        params["contact_id"] = contact_id
+    sanitized = _sanitize_search(search)
+    if sanitized is not None:
+        # OR 部分一致: order_number / company.name / contact.display_name
+        # ILIKE はテストの SQLite では LIKE に rewrite される（conftest の hook 参照）
+        conditions.append(
+            "(o.order_number ILIKE :search "
+            "OR c.name ILIKE :search "
+            "OR ct.display_name ILIKE :search)"
+        )
+        params["search"] = f"%{sanitized}%"
+    return conditions, params
+
+
+@router.get("/orders", response_model=list[OrderListResponse],
             dependencies=[Depends(require_permission("orders.view"))])
 async def list_orders(
     page: int = Query(default=1, ge=1),
@@ -48,39 +130,136 @@ async def list_orders(
     status_filter: str | None = Query(default=None, alias="status"),
     company_id: int | None = Query(default=None),
     contact_id: int | None = Query(default=None),
+    search: str | None = Query(
+        default=None,
+        max_length=200,
+        description="order_number / company.name / contact.display_name の OR 部分一致",
+    ),
+    sort_by: str = Query(
+        default="updated_at",
+        description="ソート対象カラム（updated_at / created_at / total_amount / status）",
+    ),
+    sort_order: str = Query(
+        default="desc",
+        description="ソート方向（asc / desc, 大文字小文字不問）",
+    ),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    """注文一覧を取得する"""
-    offset = (page - 1) * per_page
-    conditions = []
-    params: dict = {"limit": per_page, "offset": offset}
+    """注文一覧を取得する。
 
-    if status_filter:
-        conditions.append("status = :status")
-        params["status"] = status_filter
-    if company_id:
-        conditions.append("company_id = :company_id")
-        params["company_id"] = company_id
-    if contact_id:
-        conditions.append("contact_id = :contact_id")
-        params["contact_id"] = contact_id
+    ADR-021 Sprint 1:
+      - search: order_number / company.name / contact.display_name の OR 部分一致
+      - sort_by + sort_order: 並び順切替（デフォルト updated_at desc）
+      - LEFT JOIN で会社名・担当者名を同梱
+    マルチテナント分離は既存通りテナントスキーマ + RLS で担保。
+    """
+    if sort_by not in _SORTABLE_COLUMNS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"sort_by は {sorted(_SORTABLE_COLUMNS)} のいずれかを指定してください",
+        )
+    sort_order_lc = (sort_order or "desc").lower()
+    if sort_order_lc not in ("asc", "desc"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="sort_order は asc / desc を指定してください",
+        )
+    sort_dir = "DESC" if sort_order_lc == "desc" else "ASC"
+
+    offset = (page - 1) * per_page
+    conditions, params = _build_orders_filters(
+        status_filter, company_id, contact_id, search,
+    )
+    params["limit"] = per_page
+    params["offset"] = offset
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
+    # ORDER BY のカラム名はホワイトリスト経由のみ。f-string で埋めても安全。
+    # NULL の安定ソートのため total_amount のみ NULLS LAST 相当の挙動を
+    # 既存挙動（PostgreSQL のデフォルト）に委ねる。
     result = await db.execute(
         text(f"""
-            SELECT {_SELECT_COLS}
-            FROM orders
+            SELECT
+                o.id, o.company_id, o.contact_id, o.deal_id, o.invoice_id,
+                o.order_number, o.total_amount, o.currency, o.status,
+                o.shipping_carrier, o.shipping_fee, o.tracking_number,
+                o.shipped_at, o.delivered_at, o.shipping_country,
+                o.notes, o.created_at, o.updated_at,
+                c.name AS company_name,
+                ct.display_name AS contact_display_name
+            FROM orders o
+            LEFT JOIN companies c ON c.id = o.company_id
+            LEFT JOIN contacts ct ON ct.id = o.contact_id
             {where_clause}
-            ORDER BY updated_at DESC
+            ORDER BY o.{sort_by} {sort_dir}, o.id DESC
             LIMIT :limit OFFSET :offset
         """),
         params,
     )
     rows = result.mappings().all()
-    return [OrderResponse(**row) for row in rows]
+    return [OrderListResponse(**row) for row in rows]
+
+
+@router.get(
+    "/orders/group-counts",
+    response_model=OrderGroupCountsResponse,
+    dependencies=[Depends(require_permission("orders.view"))],
+)
+async def get_orders_group_counts(
+    status_filter: str | None = Query(default=None, alias="status"),
+    company_id: int | None = Query(default=None),
+    contact_id: int | None = Query(default=None),
+    search: str | None = Query(
+        default=None,
+        max_length=200,
+        description="一覧と同じ search 条件下での集計",
+    ),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """ステータスごとの受注件数 + 合計を返す（ADR-021 Sprint 1）。
+
+    OrderFlow `calculateGroupCounts_` 相当。`?search=` 等の他パラメータも
+    一覧と同じ条件で適用するため、画面上の件数バッジが検索結果と連動する。
+    OrderStatus enum 全値を 0 埋めで返すため、フロントは undefined を
+    気にせずバッジを並べられる。
+    """
+    conditions, params = _build_orders_filters(
+        status_filter, company_id, contact_id, search,
+    )
+    where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+    # JOIN は search のときだけ必要だが、status_filter 単独でも JOIN しておく方が
+    # 一覧と同じプランで集計できるので常に LEFT JOIN（テナント内の小規模テーブル想定）。
+    result = await db.execute(
+        text(f"""
+            SELECT o.status AS status, COUNT(*) AS cnt
+            FROM orders o
+            LEFT JOIN companies c ON c.id = o.company_id
+            LEFT JOIN contacts ct ON ct.id = o.contact_id
+            {where_clause}
+            GROUP BY o.status
+        """),
+        params,
+    )
+    rows = result.mappings().all()
+
+    # OrderStatus enum 全値で 0 埋め
+    counts: dict[str, int] = {s.value: 0 for s in OrderStatus}
+    total = 0
+    for row in rows:
+        key = row["status"]
+        cnt = int(row["cnt"]) if row["cnt"] is not None else 0
+        # 想定外の status 値（migration 未対応の異常値等）も拾うが、
+        # OrderStatus に無い値は別キーとして残す（落とすと total と差が出るため）。
+        counts[key] = counts.get(key, 0) + cnt
+        total += cnt
+
+    return OrderGroupCountsResponse(counts=counts, total=total)
 
 
 @router.get("/orders/{order_id}", response_model=OrderResponse,
