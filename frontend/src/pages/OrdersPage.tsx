@@ -19,6 +19,11 @@
  *     を開いて発送情報を CRUD + eLogi CSV ダウンロードができるようにした。
  *     発送情報も /orders/{id}/shipping を並列取得して列に反映する
  *     （N+1 課題は spec.md 実装メモ通り Phase 4-5 の bulk endpoint で吸収予定）。
+ *   - 2026-05-11: ADR-021 Phase 4 / Sprint 4 — 仕入情報 MVP
+ *     一覧に「仕入状況」列（未登録 / 確認中 / 確定済み）を追加し、
+ *     「仕入編集」ボタンから PurchaseDetailPanel を開いて仕入情報を CRUD
+ *     + 「確定」ショートカットで status を切替できるようにした。
+ *     /orders/{id}/purchase を並列取得して列に反映する。
  */
 
 import { useEffect, useMemo, useRef, useState, FormEvent } from "react";
@@ -31,6 +36,9 @@ import OrderFinancialPanel, {
 import ShippingDetailPanel, {
   ShippingDetailDto,
 } from "../components/ShippingDetailPanel";
+import PurchaseDetailPanel, {
+  PurchaseDetailDto,
+} from "../components/PurchaseDetailPanel";
 
 interface OrderListItem {
   id: number;
@@ -123,6 +131,10 @@ export default function OrdersPage() {
   // ADR-021 Sprint 3: 発送情報パネルと表示中受注の shipping map
   const [shippingTarget, setShippingTarget] = useState<OrderListItem | null>(null);
   const [shippings, setShippings] = useState<Record<number, ShippingDetailDto | null>>({});
+
+  // ADR-021 Sprint 4: 仕入情報パネルと表示中受注の purchase map
+  const [purchaseTarget, setPurchaseTarget] = useState<OrderListItem | null>(null);
+  const [purchases, setPurchases] = useState<Record<number, PurchaseDetailDto | null>>({});
 
   // 検索入力の debounce（300ms）。タイピング毎に API を叩かない。
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -264,6 +276,41 @@ export default function OrdersPage() {
       const map: Record<number, ShippingDetailDto | null> = {};
       for (const [id, data] of results) map[id] = data;
       setShippings(map);
+    };
+    fetchAll();
+    return () => {
+      cancelled = true;
+    };
+  }, [orders]);
+
+  // ADR-021 Sprint 4: 表示中受注ごとに /orders/{id}/purchase を並列取得し
+  // 仕入状況列を埋める。404 は "未登録 = null"。
+  useEffect(() => {
+    if (orders.length === 0) {
+      setPurchases({});
+      return;
+    }
+    let cancelled = false;
+    const fetchAll = async () => {
+      const results = await Promise.all(
+        orders.map(async (o) => {
+          try {
+            const data = await api.get<PurchaseDetailDto>(
+              `/orders/${o.id}/purchase`,
+            );
+            return [o.id, data] as const;
+          } catch (e) {
+            if (e instanceof ApiError && e.status === 404) {
+              return [o.id, null] as const;
+            }
+            return [o.id, null] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const map: Record<number, PurchaseDetailDto | null> = {};
+      for (const [id, data] of results) map[id] = data;
+      setPurchases(map);
     };
     fetchAll();
     return () => {
@@ -567,6 +614,7 @@ export default function OrdersPage() {
               <th>粗利</th>
               <th>粗利率</th>
               <th>追跡番号</th>
+              <th>仕入状況</th>
               <th>ステータス</th>
               <th>登録日</th>
               <th>操作</th>
@@ -576,6 +624,7 @@ export default function OrdersPage() {
             {orders.map((o) => {
               const fin = financials[o.id] ?? null;
               const ship = shippings[o.id] ?? null;
+              const pur = purchases[o.id] ?? null;
               return (
                 <tr key={o.id}>
                   <td>{o.order_number}</td>
@@ -593,6 +642,19 @@ export default function OrdersPage() {
                   </td>
                   <td data-testid={`ship-cell-tracking-${o.id}`}>
                     {ship && ship.tracking_number ? ship.tracking_number : "-"}
+                  </td>
+                  <td data-testid={`pur-cell-status-${o.id}`}>
+                    {(() => {
+                      if (!pur) {
+                        return <span className="badge">未登録</span>;
+                      }
+                      if (pur.purchase_status === "confirmed") {
+                        return (
+                          <span className="badge badge-confirmed">確定済み</span>
+                        );
+                      }
+                      return <span className="badge badge-pending">確認中</span>;
+                    })()}
                   </td>
                   <td>
                     <span className={`badge badge-${o.status}`}>
@@ -619,6 +681,13 @@ export default function OrdersPage() {
                       発送編集
                     </button>
                     <button
+                      className="btn-sm"
+                      onClick={() => setPurchaseTarget(o)}
+                      data-testid={`open-purchase-${o.id}`}
+                    >
+                      仕入編集
+                    </button>
+                    <button
                       className="btn-sm btn-danger"
                       onClick={() => setDeleteTarget(o)}
                     >
@@ -630,7 +699,7 @@ export default function OrdersPage() {
             })}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={11} className="empty">
+                <td colSpan={12} className="empty">
                   受注が登録されていません
                 </td>
               </tr>
@@ -657,6 +726,17 @@ export default function OrdersPage() {
           onClose={() => setShippingTarget(null)}
           onSaved={(saved) => {
             setShippings((prev) => ({ ...prev, [saved.order_id]: saved }));
+          }}
+        />
+      )}
+
+      {purchaseTarget && (
+        <PurchaseDetailPanel
+          orderId={purchaseTarget.id}
+          orderNumber={purchaseTarget.order_number}
+          onClose={() => setPurchaseTarget(null)}
+          onSaved={(saved) => {
+            setPurchases((prev) => ({ ...prev, [saved.order_id]: saved }));
           }}
         />
       )}
