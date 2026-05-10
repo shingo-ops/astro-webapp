@@ -9,12 +9,20 @@
  *     （DB enum は据え置き、UI ラベルのみ）。
  *     一覧テーブルは API JOIN 結果（company_name / contact_display_name）を
  *     直接表示し、別ロード（/companies）への依存を切る。
+ *   - 2026-05-11: ADR-021 Phase 2 / Sprint 2 — 売上計算 MVP
+ *     一覧に「売上 / 粗利 / 粗利率」列を追加し、「売上編集」ボタンから
+ *     OrderFinancialPanel を開いて売上情報を CRUD できるようにした。
+ *     売上情報は表示中の受注ごとに /orders/{id}/financial を並列取得し、
+ *     軽量な map で保持する（受注数が多い場合は将来的に bulk endpoint 化）。
  */
 
 import { useEffect, useMemo, useRef, useState, FormEvent } from "react";
-import { api } from "../lib/api";
+import { api, ApiError } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import CompanyContactSelector from "../components/CompanyContactSelector";
+import OrderFinancialPanel, {
+  OrderFinancialDto,
+} from "../components/OrderFinancialPanel";
 
 interface OrderListItem {
   id: number;
@@ -100,6 +108,10 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<OrderListItem | null>(null);
 
+  // ADR-021 Sprint 2: 売上情報パネルと表示中受注の financial map
+  const [financialTarget, setFinancialTarget] = useState<OrderListItem | null>(null);
+  const [financials, setFinancials] = useState<Record<number, OrderFinancialDto | null>>({});
+
   // 検索入力の debounce（300ms）。タイピング毎に API を叩かない。
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -176,6 +188,42 @@ export default function OrdersPage() {
     loadCompanies();
   }, []);
 
+  // ADR-021 Sprint 2: 表示中受注ごとに /orders/{id}/financial を並列取得し
+  // 売上 / 粗利 / 粗利率 列を埋める。404 は "未登録 = null" として扱う。
+  useEffect(() => {
+    if (orders.length === 0) {
+      setFinancials({});
+      return;
+    }
+    let cancelled = false;
+    const fetchAll = async () => {
+      const results = await Promise.all(
+        orders.map(async (o) => {
+          try {
+            const data = await api.get<OrderFinancialDto>(
+              `/orders/${o.id}/financial`,
+            );
+            return [o.id, data] as const;
+          } catch (e) {
+            if (e instanceof ApiError && e.status === 404) {
+              return [o.id, null] as const;
+            }
+            // 取得失敗はバッジを描かないだけで全体は壊さない
+            return [o.id, null] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const map: Record<number, OrderFinancialDto | null> = {};
+      for (const [id, data] of results) map[id] = data;
+      setFinancials(map);
+    };
+    fetchAll();
+    return () => {
+      cancelled = true;
+    };
+  }, [orders]);
+
   const resetSelector = () => {
     setCompanyId(null);
     setContactId(null);
@@ -247,6 +295,12 @@ export default function OrdersPage() {
 
   const fmt = (n: number) =>
     n.toLocaleString("ja-JP", { style: "currency", currency: "JPY" });
+
+  // 粗利率の小数 1 桁 % 表示（spec UI 要件）
+  const fmtRate = (n: number | null | undefined) => {
+    if (n === null || n === undefined) return "-";
+    return `${(n * 100).toFixed(1)}%`;
+  };
 
   const companyDisplay = (o: OrderListItem) => {
     if (o.company_name) return o.company_name;
@@ -462,46 +516,79 @@ export default function OrdersPage() {
               <th>会社</th>
               <th>担当者</th>
               <th>合計金額</th>
+              <th>売上</th>
+              <th>粗利</th>
+              <th>粗利率</th>
               <th>ステータス</th>
               <th>登録日</th>
               <th>操作</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((o) => (
-              <tr key={o.id}>
-                <td>{o.order_number}</td>
-                <td>{companyDisplay(o)}</td>
-                <td>{o.contact_display_name ?? "-"}</td>
-                <td>{o.total_amount ? fmt(o.total_amount) : "-"}</td>
-                <td>
-                  <span className={`badge badge-${o.status}`}>
-                    {STATUS_LABELS[o.status] || o.status}
-                  </span>
-                </td>
-                <td>{new Date(o.created_at).toLocaleDateString("ja-JP")}</td>
-                <td className="actions">
-                  <button className="btn-sm" onClick={() => handleEdit(o)}>
-                    編集
-                  </button>
-                  <button
-                    className="btn-sm btn-danger"
-                    onClick={() => setDeleteTarget(o)}
-                  >
-                    削除
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {orders.map((o) => {
+              const fin = financials[o.id] ?? null;
+              return (
+                <tr key={o.id}>
+                  <td>{o.order_number}</td>
+                  <td>{companyDisplay(o)}</td>
+                  <td>{o.contact_display_name ?? "-"}</td>
+                  <td>{o.total_amount ? fmt(o.total_amount) : "-"}</td>
+                  <td data-testid={`fin-cell-revenue-${o.id}`}>
+                    {fin && fin.revenue_amount > 0 ? fmt(fin.revenue_amount) : "-"}
+                  </td>
+                  <td data-testid={`fin-cell-gross-${o.id}`}>
+                    {fin ? fmt(fin.gross_profit) : "-"}
+                  </td>
+                  <td data-testid={`fin-cell-rate-${o.id}`}>
+                    {fin ? fmtRate(fin.gross_profit_rate) : "-"}
+                  </td>
+                  <td>
+                    <span className={`badge badge-${o.status}`}>
+                      {STATUS_LABELS[o.status] || o.status}
+                    </span>
+                  </td>
+                  <td>{new Date(o.created_at).toLocaleDateString("ja-JP")}</td>
+                  <td className="actions">
+                    <button className="btn-sm" onClick={() => handleEdit(o)}>
+                      編集
+                    </button>
+                    <button
+                      className="btn-sm"
+                      onClick={() => setFinancialTarget(o)}
+                      data-testid={`open-financial-${o.id}`}
+                    >
+                      売上編集
+                    </button>
+                    <button
+                      className="btn-sm btn-danger"
+                      onClick={() => setDeleteTarget(o)}
+                    >
+                      削除
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={7} className="empty">
+                <td colSpan={10} className="empty">
                   受注が登録されていません
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      )}
+
+      {financialTarget && (
+        <OrderFinancialPanel
+          orderId={financialTarget.id}
+          orderNumber={financialTarget.order_number}
+          onClose={() => setFinancialTarget(null)}
+          onSaved={(saved) => {
+            setFinancials((prev) => ({ ...prev, [saved.order_id]: saved }));
+          }}
+        />
       )}
 
       <ConfirmModal
