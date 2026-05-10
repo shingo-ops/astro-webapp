@@ -222,3 +222,323 @@ class TestOrdersValidation:
             "total_amount": -500,
         })
         assert res.status_code == 422
+
+
+class TestOrdersListSearchSort:
+    """ADR-021 Sprint 1: GET /orders の search / sort / JOIN 拡張"""
+
+    async def test_list_orders_search_by_order_number(self, client):
+        """search で order_number 部分一致できる"""
+        company_id, contact_id = await _create_company_contact(client)
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-ALPHA-001",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-BRAVO-002",
+        })
+
+        res = await client.get("/api/v1/orders", params={"search": "ALPHA"})
+        assert res.status_code == 200
+        body = res.json()
+        numbers = {o["order_number"] for o in body}
+        assert "ORD-ALPHA-001" in numbers
+        assert "ORD-BRAVO-002" not in numbers
+
+    async def test_list_orders_search_by_company_name(self, client):
+        """search で company.name 部分一致できる"""
+        co_a, ct_a = await _create_company_contact(client, "アルファ商事")
+        co_b, ct_b = await _create_company_contact(client, "ベータ工業")
+        await client.post("/api/v1/orders", json={
+            "company_id": co_a, "contact_id": ct_a,
+            "order_number": "ORD-CO-SEARCH-A",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": co_b, "contact_id": ct_b,
+            "order_number": "ORD-CO-SEARCH-B",
+        })
+
+        res = await client.get("/api/v1/orders", params={"search": "アルファ"})
+        assert res.status_code == 200
+        body = res.json()
+        numbers = {o["order_number"] for o in body}
+        assert "ORD-CO-SEARCH-A" in numbers
+        assert "ORD-CO-SEARCH-B" not in numbers
+
+    async def test_list_orders_search_by_contact_display_name(self, client):
+        """search で contact.display_name 部分一致できる"""
+        co_a, ct_a = await _create_company_contact(client, "DisplayCoA")
+        co_b, ct_b = await _create_company_contact(client, "DisplayCoB")
+        await client.post("/api/v1/orders", json={
+            "company_id": co_a, "contact_id": ct_a,
+            "order_number": "ORD-CT-A",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": co_b, "contact_id": ct_b,
+            "order_number": "ORD-CT-B",
+        })
+        # _create_company_contact のヘルパーは display_name = "{company_name}の担当"
+        # を生成するので、"DisplayCoA" を search すれば ct_a 行のみがヒットする
+        res = await client.get("/api/v1/orders", params={"search": "DisplayCoAの担当"})
+        assert res.status_code == 200
+        body = res.json()
+        numbers = {o["order_number"] for o in body}
+        assert "ORD-CT-A" in numbers
+        assert "ORD-CT-B" not in numbers
+
+    async def test_list_orders_search_blank_returns_all(self, client):
+        """search が空白のみは無視され全件返る"""
+        company_id, contact_id = await _create_company_contact(client)
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-BLANK-1",
+        })
+
+        res = await client.get("/api/v1/orders", params={"search": "   "})
+        assert res.status_code == 200
+        assert any(o["order_number"] == "ORD-BLANK-1" for o in res.json())
+
+    async def test_list_orders_search_special_chars_escaped(self, client):
+        """LIKE メタ文字 (%, _) はエスケープされ、リテラル一致になる"""
+        company_id, contact_id = await _create_company_contact(client, "EscapeCo")
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-NORMAL-1",
+        })
+        # "%" を search に含めても他レコードに勝手にマッチしないこと
+        res = await client.get("/api/v1/orders", params={"search": "%"})
+        assert res.status_code == 200
+        # "%" を含む order_number は存在しないので空のはず
+        numbers = {o["order_number"] for o in res.json()}
+        assert "ORD-NORMAL-1" not in numbers
+
+    async def test_list_orders_sort_by_total_amount_desc(self, client):
+        """total_amount で降順ソートできる"""
+        company_id, contact_id = await _create_company_contact(client)
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-SORT-LOW", "total_amount": 1000,
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-SORT-HIGH", "total_amount": 999999,
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-SORT-MID", "total_amount": 50000,
+        })
+
+        res = await client.get(
+            "/api/v1/orders",
+            params={"sort_by": "total_amount", "sort_order": "desc"},
+        )
+        assert res.status_code == 200
+        body = res.json()
+        # 該当 3 件のみ抽出
+        ours = [o for o in body if o["order_number"].startswith("ORD-SORT-")]
+        assert [o["order_number"] for o in ours[:3]] == [
+            "ORD-SORT-HIGH", "ORD-SORT-MID", "ORD-SORT-LOW",
+        ]
+
+    async def test_list_orders_sort_by_total_amount_asc(self, client):
+        """total_amount で昇順ソートできる"""
+        company_id, contact_id = await _create_company_contact(client)
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-ASC-A", "total_amount": 5000,
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-ASC-B", "total_amount": 100,
+        })
+        res = await client.get(
+            "/api/v1/orders",
+            params={"sort_by": "total_amount", "sort_order": "asc"},
+        )
+        assert res.status_code == 200
+        ours = [o for o in res.json() if o["order_number"].startswith("ORD-ASC-")]
+        assert [o["order_number"] for o in ours[:2]] == ["ORD-ASC-B", "ORD-ASC-A"]
+
+    async def test_list_orders_sort_by_status(self, client):
+        """status でソートできる（文字列辞書順）"""
+        company_id, contact_id = await _create_company_contact(client)
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-ST-PEND", "status": "pending",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-ST-CONF", "status": "confirmed",
+        })
+
+        res = await client.get(
+            "/api/v1/orders",
+            params={"sort_by": "status", "sort_order": "asc"},
+        )
+        assert res.status_code == 200
+        ours = [o for o in res.json() if o["order_number"].startswith("ORD-ST-")]
+        statuses = [o["status"] for o in ours]
+        # ascending order: confirmed < pending（辞書順）
+        assert statuses == sorted(statuses)
+
+    async def test_list_orders_invalid_sort_by_returns_400(self, client):
+        """ホワイトリスト外の sort_by は 400"""
+        res = await client.get(
+            "/api/v1/orders",
+            params={"sort_by": "evil_column; DROP TABLE orders;"},
+        )
+        assert res.status_code == 400
+
+    async def test_list_orders_invalid_sort_order_returns_400(self, client):
+        """ホワイトリスト外の sort_order は 400"""
+        res = await client.get(
+            "/api/v1/orders",
+            params={"sort_order": "shuffle"},
+        )
+        assert res.status_code == 400
+
+    async def test_list_orders_response_includes_company_contact_names(self, client):
+        """レスポンスに company_name / contact_display_name が含まれる"""
+        company_id, contact_id = await _create_company_contact(client, "JoinTestCo")
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-JOIN-1",
+        })
+
+        res = await client.get("/api/v1/orders", params={"search": "ORD-JOIN-1"})
+        assert res.status_code == 200
+        body = res.json()
+        assert len(body) == 1
+        order = body[0]
+        assert order["company_name"] == "JoinTestCo"
+        assert order["contact_display_name"] == "JoinTestCoの担当"
+
+
+class TestOrdersGroupCounts:
+    """ADR-021 Sprint 1: GET /orders/group-counts"""
+
+    async def test_get_orders_group_counts_basic(self, client):
+        """OrderStatus 全値 + total が返る、件数 0 のステータスも 0 で含まれる"""
+        company_id, contact_id = await _create_company_contact(client)
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-GC-1", "status": "pending",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-GC-2", "status": "pending",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-GC-3", "status": "shipped",
+        })
+
+        res = await client.get("/api/v1/orders/group-counts")
+        assert res.status_code == 200
+        body = res.json()
+        assert "counts" in body and "total" in body
+        # OrderStatus 全値が含まれる（件数 0 も）
+        for s in ["pending", "confirmed", "processing", "shipped",
+                  "delivered", "returned", "cancelled"]:
+            assert s in body["counts"]
+        assert body["counts"]["pending"] >= 2
+        assert body["counts"]["shipped"] >= 1
+        # total はカウントの合計と一致
+        assert body["total"] == sum(body["counts"].values())
+
+    async def test_get_orders_group_counts_respects_search(self, client):
+        """?search= 指定時は集計が連動する"""
+        co_a, ct_a = await _create_company_contact(client, "GroupSearchA")
+        co_b, ct_b = await _create_company_contact(client, "GroupSearchB")
+        await client.post("/api/v1/orders", json={
+            "company_id": co_a, "contact_id": ct_a,
+            "order_number": "ORD-GS-A1", "status": "pending",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": co_a, "contact_id": ct_a,
+            "order_number": "ORD-GS-A2", "status": "pending",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": co_b, "contact_id": ct_b,
+            "order_number": "ORD-GS-B1", "status": "shipped",
+        })
+
+        res = await client.get(
+            "/api/v1/orders/group-counts",
+            params={"search": "GroupSearchA"},
+        )
+        assert res.status_code == 200
+        body = res.json()
+        # A 検索なので A 社の 2 件のみ集計対象
+        assert body["counts"]["pending"] == 2
+        assert body["counts"]["shipped"] == 0
+        assert body["total"] == 2
+
+    async def test_get_orders_group_counts_with_status_filter(self, client):
+        """?status= を一緒に指定すると、そのステータスだけ件数が乗る"""
+        company_id, contact_id = await _create_company_contact(client)
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-GCF-1", "status": "pending",
+        })
+        await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-GCF-2", "status": "shipped",
+        })
+
+        res = await client.get(
+            "/api/v1/orders/group-counts",
+            params={"status": "shipped"},
+        )
+        assert res.status_code == 200
+        body = res.json()
+        assert body["counts"]["pending"] == 0
+        assert body["counts"]["shipped"] >= 1
+        assert body["total"] == body["counts"]["shipped"]
+
+    async def test_get_orders_group_counts_empty(self, client):
+        """注文が無いテナントでも 200 + 全 0 + total=0 を返す"""
+        res = await client.get("/api/v1/orders/group-counts")
+        assert res.status_code == 200
+        body = res.json()
+        assert body["total"] == 0
+        for s in ["pending", "confirmed", "processing", "shipped",
+                  "delivered", "returned", "cancelled"]:
+            assert body["counts"][s] == 0
+
+
+class TestOrdersListMultiTenant:
+    """ADR-021 Sprint 1: マルチテナント分離（AC-1.10）
+
+    本番 PostgreSQL では `get_current_tenant` が search_path をテナント
+    スキーマ (tenant_NNN) に切替えるため、orders / companies / contacts は
+    自テナントのレコードしか見えない（物理分離）。
+
+    SQLite テスト基盤は単一スキーマなので物理分離のシミュレーションは
+    できないが、以下を回帰検証する:
+      1. require_permission("orders.view") が JOIN 拡張後も依存に残っている
+      2. JOIN 後も orders.view 権限なしユーザーは 403 が返る
+    """
+
+    async def test_list_orders_requires_orders_view_permission(self, client):
+        """orders.view 権限なしユーザーは 403 を返す（JOIN 拡張後も維持）"""
+        from unittest.mock import patch
+
+        async def _no_perms(db, tenant_id, user_id):
+            return set()
+
+        with patch("app.auth.dependencies.load_user_permissions", _no_perms):
+            res = await client.get("/api/v1/orders")
+        assert res.status_code == 403
+
+    async def test_get_orders_group_counts_requires_orders_view_permission(self, client):
+        """group-counts も orders.view 権限を要求する"""
+        from unittest.mock import patch
+
+        async def _no_perms(db, tenant_id, user_id):
+            return set()
+
+        with patch("app.auth.dependencies.load_user_permissions", _no_perms):
+            res = await client.get("/api/v1/orders/group-counts")
+        assert res.status_code == 403
