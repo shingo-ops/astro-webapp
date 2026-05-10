@@ -97,10 +97,10 @@ Apps Script (onFormSubmit)
 | 時期 | 段階 | 条件 |
 |---|---|---|
 | 2026-05-08（実装済）| Phase α | デプロイ済 |
-| Phase α 運用 1〜2 ヶ月 | Phase β 設計 | Phase α で 10〜20 件のトリアージ実績、しんごさんの判定パターン蓄積 |
-| Phase β 実装 | LLM トリアージ | ADR-019 として正式起案 |
+| **Phase α 運用 1〜2 ヶ月後** | Phase β 設計 | Phase α で 10〜20 件のトリアージ実績、しんごさんの判定パターン蓄積（**Shingo 確定 2026-05-10: 1〜2 ヶ月待ってから Phase β 着手で OK**） |
+| Phase β 実装 | LLM トリアージ | ADR-022 として正式起案（ADR-019/020 は Meta審査関連、ADR-021 は受注管理で取得済） |
 | Phase β 運用 1〜2 ヶ月 | Phase γ 設計 | LLM 判定の精度評価、誤判定パターン把握 |
-| Phase γ 実装 | 完全自動化 | ADR-020 として正式起案 |
+| Phase γ 実装 | 完全自動化 | ADR-023 として正式起案 |
 
 ---
 
@@ -115,10 +115,17 @@ Apps Script (onFormSubmit)
 
 ## オープンクエスチョン
 
-1. Phase β の LLM コール先は **Claude CLI (Max plan)** vs **Anthropic API direct**？前者は self-hosted runner 必須、後者は GitHub-hosted で動かせるが Max plan を使えない
-2. trivial-bug の自動修正で誤った PR を量産しないために、**Anti-Pattern** の事前定義は必要か？
-3. `triage:investigation` のアサイン先は固定 (Hitoshi) か、しんごさんと負荷分散させるか？
-4. PR #309 の Reviewer Minor 「from-form 後付けケース」を Phase β でカバーする際の挙動
+1. Phase β の LLM コール先は **Claude CLI (Max plan)** vs **Anthropic API direct**？前者は self-hosted runner 必須、後者は GitHub-hosted で動かせるが Max plan を使えない（**Shingo 回答待ち**）
+2. trivial-bug の自動修正で誤った PR を量産しないために、**Anti-Pattern** の事前定義は必要か？（**Shingo 回答待ち**）
+3. `triage:investigation` のアサイン先は固定 (Hitoshi) か、しんごさんと負荷分散させるか？（**Shingo 回答待ち**）
+4. PR #309 の Reviewer Minor 「from-form 後付けケース」を Phase β でカバーする際の挙動（**Shingo 回答待ち**）
+
+### Shingo の確定回答（2026-05-10）
+
+| # | 質問 | 回答 |
+|---|------|------|
+| Phase β 着手タイミング | Phase α 運用後どれくらいで着手するか | **Phase α 運用 1〜2 ヶ月後で OK**（運用実績 10〜20 件のトリアージ蓄積を待つ） |
+| ADR ナンバリング | Phase β/γ 起案時の ADR 番号 | ADR-019/020 は Meta審査関連、ADR-021 は受注管理で取得済 → **Phase β = ADR-022 / Phase γ = ADR-023** に振り直し |
 
 ---
 
