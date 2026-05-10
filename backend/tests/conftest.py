@@ -438,6 +438,31 @@ async def setup_test_db(test_engine):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
+        # ADR-021 Sprint 4: 仕入情報テーブル（migration 049）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_purchase_details (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL UNIQUE
+                    REFERENCES orders(id) ON DELETE CASCADE,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                purchase_staff TEXT,
+                purchase_date DATE,
+                transaction_no TEXT,
+                supplier_name TEXT,
+                supplier_url TEXT,
+                purchase_amount NUMERIC(14, 2) DEFAULT 0,
+                purchase_quantity INTEGER DEFAULT 0,
+                purchase_total NUMERIC(14, 2) DEFAULT 0,
+                purchase_shipping NUMERIC(14, 2) DEFAULT 0,
+                carrier_name TEXT,
+                waybill_no TEXT,
+                purchase_note TEXT,
+                purchase_status TEXT NOT NULL DEFAULT ''
+                    CHECK (purchase_status IN ('', 'confirmed')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
         # ADR-021 Sprint 3: 発送情報テーブル（migration 048）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS order_shipping_details (
@@ -848,6 +873,7 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM purchase_orders"))
         await conn.execute(text("DELETE FROM suppliers"))
         await conn.execute(text("DELETE FROM order_shipping_details"))
+        await conn.execute(text("DELETE FROM order_purchase_details"))
         await conn.execute(text("DELETE FROM order_financials"))
         await conn.execute(text("DELETE FROM orders"))
         await conn.execute(text("DELETE FROM products"))
@@ -1002,6 +1028,7 @@ async def client(db_session):
         "app.routers.customers", "app.routers.deals", "app.routers.orders",
         "app.routers.order_financials",
         "app.routers.order_shipping_details",
+        "app.routers.order_purchase_details",
         "app.routers.leads", "app.routers.teams", "app.routers.roles",
         "app.routers.products", "app.routers.shipping", "app.routers.quotes",
         "app.routers.invoices", "app.routers.suppliers", "app.routers.purchase_orders",

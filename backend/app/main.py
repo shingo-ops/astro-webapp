@@ -17,6 +17,7 @@ from app.routers import deals
 from app.routers import orders
 from app.routers import order_financials  # ADR-021 Phase 2 / Sprint 2: 売上計算 MVP
 from app.routers import order_shipping_details  # ADR-021 Phase 3 / Sprint 3: 発送情報 MVP
+from app.routers import order_purchase_details  # ADR-021 Phase 4 / Sprint 4: 仕入情報 MVP
 from app.routers import dashboard
 from app.routers import reports
 from app.routers import leads
@@ -156,6 +157,11 @@ app.include_router(
 # ADR-021 Phase 3 / Sprint 3: 発送情報 + eLogi CSV エクスポート
 app.include_router(
     order_shipping_details.router, prefix="/api/v1", tags=["order_shipping_details"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# ADR-021 Phase 4 / Sprint 4: 仕入情報 + 仕入元別履歴
+app.include_router(
+    order_purchase_details.router, prefix="/api/v1", tags=["order_purchase_details"],
     dependencies=[Depends(get_current_tenant)],
 )
 app.include_router(
