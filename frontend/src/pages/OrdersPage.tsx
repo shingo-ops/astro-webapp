@@ -14,6 +14,11 @@
  *     OrderFinancialPanel を開いて売上情報を CRUD できるようにした。
  *     売上情報は表示中の受注ごとに /orders/{id}/financial を並列取得し、
  *     軽量な map で保持する（受注数が多い場合は将来的に bulk endpoint 化）。
+ *   - 2026-05-11: ADR-021 Phase 3 / Sprint 3 — 発送情報 MVP
+ *     一覧に「追跡番号」列を追加し、「発送編集」ボタンから ShippingDetailPanel
+ *     を開いて発送情報を CRUD + eLogi CSV ダウンロードができるようにした。
+ *     発送情報も /orders/{id}/shipping を並列取得して列に反映する
+ *     （N+1 課題は spec.md 実装メモ通り Phase 4-5 の bulk endpoint で吸収予定）。
  */
 
 import { useEffect, useMemo, useRef, useState, FormEvent } from "react";
@@ -23,6 +28,9 @@ import CompanyContactSelector from "../components/CompanyContactSelector";
 import OrderFinancialPanel, {
   OrderFinancialDto,
 } from "../components/OrderFinancialPanel";
+import ShippingDetailPanel, {
+  ShippingDetailDto,
+} from "../components/ShippingDetailPanel";
 
 interface OrderListItem {
   id: number;
@@ -111,6 +119,10 @@ export default function OrdersPage() {
   // ADR-021 Sprint 2: 売上情報パネルと表示中受注の financial map
   const [financialTarget, setFinancialTarget] = useState<OrderListItem | null>(null);
   const [financials, setFinancials] = useState<Record<number, OrderFinancialDto | null>>({});
+
+  // ADR-021 Sprint 3: 発送情報パネルと表示中受注の shipping map
+  const [shippingTarget, setShippingTarget] = useState<OrderListItem | null>(null);
+  const [shippings, setShippings] = useState<Record<number, ShippingDetailDto | null>>({});
 
   // 検索入力の debounce（300ms）。タイピング毎に API を叩かない。
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -217,6 +229,41 @@ export default function OrdersPage() {
       const map: Record<number, OrderFinancialDto | null> = {};
       for (const [id, data] of results) map[id] = data;
       setFinancials(map);
+    };
+    fetchAll();
+    return () => {
+      cancelled = true;
+    };
+  }, [orders]);
+
+  // ADR-021 Sprint 3: 表示中受注ごとに /orders/{id}/shipping を並列取得し
+  // 追跡番号列を埋める。404 は "未登録 = null"。
+  useEffect(() => {
+    if (orders.length === 0) {
+      setShippings({});
+      return;
+    }
+    let cancelled = false;
+    const fetchAll = async () => {
+      const results = await Promise.all(
+        orders.map(async (o) => {
+          try {
+            const data = await api.get<ShippingDetailDto>(
+              `/orders/${o.id}/shipping`,
+            );
+            return [o.id, data] as const;
+          } catch (e) {
+            if (e instanceof ApiError && e.status === 404) {
+              return [o.id, null] as const;
+            }
+            return [o.id, null] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const map: Record<number, ShippingDetailDto | null> = {};
+      for (const [id, data] of results) map[id] = data;
+      setShippings(map);
     };
     fetchAll();
     return () => {
@@ -519,6 +566,7 @@ export default function OrdersPage() {
               <th>売上</th>
               <th>粗利</th>
               <th>粗利率</th>
+              <th>追跡番号</th>
               <th>ステータス</th>
               <th>登録日</th>
               <th>操作</th>
@@ -527,6 +575,7 @@ export default function OrdersPage() {
           <tbody>
             {orders.map((o) => {
               const fin = financials[o.id] ?? null;
+              const ship = shippings[o.id] ?? null;
               return (
                 <tr key={o.id}>
                   <td>{o.order_number}</td>
@@ -541,6 +590,9 @@ export default function OrdersPage() {
                   </td>
                   <td data-testid={`fin-cell-rate-${o.id}`}>
                     {fin ? fmtRate(fin.gross_profit_rate) : "-"}
+                  </td>
+                  <td data-testid={`ship-cell-tracking-${o.id}`}>
+                    {ship && ship.tracking_number ? ship.tracking_number : "-"}
                   </td>
                   <td>
                     <span className={`badge badge-${o.status}`}>
@@ -560,6 +612,13 @@ export default function OrdersPage() {
                       売上編集
                     </button>
                     <button
+                      className="btn-sm"
+                      onClick={() => setShippingTarget(o)}
+                      data-testid={`open-shipping-${o.id}`}
+                    >
+                      発送編集
+                    </button>
+                    <button
                       className="btn-sm btn-danger"
                       onClick={() => setDeleteTarget(o)}
                     >
@@ -571,7 +630,7 @@ export default function OrdersPage() {
             })}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={10} className="empty">
+                <td colSpan={11} className="empty">
                   受注が登録されていません
                 </td>
               </tr>
@@ -587,6 +646,17 @@ export default function OrdersPage() {
           onClose={() => setFinancialTarget(null)}
           onSaved={(saved) => {
             setFinancials((prev) => ({ ...prev, [saved.order_id]: saved }));
+          }}
+        />
+      )}
+
+      {shippingTarget && (
+        <ShippingDetailPanel
+          orderId={shippingTarget.id}
+          orderNumber={shippingTarget.order_number}
+          onClose={() => setShippingTarget(null)}
+          onSaved={(saved) => {
+            setShippings((prev) => ({ ...prev, [saved.order_id]: saved }));
           }}
         />
       )}

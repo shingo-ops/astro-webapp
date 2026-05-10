@@ -438,6 +438,54 @@ async def setup_test_db(test_engine):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
+        # ADR-021 Sprint 3: 発送情報テーブル（migration 048）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_shipping_details (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL UNIQUE
+                    REFERENCES orders(id) ON DELETE CASCADE,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                recipient_name VARCHAR(255),
+                phone VARCHAR(50),
+                email VARCHAR(255),
+                tax_number VARCHAR(100),
+                address1 VARCHAR(255),
+                address2 VARCHAR(255),
+                address3 VARCHAR(255),
+                city VARCHAR(100),
+                state_code VARCHAR(20),
+                zip_code VARCHAR(50),
+                country_code VARCHAR(10),
+                length_cm NUMERIC(8, 2),
+                width_cm NUMERIC(8, 2),
+                height_cm NUMERIC(8, 2),
+                weight_kg NUMERIC(8, 3),
+                volume_g NUMERIC(10, 2),
+                box_count INTEGER,
+                packing_memo TEXT,
+                packing_type VARCHAR(50),
+                inspection_status VARCHAR(50),
+                item_description VARCHAR(500),
+                item_price_usd NUMERIC(12, 2),
+                exchange_rate NUMERIC(12, 6),
+                hs_code VARCHAR(50),
+                tax_id VARCHAR(100),
+                fedex_id VARCHAR(100),
+                carrier VARCHAR(20)
+                    CHECK (carrier IS NULL OR carrier IN ('elogi', 'fedex', 'dhl', 'yamato', 'other')),
+                ship_method VARCHAR(50),
+                ship_date DATE,
+                tracking_number VARCHAR(200),
+                est_shipping_fee NUMERIC(12, 2),
+                label_issued_at TIMESTAMP,
+                pickup_requested_at TIMESTAMP,
+                shipped_at TIMESTAMP,
+                notified_at TIMESTAMP,
+                ship_memo TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
         # 監査ログテーブル
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS audit_logs (
@@ -799,6 +847,7 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM purchase_order_items"))
         await conn.execute(text("DELETE FROM purchase_orders"))
         await conn.execute(text("DELETE FROM suppliers"))
+        await conn.execute(text("DELETE FROM order_shipping_details"))
         await conn.execute(text("DELETE FROM order_financials"))
         await conn.execute(text("DELETE FROM orders"))
         await conn.execute(text("DELETE FROM products"))
@@ -952,6 +1001,7 @@ async def client(db_session):
     _audit_targets = [
         "app.routers.customers", "app.routers.deals", "app.routers.orders",
         "app.routers.order_financials",
+        "app.routers.order_shipping_details",
         "app.routers.leads", "app.routers.teams", "app.routers.roles",
         "app.routers.products", "app.routers.shipping", "app.routers.quotes",
         "app.routers.invoices", "app.routers.suppliers", "app.routers.purchase_orders",
