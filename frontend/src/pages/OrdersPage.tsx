@@ -39,6 +39,9 @@ import ShippingDetailPanel, {
 import PurchaseDetailPanel, {
   PurchaseDetailDto,
 } from "../components/PurchaseDetailPanel";
+import CommissionPanel, {
+  OrderCommissionsBundleDto,
+} from "../components/CommissionPanel";
 
 interface OrderListItem {
   id: number;
@@ -135,6 +138,10 @@ export default function OrdersPage() {
   // ADR-021 Sprint 4: 仕入情報パネルと表示中受注の purchase map
   const [purchaseTarget, setPurchaseTarget] = useState<OrderListItem | null>(null);
   const [purchases, setPurchases] = useState<Record<number, PurchaseDetailDto | null>>({});
+
+  // ADR-021 Sprint 5: 報酬パネルと表示中受注の commission map (5 ロール合計のキャッシュ)
+  const [commissionTarget, setCommissionTarget] = useState<OrderListItem | null>(null);
+  const [commissionTotals, setCommissionTotals] = useState<Record<number, number>>({});
 
   // 検索入力の debounce（300ms）。タイピング毎に API を叩かない。
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -311,6 +318,42 @@ export default function OrdersPage() {
       const map: Record<number, PurchaseDetailDto | null> = {};
       for (const [id, data] of results) map[id] = data;
       setPurchases(map);
+    };
+    fetchAll();
+    return () => {
+      cancelled = true;
+    };
+  }, [orders]);
+
+  // ADR-021 Sprint 5: 表示中受注ごとに /orders/{id}/commissions を並列取得し
+  // 「報酬合計」列を埋める。N+1 は Sprint 4 と同じ仕組み（spec.md 通り）。
+  useEffect(() => {
+    if (orders.length === 0) {
+      setCommissionTotals({});
+      return;
+    }
+    let cancelled = false;
+    const fetchAll = async () => {
+      const results = await Promise.all(
+        orders.map(async (o) => {
+          try {
+            const data = await api.get<OrderCommissionsBundleDto>(
+              `/orders/${o.id}/commissions`,
+            );
+            const total = Object.values(data.commissions).reduce(
+              (acc, c) => acc + (c ? Number(c.calculated_amount) || 0 : 0),
+              0,
+            );
+            return [o.id, total] as const;
+          } catch {
+            return [o.id, 0] as const;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const map: Record<number, number> = {};
+      for (const [id, total] of results) map[id] = total;
+      setCommissionTotals(map);
     };
     fetchAll();
     return () => {
@@ -615,6 +658,7 @@ export default function OrdersPage() {
               <th>粗利率</th>
               <th>追跡番号</th>
               <th>仕入状況</th>
+              <th>報酬合計</th>
               <th>ステータス</th>
               <th>登録日</th>
               <th>操作</th>
@@ -656,6 +700,9 @@ export default function OrdersPage() {
                       return <span className="badge badge-pending">確認中</span>;
                     })()}
                   </td>
+                  <td data-testid={`com-cell-total-${o.id}`}>
+                    {commissionTotals[o.id] ? fmt(commissionTotals[o.id]) : "-"}
+                  </td>
                   <td>
                     <span className={`badge badge-${o.status}`}>
                       {STATUS_LABELS[o.status] || o.status}
@@ -688,6 +735,13 @@ export default function OrdersPage() {
                       仕入編集
                     </button>
                     <button
+                      className="btn-sm"
+                      onClick={() => setCommissionTarget(o)}
+                      data-testid={`open-commission-${o.id}`}
+                    >
+                      報酬編集
+                    </button>
+                    <button
                       className="btn-sm btn-danger"
                       onClick={() => setDeleteTarget(o)}
                     >
@@ -699,7 +753,7 @@ export default function OrdersPage() {
             })}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={12} className="empty">
+                <td colSpan={13} className="empty">
                   受注が登録されていません
                 </td>
               </tr>
@@ -737,6 +791,24 @@ export default function OrdersPage() {
           onClose={() => setPurchaseTarget(null)}
           onSaved={(saved) => {
             setPurchases((prev) => ({ ...prev, [saved.order_id]: saved }));
+          }}
+        />
+      )}
+
+      {commissionTarget && (
+        <CommissionPanel
+          orderId={commissionTarget.id}
+          orderNumber={commissionTarget.order_number}
+          onClose={() => setCommissionTarget(null)}
+          onSaved={(bundle) => {
+            const total = Object.values(bundle.commissions).reduce(
+              (acc, c) => acc + (c ? Number(c.calculated_amount) || 0 : 0),
+              0,
+            );
+            setCommissionTotals((prev) => ({
+              ...prev,
+              [bundle.order_id]: total,
+            }));
           }}
         />
       )}

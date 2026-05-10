@@ -293,6 +293,7 @@ async def setup_test_db(test_engine):
                 role_id INTEGER NOT NULL,
                 status VARCHAR(20) NOT NULL DEFAULT 'active',
                 firebase_uid VARCHAR(128) UNIQUE,
+                is_employee BOOLEAN NOT NULL DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (tenant_id, staff_code)
@@ -509,6 +510,37 @@ async def setup_test_db(test_engine):
                 ship_memo TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        # ADR-021 Sprint 5: テナント別報酬計算設定（migration 050）
+        # SQLite には JSONB が無いので TEXT に JSON 文字列で保存する。
+        # 本番 PG では JSONB だがアプリ側のシリアライズ/パースで吸収する。
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS tenant_commission_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                commission_rates TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (tenant_id)
+            )
+        """))
+        # ADR-021 Sprint 5: 受注ごとの報酬（migration 050）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS order_commissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL
+                    REFERENCES orders(id) ON DELETE CASCADE,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                role TEXT NOT NULL
+                    CHECK (role IN ('sales','order','ship','purchase','trouble')),
+                staff_id INTEGER REFERENCES staff(id) ON DELETE SET NULL,
+                calculated_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+                calculated_at TIMESTAMP,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (order_id, role)
             )
         """))
         # 監査ログテーブル
@@ -872,6 +904,8 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM purchase_order_items"))
         await conn.execute(text("DELETE FROM purchase_orders"))
         await conn.execute(text("DELETE FROM suppliers"))
+        await conn.execute(text("DELETE FROM order_commissions"))
+        await conn.execute(text("DELETE FROM tenant_commission_settings"))
         await conn.execute(text("DELETE FROM order_shipping_details"))
         await conn.execute(text("DELETE FROM order_purchase_details"))
         await conn.execute(text("DELETE FROM order_financials"))
@@ -1029,6 +1063,9 @@ async def client(db_session):
         "app.routers.order_financials",
         "app.routers.order_shipping_details",
         "app.routers.order_purchase_details",
+        # ADR-021 Sprint 5: 報酬計算 MVP
+        "app.routers.tenant_commission_settings",
+        "app.routers.order_commissions",
         "app.routers.leads", "app.routers.teams", "app.routers.roles",
         "app.routers.products", "app.routers.shipping", "app.routers.quotes",
         "app.routers.invoices", "app.routers.suppliers", "app.routers.purchase_orders",
