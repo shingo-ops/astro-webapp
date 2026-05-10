@@ -23,29 +23,29 @@ interface FirebaseLikeError {
  */
 const ERROR_MESSAGES: Record<string, string> = {
   // ログイン系（最近の Firebase は auth/invalid-credential に統合）
-  "auth/invalid-credential": "メールアドレスまたはパスワードが正しくありません。",
-  "auth/wrong-password": "メールアドレスまたはパスワードが正しくありません。",
-  "auth/user-not-found": "メールアドレスまたはパスワードが正しくありません。",
-  "auth/invalid-email": "メールアドレスの形式が正しくありません。",
-  "auth/user-disabled": "このアカウントは無効化されています。管理者にお問い合わせください。",
+  "auth/invalid-credential": "Incorrect email address or password.",
+  "auth/wrong-password": "Incorrect email address or password.",
+  "auth/user-not-found": "Incorrect email address or password.",
+  "auth/invalid-email": "Email address format is invalid.",
+  "auth/user-disabled": "This account has been disabled. Please contact your administrator.",
   // レート制限
   "auth/too-many-requests":
-    "ログイン試行回数の上限を超えました。しばらく時間をおいてから再度お試しください。",
+    "Too many sign-in attempts. Please wait a moment and try again.",
   // ネットワーク
   "auth/network-request-failed":
-    "ネットワークエラーが発生しました。接続状態を確認して再度お試しください。",
+    "Network error. Please check your connection and try again.",
   // 設定不整合
   "auth/operation-not-allowed":
-    "現在この認証方法はご利用いただけません。サポートにお問い合わせください。",
+    "This sign-in method is not currently available. Please contact support.",
   // パスワードリセット系（将来用）
   "auth/expired-action-code":
-    "リンクの有効期限が切れています。再度操作をやり直してください。",
+    "This link has expired. Please start over.",
   "auth/invalid-action-code":
-    "リンクが無効です。最新のメールから操作してください。",
+    "This link is invalid. Please use the latest email.",
 };
 
 const DEFAULT_MESSAGE =
-  "ログインに失敗しました。時間をおいて再度お試しください。問題が続く場合はサポートにご連絡ください。";
+  "Sign-in failed. Please try again later. Contact support if the problem persists.";
 
 /**
  * unknown 型のエラーから Firebase の error code を取り出して日本語メッセージに変換。

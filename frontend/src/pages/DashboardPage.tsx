@@ -14,10 +14,10 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
 const DEAL_STATUS_LABELS: Record<string, string> = {
-  open: "オープン", negotiating: "交渉中", won: "成約", lost: "失注", on_hold: "保留",
+  open: "Open", negotiating: "Negotiating", won: "Won", lost: "Lost", on_hold: "On hold",
 };
 const STAGE_LABELS: Record<string, string> = {
-  open: "初回接触", negotiating: "ヒアリング中", proposal: "提案済", on_hold: "保留",
+  open: "First contact", negotiating: "Discovery", proposal: "Proposal sent", on_hold: "On hold",
 };
 
 interface PipelineStage {
@@ -68,35 +68,35 @@ export default function DashboardPage() {
     api.get<Dashboard>("/dashboard").then(setData).catch((e) => setError(e.message));
   }, []);
 
-  if (error) return <div className="page"><div className="error-message">エラー: {error}</div></div>;
-  if (!data) return <div className="page"><div className="loading">読み込み中...</div></div>;
+  if (error) return <div className="page"><div className="error-message">Error: {error}</div></div>;
+  if (!data) return <div className="page"><div className="loading">Loading...</div></div>;
 
   const fmt = (n: number) => `¥${n.toLocaleString()}`;
 
   return (
     <div className="page">
-      <h2>ダッシュボード</h2>
+      <h2>Dashboard</h2>
 
       {/* === 営業 KPI === */}
-      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>営業</h3>
+      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>Sales</h3>
       <div className="kpi-grid">
-        <div className="kpi-card"><div className="kpi-value">{data.customer_count}</div><div className="kpi-label">顧客数</div></div>
-        <div className="kpi-card"><div className="kpi-value">{data.lead_count}</div><div className="kpi-label">リード数</div></div>
+        <div className="kpi-card"><div className="kpi-value">{data.customer_count}</div><div className="kpi-label">Customers</div></div>
+        <div className="kpi-card"><div className="kpi-value">{data.lead_count}</div><div className="kpi-label">Leads</div></div>
         <div className="kpi-card"><div className="kpi-value">{data.lead_inbound_count} / {data.lead_outbound_count}</div><div className="kpi-label">Inbound / Outbound</div></div>
-        <div className="kpi-card accent"><div className="kpi-value">{data.lead_conversion_rate}%</div><div className="kpi-label">コンバージョン率</div></div>
-        <div className="kpi-card"><div className="kpi-value">{data.deal_open_count}</div><div className="kpi-label">オープン商談</div></div>
-        <div className="kpi-card accent"><div className="kpi-value">{data.deal_won_count}</div><div className="kpi-label">成約商談</div></div>
-        <div className="kpi-card accent"><div className="kpi-value">{fmt(data.deal_won_amount)}</div><div className="kpi-label">成約金額</div></div>
+        <div className="kpi-card accent"><div className="kpi-value">{data.lead_conversion_rate}%</div><div className="kpi-label">Conversion rate</div></div>
+        <div className="kpi-card"><div className="kpi-value">{data.deal_open_count}</div><div className="kpi-label">Open deals</div></div>
+        <div className="kpi-card accent"><div className="kpi-value">{data.deal_won_count}</div><div className="kpi-label">Won deals</div></div>
+        <div className="kpi-card accent"><div className="kpi-value">{fmt(data.deal_won_amount)}</div><div className="kpi-label">Won amount</div></div>
       </div>
 
       {/* === パイプライン === */}
       {data.pipeline_by_stage.length > 0 && (
         <>
-          <h3 style={{ marginTop: 24, marginBottom: 8, color: "var(--text-secondary)" }}>パイプライン（ステージ別）</h3>
+          <h3 style={{ marginTop: 24, marginBottom: 8, color: "var(--text-secondary)" }}>Pipeline (by stage)</h3>
           <div style={{ background: "var(--bg-surface)", borderRadius: 8, padding: 16, boxShadow: "var(--shadow-sm)", marginBottom: 24 }}>
             <table className="data-table">
               <thead>
-                <tr><th>ステージ</th><th>件数</th><th>金額</th><th>加重金額</th></tr>
+                <tr><th>Stage</th><th>Count</th><th>Amount</th><th>Weighted amount</th></tr>
               </thead>
               <tbody>
                 {data.pipeline_by_stage.map((s) => (
@@ -114,51 +114,51 @@ export default function DashboardPage() {
       )}
 
       {/* === 財務 KPI === */}
-      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>財務</h3>
+      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>Finance</h3>
       <div className="kpi-grid">
-        <div className="kpi-card"><div className="kpi-value">{data.quote_count}</div><div className="kpi-label">見積数</div></div>
-        <div className="kpi-card"><div className="kpi-value">{fmt(data.quote_approved_amount)}</div><div className="kpi-label">承認済見積額</div></div>
-        <div className="kpi-card"><div className="kpi-value">{data.invoice_count}</div><div className="kpi-label">請求書数</div></div>
+        <div className="kpi-card"><div className="kpi-value">{data.quote_count}</div><div className="kpi-label">Quotes</div></div>
+        <div className="kpi-card"><div className="kpi-value">{fmt(data.quote_approved_amount)}</div><div className="kpi-label">Approved quote amount</div></div>
+        <div className="kpi-card"><div className="kpi-value">{data.invoice_count}</div><div className="kpi-label">Invoices</div></div>
         <div className="kpi-card" style={{ borderLeft: data.invoice_unpaid_count > 0 ? "3px solid var(--danger)" : undefined }}>
           <div className="kpi-value" style={{ color: data.invoice_unpaid_count > 0 ? "var(--danger)" : undefined }}>{data.invoice_unpaid_count}</div>
-          <div className="kpi-label">未入金</div>
+          <div className="kpi-label">Unpaid</div>
         </div>
-        <div className="kpi-card"><div className="kpi-value">{fmt(data.order_total_amount)}</div><div className="kpi-label">注文総額</div></div>
+        <div className="kpi-card"><div className="kpi-value">{fmt(data.order_total_amount)}</div><div className="kpi-label">Order total</div></div>
       </div>
 
       {/* === 在庫・仕入 KPI === */}
-      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>在庫・仕入</h3>
+      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>Inventory & purchasing</h3>
       <div className="kpi-grid">
-        <div className="kpi-card"><div className="kpi-value">{data.product_count}</div><div className="kpi-label">商品数</div></div>
-        <div className="kpi-card"><div className="kpi-value">{fmt(data.inventory_value)}</div><div className="kpi-label">在庫金額</div></div>
-        <div className="kpi-card"><div className="kpi-value">{data.supplier_count}</div><div className="kpi-label">仕入先数</div></div>
-        <div className="kpi-card"><div className="kpi-value">{data.po_pending_count}</div><div className="kpi-label">未入荷PO</div></div>
+        <div className="kpi-card"><div className="kpi-value">{data.product_count}</div><div className="kpi-label">Products</div></div>
+        <div className="kpi-card"><div className="kpi-value">{fmt(data.inventory_value)}</div><div className="kpi-label">Inventory value</div></div>
+        <div className="kpi-card"><div className="kpi-value">{data.supplier_count}</div><div className="kpi-label">Suppliers</div></div>
+        <div className="kpi-card"><div className="kpi-value">{data.po_pending_count}</div><div className="kpi-label">Pending POs</div></div>
       </div>
 
       {/* === 直近データ === */}
       <div className="dashboard-tables">
         <div className="card">
-          <h3>最近の顧客</h3>
+          <h3>Recent customers</h3>
           <table>
-            <thead><tr><th>名前</th><th>会社</th><th>登録日</th></tr></thead>
+            <thead><tr><th>Name</th><th>Company</th><th>Created</th></tr></thead>
             <tbody>
               {data.recent_customers.map((c) => (
-                <tr key={c.id}><td>{c.name || c.customer_code}</td><td>{c.company || "-"}</td><td>{new Date(c.created_at).toLocaleDateString("ja-JP")}</td></tr>
+                <tr key={c.id}><td>{c.name || c.customer_code}</td><td>{c.company || "-"}</td><td>{new Date(c.created_at).toLocaleDateString("en-US")}</td></tr>
               ))}
-              {data.recent_customers.length === 0 && <tr><td colSpan={3} className="empty">データなし</td></tr>}
+              {data.recent_customers.length === 0 && <tr><td colSpan={3} className="empty">No data</td></tr>}
             </tbody>
           </table>
         </div>
         <div className="card">
-          <h3>最近の商談</h3>
+          <h3>Recent deals</h3>
           <table>
-            <thead><tr><th>タイトル</th><th>金額</th><th>ステータス</th></tr></thead>
+            <thead><tr><th>Title</th><th>Amount</th><th>Status</th></tr></thead>
             <tbody>
               {data.recent_deals.map((d) => (
                 <tr key={d.id}><td>{d.title}</td><td>{d.amount ? fmt(d.amount) : "-"}</td>
                   <td><span className={`badge badge-${d.status}`}>{DEAL_STATUS_LABELS[d.status] || d.status}</span></td></tr>
               ))}
-              {data.recent_deals.length === 0 && <tr><td colSpan={3} className="empty">データなし</td></tr>}
+              {data.recent_deals.length === 0 && <tr><td colSpan={3} className="empty">No data</td></tr>}
             </tbody>
           </table>
         </div>
