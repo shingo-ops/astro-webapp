@@ -56,7 +56,7 @@ Apps Script (onFormSubmit)
 
 #### コスト・リスク
 
-- Claude CLI コール: 月 10 件 × 1〜2 ksetup tokens = 軽負荷
+- Claude CLI コール: 月 10 件 × 5〜20k input tokens（Issue 本文 + 既存 ADR 一覧 + 直近 PR 概要を context に含める想定）。月数百 k input tokens 程度の負荷見込み。Q1（Claude CLI vs API direct）の判断時に実測値で再評価する
 - self-hosted runner 必要（既存の `Hikky-dev-Mac` 流用）
 - 誤判定リスク: 確信度しきい値で human review 経路を残す
 
@@ -115,17 +115,21 @@ Apps Script (onFormSubmit)
 
 ## オープンクエスチョン
 
-1. Phase β の LLM コール先は **Claude CLI (Max plan)** vs **Anthropic API direct**？前者は self-hosted runner 必須、後者は GitHub-hosted で動かせるが Max plan を使えない（**Shingo 回答待ち**）
-2. trivial-bug の自動修正で誤った PR を量産しないために、**Anti-Pattern** の事前定義は必要か？（**Shingo 回答待ち**）
-3. `triage:investigation` のアサイン先は固定 (Hitoshi) か、しんごさんと負荷分散させるか？（**Shingo 回答待ち**）
-4. PR #309 の Reviewer Minor 「from-form 後付けケース」を Phase β でカバーする際の挙動（**Shingo 回答待ち**）
+優先度（Phase β 着手前 must-confirm = ★、着手時に詰めれば足りる = ☆）:
+
+| # | 優先度 | 質問 | 状態 |
+|---|--------|------|------|
+| Q1 | **★ Phase β 着手前 must** | Phase β の LLM コール先は **Claude CLI (Max plan)** vs **Anthropic API direct**？前者は self-hosted runner 必須、後者は GitHub-hosted で動かせるが Max plan を使えない | Shingo 回答待ち |
+| Q2 | ★ Phase β 着手前 must | trivial-bug の自動修正で誤った PR を量産しないために、**Anti-Pattern** の事前定義は必要か？ | Shingo 回答待ち |
+| Q3 | ☆ Phase β 着手時に詰める | `triage:investigation` のアサイン先は固定 (Hitoshi) か、しんごさんと負荷分散させるか？ | Shingo 回答待ち |
+| Q4 | ☆ Phase β 着手時に詰める | PR #309 の Reviewer Minor 「from-form 後付けケース」を Phase β でカバーする際の挙動 | Shingo 回答待ち |
 
 ### Shingo の確定回答（2026-05-10）
 
 | # | 質問 | 回答 |
 |---|------|------|
-| Phase β 着手タイミング | Phase α 運用後どれくらいで着手するか | **Phase α 運用 1〜2 ヶ月後で OK**（運用実績 10〜20 件のトリアージ蓄積を待つ） |
-| ADR ナンバリング | Phase β/γ 起案時の ADR 番号 | ADR-019/020 は Meta審査関連、ADR-021 は受注管理で取得済 → **Phase β = ADR-022 / Phase γ = ADR-023** に振り直し |
+| T1 | Phase β 着手タイミング（Phase α 運用後どれくらい？） | **Phase α 運用 1〜2 ヶ月後で OK**（運用実績 10〜20 件のトリアージ蓄積を待つ） |
+| T2 | ADR ナンバリング（Phase β/γ 起案時の ADR 番号） | ADR-019/020 は Meta審査関連で確定済、ADR-021 は受注管理で **PR #315 で起案中**（未マージ）→ **Phase β = ADR-022 / Phase γ = ADR-023** に予約。Phase β 起案時に空き番号を再確認すること |
 
 ---
 
@@ -139,7 +143,9 @@ Apps Script (onFormSubmit)
 
 ---
 
-**しんごさんの判断待ち**:
-- 本提案を承認 → Phase β 実装開始のタイミングで ADR-019 として正式起案
+**承認後の流れ**:
+- 承認 → Phase α 運用 1〜2 ヶ月後に Phase β 実装着手（**Phase β = ADR-022 として正式起案、Phase γ = ADR-023 予約**）
 - 修正・調整 → コメント or 直接編集
 - 却下 → Phase α のみで運用継続
+
+> **Note**: ADR-019 / ADR-020 は Meta審査関連で確定済、ADR-021 は受注管理で PR #315 にて起案中（未マージ）。Phase β/γ 起案時は空き番号を再確認すること。
