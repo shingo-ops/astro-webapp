@@ -19,17 +19,27 @@
   --border: #e2e8f0;
   --border-strong: #cbd5e0;
 
-  /* アクセント */
-  --accent: #667eea;             /* プライマリボタン・フォーカス */
-  --accent-hover: #5a67d8;
-  --link: #2b6cb0;               /* ナビゲーションリンク */
-  --link-active-bg: #ebf4ff;
+  /* アクセント（Meta Business Suite 青系） */
+  --accent: #1877F2;             /* プライマリボタン・フォーカス */
+  --accent-hover: #166FE5;
+  --link: #1877F2;               /* ナビゲーションリンク */
+  --link-active-bg: #E7F3FF;
 
-  /* ナビゲーション（上段の濃色バー） */
+  /* ナビゲーション（サイドバー時は使用しないが互換維持） */
   --nav-brand-bg: #1a365d;
   --nav-brand-text: #ffffff;
-  --nav-brand-accent: #f0b429;
+  --nav-brand-accent: #1877F2;
   --nav-search-bg: #2c5282;
+
+  /* サイドバー */
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #E4E4E7;
+  --sidebar-item-hover-bg: #E7F3FF;
+  --sidebar-item-active-bg: #E7F3FF;
+  --sidebar-item-active-color: #1877F2;
+  --sidebar-item-active-border: #1877F2;
+  --sidebar-width-collapsed: 68px;
+  --sidebar-width-expanded: 240px;
 
   /* ステータス色 */
   --danger: #e53e3e;
@@ -80,11 +90,17 @@
     --border: #334155;
     --border-strong: #475569;
 
-    /* アクセント */
-    --accent: #818cf8;
-    --accent-hover: #6366f1;
-    --link: #93c5fd;
-    --link-active-bg: #1e3a8a;
+    /* アクセント（Meta blue ダーク版） */
+    --accent: #4899f1;
+    --accent-hover: #3a8de8;
+    --link: #4899f1;
+    --link-active-bg: #1e3a5f;
+    --sidebar-bg: #1e293b;
+    --sidebar-border: #334155;
+    --sidebar-item-hover-bg: #1e3a5f;
+    --sidebar-item-active-bg: #1e3a5f;
+    --sidebar-item-active-color: #4899f1;
+    --sidebar-item-active-border: #4899f1;
 
     /* ナビゲーション */
     --nav-brand-bg: #0b1c33;

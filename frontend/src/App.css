@@ -2,7 +2,288 @@
    Sales Anchor - Application Styles
    ============================================================ */
 
-/* --- Top Nav Layout (GAS互換 2段ナビ) --- */
+/* ============================================================
+   ADR-022: App Shell (Sidebar Layout)
+   ============================================================ */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* --- Sidebar panel --- */
+.sidebar-panel {
+  width: var(--sidebar-width-collapsed, 68px);
+  background: var(--sidebar-bg, #ffffff);
+  border-right: 1px solid var(--sidebar-border, #E4E4E7);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width 250ms ease;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 200;
+}
+
+.sidebar-panel.sidebar-expanded {
+  width: var(--sidebar-width-expanded, 240px);
+}
+
+/* Logo area */
+.sidebar-logo-area {
+  height: 64px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--sidebar-border, #E4E4E7);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-logo-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.sidebar-logo-full {
+  height: 36px;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
+}
+
+/* Nav items container */
+.sidebar-nav-items {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+}
+
+.sidebar-nav-items::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-nav-items::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav-items::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Sidebar nav item (NavLink / button) */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 24px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  border: none;
+  border-left: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.sidebar-item:hover {
+  background: var(--sidebar-item-hover-bg, #E7F3FF);
+  color: var(--sidebar-item-active-color, #1877F2);
+}
+
+.sidebar-item.active {
+  background: var(--sidebar-item-active-bg, #E7F3FF);
+  color: var(--sidebar-item-active-color, #1877F2);
+  font-weight: 600;
+  border-left-color: var(--sidebar-item-active-border, #1877F2);
+}
+
+.sidebar-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: 20px;
+}
+
+.sidebar-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* 細幅時は透明にして見えなくする。widthはsidebarのoverflow:hiddenで制御 */
+  opacity: 0;
+  transition: opacity 150ms ease 80ms;
+}
+
+.sidebar-expanded .sidebar-label {
+  opacity: 1;
+}
+
+/* Accordion */
+.sidebar-accordion-wrap {
+  /* stackable */
+}
+
+.sidebar-accordion-btn {
+  /* inherits .sidebar-item */
+}
+
+.sidebar-caret {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  transition: transform 200ms ease;
+}
+
+.sidebar-caret.open {
+  transform: rotate(180deg);
+}
+
+.sidebar-accordion-menu {
+  background: var(--bg-subtle, #F7FAFC);
+  border-bottom: 1px solid var(--border, #E4E4E7);
+}
+
+.sidebar-sub-item {
+  display: block;
+  padding: 8px 16px 8px 56px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.84rem;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-sub-item:hover {
+  background: var(--sidebar-item-hover-bg, #E7F3FF);
+  color: var(--sidebar-item-active-color, #1877F2);
+}
+
+.sidebar-sub-item.active {
+  color: var(--sidebar-item-active-color, #1877F2);
+  font-weight: 600;
+  background: var(--link-active-bg, #E7F3FF);
+}
+
+.sidebar-loading-dot {
+  padding: 16px 24px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  letter-spacing: 4px;
+}
+
+/* --- App body (right of sidebar) --- */
+.app-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* --- Top bar --- */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-bottom: 1px solid #E4E4E7;
+  padding: 0 24px;
+  height: 56px;
+  gap: 16px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 480px;
+  background: #F5F5F7;
+  border: 1px solid #E4E4E7;
+  border-radius: 8px;
+  padding: 0 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.topbar-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.12);
+}
+
+.topbar-search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.topbar-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.topbar-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.topbar-email {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-signout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-signout:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+/* --- App content (main scroll area) --- */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-primary);
+}
+
+/* --- Legacy top-nav layout (保持・互換性) --- */
 .layout-top {
   display: flex;
   flex-direction: column;
@@ -583,7 +864,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
 }
 
 .form-group textarea {
@@ -720,7 +1001,7 @@
 }
 
 .kpi-card.accent {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent, #1877F2);
   color: #fff;
 }
 
@@ -929,11 +1210,11 @@
   margin-bottom: -1px;
 }
 .tab-nav button:hover {
-  color: #667eea;
+  color: var(--accent, #1877F2);
 }
 .tab-nav button.tab-active {
-  color: #667eea;
-  border-bottom-color: #667eea;
+  color: var(--accent, #1877F2);
+  border-bottom-color: var(--accent, #1877F2);
   font-weight: 600;
 }
 .mono {
