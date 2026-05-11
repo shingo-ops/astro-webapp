@@ -165,10 +165,9 @@ export default function Layout() {
       >
         {/* Logo */}
         <div className="sidebar-logo-area">
-          {sidebarExpanded ? (
-            <img src="/logo.png" alt="Sales Anchor" className="sidebar-logo-full" />
-          ) : (
-            <img src="/favicon.png" alt="SA" className="sidebar-logo-icon" />
+          <img src="/favicon.png" alt="Sales Anchor" className="sidebar-logo-icon" />
+          {sidebarExpanded && (
+            <span className="sidebar-logo-text">SALESANCHOR</span>
           )}
         </div>
 
