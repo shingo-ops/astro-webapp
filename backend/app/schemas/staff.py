@@ -130,3 +130,17 @@ class StaffResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class StaffCreateResponse(StaffResponse):
+    """ADR-023: POST /staff 専用レスポンス。
+
+    3 層プロビジョニング時に発行した仮パスワードを 1 度だけ平文で返す。
+    DB・監査ログには保存しない。既存 Firebase ユーザを紐づけた場合や、
+    プロビジョニング不要だった場合は None を返す。
+    """
+
+    provisional_password: str | None = Field(
+        default=None,
+        description="新規 Firebase ユーザの仮パスワード（管理者から本人に伝達するための一度きりの値）",
+    )

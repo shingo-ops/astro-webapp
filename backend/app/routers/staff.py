@@ -21,8 +21,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
 from app.database import get_db
 from app.models import User
-from app.schemas.staff import StaffCreate, StaffEmailInput, StaffResponse, StaffUIPreferences, StaffUpdate
+from app.schemas.staff import (
+    StaffCreate,
+    StaffCreateResponse,
+    StaffEmailInput,
+    StaffResponse,
+    StaffUIPreferences,
+    StaffUpdate,
+)
 from app.services.audit import record_audit_log
+from app.services.staff_lifecycle import (
+    deprovision_user_layers,
+    provision_user_layers,
+    sync_user_active_flag,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -240,11 +252,15 @@ async def get_staff(staff_id: int, db: AsyncSession = Depends(get_db),
     return await _compose(db, dict(row))
 
 
-@router.post("/staff", response_model=StaffResponse, status_code=201,
+@router.post("/staff", response_model=StaffCreateResponse, status_code=201,
              dependencies=[Depends(require_permission("staff.create"))])
 async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
                        tenant_id: int = Depends(get_current_tenant),
                        current_user: User = Depends(get_current_user)):
+    """ADR-023: スタッフ作成は 3 層（Firebase Auth / public.users / tenant.staff）に
+    伝播させる。``user_id`` が明示された場合は public.users 側を既存リンクとして
+    扱い、Firebase ユーザ作成もスキップ（運用上の管理者オーバーライド）。
+    """
     # role_id 存在検証（同一テナント内）
     check = await db.execute(
         text("SELECT id FROM roles WHERE id = :rid AND tenant_id = :tid"),
@@ -252,6 +268,24 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
     )
     if not check.first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定の role_id はこのテナントに存在しません")
+
+    # ── ADR-023: 3 層プロビジョニング ────────────────────────────
+    # 既存ユーザ紐付け (user_id 明示) でない場合は public.users + Firebase Auth を生成。
+    provisioning = None
+    effective_user_id = data.user_id
+    effective_firebase_uid = data.firebase_uid
+
+    if data.user_id is None:
+        provisioning = await provision_user_layers(
+            db=db,
+            tenant_id=tenant_id,
+            email=data.primary_email,
+            username=f"{data.surname_jp}{data.given_name_jp}",
+            full_name=f"{data.surname_jp} {data.given_name_jp}",
+            existing_firebase_uid=data.firebase_uid,
+        )
+        effective_user_id = provisioning.user_id
+        effective_firebase_uid = provisioning.firebase_uid
 
     explicit_code = data.staff_code and data.staff_code.strip()
     staff_code = explicit_code if explicit_code else f"EMP-PENDING-{uuid.uuid4().hex}"
@@ -272,13 +306,13 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
                 RETURNING id
             """),
             {
-                "tid": tenant_id, "uid": data.user_id, "code": staff_code,
+                "tid": tenant_id, "uid": effective_user_id, "code": staff_code,
                 "sjp": data.surname_jp, "gjp": data.given_name_jp,
                 "sk": data.surname_kana, "gk": data.given_name_kana,
                 "sen": data.surname_en, "gen": data.given_name_en,
                 "email": data.primary_email, "did": data.discord_user_id,
                 "rid": data.role_id, "st": data.status.value,
-                "fbuid": data.firebase_uid,
+                "fbuid": effective_firebase_uid,
                 "is_emp": bool(data.is_employee),
             },
         )
@@ -290,6 +324,13 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
             )
         await _upsert_ui_prefs(db, new_id, data.ui_preferences)
         await _replace_additional_emails(db, new_id, data.additional_emails)
+        # ADR-023: pending/inactive で作成された場合は public.users.is_active も同期
+        await sync_user_active_flag(
+            db=db,
+            user_id=effective_user_id,
+            firebase_uid=effective_firebase_uid,
+            staff_status=data.status.value,
+        )
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="create", table_name="staff", record_id=new_id,
@@ -298,11 +339,33 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
         await db.commit()
     except IntegrityError as e:
         await db.rollback()
+        # ADR-023: staff INSERT が失敗した場合、provisioning で作った Firebase + public.users を巻き戻す
+        if provisioning is not None:
+            await deprovision_user_layers(
+                db=db,
+                user_id=provisioning.user_id,
+                firebase_uid=provisioning.firebase_uid,
+            )
+            await db.commit()
         logger.warning("create_staff IntegrityError: tenant=%d err=%s", tenant_id, e.orig)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="スタッフの登録に失敗しました（staff_code / discord_user_id / firebase_uid 重複の可能性）",
         )
+    except HTTPException:
+        # provision_user_layers が投げた 4xx/5xx はそのまま伝播（rollback 済み or 副作用ロールバック済み）
+        await db.rollback()
+        raise
+    except Exception:
+        await db.rollback()
+        if provisioning is not None:
+            await deprovision_user_layers(
+                db=db,
+                user_id=provisioning.user_id,
+                firebase_uid=provisioning.firebase_uid,
+            )
+            await db.commit()
+        raise
     fetched = await db.execute(
         text(f"""
             SELECT {_STAFF_COLS}
@@ -312,7 +375,11 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
         """),
         {"id": new_id},
     )
-    return await _compose(db, dict(fetched.mappings().first()))
+    base = await _compose(db, dict(fetched.mappings().first()))
+    return StaffCreateResponse(
+        **base.model_dump(),
+        provisional_password=(provisioning.provisional_password if provisioning and provisioning.provisional_password else None),
+    )
 
 
 @router.patch("/staff/{staff_id}", response_model=StaffResponse,
@@ -358,6 +425,16 @@ async def update_staff(staff_id: int, data: StaffUpdate,
         email_models = [StaffEmailInput(**e) if isinstance(e, dict) else e for e in additional_emails]
         await _replace_additional_emails(db, staff_id, email_models)
 
+    # ADR-023: status 変更時は public.users.is_active と Firebase disabled も同期
+    new_status_val = update_data.get("status")
+    if new_status_val is not None and new_status_val != old_row["status"]:
+        await sync_user_active_flag(
+            db=db,
+            user_id=old_row["user_id"],
+            firebase_uid=old_row["firebase_uid"],
+            staff_status=new_status_val,
+        )
+
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,
         action="update", table_name="staff", record_id=staff_id,
@@ -387,6 +464,13 @@ async def delete_staff(staff_id: int, db: AsyncSession = Depends(get_db),
     try:
         # 副テーブルは ON DELETE CASCADE で消える
         await db.execute(text("DELETE FROM staff WHERE id = :id"), {"id": staff_id})
+        # ADR-023: tenant.staff の削除に成功したら、public.users と Firebase Auth からも消す。
+        # 参照系 IntegrityError はこの DELETE で先に検出されるため、3 層伝播はその後で実施。
+        await deprovision_user_layers(
+            db=db,
+            user_id=old_row["user_id"],
+            firebase_uid=old_row["firebase_uid"],
+        )
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="delete", table_name="staff", record_id=staff_id,

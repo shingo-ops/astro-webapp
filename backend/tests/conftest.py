@@ -867,15 +867,20 @@ async def setup_test_db(test_engine):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tenant_id INTEGER NOT NULL DEFAULT 999,
                 username VARCHAR(255),
-                email VARCHAR(255),
+                email VARCHAR(255) UNIQUE,
+                password_hash VARCHAR(255),
+                full_name VARCHAR(255),
                 role VARCHAR(50) DEFAULT 'user',
-                is_active BOOLEAN DEFAULT TRUE
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_login TIMESTAMP
             )
         """))
         # テストユーザー投入
         await conn.execute(text("""
-            INSERT OR IGNORE INTO users (id, tenant_id, username, email, role, is_active)
-            VALUES (999, 999, 'testuser', 'test@example.com', 'admin', TRUE)
+            INSERT OR IGNORE INTO users (id, tenant_id, username, email, password_hash, role, is_active)
+            VALUES (999, 999, 'testuser', 'test@example.com', '$2b$12$dummyhash', 'admin', TRUE)
         """))
     yield
 
@@ -936,6 +941,8 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM user_roles"))
         await conn.execute(text("DELETE FROM role_permissions"))
         await conn.execute(text("DELETE FROM roles"))
+        # ADR-023: 3 層同期テストで作られた public.users (id != 999) を掃除
+        await conn.execute(text("DELETE FROM users WHERE id != 999"))
 
 
 def _mock_user():
@@ -1082,6 +1089,26 @@ async def client(db_session):
         for target in _audit_targets:
             stack.enter_context(patch(f"{target}.record_audit_log", _make_noop_audit_log()))
         stack.enter_context(patch("app.auth.dependencies.load_user_permissions", _mock_load_user_permissions))
+        # ADR-023: Firebase Auth と tenant claim もテストではモック（外部 API を呼ばない）
+        import itertools
+        _uid_counter = itertools.count(start=1)
+
+        def _fake_create_user(email, password, display_name=None):
+            return f"fake-uid-{next(_uid_counter)}"
+
+        def _fake_delete_user(firebase_uid):
+            return None
+
+        def _fake_set_disabled(firebase_uid, disabled):
+            return None
+
+        def _fake_set_tenant_claim(firebase_uid, tenant_id):
+            return None
+
+        stack.enter_context(patch("app.services.staff_lifecycle.firebase_helpers.create_user", _fake_create_user))
+        stack.enter_context(patch("app.services.staff_lifecycle.firebase_helpers.delete_user", _fake_delete_user))
+        stack.enter_context(patch("app.services.staff_lifecycle.firebase_helpers.set_disabled", _fake_set_disabled))
+        stack.enter_context(patch("app.services.staff_lifecycle.set_tenant_claim", _fake_set_tenant_claim))
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             yield ac
 
