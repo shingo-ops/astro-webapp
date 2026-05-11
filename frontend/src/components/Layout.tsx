@@ -167,7 +167,7 @@ export default function Layout() {
         <div className="sidebar-logo-area">
           <img src="/favicon.png" alt="Sales Anchor" className="sidebar-logo-icon" />
           {sidebarExpanded && (
-            <span className="sidebar-logo-text">SALESANCHOR</span>
+            <img src="/logo.png" alt="Sales Anchor" className="sidebar-logo-text-img" />
           )}
         </div>
 
