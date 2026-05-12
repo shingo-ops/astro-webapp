@@ -51,6 +51,19 @@ _DEFAULT_SUBSCRIBED_FIELDS = (
     "messaging_referrals",
 )
 
+# Instagram Business Account 側に対して張る webhook field 群（ADR-024）。
+# Page 側 subscribed_apps だけでは Instagram Login for Business 経由の DM が
+# 受信できないため、`/{ig-user-id}/subscribed_apps` にも明示的に登録する。
+_DEFAULT_INSTAGRAM_SUBSCRIBED_FIELDS = (
+    "messages",
+    "messaging_postbacks",
+    "message_reactions",
+)
+
+# subscribed_fields JSONB に Instagram 側のフィールドを保存する際の prefix。
+# Page 側の `messages` と Instagram 側の `messages` を区別するために付ける。
+INSTAGRAM_FIELD_PREFIX = "instagram:"
+
 
 # ---------------------------------------------------------------------------
 # 例外階層
@@ -688,11 +701,96 @@ async def unsubscribe_page_from_app(
     return bool(body.get("success", False))
 
 
+async def subscribe_ig_user_to_app(
+    ig_user_id: str,
+    page_access_token: str,
+    *,
+    subscribed_fields: Optional[tuple[str, ...]] = None,
+    client: Optional[httpx.AsyncClient] = None,
+) -> list[str]:
+    """Instagram Business Account を本 App の subscribed_apps に登録する（ADR-024）。
+
+    Page-level subscription と並行して、Instagram Login for Business 経由で
+    届く DM/Reaction/Postback を受け取るために IG 側にも明示的に登録する。
+
+    Returns:
+        登録した subscribed_fields のリスト
+    """
+    if not ig_user_id:
+        raise ValueError("ig_user_id is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    fields = (
+        tuple(subscribed_fields)
+        if subscribed_fields
+        else _DEFAULT_INSTAGRAM_SUBSCRIBED_FIELDS
+    )
+    url = f"{graph_base_url()}/{ig_user_id}/subscribed_apps"
+    body = await _request(
+        "POST",
+        url,
+        params={"access_token": page_access_token},
+        data={"subscribed_fields": ",".join(fields)},
+        client=client,
+    )
+    if not body.get("success", False):
+        raise MetaGraphTransportError(
+            f"Meta /{ig_user_id}/subscribed_apps did not return success=true"
+        )
+    return list(fields)
+
+
+async def get_page_subscribed_apps(
+    page_id: str,
+    page_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> list[dict[str, Any]]:
+    """Page に登録されている subscribed_apps の一覧を取得する（ADR-024 検証用）。
+
+    `GET /{page-id}/subscribed_apps` の戻り値:
+        {"data": [{"id": "<app-id>", "name": "<app-name>",
+                    "subscribed_fields": ["messages", ...]}, ...]}
+
+    Returns:
+        list of {"id", "name", "subscribed_fields"}（順序は Meta 側の返却順）
+    """
+    if not page_id:
+        raise ValueError("page_id is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    url = f"{graph_base_url()}/{page_id}/subscribed_apps"
+    body = await _request(
+        "GET",
+        url,
+        params={"access_token": page_access_token},
+        client=client,
+    )
+    data = body.get("data", [])
+    if not isinstance(data, list):
+        raise MetaGraphTransportError(
+            f"Meta /{page_id}/subscribed_apps did not return a data list"
+        )
+    out: list[dict[str, Any]] = []
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        out.append(
+            {
+                "id": item.get("id"),
+                "name": item.get("name"),
+                "subscribed_fields": item.get("subscribed_fields") or [],
+            }
+        )
+    return out
+
+
 __all__ = [
     "MetaGraphError",
     "MetaGraphAPIError",
     "MetaGraphTimeoutError",
     "MetaGraphTransportError",
+    "INSTAGRAM_FIELD_PREFIX",
     "graph_api_version",
     "graph_base_url",
     "exchange_code_for_short_token",
@@ -701,6 +799,8 @@ __all__ = [
     "list_user_pages",
     "get_instagram_business_account",
     "subscribe_page_to_app",
+    "subscribe_ig_user_to_app",
+    "get_page_subscribed_apps",
     "unsubscribe_page_from_app",
     "send_messenger_message",
     "send_instagram_message",

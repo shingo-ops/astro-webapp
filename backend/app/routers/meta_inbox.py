@@ -448,6 +448,44 @@ async def connect_callback(
                 logger.warning("IG fetch failed for page %s: %s", page_id, e)
                 ig_id = ig_account.get("id")  # 最低限 id だけ保存
 
+        # ADR-024 AC-1: Instagram 側 subscribed_apps 登録（IG 紐付けがあれば）。
+        # Page 側 subscription だけでは Instagram Login for Business 経由の DM が
+        # 受信できないため、IG account に対しても明示的に subscribe_fields を張る。
+        # 失敗しても Page 接続自体は維持する（IG 連携のみ部分失敗扱い）。
+        ig_subscribe_error: Optional[dict] = None
+        if ig_id:
+            try:
+                ig_fields = await meta_graph.subscribe_ig_user_to_app(ig_id, page_token)
+                subscribed_fields = subscribed_fields + [
+                    f"{meta_graph.INSTAGRAM_FIELD_PREFIX}{f}" for f in ig_fields
+                ]
+            except MetaGraphAPIError as e:
+                logger.warning(
+                    "IG subscribe failed for ig=%s (page=%s): %s",
+                    ig_id, page_id, e.error_type,
+                )
+                ig_subscribe_error = e.to_audit_dict()
+            except MetaGraphError as e:
+                logger.warning("IG subscribe transport error for ig=%s: %s", ig_id, e)
+                ig_subscribe_error = {"reason": "transport_error", "detail": str(e)[:200]}
+
+        # ADR-024 AC-2: 登録結果の検証。`GET /{page-id}/subscribed_apps` を叩いて
+        # 自 App が含まれるか確認し、結果を audit に残す。失敗しても接続自体は通す
+        # （Meta の整合反映タイミング差を許容）。
+        verification: dict = {"checked": False}
+        try:
+            apps = await meta_graph.get_page_subscribed_apps(page_id, page_token)
+            our_app_id = os.getenv("META_APP_ID", "")
+            app_ids = [str(a.get("id")) for a in apps if a.get("id") is not None]
+            verification = {
+                "checked": True,
+                "subscribed_app_ids": app_ids,
+                "self_app_subscribed": our_app_id in app_ids if our_app_id else None,
+            }
+        except MetaGraphError as e:
+            logger.warning("subscribed_apps verification failed for page %s: %s", page_id, e)
+            verification = {"checked": False, "error": str(e)[:200]}
+
         # DB 保存
         record_id = await _upsert_tenant_meta_config(
             db,
@@ -472,6 +510,8 @@ async def connect_callback(
                 "instagram_business_account_id": ig_id,
                 "instagram_username": ig_username,
                 "subscribed_fields": subscribed_fields,
+                "ig_subscribe_error": ig_subscribe_error,
+                "subscription_verification": verification,
             },
         )
 
