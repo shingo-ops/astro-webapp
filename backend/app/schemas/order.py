@@ -11,6 +11,13 @@ from __future__ import annotations
     OrderListResponse / OrderGroupCountsResponse を追加
     （JOIN 結果の company_name / contact_display_name と
      ステータスごとの集計件数を表現するための薄い拡張）
+  2026-05-13: ADR-021 J1 fix — OrderStatus enum から `confirmed` を撤去し
+    ADR-021 第 1 節の正本 6 値（pending / processing / shipped / delivered /
+    returned / cancelled）に揃える。既存 `confirmed` 行は migration 051
+    で `pending` に統合される。
+
+    Note: `order_purchase_details.purchase_status='confirmed'`（仕入確定フラグ）
+    は **別ドメイン** で本変更の対象外。
 """
 
 from datetime import datetime
@@ -21,8 +28,17 @@ from pydantic import BaseModel, Field
 
 
 class OrderStatus(str, Enum):
+    """ADR-021 第 1 節「ステータスフィルタ」の正本 6 値。
+
+    日本語ラベル対応（フロント側で持つ）:
+      pending → 未処理
+      processing → 仕入中
+      shipped → 配送中
+      delivered → 完了
+      returned → トラブル
+      cancelled → キャンセル
+    """
     pending = "pending"
-    confirmed = "confirmed"
     processing = "processing"
     shipped = "shipped"
     delivered = "delivered"

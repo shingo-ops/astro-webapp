@@ -69,11 +69,12 @@ interface GroupCountsResponse {
   total: number;
 }
 
-// ADR-021 第 1 節の 6 値 + 既存 DB enum との対応。
-// `confirmed` は ADR-021 にない既存値だが破壊的変更を避けるため UI 上は「確認済」のままで残す。
+// ADR-021 第 1 節の正本 6 値。
+// 2026-05-13 J1 fix: 互換性のため残していた `confirmed`（確認済）を撤去し
+// ADR-021 設計通りの 6 値に揃えた（pending / processing / shipped / delivered /
+// returned / cancelled）。旧 confirmed 行は migration 051 で pending に統合される。
 const STATUSES = [
   "pending",
-  "confirmed",
   "processing",
   "shipped",
   "delivered",
@@ -82,7 +83,6 @@ const STATUSES = [
 ];
 const STATUS_LABELS: Record<string, string> = {
   pending: "未処理",
-  confirmed: "確認済",
   processing: "仕入中",
   shipped: "配送中",
   delivered: "完了",
