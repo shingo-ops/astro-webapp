@@ -67,24 +67,28 @@ jobs:
             git pull origin main
 
             echo "Step 2: Setting Meta Webhook environment variables..."
-            # 既存値があれば上書きしない（しんごさんが VPS で手動設定した値を尊重）。
-            # VPS が再構築されたとき GitHub Secrets から自動復元する目的。
-            # `^KEY=` の anchor 必須。`KEY` だけだと `#KEY=...` (コメント) や
-            # `META_APP_ID_OLD=...` 等の部分一致で誤って skip されるバグになる。
-            grep -q "^META_VERIFY_TOKEN=" .env 2>/dev/null || \
-              echo "META_VERIFY_TOKEN=${{ secrets.META_VERIFY_TOKEN }}" >> .env
-            grep -q "^META_APP_SECRET=" .env 2>/dev/null || \
-              echo "META_APP_SECRET=${{ secrets.META_APP_SECRET }}" >> .env
+            # ADR-025: GitHub Secrets を更新したら必ず VPS .env に反映される設計。
+            # 旧設計 (grep-or-append) は "既存行があれば上書きしない" ため Secrets 更新が
+            # VPS に届かず、METADATA_FERNET_KEY 不一致によるトークン復号失敗を引き起こした。
+            # 新設計: sed で既存行を削除してから append（冪等・上書き確実）。
+            # 手動で VPS .env を編集した値は次回デプロイで GitHub Secrets の値に戻される。
+            # 意図的に VPS で別の値を使いたい場合は GitHub Secrets 側を更新すること。
+            touch .env
+            sed -i '/^META_VERIFY_TOKEN=/d' .env
+            echo "META_VERIFY_TOKEN=${{ secrets.META_VERIFY_TOKEN }}" >> .env
+            sed -i '/^META_APP_SECRET=/d' .env
+            echo "META_APP_SECRET=${{ secrets.META_APP_SECRET }}" >> .env
             # Phase 1-D Sprint 2: OAuth backend で必要
-            grep -q "^META_APP_ID=" .env 2>/dev/null || \
-              echo "META_APP_ID=${{ secrets.META_APP_ID }}" >> .env
-            grep -q "^META_OAUTH_REDIRECT_URI=" .env 2>/dev/null || \
-              echo "META_OAUTH_REDIRECT_URI=${{ secrets.META_OAUTH_REDIRECT_URI }}" >> .env
+            sed -i '/^META_APP_ID=/d' .env
+            echo "META_APP_ID=${{ secrets.META_APP_ID }}" >> .env
+            sed -i '/^META_OAUTH_REDIRECT_URI=/d' .env
+            echo "META_OAUTH_REDIRECT_URI=${{ secrets.META_OAUTH_REDIRECT_URI }}" >> .env
             # Phase 1-D Sprint 1: tenant_meta_config の Page Access Token Fernet 暗号化鍵
-            # 鍵紛失リスクが極めて高い (DB 内の token が永久に復号不能になる) ため、
-            # GitHub Secrets と Bitwarden の二重保管が望ましい。
-            grep -q "^METADATA_FERNET_KEY=" .env 2>/dev/null || \
-              echo "METADATA_FERNET_KEY=${{ secrets.METADATA_FERNET_KEY }}" >> .env
+            # 重要: 鍵を変更した場合は既存の暗号化済みトークンが全て復号不能になる。
+            # キーローテーション時は docs/operations/meta_encryption_key_rotation.md に従うこと。
+            sed -i '/^METADATA_FERNET_KEY=/d' .env
+            echo "METADATA_FERNET_KEY=${{ secrets.METADATA_FERNET_KEY }}" >> .env
+            echo "  → .env の Meta 関連環境変数を GitHub Secrets の現在値で上書き完了"
 
             echo "Step 3: Rebuilding and restarting containers..."
             docker compose up -d --build
