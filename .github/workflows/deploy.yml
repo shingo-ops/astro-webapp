@@ -66,25 +66,43 @@ jobs:
             echo "Step 1: Pulling latest code from GitHub..."
             git pull origin main
 
-            echo "Step 2: Setting Meta Webhook environment variables..."
-            # 既存値があれば上書きしない（しんごさんが VPS で手動設定した値を尊重）。
-            # VPS が再構築されたとき GitHub Secrets から自動復元する目的。
-            # `^KEY=` の anchor 必須。`KEY` だけだと `#KEY=...` (コメント) や
-            # `META_APP_ID_OLD=...` 等の部分一致で誤って skip されるバグになる。
-            grep -q "^META_VERIFY_TOKEN=" .env 2>/dev/null || \
-              echo "META_VERIFY_TOKEN=${{ secrets.META_VERIFY_TOKEN }}" >> .env
-            grep -q "^META_APP_SECRET=" .env 2>/dev/null || \
-              echo "META_APP_SECRET=${{ secrets.META_APP_SECRET }}" >> .env
-            # Phase 1-D Sprint 2: OAuth backend で必要
-            grep -q "^META_APP_ID=" .env 2>/dev/null || \
-              echo "META_APP_ID=${{ secrets.META_APP_ID }}" >> .env
-            grep -q "^META_OAUTH_REDIRECT_URI=" .env 2>/dev/null || \
-              echo "META_OAUTH_REDIRECT_URI=${{ secrets.META_OAUTH_REDIRECT_URI }}" >> .env
-            # Phase 1-D Sprint 1: tenant_meta_config の Page Access Token Fernet 暗号化鍵
-            # 鍵紛失リスクが極めて高い (DB 内の token が永久に復号不能になる) ため、
-            # GitHub Secrets と Bitwarden の二重保管が望ましい。
-            grep -q "^METADATA_FERNET_KEY=" .env 2>/dev/null || \
-              echo "METADATA_FERNET_KEY=${{ secrets.METADATA_FERNET_KEY }}" >> .env
+            echo "Step 2: Syncing Meta Webhook environment variables from GitHub Secrets..."
+            # ADR-025: GitHub Secrets を更新したら必ず VPS .env に反映する。
+            # 旧パターン `grep -q "^K=" .env || echo "K=V" >> .env` は
+            # "既存値があれば上書きしない" 設計のため、Secret を更新しても
+            # VPS の .env が古い値のまま残った（2026-05-01 の METADATA_FERNET_KEY
+            # ローテーションが反映されず、毎日の token refresh が失敗した直接原因）。
+            #
+            # 新パターン: 対象キーの既存行を anchored 削除 → 最新値を append。
+            #   - `^KEY=` anchor によりコメント行 (`#KEY=...`) や部分一致
+            #     (`META_APP_ID_OLD=...`) を誤って削除しない
+            #   - .env 内の他のキー（DB_PASSWORD 等 VPS で手動設定したもの）には触れない
+            #   - 冪等: 同じ値で再実行しても最終状態は同じ
+            #   - quoted heredoc (`<<'ENV_EOF'`) でシェル変数展開を抑止し、
+            #     Secret 値をそのまま literal text として書き込む。
+            #     `${{ secrets.X }}` 自体は GitHub Actions が SSH 送信前に展開する。
+            #   - Phase 1-D Sprint 1: METADATA_FERNET_KEY 紛失は DB token を永久に
+            #     復号不能化するリスクが極めて高い。GitHub Secrets と Bitwarden の
+            #     二重保管必須。ローテーション手順は
+            #     docs/operations/meta_encryption_key_rotation.md 参照。
+            touch .env
+            sed -i.bak \
+              -e '/^META_VERIFY_TOKEN=/d' \
+              -e '/^META_APP_SECRET=/d' \
+              -e '/^META_APP_ID=/d' \
+              -e '/^META_OAUTH_REDIRECT_URI=/d' \
+              -e '/^METADATA_FERNET_KEY=/d' \
+              .env
+            rm -f .env.bak
+            # YAML `|` ブロックの共通インデント (12 スペース) はパース時に自動除去される。
+            # したがって heredoc 本文の各行は実行時に行頭スペースなしで届く。
+            cat >> .env <<'ENV_EOF'
+            META_VERIFY_TOKEN=${{ secrets.META_VERIFY_TOKEN }}
+            META_APP_SECRET=${{ secrets.META_APP_SECRET }}
+            META_APP_ID=${{ secrets.META_APP_ID }}
+            META_OAUTH_REDIRECT_URI=${{ secrets.META_OAUTH_REDIRECT_URI }}
+            METADATA_FERNET_KEY=${{ secrets.METADATA_FERNET_KEY }}
+            ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
             docker compose up -d --build

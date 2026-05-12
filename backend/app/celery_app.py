@@ -24,6 +24,7 @@ celery_app = Celery(
         "app.tasks.maintenance",
         "app.tasks.refresh_meta_tokens",
         "app.tasks.reports",
+        "app.tasks.verify_meta_subscriptions",
     ],
 )
 
@@ -58,5 +59,10 @@ celery_app.conf.beat_schedule = {
     "refresh-meta-page-tokens": {
         "task": "app.tasks.refresh_meta_tokens.refresh_all_meta_page_tokens",
         "schedule": crontab(hour=3, minute=0),
+    },
+    # Meta 接続レコードの整合性（暗号鍵 + Meta 側 subscribed_apps）を毎日AM4:30 JSTに検証（ADR-024）
+    "verify-meta-subscriptions": {
+        "task": "app.tasks.verify_meta_subscriptions.verify_all_meta_subscriptions",
+        "schedule": crontab(hour=4, minute=30),
     },
 }

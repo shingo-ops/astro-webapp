@@ -205,10 +205,16 @@ def _mk_graph_handler(code_to_short: dict[str, str] | None = None,
                       pages: list[dict] | None = None,
                       ig_by_page: dict[str, dict] | None = None,
                       subscribe_ok: bool = True,
-                      unsubscribe_ok: bool = True):
+                      ig_subscribe_ok: bool = True,
+                      unsubscribe_ok: bool = True,
+                      subscribed_apps_data: list[dict] | None = None):
     """httpx.MockTransport handler を組み立てる。
 
     Meta Graph API の各 endpoint をパス + パラメータで分岐する。
+
+    `subscribed_apps_data` を渡すと GET /{page_id}/subscribed_apps が
+    `{"data": subscribed_apps_data}` を返す（ADR-024 検証 path）。
+    既定では自 App (test-app-id-123) が登録済みの想定で 1 件返す。
     """
     if code_to_short is None:
         code_to_short = {"the-code": "short-uat"}
@@ -222,6 +228,15 @@ def _mk_graph_handler(code_to_short: dict[str, str] | None = None,
         }]
     if ig_by_page is None:
         ig_by_page = {"page-1": {"id": "ig-1", "username": "highlifejpn"}}
+    if subscribed_apps_data is None:
+        subscribed_apps_data = [{
+            "id": "test-app-id-123",
+            "name": "Sales Anchor",
+            "subscribed_fields": ["messages", "messaging_postbacks"],
+        }]
+
+    # IG subscribe/check 用の判別: ig_by_page の id 一覧
+    ig_ids = {iba.get("id") for iba in ig_by_page.values() if isinstance(iba, dict)}
 
     def handler(req: httpx.Request) -> httpx.Response:
         path = req.url.path
@@ -242,12 +257,22 @@ def _mk_graph_handler(code_to_short: dict[str, str] | None = None,
         if path.endswith("/me/accounts"):
             return _ok({"data": pages})
         if path.endswith("/subscribed_apps"):
+            # IG subscribe POST 失敗を別途制御
+            if (
+                req.method == "POST"
+                and not ig_subscribe_ok
+                and any(path.endswith(f"/{ig_id}/subscribed_apps") for ig_id in ig_ids)
+            ):
+                return _err(400, {"type": "GraphMethodException", "code": 100,
+                                   "message": "IG subscribe unsupported"})
             if not subscribe_ok and req.method == "POST":
                 return _err(400, {"type": "GraphMethodException", "code": 100,
                                    "message": "Unsupported"})
             if not unsubscribe_ok and req.method == "DELETE":
                 return _err(400, {"type": "GraphMethodException", "code": 100,
                                    "message": "Cannot unsubscribe"})
+            if req.method == "GET":
+                return _ok({"data": subscribed_apps_data})
             return _ok({"success": True})
         # GET /{page_id} で IG account fetch
         for pid, iba in ig_by_page.items():
@@ -611,3 +636,127 @@ async def test_delete_page_returns_500_when_token_decrypt_fails(app_client, db_s
     with _patch_graph(handler):
         resp = await app_client.delete("/api/v1/meta/connect/page-1")
     assert resp.status_code == 500
+
+
+# ---------------------------------------------------------------------------
+# ADR-024: IG subscribe + post-subscribe verification（Phase 1-D 構造的不整合修正）
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_callback_subscribes_instagram_when_ig_account_present(app_client, db_session):
+    """ADR-024 AC-1: IG 紐付けがある Page では IG subscribe も走り、
+    subscribed_fields に instagram:messages 等が混ざる。"""
+    redis_mock, _ = _make_redis_with_state({
+        "tenant_id": 999, "staff_id": 0, "created_at": "x", "nonce": "y",
+    })
+    handler = _mk_graph_handler()  # 既定: Page page-1 + IG ig-1
+
+    with patch("app.services.oauth_state.get_redis", return_value=redis_mock), \
+         _patch_graph(handler):
+        resp = await app_client.get(
+            "/api/v1/meta/connect/callback?code=the-code&state=ok-state"
+        )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["connected_pages"][0]["instagram_business_account_id"] == "ig-1"
+
+    row = (await db_session.execute(text(
+        "SELECT subscribed_fields FROM tenant_meta_config WHERE page_id = 'page-1'"
+    ))).first()
+    fields = json.loads(row[0])
+    # Page 側
+    assert "messages" in fields
+    assert "messaging_postbacks" in fields
+    # Instagram 側（prefix で区別）
+    assert "instagram:messages" in fields
+    assert "instagram:messaging_postbacks" in fields
+
+
+@pytest.mark.asyncio
+async def test_callback_skips_instagram_subscribe_when_no_ig_account(app_client, db_session):
+    """IG 紐付けが無い Page では IG subscribe をスキップし、
+    subscribed_fields には Page 側のみ入る。"""
+    redis_mock, _ = _make_redis_with_state({
+        "tenant_id": 999, "staff_id": 0, "created_at": "x", "nonce": "y",
+    })
+    pages = [{
+        "id": "page-2", "name": "FB Only Page",
+        "access_token": "page-2-token",
+        "instagram_business_account": None,
+    }]
+    handler = _mk_graph_handler(pages=pages, ig_by_page={})
+
+    with patch("app.services.oauth_state.get_redis", return_value=redis_mock), \
+         _patch_graph(handler):
+        resp = await app_client.get(
+            "/api/v1/meta/connect/callback?code=the-code&state=ok-state"
+        )
+    assert resp.status_code == 200
+
+    row = (await db_session.execute(text(
+        "SELECT subscribed_fields, instagram_business_account_id "
+        "FROM tenant_meta_config WHERE page_id = 'page-2'"
+    ))).first()
+    assert row[1] is None  # IG なし
+    fields = json.loads(row[0])
+    assert "messages" in fields
+    assert not any(f.startswith("instagram:") for f in fields)
+
+
+@pytest.mark.asyncio
+async def test_callback_continues_when_instagram_subscribe_fails(app_client, db_session):
+    """IG subscribe が失敗しても Page 接続は維持され、Page 側 fields は保存される。"""
+    redis_mock, _ = _make_redis_with_state({
+        "tenant_id": 999, "staff_id": 0, "created_at": "x", "nonce": "y",
+    })
+    handler = _mk_graph_handler(ig_subscribe_ok=False)
+
+    with patch("app.services.oauth_state.get_redis", return_value=redis_mock), \
+         _patch_graph(handler):
+        resp = await app_client.get(
+            "/api/v1/meta/connect/callback?code=the-code&state=ok-state"
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    # Page 接続自体は成功扱い
+    assert body["connected_pages"][0]["page_id"] == "page-1"
+    assert body["failed_pages"] == []
+
+    row = (await db_session.execute(text(
+        "SELECT subscribed_fields FROM tenant_meta_config WHERE page_id = 'page-1'"
+    ))).first()
+    fields = json.loads(row[0])
+    # Page 側は入る、IG 側は入らない
+    assert "messages" in fields
+    assert not any(f.startswith("instagram:") for f in fields)
+
+
+@pytest.mark.asyncio
+async def test_callback_verifies_subscribed_apps_after_subscribe(app_client, db_session):
+    """ADR-024 AC-2: 接続後に GET /{page-id}/subscribed_apps を呼んで自 App が返るか確認する。"""
+    redis_mock, _ = _make_redis_with_state({
+        "tenant_id": 999, "staff_id": 0, "created_at": "x", "nonce": "y",
+    })
+
+    seen_paths: list[tuple[str, str]] = []
+    base_handler = _mk_graph_handler()
+
+    def spy_handler(req):
+        seen_paths.append((req.method, req.url.path))
+        return base_handler(req)
+
+    with patch("app.services.oauth_state.get_redis", return_value=redis_mock), \
+         _patch_graph(spy_handler):
+        resp = await app_client.get(
+            "/api/v1/meta/connect/callback?code=the-code&state=ok-state"
+        )
+    assert resp.status_code == 200
+
+    # GET /v19.0/page-1/subscribed_apps が呼ばれている
+    assert any(
+        method == "GET" and path.endswith("/page-1/subscribed_apps")
+        for method, path in seen_paths
+    ), f"GET /page-1/subscribed_apps not called. seen={seen_paths}"

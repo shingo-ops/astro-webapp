@@ -499,3 +499,120 @@ async def test_get_user_name_empty_args_raise():
         await get_user_name("", "token")
     with pytest.raises(ValueError):
         await get_user_name("PSID-1", "")
+
+
+# ---------------------------------------------------------------------------
+# ADR-024: subscribe_ig_user_to_app / get_page_subscribed_apps
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_subscribe_ig_user_to_app_default_fields():
+    """ADR-024: IG account subscribe で既定フィールドが POST される。"""
+    from app.services.meta_graph import subscribe_ig_user_to_app
+
+    captured: dict[str, Any] = {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        captured["method"] = req.method
+        captured["path"] = req.url.path
+        captured["params"] = dict(req.url.params)
+        captured["body"] = req.read().decode("utf-8")
+        return _ok({"success": True})
+
+    async with _make_client(handler) as client:
+        fields = await subscribe_ig_user_to_app("ig-99", "page-token", client=client)
+
+    assert captured["method"] == "POST"
+    assert captured["path"].endswith("/ig-99/subscribed_apps")
+    assert captured["params"]["access_token"] == "page-token"
+    # IG 既定フィールド: messages / messaging_postbacks / message_reactions
+    assert "messages" in fields
+    assert "messaging_postbacks" in fields
+    assert "message_reactions" in fields
+
+
+@pytest.mark.asyncio
+async def test_subscribe_ig_user_to_app_success_false():
+    from app.services.meta_graph import subscribe_ig_user_to_app
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _ok({"success": False})
+
+    async with _make_client(handler) as client:
+        with pytest.raises(MetaGraphTransportError):
+            await subscribe_ig_user_to_app("ig-99", "page-token", client=client)
+
+
+@pytest.mark.asyncio
+async def test_subscribe_ig_user_empty_args_raise():
+    from app.services.meta_graph import subscribe_ig_user_to_app
+
+    with pytest.raises(ValueError):
+        await subscribe_ig_user_to_app("", "token")
+    with pytest.raises(ValueError):
+        await subscribe_ig_user_to_app("ig", "")
+
+
+@pytest.mark.asyncio
+async def test_get_page_subscribed_apps_returns_app_list():
+    """ADR-024 AC-2: GET /{page-id}/subscribed_apps の結果を構造化して返す。"""
+    from app.services.meta_graph import get_page_subscribed_apps
+
+    captured: dict[str, Any] = {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        captured["method"] = req.method
+        captured["path"] = req.url.path
+        return _ok({"data": [
+            {"id": "app-aaa", "name": "Sales Anchor",
+             "subscribed_fields": ["messages", "messaging_postbacks"]},
+            {"id": "app-bbb", "name": "Other"},
+        ]})
+
+    async with _make_client(handler) as client:
+        apps = await get_page_subscribed_apps("page-1", "page-token", client=client)
+
+    assert captured["method"] == "GET"
+    assert captured["path"].endswith("/page-1/subscribed_apps")
+    assert len(apps) == 2
+    assert apps[0]["id"] == "app-aaa"
+    assert apps[0]["subscribed_fields"] == ["messages", "messaging_postbacks"]
+    # subscribed_fields 欠落時は []
+    assert apps[1]["subscribed_fields"] == []
+
+
+@pytest.mark.asyncio
+async def test_get_page_subscribed_apps_empty_data():
+    """data=[] の場合は空 list を返す（drift 検知の典型ケース）。"""
+    from app.services.meta_graph import get_page_subscribed_apps
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _ok({"data": []})
+
+    async with _make_client(handler) as client:
+        apps = await get_page_subscribed_apps("page-1", "page-token", client=client)
+    assert apps == []
+
+
+@pytest.mark.asyncio
+async def test_get_page_subscribed_apps_data_not_a_list():
+    """data が list でない異常 → MetaGraphTransportError。"""
+    from app.services.meta_graph import get_page_subscribed_apps
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _ok({"data": {"oops": True}})
+
+    async with _make_client(handler) as client:
+        with pytest.raises(MetaGraphTransportError):
+            await get_page_subscribed_apps("page-1", "page-token", client=client)
+
+
+@pytest.mark.asyncio
+async def test_get_page_subscribed_apps_empty_args_raise():
+    from app.services.meta_graph import get_page_subscribed_apps
+
+    with pytest.raises(ValueError):
+        await get_page_subscribed_apps("", "token")
+    with pytest.raises(ValueError):
+        await get_page_subscribed_apps("page", "")
