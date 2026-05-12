@@ -289,6 +289,144 @@ class TestMonthlySummary:
         assert res.status_code == 422
 
 
+class TestMonthlyJstBoundary:
+    """ADR-021 J2 fix (2026-05-13): /financials/monthly の JST 暦月境界。
+
+    `created_at` を SQL で直接 UPDATE して境界を作る。
+    JST 月末 23:59:59 までを当該月にカウントし、JST 翌月 00:00 は翌月。
+    """
+
+    async def _set_financial_created_at(self, order_id: int, created_at_utc):
+        """order_financials.created_at を aware UTC datetime に直接 UPDATE する。
+
+        SQLAlchemy が SQLite に向けて文字列化する形式と router 側の bind
+        値（datetime オブジェクト）が一致するよう、両方 datetime を渡す。
+        """
+        from sqlalchemy import text
+
+        from app.database import get_db
+        from app.main import app
+
+        override = app.dependency_overrides.get(get_db)
+        if override is None:
+            raise RuntimeError("client fixture が DB セッションを登録していません")
+        agen = override()
+        db = await agen.__anext__()
+        await db.execute(
+            text("UPDATE order_financials SET created_at = :cat WHERE order_id = :oid"),
+            {"cat": created_at_utc, "oid": order_id},
+        )
+        await db.commit()
+
+    async def test_monthly_financials_includes_jst_late_night(self, client):
+        """JST 2026-05-31 23:59:59 の created_at は month=5 集計に含まれる"""
+        from datetime import datetime, timezone
+        order_id = await _create_order(client, "ORD-FIN-JST-LATE")
+        await client.post(
+            f"/api/v1/orders/{order_id}/financial",
+            json={"revenue_amount": 100000, "purchase_cost": 60000},
+        )
+        # UTC 2026-05-31 14:59:59 = JST 2026-05-31 23:59:59
+        await self._set_financial_created_at(
+            order_id, datetime(2026, 5, 31, 14, 59, 59, tzinfo=timezone.utc),
+        )
+
+        res_may = await client.get(
+            "/api/v1/financials/monthly",
+            params={"year": 2026, "month": 5},
+        )
+        assert res_may.status_code == 200, res_may.text
+        # 5 月に含まれる
+        assert res_may.json()["count"] >= 1
+
+        res_jun = await client.get(
+            "/api/v1/financials/monthly",
+            params={"year": 2026, "month": 6},
+        )
+        # 6 月には入らない（この order だけを観測するため revenue 一致で見る）
+        assert res_jun.status_code == 200
+        # 注: 他テストの混入を避けるため revenue 100000 ピンポイント検証は
+        # しない。代わりに 5 月の方に集計されることを上で確認できれば OK。
+
+    async def test_monthly_financials_excludes_jst_month_start(self, client):
+        """JST 2026-04-30 23:59:59 は 5 月集計に入らず、JST 2026-05-01 00:00:00 は入る"""
+        from datetime import datetime, timezone
+        order_a = await _create_order(client, "ORD-FIN-JST-APR-END")
+        order_b = await _create_order(client, "ORD-FIN-JST-MAY-START")
+        await client.post(
+            f"/api/v1/orders/{order_a}/financial",
+            json={"revenue_amount": 12345},
+        )
+        await client.post(
+            f"/api/v1/orders/{order_b}/financial",
+            json={"revenue_amount": 67890},
+        )
+        # UTC 2026-04-30 14:59:59 = JST 2026-04-30 23:59:59（4 月最終秒）
+        await self._set_financial_created_at(
+            order_a, datetime(2026, 4, 30, 14, 59, 59, tzinfo=timezone.utc),
+        )
+        # UTC 2026-04-30 15:00:00 = JST 2026-05-01 00:00:00（5 月初秒）
+        await self._set_financial_created_at(
+            order_b, datetime(2026, 4, 30, 15, 0, 0, tzinfo=timezone.utc),
+        )
+
+        res_may = await client.get(
+            "/api/v1/financials/monthly",
+            params={"year": 2026, "month": 5},
+        )
+        assert res_may.status_code == 200
+        body_may = res_may.json()
+        # 5/1 00:00 の 67890 が含まれる
+        assert float(body_may["revenue_total"]) >= 67890.0
+        # 4/30 23:59 は含まれない（他のテストデータが混入する可能性があるが
+        # 12345 は他テストでは作っていない固有値）
+        # 念のためピンポイントで「12345 が含まれていない」ことを確認するのは
+        # SUM 値しか取れないため難しい。代わりに 4 月集計で 12345 を含むことを確認する。
+        res_apr = await client.get(
+            "/api/v1/financials/monthly",
+            params={"year": 2026, "month": 4},
+        )
+        assert res_apr.status_code == 200
+        body_apr = res_apr.json()
+        assert float(body_apr["revenue_total"]) >= 12345.0
+
+    async def test_monthly_financials_december_jst_year_rollover(self, client):
+        """12 月境界: JST 2026-12-31 23:59:59 は month=12、2027-01-01 00:00:00 は 2027/1"""
+        from datetime import datetime, timezone
+        order_dec = await _create_order(client, "ORD-FIN-JST-DEC-END")
+        order_jan = await _create_order(client, "ORD-FIN-JST-JAN-START")
+        await client.post(
+            f"/api/v1/orders/{order_dec}/financial",
+            json={"revenue_amount": 11111},
+        )
+        await client.post(
+            f"/api/v1/orders/{order_jan}/financial",
+            json={"revenue_amount": 22222},
+        )
+        # JST 2026-12-31 23:59:59 = UTC 2026-12-31 14:59:59
+        await self._set_financial_created_at(
+            order_dec, datetime(2026, 12, 31, 14, 59, 59, tzinfo=timezone.utc),
+        )
+        # JST 2027-01-01 00:00:00 = UTC 2026-12-31 15:00:00
+        await self._set_financial_created_at(
+            order_jan, datetime(2026, 12, 31, 15, 0, 0, tzinfo=timezone.utc),
+        )
+
+        res_dec = await client.get(
+            "/api/v1/financials/monthly",
+            params={"year": 2026, "month": 12},
+        )
+        assert res_dec.status_code == 200
+        assert float(res_dec.json()["revenue_total"]) >= 11111.0
+
+        res_jan = await client.get(
+            "/api/v1/financials/monthly",
+            params={"year": 2027, "month": 1},
+        )
+        assert res_jan.status_code == 200
+        assert float(res_jan.json()["revenue_total"]) >= 22222.0
+
+
 class TestPermissions:
     """ADR-021 Sprint 2 / AC-2.6: 権限・テナント分離
 

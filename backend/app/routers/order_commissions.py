@@ -25,7 +25,7 @@ ADR-021 Phase 5 / Sprint 5: 担当者報酬計算 MVP
 """
 
 import json
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -58,6 +58,7 @@ from app.services.commission_calculator import (
     StaffSnapshot,
     calculate_all,
 )
+from app.services.time import _jst_month_range_utc
 
 router = APIRouter()
 
@@ -470,12 +471,12 @@ async def get_monthly_commissions(
 
     集計対象は `calculated_at` が指定月内のレコードのみ。再計算未実施の行は
     `calculated_at` が NULL のため対象外（recalc が走った行のみ）。
+
+    ADR-021 J2 fix (2026-05-13):
+      期間境界は JST 暦月（month=5 → JST 2026-05-01 00:00 〜 6-01 00:00）。
+      UTC 換算で SQL バインドし、TIMESTAMPTZ 比較で評価する。
     """
-    start = date(year, month, 1)
-    if month == 12:
-        end = date(year + 1, 1, 1)
-    else:
-        end = date(year, month + 1, 1)
+    start, end = _jst_month_range_utc(year, month)
 
     # by_staff（NULL は「未割当」としてまとめる）
     by_staff_sql = text(

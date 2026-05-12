@@ -60,7 +60,7 @@ class TestCalculateLogic:
     @pytest.mark.parametrize("role", ["sales", "order", "ship", "purchase", "trouble"])
     def test_unassigned_returns_zero(self, role):
         result = calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=self.rates,
             role=role,
@@ -72,7 +72,7 @@ class TestCalculateLogic:
     @pytest.mark.parametrize("role", ["sales", "order", "ship", "purchase", "trouble"])
     def test_is_employee_returns_zero(self, role):
         result = calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=self.rates,
             role=role,
@@ -119,7 +119,7 @@ class TestCalculateLogic:
     @pytest.mark.parametrize("role,expected", [("sales", "1000.00"), ("order", "1000.00")])
     def test_rate_role_uses_commission_base_amount(self, role, expected):
         result = calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=self.rates,
             role=role,
@@ -131,7 +131,7 @@ class TestCalculateLogic:
     @pytest.mark.parametrize("role", ["sales", "order"])
     def test_rate_role_returns_zero_when_financial_missing(self, role):
         result = calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=None,
             rates=self.rates,
             role=role,
@@ -146,7 +146,7 @@ class TestCalculateLogic:
     )
     def test_fixed_role_returns_value_even_without_financial(self, role, expected):
         result = calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=None,
             rates=self.rates,
             role=role,
@@ -165,7 +165,7 @@ class TestCalculateLogic:
         )
         # 売上 10000 × 20% = 2000
         assert calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=custom,
             role="sales",
@@ -173,7 +173,7 @@ class TestCalculateLogic:
         ) == Decimal("2000.00")
         # 売上 10000 × 5% = 500
         assert calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=custom,
             role="order",
@@ -181,21 +181,21 @@ class TestCalculateLogic:
         ) == Decimal("500.00")
         # ship 300 / purchase 150 / trouble 750
         assert calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=custom,
             role="ship",
             staff=self.regular_staff,
         ) == Decimal("300.00")
         assert calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=custom,
             role="purchase",
             staff=self.regular_staff,
         ) == Decimal("150.00")
         assert calculate(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=custom,
             role="trouble",
@@ -205,7 +205,7 @@ class TestCalculateLogic:
     def test_unknown_role_raises(self):
         with pytest.raises(ValueError):
             calculate(
-                order_status="confirmed",
+                order_status="pending",
                 financial=self.fin,
                 rates=self.rates,
                 role="unknown_role",
@@ -214,7 +214,7 @@ class TestCalculateLogic:
 
     def test_calculate_all_returns_5_roles(self):
         out = calculate_all(
-            order_status="confirmed",
+            order_status="pending",
             financial=self.fin,
             rates=self.rates,
             staff_by_role={
@@ -336,7 +336,7 @@ async def _create_company_contact(client, name="報酬テスト"):
     return company_id, ct.json()["id"]
 
 
-async def _create_order(client, order_number="ORD-COM-1", status_value="confirmed"):
+async def _create_order(client, order_number="ORD-COM-1", status_value="pending"):
     company_id, contact_id = await _create_company_contact(client, f"Co-{order_number}")
     res = await client.post(
         "/api/v1/orders",
@@ -538,7 +538,7 @@ class TestAssignEndpoint:
 class TestRecalcEndpoint:
     async def test_recalc_applies_current_formula(self, client):
         """recalc で 5 ロールが現行式通り計算される"""
-        order_id = await _create_order(client, "ORD-COM-RECALC-1", status_value="confirmed")
+        order_id = await _create_order(client, "ORD-COM-RECALC-1", status_value="pending")
         staff_id = await _create_staff(client, email="recalc1@example.com")
         await _create_financial(client, order_id, 10000)
         # 5 ロールに staff を割当
@@ -778,6 +778,196 @@ class TestMonthlyEndpoint:
     async def test_monthly_invalid_month_returns_422(self, client):
         res = await client.get("/api/v1/commissions/monthly?year=2026&month=13")
         assert res.status_code == 422
+
+
+class TestMonthlyJstBoundary:
+    """ADR-021 J2 fix (2026-05-13): /commissions/monthly の JST 暦月境界。
+
+    JST 業務日基準で月末 23:59:59 までを当該月にカウントする。
+    UTC 換算では当該月の前月末 15:00:00 〜 当該月末 15:00:00 が範囲。
+
+    SQLite テストでは Python 側で UTC 等価 datetime を生成し、それを
+    raw SQL で order_commissions.calculated_at に直接 INSERT する。
+    """
+
+    async def _insert_commission_with_calc_at(
+        self,
+        order_id: int,
+        role: str,
+        staff_id: int | None,
+        amount: float,
+        calc_at_utc: "datetime",
+    ):
+        """テスト用に order_commissions 行を SQL で直接挿入する。
+
+        recalc は datetime.now(UTC) を書き込むため境界テストには使えず、
+        ここでは calc_at_utc（aware UTC datetime）をそのまま calculated_at
+        にセットする。SQLAlchemy が SQLite に向けて文字列化したものと
+        router 側の bind 値が完全に一致するよう、両方で aware datetime
+        を使う。
+        """
+        from sqlalchemy import text
+
+        from app.database import get_db
+        from app.main import app
+
+        override = app.dependency_overrides.get(get_db)
+        if override is None:
+            raise RuntimeError("client fixture が DB セッションを登録していません")
+        agen = override()
+        db = await agen.__anext__()
+        await db.execute(
+            text(
+                """
+                INSERT INTO order_commissions
+                    (order_id, tenant_id, role, staff_id, calculated_amount, calculated_at)
+                VALUES (:oid, 999, :role, :sid, :amt, :cat)
+                """
+            ),
+            {
+                "oid": order_id,
+                "role": role,
+                "sid": staff_id,
+                "amt": amount,
+                "cat": calc_at_utc,
+            },
+        )
+        await db.commit()
+
+    async def test_monthly_includes_jst_late_night_order(self, client):
+        """JST 2026-05-31 23:59:59 の行は month=5 集計に含まれ month=6 には含まれない"""
+        from datetime import datetime, timezone
+        order_id = await _create_order(client, "ORD-COM-JST-LATE")
+        staff_id = await _create_staff(client, email="jstlate@example.com")
+        # JST 2026-05-31 23:59:59 = UTC 2026-05-31 14:59:59
+        await self._insert_commission_with_calc_at(
+            order_id, "sales", staff_id, 1000.0,
+            datetime(2026, 5, 31, 14, 59, 59, tzinfo=timezone.utc),
+        )
+
+        res_may = await client.get(
+            "/api/v1/commissions/monthly?year=2026&month=5"
+        )
+        assert res_may.status_code == 200, res_may.text
+        body_may = res_may.json()
+        assert float(body_may["total"]) == 1000.0
+
+        res_jun = await client.get(
+            "/api/v1/commissions/monthly?year=2026&month=6"
+        )
+        assert res_jun.status_code == 200, res_jun.text
+        assert float(res_jun.json()["total"]) == 0.0
+
+    async def test_monthly_excludes_jst_month_start(self, client):
+        """JST 2026-04-30 23:59:59 は 5 月集計に含まれず、JST 2026-05-01 00:00:00 は含まれる"""
+        from datetime import datetime, timezone
+        order_a = await _create_order(client, "ORD-COM-JST-APR-END")
+        order_b = await _create_order(client, "ORD-COM-JST-MAY-START")
+        staff_id = await _create_staff(client, email="jstboundary@example.com")
+        # JST 2026-04-30 23:59:59 = UTC 2026-04-30 14:59:59
+        await self._insert_commission_with_calc_at(
+            order_a, "sales", staff_id, 500.0,
+            datetime(2026, 4, 30, 14, 59, 59, tzinfo=timezone.utc),
+        )
+        # JST 2026-05-01 00:00:00 = UTC 2026-04-30 15:00:00
+        await self._insert_commission_with_calc_at(
+            order_b, "sales", staff_id, 700.0,
+            datetime(2026, 4, 30, 15, 0, 0, tzinfo=timezone.utc),
+        )
+
+        res_may = await client.get(
+            "/api/v1/commissions/monthly?year=2026&month=5"
+        )
+        assert res_may.status_code == 200, res_may.text
+        # 5/1 00:00 の 700 のみ含まれる
+        assert float(res_may.json()["total"]) == 700.0
+
+        res_apr = await client.get(
+            "/api/v1/commissions/monthly?year=2026&month=4"
+        )
+        assert res_apr.status_code == 200, res_apr.text
+        # 4/30 23:59 の 500 のみ含まれる
+        assert float(res_apr.json()["total"]) == 500.0
+
+    async def test_monthly_december_jst_boundary_year_rollover(self, client):
+        """12 月境界: JST 2026-12-31 23:59:59 は month=12、2027-01-01 00:00:00 は 2027 年 1 月"""
+        from datetime import datetime, timezone
+        order_dec = await _create_order(client, "ORD-COM-JST-DEC-END")
+        order_jan = await _create_order(client, "ORD-COM-JST-JAN-START")
+        staff_id = await _create_staff(client, email="jstdec@example.com")
+        # JST 2026-12-31 23:59:59 = UTC 2026-12-31 14:59:59
+        await self._insert_commission_with_calc_at(
+            order_dec, "sales", staff_id, 1234.0,
+            datetime(2026, 12, 31, 14, 59, 59, tzinfo=timezone.utc),
+        )
+        # JST 2027-01-01 00:00:00 = UTC 2026-12-31 15:00:00
+        await self._insert_commission_with_calc_at(
+            order_jan, "sales", staff_id, 5678.0,
+            datetime(2026, 12, 31, 15, 0, 0, tzinfo=timezone.utc),
+        )
+
+        res_dec = await client.get(
+            "/api/v1/commissions/monthly?year=2026&month=12"
+        )
+        assert res_dec.status_code == 200, res_dec.text
+        assert float(res_dec.json()["total"]) == 1234.0
+
+        res_jan = await client.get(
+            "/api/v1/commissions/monthly?year=2027&month=1"
+        )
+        assert res_jan.status_code == 200, res_jan.text
+        assert float(res_jan.json()["total"]) == 5678.0
+
+
+class TestJstHelper:
+    """ADR-021 J2 fix: services.time._jst_month_range_utc の単体検証。"""
+
+    def test_returns_utc_aware_datetimes(self):
+        from app.services.time import _jst_month_range_utc, JST
+        start, end = _jst_month_range_utc(2026, 5)
+        # 両方 aware で UTC
+        assert start.tzinfo is not None
+        assert end.tzinfo is not None
+        assert start.utcoffset().total_seconds() == 0
+        assert end.utcoffset().total_seconds() == 0
+        # JST 換算で 1 日 00:00
+        assert start.astimezone(JST).day == 1
+        assert start.astimezone(JST).month == 5
+        assert end.astimezone(JST).day == 1
+        assert end.astimezone(JST).month == 6
+
+    def test_may_has_31_days(self):
+        from app.services.time import _jst_month_range_utc
+        start, end = _jst_month_range_utc(2026, 5)
+        # 5 月は 31 日
+        assert (end - start).days == 31
+
+    def test_february_leap_year(self):
+        from app.services.time import _jst_month_range_utc
+        # 2024 はうるう年
+        start, end = _jst_month_range_utc(2024, 2)
+        assert (end - start).days == 29
+
+    def test_february_non_leap_year(self):
+        from app.services.time import _jst_month_range_utc
+        # 2026 はうるう年でない
+        start, end = _jst_month_range_utc(2026, 2)
+        assert (end - start).days == 28
+
+    def test_december_rolls_over_year(self):
+        from app.services.time import _jst_month_range_utc, JST
+        start, end = _jst_month_range_utc(2026, 12)
+        assert start.astimezone(JST).year == 2026
+        assert end.astimezone(JST).year == 2027
+        assert end.astimezone(JST).month == 1
+
+    def test_may_start_is_utc_april_30_15_00(self):
+        """JST 5/1 00:00 = UTC 4/30 15:00"""
+        from datetime import datetime, timezone
+        from app.services.time import _jst_month_range_utc
+        start, end = _jst_month_range_utc(2026, 5)
+        assert start == datetime(2026, 4, 30, 15, 0, 0, tzinfo=timezone.utc)
+        assert end == datetime(2026, 5, 31, 15, 0, 0, tzinfo=timezone.utc)
 
 
 # ---------------------------------------------------------------------------

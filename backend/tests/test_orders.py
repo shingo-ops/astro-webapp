@@ -122,8 +122,8 @@ class TestOrdersCRUD:
         })
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-CONF",
-            "status": "confirmed",
+            "order_number": "ORD-SHIP",
+            "status": "shipped",
         })
 
         res = await client.get("/api/v1/orders", params={"status": "pending"})
@@ -168,13 +168,13 @@ class TestOrdersCRUD:
         order_id = create_res.json()["id"]
 
         res = await client.patch(f"/api/v1/orders/{order_id}", json={
-            "status": "confirmed",
+            "status": "processing",
             "total_amount": 50000,
             "notes": "備考更新",
         })
         assert res.status_code == 200
         body = res.json()
-        assert body["status"] == "confirmed"
+        assert body["status"] == "processing"
         assert float(body["total_amount"]) == 50000.0
         assert body["notes"] == "備考更新"
 
@@ -369,7 +369,7 @@ class TestOrdersListSearchSort:
         })
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-ST-CONF", "status": "confirmed",
+            "order_number": "ORD-ST-DEL", "status": "delivered",
         })
 
         res = await client.get(
@@ -379,7 +379,7 @@ class TestOrdersListSearchSort:
         assert res.status_code == 200
         ours = [o for o in res.json() if o["order_number"].startswith("ORD-ST-")]
         statuses = [o["status"] for o in ours]
-        # ascending order: confirmed < pending（辞書順）
+        # ascending order: delivered < pending（辞書順）
         assert statuses == sorted(statuses)
 
     async def test_list_orders_invalid_sort_by_returns_400(self, client):
@@ -438,10 +438,11 @@ class TestOrdersGroupCounts:
         assert res.status_code == 200
         body = res.json()
         assert "counts" in body and "total" in body
-        # OrderStatus 全値が含まれる（件数 0 も）
-        for s in ["pending", "confirmed", "processing", "shipped",
+        # ADR-021 J1 fix: OrderStatus 6 値が含まれる（件数 0 も）。confirmed は撤去済。
+        for s in ["pending", "processing", "shipped",
                   "delivered", "returned", "cancelled"]:
             assert s in body["counts"]
+        assert "confirmed" not in body["counts"]
         assert body["counts"]["pending"] >= 2
         assert body["counts"]["shipped"] >= 1
         # total はカウントの合計と一致
@@ -503,9 +504,11 @@ class TestOrdersGroupCounts:
         assert res.status_code == 200
         body = res.json()
         assert body["total"] == 0
-        for s in ["pending", "confirmed", "processing", "shipped",
+        # ADR-021 J1 fix: 6 値のみ（confirmed なし）
+        for s in ["pending", "processing", "shipped",
                   "delivered", "returned", "cancelled"]:
             assert body["counts"][s] == 0
+        assert "confirmed" not in body["counts"]
 
 
 class TestOrdersListMultiTenant:
@@ -542,3 +545,81 @@ class TestOrdersListMultiTenant:
         with patch("app.auth.dependencies.load_user_permissions", _no_perms):
             res = await client.get("/api/v1/orders/group-counts")
         assert res.status_code == 403
+
+
+class TestOrderStatusSixValues:
+    """ADR-021 J1 fix (2026-05-13): OrderStatus 6 値化の回帰テスト。
+
+    互換性のため Sprint 1 で一時的に残していた `confirmed` を撤去した。
+    旧 confirmed 行は migration 051 で `pending` に統合される。
+    """
+
+    async def test_order_status_enum_contains_exactly_six_values(self):
+        """OrderStatus enum は 6 値（confirmed を含まない）"""
+        from app.schemas.order import OrderStatus
+        values = {s.value for s in OrderStatus}
+        assert values == {
+            "pending", "processing", "shipped",
+            "delivered", "returned", "cancelled",
+        }
+        assert "confirmed" not in values
+
+    async def test_create_order_rejects_confirmed_status(self, client):
+        """POST /orders で status='confirmed' は 422（Pydantic enum 違反）"""
+        company_id, contact_id = await _create_company_contact(client)
+        res = await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-J1-REJ",
+            "status": "confirmed",
+        })
+        assert res.status_code == 422
+
+    async def test_update_order_rejects_confirmed_status(self, client):
+        """PATCH /orders/{id} で status='confirmed' も 422"""
+        company_id, contact_id = await _create_company_contact(client)
+        cre = await client.post("/api/v1/orders", json={
+            "company_id": company_id, "contact_id": contact_id,
+            "order_number": "ORD-J1-PATCH-REJ",
+        })
+        order_id = cre.json()["id"]
+        res = await client.patch(f"/api/v1/orders/{order_id}", json={
+            "status": "confirmed",
+        })
+        assert res.status_code == 422
+
+    async def test_status_filter_rejects_confirmed(self, client):
+        """GET /orders?status=confirmed は 400 で許可値 6 個を含むメッセージ"""
+        res = await client.get("/api/v1/orders", params={"status": "confirmed"})
+        assert res.status_code == 400
+        detail = res.json()["detail"]
+        # 許可値 6 個が detail に列挙されている
+        assert "pending" in detail
+        assert "processing" in detail
+        assert "shipped" in detail
+        assert "delivered" in detail
+        assert "returned" in detail
+        assert "cancelled" in detail
+
+    async def test_status_filter_accepts_pending(self, client):
+        """GET /orders?status=pending は 200 を返す（whitelist 通過）"""
+        res = await client.get("/api/v1/orders", params={"status": "pending"})
+        assert res.status_code == 200
+
+    async def test_group_counts_excludes_confirmed_key(self, client):
+        """GET /orders/group-counts の counts キーに confirmed が含まれない"""
+        res = await client.get("/api/v1/orders/group-counts")
+        assert res.status_code == 200
+        counts = res.json()["counts"]
+        assert "confirmed" not in counts
+        # 正本 6 値はすべて含まれる（件数 0 でも 0 埋め）
+        assert set(counts.keys()) >= {
+            "pending", "processing", "shipped",
+            "delivered", "returned", "cancelled",
+        }
+
+    async def test_group_counts_filter_with_confirmed_returns_400(self, client):
+        """GET /orders/group-counts?status=confirmed も 400 で reject"""
+        res = await client.get(
+            "/api/v1/orders/group-counts", params={"status": "confirmed"},
+        )
+        assert res.status_code == 400

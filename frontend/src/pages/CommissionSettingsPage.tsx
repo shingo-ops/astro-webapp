@@ -82,9 +82,14 @@ export default function CommissionSettingsPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  // ADR-021 J2 fix (2026-05-13): 月選択の初期値は JST 業務日基準。
+  // ブラウザのロケール TZ に依らず、常に JST の現在年月を表示する。
+  // toLocaleString で TZ 指定の壁時計を取り、Date でパースし直す方式。
+  const nowJst = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }),
+  );
+  const [year, setYear] = useState(nowJst.getFullYear());
+  const [month, setMonth] = useState(nowJst.getMonth() + 1);
 
   const dtoToForm = (dto: CommissionSettingsDto): FormState => {
     const r = dto.commission_rates;

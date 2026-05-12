@@ -161,11 +161,10 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
     // ソート順切替ボタン
     await expect(page.getByTestId("orders-sort-order")).toBeVisible();
 
-    // グループ件数バッジ（全 7 ステータス + 全件）
+    // グループ件数バッジ（ADR-021 第 1 節の 6 ステータス + 全件、J1 で confirmed 撤去）
     await expect(page.getByTestId("group-count-all")).toBeVisible();
     for (const s of [
       "pending",
-      "confirmed",
       "processing",
       "shipped",
       "delivered",
@@ -175,7 +174,7 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
       await expect(page.getByTestId(`group-count-${s}`)).toBeVisible();
     }
 
-    // ADR-021 第 1 節の 6 値ラベル（confirmed は ADR にない既存値、UI ラベル維持）
+    // ADR-021 第 1 節の 6 値ラベル
     await expect(page.getByTestId("group-count-pending")).toContainText(/未処理/);
     await expect(page.getByTestId("group-count-processing")).toContainText(/仕入中/);
     await expect(page.getByTestId("group-count-shipped")).toContainText(/配送中/);

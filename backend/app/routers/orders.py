@@ -16,6 +16,8 @@ from __future__ import annotations
     DB スキーマは据え置き、JOIN クエリのみ拡張。multi-tenant は
     既存の require_permission + get_current_tenant + tenant スキーマ
     分離で担保（このモジュールは tenant スキーマ内 SQL のみ叩く）。
+  2026-05-13: ADR-021 J1 fix — OrderStatus が 6 値化されたため、
+    `?status=` の whitelist 検証を追加（旧 `confirmed` 等の許可外値は 400）。
 """
 
 import re
@@ -44,6 +46,29 @@ router = APIRouter()
 # 値はそのまま ORDER BY 句に埋め込まれるため、拡張時は SQL injection 対策
 # として必ずこの enum 越しに通すこと（クエリパラメータの直挿入禁止）。
 _SORTABLE_COLUMNS = {"created_at", "updated_at", "total_amount", "status"}
+
+# ADR-021 J1 fix (2026-05-13): `?status=` パラメータの許可値ホワイトリスト。
+# OrderStatus enum と完全一致。旧 `confirmed` を含む許可外値は 400 で reject する。
+_ALLOWED_STATUS_VALUES = frozenset(s.value for s in OrderStatus)
+
+
+def _validate_status_filter(status_filter: str | None) -> None:
+    """`?status=` の値を OrderStatus 6 値のホワイトリストで検証する。
+
+    None または空文字は「指定なし」として素通し。許可外なら 400。
+    フロントから誤った値（旧 `confirmed` 含む）が来た場合に
+    silently 0 件返すのを避け、エラーを明示する。
+    """
+    if status_filter is None or status_filter == "":
+        return
+    if status_filter not in _ALLOWED_STATUS_VALUES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "指定された status は許可されていません。"
+                f"許可値: {sorted(_ALLOWED_STATUS_VALUES)}"
+            ),
+        )
 
 # 検索キーワードのサニタイズ用パターン。
 # psycopg のパラメータ化バインディングで SQL injection は防げるが、
@@ -168,6 +193,9 @@ async def list_orders(
         )
     sort_dir = "DESC" if sort_order_lc == "desc" else "ASC"
 
+    # ADR-021 J1 fix: status の whitelist 検証（旧 `confirmed` は 400）
+    _validate_status_filter(status_filter)
+
     offset = (page - 1) * per_page
     conditions, params = _build_orders_filters(
         status_filter, company_id, contact_id, search,
@@ -228,6 +256,9 @@ async def get_orders_group_counts(
     OrderStatus enum 全値を 0 埋めで返すため、フロントは undefined を
     気にせずバッジを並べられる。
     """
+    # ADR-021 J1 fix: status の whitelist 検証（旧 `confirmed` は 400）
+    _validate_status_filter(status_filter)
+
     conditions, params = _build_orders_filters(
         status_filter, company_id, contact_id, search,
     )
