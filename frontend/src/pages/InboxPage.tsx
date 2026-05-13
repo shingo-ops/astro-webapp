@@ -466,6 +466,7 @@ export default function InboxPage() {
                     border: "none",
                     borderBottom: "1px solid var(--border-color, #e8e8e8)",
                     background: isSelected ? "var(--bg-selected, #e8f0fe)" : "transparent",
+                    color: isSelected ? "#1a202c" : "inherit",
                     textAlign: "left",
                     cursor: "pointer",
                     display: "flex",
@@ -519,18 +520,18 @@ export default function InboxPage() {
                   <div
                     style={{
                       fontSize: "0.85rem",
-                      color: "var(--text-muted, #666)",
+                      color: isSelected ? "#4a5568" : "var(--text-muted, #666)",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                     }}
                   >
                     {conv.last_message_direction === "outbound" && (
-                      <span style={{ color: "#666" }}>You: </span>
+                      <span style={{ color: isSelected ? "#4a5568" : "#666" }}>You: </span>
                     )}
                     {conv.last_message_text || "(no message)"}
                   </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted, #999)" }}>
+                  <div style={{ fontSize: "0.75rem", color: isSelected ? "#718096" : "var(--text-muted, #999)" }}>
                     {relativeTime(conv.last_message_at)}
                   </div>
                 </button>
@@ -780,6 +781,7 @@ export default function InboxPage() {
                     fontSize: "0.9rem",
                     resize: "vertical",
                     background: !canSend ? "#f5f5f5" : "white",
+                    color: "#1a202c",
                   }}
                 />
                 <button
