@@ -1222,3 +1222,72 @@ async def test_existing_lead_does_not_trigger_graph_api(
     assert res.scalar() == "既存さん"
     # Graph API も呼ばれていない
     assert call_count["n"] == 0
+
+
+# ---------------------------------------------------------------------------
+# ADR-026: meta_messages.message_id TEXT 化 — 200 文字 mid の regression
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_long_message_id_persists(db_session, webhook_env):
+    """ADR-026 regression:
+    Instagram の Message ID (mid) は base64 多重エンコードで 150〜200 文字を超える。
+    既存定義 `VARCHAR(100)` で `StringDataRightTruncationError` を起こしていた事象を
+    `meta_messages.message_id` の TEXT 化で解消する。
+
+    本テストでは架空の 200 文字 mid を含む IG webhook を `process_messenger_event`
+    に流し、`meta_messages` 行が正しく永続化されることを確認する。
+
+    SQLite は型を緩く扱うため VARCHAR(100) でも 200 文字を素通しさせるが、テストの
+    意図は「webhook ハンドラが長 mid を取り扱う際にコード側で長さ検査やトリミングを
+    行っていないこと」を回帰検証することにある（コード側の non-truncation 保証）。
+    PostgreSQL 本番では migration 052 + per-tenant スクリプトで列型を TEXT に拡張
+    することで truncation が回避される（Hitoshi 即決 Q-026.1〜Q-026.4 / ADR-026）。
+    """
+    from app.routers import webhook as wh
+
+    await _insert_tenant_meta_config(
+        db_session, tenant_id=999, page_id="PAGE-LONG",
+        ig_business_account_id="IG-BIZ-LONG",
+    )
+
+    # 架空の 200 文字 mid（PII を含まない、IG mid の base64 風 prefix のみ流用）
+    # `aWdfZA` は base64 で "ig_" のエンコード、後続は 'x' × 194 文字
+    long_mid = "aWdfZA" + ("x" * 194)
+    assert len(long_mid) == 200
+
+    body = {
+        "object": "instagram",
+        "entry": [{
+            "id": "IG-BIZ-LONG",
+            "messaging": [{
+                "sender": {"id": "IGSID-LONG"},
+                "timestamp": 1714400000,
+                "message": {"mid": long_mid, "text": "long mid test"},
+            }],
+        }],
+    }
+    await wh.process_messenger_event(body)
+
+    # 行が永続化されている（message_id が truncate されていない）
+    res = await db_session.execute(
+        text(
+            "SELECT platform, sender_id, message_text, message_id, length(message_id) AS len "
+            "FROM meta_messages WHERE message_id = :mid"
+        ),
+        {"mid": long_mid},
+    )
+    row = res.mappings().first()
+    assert row is not None, "200 文字 message_id の行が永続化されていない"
+    assert row["platform"] == "instagram"
+    assert row["sender_id"] == "IGSID-LONG"
+    assert row["message_text"] == "long mid test"
+    assert row["message_id"] == long_mid
+    assert row["len"] == 200, f"保存された message_id の長さが 200 ではない: {row['len']}"
+
+    # leads も作成されている
+    res = await db_session.execute(text(
+        "SELECT source FROM leads WHERE source = 'instagram:IGSID-LONG'"
+    ))
+    assert res.scalar() == "instagram:IGSID-LONG"
