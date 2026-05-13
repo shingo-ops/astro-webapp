@@ -556,7 +556,7 @@ async def test_send_instagram_calls_instagram_send_api(app_client, db_session):
     body = resp.json()
     assert body["platform"] == "instagram"
     assert body["message_id"] == "ig-mid-001"
-    assert captured["ig_user_id"] == "ig-biz-1"
+    assert captured["page_id"] == "page-1"
     assert captured["recipient_id"] == "IGSID-1"
     assert mocked_ig.await_count == 1
     assert mocked_msg.await_count == 0

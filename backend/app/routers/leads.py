@@ -987,7 +987,7 @@ async def send_lead_message(
                 )
             send_result = await meta_graph.send_instagram_message(
                 page_access_token=page_access_token,
-                ig_user_id=str(ig_business_id),
+                page_id=str(page_id_for_send) if page_id_for_send else "me",
                 recipient_id=recipient_id,
                 text=text_body,
                 messaging_type=messaging_type,

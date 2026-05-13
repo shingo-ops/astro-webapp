@@ -564,23 +564,23 @@ async def send_messenger_message(
 async def send_instagram_message(
     *,
     page_access_token: str,
-    ig_user_id: str,
+    page_id: str,
     recipient_id: str,
     text: str,
     messaging_type: str = "RESPONSE",
     tag: Optional[str] = None,
     client: Optional[httpx.AsyncClient] = None,
 ) -> dict[str, Any]:
-    """Instagram Messaging API でテキストメッセージを送信する。
+    """Instagram Messaging API でテキストメッセージを送信する（ADR-018）。
 
-    `POST /v19.0/{ig_user_id}/messages?access_token=<page_access_token>`
+    `POST /v19.0/{page_id}/messages?access_token=<page_access_token>`
 
-    Instagram は「Page に紐づく IG Business Account ID」をパスに使う。
-    Messenger と Instagram で必須 body は同じ構造（recipient.id / message.text /
-    messaging_type / tag）だが endpoint パスのみ異なる。
+    Facebook Login for Business 経由のアプリは Messenger Platform の endpoint を使う。
+    recipient.id に IGSID を渡すと Meta が Instagram DM としてディスパッチする。
+    Messenger 送信（PSID）と同一 endpoint・同一トークンで動作する。
     """
-    if not ig_user_id:
-        raise ValueError("ig_user_id is required")
+    if not page_id:
+        raise ValueError("page_id is required")
     if not page_access_token:
         raise ValueError("page_access_token is required")
     if not recipient_id:
@@ -590,7 +590,7 @@ async def send_instagram_message(
     if messaging_type not in ("RESPONSE", "MESSAGE_TAG", "UPDATE"):
         raise ValueError(f"invalid messaging_type: {messaging_type}")
 
-    url = f"{graph_base_url()}/{ig_user_id}/messages"
+    url = f"{graph_base_url()}/{page_id}/messages"
     body: dict[str, Any] = {
         "messaging_type": messaging_type,
         "recipient": {"id": recipient_id},
