@@ -455,11 +455,26 @@ async def _persist_meta_message(
 
     # 1) leads 検索 → 無ければ自動作成
     result = await db.execute(
-        text("SELECT id FROM leads WHERE source = :source LIMIT 1"),
+        text("SELECT id, customer_name FROM leads WHERE source = :source LIMIT 1"),
         {"source": source_key},
     )
     row = result.mappings().first()
     lead_id = row["id"] if row else None
+    existing_name = row["customer_name"] if row else None
+
+    # F15-S6 follow-up: 既存 lead でデフォルト名のままの場合も Graph API で再解決する。
+    # 新規 lead のみ解決していた旧実装の漏れを修正（ADR-016）。
+    if lead_id is not None and existing_name in ("Messenger User", "Instagram User"):
+        resolved_name = await _resolve_lead_name_via_graph(
+            db, sender_id, page_id=page_id,
+        )
+        if resolved_name:
+            await db.execute(
+                text("UPDATE leads SET customer_name = :name WHERE id = :id"),
+                {"name": resolved_name, "id": lead_id},
+            )
+            await db.commit()
+            await reset_tenant_context(db, tenant_id)
 
     if lead_id is None:
         customer_name = (
