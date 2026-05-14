@@ -2,12 +2,12 @@
 
 | 項目 | 内容 |
 |---|---|
-| ステータス | Sprint 7 完成版（撮影リハーサル前最終） |
-| 作成日 | 2026-04-30 |
+| ステータス | 2026-05-15 更新版（ADR-027/030/033/034 対応） |
+| 作成日 | 2026-05-15 |
 | 作成者 | Phase 1-D Sprint 7 Generator |
 | 対象 | Meta App Review 提出用スクリーンキャスト |
 | 想定尺 | 7 分 30 秒（7 シーン × 平均 1 分） |
-| 想定言語 | ナレーション英語 / UI 日本語 / 字幕英語焼き込み |
+| 想定言語 | ナレーション英語 / UI 英語 / 字幕英語焼き込み |
 | 関連ドキュメント | `META_APP_REVIEW_PRE_RECORDING_CHECKLIST.md`, `PHASE_1D_META_INBOX_OVERVIEW.md` |
 
 ## 0. 撮影上の共通ルール（全シーン共通）
@@ -200,7 +200,7 @@ FPS: 60
 
 ### 4-2. 英語ナレーション
 
-> "Now let's see an incoming message. The Inbox shows all Messenger and Instagram conversations on the left, and message history on the right. When a customer sends a message to our connected Page, our webhook receives it, persists it to the database, and the inbox polls every ten seconds to refresh. As soon as the message arrives, an unread badge appears. Clicking the conversation marks it read and shows the full message thread. The 'Messenger' platform badge confirms which channel this conversation came from, and the 24-hour reply window is displayed at the top."
+> "Now let's see an incoming message. The Inbox shows all Messenger and Instagram conversations on the left, and message history on the right. When a customer sends a message to our connected Page, our webhook receives it, persists it to the database, and the inbox polls every ten seconds to refresh. As soon as the message arrives, an unread badge appears. Clicking the conversation marks it read and shows the full message thread. The 'Messenger' platform badge confirms which channel this conversation came from."
 
 (約 100 単語 / 55 秒)
 
@@ -233,7 +233,7 @@ FPS: 60
 | 2:35 | 入力欄に `Hi! Thank you for reaching out. Our products are listed on our website. Could you share which category interests you?` を入力 |
 | 2:50 | 「送信」ボタンクリック |
 | 2:52 | 送信中ローディングのバブル → 1 秒以内に成功 outbound バブルに切り替わる |
-| 2:56 | バブル下に `RESPONSE` ラベルが表示される（24h 以内 → Standard Messaging） |
+| 2:56 | バブル下に `MESSAGE_TAG` + `HUMAN_AGENT` ラベルが表示される |
 | 3:00 | 送信者（"You" or staff name）と送信時刻が表示 |
 | 3:04 | カーソルを Messenger ウィンドウに切替 |
 | 3:08 | Sender 側 Messenger に同じテキストの新着メッセージが表示される |
@@ -243,7 +243,7 @@ FPS: 60
 
 ### 5-2. 英語ナレーション
 
-> "Now the sales rep replies. The reply composer at the bottom of the conversation lets the rep type a response and click Send. Because we are within 24 hours of the customer's last message, the messaging type is automatically RESPONSE — standard messaging under Meta's policy. The message is sent through the Send API using the encrypted Page Access Token, persisted as an outbound entry in our database, and immediately delivered to the customer on Messenger. The customer sees the reply in real time, and the sales rep sees a complete conversation thread."
+> "Now the sales rep replies. The reply composer at the bottom of the conversation lets the rep type a response and click Send. Because we are within 24 hours of the customer's last message, the messaging type is automatically set to HUMAN_AGENT, ensuring our team can always respond within Meta's allowed policy window. The message is sent through the Send API using the encrypted Page Access Token, persisted as an outbound entry in our database, and immediately delivered to the customer on Messenger. The customer sees the reply in real time, and the sales rep sees a complete conversation thread."
 
 (約 95 単語 / 55 秒)
 
@@ -318,10 +318,9 @@ FPS: 60
 | 4:33 | 別ウィンドウで Instagram Web/Mobile を Sender 側で開いておき、`@highlifejpn_test` 宛に DM 送信: `Hi, do you ship internationally?` |
 | 4:44 | Sales Anchor Inbox 左ペインに新しい会話が出現（最大 10 秒）。**platform バッジが「Instagram」** であることを強調表示 |
 | 4:52 | 会話をクリック → 右ペインに inbound バブルで `Hi, do you ship internationally?` 表示 |
-| 4:56 | 24h バナー表示確認 |
 | 5:00 | 返信フォームに `Yes! We ship to over 30 countries. Please share your country and we'll provide shipping options.` を入力 |
 | 5:14 | 送信ボタンクリック |
-| 5:16 | outbound バブル表示 → `RESPONSE` ラベル |
+| 5:16 | outbound バブル表示 → `MESSAGE_TAG` + `HUMAN_AGENT` ラベル |
 | 5:20 | Instagram ウィンドウに切替 → Sender 側に同じメッセージが届いていることを確認 |
 | 5:28 | 完了 |
 
@@ -349,7 +348,7 @@ FPS: 60
 ## 8. シーン 7: Reply Outside 24-Hour Window using Human Agent Tag
 
 **時間**: 5:30 - 6:30（60 秒）
-**目的**: Human Agent Tag を実演。24h 経過後に Standard Messaging では送信できないが、Human Agent Tag で送信できることを示す。
+**目的**: Human Agent Tag を実演。24h 経過後でも Sales Anchor が自動で HUMAN_AGENT タグを付与して送信できることを示す。
 
 ### 8-1. 画面操作
 
@@ -357,25 +356,23 @@ FPS: 60
 |---|---|
 | 5:30 | Inbox を開いた状態で、**24h を経過した会話**（事前に用意）をクリック |
 | 5:34 | 右ペインに過去の inbound メッセージが表示される（25-30h 前のタイムスタンプ） |
-| 5:38 | 24h バナーが切替: 「Standard window expired. Replying with Human Agent Tag (valid up to 7 days).」 |
 | 5:48 | 返信フォームに `Sorry for the late reply! Our team had a one-day off. Are you still interested in our products?` を入力 |
 | 6:02 | 送信ボタンクリック |
 | 6:04 | outbound バブル表示。**`MESSAGE_TAG` + `HUMAN_AGENT`** ラベルがバブル下に表示される |
 | 6:10 | Sender 側 Messenger / Instagram で同メッセージ受信を確認（任意で画面切替） |
-| 6:18 | バブルを再選択して詳細パネル: `messaging_type=MESSAGE_TAG, message_tag=HUMAN_AGENT` |
 | 6:26 | 完了 |
 
 ### 8-2. 英語ナレーション
 
-> "Sometimes a sales rep replies later than 24 hours after the customer's last message. Standard messaging would be blocked, but Meta provides the Human Agent Tag for cases where a real person needs to respond outside the standard window. Sales Anchor detects the elapsed time, automatically updates the banner, and applies messaging_type MESSAGE_TAG with the HUMAN_AGENT tag when the rep clicks Send. The customer receives the reply within Meta's allowed timeframe, and the message metadata clearly records that the Human Agent Tag was used. After 7 days, even Human Agent Tag cannot be used, and the send button becomes disabled."
+> "Sometimes a sales rep replies more than 24 hours after the customer's last message. Sales Anchor automatically applies the Human Agent Tag for all replies — no manual steps required. This allows conversations to continue up to 7 days after the customer's last message, fully compliant with Meta's platform policy. The outbound message metadata confirms that the Human Agent Tag was applied. After 7 days, Meta's policy prohibits further messages through this channel, and Sales Anchor disables the send button to prevent policy violations. At that point, sales reps are prompted to follow up through other channels such as email or phone."
 
-(約 105 単語 / 55 秒)
+(約 100 単語 / 55 秒)
 
 ### 8-3. 撮影上の注意
 
-- **24h 経過済の会話を事前に用意するのが最大のポイント**。撮影前日に inbound DM を受け取り、24h 待ってから撮影する or DB の `created_at` を直接いじって 25h 前にする（後者は審査担当に「実機シナリオでない」と取られるリスクあり、できれば前者）
-- バナー表示の切替（24h 内 → 24h-7d）が画面で確実に見えるよう、ハイライト or 矢印アノテーション推奨（編集時挿入）
-- `HUMAN_AGENT` ラベルがバブル下に表示されない場合は、UI 改修が必要 → Phase 1-E
+- **24h 経過済の会話を事前に用意する**。撮影直前に DB の `created_at` を 25h 前に書き換えて用意する
+- `MESSAGE_TAG` + `HUMAN_AGENT` ラベルがバブル下に表示されることを画面上で確認
+- 送信ボタンが押せる状態（7d 以内）になっていることを確認
 
 ### 8-4. テストデータ要件
 
@@ -505,7 +502,7 @@ OAuth ダイアログ（permission 承認画面）は映してよいが、その
 
 - [ ] 全 8 シーン（Intro 含む）が連続して 7 分 30 秒前後で撮れた
 - [ ] 申請 6 Permission すべてが、シーン 2-7 のいずれかで実演されている
-- [ ] Human Agent Tag がシーン 7 で明示されている
+- [ ] Human Agent Tag が MESSAGE_TAG + HUMAN_AGENT ラベルとして outbound バブルに表示されている
 - [ ] Data Deletion Callback がシーン 8 で動作確認できている
 - [ ] PII / Secret が一切映っていない
 - [ ] 英語ナレーションが全シーンで聞き取れる
