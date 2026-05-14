@@ -448,26 +448,11 @@ async def connect_callback(
                 logger.warning("IG fetch failed for page %s: %s", page_id, e)
                 ig_id = ig_account.get("id")  # 最低限 id だけ保存
 
-        # ADR-024 AC-1: Instagram 側 subscribed_apps 登録（IG 紐付けがあれば）。
-        # Page 側 subscription だけでは Instagram Login for Business 経由の DM が
-        # 受信できないため、IG account に対しても明示的に subscribe_fields を張る。
-        # 失敗しても Page 接続自体は維持する（IG 連携のみ部分失敗扱い）。
+        # NOTE: `/{ig_user_id}/subscribed_apps` は IG Business Account では常に #100 エラー。
+        # Instagram DM は Page-level subscription（subscribe_page_to_app で登録済みの
+        # message_reactions を含む fields）で受信できる。IG 側への個別 subscribe は不要。
+        # 2026-05-14 hotfix: subscribe_ig_user_to_app() 呼び出しを除去。
         ig_subscribe_error: Optional[dict] = None
-        if ig_id:
-            try:
-                ig_fields = await meta_graph.subscribe_ig_user_to_app(ig_id, page_token)
-                subscribed_fields = subscribed_fields + [
-                    f"{meta_graph.INSTAGRAM_FIELD_PREFIX}{f}" for f in ig_fields
-                ]
-            except MetaGraphAPIError as e:
-                logger.warning(
-                    "IG subscribe failed for ig=%s (page=%s): %s",
-                    ig_id, page_id, e.error_type,
-                )
-                ig_subscribe_error = e.to_audit_dict()
-            except MetaGraphError as e:
-                logger.warning("IG subscribe transport error for ig=%s: %s", ig_id, e)
-                ig_subscribe_error = {"reason": "transport_error", "detail": str(e)[:200]}
 
         # ADR-024 AC-2: 登録結果の検証。`GET /{page-id}/subscribed_apps` を叩いて
         # 自 App が含まれるか確認し、結果を audit に残す。失敗しても接続自体は通す

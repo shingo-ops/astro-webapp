@@ -645,8 +645,12 @@ async def test_delete_page_returns_500_when_token_decrypt_fails(app_client, db_s
 
 @pytest.mark.asyncio
 async def test_callback_subscribes_instagram_when_ig_account_present(app_client, db_session):
-    """ADR-024 AC-1: IG 紐付けがある Page では IG subscribe も走り、
-    subscribed_fields に instagram:messages 等が混ざる。"""
+    """IG 紐付けがある Page では IG account ID が保存され、
+    Page-level subscribed_fields に message_reactions が含まれる。
+
+    NOTE: /{ig_user_id}/subscribed_apps は IG Business Account では #100 エラーのため
+    呼び出しを廃止（hotfix 2026-05-14）。Page-level subscription のみで Instagram DM を受信。
+    """
     redis_mock, _ = _make_redis_with_state({
         "tenant_id": 999, "staff_id": 0, "created_at": "x", "nonce": "y",
     })
@@ -666,12 +670,12 @@ async def test_callback_subscribes_instagram_when_ig_account_present(app_client,
         "SELECT subscribed_fields FROM tenant_meta_config WHERE page_id = 'page-1'"
     ))).first()
     fields = json.loads(row[0])
-    # Page 側
+    # Page-level fields（Instagram DM に必要な message_reactions を含む）
     assert "messages" in fields
     assert "messaging_postbacks" in fields
-    # Instagram 側（prefix で区別）
-    assert "instagram:messages" in fields
-    assert "instagram:messaging_postbacks" in fields
+    assert "message_reactions" in fields
+    # IG 側個別 subscribe は廃止 → instagram: prefix 付きフィールドは存在しない
+    assert not any(f.startswith("instagram:") for f in fields)
 
 
 @pytest.mark.asyncio
