@@ -37,11 +37,11 @@ export default function LoginPage() {
           aria-hidden="true"
           className="login-logo"
         />
-        <p className="login-subtitle">Sign in</p>
+        <p className="login-subtitle">ログイン</p>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email address</label>
+            <label htmlFor="email">メールアドレス</label>
             <input
               id="email"
               type="email"
@@ -52,7 +52,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">パスワード</label>
             <input
               id="password"
               type="password"
@@ -63,7 +63,7 @@ export default function LoginPage() {
             />
           </div>
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "ログイン中..." : "ログイン"}
           </button>
         </form>
       </div>
