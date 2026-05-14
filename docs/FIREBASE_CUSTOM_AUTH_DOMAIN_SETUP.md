@@ -136,7 +136,7 @@ https://auth.salesanchor.jp/__/auth/handler
 
 ```bash
 ssh ubuntu@49.212.137.46
-cd /home/ubuntu/jarvis
+cd /home/ubuntu/salesanchor
 sudo vi .env
 ```
 
@@ -155,7 +155,7 @@ VITE_FIREBASE_AUTH_DOMAIN=auth.salesanchor.jp
 ### 6-2. frontend を再ビルド・再起動
 
 ```bash
-cd /home/ubuntu/jarvis
+cd /home/ubuntu/salesanchor
 sudo docker compose build frontend
 sudo docker compose up -d frontend
 ```
