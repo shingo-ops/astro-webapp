@@ -135,19 +135,17 @@ def compute_window(
 def messaging_type_for_state(
     state: WindowState,
     *,
-    force_human_agent_tag: bool = False,
+    force_human_agent_tag: bool = False,  # 後方互換のため引数は残す（無視）
 ) -> tuple[Optional[str], Optional[str]]:
     """送信時の (messaging_type, message_tag) を決める。
 
+    人間スタッフが送信する前提のため、window 内は常に HUMAN_AGENT を付与する（ADR-035）。
+
     - EXPIRED / NO_INBOUND → (None, None)（呼び出し側が 400 を返すべき）
-    - WITHIN_24H + force=False → ("RESPONSE", None)
-    - WITHIN_24H + force=True  → ("MESSAGE_TAG", "HUMAN_AGENT")  運用 override（spec §5-5）
-    - WITHIN_HUMAN_AGENT       → ("MESSAGE_TAG", "HUMAN_AGENT")
+    - WITHIN_24H / WITHIN_HUMAN_AGENT → ("MESSAGE_TAG", "HUMAN_AGENT")
     """
     if state in (WindowState.EXPIRED, WindowState.NO_INBOUND):
         return (None, None)
-    if state == WindowState.WITHIN_24H and not force_human_agent_tag:
-        return ("RESPONSE", None)
     return ("MESSAGE_TAG", "HUMAN_AGENT")
 
 

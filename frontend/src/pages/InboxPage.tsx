@@ -132,10 +132,6 @@ export default function InboxPage() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
-  // Phase 1-E F4-S5: 24h 以内でも明示的に Human Agent Tag を付与する toggle
-  // backend は force_human_agent_tag を spec §5-5 で受付済（Sprint 5）
-  const [forceHumanAgentTag, setForceHumanAgentTag] = useState(false);
-
   // メッセージ末尾への自動スクロール用 ref
   const messageListRef = useRef<HTMLDivElement | null>(null);
 
@@ -308,10 +304,7 @@ export default function InboxPage() {
     setSendError("");
     setSending(true);
     try {
-      await sendMessage(selectedLeadId, {
-        text: trimmedDraft,
-        force_human_agent_tag: forceHumanAgentTag || undefined,
-      });
+      await sendMessage(selectedLeadId, { text: trimmedDraft });
       setDraft("");
       // 成功直後に即座にメッセージ再取得（楽観的更新ではなく確実な再描画）
       // Phase 1-E F13-S5: 直後の polling 1 回を skip して二重取得を回避
@@ -330,7 +323,7 @@ export default function InboxPage() {
     } finally {
       setSending(false);
     }
-  }, [sendDisabled, selectedLeadId, trimmedDraft, forceHumanAgentTag, loadMessages, loadConversations]);
+  }, [sendDisabled, selectedLeadId, trimmedDraft, loadMessages, loadConversations]);
 
   /** Enter で送信、Shift+Enter で改行（chat UX 標準）。日本語 IME 変換中は無視。 */
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -717,33 +710,6 @@ export default function InboxPage() {
                 background: "var(--bg-secondary, #fafafa)",
               }}
             >
-              {messagingWindow && (
-                <MessagingWindowBanner messagingWindow={messagingWindow} />
-              )}
-              {/* Phase 1-E F4-S5: Human Agent Tag 強制付与 toggle
-                  WITHIN_24H 時のみ意味があるオプション。24h 超は自動で HUMAN_AGENT 適用済 */}
-              {messagingWindow?.can_send_response && (
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: "0.8rem",
-                    marginBottom: 8,
-                    cursor: "pointer",
-                    color: forceHumanAgentTag ? "#a45a00" : "var(--text-secondary, #666)",
-                  }}
-                  title="When ON, messages are sent with MESSAGE_TAG=HUMAN_AGENT even within the 24h window (escape hatch)."
-                >
-                  <input
-                    type="checkbox"
-                    checked={forceHumanAgentTag}
-                    onChange={e => setForceHumanAgentTag(e.target.checked)}
-                    disabled={sending}
-                  />
-                  Force Human Agent Tag{forceHumanAgentTag ? " (will apply on next send)" : ""}
-                </label>
-              )}
               {sendError && (
                 <div
                   className="error"
@@ -809,49 +775,3 @@ export default function InboxPage() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// messaging window バナー
-// ---------------------------------------------------------------------------
-
-function MessagingWindowBanner({ messagingWindow }: { messagingWindow: MessagingWindow }) {
-  const { t } = useTranslation();
-  // - 緑: 24h 以内（can_send_response=true）
-  // - 黄: 24h-7d（requires_human_agent_tag=true）
-  // - 赤: 7d 超 or inbound 履歴なし（can_send_at_all=false）
-  let color: { bg: string; fg: string; border: string };
-  let text: string;
-
-  if (messagingWindow.can_send_response) {
-    color = { bg: "#e6f4ea", fg: "#137333", border: "#137333" };
-    text = t("inbox.windowOpen");
-  } else if (messagingWindow.requires_human_agent_tag) {
-    color = { bg: "#fff4e5", fg: "#a45a00", border: "#a45a00" };
-    text = t("inbox.humanAgentTag");
-  } else if (!messagingWindow.can_send_at_all) {
-    color = { bg: "#fdecea", fg: "#a50e0e", border: "#a50e0e" };
-    text = messagingWindow.last_inbound_at
-      ? t("inbox.windowExpired")
-      : t("inbox.noMessages");
-  } else {
-    // fallback
-    color = { bg: "#eee", fg: "#333", border: "#999" };
-    text = t("common.loading");
-  }
-
-  return (
-    <div
-      role="status"
-      style={{
-        padding: "8px 12px",
-        borderRadius: 4,
-        marginBottom: 8,
-        background: color.bg,
-        color: color.fg,
-        border: `1px solid ${color.border}`,
-        fontSize: "0.8rem",
-      }}
-    >
-      {text}
-    </div>
-  );
-}
