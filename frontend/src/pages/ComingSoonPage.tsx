@@ -8,21 +8,24 @@
  *   2026-04-17: 初版作成
  */
 
+import { useTranslation } from "react-i18next";
+
 interface Props {
   title: string;
   description?: string;
 }
 
 export default function ComingSoonPage({ title, description }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="page">
       <div className="coming-soon">
         <div className="coming-soon-icon">🚧</div>
         <h2>{title}</h2>
-        <p className="coming-soon-label">準備中</p>
+        <p className="coming-soon-label">{t("comingSoon.label")}</p>
         {description && <p className="coming-soon-desc">{description}</p>}
         <p className="coming-soon-note">
-          この機能は現在開発中です。Phase 2 以降のリリースで利用可能になります。
+          {t("comingSoon.note")}
         </p>
       </div>
     </div>

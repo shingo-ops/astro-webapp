@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -177,6 +178,7 @@ const addressDisplay = (a: CustomerAddress | undefined): string => {
 };
 
 export default function CustomersPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
@@ -199,7 +201,7 @@ export default function CustomersPage() {
       const data = await api.get<Customer[]>(`/customers${params}`);
       setCustomers(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -327,7 +329,7 @@ export default function CustomersPage() {
       setDiscordTouched(false);
       loadCustomers();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -390,15 +392,15 @@ export default function CustomersPage() {
       await api.delete(`/customers/${id}`);
       loadCustomers();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "削除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
     }
   };
 
   const statusLabel = (s: string): string => {
     switch (s) {
-      case "active": return "有効";
-      case "inactive": return "無効";
-      case "archived": return "アーカイブ";
+      case "active": return t("customers.status_active");
+      case "inactive": return t("customers.status_inactive");
+      case "archived": return t("customers.status_archived");
       case "pending_dedup_review": return "重複確認待ち";
       default: return s;
     }
@@ -407,10 +409,10 @@ export default function CustomersPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>顧客管理</h2>
+        <h2>{t("customers.title")}</h2>
         {hasPermission("customers.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); setDiscordTouched(false); }}>
-            新規登録
+            {t("customers.newCustomer")}
           </button>
         )}
       </div>
@@ -429,7 +431,7 @@ export default function CustomersPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editId ? "顧客編集" : "新規顧客登録"}</h3>
+            <h3>{editId ? t("customers.editCustomer") : t("customers.newCustomer")}</h3>
             <div className="tab-nav">
               <button type="button" className={activeTab === "basic" ? "tab-active" : ""} onClick={() => setActiveTab("basic")}>基本情報</button>
               <button type="button" className={activeTab === "billing" ? "tab-active" : ""} onClick={() => setActiveTab("billing")}>請求先</button>
@@ -517,9 +519,9 @@ export default function CustomersPage() {
                   <div className="form-group">
                     <label>ステータス</label>
                     <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                      <option value="active">有効</option>
-                      <option value="inactive">無効</option>
-                      <option value="archived">アーカイブ</option>
+                      <option value="active">{t("customers.status_active")}</option>
+                      <option value="inactive">{t("customers.status_inactive")}</option>
+                      <option value="archived">{t("customers.status_archived")}</option>
                       <option value="pending_dedup_review">重複確認待ち</option>
                     </select>
                   </div>
@@ -546,7 +548,7 @@ export default function CustomersPage() {
                           onChange={(e) => { updateAddr({ telephone: e.target.value }); if (phoneError && key === "billing") setPhoneError(null); }}
                           onBlur={(e) => { if (key === "billing") setPhoneError(validatePhoneClient(e.target.value)); }}
                         />
-                        {key === "billing" && phoneError && <div className="error-message" style={{ marginTop: 4 }}>{phoneError}</div>}
+                        {key === "billing" && phoneError && <div className="error-message" style={{ marginTop: 4 }}>{t("customers.phoneError")}</div>}
                       </div>
                       <div className="form-group"><label>税番号（VAT / EIN 等）</label>
                         <input value={addr.tax_id} onChange={(e) => updateAddr({ tax_id: e.target.value })} />
@@ -629,7 +631,7 @@ export default function CustomersPage() {
                         <button type="button" className="btn-sm btn-danger" onClick={() => {
                           const next = form.contact_channels.filter((_, i) => i !== idx);
                           setForm({ ...form, contact_channels: next });
-                        }}>削除</button>
+                        }}>{t("common.delete")}</button>
                       </div>
                     </div>
                   ))}
@@ -673,9 +675,9 @@ export default function CustomersPage() {
                 </>
               )}
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>キャンセル</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "送信中..." : editId ? "更新" : "登録"}
+                  {submitting ? t("common.saving") : editId ? t("common.update") : t("common.register")}
                 </button>
               </div>
             </form>
@@ -684,18 +686,18 @@ export default function CustomersPage() {
       )}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>コード</th>
-              <th>顧客名</th>
-              <th>会社名</th>
-              <th>請求先連絡</th>
-              <th>配送先連絡</th>
-              <th>ステータス</th>
-              <th>操作</th>
+              <th>{t("common.code")}</th>
+              <th>{t("customers.title")}</th>
+              <th>{t("customers.companyName")}</th>
+              <th>{t("companies.billing")}</th>
+              <th>{t("companies.delivery")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -715,14 +717,14 @@ export default function CustomersPage() {
                     </span>
                   </td>
                   <td className="actions">
-                    {hasPermission("customers.update") && <button className="btn-sm" onClick={() => handleEdit(c)}>編集</button>}
-                    {hasPermission("customers.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(c)}>削除</button>}
+                    {hasPermission("customers.update") && <button className="btn-sm" onClick={() => handleEdit(c)}>{t("common.edit")}</button>}
+                    {hasPermission("customers.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(c)}>{t("common.delete")}</button>}
                   </td>
                 </tr>
               );
             })}
             {customers.length === 0 && (
-              <tr><td colSpan={7} className="empty">顧客が登録されていません</td></tr>
+              <tr><td colSpan={7} className="empty">{t("customers.noCustomers")}</td></tr>
             )}
           </tbody>
         </table>
@@ -730,15 +732,15 @@ export default function CustomersPage() {
 
       <ConfirmModal
         open={!!deleteTarget}
-        title="顧客を削除"
+        title={t("customers.deleteCustomer")}
         message={
           <>
             <strong>{deleteTarget && customerDisplayName(deleteTarget)}</strong> を削除します。<br />
             関連する商談・注文・見積・請求書がある場合は削除できません（先にそれらを削除してください）。<br />
-            この操作は取り消せません。
+            {t("common.irreversible")}
           </>
         }
-        confirmLabel="削除する"
+        confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}

@@ -28,6 +28,7 @@
  */
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { ApiError } from "../lib/api";
 import {
@@ -103,6 +104,7 @@ function platformBadgeStyle(p: string | null): React.CSSProperties {
 // ---------------------------------------------------------------------------
 
 export default function InboxPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialLeadIdRaw = searchParams.get("lead_id");
   const initialLeadId = initialLeadIdRaw && !isNaN(Number(initialLeadIdRaw))
@@ -369,7 +371,7 @@ export default function InboxPage() {
         }}
       >
         <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-color, #e0e0e0)" }}>
-          <h2 style={{ margin: "0 0 12px 0", fontSize: "1.1rem" }}>Inbox</h2>
+          <h2 style={{ margin: "0 0 12px 0", fontSize: "1.1rem" }}>{t("inbox.title")}</h2>
           <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
             {(["all", "messenger", "instagram"] as PlatformFilter[]).map(p => (
               <button
@@ -379,7 +381,7 @@ export default function InboxPage() {
                 onClick={() => setPlatformFilter(p)}
                 style={{ fontSize: "0.8rem" }}
               >
-                {p === "all" ? "All" : platformLabel(p)}
+                {p === "all" ? t("inbox.all") : platformLabel(p)}
               </button>
             ))}
           </div>
@@ -400,7 +402,7 @@ export default function InboxPage() {
                   background: "white",
                 }}
               >
-                <option value="">All Pages</option>
+                <option value="">{t("inbox.allPages")}</option>
                 {availablePageIds.map(pid => (
                   <option key={pid} value={pid}>
                     Page: {pid}
@@ -415,7 +417,7 @@ export default function InboxPage() {
               checked={unreadOnly}
               onChange={e => setUnreadOnly(e.target.checked)}
             />
-            Show unread only
+            {t("inbox.showUnreadOnly")}
           </label>
         </div>
 
@@ -429,25 +431,24 @@ export default function InboxPage() {
                 style={{ marginLeft: 8 }}
                 onClick={() => loadConversations()}
               >
-                Reload
+                {t("common.reload")}
               </button>
             </div>
           )}
           {convLoading ? (
             <div className="loading" style={{ padding: 16, textAlign: "center", color: "var(--text-muted)" }}>
-              Loading...
+              {t("common.loading")}
             </div>
           ) : conversations.length === 0 ? (
             <div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>
               {unreadOnly
-                ? "No unread conversations"
-                : "No messages yet."}
+                ? t("inbox.noUnread")
+                : t("inbox.noMessages")}
               <br />
               {!unreadOnly && (
                 <span style={{ fontSize: "0.8rem" }}>
-                  To connect a Facebook Page, see{" "}
-                  <a href="/channels">Channels settings</a>
-                  .
+                  {t("inbox.channelsHint")}{" "}
+                  <a href="/channels">{t("inbox.channelsLink")}</a>
                 </span>
               )}
             </div>
@@ -555,7 +556,7 @@ export default function InboxPage() {
               textAlign: "center",
             }}
           >
-            Select a conversation from the list on the left.
+            {t("inbox.selectConversation")}
           </div>
         ) : (
           <>
@@ -599,7 +600,7 @@ export default function InboxPage() {
                 className="btn-sm"
                 style={{ fontSize: "0.8rem" }}
               >
-                Lead details
+                {t("inbox.lead")}
               </a>
             </header>
 
@@ -618,7 +619,7 @@ export default function InboxPage() {
             >
               {msgLoading && !messagesData && (
                 <div className="loading" style={{ textAlign: "center", color: "var(--text-muted)" }}>
-                  Loading...
+                  {t("common.loading")}
                 </div>
               )}
               {msgError && (
@@ -626,7 +627,7 @@ export default function InboxPage() {
               )}
               {messagesData && messagesData.messages.length === 0 && !msgError && (
                 <div style={{ textAlign: "center", color: "var(--text-muted, #888)", padding: 32 }}>
-                  No messages yet.
+                  {t("inbox.noMessages")}
                 </div>
               )}
               {messagesData?.messages.map(msg => {
@@ -767,8 +768,8 @@ export default function InboxPage() {
                   onKeyDown={handleKeyDown}
                   placeholder={
                     canSend
-                      ? "Type a reply (Enter to send, Shift+Enter for newline)"
-                      : "Outside the messaging window — replies are disabled"
+                      ? t("inbox.messagePlaceholder")
+                      : t("inbox.sendDisabled7d")
                   }
                   rows={2}
                   disabled={!canSend || sending}
@@ -791,13 +792,13 @@ export default function InboxPage() {
                   disabled={sendDisabled}
                   title={
                     !canSend
-                      ? "Outside the messaging window — replies are disabled"
+                      ? t("inbox.sendDisabled7d")
                       : trimmedDraft.length === 0
-                        ? "Please enter a message"
-                        : "Send (Enter)"
+                        ? t("inbox.messagePlaceholder")
+                        : t("inbox.send")
                   }
                 >
-                  {sending ? "Sending..." : "Send"}
+                  {sending ? t("inbox.sending") : t("inbox.send")}
                 </button>
               </div>
             </div>
@@ -813,6 +814,7 @@ export default function InboxPage() {
 // ---------------------------------------------------------------------------
 
 function MessagingWindowBanner({ messagingWindow }: { messagingWindow: MessagingWindow }) {
+  const { t } = useTranslation();
   // - 緑: 24h 以内（can_send_response=true）
   // - 黄: 24h-7d（requires_human_agent_tag=true）
   // - 赤: 7d 超 or inbound 履歴なし（can_send_at_all=false）
@@ -821,19 +823,19 @@ function MessagingWindowBanner({ messagingWindow }: { messagingWindow: Messaging
 
   if (messagingWindow.can_send_response) {
     color = { bg: "#e6f4ea", fg: "#137333", border: "#137333" };
-    text = "Within the standard reply window (24 hours). Messages will be sent as RESPONSE type.";
+    text = t("inbox.windowOpen");
   } else if (messagingWindow.requires_human_agent_tag) {
     color = { bg: "#fff4e5", fg: "#a45a00", border: "#a45a00" };
-    text = "More than 24 hours since the last inbound message. Replies will be sent with a Human Agent Tag (24h–7d window).";
+    text = t("inbox.humanAgentTag");
   } else if (!messagingWindow.can_send_at_all) {
     color = { bg: "#fdecea", fg: "#a50e0e", border: "#a50e0e" };
     text = messagingWindow.last_inbound_at
-      ? "Outside the messaging window (over 7 days since the last inbound message). Replies are disabled."
-      : "No inbound history. Per Meta's policy, the customer must send the first message.";
+      ? t("inbox.windowExpired")
+      : t("inbox.noMessages");
   } else {
-    // 念のため fallback
+    // fallback
     color = { bg: "#eee", fg: "#333", border: "#999" };
-    text = "Checking messaging status...";
+    text = t("common.loading");
   }
 
   return (

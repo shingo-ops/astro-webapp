@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -82,11 +83,8 @@ const emptyForm: FormState = {
   firebase_uid: "", ui_preferences: { ...emptyPrefs },
 };
 
-const statusLabel = (s: string): string => ({
-  active: "有効", inactive: "無効", pending: "保留",
-}[s] || s);
-
 export default function StaffPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const { refresh: refreshUiPrefs, selfStaffId } = useUiPrefs();
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -108,7 +106,7 @@ export default function StaffPage() {
       setStaff(s);
       setRoles(r);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -154,7 +152,7 @@ export default function StaffPage() {
         await refreshUiPrefs();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -188,17 +186,17 @@ export default function StaffPage() {
       await api.delete(`/staff/${id}`);
       loadAll();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "削除に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.deleteError"));
     }
   };
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>スタッフ管理</h2>
+        <h2>{t("staff.title")}</h2>
         {hasPermission("staff.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
-            新規登録
+            {t("staff.newStaff")}
           </button>
         )}
       </div>
@@ -208,18 +206,18 @@ export default function StaffPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editId ? "スタッフ編集" : "新規スタッフ登録"}</h3>
+            <h3>{editId ? t("staff.editStaff") : t("staff.newStaff")}</h3>
             <form onSubmit={handleSubmit}>
               {!editId && (
                 <div className="form-group">
-                  <label>スタッフコード（空欄なら自動採番 EMP-00001 形式）</label>
+                  <label>{t("staff.staffCode")}（空欄なら自動採番 EMP-00001 形式）</label>
                   <input value={form.staff_code} placeholder="例: EMP-00001" onChange={(e) => setForm({ ...form, staff_code: e.target.value })} />
                 </div>
               )}
-              <div className="form-group"><label>苗字（日本語）*</label>
+              <div className="form-group"><label>{t("staff.surnameJp")} *</label>
                 <input required value={form.surname_jp} onChange={(e) => setForm({ ...form, surname_jp: e.target.value })} />
               </div>
-              <div className="form-group"><label>名前（日本語）*</label>
+              <div className="form-group"><label>{t("staff.givenNameJp")} *</label>
                 <input required value={form.given_name_jp} onChange={(e) => setForm({ ...form, given_name_jp: e.target.value })} />
               </div>
               <div className="form-group"><label>苗字ふりがな</label>
@@ -228,43 +226,43 @@ export default function StaffPage() {
               <div className="form-group"><label>名前ふりがな</label>
                 <input value={form.given_name_kana} onChange={(e) => setForm({ ...form, given_name_kana: e.target.value })} />
               </div>
-              <div className="form-group"><label>苗字（英語）</label>
+              <div className="form-group"><label>{t("staff.surnameEn")}</label>
                 <input value={form.surname_en} onChange={(e) => setForm({ ...form, surname_en: e.target.value })} />
               </div>
-              <div className="form-group"><label>名前（英語）</label>
+              <div className="form-group"><label>{t("staff.givenNameEn")}</label>
                 <input value={form.given_name_en} onChange={(e) => setForm({ ...form, given_name_en: e.target.value })} />
               </div>
-              <div className="form-group"><label>主メールアドレス *</label>
+              <div className="form-group"><label>{t("staff.primaryEmail")} *</label>
                 <input required type="email" value={form.primary_email} onChange={(e) => setForm({ ...form, primary_email: e.target.value })} />
               </div>
               <div className="form-group"><label>Discord ID</label>
                 <input value={form.discord_user_id} onChange={(e) => setForm({ ...form, discord_user_id: e.target.value })} />
               </div>
-              <div className="form-group"><label>役割 *</label>
+              <div className="form-group"><label>{t("staff.role")} *</label>
                 <select required value={form.role_id} onChange={(e) => setForm({ ...form, role_id: e.target.value })}>
                   <option value="">選択してください</option>
                   {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
-              <div className="form-group"><label>ステータス</label>
+              <div className="form-group"><label>{t("staff.status")}</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                  <option value="active">有効</option>
-                  <option value="inactive">無効</option>
+                  <option value="active">{t("staff.status_active")}</option>
+                  <option value="inactive">{t("staff.status_inactive")}</option>
                   <option value="pending">保留</option>
                 </select>
               </div>
-              <h4>UI設定</h4>
+              <h4>{t("staff.uiPreferences")}</h4>
               {(() => {
                 // Record<keyof StaffUIPreferences, string> で網羅性を型保証。
                 // StaffUIPreferences にフィールド追加した時にコンパイル時エラーで検知できる。
                 const labels: Record<keyof StaffUIPreferences, string> = {
-                  dark_mode: "ダークモード",
-                  show_chat_menu: "チャットメニュー表示",
-                  show_sales_menu: "営業メニュー表示",
-                  show_settings_menu: "設定メニュー表示",
-                  show_admin_menu: "管理メニュー表示",
-                  show_buddy_menu: "Buddyメニュー表示",
-                  show_sidebar: "サイドバー表示",
+                  dark_mode: t("staff.darkMode"),
+                  show_chat_menu: t("staff.showChatMenu"),
+                  show_sales_menu: t("staff.showSalesMenu"),
+                  show_settings_menu: t("staff.showSettingsMenu"),
+                  show_admin_menu: t("staff.showAdminMenu"),
+                  show_buddy_menu: t("staff.showBuddyMenu"),
+                  show_sidebar: t("staff.showSidebar"),
                 };
                 return (Object.entries(labels) as Array<[keyof StaffUIPreferences, string]>).map(([k, label]) => (
                   <div className="form-group" key={k}>
@@ -276,9 +274,9 @@ export default function StaffPage() {
                 ));
               })()}
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>キャンセル</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "送信中..." : editId ? "更新" : "登録"}
+                  {submitting ? "送信中..." : editId ? t("common.update") : t("common.register")}
                 </button>
               </div>
             </form>
@@ -287,17 +285,17 @@ export default function StaffPage() {
       )}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>コード</th>
+              <th>{t("common.code")}</th>
               <th>氏名</th>
-              <th>メール</th>
-              <th>役割</th>
-              <th>ステータス</th>
-              <th>操作</th>
+              <th>{t("common.email")}</th>
+              <th>{t("staff.role")}</th>
+              <th>{t("staff.status")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -310,23 +308,23 @@ export default function StaffPage() {
                   {s.emails.length > 0 && <span style={{ fontSize: "0.8em", color: "#888" }}> (+{s.emails.length})</span>}
                 </td>
                 <td>{s.role_name || "-"}</td>
-                <td><span className={`badge badge-${s.status === "active" ? "won" : "lost"}`}>{statusLabel(s.status)}</span></td>
+                <td><span className={`badge badge-${s.status === "active" ? "won" : "lost"}`}>{s.status === "active" ? t("staff.status_active") : s.status === "inactive" ? t("staff.status_inactive") : s.status}</span></td>
                 <td className="actions">
-                  {hasPermission("staff.update") && <button className="btn-sm" onClick={() => handleEdit(s)}>編集</button>}
-                  {hasPermission("staff.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(s)}>削除</button>}
+                  {hasPermission("staff.update") && <button className="btn-sm" onClick={() => handleEdit(s)}>{t("common.edit")}</button>}
+                  {hasPermission("staff.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(s)}>{t("common.delete")}</button>}
                 </td>
               </tr>
             ))}
-            {staff.length === 0 && <tr><td colSpan={6} className="empty">スタッフが登録されていません</td></tr>}
+            {staff.length === 0 && <tr><td colSpan={6} className="empty">{t("staff.noStaff")}</td></tr>}
           </tbody>
         </table>
       )}
 
       <ConfirmModal
         open={!!deleteTarget}
-        title="スタッフを削除"
+        title={t("staff.deleteStaff")}
         message={<><strong>{deleteTarget?.surname_jp} {deleteTarget?.given_name_jp}</strong> を削除します。<br />この操作は取り消せません。</>}
-        confirmLabel="削除する"
+        confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}

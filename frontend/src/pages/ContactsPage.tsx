@@ -9,6 +9,7 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -85,6 +86,7 @@ const contactDisplayName = (c: Contact): string => {
 };
 
 export default function ContactsPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   // Step 5c-2: /contacts?company_id=N の URL クエリから初期フィルタを復元
   // （CompanyDetailPage の担当者タブからの導線で会社別絞り込みを有効化）
@@ -114,7 +116,7 @@ export default function ContactsPage() {
       const data = await api.get<Contact[]>(`/contacts?${qs}`);
       setContacts(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -179,7 +181,7 @@ export default function ContactsPage() {
       setForm(emptyForm);
       loadContacts();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -211,7 +213,7 @@ export default function ContactsPage() {
       setDeleteTarget(null);
       loadContacts();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "削除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
       setDeleteTarget(null);
     }
   };
@@ -233,7 +235,7 @@ export default function ContactsPage() {
       // 件数バッジが古いままになることがあった。
       await loadContacts();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "ステータス更新に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
       setDedupConfirmTarget(null);
     } finally {
       setDedupSubmitting(false);
@@ -271,7 +273,7 @@ export default function ContactsPage() {
     <div className="page-container">
       <div className="page-header">
         <h1>
-          担当者管理（新 B2B モデル）
+          {t("contacts.title")}
           {pendingDedupCount > 0 && (
             <span className="dedup-summary" title="status が pending_dedup_review の担当者の数">
               重複確認待ち: {pendingDedupCount} 件
@@ -301,7 +303,7 @@ export default function ContactsPage() {
                 setShowForm(true);
               }}
             >
-              + 新規担当者
+              + {t("contacts.newContact")}
             </button>
           )}
         </div>
@@ -310,25 +312,25 @@ export default function ContactsPage() {
       {error && <div className="error-banner">{error}</div>}
 
       {loading ? (
-        <p>読み込み中...</p>
+        <p>{t("common.loading")}</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>コード</th>
-              <th>氏名</th>
-              <th>所属会社</th>
-              <th>役職</th>
-              <th>メール</th>
-              <th>電話</th>
+              <th>{t("common.code")}</th>
+              <th>{t("common.name")}</th>
+              <th>{t("common.company")}</th>
+              <th>{t("contacts.position")}</th>
+              <th>{t("common.email")}</th>
+              <th>{t("common.phone")}</th>
               <th>主担当</th>
-              <th>ステータス</th>
-              <th>操作</th>
+              <th>{t("common.status")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {contacts.length === 0 ? (
-              <tr><td colSpan={9} style={{ textAlign: "center", padding: "1rem" }}>担当者が登録されていません</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: "center", padding: "1rem" }}>{t("contacts.noContacts")}</td></tr>
             ) : (
               contacts.map((c) => (
                 <tr
@@ -346,7 +348,7 @@ export default function ContactsPage() {
                   <td><span className={`status-badge status-${c.status}`}>{c.status}</span></td>
                   <td>
                     {hasPermission("customers.update") && (
-                      <button className="btn-sm" onClick={() => handleEdit(c)}>編集</button>
+                      <button className="btn-sm" onClick={() => handleEdit(c)}>{t("common.edit")}</button>
                     )}
                     {/* PR #145 Q2: 一覧から直接解消できるショートカット（編集モーダル経由でも可） */}
                     {hasPermission("customers.update") && c.status === "pending_dedup_review" && (
@@ -359,7 +361,7 @@ export default function ContactsPage() {
                       </button>
                     )}
                     {hasPermission("customers.delete") && (
-                      <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(c)}>削除</button>
+                      <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(c)}>{t("common.delete")}</button>
                     )}
                   </td>
                 </tr>
@@ -372,7 +374,7 @@ export default function ContactsPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
-            <h2>{editId ? "担当者編集" : "新規担当者登録"}</h2>
+            <h2>{editId ? t("contacts.editContact") : t("contacts.newContact")}</h2>
             <form onSubmit={handleSubmit} className="form-grid">
               {!editId && (
                 <div className="form-row">
@@ -390,11 +392,11 @@ export default function ContactsPage() {
                 </select>
               </div>
               <div className="form-row">
-                <label>姓</label>
+                <label>{t("contacts.surname")}</label>
                 <input value={form.surname} onChange={(e) => setForm({ ...form, surname: e.target.value })} />
               </div>
               <div className="form-row">
-                <label>名</label>
+                <label>{t("contacts.givenName")}</label>
                 <input value={form.given_name} onChange={(e) => setForm({ ...form, given_name: e.target.value })} />
               </div>
               <div className="form-row">
@@ -402,11 +404,11 @@ export default function ContactsPage() {
                 <input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
               </div>
               <div className="form-row">
-                <label>役職</label>
+                <label>{t("contacts.position")}</label>
                 <input value={form.job_title} onChange={(e) => setForm({ ...form, job_title: e.target.value })} />
               </div>
               <div className="form-row">
-                <label>部署</label>
+                <label>{t("contacts.department")}</label>
                 <input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
               </div>
               <div className="form-row">
@@ -420,15 +422,15 @@ export default function ContactsPage() {
                 </label>
               </div>
               <div className="form-row">
-                <label>メール</label>
+                <label>{t("common.email")}</label>
                 <input type="email" value={form.primary_email} onChange={(e) => setForm({ ...form, primary_email: e.target.value })} />
               </div>
               <div className="form-row">
-                <label>電話</label>
+                <label>{t("common.phone")}</label>
                 <input value={form.primary_phone} onChange={(e) => setForm({ ...form, primary_phone: e.target.value })} />
               </div>
               <div className="form-row">
-                <label>ステータス</label>
+                <label>{t("common.status")}</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                   <option value="active">active</option>
                   <option value="inactive">inactive</option>
@@ -439,7 +441,7 @@ export default function ContactsPage() {
                 </select>
               </div>
               <div className="form-row">
-                <label>メモ</label>
+                <label>{t("common.notes")}</label>
                 <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
 
@@ -488,9 +490,9 @@ export default function ContactsPage() {
               )}
 
               <div className="form-actions">
-                <button type="button" onClick={() => setShowForm(false)} disabled={submitting}>キャンセル</button>
+                <button type="button" onClick={() => setShowForm(false)} disabled={submitting}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "保存中..." : editId ? "更新" : "登録"}
+                  {submitting ? t("common.saving") : editId ? t("common.update") : t("common.register")}
                 </button>
               </div>
             </form>
@@ -500,13 +502,13 @@ export default function ContactsPage() {
 
       <ConfirmModal
         open={deleteTarget !== null}
-        title="担当者削除の確認"
+        title={t("contacts.deleteContact")}
         message={
           deleteTarget
             ? `「${contactDisplayName(deleteTarget)}」(${deleteTarget.contact_code}) を削除しますか？ 関連する商談・注文・見積・請求書がある場合は削除できません。`
             : ""
         }
-        confirmLabel="削除"
+        confirmLabel={t("common.delete")}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />

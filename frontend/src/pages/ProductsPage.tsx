@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -86,6 +87,7 @@ interface ArchiveBlockedDetail {
 }
 
 export default function ProductsPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
@@ -107,7 +109,7 @@ export default function ProductsPage() {
       const data = await api.get<Product[]>(`/products${qs}`);
       setProducts(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -150,7 +152,7 @@ export default function ProductsPage() {
       setForm(emptyForm);
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     }
   };
 
@@ -184,7 +186,7 @@ export default function ProductsPage() {
       await api.patch(`/products/${p.id}`, { is_archived: !p.is_archived });
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "アーカイブ切替に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     }
   };
 
@@ -204,7 +206,7 @@ export default function ProductsPage() {
           return;
         }
       }
-      setError(e instanceof Error ? e.message : "削除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
     }
   };
 
@@ -216,24 +218,24 @@ export default function ProductsPage() {
       await api.patch(`/products/${id}`, { is_archived: true });
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "アーカイブに失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     }
   };
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>在庫管理</h2>
+        <h2>{t("products.title")}</h2>
         {hasPermission("products.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>商品登録</button>
+          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("products.newProduct")}</button>
         )}
       </div>
 
       <div className="search-bar" style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-        <input type="text" placeholder="商品名・コード・JAN・カード番号で検索..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input type="text" placeholder={t("common.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
         <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", whiteSpace: "nowrap" }}>
           <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-          廃番を含む
+          {t("products.status_discontinued")}
         </label>
       </div>
 
@@ -242,86 +244,86 @@ export default function ProductsPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editId ? "商品編集" : "商品登録"}</h3>
+            <h3>{editId ? t("products.editProduct") : t("products.newProduct")}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group"><label>商品名（日本語） *</label>
+              <div className="form-group"><label>{t("products.nameJa")} *</label>
                 <input required value={form.name_ja} onChange={(e) => setForm({ ...form, name_ja: e.target.value })} />
               </div>
-              <div className="form-group"><label>商品名（英語）</label>
+              <div className="form-group"><label>{t("products.nameEn")}</label>
                 <input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
               </div>
-              <div className="form-group"><label>カテゴリ</label>
+              <div className="form-group"><label>{t("leads.type")}</label>
                 <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
               </div>
-              <div className="form-group"><label>マーク / SKU</label>
+              <div className="form-group"><label>{t("common.code")}</label>
                 <input value={form.mark} onChange={(e) => setForm({ ...form, mark: e.target.value })} />
               </div>
 
               {/* Phase 1-C M-MVP: TCG 列 */}
               <fieldset style={{ border: "1px solid var(--border)", padding: "0.75rem", marginBottom: "1rem" }}>
-                <legend style={{ padding: "0 0.5rem", fontSize: "0.85rem", color: "var(--text-secondary)" }}>TCG / 国際取引項目</legend>
-                <div className="form-group"><label>JAN/EAN コード</label>
-                  <input maxLength={20} placeholder="例: 4521329211527" value={form.jan_code} onChange={(e) => setForm({ ...form, jan_code: e.target.value })} />
+                <legend style={{ padding: "0 0.5rem", fontSize: "0.85rem", color: "var(--text-secondary)" }}>TCG</legend>
+                <div className="form-group"><label>JAN/EAN</label>
+                  <input maxLength={20} value={form.jan_code} onChange={(e) => setForm({ ...form, jan_code: e.target.value })} />
                 </div>
-                <div className="form-group"><label>カード番号</label>
-                  <input maxLength={50} placeholder="例: SV5a-001/073" value={form.card_number} onChange={(e) => setForm({ ...form, card_number: e.target.value })} />
+                <div className="form-group"><label>{t("common.code")}</label>
+                  <input maxLength={50} value={form.card_number} onChange={(e) => setForm({ ...form, card_number: e.target.value })} />
                 </div>
-                <div className="form-group"><label>拡張パック略号</label>
-                  <input maxLength={20} placeholder="例: SV5a" value={form.expansion_code} onChange={(e) => setForm({ ...form, expansion_code: e.target.value })} />
+                <div className="form-group"><label>{t("common.code")}</label>
+                  <input maxLength={20} value={form.expansion_code} onChange={(e) => setForm({ ...form, expansion_code: e.target.value })} />
                 </div>
-                <div className="form-group"><label>レアリティ</label>
-                  <input maxLength={20} placeholder="例: SAR / RR / UR" value={form.rarity} onChange={(e) => setForm({ ...form, rarity: e.target.value })} />
+                <div className="form-group"><label>{t("common.type")}</label>
+                  <input maxLength={20} value={form.rarity} onChange={(e) => setForm({ ...form, rarity: e.target.value })} />
                 </div>
-                <div className="form-group"><label>言語版</label>
+                <div className="form-group"><label>{t("language.label")}</label>
                   <select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })}>
                     <option value="">-</option>
-                    <option value="ja">日本語 (ja)</option>
-                    <option value="en">英語 (en)</option>
-                    <option value="kr">韓国語 (kr)</option>
-                    <option value="zh">中国語 (zh)</option>
+                    <option value="ja">{t("language.ja")}</option>
+                    <option value="en">{t("language.en")}</option>
+                    <option value="kr">Korean (kr)</option>
+                    <option value="zh">Chinese (zh)</option>
                   </select>
                 </div>
               </fieldset>
 
-              <div className="form-group"><label>状態</label>
-                <input placeholder="例: 新品、中古" value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })} />
+              <div className="form-group"><label>{t("common.status")}</label>
+                <input value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })} />
               </div>
 
               {/* 価格 */}
               <fieldset style={{ border: "1px solid var(--border)", padding: "0.75rem", marginBottom: "1rem" }}>
-                <legend style={{ padding: "0 0.5rem", fontSize: "0.85rem", color: "var(--text-secondary)" }}>価格</legend>
-                <div className="form-group"><label>単価 (JPY)</label>
+                <legend style={{ padding: "0 0.5rem", fontSize: "0.85rem", color: "var(--text-secondary)" }}>{t("products.unitPrice")}</legend>
+                <div className="form-group"><label>{t("products.unitPrice")} (JPY)</label>
                   <input type="number" min="0" step="0.01" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} />
                 </div>
-                <div className="form-group"><label>単価 (USD)</label>
+                <div className="form-group"><label>{t("products.unitPrice")} (USD)</label>
                   <input type="number" min="0" step="0.01" value={form.unit_price_usd} onChange={(e) => setForm({ ...form, unit_price_usd: e.target.value })} />
                 </div>
-                <div className="form-group"><label>単価 (EUR)</label>
+                <div className="form-group"><label>{t("products.unitPrice")} (EUR)</label>
                   <input type="number" min="0" step="0.01" value={form.unit_price_eur} onChange={(e) => setForm({ ...form, unit_price_eur: e.target.value })} />
                 </div>
               </fieldset>
 
-              <div className="form-group"><label>在庫数量</label>
+              <div className="form-group"><label>{t("products.stockQty")}</label>
                 <input type="number" min="0" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
               </div>
-              <div className="form-group"><label>重量 (kg)</label>
+              <div className="form-group"><label>{t("products.weight")}</label>
                 <input type="number" min="0" step="0.001" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
               </div>
-              <div className="form-group"><label>商品画像 URL</label>
+              <div className="form-group"><label>URL</label>
                 <input type="url" maxLength={500} placeholder="https://..." value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
               </div>
-              <div className="form-group"><label>ステータス</label>
+              <div className="form-group"><label>{t("common.status")}</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                  <option value="active">有効</option>
-                  <option value="discontinued">廃盤</option>
+                  <option value="active">{t("products.status_active")}</option>
+                  <option value="discontinued">{t("products.status_discontinued")}</option>
                 </select>
               </div>
-              <div className="form-group"><label>備考</label>
+              <div className="form-group"><label>{t("common.notes")}</label>
                 <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>キャンセル</button>
-                <button type="submit" className="btn-primary">{editId ? "更新" : "登録"}</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{editId ? t("common.update") : t("common.register")}</button>
               </div>
             </form>
           </div>
@@ -329,21 +331,21 @@ export default function ProductsPage() {
       )}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>コード</th>
-              <th>商品名</th>
-              <th>カード番号</th>
-              <th>レアリティ</th>
-              <th>言語</th>
-              <th>カテゴリ</th>
-              <th>単価</th>
-              <th>在庫</th>
-              <th>ステータス</th>
-              <th>操作</th>
+              <th>{t("products.productCode")}</th>
+              <th>{t("common.name")}</th>
+              <th>{t("common.code")}</th>
+              <th>{t("quotes.items")}</th>
+              <th>{t("language.label")}</th>
+              <th>{t("leads.type")}</th>
+              <th>{t("products.unitPrice")}</th>
+              <th>{t("products.stockQty")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -353,7 +355,7 @@ export default function ProductsPage() {
                 <td>
                   {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: 4, objectFit: "cover", verticalAlign: "middle", borderRadius: 2 }} />}
                   {p.name_ja}
-                  {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: 6 }}>廃番</span>}
+                  {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: 6 }}>{t("products.status_discontinued")}</span>}
                 </td>
                 <td className="mono">{p.card_number || "-"}</td>
                 <td>{p.rarity || "-"}</td>
@@ -374,28 +376,28 @@ export default function ProductsPage() {
                     {p.quantity}
                   </span>
                 </td>
-                <td><span className={`badge badge-${p.status === "active" ? "won" : "lost"}`}>{p.status === "active" ? "有効" : "廃盤"}</span></td>
+                <td><span className={`badge badge-${p.status === "active" ? "won" : "lost"}`}>{p.status === "active" ? t("products.status_active") : t("products.status_discontinued")}</span></td>
                 <td className="actions">
-                  {hasPermission("products.update") && <button className="btn-sm" onClick={() => handleEdit(p)}>編集</button>}
+                  {hasPermission("products.update") && <button className="btn-sm" onClick={() => handleEdit(p)}>{t("common.edit")}</button>}
                   {hasPermission("products.update") && (
                     <button className="btn-sm" onClick={() => handleArchiveToggle(p)}>
-                      {p.is_archived ? "復活" : "アーカイブ"}
+                      {p.is_archived ? t("common.reload") : t("common.add")}
                     </button>
                   )}
-                  {hasPermission("products.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(p)}>削除</button>}
+                  {hasPermission("products.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(p)}>{t("common.delete")}</button>}
                 </td>
               </tr>
             ))}
-            {products.length === 0 && <tr><td colSpan={10} className="empty">商品が登録されていません</td></tr>}
+            {products.length === 0 && <tr><td colSpan={10} className="empty">{t("products.noProducts")}</td></tr>}
           </tbody>
         </table>
       )}
 
       <ConfirmModal
         open={!!deleteTarget}
-        title="商品を削除"
-        message={<><strong>{deleteTarget?.name_ja}</strong> を削除します。<br />見積もり・請求書・仕入注文で参照されている場合は削除できません（アーカイブ推奨）。</>}
-        confirmLabel="削除する"
+        title={t("products.deleteProduct")}
+        message={<><strong>{deleteTarget?.name_ja}</strong><br />{t("common.irreversible")}</>}
+        confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
@@ -403,21 +405,18 @@ export default function ProductsPage() {
 
       <ConfirmModal
         open={!!archiveBlocked}
-        title="削除できません"
+        title={t("common.error")}
         message={
           <>
-            <strong>{archiveBlocked?.name_ja}</strong> は下流テーブルから参照されています:
+            <strong>{archiveBlocked?.name_ja}</strong>
             {archiveBlocked && archiveBlocked.blocking_references.length > 0 ? (
               <ul>{archiveBlocked.blocking_references.map((r) => <li key={r}>{r}</li>)}</ul>
             ) : (
-              <p style={{ color: "var(--text-secondary)" }}>（参照先未特定）</p>
+              <p style={{ color: "var(--text-secondary)" }}>{t("common.notSet")}</p>
             )}
-            物理削除の代わりに <strong>アーカイブ</strong>（is_archived=true）を実行しますか？
-            <br />
-            アーカイブすると一覧から非表示になりますが、過去の参照は維持されます。
           </>
         }
-        confirmLabel="アーカイブする"
+        confirmLabel={t("common.add")}
         onConfirm={handleArchiveFromBlocked}
         onCancel={() => setArchiveBlocked(null)}
       />

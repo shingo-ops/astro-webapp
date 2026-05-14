@@ -1,4 +1,5 @@
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
 
@@ -7,10 +8,14 @@ interface StaffReport {
   review: string | null; goals: string | null; challenges: string | null;
   reviewer_comment: string | null; reviewed_at: string | null; submitted_at: string | null; created_at: string;
 }
-const TYPE_LABELS: Record<string, string> = { daily: "日報", weekly: "週報", monthly: "月報" };
-
 export default function StaffReportsPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
+  const TYPE_LABELS: Record<string, string> = {
+    daily: "Daily",
+    weekly: "Weekly",
+    monthly: "Monthly",
+  };
   const [reports, setReports] = useState<StaffReport[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ report_type: "daily", period: "", review: "", goals: "", challenges: "" });
@@ -20,7 +25,7 @@ export default function StaffReportsPage() {
 
   const load = async () => {
     try { setReports(await api.get<StaffReport[]>(`/staff-reports${typeFilter ? `?report_type=${typeFilter}` : ""}`)); }
-    catch (e) { setError(e instanceof Error ? e.message : "取得失敗"); }
+    catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [typeFilter]);
@@ -33,18 +38,18 @@ export default function StaffReportsPage() {
         goals: form.goals || null, challenges: form.challenges || null,
       });
       setShowForm(false); setForm({ report_type: "daily", period: "", review: "", goals: "", challenges: "" }); load();
-    } catch (e) { setError(e instanceof Error ? e.message : "保存失敗"); }
+    } catch (e) { setError(e instanceof Error ? e.message : t("common.saveError")); }
   };
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>日報・週報・月報</h2>
-        {hasPermission("staff_reports.create") && <button className="btn-primary" onClick={() => setShowForm(true)}>レポート提出</button>}
+        <h2>{t("reports.title")}</h2>
+        {hasPermission("staff_reports.create") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("common.add")}</button>}
       </div>
       <div className="filter-bar">
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
-          <option value="">全タイプ</option>
+          <option value="">{t("common.all")}</option>
           {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
       </div>
@@ -52,28 +57,28 @@ export default function StaffReportsPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>レポート提出</h3>
+            <h3>{t("common.add")}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group"><label>タイプ *</label>
+              <div className="form-group"><label>{t("common.type")} *</label>
                 <select value={form.report_type} onChange={e => setForm({ ...form, report_type: e.target.value })}>
                   {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
-              <div className="form-group"><label>対象期間 *</label><input required placeholder="例: 2026-04-17 / 2026-W16 / 2026-04" value={form.period} onChange={e => setForm({ ...form, period: e.target.value })} /></div>
-              <div className="form-group"><label>振り返り *</label><textarea required value={form.review} onChange={e => setForm({ ...form, review: e.target.value })} style={{ minHeight: 120 }} /></div>
-              <div className="form-group"><label>目標</label><textarea value={form.goals} onChange={e => setForm({ ...form, goals: e.target.value })} /></div>
-              <div className="form-group"><label>課題</label><textarea value={form.challenges} onChange={e => setForm({ ...form, challenges: e.target.value })} /></div>
+              <div className="form-group"><label>{t("common.date")} *</label><input required value={form.period} onChange={e => setForm({ ...form, period: e.target.value })} /></div>
+              <div className="form-group"><label>{t("common.description")} *</label><textarea required value={form.review} onChange={e => setForm({ ...form, review: e.target.value })} style={{ minHeight: 120 }} /></div>
+              <div className="form-group"><label>{t("common.notes")}</label><textarea value={form.goals} onChange={e => setForm({ ...form, goals: e.target.value })} /></div>
+              <div className="form-group"><label>{t("common.notes")}</label><textarea value={form.challenges} onChange={e => setForm({ ...form, challenges: e.target.value })} /></div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>キャンセル</button>
-                <button type="submit" className="btn-primary">提出</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{t("common.add")}</button>
               </div>
             </form>
           </div>
         </div>
       )}
-      {loading ? <div className="loading">読み込み中...</div> : (
+      {loading ? <div className="loading">{t("common.loading")}</div> : (
         <table className="data-table">
-          <thead><tr><th>コード</th><th>タイプ</th><th>期間</th><th>提出日</th><th>レビュー</th></tr></thead>
+          <thead><tr><th>{t("common.code")}</th><th>{t("common.type")}</th><th>{t("common.date")}</th><th>{t("common.createdAt")}</th><th>{t("common.status")}</th></tr></thead>
           <tbody>
             {reports.map(r => (
               <tr key={r.id}>
@@ -81,10 +86,10 @@ export default function StaffReportsPage() {
                 <td><span className="badge badge-negotiating">{TYPE_LABELS[r.report_type] || r.report_type}</span></td>
                 <td>{r.period}</td>
                 <td>{r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : "-"}</td>
-                <td>{r.reviewed_at ? <span className="badge badge-won">レビュー済</span> : <span className="badge badge-pending">未レビュー</span>}</td>
+                <td>{r.reviewed_at ? <span className="badge badge-won">{t("common.confirm")}</span> : <span className="badge badge-pending">{t("common.notSet")}</span>}</td>
               </tr>
             ))}
-            {reports.length === 0 && <tr><td colSpan={5} className="empty">レポートがありません</td></tr>}
+            {reports.length === 0 && <tr><td colSpan={5} className="empty">{t("common.noData")}</td></tr>}
           </tbody>
         </table>
       )}

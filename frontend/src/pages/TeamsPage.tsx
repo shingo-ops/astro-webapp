@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -32,6 +33,7 @@ interface TeamMember {
 const emptyForm = { name: "", leader_id: "", description: "" };
 
 export default function TeamsPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [teams, setTeams] = useState<Team[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -49,7 +51,7 @@ export default function TeamsPage() {
       const data = await api.get<Team[]>("/teams");
       setTeams(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,7 @@ export default function TeamsPage() {
       const data = await api.get<TeamMember[]>(`/teams/${teamId}/members`);
       setMembers(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "メンバー取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     }
   };
 
@@ -85,7 +87,7 @@ export default function TeamsPage() {
       setForm(emptyForm);
       loadTeams();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     }
   };
 
@@ -107,13 +109,13 @@ export default function TeamsPage() {
       await api.delete(`/teams/${id}`);
       loadTeams();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "削除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
     }
   };
 
-  const openMembers = async (t: Team) => {
-    setMembersPanel(t);
-    await loadMembers(t.id);
+  const openMembers = async (team: Team) => {
+    setMembersPanel(team);
+    await loadMembers(team.id);
   };
 
   const addMember = async (e: FormEvent) => {
@@ -125,7 +127,7 @@ export default function TeamsPage() {
       loadMembers(membersPanel.id);
       loadTeams();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "メンバー追加に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     }
   };
 
@@ -136,16 +138,16 @@ export default function TeamsPage() {
       loadMembers(membersPanel.id);
       loadTeams();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "メンバー削除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
     }
   };
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>チーム管理</h2>
+        <h2>{t("teams.title")}</h2>
         {hasPermission("teams.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>新規作成</button>
+          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("teams.newTeam")}</button>
         )}
       </div>
 
@@ -154,20 +156,20 @@ export default function TeamsPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editId ? "チーム編集" : "新規チーム作成"}</h3>
+            <h3>{editId ? t("teams.editTeam") : t("teams.newTeam")}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group"><label>チーム名 *</label>
+              <div className="form-group"><label>{t("teams.teamName")} *</label>
                 <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="form-group"><label>リーダーユーザーID（任意）</label>
                 <input type="number" min="1" value={form.leader_id} onChange={(e) => setForm({ ...form, leader_id: e.target.value })} />
               </div>
-              <div className="form-group"><label>説明</label>
+              <div className="form-group"><label>{t("common.description")}</label>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
               </div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>キャンセル</button>
-                <button type="submit" className="btn-primary">{editId ? "更新" : "作成"}</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{editId ? t("common.update") : t("common.create")}</button>
               </div>
             </form>
           </div>
@@ -180,14 +182,14 @@ export default function TeamsPage() {
             <h3>メンバー管理 - {membersPanel.name}</h3>
             {hasPermission("teams.manage_members") && (
               <form onSubmit={addMember} style={{ marginBottom: 16 }}>
-                <div className="form-group"><label>追加するユーザーID</label>
+                <div className="form-group"><label>{t("common.add")}するユーザーID</label>
                   <input type="number" min="1" required value={newMemberId} onChange={(e) => setNewMemberId(e.target.value)} />
                 </div>
-                <button type="submit" className="btn-primary">追加</button>
+                <button type="submit" className="btn-primary">{t("common.add")}</button>
               </form>
             )}
             <table className="data-table">
-              <thead><tr><th>ユーザー名</th><th>メール</th><th>加入日</th><th>操作</th></tr></thead>
+              <thead><tr><th>ユーザー名</th><th>{t("common.email")}</th><th>加入日</th><th>{t("common.actions")}</th></tr></thead>
               <tbody>
                 {members.map((m) => (
                   <tr key={m.user_id}>
@@ -196,7 +198,7 @@ export default function TeamsPage() {
                     <td>{new Date(m.joined_at).toLocaleDateString()}</td>
                     <td>
                       {hasPermission("teams.manage_members") && (
-                        <button className="btn-sm btn-danger" onClick={() => removeMember(m.user_id)}>削除</button>
+                        <button className="btn-sm btn-danger" onClick={() => removeMember(m.user_id)}>{t("common.remove")}</button>
                       )}
                     </td>
                   </tr>
@@ -205,43 +207,43 @@ export default function TeamsPage() {
               </tbody>
             </table>
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={() => setMembersPanel(null)}>閉じる</button>
+              <button type="button" className="btn-secondary" onClick={() => setMembersPanel(null)}>{t("common.close")}</button>
             </div>
           </div>
         </div>
       )}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
-            <tr><th>チーム名</th><th>説明</th><th>メンバー数</th><th>リーダーID</th><th>操作</th></tr>
+            <tr><th>{t("teams.teamName")}</th><th>{t("common.description")}</th><th>メンバー数</th><th>リーダーID</th><th>{t("common.actions")}</th></tr>
           </thead>
           <tbody>
-            {teams.map((t) => (
-              <tr key={t.id}>
-                <td>{t.name}</td>
-                <td>{t.description || "-"}</td>
-                <td>{t.member_count ?? 0}</td>
-                <td>{t.leader_id ?? "-"}</td>
+            {teams.map((team) => (
+              <tr key={team.id}>
+                <td>{team.name}</td>
+                <td>{team.description || "-"}</td>
+                <td>{team.member_count ?? 0}</td>
+                <td>{team.leader_id ?? "-"}</td>
                 <td className="actions">
-                  <button className="btn-sm" onClick={() => openMembers(t)}>メンバー</button>
-                  {hasPermission("teams.update") && <button className="btn-sm" onClick={() => handleEdit(t)}>編集</button>}
-                  {hasPermission("teams.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(t)}>削除</button>}
+                  <button className="btn-sm" onClick={() => openMembers(team)}>メンバー</button>
+                  {hasPermission("teams.update") && <button className="btn-sm" onClick={() => handleEdit(team)}>{t("common.edit")}</button>}
+                  {hasPermission("teams.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(team)}>{t("common.delete")}</button>}
                 </td>
               </tr>
             ))}
-            {teams.length === 0 && <tr><td colSpan={5} className="empty">チームが作成されていません</td></tr>}
+            {teams.length === 0 && <tr><td colSpan={5} className="empty">{t("teams.noTeams")}</td></tr>}
           </tbody>
         </table>
       )}
 
       <ConfirmModal
         open={!!deleteTarget}
-        title="チームを削除"
+        title={t("teams.deleteTeam")}
         message={<><strong>{deleteTarget?.name}</strong> を削除します。<br />メンバー情報も同時に削除されます。</>}
-        confirmLabel="削除する"
+        confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}

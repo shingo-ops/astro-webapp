@@ -19,6 +19,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -84,6 +85,7 @@ function daysUntil(iso: string | null): number | null {
 }
 
 export default function ChannelsPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,14 +216,14 @@ export default function ChannelsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Channels (Meta integration)</h2>
+        <h2>{t("channels.title")}</h2>
         {canManage && (
           <button
             className="btn-primary"
             onClick={handleConnect}
             disabled={connecting}
           >
-            {connecting ? "Starting connection..." : "Connect a Facebook Page"}
+            {connecting ? t("channels.connecting") : t("channels.connect")}
           </button>
         )}
       </div>
@@ -243,7 +245,7 @@ export default function ChannelsPage() {
               fontSize: "1rem",
               lineHeight: 1,
             }}
-            aria-label="Close"
+            aria-label={t("channels.close")}
           >
             ×
           </button>
@@ -256,20 +258,20 @@ export default function ChannelsPage() {
 
       {loadError && (
         <div className="error" style={{ marginBottom: 16 }}>
-          Failed to load channels: {loadError}
+          {t("channels.loadError")} {loadError}
           <button
             type="button"
             className="btn-sm"
             style={{ marginLeft: 8 }}
             onClick={loadChannels}
           >
-            Reload
+            {t("channels.reload")}
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="loading">Loading...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : channels.length === 0 ? (
         // ----- 空 state（onboarding CTA） -----
         <div
@@ -279,10 +281,9 @@ export default function ChannelsPage() {
             padding: "48px 24px",
           }}
         >
-          <h3 style={{ marginTop: 0 }}>No Facebook Pages connected yet</h3>
+          <h3 style={{ marginTop: 0 }}>{t("channels.noChannels")}</h3>
           <p style={{ color: "var(--text-muted)", marginBottom: 24 }}>
-            To send and receive Messenger and Instagram DMs from the Sales Anchor
-            inbox, connect a Facebook Page first.
+            {t("channels.noChannelsDesc")}
           </p>
           {canManage ? (
             <button
@@ -291,11 +292,11 @@ export default function ChannelsPage() {
               disabled={connecting}
               style={{ fontSize: "1rem", padding: "12px 24px" }}
             >
-              {connecting ? "Starting connection..." : "Connect a Facebook Page"}
+              {connecting ? t("channels.connecting") : t("channels.connect")}
             </button>
           ) : (
             <p style={{ color: "var(--text-muted)" }}>
-              Connecting requires the <code>channels.manage</code> permission. Please contact your administrator.
+              {t("channels.noChannelsDesc")}
             </p>
           )}
         </div>
@@ -322,11 +323,11 @@ export default function ChannelsPage() {
                     <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{ch.page_name}</h3>
                     {ch.is_active ? (
                       <span className="badge" style={{ background: "#e6f4ea", color: "#137333" }}>
-                        Connected
+                        {t("channels.status_active")}
                       </span>
                     ) : (
                       <span className="badge" style={{ background: "#eee", color: "#666" }}>
-                        Disconnected
+                        {t("channels.status_inactive")}
                       </span>
                     )}
                   </div>
@@ -336,7 +337,7 @@ export default function ChannelsPage() {
                     </div>
                     {ch.instagram_username && (
                       <div>
-                        <strong>Instagram:</strong> @{ch.instagram_username}
+                        <strong>{t("channels.instagramLinked")}:</strong> @{ch.instagram_username}
                         {ch.instagram_business_account_id && (
                           <span className="mono" style={{ marginLeft: 6, opacity: 0.7 }}>
                             ({ch.instagram_business_account_id})
@@ -345,15 +346,15 @@ export default function ChannelsPage() {
                       </div>
                     )}
                     <div>
-                      <strong>Connected:</strong> {formatDate(ch.connected_at)}
-                      {ch.connected_by_staff_name && ` / by: ${ch.connected_by_staff_name}`}
+                      <strong>{t("channels.connectedAt")}:</strong> {formatDate(ch.connected_at)}
+                      {ch.connected_by_staff_name && ` / ${t("channels.connectedBy")}: ${ch.connected_by_staff_name}`}
                     </div>
                     {ch.page_token_expires_at && (
                       <div style={tokenWarn ? { color: "#a45a00", fontWeight: 600 } : undefined}>
-                        <strong>Token expires:</strong> {formatDate(ch.page_token_expires_at)}
+                        <strong>{t("channels.tokenExpires")}:</strong> {formatDate(ch.page_token_expires_at)}
                         {expiresIn !== null && (
                           <span style={{ marginLeft: 6 }}>
-                            ({expiresIn >= 0 ? `${expiresIn} day(s) left` : `expired ${-expiresIn} day(s) ago`})
+                            ({expiresIn >= 0 ? t("channels.daysLeft", { count: expiresIn }) : t("channels.expired")})
                           </span>
                         )}
                       </div>
@@ -367,7 +368,7 @@ export default function ChannelsPage() {
                       onClick={() => setDisconnectTarget(ch)}
                       disabled={disconnecting}
                     >
-                      Disconnect
+                      {t("channels.disconnect")}
                     </button>
                   )}
                 </div>
@@ -379,17 +380,14 @@ export default function ChannelsPage() {
 
       <ConfirmModal
         open={!!disconnectTarget}
-        title="Disconnect Facebook Page"
+        title={t("channels.disconnectTitle")}
         danger
-        confirmLabel={disconnecting ? "Disconnecting..." : "Disconnect"}
+        confirmLabel={disconnecting ? t("channels.disconnecting") : t("channels.disconnect")}
         message={
           <>
-            Disconnect <strong>{disconnectTarget?.page_name}</strong>?
+            <strong>{disconnectTarget?.page_name}</strong> {t("channels.disconnectConfirm")}
             <br />
-            Messenger and Instagram messages will no longer arrive through this Page,
-            and Meta's <code>subscribed_apps</code> will be unsubscribed.
-            <br />
-            Reconnecting will require going through OAuth again.
+            {t("common.irreversible")}
           </>
         }
         onConfirm={performDisconnect}

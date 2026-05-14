@@ -27,6 +27,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import CompanyContactSelector from "../components/CompanyContactSelector";
@@ -81,21 +82,6 @@ const STATUSES = [
   "returned",
   "cancelled",
 ];
-const STATUS_LABELS: Record<string, string> = {
-  pending: "未処理",
-  processing: "仕入中",
-  shipped: "配送中",
-  delivered: "完了",
-  returned: "トラブル",
-  cancelled: "キャンセル",
-};
-
-const SORT_OPTIONS: { value: string; label: string }[] = [
-  { value: "updated_at", label: "更新日時" },
-  { value: "created_at", label: "登録日時" },
-  { value: "total_amount", label: "金額" },
-  { value: "status", label: "ステータス" },
-];
 
 const emptyForm = {
   deal_id: "",
@@ -106,6 +92,24 @@ const emptyForm = {
 };
 
 export default function OrdersPage() {
+  const { t } = useTranslation();
+
+  const STATUS_LABELS: Record<string, string> = {
+    pending: t("orders.status_pending"),
+    processing: t("orders.status_processing"),
+    shipped: t("orders.status_shipped"),
+    delivered: t("orders.status_delivered"),
+    returned: t("orders.status_returned"),
+    cancelled: t("orders.status_cancelled"),
+  };
+
+  const SORT_OPTIONS = [
+    { value: "updated_at", label: t("common.updatedAt") },
+    { value: "created_at", label: t("common.createdAt") },
+    { value: "total_amount", label: t("common.amount") },
+    { value: "status", label: t("common.status") },
+  ];
+
   const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [groupCounts, setGroupCounts] = useState<GroupCountsResponse | null>(null);
   const [companies, setCompanies] = useState<CompanyMini[]>([]);
@@ -180,7 +184,7 @@ export default function OrdersPage() {
       );
       setOrders(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -372,7 +376,7 @@ export default function OrdersPage() {
     setError("");
     setSelectorError("");
     if (!editId && contactId === null) {
-      setSelectorError("会社と担当者を選択してください");
+      setSelectorError(t("companyContactSelector.contactRequired"));
       return;
     }
     const basePayload = {
@@ -398,7 +402,7 @@ export default function OrdersPage() {
       loadOrders();
       loadGroupCounts();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     }
   };
 
@@ -426,7 +430,7 @@ export default function OrdersPage() {
       loadOrders();
       loadGroupCounts();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "削除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
     }
   };
 
@@ -453,7 +457,7 @@ export default function OrdersPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>受注管理</h2>
+        <h2>{t("orders.title")}</h2>
         <button
           className="btn-primary"
           onClick={() => {
@@ -463,7 +467,7 @@ export default function OrdersPage() {
             resetSelector();
           }}
         >
-          新規登録
+          {t("orders.newOrder")}
         </button>
       </div>
 
@@ -472,7 +476,7 @@ export default function OrdersPage() {
       <div
         className="orders-group-counts"
         role="group"
-        aria-label="ステータス別件数"
+        aria-label={t("common.status")}
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -487,7 +491,7 @@ export default function OrdersPage() {
           aria-pressed={statusFilter === ""}
           data-testid="group-count-all"
         >
-          全件 {groupCounts ? `(${groupCounts.total})` : ""}
+          {t("common.all")} {groupCounts ? `(${groupCounts.total})` : ""}
         </button>
         {STATUSES.map((s) => {
           const count = groupCounts?.counts[s] ?? 0;
@@ -513,8 +517,8 @@ export default function OrdersPage() {
       >
         <input
           type="search"
-          aria-label="受注検索"
-          placeholder="受注番号 / 会社名 / 担当者名で検索"
+          aria-label={t("orders.title")}
+          placeholder={t("common.search")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           style={{ flex: "1 1 240px", minWidth: 200 }}
@@ -523,10 +527,10 @@ export default function OrdersPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          aria-label="ステータスフィルタ"
+          aria-label={t("common.filter")}
           data-testid="orders-status-filter"
         >
-          <option value="">全ステータス</option>
+          <option value="">{t("orders.allStatuses")}</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
               {STATUS_LABELS[s]}
@@ -536,7 +540,7 @@ export default function OrdersPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          aria-label="ソート対象"
+          aria-label={t("common.filter")}
           data-testid="orders-sort-by"
         >
           {SORT_OPTIONS.map((opt) => (
@@ -548,10 +552,10 @@ export default function OrdersPage() {
         <button
           type="button"
           onClick={toggleSortOrder}
-          aria-label={`ソート順切替（現在: ${sortOrder === "desc" ? "降順" : "昇順"}）`}
+          aria-label={sortOrder === "desc" ? "↓" : "↑"}
           data-testid="orders-sort-order"
         >
-          {sortOrder === "desc" ? "降順 ↓" : "昇順 ↑"}
+          {sortOrder === "desc" ? "↓" : "↑"}
         </button>
       </div>
 
@@ -560,7 +564,7 @@ export default function OrdersPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editId ? "受注編集" : "新規受注登録"}</h3>
+            <h3>{editId ? t("orders.editOrder") : t("orders.newOrder")}</h3>
             <form onSubmit={handleSubmit}>
               <CompanyContactSelector
                 value={{ companyId, contactId }}
@@ -581,11 +585,11 @@ export default function OrdersPage() {
                     marginTop: -8,
                   }}
                 >
-                  ※ 受注の会社・担当者は作成後変更できません
+                  {t("common.irreversible")}
                 </p>
               )}
               <div className="form-group">
-                <label>受注番号 *</label>
+                <label>{t("orders.orderNumber")} *</label>
                 <input
                   required
                   value={form.order_number}
@@ -595,7 +599,7 @@ export default function OrdersPage() {
                 />
               </div>
               <div className="form-group">
-                <label>合計金額</label>
+                <label>{t("common.amount")}</label>
                 <input
                   type="number"
                   min="0"
@@ -607,7 +611,7 @@ export default function OrdersPage() {
                 />
               </div>
               <div className="form-group">
-                <label>ステータス</label>
+                <label>{t("common.status")}</label>
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -620,7 +624,7 @@ export default function OrdersPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label>備考</label>
+                <label>{t("common.notes")}</label>
                 <textarea
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -632,10 +636,10 @@ export default function OrdersPage() {
                   className="btn-secondary"
                   onClick={() => setShowForm(false)}
                 >
-                  キャンセル
+                  {t("common.cancel")}
                 </button>
                 <button type="submit" className="btn-primary">
-                  {editId ? "更新" : "登録"}
+                  {editId ? t("common.update") : t("common.register")}
                 </button>
               </div>
             </form>
@@ -644,24 +648,24 @@ export default function OrdersPage() {
       )}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>受注番号</th>
-              <th>会社</th>
-              <th>担当者</th>
-              <th>合計金額</th>
-              <th>売上</th>
-              <th>粗利</th>
-              <th>粗利率</th>
-              <th>追跡番号</th>
-              <th>仕入状況</th>
-              <th>報酬合計</th>
-              <th>ステータス</th>
-              <th>登録日</th>
-              <th>操作</th>
+              <th>{t("orders.orderNumber")}</th>
+              <th>{t("common.company")}</th>
+              <th>{t("common.name")}</th>
+              <th>{t("common.amount")}</th>
+              <th>{t("orders.financial")}</th>
+              <th>{t("financial.grossProfit")}</th>
+              <th>{t("financial.grossProfitRate")}</th>
+              <th>{t("shipping.trackingNumber")}</th>
+              <th>{t("orders.purchase")}</th>
+              <th>{t("orders.commission")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("common.createdAt")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -690,14 +694,14 @@ export default function OrdersPage() {
                   <td data-testid={`pur-cell-status-${o.id}`}>
                     {(() => {
                       if (!pur) {
-                        return <span className="badge">未登録</span>;
+                        return <span className="badge">{t("common.notSet")}</span>;
                       }
                       if (pur.purchase_status === "confirmed") {
                         return (
-                          <span className="badge badge-confirmed">確定済み</span>
+                          <span className="badge badge-confirmed">{t("purchase.status_confirmed")}</span>
                         );
                       }
-                      return <span className="badge badge-pending">確認中</span>;
+                      return <span className="badge badge-pending">{t("purchase.status_pending")}</span>;
                     })()}
                   </td>
                   <td data-testid={`com-cell-total-${o.id}`}>
@@ -711,41 +715,41 @@ export default function OrdersPage() {
                   <td>{new Date(o.created_at).toLocaleDateString("ja-JP")}</td>
                   <td className="actions">
                     <button className="btn-sm" onClick={() => handleEdit(o)}>
-                      編集
+                      {t("common.edit")}
                     </button>
                     <button
                       className="btn-sm"
                       onClick={() => setFinancialTarget(o)}
                       data-testid={`open-financial-${o.id}`}
                     >
-                      売上編集
+                      {t("orders.financial")}
                     </button>
                     <button
                       className="btn-sm"
                       onClick={() => setShippingTarget(o)}
                       data-testid={`open-shipping-${o.id}`}
                     >
-                      発送編集
+                      {t("orders.shipping")}
                     </button>
                     <button
                       className="btn-sm"
                       onClick={() => setPurchaseTarget(o)}
                       data-testid={`open-purchase-${o.id}`}
                     >
-                      仕入編集
+                      {t("orders.purchase")}
                     </button>
                     <button
                       className="btn-sm"
                       onClick={() => setCommissionTarget(o)}
                       data-testid={`open-commission-${o.id}`}
                     >
-                      報酬編集
+                      {t("orders.commission")}
                     </button>
                     <button
                       className="btn-sm btn-danger"
                       onClick={() => setDeleteTarget(o)}
                     >
-                      削除
+                      {t("common.delete")}
                     </button>
                   </td>
                 </tr>
@@ -754,7 +758,7 @@ export default function OrdersPage() {
             {orders.length === 0 && (
               <tr>
                 <td colSpan={13} className="empty">
-                  受注が登録されていません
+                  {t("orders.noOrders")}
                 </td>
               </tr>
             )}
@@ -815,15 +819,15 @@ export default function OrdersPage() {
 
       <ConfirmModal
         open={!!deleteTarget}
-        title="受注を削除"
+        title={t("orders.deleteOrder")}
         message={
           <>
-            受注番号 <strong>{deleteTarget?.order_number}</strong> を削除します。
+            {t("orders.orderNumber")}: <strong>{deleteTarget?.order_number}</strong>
             <br />
-            この操作は取り消せません。
+            {t("common.irreversible")}
           </>
         }
-        confirmLabel="削除する"
+        confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
