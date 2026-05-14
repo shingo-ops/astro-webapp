@@ -1578,6 +1578,23 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
     return schema_name
 
 
+def get_tenant_tables_sql(schema_name: str, tenant_id: int) -> str:
+    """テナントテーブル作成SQL（フォーマット済み）を返す公開 API（ADR-034）。"""
+    return _TENANT_TABLES_SQL.format(
+        schema=schema_name, schema_raw=schema_name, tenant_id=tenant_id
+    )
+
+
+def get_rls_enable_sql(schema_name: str) -> str:
+    """RLS 有効化SQL（フォーマット済み）を返す公開 API（ADR-034）。"""
+    return _RLS_ENABLE_SQL.format(schema=schema_name)
+
+
+def get_rls_policy_sql(schema_name: str) -> str:
+    """テナント分離 RLS ポリシーSQL（フォーマット済み）を返す公開 API（ADR-034）。"""
+    return _RLS_POLICY_SQL.format(schema=schema_name, schema_raw=schema_name)
+
+
 async def _execute_statements_preserving_do_blocks(db: AsyncSession, sql: str) -> None:
     """
     DO $$ ... END $$ ブロックを壊さずに複数SQL文を順次実行する。
@@ -1645,3 +1662,8 @@ def _split_sql_preserving_do_blocks(sql: str) -> list[str]:
     if buf:
         statements.append("".join(buf))
     return statements
+
+
+# setup_tenant.py 等の外部スクリプト向け公開エイリアス（ADR-034）。
+# 内部実装は _split_sql_preserving_do_blocks に集約し、こちらは名前だけ公開する。
+split_sql_preserving_do_blocks = _split_sql_preserving_do_blocks

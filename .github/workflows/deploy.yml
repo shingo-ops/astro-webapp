@@ -257,12 +257,65 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/039_create_data_deletion_logs.sql
 
+            # Phase 1-D Sprint 1: 全テナントに tenant_meta_config テーブル作成 +
+            #   public.permissions に Meta Inbox 権限 4 件 seed（migration 040 + 042）
+            #   IF NOT EXISTS / ON CONFLICT DO NOTHING で idempotent。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_meta_inbox_phase1d.py
+
+            # Phase 1-D Sprint 4: 全テナントの meta_messages に 9 列追加（migration 041）
+            #   ADD COLUMN IF NOT EXISTS / CREATE INDEX IF NOT EXISTS で idempotent。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_meta_inbox_phase1d_sprint4.py
+
+            # Phase 1-E F16-S6: public.meta_page_routing テーブル作成 +
+            #   全テナントに同期トリガ + backfill（migration 043 + 044）
+            #   CREATE TABLE/INDEX IF NOT EXISTS / CREATE OR REPLACE FUNCTION / ON CONFLICT で idempotent。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_meta_page_routing.py
+
+            # Phase 1-E F14-S5: 全テナントの meta_messages に page_id 列追加（migration 045）
+            #   ADD COLUMN IF NOT EXISTS / CREATE INDEX IF NOT EXISTS で idempotent。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_meta_messages_page_id.py
+
             # ADR-015 段階分割 Phase 1: leads カラム追加 / lead_playbook テーブル新設 /
             #   customer_contact_channels.external_id 追加
             #   Pythonテンプレートランナー（{schema}プレースホルダを全テナントに展開）。
             #   ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS で idempotent。
             docker exec -e TENANT_CODE=highlife-jpn -w /app astro-webapp-backend-1 \
               python scripts/migrate_adr015_lead_foundation.py
+
+            # GAS 版互換ロール移行: 「メンバー」→「CS」再割当 + ロール正規化（冪等）
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_roles_gas_compat.py
+
+            # ADR-021 Sprint 2: 全テナントに order_financials テーブル新設（migration 047）
+            #   CREATE TABLE IF NOT EXISTS / CREATE INDEX IF NOT EXISTS / RLS DO ブロックで idempotent。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_adr021_sprint2_financials.py
+
+            # ADR-021 Sprint 3: 全テナントに order_shipping_details テーブル新設（migration 048）
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_adr021_sprint3_shipping.py
+
+            # ADR-021 Sprint 4: 全テナントに order_purchase_details テーブル新設（migration 049）
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_adr021_sprint4_purchase.py
+
+            # ADR-021 Sprint 5: 全テナントに commissions + staff.is_employee 追加（migration 050）
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_adr021_sprint5_commissions.py
+
+            # ADR-021 J1 fix: 全テナントの orders.status='confirmed' を 'pending' に統合（migration 051）
+            #   WHERE status='confirmed' で自然に冪等。2 回目以降は 0 行更新。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_adr021_remove_confirmed_status.py
+
+            # ADR-026: 全テナントの meta_messages.message_id を VARCHAR(100) → TEXT（migration 052）
+            #   data_type='text' 確認済みテナントは skip する冪等設計。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_meta_messages_message_id_to_text.py
 
             # ADR-027: users テーブルに locale カラム追加（ユーザー個人の言語設定）
             #   ADD COLUMN IF NOT EXISTS / UPDATE で idempotent。
@@ -282,6 +335,8 @@ jobs:
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
             #       のテンプレートが全テーブルを作るので新テナントには追従不要。
+            # ADR-034: 新規テナント作成時は scripts/setup_tenant.py を使うこと。
+            #   同スクリプトが上記 migration を含む全 catch-up migration を新テナントに適用する。
 
             echo "Step 6: Health check..."
             docker exec astro-webapp-backend-1 python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || (echo "Health check failed!" && exit 1)
