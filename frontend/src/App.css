@@ -849,6 +849,40 @@
   margin: 0 0 24px;
 }
 
+/* Meta 風ログインフォーム — 入力欄（.login-card スコープ限定） */
+.login-card .form-group input {
+  background: #ffffff;
+  color: #1c1e21;
+  border: 1px solid #ccd0d5;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 1rem;
+}
+
+.login-card .form-group input:focus {
+  outline: none;
+  border-color: #1877f2;
+  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+}
+
+/* Meta 風ログインボタン（.login-card スコープ限定） */
+.login-card .btn-primary {
+  width: 100%;
+  background: #1877f2;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.login-card .btn-primary:hover:not(:disabled) {
+  background: #166fe5;
+}
+
 /* --- Forms --- */
 .form-group {
   margin-bottom: 16px;
