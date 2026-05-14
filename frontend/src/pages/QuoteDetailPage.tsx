@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
 
@@ -38,11 +39,8 @@ interface QuoteDetail {
   items: QuoteItem[];
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "下書き", sent: "送付済", approved: "承認済", rejected: "却下", expired: "期限切れ",
-};
-
 export default function QuoteDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
@@ -55,7 +53,7 @@ export default function QuoteDetailPage() {
       const data = await api.get<QuoteDetail>(`/quotes/${id}`);
       setQuote(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -68,7 +66,7 @@ export default function QuoteDetailPage() {
       await api.post(`/quotes/${id}/${action}`, {});
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "操作に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     }
   };
 
@@ -77,7 +75,7 @@ export default function QuoteDetailPage() {
       const result = await api.post<{ id: number }>(`/invoices/from-quote/${id}`, {});
       navigate(`/invoices/${result.id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "請求書変換に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     }
   };
 
@@ -86,27 +84,27 @@ export default function QuoteDetailPage() {
     return n.toLocaleString();
   };
 
-  if (loading) return <div className="page"><div className="loading">読み込み中...</div></div>;
-  if (!quote) return <div className="page"><div className="error-message">{error || "見積もりが見つかりません"}</div></div>;
+  if (loading) return <div className="page"><div className="loading">{t("common.loading")}</div></div>;
+  if (!quote) return <div className="page"><div className="error-message">{error || t("common.fetchError")}</div></div>;
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>見積もり詳細 — {quote.quote_code || `#${quote.id}`}</h2>
+        <h2>{t("quotes.title")} — {quote.quote_code || `#${quote.id}`}</h2>
         <div className="actions" style={{ display: "flex", gap: 8 }}>
           {quote.status === "draft" && hasPermission("quotes.update") && (
-            <button className="btn-primary" onClick={() => doAction("send")}>送付済にする</button>
+            <button className="btn-primary" onClick={() => doAction("send")}>{t("quotes.send")}</button>
           )}
           {quote.status === "sent" && hasPermission("quotes.approve") && (
             <>
-              <button className="btn-primary" onClick={() => doAction("approve")}>承認</button>
-              <button className="btn-danger" onClick={() => doAction("reject")}>却下</button>
+              <button className="btn-primary" onClick={() => doAction("approve")}>{t("quotes.approve")}</button>
+              <button className="btn-danger" onClick={() => doAction("reject")}>{t("quotes.reject")}</button>
             </>
           )}
           {quote.status === "approved" && hasPermission("invoices.create") && (
-            <button className="btn-primary" onClick={convertToInvoice}>請求書に変換</button>
+            <button className="btn-primary" onClick={convertToInvoice}>{t("quotes.convertToInvoice")}</button>
           )}
-          <button className="btn-secondary" onClick={() => navigate("/quotes")}>一覧に戻る</button>
+          <button className="btn-secondary" onClick={() => navigate("/quotes")}>{t("common.back")}</button>
         </div>
       </div>
 
@@ -114,23 +112,23 @@ export default function QuoteDetailPage() {
 
       <div style={{ background: "var(--bg-surface)", padding: 24, borderRadius: 8, boxShadow: "var(--shadow-sm)", marginBottom: 24 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-          <div><strong>ステータス:</strong> <span className={`badge badge-${quote.status === "approved" ? "won" : quote.status === "rejected" ? "lost" : "pending"}`}>{STATUS_LABELS[quote.status]}</span></div>
-          <div><strong>通貨:</strong> {quote.currency}</div>
-          <div><strong>有効期限:</strong> {quote.validity_date || "-"}</div>
-          <div><strong>作成日:</strong> {new Date(quote.created_at).toLocaleDateString()}</div>
-          <div><strong>備考:</strong> {quote.notes || "-"}</div>
+          <div><strong>{t("common.status")}:</strong> <span className={`badge badge-${quote.status === "approved" ? "won" : quote.status === "rejected" ? "lost" : "pending"}`}>{t(`quotes.status_${quote.status}`)}</span></div>
+          <div><strong>{t("common.currency")}:</strong> {quote.currency}</div>
+          <div><strong>{t("quotes.validityDate")}:</strong> {quote.validity_date || "-"}</div>
+          <div><strong>{t("common.createdAt")}:</strong> {new Date(quote.created_at).toLocaleDateString()}</div>
+          <div><strong>{t("common.notes")}:</strong> {quote.notes || "-"}</div>
         </div>
       </div>
 
-      <h3 style={{ marginBottom: 12 }}>明細</h3>
+      <h3 style={{ marginBottom: 12 }}>{t("quotes.items")}</h3>
       <table className="data-table" style={{ marginBottom: 24 }}>
         <thead>
           <tr>
-            <th>商品名</th>
-            <th>数量</th>
-            <th>単価</th>
-            <th>重量</th>
-            <th>小計</th>
+            <th>{t("quotes.product")}</th>
+            <th>{t("quotes.quantity")}</th>
+            <th>{t("quotes.unitPrice")}</th>
+            <th>{t("quotes.weight")}</th>
+            <th>{t("quotes.subtotal")}</th>
           </tr>
         </thead>
         <tbody>
@@ -145,10 +143,10 @@ export default function QuoteDetailPage() {
           ))}
         </tbody>
         <tfoot>
-          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 600 }}>小計</td><td style={{ fontWeight: 600 }}>{fmt(quote.subtotal)}</td></tr>
-          <tr><td colSpan={4} style={{ textAlign: "right" }}>送料</td><td>{fmt(quote.shipping_fee)}</td></tr>
-          <tr><td colSpan={4} style={{ textAlign: "right" }}>税額</td><td>{fmt(quote.tax_amount)}</td></tr>
-          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 700, fontSize: "1.1rem" }}>合計</td><td style={{ fontWeight: 700, fontSize: "1.1rem" }}>{fmt(quote.total_amount)} {quote.currency}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 600 }}>{t("quotes.subtotal")}</td><td style={{ fontWeight: 600 }}>{fmt(quote.subtotal)}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.shippingFee")}</td><td>{fmt(quote.shipping_fee)}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.tax")}</td><td>{fmt(quote.tax_amount)}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 700, fontSize: "1.1rem" }}>{t("quotes.total")}</td><td style={{ fontWeight: 700, fontSize: "1.1rem" }}>{fmt(quote.total_amount)} {quote.currency}</td></tr>
         </tfoot>
       </table>
     </div>

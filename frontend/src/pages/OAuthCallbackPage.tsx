@@ -14,6 +14,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../lib/api";
 
 interface ConnectedPage {
@@ -56,6 +57,7 @@ function normalizeReason(err: unknown): string {
 }
 
 export default function OAuthCallbackPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   // useEffect が React Strict Mode で 2 回呼ばれても backend を 1 回しか叩かない
@@ -121,7 +123,7 @@ export default function OAuthCallbackPage() {
       } catch (e) {
         const reason = normalizeReason(e);
         // 表示用に簡易メッセージも持つ（fallback でこの画面が見える場合のため）
-        setError(e instanceof Error ? e.message : "接続処理に失敗しました");
+        setError(e instanceof Error ? e.message : t("oauth.error"));
         navigate(`/channels?status=error&reason=${encodeURIComponent(reason)}`, { replace: true });
       }
     })();
@@ -129,8 +131,8 @@ export default function OAuthCallbackPage() {
 
   return (
     <div className="page" style={{ padding: 32 }}>
-      <h2>Meta 連携を処理中...</h2>
-      <p>Facebook からの接続情報を確認しています。しばらくお待ちください。</p>
+      <h2>{t("oauth.processing")}</h2>
+      <p>{t("oauth.processingDesc")}</p>
       {error && (
         <div className="error" style={{ marginTop: 16 }}>{error}</div>
       )}

@@ -64,12 +64,23 @@ async def _fetch_ui_prefs(db: AsyncSession, staff_id: int) -> StaffUIPreferences
     return StaffUIPreferences(**row) if row else None
 
 
+async def _fetch_locale(db: AsyncSession, primary_email: str) -> str:
+    """public.users の locale カラムを取得（ADR-027）。"""
+    result = await db.execute(
+        text("SELECT locale FROM public.users WHERE email = :email LIMIT 1"),
+        {"email": primary_email},
+    )
+    row = result.mappings().first()
+    return row["locale"] if row and row["locale"] else "ja"
+
+
 async def _compose(db: AsyncSession, main_row: dict) -> StaffResponse:
     sid = main_row["id"]
     return StaffResponse(
         **main_row,
         emails=await _fetch_emails(db, sid),
         ui_preferences=await _fetch_ui_prefs(db, sid),
+        locale=await _fetch_locale(db, main_row["primary_email"]),
     )
 
 
@@ -182,6 +193,30 @@ async def get_my_staff(
             detail="現在のユーザに紐づく staff レコードが見つかりません",
         )
     return await _compose(db, dict(row))
+
+
+@router.patch("/staff/me/locale", status_code=200)
+async def update_my_locale(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    現在ログイン中ユーザの locale を更新する（ADR-027）。
+    payload: { "locale": "ja" | "en" }
+    """
+    locale = payload.get("locale", "ja")
+    if locale not in ("ja", "en"):
+        raise HTTPException(status_code=400, detail="locale は 'ja' または 'en' のみ有効です")
+    user_email = getattr(current_user, "email", None)
+    if not user_email:
+        raise HTTPException(status_code=401, detail="認証されていません")
+    await db.execute(
+        text("UPDATE public.users SET locale = :locale WHERE email = :email"),
+        {"locale": locale, "email": user_email},
+    )
+    await db.commit()
+    return {"locale": locale}
 
 
 @router.get("/staff", response_model=list[StaffResponse],

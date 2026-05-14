@@ -10,6 +10,7 @@
  */
 
 import { FormEvent, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
 type RoleKey = "sales" | "order" | "ship" | "purchase" | "trouble";
@@ -47,14 +48,6 @@ interface MonthlySummaryDto {
   total: number;
 }
 
-const ROLE_LABELS: Record<RoleKey, string> = {
-  sales: "営業",
-  order: "受注",
-  ship: "発送",
-  purchase: "仕入",
-  trouble: "トラブル",
-};
-
 const ALL_ROLES: RoleKey[] = ["sales", "order", "ship", "purchase", "trouble"];
 
 interface FormState {
@@ -74,6 +67,7 @@ const DEFAULT_FORM: FormState = {
 };
 
 export default function CommissionSettingsPage() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<CommissionSettingsDto | null>(null);
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [monthly, setMonthly] = useState<MonthlySummaryDto | null>(null);
@@ -90,6 +84,14 @@ export default function CommissionSettingsPage() {
   );
   const [year, setYear] = useState(nowJst.getFullYear());
   const [month, setMonth] = useState(nowJst.getMonth() + 1);
+
+  const ROLE_LABELS: Record<RoleKey, string> = {
+    sales: t("commissions.role_sales"),
+    order: t("commissions.role_order"),
+    ship: t("commissions.role_ship"),
+    purchase: t("commissions.role_purchase"),
+    trouble: t("commissions.role_trouble"),
+  };
 
   const dtoToForm = (dto: CommissionSettingsDto): FormState => {
     const r = dto.commission_rates;
@@ -113,7 +115,7 @@ export default function CommissionSettingsPage() {
       setSettings(dto);
       setForm(dtoToForm(dto));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "報酬設定の取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -151,9 +153,9 @@ export default function CommissionSettingsPage() {
       );
       setSettings(updated);
       setForm(dtoToForm(updated));
-      setInfo("保存しました");
+      setInfo(t("common.saving"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.saveError"));
     } finally {
       setSaving(false);
     }
@@ -169,11 +171,11 @@ export default function CommissionSettingsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>報酬設定</h2>
+        <h2>{t("commissions.title")}</h2>
       </div>
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <>
           {error && <div className="error-message">{error}</div>}
@@ -185,14 +187,14 @@ export default function CommissionSettingsPage() {
 
           <form onSubmit={handleSubmit} data-testid="commission-settings-form">
             <fieldset>
-              <legend>5 ロールの計算 rate</legend>
+              <legend>{t("commissions.ratesLegend")}</legend>
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th style={{ width: "20%" }}>ロール</th>
-                    <th style={{ width: "30%" }}>計算タイプ</th>
-                    <th style={{ width: "30%" }}>値</th>
-                    <th>備考</th>
+                    <th style={{ width: "20%" }}>{t("commissions.colRole")}</th>
+                    <th style={{ width: "30%" }}>{t("commissions.colCalcType")}</th>
+                    <th style={{ width: "30%" }}>{t("commissions.colValue")}</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -207,11 +209,11 @@ export default function CommissionSettingsPage() {
                             onChange={(e) =>
                               updateRole(role, { type: e.target.value as RateType })
                             }
-                            aria-label={`${ROLE_LABELS[role]} 計算タイプ`}
+                            aria-label={`${ROLE_LABELS[role]} ${t("commissions.colCalcType")}`}
                             data-testid={`settings-type-${role}`}
                           >
-                            <option value="rate">売上 × rate</option>
-                            <option value="fixed">固定額</option>
+                            <option value="rate">{t("commissions.typeRate")}</option>
+                            <option value="fixed">{t("commissions.typeFixed")}</option>
                           </select>
                         </td>
                         <td>
@@ -223,7 +225,7 @@ export default function CommissionSettingsPage() {
                             onChange={(e) =>
                               updateRole(role, { value: Number(e.target.value) })
                             }
-                            aria-label={`${ROLE_LABELS[role]} 値`}
+                            aria-label={`${ROLE_LABELS[role]} ${t("commissions.colValue")}`}
                             data-testid={`settings-value-${role}`}
                           />
                         </td>
@@ -254,7 +256,7 @@ export default function CommissionSettingsPage() {
                 disabled={saving}
                 data-testid="settings-save"
               >
-                {saving ? "保存中..." : "保存"}
+                {saving ? t("common.saving") : t("common.save")}
               </button>
             </div>
             {settings && (
@@ -266,10 +268,10 @@ export default function CommissionSettingsPage() {
 
           {/* 月次レポート（テキスト表示） */}
           <fieldset style={{ marginTop: "2rem" }}>
-            <legend>月次集計</legend>
+            <legend>{t("commissions.monthlyLegend")}</legend>
             <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
               <label>
-                年:
+                {t("commissions.year")}:
                 <input
                   type="number"
                   value={year}
@@ -281,7 +283,7 @@ export default function CommissionSettingsPage() {
                 />
               </label>
               <label>
-                月:
+                {t("commissions.month")}:
                 <input
                   type="number"
                   value={month}
@@ -297,20 +299,20 @@ export default function CommissionSettingsPage() {
             {monthly ? (
               <div style={{ marginTop: "1rem" }}>
                 <p data-testid="monthly-total">
-                  合計: <strong>{fmt(monthly.total)}</strong>
+                  {t("commissions.total")}: <strong>{fmt(monthly.total)}</strong>
                 </p>
-                <h4>担当者別</h4>
+                <h4>{t("commissions.byStaff")}</h4>
                 <ul data-testid="monthly-by-staff">
-                  {monthly.by_staff.length === 0 && <li className="text-muted">該当データなし</li>}
+                  {monthly.by_staff.length === 0 && <li className="text-muted">{t("commissions.noData")}</li>}
                   {monthly.by_staff.map((it) => (
                     <li key={`${it.staff_id ?? "null"}`}>
-                      {it.staff_name ?? "（未割当）"}: {fmt(it.total)}
+                      {it.staff_name ?? t("commissions.unassigned")}: {fmt(it.total)}
                     </li>
                   ))}
                 </ul>
-                <h4>ロール別</h4>
+                <h4>{t("commissions.byRole")}</h4>
                 <ul data-testid="monthly-by-role">
-                  {monthly.by_role.length === 0 && <li className="text-muted">該当データなし</li>}
+                  {monthly.by_role.length === 0 && <li className="text-muted">{t("commissions.noData")}</li>}
                   {monthly.by_role.map((it) => (
                     <li key={it.role}>
                       {ROLE_LABELS[it.role as RoleKey] ?? it.role}: {fmt(it.total)}
@@ -320,7 +322,7 @@ export default function CommissionSettingsPage() {
               </div>
             ) : (
               <p className="text-muted" style={{ marginTop: "1rem" }}>
-                月次集計を取得できませんでした
+                {t("commissions.monthlyError")}
               </p>
             )}
           </fieldset>

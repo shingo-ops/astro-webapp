@@ -1,9 +1,11 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { firebaseErrorMessage } from "../lib/firebaseErrorMessage";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -37,11 +39,11 @@ export default function LoginPage() {
           aria-hidden="true"
           className="login-logo"
         />
-        <p className="login-subtitle">Sign in</p>
+        <p className="login-subtitle">{t("login.signIn")}</p>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email address</label>
+            <label htmlFor="email">{t("login.email")}</label>
             <input
               id="email"
               type="email"
@@ -52,7 +54,7 @@ export default function LoginPage() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t("login.password")}</label>
             <input
               id="password"
               type="password"
@@ -63,7 +65,7 @@ export default function LoginPage() {
             />
           </div>
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? t("login.signingIn") : t("login.signIn")}
           </button>
         </form>
       </div>

@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -15,12 +16,15 @@ export default function ConfirmModal({
   open,
   title,
   message,
-  confirmLabel = "OK",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   danger = false,
   onConfirm,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
+  const resolvedConfirmLabel = confirmLabel ?? t("confirmModal.defaultConfirm");
+  const resolvedCancelLabel = cancelLabel ?? t("confirmModal.defaultCancel");
   if (!open) return null;
   return (
     <div className="modal-overlay" onClick={onCancel}>
@@ -28,14 +32,14 @@ export default function ConfirmModal({
         <h3>{title}</h3>
         <div style={{ marginBottom: 16, lineHeight: 1.6 }}>{message}</div>
         <div className="form-actions">
-          <button type="button" className="btn-secondary" onClick={onCancel}>{cancelLabel}</button>
+          <button type="button" className="btn-secondary" onClick={onCancel}>{resolvedCancelLabel}</button>
           <button
             type="button"
             className={danger ? "btn-danger" : "btn-primary"}
             onClick={onConfirm}
             autoFocus
           >
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </button>
         </div>
       </div>

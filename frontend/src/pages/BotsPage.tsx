@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -60,6 +61,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function BotsPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [bots, setBots] = useState<Bot[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -82,7 +84,7 @@ export default function BotsPage() {
       setBots(b);
       setStaff(s);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ export default function BotsPage() {
       setForm(emptyForm);
       loadAll();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -146,7 +148,7 @@ export default function BotsPage() {
       setNewApiKey(res.api_key);
       loadAll();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "再発行に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.operationError"));
     }
   };
 
@@ -158,17 +160,17 @@ export default function BotsPage() {
       await api.delete(`/bots/${id}`);
       loadAll();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "削除に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.deleteError"));
     }
   };
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>Bot 管理</h2>
+        <h2>{t("bots.title")}</h2>
         {hasPermission("bots.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
-            新規登録
+            {t("bots.newBot")}
           </button>
         )}
       </div>
@@ -205,7 +207,7 @@ export default function BotsPage() {
                   <option value="custom">カスタム</option>
                 </select>
               </div>
-              <div className="form-group"><label>ステータス</label>
+              <div className="form-group"><label>{t("common.status")}</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                   <option value="active">稼働中</option>
                   <option value="inactive">停止中</option>
@@ -225,9 +227,9 @@ export default function BotsPage() {
                 <input type="email" value={form.sender_email} onChange={(e) => setForm({ ...form, sender_email: e.target.value })} />
               </div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>キャンセル</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "送信中..." : editId ? "更新" : "登録（APIキー発行）"}
+                  {submitting ? "送信中..." : editId ? t("common.update") : "登録（APIキー発行）"}
                 </button>
               </div>
             </form>
@@ -236,19 +238,19 @@ export default function BotsPage() {
       )}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>コード</th>
-              <th>名前</th>
+              <th>{t("common.code")}</th>
+              <th>{t("common.name")}</th>
               <th>用途</th>
-              <th>ステータス</th>
+              <th>{t("common.status")}</th>
               <th>管理者</th>
               <th>実行回数</th>
               <th>最終実行</th>
-              <th>操作</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -262,13 +264,13 @@ export default function BotsPage() {
                 <td>{b.execution_count.toLocaleString("ja-JP")}</td>
                 <td>{b.last_executed_at ? new Date(b.last_executed_at).toLocaleDateString("ja-JP") : "-"}</td>
                 <td className="actions">
-                  {hasPermission("bots.update") && <button className="btn-sm" onClick={() => handleEdit(b)}>編集</button>}
+                  {hasPermission("bots.update") && <button className="btn-sm" onClick={() => handleEdit(b)}>{t("common.edit")}</button>}
                   {hasPermission("bots.update") && <button className="btn-sm" onClick={() => setRotateTarget(b)}>鍵再発行</button>}
-                  {hasPermission("bots.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(b)}>削除</button>}
+                  {hasPermission("bots.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(b)}>{t("common.delete")}</button>}
                 </td>
               </tr>
             ))}
-            {bots.length === 0 && <tr><td colSpan={8} className="empty">Bot が登録されていません</td></tr>}
+            {bots.length === 0 && <tr><td colSpan={8} className="empty">{t("bots.noB")}</td></tr>}
           </tbody>
         </table>
       )}
@@ -277,7 +279,7 @@ export default function BotsPage() {
         open={!!deleteTarget}
         title="Bot を削除"
         message={<><strong>{deleteTarget?.display_name}</strong> を削除します。<br />この操作は取り消せません。</>}
-        confirmLabel="削除する"
+        confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}

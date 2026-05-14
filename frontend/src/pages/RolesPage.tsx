@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useMemo, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -90,6 +91,7 @@ const PRIORITY_OPTIONS = [
 const emptyRoleForm = { name: "", color: COLOR_PALETTE[0], priority: 500, description: "" };
 
 export default function RolesPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
 
   // データ
@@ -128,7 +130,7 @@ export default function RolesPage() {
         setPermissions(p);
         if (r.length > 0) setSelectedRoleId(r[0].id);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "取得失敗"))
+      .catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -141,7 +143,7 @@ export default function RolesPage() {
         setOriginalPermIds(ids);
         setEditedPermIds(new Set(ids));
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "権限取得失敗"));
+      .catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")));
   }, [selectedRoleId]);
 
   // カテゴリ別に権限をグループ化
@@ -219,7 +221,7 @@ export default function RolesPage() {
       });
       setOriginalPermIds(new Set(editedPermIds));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存失敗");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     } finally {
       setSavingPerms(false);
     }
@@ -230,7 +232,7 @@ export default function RolesPage() {
 
   // ロール選択切替（未保存なら確認）
   const selectRole = (id: number) => {
-    if (dirty && !window.confirm("未保存の変更があります。破棄して切り替えますか？")) return;
+    if (dirty && !window.confirm(t("roles.unsavedChanges") + "破棄して切り替えますか？")) return;
     setSelectedRoleId(id);
   };
 
@@ -268,7 +270,7 @@ export default function RolesPage() {
       setRoles(latest);
       setShowRoleForm(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存失敗");
+      setError(err instanceof Error ? err.message : t("common.saveError"));
     }
   };
   const performDelete = async () => {
@@ -281,7 +283,7 @@ export default function RolesPage() {
       setRoles(latest);
       if (selectedRoleId === id && latest.length > 0) setSelectedRoleId(latest[0].id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "削除失敗");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
     }
   };
 
@@ -301,7 +303,7 @@ export default function RolesPage() {
       setTargetUserId("");
       setSelectedRoleIds(new Set());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存失敗");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     }
   };
   const closeUserAssign = () => {
@@ -310,7 +312,7 @@ export default function RolesPage() {
     setSelectedRoleIds(new Set());
   };
 
-  if (loading) return <div className="page"><div className="loading">読み込み中...</div></div>;
+  if (loading) return <div className="page"><div className="loading">{t("common.loading")}</div></div>;
 
   return (
     <div className="page roles-page">
@@ -320,9 +322,9 @@ export default function RolesPage() {
         {/* === 左サイドバー: 役割一覧 === */}
         <aside className="roles-sidebar">
           <div className="roles-sidebar-header">
-            <h3>役割一覧</h3>
+            <h3>{t("roles.title")}</h3>
             {hasPermission("roles.create") && (
-              <button className="btn-primary btn-sm" onClick={openCreateRole}>+ 新規</button>
+              <button className="btn-primary btn-sm" onClick={openCreateRole}>+ {t("common.new")}</button>
             )}
           </div>
           <ul className="roles-list">
@@ -349,7 +351,7 @@ export default function RolesPage() {
           </ul>
           {hasPermission("roles.assign") && (
             <button className="btn-secondary btn-block" onClick={() => setUserAssignOpen(true)}>
-              ユーザー割当
+              {t("roles.assignUsers")}
             </button>
           )}
         </aside>
@@ -373,23 +375,23 @@ export default function RolesPage() {
                     <p className="role-description">{selectedRole.description}</p>
                   )}
                   {isSystemRole && (
-                    <p className="role-note">※ システムロールは削除不可（権限編集は {hasPermission("roles.update") ? "不可" : "権限不足"}）</p>
+                    <p className="role-note">※ {t("roles.systemRole")}（権限編集は {hasPermission("roles.update") ? "不可" : "権限不足"}）</p>
                   )}
                 </div>
                 <div className="roles-main-actions">
                   {canEditPerms && !selectedRole.is_system && (
                     <>
-                      <button className="btn-sm" onClick={() => openEditRole(selectedRole)}>編集</button>
+                      <button className="btn-sm" onClick={() => openEditRole(selectedRole)}>{t("common.edit")}</button>
                       {hasPermission("roles.delete") && (
-                        <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(selectedRole)}>削除</button>
+                        <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(selectedRole)}>{t("common.delete")}</button>
                       )}
                     </>
                   )}
                   <button className="btn-secondary" disabled={!dirty || savingPerms} onClick={cancelEdits}>
-                    キャンセル
+                    {t("roles.cancelChanges")}
                   </button>
                   <button className="btn-primary" disabled={!dirty || savingPerms || !canEditPerms} onClick={savePermissions}>
-                    {savingPerms ? "保存中..." : "保存"}
+                    {savingPerms ? t("common.saving") : t("roles.saveChanges")}
                   </button>
                 </div>
               </div>
@@ -451,7 +453,7 @@ export default function RolesPage() {
 
               {dirty && (
                 <div className="unsaved-banner">
-                  ⚠ 変更が保存されていません。「保存」ボタンをクリックして変更を反映してください。
+                  ⚠ {t("roles.unsavedChanges")}「{t("roles.saveChanges")}」ボタンをクリックして変更を反映してください。
                 </div>
               )}
             </>
@@ -465,13 +467,13 @@ export default function RolesPage() {
       {showRoleForm && (
         <div className="modal-overlay" onClick={() => setShowRoleForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editingRoleId ? "ロール編集" : "新規ロール作成"}</h3>
+            <h3>{editingRoleId ? t("roles.editRole") : t("roles.newRole")}</h3>
             <form onSubmit={submitRoleForm}>
-              <div className="form-group"><label>ロール名 *</label>
+              <div className="form-group"><label>{t("roles.roleName")} *</label>
                 <input required value={roleForm.name} onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })} />
               </div>
-              <div className="form-group"><label>表示色</label>
-                <div className="color-picker" role="radiogroup" aria-label="表示色">
+              <div className="form-group"><label>{t("roles.color")}</label>
+                <div className="color-picker" role="radiogroup" aria-label={t("roles.color")}>
                   {/* 既存ロールの色がパレットに無い場合は「現在の色」として表示 */}
                   {roleForm.color && !COLOR_PALETTE.includes(roleForm.color.toLowerCase()) && !COLOR_PALETTE.includes(roleForm.color) && (
                     <label
@@ -506,7 +508,7 @@ export default function RolesPage() {
                   ))}
                 </div>
               </div>
-              <div className="form-group"><label>優先順位</label>
+              <div className="form-group"><label>{t("roles.priority")}</label>
                 <select
                   value={roleForm.priority}
                   onChange={(e) => setRoleForm({ ...roleForm, priority: Number(e.target.value) })}
@@ -519,12 +521,12 @@ export default function RolesPage() {
                   )}
                 </select>
               </div>
-              <div className="form-group"><label>説明</label>
+              <div className="form-group"><label>{t("common.description")}</label>
                 <textarea value={roleForm.description} onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })} />
               </div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowRoleForm(false)}>キャンセル</button>
-                <button type="submit" className="btn-primary">{editingRoleId ? "更新" : "作成"}</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowRoleForm(false)}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{editingRoleId ? t("common.update") : t("common.create")}</button>
               </div>
             </form>
           </div>
@@ -535,7 +537,7 @@ export default function RolesPage() {
       {userAssignOpen && (
         <div className="modal-overlay" onClick={closeUserAssign}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>ユーザーへのロール割当</h3>
+            <h3>{t("roles.assignUsers")}</h3>
             <div className="form-group"><label>対象ユーザーID *</label>
               <input type="number" min="1" required value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)} />
             </div>
@@ -549,8 +551,8 @@ export default function RolesPage() {
               ))}
             </div>
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={closeUserAssign}>キャンセル</button>
-              <button type="button" className="btn-primary" onClick={saveUserRoles} disabled={!targetUserId}>保存</button>
+              <button type="button" className="btn-secondary" onClick={closeUserAssign}>{t("common.cancel")}</button>
+              <button type="button" className="btn-primary" onClick={saveUserRoles} disabled={!targetUserId}>{t("common.save")}</button>
             </div>
           </div>
         </div>
@@ -559,9 +561,9 @@ export default function RolesPage() {
       {/* === 削除確認 === */}
       <ConfirmModal
         open={!!deleteTarget}
-        title="ロールを削除"
+        title={t("roles.deleteRole")}
         message={<><strong>{deleteTarget?.name}</strong> を削除します。<br />このロールを持つユーザーは自動的に剥奪されます。</>}
-        confirmLabel="削除する"
+        confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}

@@ -9,6 +9,7 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../lib/api";
 
 export interface OrderFinancialDto {
@@ -42,21 +43,21 @@ interface Props {
   onSaved?: (financial: OrderFinancialDto) => void;
 }
 
-// 入力対象カラムをラベル付きで定義（OrderFlow Manager 順）
-const INPUT_FIELDS: { key: keyof OrderFinancialDto; label: string }[] = [
-  { key: "revenue_amount", label: "売上高" },
-  { key: "purchase_cost", label: "仕入原価" },
-  { key: "purchase_shipping", label: "仕入送料" },
-  { key: "paypal_fee", label: "PayPal手数料" },
-  { key: "wise_fee", label: "Wise手数料" },
-  { key: "exchange_fee", label: "為替手数料" },
-  { key: "outsource_fee", label: "外注費" },
-  { key: "packing_fee", label: "荷造運賃" },
-  { key: "ad_cost", label: "広告費" },
-  { key: "return_fee", label: "返送料" },
-  { key: "refund_amount", label: "返金額" },
-  { key: "commission_base_amount", label: "報酬計算ベース額" },
-  { key: "tax_refund", label: "消費税還付" },
+// 入力対象カラムをラベルキー付きで定義（OrderFlow Manager 順）
+const INPUT_FIELDS: { key: keyof OrderFinancialDto; labelKey: string }[] = [
+  { key: "revenue_amount", labelKey: "financial.revenue_amount" },
+  { key: "purchase_cost", labelKey: "financial.purchase_cost" },
+  { key: "purchase_shipping", labelKey: "financial.purchase_shipping" },
+  { key: "paypal_fee", labelKey: "financial.paypal_fee" },
+  { key: "wise_fee", labelKey: "financial.wise_fee" },
+  { key: "exchange_fee", labelKey: "financial.exchange_fee" },
+  { key: "outsource_fee", labelKey: "financial.outsource_fee" },
+  { key: "packing_fee", labelKey: "financial.packing_fee" },
+  { key: "ad_cost", labelKey: "financial.ad_cost" },
+  { key: "return_fee", labelKey: "financial.return_fee" },
+  { key: "refund_amount", labelKey: "financial.refund_amount" },
+  { key: "commission_base_amount", labelKey: "financial.commission_base_amount" },
+  { key: "tax_refund", labelKey: "financial.tax_refund" },
 ];
 
 type FormState = Record<(typeof INPUT_FIELDS)[number]["key"], string>;
@@ -86,6 +87,7 @@ export default function OrderFinancialPanel({
   onClose,
   onSaved,
 }: Props) {
+  const { t } = useTranslation();
   const [existing, setExisting] = useState<OrderFinancialDto | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [notes, setNotes] = useState("");
@@ -123,7 +125,7 @@ export default function OrderFinancialPanel({
           }
         } else {
           if (!cancelled) {
-            setError(e instanceof Error ? e.message : "売上情報の取得に失敗しました");
+            setError(e instanceof Error ? e.message : t("common.fetchError"));
           }
         }
       } finally {
@@ -167,7 +169,7 @@ export default function OrderFinancialPanel({
       onSaved?.(saved);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     } finally {
       setSaving(false);
     }
@@ -204,11 +206,11 @@ export default function OrderFinancialPanel({
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 720 }}
         role="dialog"
-        aria-label="売上情報"
+        aria-label={t("financial.revenue_amount")}
       >
-        <h3>売上情報 — {orderNumber}</h3>
+        <h3>{t("orders.financial")} — {orderNumber}</h3>
         {loading ? (
-          <div className="loading">読み込み中...</div>
+          <div className="loading">{t("common.loading")}</div>
         ) : (
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message">{error}</div>}
@@ -221,7 +223,7 @@ export default function OrderFinancialPanel({
             >
               {INPUT_FIELDS.map((f) => (
                 <div className="form-group" key={f.key}>
-                  <label>{f.label}</label>
+                  <label>{t(f.labelKey)}</label>
                   <input
                     type="number"
                     min="0"
@@ -231,18 +233,18 @@ export default function OrderFinancialPanel({
                     onChange={(ev) =>
                       setForm({ ...form, [f.key]: ev.target.value })
                     }
-                    aria-label={f.label}
+                    aria-label={t(f.labelKey)}
                     data-testid={`fin-input-${f.key}`}
                   />
                 </div>
               ))}
             </div>
             <div className="form-group">
-              <label>備考</label>
+              <label>{t("common.notes")}</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                aria-label="売上情報の備考"
+                aria-label={t("financial.notesAriaLabel")}
               />
             </div>
             <div
@@ -259,19 +261,19 @@ export default function OrderFinancialPanel({
               }}
               data-testid="fin-preview"
             >
-              <span>原価合計</span>
+              <span>{t("financial.costTotal")}</span>
               <span data-testid="fin-cost-total">{fmtJPY(preview.cost)}</span>
               <span>
-                <strong>粗利</strong>
+                <strong>{t("financial.grossProfit")}</strong>
               </span>
               <span data-testid="fin-gross-profit">
                 <strong>{fmtJPY(preview.gross)}</strong>
               </span>
-              <span>粗利率</span>
+              <span>{t("financial.grossProfitRate")}</span>
               <span data-testid="fin-gross-profit-rate">
                 {fmtRate(preview.rate)}
               </span>
-              <span>営業利益（消費税還付込）</span>
+              <span>{t("financial.operatingProfit")}</span>
               <span data-testid="fin-operating-profit">
                 {fmtJPY(preview.op)}
               </span>
@@ -283,7 +285,7 @@ export default function OrderFinancialPanel({
                 onClick={onClose}
                 disabled={saving}
               >
-                キャンセル
+                {t("common.cancel")}
               </button>
               <button
                 type="submit"
@@ -291,7 +293,7 @@ export default function OrderFinancialPanel({
                 disabled={saving}
                 data-testid="fin-save"
               >
-                {saving ? "保存中..." : existing ? "更新" : "登録"}
+                {saving ? t("common.saving") : existing ? t("common.update") : t("common.register")}
               </button>
             </div>
           </form>

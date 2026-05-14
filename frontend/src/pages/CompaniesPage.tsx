@@ -8,6 +8,7 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
@@ -151,6 +152,7 @@ const addressDisplay = (a: CompanyAddress | undefined): string => {
 };
 
 export default function CompaniesPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [search, setSearch] = useState("");
@@ -176,7 +178,7 @@ export default function CompaniesPage() {
       const data = await api.get<Company[]>(`/companies?${parts.join("&")}`);
       setCompanies(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -284,7 +286,7 @@ export default function CompaniesPage() {
       setAddressesDirty(false);
       loadCompanies();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     } finally {
       setSubmitting(false);
     }
@@ -339,7 +341,7 @@ export default function CompaniesPage() {
       setDeleteTarget(null);
       loadCompanies();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "削除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
       setDeleteTarget(null);
     }
   };
@@ -351,7 +353,7 @@ export default function CompaniesPage() {
     <div className="page-container">
       <div className="page-header">
         <h1>
-          会社管理（新 B2B モデル）
+          {t("companies.title")}
           {pendingDedupCount > 0 && (
             <span className="dedup-summary" title="status が pending_dedup_review の会社の数">
               重複確認待ち: {pendingDedupCount} 件
@@ -378,7 +380,7 @@ export default function CompaniesPage() {
                 setShowForm(true);
               }}
             >
-              + 新規会社
+              + {t("companies.newCompany")}
             </button>
           )}
         </div>
@@ -387,23 +389,23 @@ export default function CompaniesPage() {
       {error && <div className="error-banner">{error}</div>}
 
       {loading ? (
-        <p>読み込み中...</p>
+        <p>{t("common.loading")}</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>会社コード</th>
-              <th>会社名</th>
-              <th>業界</th>
-              <th>ステータス</th>
-              <th>請求先</th>
-              <th>配送先</th>
-              <th>操作</th>
+              <th>{t("companies.companyCode")}</th>
+              <th>{t("common.name")}</th>
+              <th>{t("companies.industry")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("companies.billing")}</th>
+              <th>{t("companies.delivery")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {companies.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: "1rem" }}>会社が登録されていません</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "1rem" }}>{t("companies.noCompanies")}</td></tr>
             ) : (
               companies.map((c) => (
                 <tr
@@ -421,12 +423,12 @@ export default function CompaniesPage() {
                   <td>{addressDisplay(defaultAddress(c, "billing"))}</td>
                   <td>{addressDisplay(defaultAddress(c, "delivery"))}</td>
                   <td>
-                    <Link to={`/companies/${c.id}`} className="btn-sm">詳細</Link>
+                    <Link to={`/companies/${c.id}`} className="btn-sm">{t("companies.viewDetail")}</Link>
                     {hasPermission("customers.update") && (
-                      <button className="btn-sm" onClick={() => handleEdit(c)}>基本編集</button>
+                      <button className="btn-sm" onClick={() => handleEdit(c)}>{t("common.edit")}</button>
                     )}
                     {hasPermission("customers.delete") && (
-                      <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(c)}>削除</button>
+                      <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(c)}>{t("common.delete")}</button>
                     )}
                   </td>
                 </tr>
@@ -439,7 +441,7 @@ export default function CompaniesPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
-            <h2>{editId ? "会社編集" : "新規会社登録"}</h2>
+            <h2>{editId ? t("companies.editCompany") : t("companies.newCompany")}</h2>
 
             <div className="tabs">
               <button className={`tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => setActiveTab("basic")}>基本情報</button>
@@ -465,11 +467,11 @@ export default function CompaniesPage() {
                     <input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>業界</label>
+                    <label>{t("companies.industry")}</label>
                     <input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>Webサイト</label>
+                    <label>{t("companies.website")}</label>
                     <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
                   </div>
                   <div className="form-row">
@@ -513,7 +515,7 @@ export default function CompaniesPage() {
                     <input value={form.sales_channels} onChange={(e) => setForm({ ...form, sales_channels: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>ステータス</label>
+                    <label>{t("common.status")}</label>
                     <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                       <option value="active">active</option>
                       <option value="inactive">inactive</option>
@@ -522,7 +524,7 @@ export default function CompaniesPage() {
                     </select>
                   </div>
                   <div className="form-row">
-                    <label>メモ</label>
+                    <label>{t("common.notes")}</label>
                     <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                   </div>
                 </>
@@ -543,13 +545,13 @@ export default function CompaniesPage() {
                       <input value={addr.branch_name} onChange={(e) => setAddr({ branch_name: e.target.value })} />
                     </div>
                     <div className="form-row"><label>担当者名</label><input value={addr.name} onChange={(e) => setAddr({ name: e.target.value })} /></div>
-                    <div className="form-row"><label>メール</label><input type="email" value={addr.email} onChange={(e) => setAddr({ email: e.target.value })} /></div>
+                    <div className="form-row"><label>{t("common.email")}</label><input type="email" value={addr.email} onChange={(e) => setAddr({ email: e.target.value })} /></div>
                     <div className="form-row">
-                      <label>電話</label>
+                      <label>{t("common.phone")}</label>
                       <input value={addr.telephone} onChange={(e) => setAddr({ telephone: e.target.value })} />
-                      {key === "billing" && phoneError && <span className="field-error">{phoneError}</span>}
+                      {key === "billing" && phoneError && <span className="field-error">{t("companies.phoneError")}</span>}
                     </div>
-                    <div className="form-row"><label>税番号</label><input value={addr.tax_id} onChange={(e) => setAddr({ tax_id: e.target.value })} /></div>
+                    <div className="form-row"><label>{t("companies.taxId")}</label><input value={addr.tax_id} onChange={(e) => setAddr({ tax_id: e.target.value })} /></div>
                     <div className="form-row"><label>住所1</label><input value={addr.address_line_1} onChange={(e) => setAddr({ address_line_1: e.target.value })} /></div>
                     <div className="form-row"><label>住所2</label><input value={addr.address_line_2} onChange={(e) => setAddr({ address_line_2: e.target.value })} /></div>
                     <div className="form-row"><label>市</label><input value={addr.city} onChange={(e) => setAddr({ city: e.target.value })} /></div>
@@ -561,9 +563,9 @@ export default function CompaniesPage() {
               })()}
 
               <div className="form-actions">
-                <button type="button" onClick={() => setShowForm(false)} disabled={submitting}>キャンセル</button>
+                <button type="button" onClick={() => setShowForm(false)} disabled={submitting}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "保存中..." : editId ? "更新" : "登録"}
+                  {submitting ? t("common.saving") : editId ? t("common.update") : t("common.register")}
                 </button>
               </div>
             </form>
@@ -573,13 +575,13 @@ export default function CompaniesPage() {
 
       <ConfirmModal
         open={deleteTarget !== null}
-        title="会社削除の確認"
+        title={t("companies.deleteCompany")}
         message={
           deleteTarget
             ? `「${companyDisplayName(deleteTarget)}」(${deleteTarget.company_code}) を削除しますか？ 関連する商談・注文・見積・請求書・担当者がある場合は削除できません。`
             : ""
         }
-        confirmLabel="削除"
+        confirmLabel={t("common.delete")}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />

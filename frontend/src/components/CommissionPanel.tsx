@@ -14,14 +14,15 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
-const ROLES: { key: RoleKey; label: string }[] = [
-  { key: "sales", label: "営業" },
-  { key: "order", label: "受注" },
-  { key: "ship", label: "発送" },
-  { key: "purchase", label: "仕入" },
-  { key: "trouble", label: "トラブル" },
+const ROLES: { key: RoleKey; labelKey: string }[] = [
+  { key: "sales", labelKey: "commissions.role_sales" },
+  { key: "order", labelKey: "commissions.role_order" },
+  { key: "ship", labelKey: "commissions.role_ship" },
+  { key: "purchase", labelKey: "commissions.role_purchase" },
+  { key: "trouble", labelKey: "commissions.role_trouble" },
 ];
 
 export type RoleKey = "sales" | "order" | "ship" | "purchase" | "trouble";
@@ -66,6 +67,7 @@ export default function CommissionPanel({
   onClose,
   onSaved,
 }: Props) {
+  const { t } = useTranslation();
   const [bundle, setBundle] = useState<OrderCommissionsBundleDto | null>(null);
   const [staffList, setStaffList] = useState<StaffMini[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +93,7 @@ export default function CommissionPanel({
         setStaffList(s);
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "報酬情報の取得に失敗しました");
+          setError(e instanceof Error ? e.message : t("common.fetchError"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -106,9 +108,9 @@ export default function CommissionPanel({
   const staffOptions = useMemo(() => {
     return staffList.map((s) => ({
       value: s.id,
-      label: `${s.surname_jp} ${s.given_name_jp}${s.is_employee ? "（社員/役員）" : ""}`,
+      label: `${s.surname_jp} ${s.given_name_jp}${s.is_employee ? t("commission.isEmployee") : ""}`,
     }));
-  }, [staffList]);
+  }, [staffList, t]);
 
   const handleAssign = async (role: RoleKey, staffId: number | null) => {
     setSavingRole(role);
@@ -125,7 +127,7 @@ export default function CommissionPanel({
       setBundle(b);
       onSaved?.(b);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "割当に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     } finally {
       setSavingRole(null);
     }
@@ -142,7 +144,7 @@ export default function CommissionPanel({
       setBundle(b);
       onSaved?.(b);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "担当解除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     } finally {
       setSavingRole(null);
     }
@@ -159,7 +161,7 @@ export default function CommissionPanel({
       setBundle(b);
       onSaved?.(b);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "再計算に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     } finally {
       setRecalcing(false);
     }
@@ -179,25 +181,26 @@ export default function CommissionPanel({
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 760, maxHeight: "90vh", overflowY: "auto" }}
         role="dialog"
-        aria-label="担当者報酬"
+        aria-label={t("commission.assignedStaff")}
       >
-        <h3>担当者報酬 — {orderNumber}</h3>
+        <h3>{t("commission.assignedStaff")} — {orderNumber}</h3>
         {loading ? (
-          <div className="loading">読み込み中...</div>
+          <div className="loading">{t("common.loading")}</div>
         ) : (
           <>
             {error && <div className="error-message">{error}</div>}
             <table className="data-table" data-testid="commission-table">
               <thead>
                 <tr>
-                  <th style={{ width: "20%" }}>ロール</th>
-                  <th style={{ width: "45%" }}>担当者</th>
-                  <th style={{ width: "20%" }}>計算結果</th>
-                  <th style={{ width: "15%" }}>操作</th>
+                  <th style={{ width: "20%" }}>{t("commissions.colRole")}</th>
+                  <th style={{ width: "45%" }}>{t("commission.assignedStaff")}</th>
+                  <th style={{ width: "20%" }}>{t("commission.calcResult")}</th>
+                  <th style={{ width: "15%" }}>{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
-                {ROLES.map(({ key, label }) => {
+                {ROLES.map(({ key, labelKey }) => {
+                  const label = t(labelKey);
                   const row = bundle?.commissions[key] ?? null;
                   const currentStaffId = row?.staff_id ?? null;
                   return (
@@ -205,7 +208,7 @@ export default function CommissionPanel({
                       <td>{label}</td>
                       <td>
                         <select
-                          aria-label={`${label}担当者`}
+                          aria-label={`${label}${t("commission.assignedStaff")}`}
                           data-testid={`commission-staff-${key}`}
                           value={currentStaffId !== null ? String(currentStaffId) : ""}
                           disabled={savingRole === key}
@@ -214,7 +217,7 @@ export default function CommissionPanel({
                             handleAssign(key, v === "" ? null : Number(v));
                           }}
                         >
-                          <option value="">— 未割当 —</option>
+                          <option value="">{t("commission.unassigned")}</option>
                           {staffOptions.map((opt) => (
                             <option key={opt.value} value={String(opt.value)}>
                               {opt.label}
@@ -234,7 +237,7 @@ export default function CommissionPanel({
                             disabled={savingRole === key}
                             onClick={() => handleUnassign(key)}
                           >
-                            担当解除
+                            {t("commission.unassignBtn")}
                           </button>
                         ) : (
                           <span className="text-muted">—</span>
@@ -261,14 +264,14 @@ export default function CommissionPanel({
                 disabled={recalcing}
                 data-testid="commission-recalc"
               >
-                {recalcing ? "再計算中..." : "再計算"}
+                {recalcing ? t("commission.recalculating") : t("commission.recalc")}
               </button>
               <button
                 type="button"
                 className="btn-secondary"
                 onClick={onClose}
               >
-                閉じる
+                {t("common.close")}
               </button>
             </div>
           </>

@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
 
@@ -25,11 +26,10 @@ interface Quote {
   created_at: string;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "下書き", sent: "送付済", approved: "承認済", rejected: "却下", expired: "期限切れ",
-};
+const QUOTE_STATUSES = ["draft", "sent", "approved", "rejected", "expired"];
 
 export default function QuotesPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -43,7 +43,7 @@ export default function QuotesPage() {
       const data = await api.get<Quote[]>(`/quotes${params}`);
       setQuotes(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -60,34 +60,34 @@ export default function QuotesPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>見積もり履歴</h2>
+        <h2>{t("quotes.title")}</h2>
         {hasPermission("quotes.create") && (
-          <button className="btn-primary" onClick={() => navigate("/quotes/new")}>見積もり作成</button>
+          <button className="btn-primary" onClick={() => navigate("/quotes/new")}>{t("quotes.newQuote")}</button>
         )}
       </div>
 
       <div className="filter-bar">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">全ステータス</option>
-          {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          <option value="">{t("quotes.allStatuses")}</option>
+          {QUOTE_STATUSES.map((s) => <option key={s} value={s}>{t(`quotes.status_${s}`)}</option>)}
         </select>
       </div>
 
       {error && <div className="error-message">{error}</div>}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>見積番号</th>
-              <th>通貨</th>
-              <th>合計</th>
-              <th>ステータス</th>
-              <th>有効期限</th>
-              <th>作成日</th>
-              <th>操作</th>
+              <th>{t("quotes.quoteCode")}</th>
+              <th>{t("common.currency")}</th>
+              <th>{t("quotes.total")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("quotes.validityDate")}</th>
+              <th>{t("common.createdAt")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -97,7 +97,7 @@ export default function QuotesPage() {
                 <td>{q.currency}</td>
                 <td>{fmt(q.total_amount, q.currency)}</td>
                 <td><span className={`badge badge-${q.status === "approved" ? "won" : q.status === "rejected" ? "lost" : q.status === "expired" ? "cancelled" : q.status === "sent" ? "negotiating" : "pending"}`}>
-                  {STATUS_LABELS[q.status] || q.status}
+                  {t(`quotes.status_${q.status}`) || q.status}
                 </span></td>
                 <td>{q.validity_date || "-"}</td>
                 <td>{new Date(q.created_at).toLocaleDateString()}</td>
@@ -106,7 +106,7 @@ export default function QuotesPage() {
                 </td>
               </tr>
             ))}
-            {quotes.length === 0 && <tr><td colSpan={7} className="empty">見積もりがありません</td></tr>}
+            {quotes.length === 0 && <tr><td colSpan={7} className="empty">{t("quotes.noQuotes")}</td></tr>}
           </tbody>
         </table>
       )}

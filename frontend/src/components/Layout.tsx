@@ -10,6 +10,7 @@
  *   2026-04-16: Phase 1対応
  *   2026-04-17: GAS版互換の2段ナビに刷新
  *   2026-05-11: ADR-022 — 左サイドバー + Meta Business Suite 配色に刷新
+ *   2026-05-14: ADR-027 — i18n対応（useTranslation + useLocale）
  */
 
 import { useState } from "react";
@@ -19,7 +20,9 @@ import {
   HelpCircle, Settings, MoreHorizontal, ChevronDown,
   Search, LogOut, ShieldCheck,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
+import { useLocale } from "../contexts/LocaleContext";
 import { useUiPrefs } from "../contexts/UiPrefsContext";
 import { usePermissions } from "../hooks/usePermissions";
 import ConfirmModal from "./ConfirmModal";
@@ -89,6 +92,8 @@ function SidebarAccordion({
 /* ------------------------------------------------------------------ */
 
 export default function Layout() {
+  const { t } = useTranslation();
+  const { locale, changeLanguage } = useLocale();
   const { user, signOut } = useAuth();
   const { hasPermission, hasAny, loading: permsLoading } = usePermissions();
   const { prefs, loading: uiPrefsLoading } = useUiPrefs();
@@ -119,40 +124,40 @@ export default function Layout() {
   /* ---- permission-filtered sub-item lists ---- */
 
   const leadsItems: SubItem[] = [
-    ...(prefs.show_chat_menu ? [{ to: "/lead-chat", label: "Lead Chat" }] : []),
-    ...(hasPermission("leads.view") ? [{ to: "/leads", label: "New Leads" }] : []),
+    ...(prefs.show_chat_menu ? [{ to: "/lead-chat", label: t("nav.leadChat") }] : []),
+    ...(hasPermission("leads.view") ? [{ to: "/leads", label: t("nav.newLeads") }] : []),
     ...(hasPermission("customers.view") ? [
-      { to: "/customers", label: "Route Customers" },
-      { to: "/companies", label: "Companies" },
-      { to: "/contacts", label: "Contacts" },
+      { to: "/customers", label: t("nav.routeCustomers") },
+      { to: "/companies", label: t("nav.companies") },
+      { to: "/contacts", label: t("nav.contacts") },
     ] : []),
-    { to: "/archive", label: "Archive" },
+    { to: "/archive", label: t("nav.archive") },
   ];
 
   const salesItems: SubItem[] = [
-    ...(hasPermission("quotes.create") ? [{ to: "/quotes/new", label: "New Quote" }] : []),
-    ...(hasPermission("quotes.view") ? [{ to: "/quotes", label: "Quote History" }] : []),
-    ...(hasPermission("invoices.view") ? [{ to: "/invoices", label: "Invoices" }] : []),
+    ...(hasPermission("quotes.create") ? [{ to: "/quotes/new", label: t("nav.newQuote") }] : []),
+    ...(hasPermission("quotes.view") ? [{ to: "/quotes", label: t("nav.quoteHistory") }] : []),
+    ...(hasPermission("invoices.view") ? [{ to: "/invoices", label: t("nav.invoices") }] : []),
   ];
 
   const adminItems: SubItem[] = [
-    ...(hasPermission("deals.view") ? [{ to: "/deals", label: "Deals" }] : []),
-    ...(hasPermission("suppliers.view") ? [{ to: "/suppliers", label: "Suppliers" }] : []),
-    ...(hasPermission("purchase_orders.view") ? [{ to: "/purchase-orders", label: "Purchase Orders" }] : []),
-    ...(hasPermission("staff.view") ? [{ to: "/staff", label: "Staff" }] : []),
-    ...(hasPermission("bots.view") ? [{ to: "/bots", label: "Bots" }] : []),
-    ...(hasPermission("teams.view") ? [{ to: "/teams", label: "Teams" }] : []),
-    ...(hasPermission("shifts.view") ? [{ to: "/shifts", label: "Shifts" }] : []),
-    ...(hasAny("roles.view", "roles.create") ? [{ to: "/roles", label: "Roles & Permissions" }] : []),
-    ...(hasPermission("erp.view") ? [{ to: "/data", label: "Data Management" }] : []),
-    ...(hasPermission("orders.view") ? [{ to: "/commission-settings", label: "Commission Settings" }] : []),
-    ...(hasPermission("channels.view") ? [{ to: "/channels", label: "Channels (Meta)" }] : []),
+    ...(hasPermission("deals.view") ? [{ to: "/deals", label: t("nav.deals") }] : []),
+    ...(hasPermission("suppliers.view") ? [{ to: "/suppliers", label: t("nav.suppliers") }] : []),
+    ...(hasPermission("purchase_orders.view") ? [{ to: "/purchase-orders", label: t("nav.purchaseOrders") }] : []),
+    ...(hasPermission("staff.view") ? [{ to: "/staff", label: t("nav.staff") }] : []),
+    ...(hasPermission("bots.view") ? [{ to: "/bots", label: t("nav.bots") }] : []),
+    ...(hasPermission("teams.view") ? [{ to: "/teams", label: t("nav.teams") }] : []),
+    ...(hasPermission("shifts.view") ? [{ to: "/shifts", label: t("nav.shifts") }] : []),
+    ...(hasAny("roles.view", "roles.create") ? [{ to: "/roles", label: t("nav.rolesPermissions") }] : []),
+    ...(hasPermission("erp.view") ? [{ to: "/data", label: t("nav.dataManagement") }] : []),
+    ...(hasPermission("orders.view") ? [{ to: "/commission-settings", label: t("nav.commissionSettings") }] : []),
+    ...(hasPermission("channels.view") ? [{ to: "/channels", label: t("nav.channels") }] : []),
   ];
 
   const moreItems: SubItem[] = [
-    ...(prefs.show_buddy_menu && hasPermission("buddy.view_own") ? [{ to: "/knowledge", label: "Buddy" }] : []),
-    ...(hasPermission("badges.view") ? [{ to: "/prompts", label: "Badges" }] : []),
-    { to: "/templates", label: "Templates" },
+    ...(prefs.show_buddy_menu && hasPermission("buddy.view_own") ? [{ to: "/knowledge", label: t("nav.buddy") }] : []),
+    ...(hasPermission("badges.view") ? [{ to: "/prompts", label: t("nav.badges") }] : []),
+    { to: "/templates", label: t("nav.templates") },
   ];
 
   return (
@@ -184,12 +189,12 @@ export default function Layout() {
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
                   <span className="sidebar-icon"><LayoutDashboard size={20} /></span>
-                  <span className="sidebar-label">Dashboard</span>
+                  <span className="sidebar-label">{t("nav.dashboard")}</span>
                 </NavLink>
               )}
 
               <SidebarAccordion
-                label="Leads"
+                label={t("nav.leads")}
                 icon={<Users size={20} />}
                 items={leadsItems}
                 activePaths={["/lead-chat", "/leads", "/customers", "/companies", "/contacts", "/archive"]}
@@ -204,13 +209,13 @@ export default function Layout() {
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
                   <span className="sidebar-icon"><Package size={20} /></span>
-                  <span className="sidebar-label">Inventory</span>
+                  <span className="sidebar-label">{t("nav.inventory")}</span>
                 </NavLink>
               )}
 
               {prefs.show_sales_menu && (
                 <SidebarAccordion
-                  label="Quotes & Invoices"
+                  label={t("nav.quotesInvoices")}
                   icon={<FileText size={20} />}
                   items={salesItems}
                   activePaths={["/quotes", "/invoices"]}
@@ -225,7 +230,7 @@ export default function Layout() {
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
               >
                 <span className="sidebar-icon"><BarChart2 size={20} /></span>
-                <span className="sidebar-label">Reports</span>
+                <span className="sidebar-label">{t("nav.reports")}</span>
               </NavLink>
 
               <NavLink
@@ -233,12 +238,12 @@ export default function Layout() {
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
               >
                 <span className="sidebar-icon"><HelpCircle size={20} /></span>
-                <span className="sidebar-label">FAQ</span>
+                <span className="sidebar-label">{t("nav.faq")}</span>
               </NavLink>
 
               {prefs.show_admin_menu && (
                 <SidebarAccordion
-                  label="Admin"
+                  label={t("nav.admin")}
                   icon={<ShieldCheck size={20} />}
                   items={adminItems}
                   activePaths={["/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings"]}
@@ -254,12 +259,12 @@ export default function Layout() {
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
                   <span className="sidebar-icon"><Settings size={20} /></span>
-                  <span className="sidebar-label">Settings</span>
+                  <span className="sidebar-label">{t("nav.settings")}</span>
                 </NavLink>
               )}
 
               <SidebarAccordion
-                label="More"
+                label={t("nav.more")}
                 icon={<MoreHorizontal size={20} />}
                 items={moreItems}
                 activePaths={["/knowledge", "/prompts", "/templates"]}
@@ -280,7 +285,7 @@ export default function Layout() {
             <Search size={16} className="topbar-search-icon" />
             <input
               type="search"
-              placeholder="Search by customer name or lead ID..."
+              placeholder={t("nav.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -288,11 +293,18 @@ export default function Layout() {
           <div className="topbar-user">
             <span className="topbar-email">{user?.email}</span>
             <button
+              onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
+              title={t("language.switchTo")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-secondary)" }}
+            >
+              🌐 {locale === "ja" ? t("language.en") : t("language.ja")}
+            </button>
+            <button
               className="btn-signout"
               onClick={() => setShowLogoutConfirm(true)}
             >
               <LogOut size={15} />
-              <span>Sign out</span>
+              <span>{t("nav.signOut")}</span>
             </button>
           </div>
         </header>
@@ -305,9 +317,9 @@ export default function Layout() {
 
       <ConfirmModal
         open={showLogoutConfirm}
-        title="Sign Out"
-        message="Are you sure you want to sign out? Any unsaved data will be lost."
-        confirmLabel="Sign out"
+        title={t("nav.signOutTitle")}
+        message={t("nav.signOutMessage")}
+        confirmLabel={t("nav.signOut")}
         onConfirm={() => { setShowLogoutConfirm(false); signOut(); }}
         onCancel={() => setShowLogoutConfirm(false)}
       />

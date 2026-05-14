@@ -20,6 +20,7 @@
  */
 
 import { FormEvent, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../lib/api";
 
 export interface PurchaseDetailDto {
@@ -58,33 +59,33 @@ interface Props {
   onSaved?: (purchase: PurchaseDetailDto) => void;
 }
 
-const STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "確認中" },
-  { value: "confirmed", label: "確定済み" },
+const STATUS_OPTION_KEYS: { value: string; labelKey: string }[] = [
+  { value: "", labelKey: "purchase.status_pending" },
+  { value: "confirmed", labelKey: "purchase.status_confirmed" },
 ];
 
 // 文字列フィールドのキー定義
 const TEXT_FIELDS = {
   staffTx: [
-    { key: "purchase_staff", label: "仕入担当" },
-    { key: "transaction_no", label: "取引番号" },
+    { key: "purchase_staff", labelKey: "purchase.purchaseStaff" },
+    { key: "transaction_no", labelKey: "purchase.transactionNo" },
   ],
   supplier: [
-    { key: "supplier_name", label: "仕入元名" },
-    { key: "supplier_url", label: "仕入元URL" },
+    { key: "supplier_name", labelKey: "purchase.supplierName" },
+    { key: "supplier_url", labelKey: "purchase.supplierUrl" },
   ],
   shipping: [
-    { key: "carrier_name", label: "運送会社" },
-    { key: "waybill_no", label: "送り状番号" },
+    { key: "carrier_name", labelKey: "purchase.carrierName" },
+    { key: "waybill_no", labelKey: "purchase.waybillNo" },
   ],
 } as const;
 
 const NUMBER_FIELDS = {
   amounts: [
-    { key: "purchase_amount", label: "単価", step: "0.01" },
-    { key: "purchase_quantity", label: "数量", step: "1" },
-    { key: "purchase_total", label: "総額", step: "0.01" },
-    { key: "purchase_shipping", label: "送料/代行費", step: "0.01" },
+    { key: "purchase_amount", labelKey: "purchase.purchaseAmount", step: "0.01" },
+    { key: "purchase_quantity", labelKey: "purchase.purchaseQuantity", step: "1" },
+    { key: "purchase_total", labelKey: "purchase.purchaseTotal", step: "0.01" },
+    { key: "purchase_shipping", labelKey: "purchase.purchaseShipping", step: "0.01" },
   ],
 } as const;
 
@@ -140,6 +141,7 @@ export default function PurchaseDetailPanel({
   onClose,
   onSaved,
 }: Props) {
+  const { t } = useTranslation();
   const [existing, setExisting] = useState<PurchaseDetailDto | null>(null);
   const [form, setForm] = useState<FormState>(buildEmptyForm());
   const [loading, setLoading] = useState(true);
