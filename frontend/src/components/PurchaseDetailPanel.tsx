@@ -266,16 +266,16 @@ export default function PurchaseDetailPanel({
         role="dialog"
         aria-label="仕入情報"
       >
-        <h3>仕入情報 — {orderNumber}</h3>
+        <h3>{t("purchase.sectionStaffTx")} — {orderNumber}</h3>
         {loading ? (
-          <div className="loading">読み込み中...</div>
+          <div className="loading">{t("common.loading")}</div>
         ) : (
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message">{error}</div>}
 
             {/* セクション: 仕入担当・取引 */}
             <fieldset>
-              <legend>仕入担当・取引</legend>
+              <legend>{t("purchase.sectionStaffTx")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -285,7 +285,7 @@ export default function PurchaseDetailPanel({
               >
                 {TEXT_FIELDS.staffTx.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type="text"
                       value={form[f.key]}
@@ -295,7 +295,7 @@ export default function PurchaseDetailPanel({
                   </div>
                 ))}
                 <div className="form-group">
-                  <label>注文日</label>
+                  <label>{t("purchase.purchaseDate")}</label>
                   <input
                     type="date"
                     value={form.purchase_date}
@@ -308,7 +308,7 @@ export default function PurchaseDetailPanel({
 
             {/* セクション: 仕入元 */}
             <fieldset>
-              <legend>仕入元</legend>
+              <legend>{t("purchase.sectionSupplier")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -318,7 +318,7 @@ export default function PurchaseDetailPanel({
               >
                 {TEXT_FIELDS.supplier.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type={f.key === "supplier_url" ? "url" : "text"}
                       value={form[f.key]}
@@ -332,7 +332,7 @@ export default function PurchaseDetailPanel({
 
             {/* セクション: 金額・数量 */}
             <fieldset>
-              <legend>金額・数量</legend>
+              <legend>{t("purchase.sectionAmounts")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -342,7 +342,7 @@ export default function PurchaseDetailPanel({
               >
                 {NUMBER_FIELDS.amounts.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type="number"
                       min="0"
@@ -359,7 +359,7 @@ export default function PurchaseDetailPanel({
 
             {/* セクション: 配送 */}
             <fieldset>
-              <legend>配送</legend>
+              <legend>{t("purchase.sectionShipping")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -369,7 +369,7 @@ export default function PurchaseDetailPanel({
               >
                 {TEXT_FIELDS.shipping.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type="text"
                       value={form[f.key]}
@@ -390,15 +390,15 @@ export default function PurchaseDetailPanel({
                 gap: "0.5rem",
               }}
             >
-              <label>ステータス</label>
+              <label>{t("common.status")}</label>
               <select
                 value={form.purchase_status}
                 onChange={(ev) => setField("purchase_status", ev.target.value)}
                 data-testid="pur-input-purchase_status"
               >
-                {STATUS_OPTIONS.map((opt) => (
+                {STATUS_OPTION_KEYS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </option>
                 ))}
               </select>
@@ -406,7 +406,7 @@ export default function PurchaseDetailPanel({
 
             {/* メモ */}
             <div className="form-group">
-              <label>仕入備考</label>
+              <label>{t("purchase.purchaseNote")}</label>
               <textarea
                 value={form.purchase_note}
                 onChange={(ev) => setField("purchase_note", ev.target.value)}
