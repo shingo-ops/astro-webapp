@@ -82,7 +82,6 @@ export interface MarkReadResponse {
 
 export interface SendMessageRequest {
   text: string;
-  force_human_agent_tag?: boolean;
 }
 
 export interface SendMessageResponse {
@@ -174,8 +173,9 @@ export async function markRead(leadId: number): Promise<MarkReadResponse> {
 /**
  * POST /api/v1/leads/{lead_id}/messages
  *
- * 24h ルール判定はサーバー側で行うため、フロントは text と
- * force_human_agent_tag（オプション）だけ送る。失敗時は ApiError を throw。
+ * 24h ルール判定はサーバー側で行うため、フロントは text だけ送る。
+ * messaging_type は常に HUMAN_AGENT をサーバーが自動付与する（ADR-035）。
+ * 失敗時は ApiError を throw。
  */
 export async function sendMessage(
   leadId: number,
@@ -183,9 +183,6 @@ export async function sendMessage(
 ): Promise<SendMessageResponse> {
   return api.post<SendMessageResponse>(
     `/leads/${leadId}/messages`,
-    {
-      text: request.text,
-      force_human_agent_tag: request.force_human_agent_tag ?? false,
-    },
+    { text: request.text },
   );
 }

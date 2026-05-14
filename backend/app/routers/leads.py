@@ -782,7 +782,6 @@ _MESSAGE_TEXT_MAX_LEN = 2000
 class _SendMessageRequest(BaseModel):
     """spec §5-5 リクエスト body。"""
     text: str = Field(min_length=1, max_length=_MESSAGE_TEXT_MAX_LEN)
-    force_human_agent_tag: bool = False
 
 
 def _extract_recipient_id(source: Optional[str], inbound_sender_id: Optional[str]) -> Optional[str]:
@@ -897,9 +896,7 @@ async def send_lead_message(
 
     # ----- (3) messaging window 判定 -----
     state = mw.compute_state(last_inbound_at)
-    messaging_type, message_tag = mw.messaging_type_for_state(
-        state, force_human_agent_tag=payload.force_human_agent_tag,
-    )
+    messaging_type, message_tag = mw.messaging_type_for_state(state)
     if messaging_type is None:
         # EXPIRED or NO_INBOUND → 送信不可
         if state == mw.WindowState.EXPIRED:
