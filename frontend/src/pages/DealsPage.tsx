@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import CompanyContactSelector from "../components/CompanyContactSelector";
@@ -49,13 +50,7 @@ interface CompanyMini {
 }
 
 const STATUSES = ["open", "negotiating", "won", "lost", "on_hold"];
-const STATUS_LABELS: Record<string, string> = {
-  open: "オープン", negotiating: "交渉中", won: "成約", lost: "失注", on_hold: "保留",
-};
 const STAGES = ["open", "negotiating", "proposal", "won", "lost", "on_hold"];
-const STAGE_LABELS: Record<string, string> = {
-  open: "初回接触", negotiating: "ヒアリング中", proposal: "提案済", won: "成約", lost: "失注", on_hold: "保留",
-};
 
 const emptyForm = {
   title: "", amount: "", currency: "JPY",
@@ -64,6 +59,7 @@ const emptyForm = {
 };
 
 export default function DealsPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [companies, setCompanies] = useState<CompanyMini[]>([]);
@@ -85,7 +81,7 @@ export default function DealsPage() {
       const data = await api.get<Deal[]>(`/deals${params}`);
       setDeals(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -114,7 +110,7 @@ export default function DealsPage() {
     setError("");
     setSelectorError("");
     if (contactId === null) {
-      setSelectorError("会社と担当者を選択してください");
+      setSelectorError(t("companyContactSelector.contactRequired"));
       return;
     }
     const payload: Record<string, unknown> = {
@@ -143,7 +139,7 @@ export default function DealsPage() {
       resetSelector();
       loadDeals();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     }
   };
 
@@ -176,7 +172,7 @@ export default function DealsPage() {
       await api.delete(`/deals/${id}`);
       loadDeals();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "削除に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.deleteError"));
     }
   };
 
@@ -197,7 +193,7 @@ export default function DealsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>案件管理</h2>
+        <h2>{t("deals.title")}</h2>
         {hasPermission("deals.create") && (
           <button
             className="btn-primary"
@@ -208,15 +204,15 @@ export default function DealsPage() {
               resetSelector();
             }}
           >
-            新規登録
+            {t("deals.newDeal")}
           </button>
         )}
       </div>
 
       <div className="filter-bar">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">全ステータス</option>
-          {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+          <option value="">{t("deals.allStatuses")}</option>
+          {STATUSES.map((s) => <option key={s} value={s}>{t(`deals.status_${s}`)}</option>)}
         </select>
       </div>
 
@@ -225,7 +221,7 @@ export default function DealsPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editId ? "商談編集" : "新規商談登録"}</h3>
+            <h3>{editId ? t("deals.editDeal") : t("deals.newDeal")}</h3>
             <form onSubmit={handleSubmit}>
               <CompanyContactSelector
                 value={{ companyId, contactId }}
@@ -237,49 +233,49 @@ export default function DealsPage() {
                 error={selectorError}
                 companies={companies}
               />
-              <div className="form-group"><label>タイトル *</label>
+              <div className="form-group"><label>{t("deals.dealTitle")} *</label>
                 <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
               </div>
-              <div className="form-group"><label>金額</label>
+              <div className="form-group"><label>{t("deals.amount")}</label>
                 <input type="number" min="0" step="1" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
               </div>
-              <div className="form-group"><label>通貨</label>
+              <div className="form-group"><label>{t("common.currency")}</label>
                 <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
                   <option value="JPY">JPY</option>
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
                 </select>
               </div>
-              <div className="form-group"><label>ステータス</label>
+              <div className="form-group"><label>{t("common.status")}</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+                  {STATUSES.map((s) => <option key={s} value={s}>{t(`deals.status_${s}`)}</option>)}
                 </select>
               </div>
-              <div className="form-group"><label>ステージ</label>
+              <div className="form-group"><label>{t("dashboard.stage")}</label>
                 <select value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })}>
-                  {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
+                  {STAGES.map((s) => <option key={s} value={s}>{t(`deals.stage_${s}`)}</option>)}
                 </select>
               </div>
-              <div className="form-group"><label>成約確率 (%)</label>
+              <div className="form-group"><label>{t("deals.probability")}</label>
                 <input type="number" min="0" max="100" value={form.probability} onChange={(e) => setForm({ ...form, probability: e.target.value })} />
               </div>
-              <div className="form-group"><label>担当者ユーザーID</label>
+              <div className="form-group"><label>{t("deals.assignedTo")}</label>
                 <input type="number" min="1" value={form.assigned_to} onChange={(e) => setForm({ ...form, assigned_to: e.target.value })} />
               </div>
-              <div className="form-group"><label>成約予定日</label>
+              <div className="form-group"><label>{t("deals.expectedCloseDate")}</label>
                 <input type="date" value={form.expected_close_date} onChange={(e) => setForm({ ...form, expected_close_date: e.target.value })} />
               </div>
               {form.status === "lost" && (
-                <div className="form-group"><label>失注理由</label>
+                <div className="form-group"><label>{t("deals.lostReason")}</label>
                   <input value={form.lost_reason} onChange={(e) => setForm({ ...form, lost_reason: e.target.value })} />
                 </div>
               )}
-              <div className="form-group"><label>備考</label>
+              <div className="form-group"><label>{t("common.notes")}</label>
                 <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>キャンセル</button>
-                <button type="submit" className="btn-primary">{editId ? "更新" : "登録"}</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{editId ? t("common.update") : t("common.register")}</button>
               </div>
             </form>
           </div>
@@ -287,19 +283,19 @@ export default function DealsPage() {
       )}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>コード</th>
-              <th>タイトル</th>
-              <th>会社</th>
-              <th>金額</th>
-              <th>ステージ</th>
-              <th>確率</th>
-              <th>ステータス</th>
-              <th>操作</th>
+              <th>{t("deals.dealCode")}</th>
+              <th>{t("deals.dealTitle")}</th>
+              <th>{t("common.company")}</th>
+              <th>{t("deals.amount")}</th>
+              <th>{t("dashboard.stage")}</th>
+              <th>{t("deals.probability")}</th>
+              <th>{t("common.status")}</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -309,17 +305,17 @@ export default function DealsPage() {
                 <td>{d.title}</td>
                 <td>{companyName(d.company_id)}</td>
                 <td>{d.amount ? fmt(d.amount, d.currency) : "-"}</td>
-                <td>{d.stage ? (STAGE_LABELS[d.stage] || d.stage) : "-"}</td>
+                <td>{d.stage ? (t(`deals.stage_${d.stage}`) || d.stage) : "-"}</td>
                 <td>{d.probability != null ? `${d.probability}%` : "-"}</td>
-                <td><span className={`badge badge-${d.status}`}>{STATUS_LABELS[d.status] || d.status}</span></td>
+                <td><span className={`badge badge-${d.status}`}>{t(`deals.status_${d.status}`) || d.status}</span></td>
                 <td className="actions">
-                  {hasPermission("deals.update") && <button className="btn-sm" onClick={() => handleEdit(d)}>編集</button>}
-                  {hasPermission("deals.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(d)}>削除</button>}
+                  {hasPermission("deals.update") && <button className="btn-sm" onClick={() => handleEdit(d)}>{t("common.edit")}</button>}
+                  {hasPermission("deals.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(d)}>{t("common.delete")}</button>}
                 </td>
               </tr>
             ))}
             {deals.length === 0 && (
-              <tr><td colSpan={8} className="empty">商談が登録されていません</td></tr>
+              <tr><td colSpan={8} className="empty">{t("deals.noDeals")}</td></tr>
             )}
           </tbody>
         </table>
@@ -327,15 +323,15 @@ export default function DealsPage() {
 
       <ConfirmModal
         open={!!deleteTarget}
-        title="商談を削除"
+        title={t("deals.deleteDeal")}
         message={
           <>
             <strong>{deleteTarget?.title}</strong> を削除します。<br />
             関連する注文がある場合は削除できません（先に注文を削除してください）。<br />
-            この操作は取り消せません。
+            {t("common.irreversible")}
           </>
         }
-        confirmLabel="削除する"
+        confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}

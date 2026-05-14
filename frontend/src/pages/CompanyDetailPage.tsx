@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
@@ -21,11 +22,6 @@ import MergeCompanyModal from "../components/MergeCompanyModal";
 import { usePermissions } from "../hooks/usePermissions";
 
 const PHONE_RE = /^(\+?\d{10,15}|0\d{9,10})$/;
-const validatePhoneClient = (raw: string): string | null => {
-  if (!raw) return null;
-  const cleaned = raw.replace(/[\s\-()]/g, "");
-  return PHONE_RE.test(cleaned) ? null : "電話番号の形式が正しくありません（例: 03-1234-5678）";
-};
 
 interface CompanyAddress {
   id: number;
@@ -145,7 +141,8 @@ const addressDisplay = (a: CompanyAddress): string => {
   return parts.join(", ") || "-";
 };
 
-const typeLabel = (t: "billing" | "delivery") => (t === "billing" ? "請求先" : "配送先");
+const typeLabel = (tFn: (key: string) => string, type: "billing" | "delivery") =>
+  type === "billing" ? tFn("companies.billing") : tFn("companies.delivery");
 
 type BasicFormState = {
   name: string;
@@ -184,6 +181,14 @@ const basicFromApi = (c: Company): BasicFormState => ({
 });
 
 export default function CompanyDetailPage() {
+  const { t } = useTranslation();
+
+  const validatePhoneClient = (raw: string): string | null => {
+    if (!raw) return null;
+    const cleaned = raw.replace(/[\s\-()]/g, "");
+    return PHONE_RE.test(cleaned) ? null : t("companies.phoneError");
+  };
+
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
@@ -235,7 +240,7 @@ export default function CompanyDetailPage() {
       const list = await api.get<Contact[]>(`/companies/${id}/contacts`);
       setContacts(list);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "会社データの取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -270,7 +275,7 @@ export default function CompanyDetailPage() {
       await api.patch(`/companies/${company.id}`, payload);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.saveError"));
     } finally {
       setBasicSubmitting(false);
     }
@@ -289,7 +294,7 @@ export default function CompanyDetailPage() {
       await api.patch(`/companies/${company.id}`, { sales_channels: list });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "保存に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.saveError"));
     } finally {
       setChannelsSubmitting(false);
     }
@@ -369,7 +374,7 @@ export default function CompanyDetailPage() {
     setAddrPhoneError(null);
     // F5 修正: country_code は空 or 2 文字のみ許容（1 文字で 422 になる前にクライアント検知）
     if (addrForm.country_code && addrForm.country_code.length !== 2) {
-      setAddrModalError("国コードは 2 文字（ISO 3166-1 alpha-2）または空欄で入力してください");
+      setAddrModalError(t("companies.countryCodeError"));
       return;
     }
     setAddrSubmitting(true);
@@ -386,7 +391,7 @@ export default function CompanyDetailPage() {
       setAddrModalOpen(false);
     } catch (err) {
       // モーダル header 直下に表示（overlay で page top の error-banner が見えない問題）
-      setAddrModalError(err instanceof Error ? err.message : "住所の保存に失敗しました");
+      setAddrModalError(err instanceof Error ? err.message : t("common.saveError"));
     } finally {
       setAddrSubmitting(false);
     }
@@ -404,7 +409,7 @@ export default function CompanyDetailPage() {
       setDedupConfirmOpen(false);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ステータス更新に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.operationError"));
       setDedupConfirmOpen(false);
     } finally {
       setDedupSubmitting(false);
@@ -420,17 +425,17 @@ export default function CompanyDetailPage() {
       await submitAddresses(next);
       setAddrDeleteTarget(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "住所の削除に失敗しました");
+      setError(err instanceof Error ? err.message : t("common.deleteError"));
       setAddrDeleteTarget(null);
     }
   };
 
-  if (loading) return <div className="page-container"><p>読み込み中...</p></div>;
+  if (loading) return <div className="page-container"><p>{t("common.loading")}</p></div>;
   if (!company) {
     return (
       <div className="page-container">
-        <p>会社が見つかりません</p>
-        <button onClick={() => navigate("/companies")}>一覧に戻る</button>
+        <p>{t("common.noData")}</p>
+        <button onClick={() => navigate("/companies")}>{t("common.back")}</button>
       </div>
     );
   }
@@ -442,7 +447,7 @@ export default function CompanyDetailPage() {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <button className="btn-sm" onClick={() => navigate("/companies")}>&larr; 一覧に戻る</button>
+          <button className="btn-sm" onClick={() => navigate("/companies")}>&larr; {t("common.back")}</button>
           <h1>{company.name} <span style={{ color: "#888", fontSize: "0.7em" }}>({company.company_code})</span></h1>
         </div>
         <div className="page-header-actions">
@@ -455,9 +460,9 @@ export default function CompanyDetailPage() {
       <div className="tabs">
         {/* F7 対応: 未保存の変更があるタブ移動前に確認 */}
         {(() => {
-          const switchTab = (t: Tab) => {
-            if ((basicDirty || channelsDirty) && t !== activeTab) {
-              if (!window.confirm("未保存の変更があります。破棄して移動しますか？")) return;
+          const switchTab = (tab: Tab) => {
+            if ((basicDirty || channelsDirty) && tab !== activeTab) {
+              if (!window.confirm(t("companies.unsavedChangesConfirm"))) return;
               // 破棄として load() で state 戻す
               if (company) {
                 setBasicForm(basicFromApi(company));
@@ -466,19 +471,19 @@ export default function CompanyDetailPage() {
                 setChannelsDirty(false);
               }
             }
-            setActiveTab(t);
+            setActiveTab(tab);
           };
           return (
             <>
-              <button className={`tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => switchTab("basic")}>基本情報</button>
+              <button className={`tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => switchTab("basic")}>{t("companies.basicInfo")}</button>
               <button className={`tab ${activeTab === "addresses" ? "active" : ""}`} onClick={() => switchTab("addresses")}>
-                住所 ({company.addresses.length})
+                {t("companies.address")} ({company.addresses.length})
               </button>
               <button className={`tab ${activeTab === "contacts" ? "active" : ""}`} onClick={() => switchTab("contacts")}>
-                担当者 ({contacts.length})
+                {t("contacts.title")} ({contacts.length})
               </button>
               <button className={`tab ${activeTab === "channels" ? "active" : ""}`} onClick={() => switchTab("channels")}>
-                販売チャネル ({company.sales_channels.length})
+                {t("nav.channels")} ({company.sales_channels.length})
               </button>
             </>
           );
@@ -487,59 +492,59 @@ export default function CompanyDetailPage() {
 
       {activeTab === "basic" && basicForm && (
         <form onSubmit={handleBasicSubmit} className="form-grid">
-          <div className="form-row"><label>会社名 *</label>
+          <div className="form-row"><label>{t("common.name")} *</label>
             <input required disabled={!canEdit} value={basicForm.name}
               onChange={(e) => { setBasicForm({ ...basicForm, name: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>英語名</label>
+          <div className="form-row"><label>{t("companies.nameEn")}</label>
             <input disabled={!canEdit} value={basicForm.name_en}
               onChange={(e) => { setBasicForm({ ...basicForm, name_en: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>業界</label>
+          <div className="form-row"><label>{t("companies.industry")}</label>
             <input disabled={!canEdit} value={basicForm.industry}
               onChange={(e) => { setBasicForm({ ...basicForm, industry: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>Webサイト</label>
+          <div className="form-row"><label>{t("companies.website")}</label>
             <input disabled={!canEdit} value={basicForm.website}
               onChange={(e) => { setBasicForm({ ...basicForm, website: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>信頼度（1-5）</label>
+          <div className="form-row"><label>{t("companies.trustLevel")}</label>
             <input type="number" min="1" max="5" disabled={!canEdit} value={basicForm.trust_level}
               onChange={(e) => { setBasicForm({ ...basicForm, trust_level: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>重視ポイント</label>
+          <div className="form-row"><label>{t("companies.priorityFocus")}</label>
             <input disabled={!canEdit} value={basicForm.priority_focus}
               onChange={(e) => { setBasicForm({ ...basicForm, priority_focus: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>1回発注額</label>
+          <div className="form-row"><label>{t("companies.perOrderAmount")}</label>
             <input disabled={!canEdit} value={basicForm.per_order_amount}
               onChange={(e) => { setBasicForm({ ...basicForm, per_order_amount: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>月間頻度</label>
+          <div className="form-row"><label>{t("companies.monthlyFrequency")}</label>
             <input type="number" min="0" disabled={!canEdit} value={basicForm.monthly_frequency}
               onChange={(e) => { setBasicForm({ ...basicForm, monthly_frequency: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>月間売上見込額</label>
+          <div className="form-row"><label>{t("companies.monthlyForecast")}</label>
             <input disabled={!canEdit} value={basicForm.monthly_forecast}
               onChange={(e) => { setBasicForm({ ...basicForm, monthly_forecast: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>請求書表示名</label>
+          <div className="form-row"><label>{t("companies.billingDisplayName")}</label>
             <input disabled={!canEdit} value={basicForm.billing_display_name}
               onChange={(e) => { setBasicForm({ ...basicForm, billing_display_name: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>支払い名義</label>
+          <div className="form-row"><label>{t("companies.paymentRecipientName")}</label>
             <input disabled={!canEdit} value={basicForm.payment_recipient_name}
               onChange={(e) => { setBasicForm({ ...basicForm, payment_recipient_name: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>FedEx ID</label>
+          <div className="form-row"><label>{t("companies.fedexAccount")}</label>
             <input disabled={!canEdit} value={basicForm.fedex_account}
               onChange={(e) => { setBasicForm({ ...basicForm, fedex_account: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>発送時メモ</label>
+          <div className="form-row"><label>{t("companies.shippingNote")}</label>
             <textarea disabled={!canEdit} value={basicForm.shipping_note}
               onChange={(e) => { setBasicForm({ ...basicForm, shipping_note: e.target.value }); setBasicDirty(true); }} />
           </div>
-          <div className="form-row"><label>ステータス</label>
+          <div className="form-row"><label>{t("common.status")}</label>
             <select disabled={!canEdit} value={basicForm.status}
               onChange={(e) => { setBasicForm({ ...basicForm, status: e.target.value }); setBasicDirty(true); }}>
               <option value="active">active</option>
@@ -548,14 +553,14 @@ export default function CompanyDetailPage() {
               <option value="pending_dedup_review">pending_dedup_review</option>
             </select>
           </div>
-          <div className="form-row"><label>メモ</label>
+          <div className="form-row"><label>{t("common.notes")}</label>
             <textarea disabled={!canEdit} value={basicForm.notes}
               onChange={(e) => { setBasicForm({ ...basicForm, notes: e.target.value }); setBasicDirty(true); }} />
           </div>
           {canEdit && (
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={!basicDirty || basicSubmitting}>
-                {basicSubmitting ? "保存中..." : "基本情報を保存"}
+                {basicSubmitting ? t("common.saving") : t("companies.saveBasicInfo")}
               </button>
             </div>
           )}
@@ -565,20 +570,17 @@ export default function CompanyDetailPage() {
               「別会社として確定」(active 化) と A-4 で実装した「重複としてマージ」の 2 択を提示する。 */}
           {canEdit && company.status === "pending_dedup_review" && (
             <div className="dedup-resolve-section">
-              <h3>重複確認待ちを解消</h3>
-              <p>
-                この会社は重複候補として暫定登録されています。
-                データを確認したうえで、別会社として独立させるか、既存会社へマージするか判断してください。
-              </p>
+              <h3>{t("companies.dedupResolveTitle")}</h3>
+              <p>{t("companies.dedupResolveDesc")}</p>
               <div className="dedup-resolve-actions">
                 <button
                   type="button"
                   className="btn-primary"
                   onClick={() => setDedupConfirmOpen(true)}
                   disabled={dedupSubmitting || basicDirty}
-                  title={basicDirty ? "未保存の変更があります。先に基本情報を保存してください" : ""}
+                  title={basicDirty ? t("companies.dedupUnsavedHint") : ""}
                 >
-                  別会社として確定（active 化）
+                  {t("companies.dedupConfirmAsDistinct")}
                 </button>
                 <button
                   type="button"
@@ -587,13 +589,13 @@ export default function CompanyDetailPage() {
                   disabled={!canMerge || dedupSubmitting || basicDirty}
                   title={
                     !canMerge
-                      ? "マージには customers.delete 権限が必要です"
+                      ? t("companies.dedupMergeNoPermission")
                       : basicDirty
-                        ? "未保存の変更があります。先に基本情報を保存してください"
-                        : "既存の会社にマージして本会社を削除します"
+                        ? t("companies.dedupUnsavedHint")
+                        : t("companies.dedupMergeHint")
                   }
                 >
-                  重複としてマージ
+                  {t("companies.dedupMergeLabel")}
                 </button>
               </div>
             </div>
@@ -603,16 +605,16 @@ export default function CompanyDetailPage() {
 
       {activeTab === "addresses" && (
         <div>
-          <h2>請求先住所 ({billingAddresses.length})
+          <h2>{t("companies.billing")}{t("companies.address")} ({billingAddresses.length})
             {canEdit && (
-              <button className="btn-sm" style={{ marginLeft: 12 }} onClick={() => openAddressNew("billing")}>+ 追加</button>
+              <button className="btn-sm" style={{ marginLeft: 12 }} onClick={() => openAddressNew("billing")}>+ {t("common.add")}</button>
             )}
           </h2>
-          {billingAddresses.length === 0 ? <p>請求先住所が登録されていません</p> : (
+          {billingAddresses.length === 0 ? <p>{t("companies.billing")}{t("companies.address")}{t("common.noData")}</p> : (
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>支店名</th><th>担当者名</th><th>メール</th><th>電話</th><th>住所</th><th>既定</th><th>操作</th>
+                  <th>{t("companies.branchName")}</th><th>{t("companies.contactName")}</th><th>{t("common.email")}</th><th>{t("common.phone")}</th><th>{t("companies.address")}</th><th>{t("companies.isDefault")}</th><th>{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -625,8 +627,8 @@ export default function CompanyDetailPage() {
                     <td>{addressDisplay(a)}</td>
                     <td>{a.is_default ? "●" : ""}</td>
                     <td>
-                      {canEdit && <button className="btn-sm" onClick={() => openAddressEdit(a)}>編集</button>}
-                      {canEdit && <button className="btn-sm btn-danger" onClick={() => setAddrDeleteTarget(a)}>削除</button>}
+                      {canEdit && <button className="btn-sm" onClick={() => openAddressEdit(a)}>{t("common.edit")}</button>}
+                      {canEdit && <button className="btn-sm btn-danger" onClick={() => setAddrDeleteTarget(a)}>{t("common.delete")}</button>}
                     </td>
                   </tr>
                 ))}
@@ -634,16 +636,16 @@ export default function CompanyDetailPage() {
             </table>
           )}
 
-          <h2 style={{ marginTop: 24 }}>配送先住所 ({deliveryAddresses.length})
+          <h2 style={{ marginTop: 24 }}>{t("companies.delivery")}{t("companies.address")} ({deliveryAddresses.length})
             {canEdit && (
-              <button className="btn-sm" style={{ marginLeft: 12 }} onClick={() => openAddressNew("delivery")}>+ 追加</button>
+              <button className="btn-sm" style={{ marginLeft: 12 }} onClick={() => openAddressNew("delivery")}>+ {t("common.add")}</button>
             )}
           </h2>
-          {deliveryAddresses.length === 0 ? <p>配送先住所が登録されていません</p> : (
+          {deliveryAddresses.length === 0 ? <p>{t("companies.delivery")}{t("companies.address")}{t("common.noData")}</p> : (
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>支店名</th><th>担当者名</th><th>メール</th><th>電話</th><th>住所</th><th>既定</th><th>操作</th>
+                  <th>{t("companies.branchName")}</th><th>{t("companies.contactName")}</th><th>{t("common.email")}</th><th>{t("common.phone")}</th><th>{t("companies.address")}</th><th>{t("companies.isDefault")}</th><th>{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -656,8 +658,8 @@ export default function CompanyDetailPage() {
                     <td>{addressDisplay(a)}</td>
                     <td>{a.is_default ? "●" : ""}</td>
                     <td>
-                      {canEdit && <button className="btn-sm" onClick={() => openAddressEdit(a)}>編集</button>}
-                      {canEdit && <button className="btn-sm btn-danger" onClick={() => setAddrDeleteTarget(a)}>削除</button>}
+                      {canEdit && <button className="btn-sm" onClick={() => openAddressEdit(a)}>{t("common.edit")}</button>}
+                      {canEdit && <button className="btn-sm btn-danger" onClick={() => setAddrDeleteTarget(a)}>{t("common.delete")}</button>}
                     </td>
                   </tr>
                 ))}
@@ -670,13 +672,13 @@ export default function CompanyDetailPage() {
       {activeTab === "contacts" && (
         <div>
           <div style={{ marginBottom: 12 }}>
-            <Link to={`/contacts?company_id=${company.id}`} className="btn-sm">担当者ページで編集</Link>
+            <Link to={`/contacts?company_id=${company.id}`} className="btn-sm">{t("contacts.title")}で{t("common.edit")}</Link>
           </div>
-          {contacts.length === 0 ? <p>担当者が登録されていません</p> : (
+          {contacts.length === 0 ? <p>{t("contacts.noContacts")}</p> : (
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>コード</th><th>氏名</th><th>役職</th><th>主担当</th><th>メール</th><th>電話</th><th>ステータス</th>
+                  <th>{t("common.code")}</th><th>{t("common.name")}</th><th>{t("contacts.position")}</th><th>{t("contacts.isPrimary")}</th><th>{t("common.email")}</th><th>{t("common.phone")}</th><th>{t("common.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -703,15 +705,15 @@ export default function CompanyDetailPage() {
       {activeTab === "channels" && (
         <form onSubmit={handleChannelsSubmit} className="form-grid">
           <div className="form-row">
-            <label>販売チャネル（カンマ区切り）</label>
+            <label>{t("companies.salesChannelsLabel")}</label>
             <input disabled={!canEdit} value={channelsText}
               onChange={(e) => { setChannelsText(e.target.value); setChannelsDirty(true); }} />
-            <small>現在: {company.sales_channels.join(", ") || "（なし）"}</small>
+            <small>{t("companies.currentValue")}: {company.sales_channels.join(", ") || `（${t("common.none")}）`}</small>
           </div>
           {canEdit && (
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={!channelsDirty || channelsSubmitting}>
-                {channelsSubmitting ? "保存中..." : "販売チャネルを保存"}
+                {channelsSubmitting ? t("common.saving") : t("companies.saveChannels")}
               </button>
             </div>
           )}
@@ -722,66 +724,66 @@ export default function CompanyDetailPage() {
         <div className="modal-overlay" onClick={() => setAddrModalOpen(false)}>
           <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
             <h2>
-              {addrForm.id === null ? `${typeLabel(addrForm.address_type)}住所を追加` : `${typeLabel(addrForm.address_type)}住所を編集`}
+              {addrForm.id === null ? `${typeLabel(t, addrForm.address_type)}${t("companies.address")}を${t("common.add")}` : `${typeLabel(t, addrForm.address_type)}${t("companies.address")}を${t("common.edit")}`}
             </h2>
             {/* F6: モーダル内エラー（page top の error-banner は overlay で隠れる） */}
             {addrModalError && <div className="error-banner">{addrModalError}</div>}
             <form onSubmit={handleAddressSave} className="form-grid">
               <div className="form-row">
-                <label>種別</label>
+                <label>{t("common.type")}</label>
                 <select disabled={!canEdit || addrSubmitting} value={addrForm.address_type}
                   onChange={(e) => handleAddressTypeChange(e.target.value as "billing" | "delivery")}>
-                  <option value="billing">請求先</option>
-                  <option value="delivery">配送先</option>
+                  <option value="billing">{t("companies.billing")}</option>
+                  <option value="delivery">{t("companies.delivery")}</option>
                 </select>
               </div>
               <div className="form-row">
-                <label>支店名（複数拠点を区別する場合に使用）</label>
+                <label>{t("companies.branchNameHint")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.branch_name}
                   onChange={(e) => setAddrForm({ ...addrForm, branch_name: e.target.value })} />
               </div>
-              <div className="form-row"><label>担当者名</label>
+              <div className="form-row"><label>{t("companies.contactName")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.name}
                   onChange={(e) => setAddrForm({ ...addrForm, name: e.target.value })} />
               </div>
-              <div className="form-row"><label>メール</label>
+              <div className="form-row"><label>{t("common.email")}</label>
                 <input type="email" disabled={!canEdit || addrSubmitting} value={addrForm.email}
                   onChange={(e) => setAddrForm({ ...addrForm, email: e.target.value })} />
               </div>
-              <div className="form-row"><label>電話</label>
+              <div className="form-row"><label>{t("common.phone")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.telephone}
                   onChange={(e) => setAddrForm({ ...addrForm, telephone: e.target.value })} />
                 {addrPhoneError && <span className="field-error">{addrPhoneError}</span>}
               </div>
-              <div className="form-row"><label>税番号</label>
+              <div className="form-row"><label>{t("companies.taxId")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.tax_id}
                   onChange={(e) => setAddrForm({ ...addrForm, tax_id: e.target.value })} />
               </div>
-              <div className="form-row"><label>住所1</label>
+              <div className="form-row"><label>{t("shipping.address1")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.address_line_1}
                   onChange={(e) => setAddrForm({ ...addrForm, address_line_1: e.target.value })} />
               </div>
-              <div className="form-row"><label>住所2</label>
+              <div className="form-row"><label>{t("shipping.address2")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.address_line_2}
                   onChange={(e) => setAddrForm({ ...addrForm, address_line_2: e.target.value })} />
               </div>
-              <div className="form-row"><label>住所3</label>
+              <div className="form-row"><label>{t("shipping.address3")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.address_line_3}
                   onChange={(e) => setAddrForm({ ...addrForm, address_line_3: e.target.value })} />
               </div>
-              <div className="form-row"><label>市</label>
+              <div className="form-row"><label>{t("shipping.city")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.city}
                   onChange={(e) => setAddrForm({ ...addrForm, city: e.target.value })} />
               </div>
-              <div className="form-row"><label>州/県</label>
+              <div className="form-row"><label>{t("shipping.stateCode")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.state}
                   onChange={(e) => setAddrForm({ ...addrForm, state: e.target.value })} />
               </div>
-              <div className="form-row"><label>郵便番号</label>
+              <div className="form-row"><label>{t("shipping.zipCode")}</label>
                 <input disabled={!canEdit || addrSubmitting} value={addrForm.zip}
                   onChange={(e) => setAddrForm({ ...addrForm, zip: e.target.value })} />
               </div>
-              <div className="form-row"><label>国コード（ISO 2文字、例: JP/US/GB）</label>
+              <div className="form-row"><label>{t("shipping.countryCode")}{t("companies.countryCodeHint")}</label>
                 <input maxLength={2} disabled={!canEdit || addrSubmitting} value={addrForm.country_code}
                   onChange={(e) => setAddrForm({ ...addrForm, country_code: e.target.value.toUpperCase() })} />
               </div>
@@ -789,13 +791,13 @@ export default function CompanyDetailPage() {
                 <label>
                   <input type="checkbox" disabled={!canEdit || addrSubmitting} checked={addrForm.is_default}
                     onChange={(e) => setAddrForm({ ...addrForm, is_default: e.target.checked })} />
-                  {" "}この種別の既定住所にする（同種別 1 件のみ）
+                  {" "}{t("companies.setAsDefault")}
                 </label>
               </div>
               <div className="form-actions">
-                <button type="button" onClick={() => setAddrModalOpen(false)} disabled={addrSubmitting}>キャンセル</button>
+                <button type="button" onClick={() => setAddrModalOpen(false)} disabled={addrSubmitting}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary" disabled={!canEdit || addrSubmitting}>
-                  {addrSubmitting ? "保存中..." : "保存"}
+                  {addrSubmitting ? t("common.saving") : t("common.save")}
                 </button>
               </div>
             </form>
@@ -805,13 +807,13 @@ export default function CompanyDetailPage() {
 
       <ConfirmModal
         open={addrDeleteTarget !== null}
-        title="住所削除の確認"
+        title={t("companies.deleteAddressTitle")}
         message={
           addrDeleteTarget
-            ? `${typeLabel(addrDeleteTarget.address_type)}住所「${addrDeleteTarget.branch_name || addrDeleteTarget.name || "(無名)"}」を削除しますか？`
+            ? `${typeLabel(t, addrDeleteTarget.address_type)}${t("companies.address")}「${addrDeleteTarget.branch_name || addrDeleteTarget.name || "(無名)"}」を${t("common.delete")}しますか？`
             : ""
         }
-        confirmLabel="削除"
+        confirmLabel={t("common.delete")}
         onConfirm={handleAddressDelete}
         onCancel={() => setAddrDeleteTarget(null)}
       />
@@ -819,9 +821,9 @@ export default function CompanyDetailPage() {
       {/* PR #145 Q2: 別会社として確定の確認ダイアログ */}
       <ConfirmModal
         open={dedupConfirmOpen}
-        title="重複確認待ちの解消"
-        message={`「${company.name}」を別会社として確定し、ステータスを active に変更しますか？\n\n（マージではなく、独立した会社として承認します。この操作は audit_logs に記録されます）`}
-        confirmLabel="active に変更"
+        title={t("companies.dedupResolveTitle")}
+        message={t("companies.dedupResolveConfirmMessage", { name: company.name })}
+        confirmLabel={t("companies.dedupResolveConfirmLabel")}
         onConfirm={handleResolveAsDistinct}
         onCancel={() => setDedupConfirmOpen(false)}
       />

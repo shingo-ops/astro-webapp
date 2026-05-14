@@ -10,6 +10,7 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import CompanyContactSelector from "../components/CompanyContactSelector";
 
@@ -24,6 +25,7 @@ interface LineItem {
 }
 
 export default function QuoteCreatePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [companyId, setCompanyId] = useState<number | null>(null);
@@ -81,7 +83,7 @@ export default function QuoteCreatePage() {
     e.preventDefault();
     setError("");
     setSelectorError("");
-    if (contactId === null) { setSelectorError("会社と担当者を選択してください"); return; }
+    if (contactId === null) { setSelectorError(t("companyContactSelector.contactRequired")); return; }
     if (items.some((i) => !i.product_name || i.unit_price <= 0)) {
       setError("各明細行に商品名と単価を入力してください");
       return;
@@ -105,7 +107,7 @@ export default function QuoteCreatePage() {
       });
       navigate("/quotes");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     } finally {
       setSaving(false);
     }
@@ -114,7 +116,7 @@ export default function QuoteCreatePage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>見積もり作成</h2>
+        <h2>{t("quotes.newQuote")}</h2>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -132,28 +134,28 @@ export default function QuoteCreatePage() {
           />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-          <div className="form-group"><label>通貨</label>
+          <div className="form-group"><label>{t("common.currency")}</label>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
               <option value="JPY">JPY</option>
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
             </select>
           </div>
-          <div className="form-group"><label>備考</label>
+          <div className="form-group"><label>{t("common.notes")}</label>
             <input value={notes} onChange={(e) => setNotes(e.target.value)} />
           </div>
         </div>
 
-        <h3 style={{ marginBottom: 12 }}>明細行</h3>
+        <h3 style={{ marginBottom: 12 }}>{t("quotes.items")}</h3>
         <table className="data-table" style={{ marginBottom: 16 }}>
           <thead>
             <tr>
-              <th>商品選択</th>
-              <th>商品名</th>
-              <th>数量</th>
-              <th>単価</th>
-              <th>重量(kg)</th>
-              <th>小計</th>
+              <th>{t("quotes.selectProduct")}</th>
+              <th>{t("quotes.product")}</th>
+              <th>{t("quotes.quantity")}</th>
+              <th>{t("quotes.unitPrice")}</th>
+              <th>{t("quotes.weight")}</th>
+              <th>{t("quotes.subtotal")}</th>
               <th></th>
             </tr>
           </thead>
@@ -162,7 +164,7 @@ export default function QuoteCreatePage() {
               <tr key={i}>
                 <td>
                   <select value={item.product_id || ""} onChange={(e) => selectProduct(i, e.target.value)} style={{ minWidth: 120 }}>
-                    <option value="">手入力</option>
+                    <option value="">{t("quotes.customProduct")}</option>
                     {products.map((p) => <option key={p.id} value={p.id}>{p.name_ja} (在庫:{p.quantity})</option>)}
                   </select>
                 </td>
@@ -181,30 +183,30 @@ export default function QuoteCreatePage() {
                 <td style={{ fontWeight: 600 }}>{(item.quantity * item.unit_price).toLocaleString()}</td>
                 <td>
                   {items.length > 1 && (
-                    <button type="button" className="btn-sm btn-danger" onClick={() => removeItem(i)}>-</button>
+                    <button type="button" className="btn-sm btn-danger" onClick={() => removeItem(i)}>{t("quotes.removeItem")}</button>
                   )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <button type="button" className="btn-secondary" onClick={addItem} style={{ marginBottom: 24 }}>+ 行追加</button>
+        <button type="button" className="btn-secondary" onClick={addItem} style={{ marginBottom: 24 }}>{t("quotes.addItem")}</button>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
-          <div className="form-group"><label>送料</label>
+          <div className="form-group"><label>{t("quotes.shippingFee")}</label>
             <input type="number" min="0" step="1" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} />
           </div>
-          <div className="form-group"><label>税額</label>
+          <div className="form-group"><label>{t("quotes.tax")}</label>
             <input type="number" min="0" step="1" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} />
           </div>
-          <div className="form-group"><label>合計</label>
+          <div className="form-group"><label>{t("quotes.total")}</label>
             <div style={{ padding: "8px 12px", fontWeight: 700, fontSize: "1.1rem" }}>{total.toLocaleString()} {currency}</div>
           </div>
         </div>
 
         <div className="form-actions">
-          <button type="button" className="btn-secondary" onClick={() => navigate("/quotes")}>キャンセル</button>
-          <button type="submit" className="btn-primary" disabled={saving}>{saving ? "保存中..." : "下書き保存"}</button>
+          <button type="button" className="btn-secondary" onClick={() => navigate("/quotes")}>{t("common.cancel")}</button>
+          <button type="submit" className="btn-primary" disabled={saving}>{saving ? t("common.saving") : t("quotes.saveDraft")}</button>
         </div>
       </form>
     </div>

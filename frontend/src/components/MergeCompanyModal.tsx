@@ -16,6 +16,7 @@
  */
 
 import { useEffect, useMemo, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
 interface CompanyOption {
@@ -41,6 +42,7 @@ const PER_PAGE_CAP = 100;
 const SEARCH_DEBOUNCE_MS = 250;
 
 export default function MergeCompanyModal({ open, source, onMerged, onCancel }: Props) {
+  const { t } = useTranslation();
   const [candidates, setCandidates] = useState<CompanyOption[]>([]);
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -92,7 +94,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
         })
         .catch((e: unknown) => {
           if (cancelled) return;
-          setError(e instanceof Error ? e.message : "会社一覧の取得に失敗しました");
+          setError(e instanceof Error ? e.message : t("common.fetchError"));
         })
         .finally(() => {
           if (!cancelled) setLoading(false);
@@ -129,7 +131,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
       );
       onMerged(selected.id);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "マージに失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     } finally {
       setSubmitting(false);
     }
@@ -144,9 +146,9 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 640 }}
       >
-        <h2>重複としてマージ</h2>
+        <h2>{t("mergeCompany.title")}</h2>
         <p style={{ color: "#666", fontSize: "0.9em", marginTop: 4 }}>
-          「{source.name}」（{source.company_code}）を既存の会社に吸収させます。
+          {t("mergeCompany.sourceDesc", { name: source.name, code: source.company_code })}
         </p>
 
         {error && <div className="error-banner">{error}</div>}
@@ -154,10 +156,10 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
         {stage === "select" && (
           <>
             <div className="form-row">
-              <label>マージ先（master）の会社を選択</label>
+              <label>{t("mergeCompany.selectMaster")}</label>
               <input
                 type="text"
-                placeholder="会社名 / 会社コードで絞り込み（サーバー検索）"
+                placeholder={t("mergeCompany.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -174,8 +176,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                   color: "#856404",
                 }}
               >
-                候補が {PER_PAGE_CAP} 件に達しました。目的の会社が下のリストに無い場合は、
-                会社名 / 会社コードで絞り込んでください（サーバー側で再検索されます）。
+                {t("mergeCompany.resultsCapped", { count: PER_PAGE_CAP })}
               </div>
             )}
 
@@ -189,10 +190,10 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
               }}
             >
               {loading ? (
-                <p style={{ padding: 16, textAlign: "center" }}>読み込み中...</p>
+                <p style={{ padding: 16, textAlign: "center" }}>{t("common.loading")}</p>
               ) : filteredCandidates.length === 0 ? (
                 <p style={{ padding: 16, textAlign: "center", color: "#888" }}>
-                  該当する会社がありません
+                  {t("mergeCompany.noResults")}
                 </p>
               ) : (
                 <table className="data-table" style={{ marginBottom: 0 }}>
@@ -243,10 +244,10 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
             </div>
 
             <div className="form-row" style={{ marginTop: 16 }}>
-              <label>マージ理由（任意 / audit_logs に記録）</label>
+              <label>{t("mergeCompany.reasonLabel")}</label>
               <textarea
                 rows={2}
-                placeholder="例: 同一法人の支店登録ミス、CSV 取り込み重複など"
+                placeholder={t("mergeCompany.reasonPlaceholder")}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 maxLength={500}
@@ -255,7 +256,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
 
             <div className="form-actions">
               <button type="button" onClick={onCancel}>
-                キャンセル
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -263,7 +264,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 disabled={!selected}
                 onClick={() => setStage("confirm")}
               >
-                次へ（マージ内容を確認）
+                {t("mergeCompany.nextStep")}
               </button>
             </div>
           </>
@@ -280,21 +281,23 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 marginBottom: 16,
               }}
             >
-              <strong>確認: この操作は取り消せません</strong>
+              <strong>{t("mergeCompany.confirmWarning")}</strong>
               <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
                 <li>
-                  「{source.name}」（{source.company_code}）に紐づく
-                  <strong>担当者・商談・注文・見積・請求書・住所・販売チャネル</strong>が
-                  全て「{selected.name}」（{selected.company_code}）に付け替えられます。
+                  {t("mergeCompany.confirmDesc1", {
+                    sourceName: source.name,
+                    sourceCode: source.company_code,
+                    masterName: selected.name,
+                    masterCode: selected.company_code,
+                  })}
                 </li>
                 <li>
-                  「{source.name}」の会社レコードは削除されます。
+                  {t("mergeCompany.confirmDesc2", { sourceName: source.name })}
                 </li>
                 <li>
-                  master 側が pending_dedup_review だった場合、自動的に active に
-                  昇格します。
+                  {t("mergeCompany.confirmDesc3")}
                 </li>
-                <li>監査ログ (audit_logs) に操作内容が記録されます。</li>
+                <li>{t("mergeCompany.confirmDesc4")}</li>
               </ul>
             </div>
 
@@ -319,7 +322,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 onClick={() => setStage("select")}
                 disabled={submitting}
               >
-                戻る
+                {t("common.back")}
               </button>
               <button
                 type="submit"
@@ -327,8 +330,8 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 disabled={submitting}
               >
                 {submitting
-                  ? "マージ中..."
-                  : `「${selected.name}」へマージを実行`}
+                  ? t("mergeCompany.merging")
+                  : t("mergeCompany.executeLabel", { masterName: selected.name })}
               </button>
             </div>
           </form>

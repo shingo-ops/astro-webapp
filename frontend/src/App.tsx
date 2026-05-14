@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UiPrefsProvider } from "./contexts/UiPrefsContext";
+import { LocaleProvider } from "./contexts/LocaleContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
@@ -40,6 +42,7 @@ import CommissionSettingsPage from "./pages/CommissionSettingsPage";
 import "./App.css";
 
 function App() {
+  const { t } = useTranslation();
   // PR #166 F5: UiPrefsProvider は BrowserRouter の内側に配置する。
   //   - useNavigate などの react-router フックを将来 prefs フックから使えるようにする
   //   - インデント階層が PR diff として読みやすくなる
@@ -47,6 +50,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <UiPrefsProvider>
+          <LocaleProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route
@@ -84,7 +88,7 @@ function App() {
               <Route path="/reports" element={<StaffReportsPage />} />
 
               {/* FAQ */}
-              <Route path="/faq" element={<ComingSoonPage title="FAQ" description="ヘルプ・よくある質問" />} />
+              <Route path="/faq" element={<ComingSoonPage title={t("faq.title")} description={t("faq.description")} />} />
 
               {/* 管理 */}
               <Route path="/deals" element={<DealsPage />} />
@@ -111,9 +115,10 @@ function App() {
               {/* その他 */}
               <Route path="/knowledge" element={<BuddyPage />} />
               <Route path="/prompts" element={<BadgesPage />} />
-              <Route path="/templates" element={<ComingSoonPage title="テンプレート管理" description="メール・メッセージテンプレート管理" />} />
+              <Route path="/templates" element={<ComingSoonPage title={t("templates.title")} description={t("templates.description")} />} />
             </Route>
           </Routes>
+          </LocaleProvider>
         </UiPrefsProvider>
       </BrowserRouter>
     </AuthProvider>

@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
 
@@ -49,11 +50,8 @@ interface InvoiceDetail {
   items: InvoiceItem[];
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "下書き", issued: "発行済", paid: "入金済", overdue: "期限超過", voided: "無効",
-};
-
 export default function InvoiceDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
@@ -68,7 +66,7 @@ export default function InvoiceDetailPage() {
       const data = await api.get<InvoiceDetail>(`/invoices/${id}`);
       setInvoice(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -81,7 +79,7 @@ export default function InvoiceDetailPage() {
       await api.post(`/invoices/${id}/${action}`, body);
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "操作に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.operationError"));
     }
   };
 
@@ -94,13 +92,13 @@ export default function InvoiceDetailPage() {
 
   const fmt = (n: number | null) => n != null ? n.toLocaleString() : "-";
 
-  if (loading) return <div className="page"><div className="loading">読み込み中...</div></div>;
-  if (!invoice) return <div className="page"><div className="error-message">{error || "請求書が見つかりません"}</div></div>;
+  if (loading) return <div className="page"><div className="loading">{t("common.loading")}</div></div>;
+  if (!invoice) return <div className="page"><div className="error-message">{error || t("common.fetchError")}</div></div>;
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>請求書詳細 — {invoice.invoice_number || `#${invoice.id}`}</h2>
+        <h2>{t("invoices.title")} — {invoice.invoice_number || `#${invoice.id}`}</h2>
         <div className="actions" style={{ display: "flex", gap: 8 }}>
           {invoice.status === "draft" && hasPermission("invoices.create") && (
             <button className="btn-primary" onClick={() => doAction("issue")}>発行する</button>
@@ -111,7 +109,7 @@ export default function InvoiceDetailPage() {
           {invoice.status !== "voided" && hasPermission("invoices.void") && (
             <button className="btn-danger" onClick={() => setShowVoidForm(true)}>無効化</button>
           )}
-          <button className="btn-secondary" onClick={() => navigate("/invoices/new")}>一覧に戻る</button>
+          <button className="btn-secondary" onClick={() => navigate("/invoices/new")}>{t("common.back")}</button>
         </div>
       </div>
 
@@ -123,7 +121,7 @@ export default function InvoiceDetailPage() {
           <input style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid var(--border)" }}
                  value={voidReason} onChange={(e) => setVoidReason(e.target.value)} placeholder="無効化の理由を入力..." />
           <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-            <button className="btn-secondary" onClick={() => setShowVoidForm(false)}>キャンセル</button>
+            <button className="btn-secondary" onClick={() => setShowVoidForm(false)}>{t("common.cancel")}</button>
             <button className="btn-danger" onClick={handleVoid}>無効化実行</button>
           </div>
         </div>
@@ -131,24 +129,24 @@ export default function InvoiceDetailPage() {
 
       <div style={{ background: "var(--bg-surface)", padding: 24, borderRadius: 8, boxShadow: "var(--shadow-sm)", marginBottom: 24 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-          <div><strong>ステータス:</strong> <span className={`badge badge-${invoice.status === "paid" ? "won" : invoice.status === "voided" ? "lost" : "pending"}`}>{STATUS_LABELS[invoice.status]}</span></div>
-          <div><strong>通貨:</strong> {invoice.currency}</div>
+          <div><strong>{t("common.status")}:</strong> <span className={`badge badge-${invoice.status === "paid" ? "won" : invoice.status === "voided" ? "lost" : "pending"}`}>{t(`invoices.status_${invoice.status}`)}</span></div>
+          <div><strong>{t("common.currency")}:</strong> {invoice.currency}</div>
           <div><strong>支払方法:</strong> {invoice.payment_method || "-"}</div>
           <div><strong>発行日:</strong> {invoice.issued_at ? new Date(invoice.issued_at).toLocaleDateString() : "-"}</div>
-          <div><strong>支払期限:</strong> {invoice.due_date || "-"}</div>
+          <div><strong>{t("invoices.dueDate")}:</strong> {invoice.due_date || "-"}</div>
           <div><strong>入金日:</strong> {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString() : "-"}</div>
           <div><strong>為替 JPY:</strong> {invoice.exchange_rate_jpy ?? "-"}</div>
           <div><strong>為替 USD:</strong> {invoice.exchange_rate_usd ?? "-"}</div>
           <div><strong>ERP Key:</strong> <span className="mono">{invoice.erp_key || "-"}</span></div>
           {invoice.void_reason && <div style={{ gridColumn: "1 / -1" }}><strong>無効化理由:</strong> {invoice.void_reason}</div>}
-          {invoice.notes && <div style={{ gridColumn: "1 / -1" }}><strong>備考:</strong> {invoice.notes}</div>}
+          {invoice.notes && <div style={{ gridColumn: "1 / -1" }}><strong>{t("common.notes")}:</strong> {invoice.notes}</div>}
         </div>
       </div>
 
-      <h3 style={{ marginBottom: 12 }}>明細</h3>
+      <h3 style={{ marginBottom: 12 }}>{t("quotes.items")}</h3>
       <table className="data-table" style={{ marginBottom: 24 }}>
         <thead>
-          <tr><th>商品名</th><th>数量</th><th>単価</th><th>重量</th><th>小計</th></tr>
+          <tr><th>{t("quotes.product")}</th><th>{t("quotes.quantity")}</th><th>{t("quotes.unitPrice")}</th><th>{t("quotes.weight")}</th><th>{t("quotes.subtotal")}</th></tr>
         </thead>
         <tbody>
           {invoice.items.map((item) => (
@@ -162,10 +160,10 @@ export default function InvoiceDetailPage() {
           ))}
         </tbody>
         <tfoot>
-          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 600 }}>小計</td><td style={{ fontWeight: 600 }}>{fmt(invoice.subtotal)}</td></tr>
-          <tr><td colSpan={4} style={{ textAlign: "right" }}>送料</td><td>{fmt(invoice.shipping_fee)}</td></tr>
-          <tr><td colSpan={4} style={{ textAlign: "right" }}>税額</td><td>{fmt(invoice.tax_amount)}</td></tr>
-          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 700, fontSize: "1.1rem" }}>合計</td><td style={{ fontWeight: 700, fontSize: "1.1rem" }}>{fmt(invoice.total_amount)} {invoice.currency}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 600 }}>{t("quotes.subtotal")}</td><td style={{ fontWeight: 600 }}>{fmt(invoice.subtotal)}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.shippingFee")}</td><td>{fmt(invoice.shipping_fee)}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.tax")}</td><td>{fmt(invoice.tax_amount)}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 700, fontSize: "1.1rem" }}>{t("quotes.total")}</td><td style={{ fontWeight: 700, fontSize: "1.1rem" }}>{fmt(invoice.total_amount)} {invoice.currency}</td></tr>
           {invoice.amount_jpy != null && <tr><td colSpan={4} style={{ textAlign: "right", color: "var(--text-muted)" }}>JPY換算</td><td style={{ color: "var(--text-muted)" }}>¥{invoice.amount_jpy.toLocaleString()}</td></tr>}
           {invoice.amount_usd != null && <tr><td colSpan={4} style={{ textAlign: "right", color: "var(--text-muted)" }}>USD換算</td><td style={{ color: "var(--text-muted)" }}>${invoice.amount_usd.toLocaleString()}</td></tr>}
         </tfoot>

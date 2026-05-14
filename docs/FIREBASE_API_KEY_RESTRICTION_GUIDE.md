@@ -76,7 +76,9 @@ F12 で開発者ツールを開けば誰でも見れる
 
 | 許可するドメイン | 用途 |
 |---------------|------|
-| `https://jarvis-claude.uk/*` | 本番 |
+| `https://app.salesanchor.jp/*` | 本番アプリ |
+| `https://auth.salesanchor.jp/*` | ADR-032 カスタム認証ドメイン（Firebase Auth handler） |
+| `https://jarvis-claude.uk/*` | レガシー本番（並行稼働中） |
 | `https://*.jarvis-claude.uk/*` | サブドメイン（ステージング等予備） |
 
 **⚠️ Google Cloud の入力ルール**:
@@ -141,14 +143,18 @@ F12 で開発者ツールを開けば誰でも見れる
 **残すもの**:
 | ドメイン | 理由 |
 |---------|------|
-| `jarvis-claude.uk` | 本番 |
+| `app.salesanchor.jp` | 本番アプリ |
+| `auth.salesanchor.jp` | ADR-032 カスタム認証ドメイン（OAuth 表示用） |
+| `jarvis-claude.uk` | レガシー本番（並行稼働中） |
 | `localhost` | ローカル開発 |
-| `sales-ops-with-claude.firebaseapp.com` | Firebase内部で使用 |
+| `sales-ops-with-claude.firebaseapp.com` | Firebase内部で使用 + ADR-032 切り戻し用に残置 |
 
 **削除候補**:
 - 過去のテスト用ドメイン
 - 使っていないカスタムドメイン
-- `sales-ops-with-claude.web.app`（Firebase Hosting未使用なら削除可）
+- `sales-ops-with-claude.web.app`（Firebase Hosting で `auth.salesanchor.jp` のみ使う場合は削除可）
+
+> ⚠ ADR-032 の「既存ドメイン併用」要件により、`sales-ops-with-claude.firebaseapp.com` は **削除しない**こと（環境変数切り戻し時の保険）。
 
 **追加方法**: 「Add domain」ボタン → ドメイン名を入力 → 「Add」
 

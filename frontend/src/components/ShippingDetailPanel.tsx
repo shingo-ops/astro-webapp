@@ -20,6 +20,7 @@
  */
 
 import { FormEvent, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../lib/api";
 import { auth } from "../lib/firebase";
 
@@ -80,60 +81,60 @@ interface Props {
   onSaved?: (shipping: ShippingDetailDto) => void;
 }
 
-const CARRIER_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "未指定" },
-  { value: "elogi", label: "eLogi" },
-  { value: "fedex", label: "FedEx" },
-  { value: "dhl", label: "DHL" },
-  { value: "yamato", label: "ヤマト" },
-  { value: "other", label: "その他" },
+const CARRIER_OPTIONS: { value: string; labelKey: string }[] = [
+  { value: "", labelKey: "shipping.carrierUnspecified" },
+  { value: "elogi", labelKey: "shipping.carrierElogi" },
+  { value: "fedex", labelKey: "shipping.carrierFedex" },
+  { value: "dhl", labelKey: "shipping.carrierDhl" },
+  { value: "yamato", labelKey: "shipping.carrierYamato" },
+  { value: "other", labelKey: "shipping.carrierOther" },
 ];
 
 // 文字列フィールドのキー定義
 const TEXT_FIELDS = {
   recipient: [
-    { key: "recipient_name", label: "受取人氏名" },
-    { key: "phone", label: "電話" },
-    { key: "email", label: "メール" },
-    { key: "tax_number", label: "税番号" },
+    { key: "recipient_name", labelKey: "shipping.recipientName" },
+    { key: "phone", labelKey: "common.phone" },
+    { key: "email", labelKey: "common.email" },
+    { key: "tax_number", labelKey: "shipping.taxNumber" },
   ],
   address: [
-    { key: "address1", label: "住所1" },
-    { key: "address2", label: "住所2" },
-    { key: "address3", label: "住所3" },
-    { key: "city", label: "市" },
-    { key: "state_code", label: "州コード" },
-    { key: "zip_code", label: "ZIPコード" },
-    { key: "country_code", label: "国コード" },
+    { key: "address1", labelKey: "shipping.address1" },
+    { key: "address2", labelKey: "shipping.address2" },
+    { key: "address3", labelKey: "shipping.address3" },
+    { key: "city", labelKey: "shipping.city" },
+    { key: "state_code", labelKey: "shipping.stateCode" },
+    { key: "zip_code", labelKey: "shipping.zipCode" },
+    { key: "country_code", labelKey: "shipping.countryCode" },
   ],
   packingItem: [
-    { key: "packing_memo", label: "梱包メモ" },
-    { key: "packing_type", label: "梱包タイプ" },
-    { key: "inspection_status", label: "検品ステータス" },
-    { key: "item_description", label: "品目説明" },
-    { key: "hs_code", label: "HSコード" },
-    { key: "tax_id", label: "税ID" },
-    { key: "fedex_id", label: "FedEx ID" },
+    { key: "packing_memo", labelKey: "shipping.packingMemo" },
+    { key: "packing_type", labelKey: "shipping.packingType" },
+    { key: "inspection_status", labelKey: "shipping.inspectionStatus" },
+    { key: "item_description", labelKey: "shipping.itemDescription" },
+    { key: "hs_code", labelKey: "shipping.hsCode" },
+    { key: "tax_id", labelKey: "shipping.taxId" },
+    { key: "fedex_id", labelKey: "shipping.fedexId" },
   ],
   shippingExtras: [
-    { key: "ship_method", label: "配送方法" },
-    { key: "tracking_number", label: "追跡番号" },
+    { key: "ship_method", labelKey: "shipping.shipMethod" },
+    { key: "tracking_number", labelKey: "shipping.trackingNumber" },
   ],
 } as const;
 
 const NUMBER_FIELDS = {
   dimensions: [
-    { key: "length_cm", label: "長さ (cm)", step: "0.01" },
-    { key: "width_cm", label: "幅 (cm)", step: "0.01" },
-    { key: "height_cm", label: "高さ (cm)", step: "0.01" },
-    { key: "weight_kg", label: "重量 (kg)", step: "0.001" },
-    { key: "volume_g", label: "容積 (g)", step: "0.01" },
-    { key: "box_count", label: "個口数", step: "1" },
+    { key: "length_cm", labelKey: "shipping.lengthCm", step: "0.01" },
+    { key: "width_cm", labelKey: "shipping.widthCm", step: "0.01" },
+    { key: "height_cm", labelKey: "shipping.heightCm", step: "0.01" },
+    { key: "weight_kg", labelKey: "shipping.weightKg", step: "0.001" },
+    { key: "volume_g", labelKey: "shipping.volumeG", step: "0.01" },
+    { key: "box_count", labelKey: "shipping.boxCount", step: "1" },
   ],
   itemPrice: [
-    { key: "item_price_usd", label: "USD単価", step: "0.01" },
-    { key: "exchange_rate", label: "為替レート", step: "0.000001" },
-    { key: "est_shipping_fee", label: "予定配送料", step: "0.01" },
+    { key: "item_price_usd", labelKey: "shipping.itemPriceUsd", step: "0.01" },
+    { key: "exchange_rate", labelKey: "shipping.exchangeRate", step: "0.000001" },
+    { key: "est_shipping_fee", labelKey: "shipping.estShippingFee", step: "0.01" },
   ],
 } as const;
 
@@ -194,6 +195,7 @@ export default function ShippingDetailPanel({
   onClose,
   onSaved,
 }: Props) {
+  const { t } = useTranslation();
   const [existing, setExisting] = useState<ShippingDetailDto | null>(null);
   const [form, setForm] = useState<FormState>(buildEmptyForm());
   const [loading, setLoading] = useState(true);
@@ -222,7 +224,7 @@ export default function ShippingDetailPanel({
         } else {
           if (!cancelled) {
             setError(
-              e instanceof Error ? e.message : "発送情報の取得に失敗しました",
+              e instanceof Error ? e.message : t("common.fetchError"),
             );
           }
         }
@@ -286,7 +288,7 @@ export default function ShippingDetailPanel({
       onSaved?.(saved);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     } finally {
       setSaving(false);
     }
@@ -303,7 +305,7 @@ export default function ShippingDetailPanel({
     setDownloading(true);
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error("認証されていません");
+      if (!user) throw new Error(t("common.notAuthenticated"));
       const token = await user.getIdToken();
       const res = await fetch(
         `/api/v1/orders/${orderId}/shipping/elogi-csv`,
@@ -322,7 +324,7 @@ export default function ShippingDetailPanel({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "CSVダウンロードに失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setDownloading(false);
     }
@@ -335,18 +337,18 @@ export default function ShippingDetailPanel({
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 880, maxHeight: "90vh", overflowY: "auto" }}
         role="dialog"
-        aria-label="発送情報"
+        aria-label={t("shipping.sectionShipping")}
       >
-        <h3>発送情報 — {orderNumber}</h3>
+        <h3>{t("shipping.sectionShipping")} — {orderNumber}</h3>
         {loading ? (
-          <div className="loading">読み込み中...</div>
+          <div className="loading">{t("common.loading")}</div>
         ) : (
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message">{error}</div>}
 
             {/* セクション: 受取人 */}
             <fieldset>
-              <legend>受取人</legend>
+              <legend>{t("shipping.sectionRecipient")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -356,7 +358,7 @@ export default function ShippingDetailPanel({
               >
                 {TEXT_FIELDS.recipient.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type={f.key === "email" ? "email" : "text"}
                       value={form[f.key]}
@@ -370,7 +372,7 @@ export default function ShippingDetailPanel({
 
             {/* セクション: 住所 */}
             <fieldset>
-              <legend>住所</legend>
+              <legend>{t("companies.address")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -380,7 +382,7 @@ export default function ShippingDetailPanel({
               >
                 {TEXT_FIELDS.address.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type="text"
                       value={form[f.key]}
@@ -394,7 +396,7 @@ export default function ShippingDetailPanel({
 
             {/* セクション: 寸法・重量 */}
             <fieldset>
-              <legend>寸法・重量</legend>
+              <legend>{t("shipping.sectionDimensions")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -404,7 +406,7 @@ export default function ShippingDetailPanel({
               >
                 {NUMBER_FIELDS.dimensions.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type="number"
                       min="0"
@@ -421,7 +423,7 @@ export default function ShippingDetailPanel({
 
             {/* セクション: 梱包・品目 */}
             <fieldset>
-              <legend>梱包・品目</legend>
+              <legend>{t("shipping.sectionPackingItem")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -431,7 +433,7 @@ export default function ShippingDetailPanel({
               >
                 {TEXT_FIELDS.packingItem.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type="text"
                       value={form[f.key]}
@@ -442,7 +444,7 @@ export default function ShippingDetailPanel({
                 ))}
                 {NUMBER_FIELDS.itemPrice.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type="number"
                       min="0"
@@ -459,7 +461,7 @@ export default function ShippingDetailPanel({
 
             {/* セクション: 配送 */}
             <fieldset>
-              <legend>配送</legend>
+              <legend>{t("shipping.sectionShipping")}</legend>
               <div
                 style={{
                   display: "grid",
@@ -468,7 +470,7 @@ export default function ShippingDetailPanel({
                 }}
               >
                 <div className="form-group">
-                  <label>キャリア</label>
+                  <label>{t("shipping.carrier")}</label>
                   <select
                     value={form.carrier}
                     onChange={(ev) => setField("carrier", ev.target.value)}
@@ -476,14 +478,14 @@ export default function ShippingDetailPanel({
                   >
                     {CARRIER_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                        {t(opt.labelKey)}
                       </option>
                     ))}
                   </select>
                 </div>
                 {TEXT_FIELDS.shippingExtras.map((f) => (
                   <div className="form-group" key={f.key}>
-                    <label>{f.label}</label>
+                    <label>{t(f.labelKey)}</label>
                     <input
                       type="text"
                       value={form[f.key]}
@@ -493,7 +495,7 @@ export default function ShippingDetailPanel({
                   </div>
                 ))}
                 <div className="form-group">
-                  <label>発送日</label>
+                  <label>{t("shipping.shipDate")}</label>
                   <input
                     type="date"
                     value={form.ship_date}
@@ -506,7 +508,7 @@ export default function ShippingDetailPanel({
 
             {/* メモ */}
             <div className="form-group">
-              <label>発送メモ</label>
+              <label>{t("shipping.shipMemo")}</label>
               <textarea
                 value={form.ship_memo}
                 onChange={(ev) => setField("ship_memo", ev.target.value)}
@@ -532,11 +534,11 @@ export default function ShippingDetailPanel({
                 data-testid="ship-download-csv"
                 title={
                   existing
-                    ? "eLogi 用 CSV をダウンロード"
-                    : "発送情報を保存後にダウンロードできます"
+                    ? t("shipping.downloadCsvTitle")
+                    : t("shipping.downloadCsvTitleDisabled")
                 }
               >
-                {downloading ? "ダウンロード中..." : "eLogi CSV ダウンロード"}
+                {downloading ? t("shipping.downloading") : t("shipping.downloadCsv")}
               </button>
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
@@ -545,7 +547,7 @@ export default function ShippingDetailPanel({
                   onClick={onClose}
                   disabled={saving}
                 >
-                  キャンセル
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -553,7 +555,7 @@ export default function ShippingDetailPanel({
                   disabled={saving}
                   data-testid="ship-save"
                 >
-                  {saving ? "保存中..." : existing ? "更新" : "登録"}
+                  {saving ? t("common.saving") : existing ? t("common.update") : t("common.register")}
                 </button>
               </div>
             </div>

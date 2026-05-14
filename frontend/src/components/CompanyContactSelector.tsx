@@ -26,6 +26,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
 interface CompanyMini {
@@ -85,6 +86,7 @@ export default function CompanyContactSelector({
   showLabels = true,
   companies: externalCompanies,
 }: CompanyContactSelectorProps) {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [internalCompanies, setInternalCompanies] = useState<CompanyMini[]>([]);
   const [contacts, setContacts] = useState<ContactMini[]>([]);
@@ -173,25 +175,25 @@ export default function CompanyContactSelector({
 
   // contacts ドロップダウンのプレースホルダ
   const contactsPlaceholder = (() => {
-    if (value.companyId === null) return "先に会社を選択してください";
+    if (value.companyId === null) return t("companyContactSelector.companyRequired");
     if (companyIdMissing) return "選択中の会社が見つかりません";
-    if (loadingContacts) return "読み込み中...";
+    if (loadingContacts) return t("common.loading");
     if (contactsLoadFailed) return "担当者の取得に失敗しました";
-    if (contacts.length === 0) return "この会社に担当者が登録されていません";
-    return "選択してください";
+    if (contacts.length === 0) return t("companyContactSelector.noContact");
+    return t("companyContactSelector.selectContact");
   })();
 
   return (
     <>
       <div className="form-group">
-        {showLabels && <label>会社{required ? " *" : ""}</label>}
+        {showLabels && <label>{t("common.company")}{required ? " *" : ""}</label>}
         <select
           required={required}
           disabled={disabled}
           value={value.companyId !== null ? String(value.companyId) : ""}
           onChange={(e) => handleCompanyChange(e.target.value)}
         >
-          <option value="">選択してください</option>
+          <option value="">{t("companyContactSelector.selectCompany")}</option>
           {companies.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}（{c.company_code}）

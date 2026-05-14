@@ -41,12 +41,15 @@
 |---|---|---|
 | `GCP_PROJECT_ID` | ✅ | GCP プロジェクト ID |
 | `FIREBASE_API_KEY` | ✅ | Firebase Web API キー |
-| `FIREBASE_AUTH_DOMAIN` | ✅ | Auth ドメイン |
+| `FIREBASE_AUTH_DOMAIN` | ✅ | Auth ドメイン（ADR-032 により `auth.salesanchor.jp`） |
 | `GOOGLE_APPLICATION_CREDENTIALS` | ✅ | Service Account JSON のパス |
 
 **生成**: Firebase Console から取得。Service Account JSON は GCP IAM で発行。
 
-**運用注意**: Service Account JSON は **Bitwarden に保管 + VPS の `/app/firebase-credentials.json` に配置**。git に含めない。
+**運用注意**:
+- Service Account JSON は **Bitwarden に保管 + VPS の `/app/firebase-credentials.json` に配置**。git に含めない。
+- `FIREBASE_AUTH_DOMAIN` は ADR-032 で `auth.salesanchor.jp`（カスタム認証ドメイン）に切替済。旧値 `sales-ops-with-claude.firebaseapp.com` は Firebase Authorized domains に並行残置されているため、トラブル時は env を旧値に戻すだけで切り戻し可能（再ビルド要）。
+- カスタム認証ドメインの初期セットアップ手順は `docs/FIREBASE_CUSTOM_AUTH_DOMAIN_SETUP.md` 参照。
 
 ---
 
@@ -55,10 +58,12 @@
 | 変数名 | 必須 | 用途 |
 |---|---|---|
 | `VITE_FIREBASE_API_KEY` | ✅ | frontend に焼き込まれる Firebase API キー（FIREBASE_API_KEY と同値） |
-| `VITE_FIREBASE_AUTH_DOMAIN` | ✅ | frontend に焼き込まれる Auth ドメイン |
+| `VITE_FIREBASE_AUTH_DOMAIN` | ✅ | frontend に焼き込まれる Auth ドメイン（ADR-032 により `auth.salesanchor.jp`） |
 | `VITE_GCP_PROJECT_ID` | ✅ | frontend に焼き込まれる GCP プロジェクト ID |
 
-**運用注意**: 未設定だと frontend が `auth/invalid-api-key` で真っ白画面。docker compose build 前に必ず確認。
+**運用注意**:
+- 未設定だと frontend が `auth/invalid-api-key` で真っ白画面。docker compose build 前に必ず確認。
+- `VITE_FIREBASE_AUTH_DOMAIN` を変更した場合は frontend コンテナを **再ビルド**しないと反映されない（Vite の `import.meta.env` はビルド時埋め込みのため）。切り戻しも同様に再ビルドが必要。
 
 ---
 
@@ -237,6 +242,9 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 |---|---|
 | PostgreSQL | DATABASE_URL が PostgreSQL を指している（SQLite ではない） |
 | Firebase | VITE_* と非 VITE 系の値が一致 |
+| Firebase | `FIREBASE_AUTH_DOMAIN` / `VITE_FIREBASE_AUTH_DOMAIN` が `auth.salesanchor.jp`（ADR-032 切替後）or 切り戻し中なら `sales-ops-with-claude.firebaseapp.com` |
+| Firebase | Firebase Console > Authentication > Settings > Authorized domains に `auth.salesanchor.jp` と旧ドメインの両方が登録されている |
+| Firebase | Meta Developer Portal > Facebook Login > Valid OAuth Redirect URIs に `https://auth.salesanchor.jp/__/auth/handler` と旧 `https://sales-ops-with-claude.firebaseapp.com/__/auth/handler` の両方が残置されている |
 | Redis | パスワード設定済 |
 | Meta | METADATA_FERNET_KEY、META_APP_ID、META_APP_SECRET、META_OAUTH_REDIRECT_URI すべて注入済 |
 | Meta | META_OAUTH_REDIRECT_URI と Meta Developer Portal の Valid OAuth Redirect URIs が一致 |

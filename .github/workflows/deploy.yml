@@ -264,6 +264,13 @@ jobs:
             docker exec -e TENANT_CODE=highlife-jpn -w /app astro-webapp-backend-1 \
               python scripts/migrate_adr015_lead_foundation.py
 
+            # ADR-027: users テーブルに locale カラム追加（ユーザー個人の言語設定）
+            #   ADD COLUMN IF NOT EXISTS / UPDATE で idempotent。
+            #   review@salesanchor.jp の locale を 'en' に設定（撮影用）。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/053_add_users_locale.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

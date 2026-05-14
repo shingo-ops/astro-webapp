@@ -1,10 +1,12 @@
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
 
 interface Shift { id: number; user_id: number; shift_date: string; start_time: string; end_time: string; shift_type: string; notes: string | null; created_at: string; }
 
 export default function ShiftsPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -14,7 +16,7 @@ export default function ShiftsPage() {
 
   const load = async () => {
     try { setShifts(await api.get<Shift[]>("/shifts")); }
-    catch (e) { setError(e instanceof Error ? e.message : "取得失敗"); }
+    catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
@@ -24,28 +26,28 @@ export default function ShiftsPage() {
     try {
       await api.post("/shifts", { user_id: Number(form.user_id), shift_date: form.shift_date, start_time: form.start_time, end_time: form.end_time, shift_type: form.shift_type, notes: form.notes || null });
       setShowForm(false); load();
-    } catch (e) { setError(e instanceof Error ? e.message : "保存失敗"); }
+    } catch (e) { setError(e instanceof Error ? e.message : t("common.saveError")); }
   };
 
   const handleDelete = async (id: number) => {
     try { await api.delete(`/shifts/${id}`); load(); }
-    catch (e) { setError(e instanceof Error ? e.message : "削除失敗"); }
+    catch (e) { setError(e instanceof Error ? e.message : t("common.deleteError")); }
   };
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>シフト管理</h2>
-        {hasPermission("shifts.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>シフト登録</button>}
+        <h2>{t("shifts.title")}</h2>
+        {hasPermission("shifts.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("shifts.newShift")}</button>}
       </div>
       {error && <div className="error-message">{error}</div>}
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>シフト登録</h3>
+            <h3>{t("shifts.newShift")}</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group"><label>ユーザーID *</label><input type="number" min="1" required value={form.user_id} onChange={e => setForm({ ...form, user_id: e.target.value })} /></div>
-              <div className="form-group"><label>日付 *</label><input type="date" required value={form.shift_date} onChange={e => setForm({ ...form, shift_date: e.target.value })} /></div>
+              <div className="form-group"><label>{t("common.date")} *</label><input type="date" required value={form.shift_date} onChange={e => setForm({ ...form, shift_date: e.target.value })} /></div>
               <div className="form-group"><label>開始時刻 *</label><input type="time" required value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></div>
               <div className="form-group"><label>終了時刻 *</label><input type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></div>
               <div className="form-group"><label>種別</label>
@@ -54,25 +56,25 @@ export default function ShiftsPage() {
                 </select>
               </div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>キャンセル</button>
-                <button type="submit" className="btn-primary">登録</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{t("common.register")}</button>
               </div>
             </form>
           </div>
         </div>
       )}
-      {loading ? <div className="loading">読み込み中...</div> : (
+      {loading ? <div className="loading">{t("common.loading")}</div> : (
         <table className="data-table">
-          <thead><tr><th>日付</th><th>ユーザーID</th><th>開始</th><th>終了</th><th>種別</th><th>操作</th></tr></thead>
+          <thead><tr><th>{t("common.date")}</th><th>ユーザーID</th><th>開始</th><th>終了</th><th>種別</th><th>{t("common.actions")}</th></tr></thead>
           <tbody>
             {shifts.map(s => (
               <tr key={s.id}>
                 <td>{s.shift_date}</td><td>{s.user_id}</td><td>{s.start_time}</td><td>{s.end_time}</td>
                 <td><span className="badge badge-negotiating">{s.shift_type}</span></td>
-                <td className="actions">{hasPermission("shifts.manage") && <button className="btn-sm btn-danger" onClick={() => handleDelete(s.id)}>削除</button>}</td>
+                <td className="actions">{hasPermission("shifts.manage") && <button className="btn-sm btn-danger" onClick={() => handleDelete(s.id)}>{t("common.delete")}</button>}</td>
               </tr>
             ))}
-            {shifts.length === 0 && <tr><td colSpan={6} className="empty">シフトがありません</td></tr>}
+            {shifts.length === 0 && <tr><td colSpan={6} className="empty">{t("shifts.noShifts")}</td></tr>}
           </tbody>
         </table>
       )}

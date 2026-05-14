@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
 interface Invoice {
@@ -24,11 +25,10 @@ interface Invoice {
   created_at: string;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "下書き", issued: "発行済", paid: "入金済", overdue: "期限超過", voided: "無効",
-};
+const INVOICE_STATUSES = ["draft", "sent", "paid", "overdue", "cancelled"];
 
 export default function InvoicesPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
@@ -41,7 +41,7 @@ export default function InvoicesPage() {
       const data = await api.get<Invoice[]>(`/invoices${params}`);
       setInvoices(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "取得に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -58,33 +58,33 @@ export default function InvoicesPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>請求書管理</h2>
+        <h2>{t("invoices.title")}</h2>
       </div>
 
       <div className="filter-bar">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">全ステータス</option>
-          {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          <option value="">{t("invoices.allStatuses")}</option>
+          {INVOICE_STATUSES.map((s) => <option key={s} value={s}>{t(`invoices.status_${s}`)}</option>)}
         </select>
       </div>
 
       {error && <div className="error-message">{error}</div>}
 
       {loading ? (
-        <div className="loading">読み込み中...</div>
+        <div className="loading">{t("common.loading")}</div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>請求番号</th>
-              <th>通貨</th>
-              <th>合計</th>
+              <th>{t("invoices.invoiceCode")}</th>
+              <th>{t("common.currency")}</th>
+              <th>{t("common.amount")}</th>
               <th>JPY換算</th>
-              <th>ステータス</th>
+              <th>{t("common.status")}</th>
               <th>発行日</th>
-              <th>支払期限</th>
+              <th>{t("invoices.dueDate")}</th>
               <th>入金日</th>
-              <th>操作</th>
+              <th>{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -95,7 +95,7 @@ export default function InvoicesPage() {
                 <td>{fmt(inv.total_amount, inv.currency)}</td>
                 <td>{inv.amount_jpy != null ? `¥${inv.amount_jpy.toLocaleString()}` : "-"}</td>
                 <td><span className={`badge badge-${inv.status === "paid" ? "won" : inv.status === "voided" ? "lost" : inv.status === "overdue" ? "cancelled" : inv.status === "issued" ? "negotiating" : "pending"}`}>
-                  {STATUS_LABELS[inv.status] || inv.status}
+                  {t(`invoices.status_${inv.status}`) || inv.status}
                 </span></td>
                 <td>{inv.issued_at ? new Date(inv.issued_at).toLocaleDateString() : "-"}</td>
                 <td>{inv.due_date || "-"}</td>
@@ -105,7 +105,7 @@ export default function InvoicesPage() {
                 </td>
               </tr>
             ))}
-            {invoices.length === 0 && <tr><td colSpan={9} className="empty">請求書がありません</td></tr>}
+            {invoices.length === 0 && <tr><td colSpan={9} className="empty">{t("invoices.noInvoices")}</td></tr>}
           </tbody>
         </table>
       )}

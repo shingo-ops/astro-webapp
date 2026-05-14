@@ -1,4 +1,5 @@
 import { useEffect, useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
 
@@ -6,6 +7,7 @@ interface Badge { id: number; name: string; description: string | null; icon: st
 interface LeaderEntry { user_id: number; username: string | null; badge_count: number; total_points: number; }
 
 export default function BadgesPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [badges, setBadges] = useState<Badge[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
@@ -18,7 +20,7 @@ export default function BadgesPage() {
     try {
       setBadges(await api.get<Badge[]>("/badges"));
       setLeaderboard(await api.get<LeaderEntry[]>("/badges/leaderboard"));
-    } catch (e) { setError(e instanceof Error ? e.message : "取得失敗"); }
+    } catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
@@ -28,41 +30,41 @@ export default function BadgesPage() {
     try {
       await api.post("/badges", { name: form.name, description: form.description || null, icon: form.icon || null, criteria: form.criteria || null, points: Number(form.points) });
       setShowForm(false); setForm({ name: "", description: "", icon: "🏆", criteria: "", points: "10" }); load();
-    } catch (e) { setError(e instanceof Error ? e.message : "保存失敗"); }
+    } catch (e) { setError(e instanceof Error ? e.message : t("common.saveError")); }
   };
 
   return (
     <div className="page">
       <div className="page-header">
-        <h2>バッジ・ゲーミフィケーション</h2>
-        {hasPermission("badges.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>バッジ作成</button>}
+        <h2>{t("badges.title")}</h2>
+        {hasPermission("badges.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("badges.newBadge")}</button>}
       </div>
       {error && <div className="error-message">{error}</div>}
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>バッジ作成</h3>
+            <h3>{t("badges.newBadge")}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group"><label>バッジ名 *</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="例: 初成約" /></div>
-              <div className="form-group"><label>アイコン</label><input value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="例: 🏆" /></div>
-              <div className="form-group"><label>説明</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
-              <div className="form-group"><label>獲得条件</label><input value={form.criteria} onChange={e => setForm({ ...form, criteria: e.target.value })} placeholder="例: 初めて案件を成約" /></div>
-              <div className="form-group"><label>ポイント</label><input type="number" min="0" value={form.points} onChange={e => setForm({ ...form, points: e.target.value })} /></div>
+              <div className="form-group"><label>{t("badges.badgeName")} *</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="例: 初成約" /></div>
+              <div className="form-group"><label>{t("badges.icon")}</label><input value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="例: 🏆" /></div>
+              <div className="form-group"><label>{t("common.description")}</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
+              <div className="form-group"><label>{t("badges.criteria")}</label><input value={form.criteria} onChange={e => setForm({ ...form, criteria: e.target.value })} placeholder="例: 初めて案件を成約" /></div>
+              <div className="form-group"><label>{t("badges.points")}</label><input type="number" min="0" value={form.points} onChange={e => setForm({ ...form, points: e.target.value })} /></div>
               <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>キャンセル</button>
-                <button type="submit" className="btn-primary">作成</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{t("common.create")}</button>
               </div>
             </form>
           </div>
         </div>
       )}
-      {loading ? <div className="loading">読み込み中...</div> : (
+      {loading ? <div className="loading">{t("common.loading")}</div> : (
         <>
           {leaderboard.length > 0 && (
             <>
-              <h3 style={{ marginBottom: 12 }}>リーダーボード</h3>
+              <h3 style={{ marginBottom: 12 }}>{t("badges.leaderboard")}</h3>
               <table className="data-table" style={{ marginBottom: 24 }}>
-                <thead><tr><th>順位</th><th>ユーザー</th><th>バッジ数</th><th>ポイント</th></tr></thead>
+                <thead><tr><th>{t("badges.rank")}</th><th>{t("badges.user")}</th><th>{t("badges.badgeCount")}</th><th>{t("badges.points")}</th></tr></thead>
                 <tbody>
                   {leaderboard.map((e, i) => (
                     <tr key={e.user_id}>
@@ -76,7 +78,7 @@ export default function BadgesPage() {
               </table>
             </>
           )}
-          <h3 style={{ marginBottom: 12 }}>バッジ一覧</h3>
+          <h3 style={{ marginBottom: 12 }}>{t("badges.badgeList")}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 16 }}>
             {badges.map(b => (
               <div key={b.id} style={{ background: "var(--bg-surface)", borderRadius: 8, padding: 16, boxShadow: "var(--shadow-sm)", textAlign: "center" }}>
@@ -86,7 +88,7 @@ export default function BadgesPage() {
                 <div style={{ marginTop: 8, fontWeight: 600, color: "var(--accent)" }}>{b.points} pt</div>
               </div>
             ))}
-            {badges.length === 0 && <div style={{ color: "var(--text-muted)" }}>バッジがありません</div>}
+            {badges.length === 0 && <div style={{ color: "var(--text-muted)" }}>{t("badges.noBadges")}</div>}
           </div>
         </>
       )}
