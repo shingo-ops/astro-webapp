@@ -1,4 +1,4 @@
-# ADR-020: Sales Anchor UI の i18n 対応（日本語/英語切り替え）
+# ADR-027: Sales Anchor UI の i18n 対応（日本語/英語切り替え）
 
 | 項目 | 内容 |
 |------|------|

@@ -1,4 +1,4 @@
-# ADR-021: Meta App Review 撮影用テナント分離
+# ADR-028: Meta App Review 撮影用テナント分離
 
 | 項目 | 内容 |
 |------|------|
