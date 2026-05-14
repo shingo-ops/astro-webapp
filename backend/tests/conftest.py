@@ -55,6 +55,9 @@ async def test_engine():
     def rewrite_ilike_for_sqlite(conn, cursor, statement, parameters, context, executemany):
         if "ILIKE" in statement:
             statement = statement.replace(" ILIKE ", " LIKE ").replace("\nILIKE ", "\nLIKE ")
+        # SQLite はスキーマプレフィックスを持たない。public.users → users に書き換える。
+        if "public.users" in statement:
+            statement = statement.replace("public.users", "users")
         return statement, parameters
 
     yield engine
@@ -862,6 +865,7 @@ async def setup_test_db(test_engine):
             )
         """))
         # public.users 相当（SQLiteにはスキーマがないのでusersテーブルで代用）
+        # ADR-027: locale カラム追加 / ADR-033: theme カラム追加
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -869,13 +873,15 @@ async def setup_test_db(test_engine):
                 username VARCHAR(255),
                 email VARCHAR(255),
                 role VARCHAR(50) DEFAULT 'user',
-                is_active BOOLEAN DEFAULT TRUE
+                is_active BOOLEAN DEFAULT TRUE,
+                locale VARCHAR(10) NOT NULL DEFAULT 'ja',
+                theme VARCHAR(10) NOT NULL DEFAULT 'light'
             )
         """))
         # テストユーザー投入
         await conn.execute(text("""
-            INSERT OR IGNORE INTO users (id, tenant_id, username, email, role, is_active)
-            VALUES (999, 999, 'testuser', 'test@example.com', 'admin', TRUE)
+            INSERT OR IGNORE INTO users (id, tenant_id, username, email, role, is_active, locale, theme)
+            VALUES (999, 999, 'testuser', 'test@example.com', 'admin', TRUE, 'ja', 'light')
         """))
     yield
 

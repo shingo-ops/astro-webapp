@@ -126,6 +126,8 @@ class StaffResponse(BaseModel):
     )
     emails: list[str] = Field(default_factory=list)
     ui_preferences: StaffUIPreferences | None = None
+    locale: str = "ja"
+    theme: str = "light"
     created_at: datetime
     updated_at: datetime
 

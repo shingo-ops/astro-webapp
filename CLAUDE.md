@@ -278,6 +278,53 @@ ADR-024 で発覚した Meta 連携の不整合は、`tenant_meta_config` レコ
 > 詳細な背景は `docs/adr/ADR-025_meta_integration_operational_hardening.md` を参照。
 
 ---
+
+## 新規テナント作成時の必須確認事項（ADR-034 で根本修正予定）
+
+### 判明した設計欠陥
+
+新規テナントを作成した際、`public.meta_page_routing`（Webhook ルーティングテーブル）への自動登録が行われない。
+tenant_001〜005 は手動で登録済みだが、tenant_006 以降は手動追加が必要。
+
+原因: 新規テナント作成時に `sync_meta_page_routing` トリガー関数が tenant スキーマに生成されておらず、
+`tenant_NNN.tenant_meta_config` への INSERT が `public.meta_page_routing` に自動反映されない。
+
+### 新規テナント作成後の必須チェックリスト
+
+1. **Channels（Meta連携）接続後、以下を必ず確認すること**
+   - `public.meta_page_routing` にテナントのエントリが追加されているか
+   - 確認 SQL:
+     ```sql
+     SELECT * FROM public.meta_page_routing WHERE tenant_id = <tenant_id>;
+     ```
+   - 追加されていなければ以下の SQL を実行（`config_id` は `tenant_NNN.tenant_meta_config.id` の active レコード）:
+     ```sql
+     INSERT INTO public.meta_page_routing (tenant_id, config_id, schema_name, page_id, instagram_business_account_id, is_active, updated_at)
+     VALUES (<tenant_id>, <config_id>, 'tenant_0NN', '<page_id>', '<ig_account_id>', true, NOW())
+     ON CONFLICT (tenant_id, config_id) DO UPDATE SET
+       schema_name                   = EXCLUDED.schema_name,
+       page_id                       = EXCLUDED.page_id,
+       instagram_business_account_id = EXCLUDED.instagram_business_account_id,
+       is_active                     = EXCLUDED.is_active,
+       updated_at                    = NOW();
+     ```
+
+2. **Webhook の動作確認を必ず実施すること**
+   - テスターアカウントから Messenger DM を送信
+   - Sales Anchor の Inbox でメッセージが受信されるか確認
+   - 返信が相手に届くか確認
+   - Instagram でも同様に確認
+
+3. **根本修正**
+   - ADR-034 で新規テナント作成フロー（admin API + OAuth 接続処理）に自動登録ロジックを追加予定
+   - それまでは上記の手動チェックリストを必ず実施すること
+
+### 実装後は動作確認を必ず実施すること
+
+設計上の欠陥が実装後に発覚するケースが確認された（tenant_006 の webhook ルーティング欠落、2026-05-14）。
+新機能・新テナント・新連携を実装した際は、必ず End-to-End の動作確認を実施してから完了と判断すること。
+
+---
 ## 実装フロー（ADR-012: What/How 役割分担モデル）
 
 > ADR-012 により正式採択。旧 PROPOSAL-001 暫定運用セクションを置き換える。
