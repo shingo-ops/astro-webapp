@@ -49,11 +49,12 @@ _DEFAULT_SUBSCRIBED_FIELDS = (
     "message_deliveries",
     "message_reads",
     "messaging_referrals",
+    "message_reactions",  # Instagram DM リアクションを受け取るために追加（hotfix 2026-05-14）
 )
 
-# Instagram Business Account 側に対して張る webhook field 群（ADR-024）。
-# Page 側 subscribed_apps だけでは Instagram Login for Business 経由の DM が
-# 受信できないため、`/{ig-user-id}/subscribed_apps` にも明示的に登録する。
+# NOTE: `/{ig-user-id}/subscribed_apps` は IG Business Account では使用不可（#100 エラー）。
+# Instagram DM は Page-level subscription（上記 _DEFAULT_SUBSCRIBED_FIELDS）のみで受信できる。
+# 以下の定数は互換性のために残すが、実際には使用しない。
 _DEFAULT_INSTAGRAM_SUBSCRIBED_FIELDS = (
     "messages",
     "messaging_postbacks",
