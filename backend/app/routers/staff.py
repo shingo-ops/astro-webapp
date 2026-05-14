@@ -74,6 +74,16 @@ async def _fetch_locale(db: AsyncSession, primary_email: str) -> str:
     return row["locale"] if row and row["locale"] else "ja"
 
 
+async def _fetch_theme(db: AsyncSession, primary_email: str) -> str:
+    """public.users の theme カラムを取得（ADR-033）。"""
+    result = await db.execute(
+        text("SELECT theme FROM public.users WHERE email = :email LIMIT 1"),
+        {"email": primary_email},
+    )
+    row = result.mappings().first()
+    return row["theme"] if row and row["theme"] else "light"
+
+
 async def _compose(db: AsyncSession, main_row: dict) -> StaffResponse:
     sid = main_row["id"]
     return StaffResponse(
@@ -81,6 +91,7 @@ async def _compose(db: AsyncSession, main_row: dict) -> StaffResponse:
         emails=await _fetch_emails(db, sid),
         ui_preferences=await _fetch_ui_prefs(db, sid),
         locale=await _fetch_locale(db, main_row["primary_email"]),
+        theme=await _fetch_theme(db, main_row["primary_email"]),
     )
 
 
@@ -217,6 +228,30 @@ async def update_my_locale(
     )
     await db.commit()
     return {"locale": locale}
+
+
+@router.patch("/staff/me/theme", status_code=200)
+async def update_my_theme(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    現在ログイン中ユーザの theme を更新する（ADR-033）。
+    payload: { "theme": "light" | "dark" }
+    """
+    theme = payload.get("theme", "light")
+    if theme not in ("light", "dark"):
+        raise HTTPException(status_code=400, detail="theme は 'light' または 'dark' のみ有効です")
+    user_email = getattr(current_user, "email", None)
+    if not user_email:
+        raise HTTPException(status_code=401, detail="認証されていません")
+    await db.execute(
+        text("UPDATE public.users SET theme = :theme WHERE email = :email"),
+        {"theme": theme, "email": user_email},
+    )
+    await db.commit()
+    return {"theme": theme}
 
 
 @router.get("/staff", response_model=list[StaffResponse],

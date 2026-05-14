@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UiPrefsProvider } from "./contexts/UiPrefsContext";
 import { LocaleProvider } from "./contexts/LocaleContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
@@ -51,6 +52,7 @@ function App() {
       <BrowserRouter>
         <UiPrefsProvider>
           <LocaleProvider>
+          <ThemeProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route
@@ -118,6 +120,7 @@ function App() {
               <Route path="/templates" element={<ComingSoonPage title={t("templates.title")} description={t("templates.description")} />} />
             </Route>
           </Routes>
+          </ThemeProvider>
           </LocaleProvider>
         </UiPrefsProvider>
       </BrowserRouter>

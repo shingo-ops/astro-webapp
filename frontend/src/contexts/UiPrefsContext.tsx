@@ -119,31 +119,9 @@ export function UiPrefsProvider({ children }: { children: ReactNode }) {
     fetchPrefs();
   }, [authLoading, fetchPrefs]);
 
-  // dark_mode を <html> ルート要素に反映
-  // <html> に付けるのは、index.css の :root セレクタとの相性が良いため
-  //
-  // PR #166 F2 fix:
-  //   prefs を fetch し終わるまでは force-light / force-dark を付けない。
-  //   これにより、OS prefers-color-scheme=dark のユーザがログイン直後にライト固定される
-  //   regression を防ぐ（@media (prefers-color-scheme: dark) :root:not(.force-light) が
-  //   引き続き有効になる）。
-  //   取得後は dark_mode の boolean に従って force-dark / force-light を排他的に付与。
-  useEffect(() => {
-    const root = document.documentElement;
-    if (!prefsFetched) {
-      // 未取得時は OS 設定に従わせる（クラスを一切付けない）
-      root.classList.remove("force-dark");
-      root.classList.remove("force-light");
-      return;
-    }
-    if (prefs.dark_mode) {
-      root.classList.add("force-dark");
-      root.classList.remove("force-light");
-    } else {
-      root.classList.add("force-light");
-      root.classList.remove("force-dark");
-    }
-  }, [prefs.dark_mode, prefsFetched]);
+  // ADR-033: <html> への force-dark / force-light クラス管理は ThemeContext に委譲。
+  // UiPrefsContext は staff_ui_preferences.dark_mode の値を保持するが、
+  // CSS クラスの適用は行わない（ThemeContext が users.theme に基づいて管理する）。
 
   const setPrefs = useCallback((next: UiPrefs) => {
     setPrefsState(next);

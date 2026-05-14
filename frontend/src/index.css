@@ -58,75 +58,15 @@
   --row-hover: #edf2f7;
 }
 
-/* ダーク変数の定義。下記のいずれかが当たればダーク化する:
-   ① ユーザが明示的に dark_mode=true を選択した（html.force-dark）
-   ② OS の prefers-color-scheme=dark かつ ユーザが明示的にライトを選んでいない（html:not(.force-light)）
+/* ダーク変数の定義（ADR-033）:
+   OS の prefers-color-scheme は無視し、アプリ設定（users.theme）を優先する。
+   ThemeContext が <html> に force-dark クラスを付与することでダーク化する。
 
-   優先順位:
-     html.force-dark   → ダーク強制
-     html.force-light  → ライト強制（OS が dark でも上書き）
-     どちらも無い      → OS の prefers-color-scheme に従う
-
-   ※ :not(.force-light) は下の @media (prefers-color-scheme: dark) 内で
-     auto 適用判定として使うため、ここでは空ルールを置かずコメントだけにする
-     （PR #166 F6: 空 CSS ルール削除）。
+   html.force-dark → ダーク強制
+   クラスなし      → ライト（:root デフォルト）
 */
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.force-light) {
-    /* 背景: slate系ベースのダーク */
-    --bg-primary: #0f172a;
-    --bg-surface: #1e293b;
-    --bg-subtle: #243046;
-    --bg-hover: #334155;
-    --bg-active: #475569;
-
-    /* テキスト */
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-
-    /* ボーダー */
-    --border: #334155;
-    --border-strong: #475569;
-
-    /* アクセント（Meta blue ダーク版） */
-    --accent: #4899f1;
-    --accent-hover: #3a8de8;
-    --link: #4899f1;
-    --link-active-bg: #1e3a5f;
-    --sidebar-bg: #1e293b;
-    --sidebar-border: #334155;
-    --sidebar-item-hover-bg: #1e3a5f;
-    --sidebar-item-active-bg: #1e3a5f;
-    --sidebar-item-active-color: #4899f1;
-    --sidebar-item-active-border: #4899f1;
-
-    /* ナビゲーション */
-    --nav-brand-bg: #0b1c33;
-    --nav-brand-text: #f1f5f9;
-    --nav-brand-accent: #f59e0b;
-    --nav-search-bg: #1e3a5f;
-
-    /* ステータス色（ダーク背景に合わせて彩度を落とす） */
-    --danger: #f87171;
-    --danger-bg: #4c1d1d;
-    --danger-text: #fecaca;
-    --warning-bg: #3d2f0c;
-    --warning-text: #fde68a;
-    --success-bg: #14432b;
-    --success-text: #bbf7d0;
-
-    /* 影 */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-
-    /* テーブル */
-    --row-hover: #2d3b52;
-  }
-}
-
-/* ユーザ明示のダークモード（OS設定に関わらず適用） */
+/* ユーザがダークテーマを選択した場合（OS設定に関わらず適用） */
 :root.force-dark {
   --bg-primary: #0f172a;
   --bg-surface: #1e293b;

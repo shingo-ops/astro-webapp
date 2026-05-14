@@ -11,6 +11,7 @@
  *   2026-04-17: GAS版互換の2段ナビに刷新
  *   2026-05-11: ADR-022 — 左サイドバー + Meta Business Suite 配色に刷新
  *   2026-05-14: ADR-027 — i18n対応（useTranslation + useLocale）
+ *   2026-05-14: ADR-033 — テーマ切り替えボタン追加（useTheme）
  */
 
 import { useState } from "react";
@@ -23,6 +24,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useLocale } from "../contexts/LocaleContext";
+import { useTheme } from "../contexts/ThemeContext";
 import { useUiPrefs } from "../contexts/UiPrefsContext";
 import { usePermissions } from "../hooks/usePermissions";
 import ConfirmModal from "./ConfirmModal";
@@ -94,6 +96,7 @@ function SidebarAccordion({
 export default function Layout() {
   const { t } = useTranslation();
   const { locale, changeLanguage } = useLocale();
+  const { theme, changeTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { hasPermission, hasAny, loading: permsLoading } = usePermissions();
   const { prefs, loading: uiPrefsLoading } = useUiPrefs();
@@ -292,6 +295,13 @@ export default function Layout() {
           </form>
           <div className="topbar-user">
             <span className="topbar-email">{user?.email}</span>
+            <button
+              onClick={() => changeTheme(theme === "light" ? "dark" : "light")}
+              title={theme === "light" ? "ダークモードに切り替え" : "ライトモードに切り替え"}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1rem", color: "var(--text-secondary)" }}
+            >
+              {theme === "light" ? "🌙" : "☀️"}
+            </button>
             <button
               onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
               title={t("language.switchTo")}
