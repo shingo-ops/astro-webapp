@@ -797,13 +797,13 @@
   margin: 0;
 }
 
-/* --- Login --- */
+/* --- Login (ADR-030: アプリ本体デザインと整合) --- */
 .login-page {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg-primary);
 }
 
 .login-card {
@@ -812,7 +812,8 @@
   padding: 40px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
+  border-top: 3px solid var(--accent);
 }
 
 .login-card h1 {
