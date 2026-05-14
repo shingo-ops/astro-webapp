@@ -183,7 +183,9 @@ def test_modal_warns_when_results_capped():
         "rows.length >= PER_PAGE_CAP" in src
         or "rows.length === PER_PAGE_CAP" in src
     ), "rows.length と PER_PAGE_CAP の比較が見つかりません。"
-    # ユーザー向け文言
-    assert "件に達しました" in src or "絞り込んでください" in src, (
-        "100 件キャップ時の警告メッセージが UI に出ていません。"
-    )
+    # ユーザー向け文言（ADR-027 i18n 化後は i18n キーで確認）
+    assert (
+        "件に達しました" in src
+        or "絞り込んでください" in src
+        or "mergeCompany.resultsCapped" in src
+    ), "100 件キャップ時の警告メッセージが UI に出ていません。"
