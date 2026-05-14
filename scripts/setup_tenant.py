@@ -152,31 +152,29 @@ async def _ensure_tenant(engine, tenant_code: str, tenant_name: str) -> tuple[in
 async def _apply_base_schema(engine, tenant_id: int, schema_name: str) -> None:
     """テナントスキーマの基底テーブル・RLS・システムロールを適用する（冪等）。"""
     from app.services.tenant import (
-        _TENANT_TABLES_SQL,
-        _RLS_ENABLE_SQL,
-        _RLS_POLICY_SQL,
+        get_tenant_tables_sql,
+        get_rls_enable_sql,
+        get_rls_policy_sql,
         seed_system_roles,
-        _split_sql_preserving_do_blocks as _svc_split,
+        split_sql_preserving_do_blocks,
     )
 
     logger.info("スキーマ %s にテーブル・RLS・ロールを適用中...", schema_name)
 
     async with engine.begin() as conn:
-        tables_sql = _TENANT_TABLES_SQL.format(
-            schema=schema_name, schema_raw=schema_name, tenant_id=tenant_id
-        )
-        for stmt in _svc_split(tables_sql):
+        tables_sql = get_tenant_tables_sql(schema_name, tenant_id)
+        for stmt in split_sql_preserving_do_blocks(tables_sql):
             stmt = stmt.strip()
             if stmt:
                 await conn.execute(text(stmt))
 
-        enable_sql = _RLS_ENABLE_SQL.format(schema=schema_name)
+        enable_sql = get_rls_enable_sql(schema_name)
         for stmt in enable_sql.strip().split(";"):
             stmt = stmt.strip()
             if stmt:
                 await conn.execute(text(stmt))
 
-        policy_sql = _RLS_POLICY_SQL.format(schema=schema_name, schema_raw=schema_name)
+        policy_sql = get_rls_policy_sql(schema_name)
         await conn.execute(text(policy_sql))
 
         await seed_system_roles(conn, tenant_id, schema_name)
