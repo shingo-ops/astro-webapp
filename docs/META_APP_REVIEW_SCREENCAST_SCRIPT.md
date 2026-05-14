@@ -472,7 +472,23 @@ FPS: 60
 
 ---
 
-## 11. 補足: 撮影で映してはいけないもの（PII / Secret）
+## 11. 撮影禁止事項（ADR-028 関連）
+
+以下の画面は実顧客データを含むため、撮影で絶対に映さないこと:
+
+- Meta Business Suite (`business.facebook.com`)
+- HIGH LIFE JPN Test Page の Facebook 側 Inbox
+- treasureislandjapan の Instagram Direct（PC/モバイル）
+- Facebook の通知エリア / ホームフィード
+- Shingo の Facebook 個人プロフィール
+
+OAuth ダイアログ（permission 承認画面）は映してよいが、その後 Facebook トップに戻らずに必ず Sales Anchor に戻る経路で撮影する。
+
+撮影用に専用 Chrome プロファイルを作成し、Sales Anchor のみログインした状態で撮影することを推奨。
+
+---
+
+## 12. 補足: 撮影で映してはいけないもの（PII / Secret）
 
 - `META_APP_SECRET`、`METADATA_FERNET_KEY` の **生値**
 - Page Access Token の **生値**
