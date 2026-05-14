@@ -105,7 +105,7 @@ jobs:
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
-            docker compose up -d --build
+            docker compose up -d --build --remove-orphans
 
             echo "Step 4: Waiting for services to become healthy..."
             sleep 20
