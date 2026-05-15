@@ -92,8 +92,6 @@ async def run() -> None:
         try:
             async with engine.begin() as conn:
                 for stmt in split_sql(sql):
-                    if stmt.startswith("--"):
-                        continue
                     try:
                         await conn.execute(text(stmt))
                     except Exception as e:
