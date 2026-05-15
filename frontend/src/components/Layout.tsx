@@ -116,7 +116,9 @@ export default function Layout() {
   };
 
   const toggleAccordion = (key: string) => {
-    setOpenAccordion((prev) => (prev === key ? null : key));
+    const next = openAccordion === key ? null : key;
+    setOpenAccordion(next);
+    if (next !== null) setSidebarExpanded(true); // アコーディオンを開く際はサイドバーも展開
   };
 
   const handleSidebarLeave = () => {
