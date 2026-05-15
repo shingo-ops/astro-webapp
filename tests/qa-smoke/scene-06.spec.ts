@@ -15,14 +15,14 @@
 
 import { expect, test } from "@playwright/test";
 import { login } from "./utils/real-backend";
-import { psqlRows } from "./utils/db-assert";
+import { psqlRows, pgQuote } from "./utils/db-assert";
 
 function getStaffRoleName(email: string): string {
   const rows = psqlRows(
     `SELECT r.name
        FROM tenant_006.staff s
        JOIN tenant_006.roles r ON r.id = s.role_id
-      WHERE s.primary_email = '${email}'`,
+      WHERE s.primary_email = ${pgQuote(email)}`,
   );
   if (rows.length === 0) throw new Error(`staff not found: ${email}`);
   return rows[0][0];
@@ -72,11 +72,11 @@ test.describe("Scene 06: Staff & Permissions (real backend)", () => {
       });
       // DB 直 update → 確認 → 元に戻す
       psqlRows(
-        `UPDATE tenant_006.staff SET role_id = (SELECT id FROM tenant_006.roles WHERE tenant_id=6 AND name='リーダー') WHERE primary_email='${target}' RETURNING id`,
+        `UPDATE tenant_006.staff SET role_id = (SELECT id FROM tenant_006.roles WHERE tenant_id=6 AND name='リーダー') WHERE primary_email=${pgQuote(target)} RETURNING id`,
       );
       expect(getStaffRoleName(target)).toBe("リーダー");
       psqlRows(
-        `UPDATE tenant_006.staff SET role_id = (SELECT id FROM tenant_006.roles WHERE tenant_id=6 AND name='${before}') WHERE primary_email='${target}' RETURNING id`,
+        `UPDATE tenant_006.staff SET role_id = (SELECT id FROM tenant_006.roles WHERE tenant_id=6 AND name=${pgQuote(before)}) WHERE primary_email=${pgQuote(target)} RETURNING id`,
       );
       expect(getStaffRoleName(target)).toBe(before);
       return;

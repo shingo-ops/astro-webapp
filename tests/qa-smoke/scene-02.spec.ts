@@ -2,7 +2,7 @@
  * ADR-038 / Scene 02: Dashboard
  *
  * 目的:
- *   - Dashboard で KPI カード (顧客数 / コンバージョン率 / 成約金額) が描画される
+ *   - Dashboard で KPI カード (顧客 / コンバージョン率 / 成約金額) が描画される
  *   - ページ全体で console.error が 0 件 (実 API を叩いて壊れない)
  *
  * 所要: 5 分目安
@@ -19,7 +19,7 @@ test.describe("Scene 02: Dashboard (real backend)", () => {
     await login(page, "admin");
 
     // 主要 KPI 3 種が見える
-    await expect(page.getByText("顧客数")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("顧客", { exact: true })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("コンバージョン率")).toBeVisible();
     await expect(page.getByText("成約金額")).toBeVisible();
 

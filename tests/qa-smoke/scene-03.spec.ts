@@ -31,7 +31,7 @@ test.describe("Scene 03: Customers (real backend)", () => {
     await page.goto("/customers");
 
     // 検索 input (placeholder で識別、frontend が 'search' 系のラベルを使う前提)
-    const search = page.getByPlaceholder(/検索|search|search/i).first();
+    const search = page.getByPlaceholder(/検索|search/i).first();
     await search.fill("QA Company E");
     // debounce 待ち
     await page.waitForTimeout(500);

@@ -48,7 +48,7 @@ test.describe("Scene 07: i18n & Settings (real backend)", () => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 15_000 });
 
-    const nav = page.locator("nav.mainnav");
+    const nav = page.locator("nav.sidebar-nav-items");
     // navigation に「Dashboard」が表示されることを期待 (ja の場合は「ダッシュボード」)
     const hasEn = await nav.getByText(/Dashboard/i).isVisible().catch(() => false);
     expect(hasEn, "en 切替後も英語 navigation が出ていない").toBeTruthy();
@@ -88,7 +88,8 @@ test.describe("Scene 07: i18n & Settings (real backend)", () => {
       const out = execSync(
         // hiragana / katakana を含む行を JSX/TSX の戻り値で雑に拾う
         // 完全 0 を強制せず、ベースライン (200) を超えたら fail
-        `grep -RInE "[\\p{Hiragana}\\p{Katakana}]" --include='*.tsx' --include='*.ts' frontend/src | wc -l`,
+        // POSIX 文字範囲を使い PCRE (-P) 非依存 (BSD/GNU 両対応)
+        `grep -RInE "[ぁ-んァ-ヶー]" --include='*.tsx' --include='*.ts' frontend/src | wc -l`,
         { encoding: "utf-8", shell: "/bin/bash" },
       ).trim();
       count = Number(out);

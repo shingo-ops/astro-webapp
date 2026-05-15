@@ -33,6 +33,15 @@ function psqlUrl(): string {
 }
 
 /**
+ * PostgreSQL 文字列リテラル用の安全な quote。
+ * シングルクォートをエスケープしてバインド代替として使う。
+ * scene-06 等で email / 任意文字列を SQL に埋め込む場合の最低限の防御。
+ */
+export function pgQuote(s: string): string {
+  return `'${s.replace(/'/g, "''")}'`;
+}
+
+/**
  * psql に SQL 1 文を投げて結果を 2 次元配列 (行 × 列) で返す。
  * 失敗時は throw。
  */

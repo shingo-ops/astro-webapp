@@ -38,7 +38,7 @@ test.describe("Scene 08: Data Lifecycle (real backend)", () => {
 
     // === 2. UI で Inbox に新着が反映されるか (admin で確認) ===
     await login(page, "admin");
-    await page.goto("/inbox", { waitUntil: "domcontentloaded" }).catch(() => {/* 別 URL かも */});
+    await page.goto("/lead-chat", { waitUntil: "domcontentloaded" }).catch(() => {/* 別 URL かも */});
 
     // Inbox 画面に到達できない場合は /channels で代替確認
     const sawInbox = await page.getByText(/QA Lifecycle Sender|lifecycle scene/i)
@@ -50,7 +50,7 @@ test.describe("Scene 08: Data Lifecycle (real backend)", () => {
 
     // === 3. KPI 更新: Dashboard でメッセージ数 / 案件数 等が増えていることを確認 ===
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await expect(page.getByText("顧客数")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("顧客", { exact: true })).toBeVisible({ timeout: 20_000 });
 
     // === 4. DB sanity: lifecycle で投入した行が確かに増えている ===
     const total = psqlCount(`SELECT COUNT(*) FROM tenant_006.meta_messages`);

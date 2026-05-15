@@ -22,7 +22,7 @@ test.describe("Scene 01: Auth & Roles (real backend)", () => {
         .toBeVisible({ timeout: 20_000 });
 
       // メインナビは admin/staff/viewer 全員に出る
-      const nav = page.locator("nav.mainnav");
+      const nav = page.locator("nav.sidebar-nav-items");
       await expect(nav).toBeVisible();
       await expect(nav.getByRole("link", { name: /ダッシュボード|Dashboard/i })).toBeVisible();
     });
@@ -30,7 +30,7 @@ test.describe("Scene 01: Auth & Roles (real backend)", () => {
 
   test("viewer は管理 (admin) メニューが表示されない", async ({ page }) => {
     await login(page, "viewer");
-    const nav = page.locator("nav.mainnav");
+    const nav = page.locator("nav.sidebar-nav-items");
     // viewer ロール = '管理' / 'システム管理' トリガが出ない想定
     // toBeHidden ではなく count==0 で確認 (locator が見つからなくても通過)
     const adminTrigger = nav.getByRole("button", { name: /管理|Admin/i });
