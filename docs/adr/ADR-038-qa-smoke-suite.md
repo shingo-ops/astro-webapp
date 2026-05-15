@@ -38,9 +38,11 @@ seed 内容:
 
 ### L3: 8 smoke scenarios (実 VPS backend 向け)
 
-`tests/qa-smoke/scene-{01..08}.spec.ts` を新規作成。**実 VPS backend (`https://api.salesanchor.jp`) を直接叩く**（既存 `frontend/tests-e2e/scene1-8.spec.ts` は `/api/v1/*` を mock 化していたので、実バグを検出できない）。
+`tests/qa-smoke/scene-{01..08}.spec.ts` を新規作成。**実 VPS backend (`https://api.salesanchor.jp`) を直接叩く**（既存 `frontend/tests-e2e/scene1-dashboard.spec.ts` 〜 `scene8-data-deletion.spec.ts` は `/api/v1/*` を mock 化していたので、実バグを検出できない）。
 
-既存 mock e2e は削除せず並存させ、`scene-N-mock.spec.ts` / `scene-N-live.spec.ts` で命名分離（mock = 撮影資産 + 高速 CI 用、live = 実バグ検出）。
+既存 mock e2e は **Meta App Review 撮影シナリオ** に特化した命名（scene1-dashboard / scene2-connect-fb-page / scene3-receive-messenger / scene4-reply-messenger / scene5-connect-instagram / scene6-instagram-dm / scene7-human-agent-tag / scene8-data-deletion）で、本 ADR の **領域横断機能 smoke** とは内容が完全に異なる。両者は重複ではなく **目的別の別資産** として並存:
+- 既存 `frontend/tests-e2e/` = Meta 撮影シナリオ用 mock e2e（撮影資産 + 高速 CI 用、削除しない・リネームしない）
+- 新規 `tests/qa-smoke/` = 領域横断機能 smoke（実 VPS backend、毎スプリント mandatory）
 
 | # | Scenario | 目的 | 所要 |
 |---|----------|------|------|
@@ -61,7 +63,7 @@ seed 内容:
 
 **Sprint Evaluator は ACS で指定された機能だけ検証する設計** で、ACS 範囲外の領域（隣接機能、UI 全般）は素通りする。AC が「メッセージング機能の改善」だった場合、Customers / Channels / Orders は触らない。
 
-加えて、既存 `tests-e2e/scene1-8.spec.ts` は `/api/v1/*` を mock 化していて、**実 backend を叩いていなかった**。これでは「PO が 5 分触っただけで見つかる初歩バグ」を検出できない。
+加えて、既存 `frontend/tests-e2e/scene1-dashboard.spec.ts` 〜 `scene8-data-deletion.spec.ts` は Meta App Review 撮影シナリオに特化した mock e2e で、`/api/v1/*` を mock 化しており **実 backend を叩いていなかった**。これでは「PO が 5 分触っただけで見つかる初歩バグ」を検出できない。
 
 本 ADR は **「ACS と無関係に毎スプリント走る、実 backend 向けの UI smoke suite」** を導入し、Evaluator の練度に頼らず機械的にこの種のバグを止める仕組みを作る。ADR-034 (migration 自動化) / ADR-036 (schema 整合性) と組み合わせて、ローンチ前に必要な品質保証 floor を完成させる。
 
@@ -78,8 +80,7 @@ seed 内容:
   - `tests/qa-smoke/utils/db-assert.ts`
   - `.github/workflows/qa-smoke.yml`（pull_request + weekly cron + workflow_dispatch、self-hosted runner で実行）
   - `docs/runbooks/qa-smoke-operations.md`
-- 既存 mock e2e のリネーム:
-  - `frontend/tests-e2e/scene{1..8}.spec.ts` → `scene-N-mock.spec.ts`
+既存ファイルへの変更はなし（既存 mock e2e はリネームせず、Meta 撮影シナリオ資産として保持）。
 
 ## Scope (OUT — 明示除外)
 
@@ -107,6 +108,7 @@ seed 内容:
 - 本セッション設計プラン: ひとし side local の `~/.claude/plans/generic-skipping-fox.md`
 - Evaluator/Generator agent 定義: `~/.claude/agents/{evaluator,generator}.md` Step 3.4 + 0.9/0.10 を本セッションで更新済
 - プロジェクト共通真実: `astro-webapp/CLAUDE.md` §QA smoke suite + Fresh tenant onboarding
-- 過去 PR: #363（ADR-034 merged）/ #372（ADR-036 open）/ 2026-05-15 朝の手動修正
-- 既存 setup スクリプト: `backend/scripts/setup_tenant.py` / `setup_review_tenant.py`（ADR-036 で完全版に置き換え予定）
-- 既存 mock e2e: `frontend/tests-e2e/scene{1..8}.spec.ts`
+- 過去 PR: #363（ADR-034 merged）/ #372（ADR-036 merged 2026-05-15 06:39 UTC、commit `56ac477`）/ 2026-05-15 朝の手動修正
+- 既存 setup スクリプト: `scripts/setup_tenant.py` / `scripts/setup_review_tenant.py`（ADR-036 で完全版に置き換え済）
+- 既存 mock e2e: `frontend/tests-e2e/scene1-dashboard.spec.ts` 〜 `scene8-data-deletion.spec.ts`（Meta App Review 撮影シナリオ）
+- ADR-036 follow-up Issue: #375（schema-check.yml が後発 migration の catch-up 漏れを検出できない件）
