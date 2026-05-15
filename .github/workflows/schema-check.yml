@@ -1,0 +1,191 @@
+name: Tenant Schema Integrity Check
+
+# ADR-036 Level 3: テナントスキーマ整合性チェック
+#
+# トリガー:
+#   - PR / push で backend / migrations / scripts 配下が変更された場合
+#
+# 検証内容:
+#   1. PostgreSQL を起動し、最小限の公開スキーマを作成
+#   2. setup_tenant.py で 4 つのテストテナントを作成（tenant_004 が基準スキーマになる）
+#   3. sync_tenant_schema.py --dry-run を実行
+#   4. 差分があれば PR をブロック（終了コード 1）
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'migrations/**'
+      - 'scripts/**'
+      - '.github/workflows/schema-check.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'migrations/**'
+      - 'scripts/**'
+      - '.github/workflows/schema-check.yml'
+
+jobs:
+  schema-check:
+    name: テナントスキーマ整合性チェック
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: jarvis
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: jarvis_schema_check_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jarvis -d jarvis_schema_check_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://jarvis:testpass@localhost:5432/jarvis_schema_check_db
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate Fernet key
+        id: fernet
+        run: |
+          KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for PostgreSQL
+        env:
+          PGPASSWORD: testpass
+        run: |
+          for i in $(seq 1 10); do
+            if pg_isready -h localhost -U jarvis -d jarvis_schema_check_db; then
+              echo "PostgreSQL ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "PostgreSQL did not become ready in time"
+          exit 1
+
+      # setup_tenant.py が必要とする最小限の公開スキーマを作成する。
+      # public.tenants, public.users, public.permissions の 3 テーブルがあれば
+      # setup_tenant.py が完走できる。
+      - name: Create minimal public schema
+        env:
+          PGPASSWORD: testpass
+        run: |
+          psql -h localhost -U jarvis -d jarvis_schema_check_db -v ON_ERROR_STOP=1 <<'SQL'
+          -- public.tenants（setup_tenant.py が INSERT / SELECT に使用）
+          CREATE TABLE IF NOT EXISTS public.tenants (
+              id          SERIAL PRIMARY KEY,
+              tenant_name VARCHAR(255) NOT NULL UNIQUE,
+              tenant_code VARCHAR(50)  NOT NULL UNIQUE,
+              is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+              settings    JSONB                 DEFAULT '{}',
+              created_at  TIMESTAMPTZ           DEFAULT NOW(),
+              updated_at  TIMESTAMPTZ           DEFAULT NOW()
+          );
+
+          -- public.users（RLS ポリシーが参照）
+          CREATE TABLE IF NOT EXISTS public.users (
+              id            SERIAL PRIMARY KEY,
+              tenant_id     INTEGER      NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+              username      VARCHAR(255) NOT NULL,
+              email         VARCHAR(255) NOT NULL UNIQUE,
+              password_hash VARCHAR(255) NOT NULL DEFAULT '',
+              full_name     VARCHAR(255),
+              role          VARCHAR(50)           DEFAULT 'user',
+              is_active     BOOLEAN               DEFAULT TRUE,
+              locale        VARCHAR(10)  NOT NULL DEFAULT 'ja',
+              theme         VARCHAR(10)  NOT NULL DEFAULT 'light',
+              created_at    TIMESTAMPTZ           DEFAULT NOW(),
+              updated_at    TIMESTAMPTZ           DEFAULT NOW(),
+              last_login    TIMESTAMPTZ
+          );
+
+          -- public.permissions（seed_system_roles が参照）
+          CREATE TABLE IF NOT EXISTS public.permissions (
+              id          SERIAL PRIMARY KEY,
+              key         VARCHAR(100) NOT NULL UNIQUE,
+              resource    VARCHAR(50)  NOT NULL,
+              action      VARCHAR(50)  NOT NULL,
+              description VARCHAR(255) NOT NULL,
+              category    VARCHAR(50)  NOT NULL
+          );
+          SQL
+
+      # public.permissions に最低限のデータを seed する（migration 042 の依存）
+      - name: Seed permissions master
+        env:
+          PGPASSWORD: testpass
+        run: |
+          psql -h localhost -U jarvis -d jarvis_schema_check_db -v ON_ERROR_STOP=1 \
+            < migrations/002_add_permissions_master.sql || true
+          psql -h localhost -U jarvis -d jarvis_schema_check_db -v ON_ERROR_STOP=1 \
+            < migrations/004_add_phase2_permissions.sql || true
+          psql -h localhost -U jarvis -d jarvis_schema_check_db -v ON_ERROR_STOP=1 \
+            < migrations/006_add_phase3_permissions.sql || true
+          psql -h localhost -U jarvis -d jarvis_schema_check_db -v ON_ERROR_STOP=1 \
+            < migrations/008_add_phase4_permissions.sql || true
+          psql -h localhost -U jarvis -d jarvis_schema_check_db -v ON_ERROR_STOP=1 \
+            < migrations/018_extend_permissions_with_menu_grain.sql || true
+          psql -h localhost -U jarvis -d jarvis_schema_check_db -v ON_ERROR_STOP=1 \
+            < migrations/024_add_staff_bots_permissions.sql || true
+
+      # 4 つのテストテナントを作成する。
+      # ID 4 が tenant_004 = sync_tenant_schema.py の基準スキーマになる。
+      - name: Create test tenants (1-4)
+        env:
+          METADATA_FERNET_KEY: ${{ steps.fernet.outputs.key }}
+          META_VERIFY_TOKEN: ci-verify-token
+          META_APP_SECRET: ci-app-secret
+          META_APP_ID: ci-app-id
+          META_OAUTH_REDIRECT_URI: https://test.example.com/callback
+          REDIS_URL: ""
+          ENVIRONMENT: test
+        run: |
+          cd backend
+          for i in 1 2 3 4; do
+            echo "=== Creating test-tenant-$i ==="
+            DATABASE_URL="${{ env.DATABASE_URL }}" \
+            TENANT_CODE="test-tenant-$i" \
+            TENANT_NAME="Test Tenant $i" \
+            python ../scripts/setup_tenant.py
+          done
+
+      # 基準スキーマ（tenant_004）と他テナントを比較する。
+      # 差分がなければ終了コード 0、あれば 1 でジョブが失敗する。
+      - name: Run schema diff check (dry-run)
+        env:
+          METADATA_FERNET_KEY: ${{ steps.fernet.outputs.key }}
+          META_VERIFY_TOKEN: ci-verify-token
+          META_APP_SECRET: ci-app-secret
+          META_APP_ID: ci-app-id
+          META_OAUTH_REDIRECT_URI: https://test.example.com/callback
+          REDIS_URL: ""
+          ENVIRONMENT: test
+        run: |
+          cd backend
+          DATABASE_URL="${{ env.DATABASE_URL }}" \
+          python ../scripts/db/sync_tenant_schema.py --dry-run

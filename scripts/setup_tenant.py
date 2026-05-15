@@ -5,6 +5,7 @@
   1. public.tenants にテナントレコードを作成
   2. tenant_NNN スキーマを作成し、テーブル・RLS・システムロールを適用
   3. 過去の全 migration を catch-up 適用（新旧テナント間のスキーマ差分をゼロにする）
+  4. tenant_004 との整合性チェック（ADR-036 Level 2）
 
 使用方法:
   docker compose exec \
@@ -31,6 +32,7 @@
 
 変更履歴:
   2026-05-15: ADR-034 初版作成
+  2026-05-15: ADR-036 Level 2: _verify_schema_integrity 追加
 """
 from __future__ import annotations
 
@@ -259,6 +261,129 @@ async def _apply_catchup_migrations(engine, tenant_id: int, schema_name: str) ->
 
 
 # ---------------------------------------------------------------------------
+# Step 4: スキーマ整合性検証（ADR-036 Level 2）
+# ---------------------------------------------------------------------------
+
+async def _verify_schema_integrity(engine, schema_name: str) -> None:
+    """新規テナントのスキーマを tenant_004 と比較して整合性を確認する（非ブロッキング）。
+
+    tenant_004 が存在しない場合はスキップ。
+    差分があっても例外は送出せず、警告ログのみ出力する（情報提供目的）。
+    """
+    logger.info("=== スキーマ整合性チェック (%s vs tenant_004) ===", schema_name)
+
+    if schema_name == "tenant_004":
+        logger.info("  基準スキーマ自身のためスキップ")
+        return
+
+    try:
+        async with engine.connect() as conn:
+            # tenant_004 の存在確認
+            row = await conn.execute(
+                text("SELECT 1 FROM pg_namespace WHERE nspname = 'tenant_004'")
+            )
+            if not row.first():
+                logger.info("  tenant_004 が存在しないためスキップ")
+                return
+
+            # カラム数比較
+            ref_col_row = await conn.execute(
+                text("""
+                    SELECT COUNT(*) FROM information_schema.columns
+                    WHERE table_schema = 'tenant_004'
+                """)
+            )
+            ref_col_count = int(ref_col_row.scalar())
+
+            tgt_col_row = await conn.execute(
+                text("""
+                    SELECT COUNT(*) FROM information_schema.columns
+                    WHERE table_schema = :schema
+                """),
+                {"schema": schema_name},
+            )
+            tgt_col_count = int(tgt_col_row.scalar())
+
+            # テーブル数比較
+            ref_tbl_row = await conn.execute(
+                text("""
+                    SELECT COUNT(DISTINCT table_name)
+                    FROM information_schema.columns
+                    WHERE table_schema = 'tenant_004'
+                """)
+            )
+            ref_tbl_count = int(ref_tbl_row.scalar())
+
+            tgt_tbl_row = await conn.execute(
+                text("""
+                    SELECT COUNT(DISTINCT table_name)
+                    FROM information_schema.columns
+                    WHERE table_schema = :schema
+                """),
+                {"schema": schema_name},
+            )
+            tgt_tbl_count = int(tgt_tbl_row.scalar())
+
+            # RLS 有効テーブル数比較
+            ref_rls_row = await conn.execute(
+                text("""
+                    SELECT COUNT(*) FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = 'tenant_004'
+                      AND c.relkind = 'r'
+                      AND c.relrowsecurity = TRUE
+                """)
+            )
+            ref_rls_count = int(ref_rls_row.scalar())
+
+            tgt_rls_row = await conn.execute(
+                text("""
+                    SELECT COUNT(*) FROM pg_class c
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = :schema
+                      AND c.relkind = 'r'
+                      AND c.relrowsecurity = TRUE
+                """),
+                {"schema": schema_name},
+            )
+            tgt_rls_count = int(tgt_rls_row.scalar())
+
+        logger.info(
+            "  テーブル数: ref(tenant_004)=%d, new=%d",
+            ref_tbl_count, tgt_tbl_count,
+        )
+        logger.info(
+            "  カラム数:   ref(tenant_004)=%d, new=%d",
+            ref_col_count, tgt_col_count,
+        )
+        logger.info(
+            "  RLS有効:    ref(tenant_004)=%d, new=%d",
+            ref_rls_count, tgt_rls_count,
+        )
+
+        issues: list[str] = []
+        if tgt_tbl_count < ref_tbl_count:
+            issues.append(f"テーブル不足 {ref_tbl_count - tgt_tbl_count} 件")
+        if tgt_col_count < ref_col_count:
+            issues.append(f"カラム不足 {ref_col_count - tgt_col_count} 件")
+        if tgt_rls_count < ref_rls_count:
+            issues.append(f"RLS未設定テーブル {ref_rls_count - tgt_rls_count} 件")
+
+        if issues:
+            logger.warning("  ⚠ 整合性問題を検出: %s", " / ".join(issues))
+            logger.warning(
+                "  → scripts/db/sync_tenant_schema.py を実行して差分を確認・適用してください。"
+            )
+        else:
+            logger.info("  ✓ スキーマ整合性 OK")
+
+    except Exception as e:
+        logger.warning("  スキーマ整合性チェック中に例外（スキップ）: %s", e)
+
+    logger.info("=== スキーマ整合性チェック完了 ===")
+
+
+# ---------------------------------------------------------------------------
 # メイン
 # ---------------------------------------------------------------------------
 
@@ -301,6 +426,9 @@ async def main() -> None:
 
         # 3. catch-up migration（冪等）
         await _apply_catchup_migrations(engine, tenant_id, schema_name)
+
+        # 4. スキーマ整合性検証（ADR-036 Level 2）
+        await _verify_schema_integrity(engine, schema_name)
 
         logger.info("=== ADR-034: テナント作成完了 ===")
         logger.info("  tenant_id   : %d", tenant_id)
