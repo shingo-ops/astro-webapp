@@ -1,0 +1,152 @@
+name: QA Smoke Suite (ADR-038)
+
+# ADR-038 / QA Smoke Suite
+#
+# 目的:
+#   - 実 VPS backend (https://api.salesanchor.jp) を対象に、ACS 範囲外の
+#     領域横断機能を毎スプリント機械的に検証する
+#   - mock e2e (frontend/tests-e2e/) とは別資産 (撮影資産 + 高速 CI とは分離)
+#
+# Trigger:
+#   - workflow_dispatch     手動 (Evaluator / Generator が任意に走らせる)
+#   - schedule (weekly)     毎週月曜 03:00 JST (18:00 UTC Sunday)
+#   - pull_request          tests/qa-smoke/ または scripts/qa/ が変更されたとき
+#                           (毎 PR 走らせると prod 負荷になるため変更時のみ)
+#
+# Runner:
+#   - **self-hosted** (VPS or 同等ネットワーク経路内のホスト)
+#     reason: 本番 DB + 本番 API + 本番 Firebase に直アクセスするため
+#             github-hosted runner からは firewall で塞がれる前提
+#
+# Required Secrets (Settings → Secrets and variables → Actions):
+#   DATABASE_URL                postgresql://... (本番 readwrite 想定。tenant_006 限定で使用)
+#   QA_ADMIN_EMAIL              Firebase real user (tenant_006 = tenant-review)
+#   QA_ADMIN_PASSWORD
+#   QA_STAFF_EMAIL
+#   QA_STAFF_PASSWORD
+#   QA_VIEWER_EMAIL
+#   QA_VIEWER_PASSWORD
+#   QA_ADMIN_FIREBASE_UID       seed-tenant.sql に渡す
+#   QA_STAFF_FIREBASE_UID
+#   QA_VIEWER_FIREBASE_UID
+#   QA_ADMIN_PASSWORD_HASH      bcrypt 済 (fallback)
+#   QA_STAFF_PASSWORD_HASH
+#   QA_VIEWER_PASSWORD_HASH
+#   QA_DISCORD_WEBHOOK_URL      (optional) reset 開始/完了 通知用
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 毎週月曜 03:00 JST (= 18:00 UTC Sun)
+    - cron: '0 18 * * 0'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'tests/qa-smoke/**'
+      - 'scripts/qa/**'
+      - '.github/workflows/qa-smoke.yml'
+
+concurrency:
+  # 同時実行禁止 (tenant_006 を共有するため race condition を防ぐ)
+  group: qa-smoke-tenant-006
+  cancel-in-progress: false
+
+jobs:
+  reset-and-smoke:
+    name: Reset tenant_006 + run smoke (real backend)
+    runs-on: [self-hosted, salesanchor-vps]
+    timeout-minutes: 90
+
+    env:
+      QA_SMOKE_BASE_URL: https://app.salesanchor.jp
+      QA_SMOKE_API_URL:  https://api.salesanchor.jp
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- Node + Playwright deps (frontend が @playwright/test を持っている) ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies (for @playwright/test)
+        working-directory: frontend
+        run: npm ci
+
+      - name: Get Playwright version
+        id: pw
+        working-directory: frontend
+        run: |
+          PW_VERSION=$(node -p "require('@playwright/test/package.json').version")
+          echo "version=$PW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      # --- tenant_006 reset (seed 投入) ---
+      - name: Reset tenant_006 (seed known state)
+        env:
+          QA_ADMIN_FIREBASE_UID:  ${{ secrets.QA_ADMIN_FIREBASE_UID }}
+          QA_STAFF_FIREBASE_UID:  ${{ secrets.QA_STAFF_FIREBASE_UID }}
+          QA_VIEWER_FIREBASE_UID: ${{ secrets.QA_VIEWER_FIREBASE_UID }}
+          QA_ADMIN_PASSWORD_HASH:  ${{ secrets.QA_ADMIN_PASSWORD_HASH }}
+          QA_STAFF_PASSWORD_HASH:  ${{ secrets.QA_STAFF_PASSWORD_HASH }}
+          QA_VIEWER_PASSWORD_HASH: ${{ secrets.QA_VIEWER_PASSWORD_HASH }}
+          QA_DISCORD_WEBHOOK_URL:  ${{ secrets.QA_DISCORD_WEBHOOK_URL }}
+        run: bash scripts/qa/reset-tenant.sh
+
+      # --- 8 scene 実行 ---
+      - name: Run QA smoke (8 scenes against real backend)
+        env:
+          QA_ADMIN_EMAIL:    ${{ secrets.QA_ADMIN_EMAIL }}
+          QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+          QA_STAFF_EMAIL:    ${{ secrets.QA_STAFF_EMAIL }}
+          QA_STAFF_PASSWORD: ${{ secrets.QA_STAFF_PASSWORD }}
+          QA_VIEWER_EMAIL:   ${{ secrets.QA_VIEWER_EMAIL }}
+          QA_VIEWER_PASSWORD: ${{ secrets.QA_VIEWER_PASSWORD }}
+          CI: 'true'
+        run: |
+          # frontend 配下に @playwright/test がインストール済。リポジトリ直下から
+          # --config を指定して tests/qa-smoke/ の config を読み込ませる
+          ./frontend/node_modules/.bin/playwright test \
+            --config tests/qa-smoke/playwright.config.ts
+
+      # --- Cleanup: qa-/QA- 接頭辞データを掃除 (best-effort) ---
+      - name: Cleanup smoke-prefixed data
+        if: always()
+        run: bash scripts/qa/cleanup-smoke-data.sh || echo "cleanup failed (best-effort)"
+
+      # --- Artifacts ---
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-smoke-playwright-report
+          path: playwright-report
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload test-results (trace / video / screenshot)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-smoke-test-results
+          path: test-results
+          retention-days: 14
+          if-no-files-found: ignore
