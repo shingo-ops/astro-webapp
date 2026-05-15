@@ -1,0 +1,165 @@
+name: External State Snapshot (ADR-035)
+
+# ADR-035: External State Verification — 週次 cron + 手動 workflow_dispatch
+#
+# 目的:
+#   6 外部システム（Meta / Firebase / GitHub / Cloudflare / Discord / GCP）の
+#   状態を毎週スナップショット保存し、drift を検出して Discord #owner-ping に通知する。
+#
+# Trigger:
+#   - schedule: 毎週日曜 03:00 JST (= 18:00 UTC Saturday)
+#   - workflow_dispatch: 手動実行（Generator / Evaluator が任意に走らせる）
+#
+# Runner:
+#   - self-hosted (ADR-029: Hikky-dev-Mac / Shingo-Mac-Temp 2 台体制)
+#     理由: 本番環境と同一ネットワーク経路 + GOOGLE_APPLICATION_CREDENTIALS ファイルアクセス
+#
+# Business constraints (ADR-035):
+#   - VPS 2GB 配慮: 6 system を直列実行 (concurrency: 1)
+#   - 各 snapshot 完了後に 5s sleep を挿入
+#   - secret scrub: snapshot json に raw secret を絶対に書かない
+#
+# Required Secrets (Settings → Secrets and variables → Actions):
+#   META_APP_ID
+#   META_APP_SECRET
+#   META_PAGE_ID
+#   META_PAGE_TOKEN
+#   META_GRAPH_API_VERSION         (optional, default v19.0)
+#   FIREBASE_API_KEY
+#   GCP_PROJECT_ID                 (optional, default: sales-ops-with-claude)
+#   GOOGLE_APPLICATION_CREDENTIALS_JSON  (JSON の中身を secret に格納)
+#   PIPELINE_PAT
+#   CLOUDFLARE_API_TOKEN
+#   DISCORD_WEBHOOK_PR
+#   DISCORD_WEBHOOK_PLAN_REVIEW
+#   DISCORD_WEBHOOK_OWNER_PING
+
+on:
+  schedule:
+    # 毎週日曜 03:00 JST = 土曜 18:00 UTC
+    - cron: '0 18 * * 6'
+  workflow_dispatch: {}
+
+concurrency:
+  group: external-state-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    name: Snapshot 6 external systems
+    runs-on: [self-hosted, salesanchor-vps]
+    timeout-minutes: 30
+
+    env:
+      SNAPSHOT_DIR: external-state-snapshots
+      SPRINT_TAG: weekly
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # GOOGLE_APPLICATION_CREDENTIALS を JSON secret からファイルに書き出す
+      # secret は env 経由で inject、printf で安全に書き出す (template injection 防止)
+      - name: Write GCP credentials file
+        env:
+          GCP_CREDS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+        run: |
+          printf '%s' "$GCP_CREDS_JSON" > /tmp/gcp-credentials.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json" >> "$GITHUB_ENV"
+
+      # --- 1. Meta snapshot ---
+      - name: Snapshot Meta
+        env:
+          META_APP_ID: ${{ secrets.META_APP_ID }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}
+          META_GRAPH_API_VERSION: ${{ secrets.META_GRAPH_API_VERSION }}
+        run: |
+          bash scripts/snapshot/meta.sh
+          sleep 5
+
+      # --- 2. Firebase snapshot ---
+      - name: Snapshot Firebase
+        env:
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          bash scripts/snapshot/firebase.sh
+          sleep 5
+
+      # --- 3. GitHub snapshot ---
+      - name: Snapshot GitHub
+        env:
+          PIPELINE_PAT: ${{ secrets.PIPELINE_PAT }}
+        run: |
+          bash scripts/snapshot/github.sh
+          sleep 5
+
+      # --- 4. Cloudflare snapshot ---
+      - name: Snapshot Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          bash scripts/snapshot/cloudflare.sh
+          sleep 5
+
+      # --- 5. Discord snapshot ---
+      - name: Snapshot Discord
+        env:
+          DISCORD_WEBHOOK_PR: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          DISCORD_WEBHOOK_PLAN_REVIEW: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_OWNER_PING }}
+        run: |
+          bash scripts/snapshot/discord.sh
+          sleep 5
+
+      # --- 6. GCP snapshot ---
+      - name: Snapshot GCP
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          bash scripts/snapshot/gcp.sh
+
+      # --- Drift 検出 → Discord #owner-ping 通知 ---
+      - name: Check for drift and notify
+        if: always()
+        env:
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_OWNER_PING }}
+        run: |
+          DATE_TAG="$(date +%Y-%m-%d)"
+          OUT_DIR="${SNAPSHOT_DIR}/${DATE_TAG}-${SPRINT_TAG}"
+
+          # .diff ファイルが存在すれば drift あり
+          DRIFT_FILES=$(find "$OUT_DIR" -name "*.diff" 2>/dev/null || true)
+
+          if [[ -n "$DRIFT_FILES" ]]; then
+            DRIFT_SUMMARY="## External system drift detected\n\n"
+            DRIFT_SUMMARY+="Snapshot date: ${DATE_TAG}\n\n"
+            while IFS= read -r f; do
+              SYSTEM=$(basename "$f" | sed 's/\.diff//')
+              DRIFT_SUMMARY+="- **DRIFT**: ${SYSTEM}\n"
+            done <<< "$DRIFT_FILES"
+            DRIFT_SUMMARY+="\n詳細は \`${OUT_DIR}/\` の .diff ファイルを確認してください。\n"
+            DRIFT_SUMMARY+="drift を確認した上で \`docs/external-state-contract.yml\` を更新してください（自動更新禁止 — ADR-035）。"
+
+            bash scripts/notify/discord-owner-ping.sh "$(echo -e "$DRIFT_SUMMARY")" || \
+              echo "WARN: Discord notify failed (owner ping)" >&2
+          else
+            echo "No drift detected — all systems nominal"
+          fi
+
+      # --- Snapshot artifacts を GitHub Actions にアップロード（90 日保持） ---
+      - name: Upload snapshot artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-state-snapshots-${{ github.run_id }}
+          path: external-state-snapshots/
+          retention-days: 90
+          if-no-files-found: warn
+
+      # --- credentials ファイルを削除（セキュリティ） ---
+      - name: Cleanup credentials file
+        if: always()
+        run: rm -f /tmp/gcp-credentials.json

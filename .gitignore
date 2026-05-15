@@ -84,3 +84,7 @@ frontend/playwright/.cache/
 
 # しんごさんローカル専用（commit 禁止）
 docs/LP_BASELAYOUT_TAILWIND_SPEC.md
+
+# ADR-035: External state snapshots — private サブディレクトリは commit 対象外
+# （snapshot directory 自体は commit 対象、private/ 配下に意図せず secret を書いた場合の最後の砦）
+external-state-snapshots/*/private/
