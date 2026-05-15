@@ -33,6 +33,8 @@ firebase-credentials.json
 postgres_data/
 *.sql
 !migrations/*.sql
+# ADR-038: scripts/qa/seed-tenant.sql は QA Smoke Suite に必須のため tracked
+!scripts/qa/*.sql
 
 # SSL証明書
 certbot/
