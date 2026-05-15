@@ -22,7 +22,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -45,6 +44,34 @@ def _make_engine():
     return create_async_engine(url, echo=False)
 
 
+def split_sql(sql: str) -> list[str]:
+    """Split SQL into individual statements, respecting dollar-quoted blocks ($$...$$)."""
+    statements: list[str] = []
+    buf: list[str] = []
+    in_dollar_quote = False
+    i = 0
+    while i < len(sql):
+        two = sql[i : i + 2]
+        if two == "$$":
+            in_dollar_quote = not in_dollar_quote
+            buf.append("$$")
+            i += 2
+        elif sql[i] == ";" and not in_dollar_quote:
+            stmt = "".join(buf).strip()
+            if stmt:
+                statements.append(stmt)
+            buf = []
+            i += 1
+        else:
+            buf.append(sql[i])
+            i += 1
+    # trailing statement without semicolon
+    stmt = "".join(buf).strip()
+    if stmt:
+        statements.append(stmt)
+    return statements
+
+
 async def run() -> None:
     engine = _make_engine()
     tmpl = MIGRATION_SQL.read_text()
@@ -64,9 +91,8 @@ async def run() -> None:
         )
         try:
             async with engine.begin() as conn:
-                for stmt in re.split(r";(?!\s*\$)", sql):
-                    stmt = stmt.strip()
-                    if not stmt:
+                for stmt in split_sql(sql):
+                    if stmt.startswith("--"):
                         continue
                     try:
                         await conn.execute(text(stmt))
