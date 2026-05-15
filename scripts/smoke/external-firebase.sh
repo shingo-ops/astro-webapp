@@ -48,7 +48,11 @@ PROJECT_ID="${GCP_PROJECT_ID:-sales-ops-with-claude}"
 case "$MODE" in
   --dry-run)
     log "MODE: dry-run"
-    log "FIREBASE_API_KEY=(masked, length=${#FIREBASE_API_KEY:-0})"
+    if [[ -n "${FIREBASE_API_KEY:-}" ]]; then
+        log "FIREBASE_API_KEY=(masked, length=${#FIREBASE_API_KEY})"
+    else
+        log "FIREBASE_API_KEY=(not set)"
+    fi
     log "FIREBASE_AUTH_DOMAIN=${AUTH_DOMAIN}"
     log "GCP_PROJECT_ID=${PROJECT_ID}"
     log "dry-run: no API calls made"

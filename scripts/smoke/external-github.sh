@@ -56,7 +56,11 @@ gh_api() {
 case "$MODE" in
   --dry-run)
     log "MODE: dry-run"
-    log "PIPELINE_PAT=(masked, length=${#PIPELINE_PAT:-0})"
+    if [[ -n "${PIPELINE_PAT:-}" ]]; then
+        log "PIPELINE_PAT=(masked, length=${#PIPELINE_PAT})"
+    else
+        log "PIPELINE_PAT=(not set)"
+    fi
     log "GITHUB_REPO=${REPO}"
     log "dry-run: no API calls made"
     echo "PASS: dry-run complete"
@@ -66,7 +70,11 @@ case "$MODE" in
     # Phase 0: GitHub sandbox 環境は未整備のため dry-run 相当で動作 (Production を叩かない)
     echo "WARN: sandbox 環境は未整備のため dry-run 動作（ADR-035 Scope OUT、Production GitHub API を叩かない）" >&2
     log "MODE: sandbox (dry-run fallback — GitHub sandbox not yet provisioned)"
-    log "PIPELINE_PAT=(masked, length=${#PIPELINE_PAT:-0})"
+    if [[ -n "${PIPELINE_PAT:-}" ]]; then
+        log "PIPELINE_PAT=(masked, length=${#PIPELINE_PAT})"
+    else
+        log "PIPELINE_PAT=(not set)"
+    fi
     log "GITHUB_REPO=${REPO}"
     log "sandbox: no API calls made (scaffold only)"
     echo "PASS: sandbox scaffold (dry-run equivalent)"

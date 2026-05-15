@@ -57,7 +57,11 @@ cf_api() {
 case "$MODE" in
   --dry-run)
     log "MODE: dry-run"
-    log "CLOUDFLARE_API_TOKEN=(masked, length=${#CLOUDFLARE_API_TOKEN:-0})"
+    if [[ -n "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+        log "CLOUDFLARE_API_TOKEN=(masked, length=${#CLOUDFLARE_API_TOKEN})"
+    else
+        log "CLOUDFLARE_API_TOKEN=(not set)"
+    fi
     log "CF_ZONE_NAME=${ZONE_NAME}"
     log "dry-run: no API calls made"
     echo "PASS: dry-run complete"
