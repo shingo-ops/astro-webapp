@@ -332,6 +332,43 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/054_add_users_theme.sql
 
+            # migration 009: 全テナントに notification_channels / notification_logs /
+            #   staff_reports / archives テーブルを追加（CREATE TABLE IF NOT EXISTS + RLS、idempotent）
+            #   tenant_006 は 2026-05-15 に手動適用済み。以降の新テナントは setup_tenant.py 経由。
+            docker exec -w /app astro-webapp-backend-1 python - << 'PYEOF'
+import asyncio
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+from pathlib import Path
+import os, re
+
+db_url = os.environ["DATABASE_URL"].replace("postgresql://", "postgresql+asyncpg://", 1)
+engine = create_async_engine(db_url, echo=False)
+tmpl = Path("migrations/009_add_phase4_tenant_tables.sql").read_text()
+
+async def run():
+    async with engine.begin() as conn:
+        rows = await conn.execute(text(
+            "SELECT id FROM public.tenants WHERE is_active = TRUE ORDER BY id"
+        ))
+        for (tid,) in rows.fetchall():
+            schema = f"tenant_{tid:03d}"
+            sql = tmpl.replace("{schema}", schema).replace("{schema_raw}", schema).replace("{tenant_id}", str(tid))
+            for stmt in re.split(r";(?!\s*\$)", sql):
+                stmt = stmt.strip()
+                if stmt:
+                    try:
+                        await conn.execute(text(stmt))
+                    except Exception as e:
+                        if "already exists" in str(e) or "duplicate" in str(e).lower():
+                            pass
+                        else:
+                            raise
+            print(f"✓ {schema} migration 009 applied")
+
+asyncio.run(run())
+PYEOF
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
