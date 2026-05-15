@@ -63,21 +63,13 @@ case "$MODE" in
     ;;
 
   --sandbox)
-    log "MODE: sandbox"
-    require_env PIPELINE_PAT
-
-    log "Checking GitHub API reachability and repo existence..."
-    REPO_STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" \
-        -H "Authorization: token ${PIPELINE_PAT}" \
-        -H "Accept: application/vnd.github+json" \
-        "${GH_API}/repos/${REPO}" 2>/dev/null || echo "000")
-    log "GitHub repo ${REPO} HTTP status: ${REPO_STATUS}"
-
-    if [[ "$REPO_STATUS" != "200" ]]; then
-        log "ERROR: repo not accessible (status=${REPO_STATUS})"
-        exit 1
-    fi
-    echo "PASS: sandbox smoke OK (repo=${REPO}, status=${REPO_STATUS})"
+    # Phase 0: GitHub sandbox 環境は未整備のため dry-run 相当で動作 (Production を叩かない)
+    echo "WARN: sandbox 環境は未整備のため dry-run 動作（ADR-035 Scope OUT、Production GitHub API を叩かない）" >&2
+    log "MODE: sandbox (dry-run fallback — GitHub sandbox not yet provisioned)"
+    log "PIPELINE_PAT=(masked, length=${#PIPELINE_PAT:-0})"
+    log "GITHUB_REPO=${REPO}"
+    log "sandbox: no API calls made (scaffold only)"
+    echo "PASS: sandbox scaffold (dry-run equivalent)"
     ;;
 
   --live)

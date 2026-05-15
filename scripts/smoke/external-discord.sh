@@ -77,28 +77,19 @@ case "$MODE" in
     ;;
 
   --sandbox)
-    log "MODE: sandbox (GET check, no message sent)"
-    PASS_COUNT=0
-    FAIL_COUNT=0
+    # Phase 0: Discord sandbox channel 未整備のため dry-run 相当で動作 (Production webhook を叩かない)
+    echo "WARN: sandbox channel は未整備のため dry-run 動作（ADR-035 Scope OUT、Production webhook を叩かない）" >&2
+    log "MODE: sandbox (dry-run fallback — Discord sandbox channel not yet provisioned)"
     for wh in "${WEBHOOKS[@]}"; do
-        url="${!wh:-}"
-        if [[ -z "$url" ]]; then
-            log "WARN: ${wh} is not set — skipping"
-            continue
-        fi
-        status=$(check_webhook_reachable "$wh" "$url")
-        if [[ "$status" == "200" ]]; then
-            PASS_COUNT=$((PASS_COUNT + 1))
+        val="${!wh:-}"
+        if [[ -n "$val" ]]; then
+            log "${wh}=(set, masked)"
         else
-            log "WARN: ${wh} returned ${status}"
-            FAIL_COUNT=$((FAIL_COUNT + 1))
+            log "${wh}=(not set)"
         fi
     done
-    if [[ "$FAIL_COUNT" -gt 0 ]]; then
-        echo "WARN: sandbox smoke partial (pass=${PASS_COUNT}, fail=${FAIL_COUNT})"
-        exit 1
-    fi
-    echo "PASS: sandbox smoke OK (pass=${PASS_COUNT})"
+    log "sandbox: no API calls made (scaffold only)"
+    echo "PASS: sandbox scaffold (dry-run equivalent)"
     ;;
 
   --live)

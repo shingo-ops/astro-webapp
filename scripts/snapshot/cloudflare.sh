@@ -76,20 +76,26 @@ if [[ -z "$ZONE_ID" ]]; then
 fi
 log "Zone ID: ${ZONE_ID}"
 
-# --- 1. DNS records（content は sha256 前 8 文字で scrub） ---
+# --- 1. DNS records（content は bash 側で sha256 計算して scrub） ---
 log "Fetching DNS records..."
-cf_api "/zones/${ZONE_ID}/dns_records?per_page=100" \
-    | jq '{
-        zone_name: "'"$ZONE_NAME"'",
-        zone_id_sha256: ("'"$ZONE_ID"'" | ltrimstr("") | .[0:8] + "..."),
-        count: (.result | length),
-        records: [.result[] | {
-          name: .name,
-          type: .type,
-          ttl: .ttl,
-          proxied: .proxied,
-          content_sha256_prefix: (.content | @sh | ltrimstr("'\''") | rtrimstr("'\''") | .[0:8] + "...")
-        }]
+ZONE_ID_SHA=$(printf '%s' "$ZONE_ID" | sha256sum | head -c 8)
+DNS_RECORDS_RAW=$(cf_api "/zones/${ZONE_ID}/dns_records?per_page=100")
+DNS_RECORDS_SCRUBBED=$(echo "$DNS_RECORDS_RAW" \
+    | jq -c '.result[]' \
+    | while IFS= read -r rec; do
+        content=$(echo "$rec" | jq -r '.content')
+        content_sha=$(printf '%s' "$content" | sha256sum | head -c 8)
+        echo "$rec" | jq --arg sha "$content_sha" '{
+          name, type, ttl, proxied,
+          content_sha256: ($sha + "...")
+        }'
+      done | jq -s '.')
+echo "$DNS_RECORDS_SCRUBBED" \
+    | jq --arg zone_name "$ZONE_NAME" --arg zone_sha "$ZONE_ID_SHA" '{
+        zone_name: $zone_name,
+        zone_id_sha256: ($zone_sha + "..."),
+        count: length,
+        records: .
       }' \
     > "${OUT}/cloudflare_dns_records.json"
 log "Saved: ${OUT}/cloudflare_dns_records.json"

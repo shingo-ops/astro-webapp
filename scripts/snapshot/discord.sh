@@ -69,8 +69,10 @@ fetch_webhook_metadata() {
         guild_id: .guild_id,
         type: .type,
         token_present: (if .token then true else false end),
-        error: .error
-      } | del(.token)'
+        error: (.error // null)
+      }
+      | with_entries(select(.value != null))
+      | del(.token)'
 }
 
 log "Fetching Discord webhook metadata..."

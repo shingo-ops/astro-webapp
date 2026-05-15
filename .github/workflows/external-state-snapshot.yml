@@ -59,9 +59,12 @@ jobs:
         uses: actions/checkout@v4
 
       # GOOGLE_APPLICATION_CREDENTIALS を JSON secret からファイルに書き出す
+      # secret は env 経由で inject、printf で安全に書き出す (template injection 防止)
       - name: Write GCP credentials file
+        env:
+          GCP_CREDS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
         run: |
-          echo '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}' > /tmp/gcp-credentials.json
+          printf '%s' "$GCP_CREDS_JSON" > /tmp/gcp-credentials.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-credentials.json" >> "$GITHUB_ENV"
 
       # --- 1. Meta snapshot ---
@@ -140,7 +143,7 @@ jobs:
             DRIFT_SUMMARY+="\n詳細は \`${OUT_DIR}/\` の .diff ファイルを確認してください。\n"
             DRIFT_SUMMARY+="drift を確認した上で \`docs/external-state-contract.yml\` を更新してください（自動更新禁止 — ADR-035）。"
 
-            echo -e "$DRIFT_SUMMARY" | bash scripts/notify/discord-owner-ping.sh "$(echo -e "$DRIFT_SUMMARY")" || \
+            bash scripts/notify/discord-owner-ping.sh "$(echo -e "$DRIFT_SUMMARY")" || \
               echo "WARN: Discord notify failed (owner ping)" >&2
           else
             echo "No drift detected — all systems nominal"

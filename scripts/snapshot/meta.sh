@@ -90,7 +90,7 @@ log "Saved: ${OUT}/meta_subscriptions.json"
 log "Fetching Meta Page subscribed_apps..."
 curl -fsS \
     "https://graph.facebook.com/${GRAPH_VERSION}/${META_PAGE_ID}/subscribed_apps?access_token=${META_PAGE_TOKEN}" \
-    | jq 'del(.[] | .access_token?, .token?) | .page_token_present = true' \
+    | jq '.data |= map(del(.access_token?, .token?)) | .page_token_present = true' \
     > "${OUT}/meta_page_subscribed_apps.json"
 log "Saved: ${OUT}/meta_page_subscribed_apps.json"
 

@@ -86,7 +86,10 @@ fi
 
 # --- 1. credentials.json から scrub 済み config を保存 ---
 log "Saving Firebase credentials metadata (scrubbed)..."
-jq 'del(.private_key, .private_key_id) | .private_key_present = true | .private_key_id_sha256 = (.private_key_id // "" | if . != "" then (.[0:8] + "...") else "empty" end)' \
+jq '(.private_key_id // "" | if . != "" then (.[0:8] + "...") else "empty" end) as $kid_sha
+    | del(.private_key, .private_key_id)
+    | .private_key_present = true
+    | .private_key_id_sha256 = $kid_sha' \
     "${GOOGLE_APPLICATION_CREDENTIALS}" \
     > "${OUT}/firebase_config.json"
 log "Saved: ${OUT}/firebase_config.json"
