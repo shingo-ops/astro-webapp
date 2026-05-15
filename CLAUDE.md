@@ -279,6 +279,39 @@ ADR-024 で発覚した Meta 連携の不整合は、`tenant_meta_config` レコ
 
 ---
 
+## §Codebase reconnaissance（ADR 概念 → 実体マッピング規約）
+
+ADR 本文中で参照する以下の **referent** は frontend/backend の実体 file:line と必ず突き合わせること:
+
+- DOM selector (`nav.foo`, `.bar`, `#baz`, `[data-testid="..."]`)
+- Frontend route (`/path`, `/foo/:id`)
+- Backend API path (`/api/v1/...`)
+- DB column / table (`users.locale`, `meta_messages.message_id`)
+- KPI / UI label (`"顧客数"`, `"Conversion rate"`)
+- Translation key (`t("dashboard.kpi.customers")`)
+- Config / env name (`META_PAGE_ID`)
+- Component / hook name (`<Layout>`, `useAuth`)
+
+### Generator の義務
+- 実装前に referent を `grep -rn` で全件実体確認
+- 報告書 `## Codebase reconnaissance` 表に referent type / 概念表現 / grep cmd / hit count / top file:line / Action / 最終実体 を必須記録
+- 0-hit referent には必ず Action（Replace / Add / Halt）を明記。"0 hit and proceed" は禁止
+- 詳細は `~/.claude/agents/generator.md` Step 2.5
+
+### Evaluator の義務
+- Step 3.10.a で Generator の表を再 grep（snapshot 一致）
+- Step 3.10.b で ADR 本文を独立再読込 → referent 抽出 → Generator 表との diff で omission 検出
+- 読み順厳守: ADR 本文を読んで自前抽出 → その後 Generator 表を開く
+- 詳細は `~/.claude/agents/evaluator.md` Step 3.10
+
+### ADR 起案側の推奨
+- 自然言語表現（"main nav"、"customer count KPI"）だけでなく、可能なら実体 file:line を ADR 本文に添えること（次サイクルで ADR template 化検討）
+
+### 背景
+2026-05-15 PR #376 (ADR-038 実装) で Generator が `frontend/src/` を読まずに ADR 概念だけから Playwright spec を書き、`nav.mainnav` / `"顧客数"` / `/inbox` が実体不在で Reviewer 1 回目 Major 3 件指摘。本規約はその再発を構造的に止める。
+
+---
+
 ## 実装フロー（ADR-012: What/How 役割分担モデル）
 
 > ADR-012 により正式採択。旧 PROPOSAL-001 暫定運用セクションを置き換える。
