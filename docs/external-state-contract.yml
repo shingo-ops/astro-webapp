@@ -1,0 +1,100 @@
+# docs/external-state-contract.yml
+# ADR-035: External State Verification — L1 Contract
+#
+# 6 外部システムの「期待される状態」を宣言。
+# raw secret は書かず name / id / sha256 prefix のみ記載。
+#
+# 更新ルール:
+#   - 外部システム側で変更が起きたとき（OAuth provider 追加、Webhook URL 変更など）
+#     人間（PO）が確認した上で last_verified を更新してコミットする。
+#   - drift 検出スクリプト（scripts/snapshot/）との自動照合はスクリプト側で実装。
+#   - contract の「自動マージ」（drift 検出 → 自動更新）は禁止（ADR-035 Scope OUT）。
+
+last_updated: 2026-05-16
+
+systems:
+  meta_app:
+    app_id_env: META_APP_ID            # 値そのものではなく env reference
+    page_id_env: META_PAGE_ID
+    app_secret_env: META_APP_SECRET
+    page_token_env: META_PAGE_TOKEN
+    graph_api_version_env: META_GRAPH_API_VERSION  # 実体: backend/app/services/meta_graph.py:134, 既定 v19.0
+    subscribed_fields:
+      page: [messages, messaging_postbacks, message_echoes]
+      instagram: [messages, mentions]
+    test_users: []                     # 名前のみ（PII なし）
+    review_state: in_review            # in_review | live
+    last_verified: 2026-05-16
+
+  firebase:
+    project_id: sales-ops-with-claude
+    auth_domain: auth.salesanchor.jp
+    auth_providers: [google.com, password]
+    authorized_domains:
+      - salesanchor.jp
+      - app.salesanchor.jp
+      - auth.salesanchor.jp
+    credentials_path_env: GOOGLE_APPLICATION_CREDENTIALS  # 実体: /app/firebase-credentials.json
+    last_verified: 2026-05-16
+
+  github:
+    org_or_owner: shingo-ops
+    repo: salesanchor
+    secrets:
+      - name: PIPELINE_PAT
+        sha256_prefix: "????????"      # 初回 snapshot 実行後に更新
+        updated_at: "unknown"
+        rotation_due: "unknown"        # rotation 管理は手動（ADR-035 Scope OUT）
+      - name: DISCORD_WEBHOOK_PLAN_REVIEW
+        sha256_prefix: "????????"
+        updated_at: "unknown"
+        rotation_due: "unknown"
+      - name: DISCORD_WEBHOOK_PR
+        sha256_prefix: "????????"
+        updated_at: "unknown"
+        rotation_due: "unknown"
+      - name: DISCORD_WEBHOOK_OWNER_PING
+        sha256_prefix: "????????"      # 本 ADR で新規追加、しんごさんが手動設定
+        updated_at: "unknown"
+        rotation_due: "unknown"
+      - name: CLOUDFLARE_API_TOKEN
+        sha256_prefix: "????????"      # 本 ADR で新規追加、しんごさんが手動設定
+        updated_at: "unknown"
+        rotation_due: "unknown"
+    branch_protection:
+      develop:
+        required_checks: [static-analysis, qa-smoke, schema-check]
+        required_reviewers: 1
+      main:
+        required_checks: [static-analysis, qa-smoke, schema-check]
+        required_reviewers: 1
+    last_verified: 2026-05-16
+
+  cloudflare:
+    zone: salesanchor.jp
+    legacy_zone: jarvis-claude.uk      # 並行稼働中、PO 確認前に削除禁止
+    api_token_env: CLOUDFLARE_API_TOKEN
+    dns_records: []                    # 初回 snapshot 実行後に更新（name + type + content sha256）
+    waf_rules_count: 0                 # 初回 snapshot 実行後に更新
+    last_verified: 2026-05-16
+
+  discord:
+    webhooks:
+      - name: DISCORD_WEBHOOK_PR
+        channel: "#pr-notifications"
+        env: DISCORD_WEBHOOK_PR
+      - name: DISCORD_WEBHOOK_PLAN_REVIEW
+        channel: "#plan-review"
+        env: DISCORD_WEBHOOK_PLAN_REVIEW
+      - name: DISCORD_WEBHOOK_OWNER_PING
+        channel: "#owner-ping"
+        env: DISCORD_WEBHOOK_OWNER_PING  # 本 ADR で新規追加
+    last_verified: 2026-05-16
+
+  gcp:
+    project_id: sales-ops-with-claude  # 実体: .env.example:17
+    service_accounts: []               # 初回 snapshot 実行後に更新（email 列挙）
+    enabled_apis: []                   # 初回 snapshot 実行後に更新
+    iam_role_count: 0                  # 初回 snapshot 実行後に更新
+    credentials_path_env: GOOGLE_APPLICATION_CREDENTIALS
+    last_verified: 2026-05-16
