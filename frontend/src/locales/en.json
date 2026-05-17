@@ -309,7 +309,10 @@
     "expired": "Expired",
     "loadError": "Failed to load channels:",
     "reload": "Reload",
-    "close": "Close"
+    "close": "Close",
+    "reauthRequired": "Please reconnect Facebook to enable Business Manager Page support.",
+    "reauthBadge": "Reconnect required",
+    "reauthAction": "Reconnect Facebook"
   },
   "deals": {
     "title": "Deal Management",

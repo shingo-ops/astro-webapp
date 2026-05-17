@@ -1,10 +1,11 @@
 """
 Phase 1-E F7-S2: OAuth scope エンコード検証
+（ADR-041 で 6 → 7 permission に拡張、`business_management` 追加）
 
 Sprint 2 Generator Known Limitations で持ち越し。
 
 検証内容:
-- 6 permission がすべて scope に含まれる（spec §6-2 / Use Case Descriptions §2）
+- 7 permission がすべて scope に含まれる（ADR-041 §1）
 - scope のエンコード形式（カンマ区切り、URL encoded）
 - scope の順序（実装が変わっても審査担当者の期待と一致）
 
@@ -34,8 +35,8 @@ from app.routers import meta_inbox
 # ---------------------------------------------------------------------------
 
 
-def test_oauth_scope_contains_all_six_permissions() -> None:
-    """spec §6-2 の 6 permission がすべて _OAUTH_SCOPE に含まれる。"""
+def test_oauth_scope_contains_all_seven_permissions() -> None:
+    """ADR-041 の 7 permission がすべて _OAUTH_SCOPE に含まれる。"""
     expected = {
         "pages_show_list",
         "pages_manage_metadata",
@@ -43,6 +44,7 @@ def test_oauth_scope_contains_all_six_permissions() -> None:
         "pages_read_engagement",
         "instagram_basic",
         "instagram_manage_messages",
+        "business_management",
     }
     actual = set(meta_inbox._OAUTH_SCOPE.split(","))
     assert actual == expected, (
@@ -62,15 +64,21 @@ def test_oauth_scope_is_comma_separated_no_spaces() -> None:
 
 
 def test_oauth_scope_does_not_contain_unrequested_permissions() -> None:
-    """過剰申請を防ぐ: business_management、ads_management 等が含まれない。"""
+    """過剰申請を防ぐ: ads_management、leads_retrieval 等が含まれない。
+
+    ADR-041 で `business_management` は申請対象に追加されたため forbidden から除外。
+    `pages_manage_engagement` / `leads_retrieval` / `marketing_messages_messenger` 等は
+    forbidden のまま維持する（追加申請は別途 ADR で判断）。
+    """
     scope = meta_inbox._OAUTH_SCOPE
     forbidden = [
-        "business_management",
         "ads_management",
         "email",
         "public_profile",
         "user_posts",
         "marketing_messages_messenger",
+        "pages_manage_engagement",
+        "leads_retrieval",
     ]
     for perm in forbidden:
         assert perm not in scope, (
@@ -78,12 +86,12 @@ def test_oauth_scope_does_not_contain_unrequested_permissions() -> None:
         )
 
 
-def test_oauth_scope_count_is_exactly_six() -> None:
-    """6 permission の正確数（過不足ない）。"""
+def test_oauth_scope_count_is_exactly_seven() -> None:
+    """7 permission の正確数（過不足ない）。ADR-041 で 6 → 7 に拡張。"""
     perms = meta_inbox._OAUTH_SCOPE.split(",")
-    assert len(perms) == 6, f"expected 6 permissions, got {len(perms)}: {perms}"
+    assert len(perms) == 7, f"expected 7 permissions, got {len(perms)}: {perms}"
     # 重複なし
-    assert len(set(perms)) == 6, f"duplicate permission found: {perms}"
+    assert len(set(perms)) == 7, f"duplicate permission found: {perms}"
 
 
 # ---------------------------------------------------------------------------
@@ -92,8 +100,8 @@ def test_oauth_scope_count_is_exactly_six() -> None:
 
 
 def test_auth_url_contains_all_scope_permissions(monkeypatch) -> None:
-    """_build_authorize_url の戻り URL で scope=... のクエリパラメータに 6 permission が
-    URL エンコード後でも全部含まれる。"""
+    """_build_authorize_url の戻り URL で scope=... のクエリパラメータに 7 permission が
+    URL エンコード後でも全部含まれる（ADR-041）。"""
     monkeypatch.setenv("META_APP_ID", "test-app-id-9999")
     monkeypatch.setenv("META_OAUTH_REDIRECT_URI", "https://app.salesanchor.jp/channels/oauth/callback")
     monkeypatch.delenv("META_GRAPH_API_VERSION", raising=False)
@@ -107,10 +115,11 @@ def test_auth_url_contains_all_scope_permissions(monkeypatch) -> None:
     assert "scope" in qs, f"scope param missing in auth_url: {auth_url}"
     scope_value = qs["scope"][0]  # parse_qs はカンマで split しないため文字列のまま
 
-    # 6 permission がすべて含まれる
+    # 7 permission がすべて含まれる
     expected_perms = {
         "pages_show_list", "pages_manage_metadata", "pages_messaging",
         "pages_read_engagement", "instagram_basic", "instagram_manage_messages",
+        "business_management",
     }
     actual_perms = set(scope_value.split(","))
     assert actual_perms == expected_perms, (

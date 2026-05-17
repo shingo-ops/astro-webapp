@@ -266,12 +266,133 @@ async def test_list_user_pages_empty():
 
 @pytest.mark.asyncio
 async def test_list_user_pages_data_not_a_list():
-    """`data` が list でない異常 → MetaGraphTransportError。"""
+    """全経路で `data` が list でない異常 → MetaGraphTransportError。"""
     def handler(req: httpx.Request) -> httpx.Response:
         return _ok({"data": {"oops": "object"}})
     async with _make_client(handler) as client:
         with pytest.raises(MetaGraphTransportError):
             await list_user_pages("uat", client=client)
+
+
+# ---------------------------------------------------------------------------
+# ADR-041: Business Manager フォールバック
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_list_user_pages_business_manager_fallback():
+    """`/me/accounts` 空 + `/me/businesses` 1 件 + `owned_pages` 2 件のとき、
+    Business Manager 経由で 2 Page を取得する（ADR-041 §2）。"""
+    def handler(req: httpx.Request) -> httpx.Response:
+        path = req.url.path
+        if path.endswith("/me/accounts"):
+            return _ok({"data": []})
+        if path.endswith("/me/businesses"):
+            return _ok({"data": [{"id": "biz-1", "name": "Highlife BM"}]})
+        if path.endswith("/biz-1/owned_pages"):
+            return _ok({"data": [
+                {"id": "p-owned-1", "name": "Owned 1", "access_token": "tok-o1",
+                 "instagram_business_account": None},
+                {"id": "p-owned-2", "name": "Owned 2", "access_token": "tok-o2",
+                 "instagram_business_account": None},
+            ]})
+        if path.endswith("/biz-1/client_pages"):
+            return _ok({"data": []})
+        return _ok({"data": []})
+
+    async with _make_client(handler) as client:
+        pages = await list_user_pages("uat", client=client)
+    ids = {p["id"] for p in pages}
+    assert ids == {"p-owned-1", "p-owned-2"}
+
+
+@pytest.mark.asyncio
+async def test_list_user_pages_dedup_first_wins():
+    """同一 page.id が複数経路から返ったとき、`/me/accounts` の token が先勝ち（ADR-041 §2.1）。"""
+    def handler(req: httpx.Request) -> httpx.Response:
+        path = req.url.path
+        if path.endswith("/me/accounts"):
+            return _ok({"data": [
+                {"id": "page-X", "name": "Page X (from accounts)",
+                 "access_token": "token-from-accounts",
+                 "instagram_business_account": None},
+            ]})
+        if path.endswith("/me/businesses"):
+            return _ok({"data": [{"id": "biz-1", "name": "BM"}]})
+        if path.endswith("/biz-1/owned_pages"):
+            return _ok({"data": [
+                {"id": "page-X", "name": "Page X (from owned)",
+                 "access_token": "token-from-owned",
+                 "instagram_business_account": None},
+            ]})
+        if path.endswith("/biz-1/client_pages"):
+            return _ok({"data": []})
+        return _ok({"data": []})
+
+    async with _make_client(handler) as client:
+        pages = await list_user_pages("uat", client=client)
+    assert len(pages) == 1
+    assert pages[0]["id"] == "page-X"
+    assert pages[0]["access_token"] == "token-from-accounts"
+
+
+@pytest.mark.asyncio
+async def test_list_user_pages_skip_business_pages_when_businesses_empty():
+    """`/me/businesses` が 0 件のとき、owned_pages/client_pages を呼ばない
+    （rate limit 配慮、ADR-041 §2.1）。"""
+    calls: list[str] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        calls.append(req.url.path)
+        path = req.url.path
+        if path.endswith("/me/accounts"):
+            return _ok({"data": [
+                {"id": "p1", "name": "P1", "access_token": "t1",
+                 "instagram_business_account": None},
+            ]})
+        if path.endswith("/me/businesses"):
+            return _ok({"data": []})
+        return _ok({"data": []})
+
+    async with _make_client(handler) as client:
+        pages = await list_user_pages("uat", client=client)
+    assert len(pages) == 1
+    assert not any("owned_pages" in c or "client_pages" in c for c in calls)
+
+
+@pytest.mark.asyncio
+async def test_list_user_pages_partial_failure_returns_successes():
+    """`/me/accounts` 成功 + `/me/businesses` 失敗 → 成功分のみ返す
+    （部分失敗、ADR-041 §2.1）。"""
+    def handler(req: httpx.Request) -> httpx.Response:
+        path = req.url.path
+        if path.endswith("/me/accounts"):
+            return _ok({"data": [
+                {"id": "p1", "name": "P1", "access_token": "t1",
+                 "instagram_business_account": None},
+            ]})
+        if path.endswith("/me/businesses"):
+            return _err(403, {"type": "OAuthException", "code": 200,
+                              "message": "business_management permission missing"})
+        return _ok({"data": []})
+
+    async with _make_client(handler) as client:
+        pages = await list_user_pages("uat", client=client)
+    assert len(pages) == 1
+    assert pages[0]["id"] == "p1"
+
+
+@pytest.mark.asyncio
+async def test_list_user_pages_all_paths_fail_raises_api_error():
+    """全経路が API エラー → MetaGraphAPIError を集約 raise（ADR-041 §2.1）。"""
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _err(403, {"type": "OAuthException", "code": 200,
+                          "message": "permission denied"})
+
+    async with _make_client(handler) as client:
+        with pytest.raises(MetaGraphAPIError) as exc:
+            await list_user_pages("uat", client=client)
+    assert exc.value.error_type == "OAuthException"
 
 
 # ---------------------------------------------------------------------------

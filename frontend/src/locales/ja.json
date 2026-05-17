@@ -309,7 +309,10 @@
     "expired": "期限切れ",
     "loadError": "チャンネルの読み込みに失敗しました:",
     "reload": "再読み込み",
-    "close": "閉じる"
+    "close": "閉じる",
+    "reauthRequired": "Facebook連携を更新してください。Business Manager管理ページに対応するには再接続が必要です。",
+    "reauthBadge": "再接続が必要",
+    "reauthAction": "Facebookを再接続"
   },
   "deals": {
     "title": "案件管理",

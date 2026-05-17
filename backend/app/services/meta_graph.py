@@ -369,16 +369,120 @@ async def list_user_pages(
     *,
     client: Optional[httpx.AsyncClient] = None,
 ) -> list[dict[str, Any]]:
-    """`/me/accounts` で接続ユーザーの管理する Page 一覧を取得する。
+    """接続ユーザーが管理する Page 一覧を取得する（ADR-041: Business Manager 対応）。
+
+    試行する経路:
+        1. `/me/accounts`（個人保有 Page）
+        2. `/me/businesses` → 各 business に対して以下の 2 経路:
+           - `/{business-id}/owned_pages`（business が所有する Page）
+           - `/{business-id}/client_pages`（business が代理管理する Page）
+
+    各経路は独立してエラーハンドリングする。**全経路が失敗した場合のみ**
+    `MetaGraphAPIError` を集約して raise する（部分失敗は警告ログのみで継続）。
+
+    ### 合成契約（ADR-041 §2.1）
+
+    - 戻り値: ユニーク化済 `list[Page]`（同一 `page.id` は先勝ち）
+    - access_token 優先順位: `/me/accounts` > `owned_pages` > `client_pages`
+    - rate limit 配慮: `/me/businesses` が 0 件なら `owned_pages`/`client_pages` をスキップ
 
     Returns:
         list of {"id", "name", "access_token", "instagram_business_account": {...} or None}
 
     `access_token` は **Page Access Token**。User の長期化を経ているため
     Meta の仕様により Page Token も実質長期となる（公式: User token 長期化 → Page token 長期化）。
+
+    Raises:
+        MetaGraphAPIError: 全経路が Meta から API エラーで返ってきた場合のみ。
+        MetaGraphTransportError: 全経路が transport error の場合のみ。
     """
     if not user_access_token:
         raise ValueError("user_access_token is required")
+
+    # 集約用バケット。先勝ち dedupe のため list ではなく dict (page_id -> page) で持つ
+    aggregated: dict[str, dict[str, Any]] = {}
+    errors: list[tuple[str, MetaGraphError]] = []  # (経路名, 例外)
+    successes: list[str] = []
+
+    # --- 経路 1: /me/accounts ---
+    try:
+        me_accounts = await _list_pages_from_me_accounts(user_access_token, client=client)
+        successes.append("me_accounts")
+        for page in me_accounts:
+            pid = page.get("id")
+            if pid and pid not in aggregated:
+                aggregated[pid] = page
+    except MetaGraphError as e:
+        logger.warning("list_user_pages: /me/accounts failed: %s", e)
+        errors.append(("me_accounts", e))
+
+    # --- 経路 2: /me/businesses → 各 business の owned_pages / client_pages ---
+    businesses: list[dict[str, Any]] = []
+    try:
+        businesses = await _list_user_businesses(user_access_token, client=client)
+        successes.append("me_businesses")
+    except MetaGraphError as e:
+        logger.warning("list_user_pages: /me/businesses failed: %s", e)
+        errors.append(("me_businesses", e))
+
+    # rate limit 配慮: businesses が空なら owned/client_pages はスキップ
+    if businesses:
+        for biz in businesses:
+            biz_id = biz.get("id")
+            if not biz_id:
+                continue
+
+            # owned_pages（owned_pages > client_pages の優先順位なので先に処理）
+            try:
+                owned = await _list_business_pages(
+                    biz_id, "owned_pages", user_access_token, client=client
+                )
+                successes.append(f"owned_pages:{biz_id}")
+                for page in owned:
+                    pid = page.get("id")
+                    if pid and pid not in aggregated:
+                        aggregated[pid] = page
+            except MetaGraphError as e:
+                logger.warning(
+                    "list_user_pages: /%s/owned_pages failed: %s", biz_id, e
+                )
+                errors.append((f"owned_pages:{biz_id}", e))
+
+            # client_pages
+            try:
+                client_pages = await _list_business_pages(
+                    biz_id, "client_pages", user_access_token, client=client
+                )
+                successes.append(f"client_pages:{biz_id}")
+                for page in client_pages:
+                    pid = page.get("id")
+                    if pid and pid not in aggregated:
+                        aggregated[pid] = page
+            except MetaGraphError as e:
+                logger.warning(
+                    "list_user_pages: /%s/client_pages failed: %s", biz_id, e
+                )
+                errors.append((f"client_pages:{biz_id}", e))
+
+    # 全経路エラー: 最初の API エラーを raise、無ければ transport error を raise
+    if not successes and errors:
+        first_api_error = next(
+            (e for _, e in errors if isinstance(e, MetaGraphAPIError)), None
+        )
+        if first_api_error is not None:
+            raise first_api_error
+        # API エラーが 1 件も無い → transport error
+        raise errors[0][1]
+
+    return list(aggregated.values())
+
+
+async def _list_pages_from_me_accounts(
+    user_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> list[dict[str, Any]]:
+    """`/me/accounts` から Page 一覧を取り、共通フォーマットで返す（内部 helper）。"""
     url = f"{graph_base_url()}/me/accounts"
     body = await _request(
         "GET",
@@ -392,6 +496,76 @@ async def list_user_pages(
     data = body.get("data", [])
     if not isinstance(data, list):
         raise MetaGraphTransportError("Meta /me/accounts did not return a list")
+    out: list[dict[str, Any]] = []
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        out.append(
+            {
+                "id": item.get("id"),
+                "name": item.get("name"),
+                "access_token": item.get("access_token"),
+                "instagram_business_account": item.get("instagram_business_account"),
+            }
+        )
+    return out
+
+
+async def _list_user_businesses(
+    user_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> list[dict[str, Any]]:
+    """`/me/businesses` から Business Manager 一覧を取得する（内部 helper）。"""
+    url = f"{graph_base_url()}/me/businesses"
+    body = await _request(
+        "GET",
+        url,
+        params={
+            "fields": "id,name",
+            "access_token": user_access_token,
+        },
+        client=client,
+    )
+    data = body.get("data", [])
+    if not isinstance(data, list):
+        raise MetaGraphTransportError("Meta /me/businesses did not return a list")
+    return [item for item in data if isinstance(item, dict) and item.get("id")]
+
+
+async def _list_business_pages(
+    business_id: str,
+    edge: str,
+    user_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> list[dict[str, Any]]:
+    """`/{business-id}/owned_pages` または `/{business-id}/client_pages` から Page 一覧を取得する。
+
+    Args:
+        business_id: Business Manager の ID
+        edge: "owned_pages" または "client_pages"
+
+    Returns:
+        list of {"id", "name", "access_token", "instagram_business_account"}
+    """
+    if edge not in ("owned_pages", "client_pages"):
+        raise ValueError(f"invalid edge: {edge}")
+    url = f"{graph_base_url()}/{business_id}/{edge}"
+    body = await _request(
+        "GET",
+        url,
+        params={
+            "fields": "id,name,access_token,instagram_business_account",
+            "access_token": user_access_token,
+        },
+        client=client,
+    )
+    data = body.get("data", [])
+    if not isinstance(data, list):
+        raise MetaGraphTransportError(
+            f"Meta /{business_id}/{edge} did not return a list"
+        )
     out: list[dict[str, Any]] = []
     for item in data:
         if not isinstance(item, dict):
