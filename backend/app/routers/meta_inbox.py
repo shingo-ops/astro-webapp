@@ -52,7 +52,9 @@ router = APIRouter()
 # 設定
 # ---------------------------------------------------------------------------
 
-# spec §6-2 の OAuth scope（カンマ区切り、6 permission）
+# OAuth scope（カンマ区切り、7 permission）
+# ADR-041: Business Manager 管理 Page を `/me/businesses` 経由で取得するため
+# `business_management` を追加。
 _OAUTH_SCOPE = ",".join([
     "pages_show_list",
     "pages_manage_metadata",
@@ -60,6 +62,7 @@ _OAUTH_SCOPE = ",".join([
     "pages_read_engagement",
     "instagram_basic",
     "instagram_manage_messages",
+    "business_management",
 ])
 
 # 接続後 frontend に飛ばすパス。Sprint 3 で Frontend を実装するまで
@@ -192,6 +195,7 @@ async def _upsert_tenant_meta_config(
     instagram_username: Optional[str],
     subscribed_fields: list[str],
     connected_by_staff_id: Optional[int],
+    granted_scopes: Optional[list[str]] = None,
 ) -> int:
     """Page 接続情報を tenant_meta_config に UPSERT し、新規 / 既存行の id を返す。
 
@@ -199,12 +203,15 @@ async def _upsert_tenant_meta_config(
     - 無ければ INSERT（連続接続時に過去 inactive 行が残ってもユニーク条件は
       partial unique index で衝突しない）
     - Page Access Token は **必ず Fernet 暗号化** してから保存（生 token は DB に置かない）
+    - `granted_scopes` (ADR-041): 当該 OAuth フローで付与されたスコープを JSONB で保存。
+      `business_management` の有無で再認証要否を判定する
     """
     encrypted_token = encryption.encrypt(page_access_token_plain)
     encrypted_token_bytes = encrypted_token.encode("ascii")
 
     import json as _json
     fields_json = _json.dumps(subscribed_fields)
+    scopes_json = _json.dumps(granted_scopes) if granted_scopes is not None else None
 
     existing = await db.execute(
         text("""
@@ -216,52 +223,25 @@ async def _upsert_tenant_meta_config(
     )
     row = existing.first()
     fields_expr = _jsonb_cast_expr(db)
+    scopes_expr = "NULL" if scopes_json is None else _jsonb_scopes_expr(db)
     if row:
         record_id = int(row[0])
-        await db.execute(
-            text(f"""
-                UPDATE tenant_meta_config
-                SET page_name = :page_name,
-                    page_access_token_encrypted = :token,
-                    page_token_expires_at = :expires_at,
-                    instagram_business_account_id = :ig_id,
-                    instagram_username = :ig_username,
-                    subscribed_fields = {fields_expr},
-                    connected_by_staff_id = COALESCE(:staff_id, connected_by_staff_id),
-                    last_token_refreshed_at = NOW(),
-                    updated_at = NOW()
-                WHERE id = :id
-            """),
-            {
-                "id": record_id,
-                "page_name": page_name,
-                "token": encrypted_token_bytes,
-                "expires_at": page_token_expires_at,
-                "ig_id": instagram_business_account_id,
-                "ig_username": instagram_username,
-                "fields": fields_json,
-                "staff_id": connected_by_staff_id,
-            },
-        )
-        return record_id
-
-    inserted = await db.execute(
-        text(f"""
-            INSERT INTO tenant_meta_config (
-                tenant_id, page_id, page_name, page_access_token_encrypted,
-                page_token_expires_at, instagram_business_account_id, instagram_username,
-                subscribed_fields, connected_by_staff_id, is_active
-            )
-            VALUES (
-                :tenant_id, :page_id, :page_name, :token,
-                :expires_at, :ig_id, :ig_username,
-                {fields_expr}, :staff_id, TRUE
-            )
-            RETURNING id
-        """),
-        {
-            "tenant_id": tenant_id,
-            "page_id": page_id,
+        update_sql = f"""
+            UPDATE tenant_meta_config
+            SET page_name = :page_name,
+                page_access_token_encrypted = :token,
+                page_token_expires_at = :expires_at,
+                instagram_business_account_id = :ig_id,
+                instagram_username = :ig_username,
+                subscribed_fields = {fields_expr},
+                connected_by_staff_id = COALESCE(:staff_id, connected_by_staff_id),
+                last_token_refreshed_at = NOW(),
+                updated_at = NOW()
+                {"" if scopes_json is None else f", granted_scopes = {scopes_expr}"}
+            WHERE id = :id
+        """
+        params = {
+            "id": record_id,
             "page_name": page_name,
             "token": encrypted_token_bytes,
             "expires_at": page_token_expires_at,
@@ -269,10 +249,50 @@ async def _upsert_tenant_meta_config(
             "ig_username": instagram_username,
             "fields": fields_json,
             "staff_id": connected_by_staff_id,
-        },
-    )
+        }
+        if scopes_json is not None:
+            params["scopes"] = scopes_json
+        await db.execute(text(update_sql), params)
+        return record_id
+
+    insert_sql = f"""
+        INSERT INTO tenant_meta_config (
+            tenant_id, page_id, page_name, page_access_token_encrypted,
+            page_token_expires_at, instagram_business_account_id, instagram_username,
+            subscribed_fields, connected_by_staff_id, is_active{"" if scopes_json is None else ", granted_scopes"}
+        )
+        VALUES (
+            :tenant_id, :page_id, :page_name, :token,
+            :expires_at, :ig_id, :ig_username,
+            {fields_expr}, :staff_id, TRUE{"" if scopes_json is None else f", {scopes_expr}"}
+        )
+        RETURNING id
+    """
+    params = {
+        "tenant_id": tenant_id,
+        "page_id": page_id,
+        "page_name": page_name,
+        "token": encrypted_token_bytes,
+        "expires_at": page_token_expires_at,
+        "ig_id": instagram_business_account_id,
+        "ig_username": instagram_username,
+        "fields": fields_json,
+        "staff_id": connected_by_staff_id,
+    }
+    if scopes_json is not None:
+        params["scopes"] = scopes_json
+    inserted = await db.execute(text(insert_sql), params)
     record_id = int(inserted.scalar_one())
     return record_id
+
+
+def _jsonb_scopes_expr(db: AsyncSession) -> str:
+    """granted_scopes 用 JSONB キャスト表現（_jsonb_cast_expr のパラメータ名違いの分離）。"""
+    bind = db.get_bind() if hasattr(db, "get_bind") else getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    if name.startswith("postgresql"):
+        return "CAST(:scopes AS jsonb)"
+    return ":scopes"
 
 
 # ---------------------------------------------------------------------------
@@ -388,20 +408,46 @@ async def connect_callback(
     if isinstance(expires_in, int) and expires_in > 0:
         page_token_expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
-    # --- Graph API: Page 一覧 ---
+    # --- Graph API: Page 一覧（ADR-041: /me/accounts + Business Manager フォールバック） ---
     try:
         pages = await meta_graph.list_user_pages(long_token)
+    except MetaGraphAPIError as e:
+        # ADR-041 §3: 全経路エラー時は各経路の HTTP エラーをユーザー向け文言に反映
+        logger.error(
+            "Meta page list failed (all paths): type=%s code=%s",
+            e.error_type, e.error_code,
+        )
+        if e.status_code == 403:
+            user_detail = (
+                "Facebook 連携の権限が不足しています。"
+                "Business Manager の設定または Facebook 連携の権限状態を確認してください"
+            )
+        else:
+            user_detail = (
+                "Page 一覧の取得に失敗しました。"
+                f"Meta Graph API エラー: {e.error_type or 'unknown'}"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=user_detail,
+        )
     except MetaGraphError as e:
-        logger.error("Meta /me/accounts failed: %s", e)
+        logger.error("Meta page list failed (transport): %s", e)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Page 一覧の取得に失敗しました",
         )
 
     if not pages:
+        # ADR-041 §3: 旧文言「Page を作成して再度お試しください」は Business Manager
+        # 管理 Page の取得不能を誤誘導していたため、権限状態を確認させる文言に変更。
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="管理可能な Facebook Page が見つかりませんでした。Page を作成して再度お試しください",
+            detail=(
+                "管理可能な Facebook Page が見つかりませんでした。"
+                "Facebook 連携の権限状態を確認してください"
+                "（Business Manager 管理ページの場合は business_management 権限の付与状況をご確認ください）"
+            ),
         )
 
     staff_id = await _resolve_staff_id(db, current_user)
@@ -472,6 +518,8 @@ async def connect_callback(
             verification = {"checked": False, "error": str(e)[:200]}
 
         # DB 保存
+        # ADR-041: 当該 OAuth フローで付与されたスコープを保存（再認証判定用）
+        granted_scopes = _OAUTH_SCOPE.split(",")
         record_id = await _upsert_tenant_meta_config(
             db,
             tenant_id=tenant_id,
@@ -483,6 +531,7 @@ async def connect_callback(
             instagram_username=ig_username,
             subscribed_fields=subscribed_fields,
             connected_by_staff_id=staff_id,
+            granted_scopes=granted_scopes,
         )
 
         await _record_audit_safely(
@@ -495,6 +544,7 @@ async def connect_callback(
                 "instagram_business_account_id": ig_id,
                 "instagram_username": ig_username,
                 "subscribed_fields": subscribed_fields,
+                "granted_scopes": granted_scopes,
                 "ig_subscribe_error": ig_subscribe_error,
                 "subscription_verification": verification,
             },
@@ -677,7 +727,8 @@ async def list_channels(
 
     # staff の表示名は `surname_jp` + ' ' + `given_name_jp` を結合（migration 019 のスキーマ）
     # staff テーブルが存在しないテストフィクスチャでも壊れないよう LEFT JOIN + fallback
-    sql = f"""
+    # ADR-041: granted_scopes を含めて返却（再認証判定用、未存在カラムでも壊れないように try）
+    sql_with_scopes = f"""
         SELECT
             tmc.page_id,
             tmc.page_name,
@@ -687,39 +738,72 @@ async def list_channels(
             tmc.connected_at,
             tmc.page_token_expires_at,
             tmc.connected_by_staff_id,
-            COALESCE(s.surname_jp || ' ' || s.given_name_jp, s.primary_email) AS staff_name
+            COALESCE(s.surname_jp || ' ' || s.given_name_jp, s.primary_email) AS staff_name,
+            tmc.granted_scopes
         FROM tenant_meta_config tmc
         LEFT JOIN staff s ON s.id = tmc.connected_by_staff_id
         WHERE {where_sql}
         ORDER BY tmc.connected_at DESC, tmc.id DESC
     """
+    sql_no_scopes = f"""
+        SELECT
+            tmc.page_id,
+            tmc.page_name,
+            tmc.instagram_business_account_id,
+            tmc.instagram_username,
+            tmc.is_active,
+            tmc.connected_at,
+            tmc.page_token_expires_at,
+            tmc.connected_by_staff_id,
+            COALESCE(s.surname_jp || ' ' || s.given_name_jp, s.primary_email) AS staff_name,
+            NULL AS granted_scopes
+        FROM tenant_meta_config tmc
+        LEFT JOIN staff s ON s.id = tmc.connected_by_staff_id
+        WHERE {where_sql}
+        ORDER BY tmc.connected_at DESC, tmc.id DESC
+    """
+    rows: list = []
     try:
-        result = await db.execute(text(sql), {"tenant_id": tenant_id})
+        result = await db.execute(text(sql_with_scopes), {"tenant_id": tenant_id})
         rows = result.fetchall()
     except Exception:
-        # staff テーブルが存在しないなど DB スキーマが部分的なケースの fallback
-        # （staff_name 抜きで再試行）
-        logger.warning("list_channels: staff JOIN 失敗、staff_name なしで再試行")
-        sql_fallback = f"""
-            SELECT
-                tmc.page_id,
-                tmc.page_name,
-                tmc.instagram_business_account_id,
-                tmc.instagram_username,
-                tmc.is_active,
-                tmc.connected_at,
-                tmc.page_token_expires_at,
-                tmc.connected_by_staff_id,
-                NULL AS staff_name
-            FROM tenant_meta_config tmc
-            WHERE {where_sql}
-            ORDER BY tmc.connected_at DESC, tmc.id DESC
-        """
-        result = await db.execute(text(sql_fallback), {"tenant_id": tenant_id})
-        rows = result.fetchall()
+        # granted_scopes 列が未適用のテナント / テストフィクスチャ
+        logger.warning("list_channels: granted_scopes 列なしで再試行")
+        try:
+            result = await db.execute(text(sql_no_scopes), {"tenant_id": tenant_id})
+            rows = result.fetchall()
+        except Exception:
+            # staff テーブル自体が無いケース
+            logger.warning("list_channels: staff JOIN 失敗、staff_name なしで再試行")
+            sql_fallback = f"""
+                SELECT
+                    tmc.page_id,
+                    tmc.page_name,
+                    tmc.instagram_business_account_id,
+                    tmc.instagram_username,
+                    tmc.is_active,
+                    tmc.connected_at,
+                    tmc.page_token_expires_at,
+                    tmc.connected_by_staff_id,
+                    NULL AS staff_name,
+                    NULL AS granted_scopes
+                FROM tenant_meta_config tmc
+                WHERE {where_sql}
+                ORDER BY tmc.connected_at DESC, tmc.id DESC
+            """
+            result = await db.execute(text(sql_fallback), {"tenant_id": tenant_id})
+            rows = result.fetchall()
 
-    channels = [
-        {
+    channels = []
+    for row in rows:
+        scopes_raw = row[9]
+        granted_scopes: Optional[list[str]] = _parse_scopes(scopes_raw)
+        # ADR-041: business_management 不在 → 再認証が必要
+        requires_reauth = (
+            granted_scopes is not None
+            and "business_management" not in granted_scopes
+        )
+        channels.append({
             "page_id": row[0],
             "page_name": row[1],
             "instagram_business_account_id": row[2],
@@ -729,10 +813,30 @@ async def list_channels(
             "page_token_expires_at": _format_dt(row[6]),
             "connected_by_staff_id": row[7],
             "connected_by_staff_name": row[8],
-        }
-        for row in rows
-    ]
+            "granted_scopes": granted_scopes,
+            "requires_reauth": requires_reauth,
+        })
     return {"channels": channels}
+
+
+def _parse_scopes(value) -> Optional[list[str]]:
+    """granted_scopes 列を list[str] に正規化する（JSONB / TEXT どちらでも処理）。"""
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return [str(v) for v in value]
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return None
+        try:
+            import json as _json
+            parsed = _json.loads(s)
+            if isinstance(parsed, list):
+                return [str(v) for v in parsed]
+        except (ValueError, TypeError):
+            return None
+    return None
 
 
 # ---------------------------------------------------------------------------

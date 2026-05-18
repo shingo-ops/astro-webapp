@@ -34,6 +34,8 @@ interface Channel {
   page_token_expires_at: string | null;
   connected_by_staff_id: number | null;
   connected_by_staff_name: string | null;
+  granted_scopes: string[] | null;
+  requires_reauth: boolean;
 }
 
 interface ChannelsResponse {
@@ -97,6 +99,9 @@ export default function ChannelsPage() {
   const [banner, setBanner] = useState<Banner>(null);
 
   const canManage = hasPermission("channels.manage");
+
+  // ADR-041: 旧スコープ（business_management 未付与）の接続が 1 つでもあれば再認証を促す
+  const reauthRequired = channels.some((c) => c.is_active && c.requires_reauth);
 
   // ----- OAuth callback の URL クエリを解析 -----
   // この effect は初回マウントのみ走る。?status=... があれば banner を立てて
@@ -252,6 +257,38 @@ export default function ChannelsPage() {
         </div>
       )}
 
+      {reauthRequired && (
+        <div
+          role="status"
+          data-testid="channels-reauth-banner"
+          style={{
+            padding: "12px 16px",
+            borderRadius: 4,
+            marginBottom: 16,
+            background: "#fff4e5",
+            color: "#a45a00",
+            border: "1px solid #a45a00",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span style={{ flex: 1 }}>
+            <strong>⚠ </strong>
+            {t("channels.reauthRequired")}
+          </span>
+          {canManage && (
+            <button
+              className="btn-sm"
+              onClick={handleConnect}
+              disabled={connecting}
+            >
+              {connecting ? t("channels.connecting") : t("channels.reauthAction")}
+            </button>
+          )}
+        </div>
+      )}
+
       {connectError && (
         <div className="error" style={{ marginBottom: 16 }}>{connectError}</div>
       )}
@@ -328,6 +365,15 @@ export default function ChannelsPage() {
                     ) : (
                       <span className="badge" style={{ background: "#eee", color: "#666" }}>
                         {t("channels.status_inactive")}
+                      </span>
+                    )}
+                    {ch.is_active && ch.requires_reauth && (
+                      <span
+                        className="badge"
+                        data-testid="channel-reauth-badge"
+                        style={{ background: "#fff4e5", color: "#a45a00" }}
+                      >
+                        {t("channels.reauthBadge")}
                       </span>
                     )}
                   </div>

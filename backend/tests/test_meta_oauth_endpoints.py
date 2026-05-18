@@ -71,7 +71,7 @@ async def engine():
         dbapi_conn.execute("PRAGMA foreign_keys = ON")
 
     async with eng.begin() as conn:
-        # tenant_meta_config（SQLite 用に最小限）
+        # tenant_meta_config（SQLite 用に最小限。ADR-041 で granted_scopes 追加）
         await conn.execute(text("""
             CREATE TABLE tenant_meta_config (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,6 +89,7 @@ async def engine():
                 is_active BOOLEAN NOT NULL DEFAULT 1,
                 deactivated_at TIMESTAMP,
                 notes TEXT,
+                granted_scopes TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
