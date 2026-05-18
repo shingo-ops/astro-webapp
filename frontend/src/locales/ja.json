@@ -397,10 +397,10 @@
     "purchase": "仕入",
     "commission": "報酬",
     "status_pending": "未処理",
-    "status_processing": "処理中",
-    "status_shipped": "発送済",
-    "status_delivered": "納品済",
-    "status_returned": "返品",
+    "status_processing": "仕入中",
+    "status_shipped": "配送中",
+    "status_delivered": "完了",
+    "status_returned": "トラブル",
     "status_cancelled": "キャンセル"
   },
   "products": {

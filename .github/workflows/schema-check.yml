@@ -182,6 +182,9 @@ jobs:
       # 差分がなければ終了コード 0、あれば 1 でジョブが失敗する。
       - name: Run schema diff check (dry-run)
         env:
+          # ADR-044/045: sync_tenant_schema.py が `from app.xxx import ...` を解決できるよう
+          # PYTHONPATH に backend/ を追加する（setup_tenant.py と同じ理由）。
+          PYTHONPATH: ${{ github.workspace }}/backend
           METADATA_FERNET_KEY: ${{ steps.fernet.outputs.key }}
           META_VERIFY_TOKEN: ci-verify-token
           META_APP_SECRET: ci-app-secret
