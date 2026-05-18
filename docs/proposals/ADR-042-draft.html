@@ -388,7 +388,7 @@
     <h2><span class="num">3</span>新運用の全体像</h2>
     <p><b>ADR 起案は基本的にしんごさん</b>が行う (パターン A・B 共通)。パターン A はしんごさん本人がすべて完結、パターン B は <code>claude-pipeline</code> 経由で Plan をひとし側に届けてひとしの Generator が実装する。<b>Reviewer と Evaluator は順序のあるループ</b>: ① <b>Generator ⇄ Reviewer (コードレビュー)</b> ループで PASS → ② <b>Generator ⇄ Evaluator (UI/UX ブラウザ評価)</b> ループで PASS → approve。Reviewer/Evaluator はそれぞれ系統別 (しんご系 / ひとし系) に持つ。</p>
     <div class="svg-wrap">
-      <svg viewBox="0 0 960 780" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 960 940" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#5a5a5a"/>
@@ -405,13 +405,16 @@
           <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
           </marker>
+          <marker id="arrow-black" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"/>
+          </marker>
         </defs>
 
         <!-- =========================================================
              パターン A: しんご単独 (起案 + 本人実装 + Reviewer + Evaluator)
-             y: 10 - 230
+             y: 10 - 320
              ========================================================= -->
-        <rect x="10" y="10" width="940" height="220" rx="8" fill="#fef9c3" fill-opacity="0.25" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <rect x="10" y="10" width="940" height="310" rx="8" fill="#fef9c3" fill-opacity="0.25" stroke="#ca8a04" stroke-width="1.5" stroke-dasharray="6,4"/>
         <text x="25" y="32" font-size="13" font-weight="700" fill="#ca8a04">パターン A: 単独開発 (起案=しんご、実装=しんご本人、Reviewer+Evaluator 2 段ループ)</text>
 
         <!-- 起案フェーズ -->
@@ -426,12 +429,20 @@
         <line x1="110" y1="72" x2="133" y2="72" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#arrow)"/>
         <line x1="250" y1="72" x2="273" y2="72" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-        <!-- 本人実装 (中央ハブ) -->
+        <!-- しんご Generator (旧: 本人実装) -->
         <rect x="275" y="50" width="115" height="45" rx="6" fill="#fff9db" stroke="#ca8a04" stroke-width="2"/>
-        <text x="332" y="68" text-anchor="middle" font-size="11" font-weight="700">本人実装</text>
-        <text x="332" y="83" text-anchor="middle" font-size="9" fill="#5a5a5a">(Generator 役)</text>
+        <text x="332" y="70" text-anchor="middle" font-size="11" font-weight="700">しんご Generator</text>
+        <text x="332" y="85" text-anchor="middle" font-size="9" fill="#5a5a5a">本人実装 + PR 作成</text>
 
-        <!-- Loop 1: 本人実装 ⇄ Reviewer -->
+        <!-- しんご Planner (新規) -->
+        <rect x="135" y="120" width="115" height="50" rx="4" fill="white" stroke="#1f2937" stroke-width="2.5"/>
+        <text x="192" y="142" text-anchor="middle" font-size="12" font-weight="700">しんご Planner</text>
+        <text x="192" y="158" text-anchor="middle" font-size="9" fill="#5a5a5a">企画立案・要件整理</text>
+
+        <!-- Planner → ADR 起案 (上向き矢印) -->
+        <line x1="192" y1="120" x2="192" y2="98" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow-black)"/>
+
+        <!-- Loop 1: Generator ⇄ Reviewer -->
         <rect x="420" y="35" width="240" height="80" rx="6" fill="white" fill-opacity="0.6" stroke="#ca8a04" stroke-dasharray="3,2"/>
         <text x="540" y="50" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Loop 1: コードレビュー</text>
 
@@ -439,10 +450,10 @@
         <text x="485" y="76" text-anchor="middle" font-size="11" font-weight="600">しんご Reviewer</text>
         <text x="485" y="91" text-anchor="middle" font-size="8" fill="#5a5a5a">Generator のコードを review</text>
 
-        <!-- 実装 → Reviewer 矢印 + Reviewer → 実装 戻り矢印 -->
+        <!-- Generator → Reviewer 矢印 + Reviewer → Generator 戻り矢印 -->
         <line x1="390" y1="72" x2="433" y2="72" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
         <path d="M 435 90 Q 410 110 360 95" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
-        <text x="400" y="125" font-size="9" fill="#dc2626" font-style="italic">FAIL: 修正</text>
+        <text x="395" y="118" font-size="9" fill="#dc2626" font-style="italic">FAIL: 修正</text>
 
         <!-- Reviewer → Evaluator (PASS) -->
         <line x1="535" y1="78" x2="580" y2="78" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
@@ -451,169 +462,170 @@
         <rect x="580" y="58" width="80" height="40" rx="4" fill="#fde68a" stroke="#ca8a04" opacity="0.4"/>
         <text x="620" y="78" text-anchor="middle" font-size="9" fill="#5a5a5a" font-style="italic">(次ループへ)</text>
 
-        <!-- Loop 2: 本人実装 ⇄ Evaluator -->
-        <rect x="275" y="135" width="385" height="85" rx="6" fill="white" fill-opacity="0.6" stroke="#ca8a04" stroke-dasharray="3,2"/>
-        <text x="467" y="150" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Loop 2: UI/UX ブラウザ評価 (Loop 1 PASS 後)</text>
+        <!-- Loop 2: しんご Generator ⇄ Evaluator (y シフト +70 to 205) -->
+        <rect x="275" y="205" width="385" height="100" rx="6" fill="white" fill-opacity="0.6" stroke="#ca8a04" stroke-dasharray="3,2"/>
+        <text x="467" y="222" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Loop 2: UI/UX ブラウザ評価 (Loop 1 PASS 後)</text>
 
-        <rect x="290" y="160" width="105" height="40" rx="4" fill="#fff9db" stroke="#ca8a04"/>
-        <text x="342" y="178" text-anchor="middle" font-size="11" font-weight="600">本人実装</text>
-        <text x="342" y="193" text-anchor="middle" font-size="9" fill="#5a5a5a">(Generator 役)</text>
+        <rect x="290" y="235" width="115" height="45" rx="4" fill="#fff9db" stroke="#ca8a04"/>
+        <text x="347" y="255" text-anchor="middle" font-size="11" font-weight="600">しんご Generator</text>
+        <text x="347" y="270" text-anchor="middle" font-size="9" fill="#5a5a5a">(修正対応)</text>
 
-        <rect x="430" y="160" width="125" height="40" rx="4" fill="#fde68a" stroke="#ca8a04"/>
-        <text x="492" y="178" text-anchor="middle" font-size="11" font-weight="600">しんご Evaluator</text>
-        <text x="492" y="193" text-anchor="middle" font-size="8" fill="#5a5a5a">UI/UX をブラウザで評価</text>
+        <rect x="430" y="235" width="135" height="45" rx="4" fill="#fde68a" stroke="#ca8a04"/>
+        <text x="497" y="255" text-anchor="middle" font-size="11" font-weight="600">しんご Evaluator</text>
+        <text x="497" y="270" text-anchor="middle" font-size="8" fill="#5a5a5a">UI/UX をブラウザで評価</text>
 
-        <!-- 実装 → Evaluator + 戻り -->
-        <line x1="395" y1="180" x2="428" y2="180" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-        <path d="M 430 200 Q 400 220 350 200" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
-        <text x="385" y="220" font-size="9" fill="#dc2626" font-style="italic">FAIL: 修正</text>
+        <!-- Generator → Evaluator + 戻り -->
+        <line x1="405" y1="257" x2="428" y2="257" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <path d="M 430 278 Q 400 298 350 278" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
+        <text x="380" y="298" font-size="9" fill="#dc2626" font-style="italic">FAIL: 修正</text>
 
-        <!-- Loop 1 から Loop 2 への接続 (Reviewer PASS → 本人実装) -->
-        <path d="M 620 98 L 620 140 L 342 140 L 342 160" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
+        <!-- Loop 1 から Loop 2 への接続 (Reviewer PASS → Loop 2 Generator) -->
+        <path d="M 620 98 L 620 215 L 347 215 L 347 235" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
 
         <!-- approve → develop -->
-        <line x1="555" y1="180" x2="700" y2="180" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
-        <text x="627" y="172" text-anchor="middle" font-size="10" font-weight="700" fill="#16a34a">approve</text>
+        <line x1="565" y1="257" x2="700" y2="257" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <text x="632" y="250" text-anchor="middle" font-size="10" font-weight="700" fill="#16a34a">approve</text>
 
         <!-- A → 共通段 develop へ -->
-        <path d="M 700 180 L 780 180 L 780 540" stroke="#ca8a04" stroke-width="2" fill="none" marker-end="url(#arrow-yellow)"/>
-        <text x="795" y="380" font-size="10" fill="#ca8a04" font-style="italic">パターン A 経路</text>
-        <text x="795" y="395" font-size="10" fill="#ca8a04" font-style="italic">→ develop merge</text>
+        <path d="M 700 257 L 780 257 L 780 765" stroke="#ca8a04" stroke-width="2" fill="none" marker-end="url(#arrow-yellow)"/>
+        <text x="795" y="500" font-size="10" fill="#ca8a04" font-style="italic">パターン A 経路</text>
+        <text x="795" y="515" font-size="10" fill="#ca8a04" font-style="italic">→ develop merge</text>
 
         <!-- =========================================================
              パターン B: しんご Plan → ひとし系 Generator
-             y: 240 - 600
+             y: 330 - 750 (height +60 for しんご Planner)
              ========================================================= -->
-        <rect x="10" y="240" width="940" height="360" rx="8" fill="#dbeafe" fill-opacity="0.25" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6,4"/>
-        <text x="25" y="262" font-size="13" font-weight="700" fill="#2563eb">パターン B: Plan → 開発委譲 (起案=しんご Plan、実装=ひとし系 Generator + Reviewer/Evaluator 2 段ループ)</text>
+        <rect x="10" y="330" width="940" height="420" rx="8" fill="#dbeafe" fill-opacity="0.25" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="25" y="352" font-size="13" font-weight="700" fill="#2563eb">パターン B: Plan → 開発委譲 (起案=しんご Plan、実装=ひとし系 Generator + Reviewer/Evaluator 2 段ループ)</text>
 
         <!-- ===== 上段: しんご系 (ADR Plan 起案) ===== -->
-        <text x="25" y="285" font-size="11" font-weight="600" fill="#92400e">━ しんご系統: ADR (Plan) 起案・review ━</text>
+        <text x="25" y="375" font-size="11" font-weight="600" fill="#92400e">━ しんご系統: ADR (Plan) 起案・review ━</text>
 
-        <rect x="25" y="295" width="85" height="40" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
-        <text x="67" y="313" text-anchor="middle" font-size="12" font-weight="700">しんご</text>
-        <text x="67" y="327" text-anchor="middle" font-size="9" fill="#5a5a5a">Plan 作成</text>
+        <rect x="25" y="385" width="85" height="40" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+        <text x="67" y="403" text-anchor="middle" font-size="12" font-weight="700">しんご</text>
+        <text x="67" y="417" text-anchor="middle" font-size="9" fill="#5a5a5a">Plan 作成</text>
 
-        <rect x="135" y="295" width="110" height="40" rx="6" fill="white" stroke="#ca8a04"/>
-        <text x="190" y="313" text-anchor="middle" font-size="11" font-weight="600">ADR PR</text>
-        <text x="190" y="327" text-anchor="middle" font-size="9" fill="#5a5a5a">(base=develop)</text>
+        <rect x="135" y="385" width="110" height="40" rx="6" fill="white" stroke="#ca8a04"/>
+        <text x="190" y="403" text-anchor="middle" font-size="11" font-weight="600">ADR PR</text>
+        <text x="190" y="417" text-anchor="middle" font-size="9" fill="#5a5a5a">(base=develop)</text>
 
-        <rect x="270" y="295" width="120" height="40" rx="6" fill="#fde68a" stroke="#ca8a04"/>
-        <text x="330" y="313" text-anchor="middle" font-size="11" font-weight="600">しんご Plan review</text>
-        <text x="330" y="327" text-anchor="middle" font-size="8" fill="#5a5a5a">(approve / 差し戻し)</text>
+        <rect x="280" y="385" width="155" height="40" rx="6" fill="#fde68a" stroke="#ca8a04" stroke-width="2"/>
+        <text x="357" y="403" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">claude-pipeline</text>
+        <text x="357" y="417" text-anchor="middle" font-size="9" fill="#5a5a5a">Plan を ひとし へ配送</text>
 
-        <rect x="415" y="295" width="155" height="40" rx="6" fill="#fde68a" stroke="#ca8a04" stroke-width="2"/>
-        <text x="492" y="313" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">claude-pipeline</text>
-        <text x="492" y="327" text-anchor="middle" font-size="9" fill="#5a5a5a">Plan を ひとし へ配送</text>
+        <line x1="110" y1="405" x2="133" y2="405" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="245" y1="405" x2="278" y2="405" stroke="#ca8a04" stroke-width="1.5" marker-end="url(#arrow-yellow)"/>
 
-        <line x1="110" y1="315" x2="133" y2="315" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#arrow)"/>
-        <line x1="245" y1="315" x2="268" y2="315" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#arrow)"/>
-        <line x1="390" y1="315" x2="413" y2="315" stroke="#ca8a04" stroke-width="1.5" marker-end="url(#arrow-yellow)"/>
+        <!-- しんご Planner (新規、ADR PR の下、上向き矢印で接続) -->
+        <rect x="135" y="445" width="110" height="50" rx="4" fill="white" stroke="#1f2937" stroke-width="2.5"/>
+        <text x="190" y="467" text-anchor="middle" font-size="12" font-weight="700">しんご Planner</text>
+        <text x="190" y="483" text-anchor="middle" font-size="9" fill="#5a5a5a">企画立案・要件整理</text>
+        <line x1="190" y1="445" x2="190" y2="425" stroke="#1f2937" stroke-width="2" marker-end="url(#arrow-black)"/>
 
-        <!-- 配送矢印 (上→下) -->
-        <line x1="492" y1="335" x2="492" y2="380" stroke="#16a34a" stroke-width="2.5" stroke-dasharray="5,3" marker-end="url(#arrow-green)"/>
-        <text x="505" y="362" font-size="10" fill="#16a34a" font-style="italic">配送</text>
+        <!-- 配送矢印 (上→下、claude-pipeline → 下段の Generator 起動者へ) -->
+        <line x1="357" y1="425" x2="357" y2="530" stroke="#16a34a" stroke-width="2.5" stroke-dasharray="5,3" marker-end="url(#arrow-green)"/>
+        <text x="370" y="482" font-size="10" fill="#16a34a" font-style="italic">配送</text>
 
         <!-- 区切り線 -->
-        <line x1="25" y1="358" x2="935" y2="358" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="25" y1="508" x2="935" y2="508" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>
 
-        <!-- ===== 下段: ひとし系 (Generator 実装 + 2 段ループ) ===== -->
-        <text x="25" y="376" font-size="11" font-weight="600" fill="#1e3a8a">━ ひとし系統 (私の段): Generator 実装 + 2 段ループ ━</text>
+        <!-- ===== 下段: ひとし系 (Generator 実装 + 2 段ループ) — 全要素 y +60 ===== -->
+        <text x="25" y="526" font-size="11" font-weight="600" fill="#1e3a8a">━ ひとし系統 (ひとしの段): Generator 実装 + 2 段ループ ━</text>
 
-        <rect x="25" y="390" width="90" height="45" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
-        <text x="70" y="410" text-anchor="middle" font-size="12" font-weight="700" fill="#2563eb">ひとし</text>
-        <text x="70" y="425" text-anchor="middle" font-size="9" fill="#5a5a5a">Generator 起動</text>
+        <rect x="25" y="540" width="90" height="45" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="70" y="560" text-anchor="middle" font-size="12" font-weight="700" fill="#2563eb">ひとし</text>
+        <text x="70" y="575" text-anchor="middle" font-size="9" fill="#5a5a5a">Generator 起動</text>
 
-        <!-- 私の Generator (中央ハブ) -->
-        <rect x="140" y="390" width="125" height="45" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
-        <text x="202" y="408" text-anchor="middle" font-size="11" font-weight="700">私の Generator</text>
-        <text x="202" y="423" text-anchor="middle" font-size="9" fill="#5a5a5a">Hikky-dev-Mac 上で実装</text>
+        <!-- ひとしの Generator (中央ハブ) -->
+        <rect x="140" y="540" width="140" height="45" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+        <text x="210" y="560" text-anchor="middle" font-size="11" font-weight="700">ひとしの Generator</text>
+        <text x="210" y="575" text-anchor="middle" font-size="9" fill="#5a5a5a">Hikky-dev-Mac 上で実装</text>
 
         <!-- 配送矢印 → ひとし起動への接続 -->
-        <path d="M 492 380 L 492 387 L 70 387 L 70 390" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arrow-green)"/>
+        <path d="M 357 530 L 357 537 L 70 537 L 70 540" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arrow-green)"/>
 
-        <line x1="115" y1="412" x2="138" y2="412" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+        <line x1="115" y1="562" x2="138" y2="562" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
 
         <!-- Loop 1: Generator ⇄ Reviewer -->
-        <rect x="290" y="370" width="280" height="85" rx="6" fill="white" fill-opacity="0.6" stroke="#2563eb" stroke-dasharray="3,2"/>
-        <text x="430" y="386" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">Loop 1: コードレビュー</text>
+        <rect x="300" y="520" width="285" height="85" rx="6" fill="white" fill-opacity="0.6" stroke="#2563eb" stroke-dasharray="3,2"/>
+        <text x="442" y="536" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">Loop 1: コードレビュー</text>
 
-        <rect x="305" y="395" width="115" height="40" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
-        <text x="362" y="413" text-anchor="middle" font-size="11" font-weight="600" fill="#1e3a8a">私の Reviewer</text>
-        <text x="362" y="427" text-anchor="middle" font-size="8" fill="#5a5a5a">Generator のコードを review</text>
+        <rect x="315" y="545" width="125" height="40" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+        <text x="377" y="563" text-anchor="middle" font-size="11" font-weight="600" fill="#1e3a8a">ひとしの Reviewer</text>
+        <text x="377" y="577" text-anchor="middle" font-size="8" fill="#5a5a5a">Generator のコードを review</text>
 
         <!-- Generator → Reviewer + 戻り -->
-        <line x1="265" y1="412" x2="303" y2="412" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-        <path d="M 305 432 Q 270 445 215 435" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
-        <text x="245" y="455" font-size="9" fill="#dc2626" font-style="italic">FAIL: Generator が修正</text>
+        <line x1="280" y1="562" x2="313" y2="562" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <path d="M 315 582 Q 280 595 215 585" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
+        <text x="240" y="605" font-size="9" fill="#dc2626" font-style="italic">FAIL: Generator が修正</text>
 
         <!-- Reviewer → (次ループ Evaluator) -->
-        <line x1="420" y1="412" x2="465" y2="412" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
-        <text x="442" y="402" text-anchor="middle" font-size="9" font-weight="700" fill="#16a34a">PASS</text>
+        <line x1="440" y1="562" x2="480" y2="562" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <text x="460" y="552" text-anchor="middle" font-size="9" font-weight="700" fill="#16a34a">PASS</text>
 
-        <rect x="465" y="395" width="100" height="40" rx="4" fill="#bfdbfe" stroke="#2563eb" opacity="0.4"/>
-        <text x="515" y="415" text-anchor="middle" font-size="9" fill="#5a5a5a" font-style="italic">(次ループへ)</text>
+        <rect x="480" y="545" width="100" height="40" rx="4" fill="#bfdbfe" stroke="#2563eb" opacity="0.4"/>
+        <text x="530" y="565" text-anchor="middle" font-size="9" fill="#5a5a5a" font-style="italic">(次ループへ)</text>
 
         <!-- Loop 2: Generator ⇄ Evaluator -->
-        <rect x="140" y="475" width="455" height="90" rx="6" fill="white" fill-opacity="0.6" stroke="#2563eb" stroke-dasharray="3,2"/>
-        <text x="367" y="492" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">Loop 2: UI/UX ブラウザ評価 (Loop 1 PASS 後)</text>
+        <rect x="140" y="625" width="470" height="100" rx="6" fill="white" fill-opacity="0.6" stroke="#2563eb" stroke-dasharray="3,2"/>
+        <text x="375" y="642" text-anchor="middle" font-size="10" font-weight="700" fill="#1e3a8a">Loop 2: UI/UX ブラウザ評価 (Loop 1 PASS 後)</text>
 
-        <rect x="155" y="500" width="125" height="45" rx="4" fill="#dbeafe" stroke="#2563eb"/>
-        <text x="217" y="518" text-anchor="middle" font-size="11" font-weight="600">私の Generator</text>
-        <text x="217" y="533" text-anchor="middle" font-size="9" fill="#5a5a5a">(修正対応)</text>
+        <rect x="155" y="655" width="140" height="50" rx="4" fill="#dbeafe" stroke="#2563eb"/>
+        <text x="225" y="675" text-anchor="middle" font-size="11" font-weight="600">ひとしの Generator</text>
+        <text x="225" y="692" text-anchor="middle" font-size="9" fill="#5a5a5a">(修正対応)</text>
 
-        <rect x="320" y="500" width="155" height="45" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
-        <text x="397" y="518" text-anchor="middle" font-size="11" font-weight="600" fill="#1e3a8a">私の Evaluator</text>
-        <text x="397" y="533" text-anchor="middle" font-size="8" fill="#5a5a5a">UI/UX をブラウザで評価 (Playwright)</text>
+        <rect x="325" y="655" width="160" height="50" rx="4" fill="#bfdbfe" stroke="#2563eb"/>
+        <text x="405" y="675" text-anchor="middle" font-size="11" font-weight="600" fill="#1e3a8a">ひとしの Evaluator</text>
+        <text x="405" y="692" text-anchor="middle" font-size="8" fill="#5a5a5a">UI/UX をブラウザで評価 (Playwright)</text>
 
         <!-- Generator → Evaluator + 戻り -->
-        <line x1="280" y1="522" x2="318" y2="522" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-        <path d="M 320 545 Q 285 565 230 545" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
-        <text x="255" y="582" font-size="9" fill="#dc2626" font-style="italic">FAIL: Generator が修正</text>
+        <line x1="295" y1="680" x2="323" y2="680" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <path d="M 325 705 Q 290 725 235 705" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
+        <text x="260" y="740" font-size="9" fill="#dc2626" font-style="italic">FAIL: Generator が修正</text>
 
-        <!-- Loop 1 → Loop 2 の接続矢印 (Reviewer PASS → 本人実装) -->
-        <path d="M 515 435 L 515 460 L 217 460 L 217 500" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
+        <!-- Loop 1 → Loop 2 の接続矢印 -->
+        <path d="M 530 585 L 530 615 L 225 615 L 225 655" stroke="#16a34a" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
 
         <!-- approve → develop -->
-        <line x1="475" y1="522" x2="595" y2="522" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
-        <text x="535" y="514" text-anchor="middle" font-size="10" font-weight="700" fill="#16a34a">approve</text>
+        <line x1="485" y1="680" x2="610" y2="680" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <text x="548" y="672" text-anchor="middle" font-size="10" font-weight="700" fill="#16a34a">approve</text>
 
         <!-- B → 共通段 develop へ -->
-        <path d="M 595 522 L 700 522 L 700 615" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
-        <text x="710" y="570" font-size="10" fill="#2563eb" font-style="italic">パターン B 経路</text>
-        <text x="710" y="585" font-size="10" fill="#2563eb" font-style="italic">→ develop merge</text>
+        <path d="M 610 680 L 700 680 L 700 765" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+        <text x="710" y="720" font-size="10" fill="#2563eb" font-style="italic">パターン B 経路</text>
+        <text x="710" y="735" font-size="10" fill="#2563eb" font-style="italic">→ develop merge</text>
 
         <!-- =========================================================
              共通段: develop → リリースボタン → main
-             y: 610 - 780
+             y: 760 - 930
              ========================================================= -->
-        <rect x="10" y="610" width="940" height="160" rx="8" fill="#dcfce7" fill-opacity="0.3" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6,4"/>
-        <text x="25" y="632" font-size="13" font-weight="700" fill="#16a34a">共通: develop → 本番反映 (パターン A・B 共通)</text>
+        <rect x="10" y="760" width="940" height="160" rx="8" fill="#dcfce7" fill-opacity="0.3" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="25" y="782" font-size="13" font-weight="700" fill="#16a34a">共通: develop → 本番反映 (パターン A・B 共通)</text>
 
-        <rect x="200" y="650" width="100" height="60" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
-        <text x="250" y="676" text-anchor="middle" font-size="14" font-weight="700" fill="#2563eb">develop</text>
-        <text x="250" y="694" text-anchor="middle" font-size="10" fill="#5a5a5a">統合ブランチ</text>
+        <rect x="200" y="800" width="100" height="60" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+        <text x="250" y="826" text-anchor="middle" font-size="14" font-weight="700" fill="#2563eb">develop</text>
+        <text x="250" y="844" text-anchor="middle" font-size="10" fill="#5a5a5a">統合ブランチ</text>
 
-        <rect x="360" y="650" width="180" height="60" rx="6" fill="#fde68a" stroke="#ca8a04" stroke-width="2"/>
-        <text x="450" y="676" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">🔘 リリースボタン</text>
-        <text x="450" y="694" text-anchor="middle" font-size="10" fill="#5a5a5a">(workflow_dispatch)</text>
-        <text x="450" y="706" text-anchor="middle" font-size="9" fill="#5a5a5a">手動 1 クリック起動</text>
+        <rect x="360" y="800" width="180" height="60" rx="6" fill="#fde68a" stroke="#ca8a04" stroke-width="2"/>
+        <text x="450" y="826" text-anchor="middle" font-size="14" font-weight="700" fill="#92400e">🔘 リリースボタン</text>
+        <text x="450" y="844" text-anchor="middle" font-size="10" fill="#5a5a5a">(workflow_dispatch)</text>
+        <text x="450" y="856" text-anchor="middle" font-size="9" fill="#5a5a5a">手動 1 クリック起動</text>
 
-        <line x1="300" y1="680" x2="358" y2="680" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <line x1="300" y1="830" x2="358" y2="830" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
 
-        <rect x="595" y="650" width="100" height="60" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
-        <text x="645" y="676" text-anchor="middle" font-size="14" font-weight="700" fill="#16a34a">main</text>
-        <text x="645" y="694" text-anchor="middle" font-size="10" fill="#5a5a5a">本番ブランチ</text>
+        <rect x="595" y="800" width="100" height="60" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="645" y="826" text-anchor="middle" font-size="14" font-weight="700" fill="#16a34a">main</text>
+        <text x="645" y="844" text-anchor="middle" font-size="10" fill="#5a5a5a">本番ブランチ</text>
 
-        <line x1="540" y1="680" x2="593" y2="680" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
-        <text x="567" y="670" text-anchor="middle" font-size="9" fill="#16a34a">fast-forward</text>
+        <line x1="540" y1="830" x2="593" y2="830" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <text x="567" y="820" text-anchor="middle" font-size="9" fill="#16a34a">fast-forward</text>
 
-        <rect x="745" y="650" width="170" height="60" rx="6" fill="white" stroke="#16a34a"/>
-        <text x="830" y="676" text-anchor="middle" font-size="11" font-weight="600" fill="#16a34a">VPS 本番</text>
-        <text x="830" y="692" text-anchor="middle" font-size="9" fill="#5a5a5a">deploy.yml 自動</text>
-        <text x="830" y="704" text-anchor="middle" font-size="9" fill="#5a5a5a">約 5 分で反映</text>
+        <rect x="745" y="800" width="170" height="60" rx="6" fill="white" stroke="#16a34a"/>
+        <text x="830" y="826" text-anchor="middle" font-size="11" font-weight="600" fill="#16a34a">VPS 本番</text>
+        <text x="830" y="842" text-anchor="middle" font-size="9" fill="#5a5a5a">deploy.yml 自動</text>
+        <text x="830" y="854" text-anchor="middle" font-size="9" fill="#5a5a5a">約 5 分で反映</text>
 
-        <line x1="695" y1="680" x2="743" y2="680" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+        <line x1="695" y1="830" x2="743" y2="830" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
 
       </svg>
     </div>
@@ -624,14 +636,22 @@
     </div>
     <div class="alert alert-info">
       <b>ループの構造 (2 系統、順序あり)</b>
-      ① <b>Generator ⇄ Reviewer</b> ループ — コードの品質チェック、FAIL なら Generator が修正、PASS で次へ<br>
-      ② <b>Generator ⇄ Evaluator</b> ループ — UI/UX 動作確認、FAIL なら Generator が修正、PASS で approve<br>
-      ※ Loop 1 と Loop 2 は順次実行 (Reviewer 完了後に Evaluator)、両方 PASS で develop merge
+      ① <b>Generator ⇄ Reviewer</b> ループ — コードの品質チェック、FAIL なら Generator が修正 push、PASS で次へ<br>
+      ② <b>Generator ⇄ Evaluator</b> ループ — UI/UX 動作確認、FAIL なら Generator が修正 push、PASS で approve<br>
+      ※ Loop 1 と Loop 2 は順次実行 (Reviewer 完了後に Evaluator)<br>
+      ※ <b>Evaluator スキップ条件</b>: 画面 (UI/UX) 修正が不要な変更 (backend のみ、ドキュメント、リファクタ等) は Evaluator スキップ可
+    </div>
+    <div class="alert alert-info">
+      <b>PR フロー (GitHub 標準準拠)</b>
+      ① PR 作成 = <b>常に Generator</b> (役割名。人間が Generator 役の場合も同じ。人間が直接 PR は作らない)<br>
+      ② 再レビュー依頼 = <b>Generator が修正 push 後に再要求</b> (Reviewer/Evaluator は反応するだけ)<br>
+      ③ Reviewer/Evaluator の操作は <code>gh pr review --approve</code> or <code>--request-changes</code> のみ<br>
+      ④ 最終 merge = <b>人間</b> (ひとし or しんご) が <code>gh pr merge --squash</code>
     </div>
     <div class="alert alert-info">
       <b>パターンの違い</b>
       ① <b>パターン A</b>: しんごさん本人が完結 (起案 + 本人実装 + しんご Reviewer + しんご Evaluator)<br>
-      ② <b>パターン B</b>: しんごさん起案 → <code>claude-pipeline</code> 経由で Plan をひとしに配送 → 私の Generator 実装 → 私の Reviewer + Evaluator<br>
+      ② <b>パターン B</b>: しんごさん起案 → <code>claude-pipeline</code> 経由で Plan をひとしに配送 → ひとしの Generator 実装 → ひとしの Reviewer + Evaluator<br>
       ③ Reviewer/Evaluator は <b>系統別</b>: パターン A=しんご系、パターン B 実装側=ひとし系<br>
       ④ main への合法経路は「リリースボタン」(workflow_dispatch) 一本だけ
     </div>
@@ -651,20 +671,26 @@
         <table>
           <tr><th width="160">項目</th><th>内容</th></tr>
           <tr><td>起案者</td><td><b>しんご</b> (ADR 起案 or 仕様書作成)</td></tr>
-          <tr><td>実装者</td><td><b>しんご本人</b> (Claude Code 支援可)</td></tr>
-          <tr><td>Reviewer 役割</td><td>しんご本人実装の<b>コード</b>を review (しんご系 Reviewer エージェント)</td></tr>
-          <tr><td>Evaluator 役割</td><td>Reviewer 通過後、<b>UI/UX をブラウザで評価</b> (しんご系 Evaluator エージェント)</td></tr>
+          <tr><td>実装者 (Generator 役)</td><td><b>しんご本人</b> (Claude Code 支援可) — Generator 役として実装 + PR 作成</td></tr>
+          <tr><td>Reviewer 役割</td><td>Generator のコードを review (しんご系 Reviewer エージェント、<code>gh pr review --approve</code>)</td></tr>
+          <tr><td>Evaluator 役割</td><td>Reviewer 通過後、UI/UX をブラウザで評価 (しんご系 Evaluator エージェント、Playwright、<code>gh pr review --approve</code>)<br><span style="color:#92400e;font-size:12px;">※ 画面修正不要な変更 (backend のみ、ドキュメント、リファクタ等) は Evaluator スキップ可</span></td></tr>
+          <tr><td>PR 作成</td><td><b>Generator が常に PR 作成</b> (人間も AI も役割として実行、人間が直接 PR は作らない)</td></tr>
+          <tr><td>再レビュー依頼</td><td><b>Generator が修正 push 後に再要求</b></td></tr>
+          <tr><td>merge</td><td>両方 PASS 後、人間 (しんご or ひとし) が <code>gh pr merge --squash</code></td></tr>
           <tr><td>ADR</td><td><span class="pill pill-yellow">起案あり (本人実装の場合は ADR でなく仕様書でも可)</span></td></tr>
           <tr><td>claude-pipeline</td><td><span class="pill pill-red">不使用</span></td></tr>
           <tr><td>用途</td><td>しんごさんが自分で実装するもの (例: ADR-041 手書き)、Meta 申請関連、軽微な改修</td></tr>
           <tr><td>例</td><td>PR #388 (しんご手書き ADR-041 起案)、PR #347 (ADR-018 Instagram 修正)</td></tr>
         </table>
         <div class="alert alert-info">
-          <b>フロー (Reviewer→Evaluator の 2 段ループ)</b>
-          ① しんごが ADR 起案 or 仕様書作成 → ② feature ブランチを develop から切る → ③ しんご本人で実装 → ④ PR (base=develop)<br>
-          ⑤ <b>Loop 1: 本人実装 ⇄ しんご Reviewer (コードレビュー)</b> — FAIL なら修正 → 再レビュー、PASS で次へ<br>
-          ⑥ <b>Loop 2: 本人実装 ⇄ しんご Evaluator (UI/UX ブラウザ評価)</b> — FAIL なら修正 → 再評価、PASS で approve<br>
-          ⑦ approve → squash merge → ⑧ Release タイミングで「リリースボタン」(workflow_dispatch)
+          <b>フロー (Generator が PR 作成 → Reviewer → Evaluator → 人間 merge)</b>
+          ① しんごが ADR 起案 or 仕様書作成 → ② feature ブランチを develop から切る → ③ <b>Generator 役のしんごが実装 + <code>gh pr create --base develop</code></b><br>
+          ④ <b>Loop 1: Generator ⇄ Reviewer (コードレビュー)</b> — Reviewer が <code>gh pr review</code>、FAIL なら <b>Generator が同じ PR ブランチに修正 push</b> → 再レビュー要求 → 再 Reviewer<br>
+          ⑤ Reviewer approve → 画面修正があるか判定<br>
+            ・画面修正あり → <b>Loop 2: Generator ⇄ Evaluator (UI/UX ブラウザ評価)</b> — FAIL なら Generator が修正 push → 再 Reviewer → 再 Evaluator<br>
+            ・画面修正なし → Evaluator スキップ可<br>
+          ⑥ 両方 approve (or Reviewer のみ approve + Evaluator スキップ) → <b>人間が <code>gh pr merge --squash</code></b><br>
+          ⑦ Release タイミングで「リリースボタン」(workflow_dispatch) で main 反映
         </div>
       </div>
 
@@ -672,29 +698,32 @@
         <h3>パターン B: Plan → 開発委譲</h3>
         <table>
           <tr><th width="160">項目</th><th>内容</th></tr>
-          <tr><td>起案者 (Plan)</td><td><b>しんご</b> (ADR で Plan を作成)</td></tr>
-          <tr><td>Plan review</td><td>しんご系 (Plan の妥当性を approve / 差し戻し、コードレビューでも UI/UX 評価でもない)</td></tr>
+          <tr><td>起案者 (Plan)</td><td><b>しんご</b> (ADR で Plan を作成 + ADR PR を Generator 役として open、自分で merge)</td></tr>
           <tr><td>Plan 配送経路</td><td><code>claude-pipeline</code> (しんご起案 ADR をひとしに届ける配送機構)</td></tr>
           <tr><td>実装トリガー</td><td><b>ひとしが Generator を手動起動</b></td></tr>
-          <tr><td>実装者</td><td>Generator (Hikky-dev-Mac 上、Claude Max ベース)</td></tr>
-          <tr><td>Reviewer 役割</td><td>Generator 実装<b>コード</b>を review (私系 Reviewer エージェント)</td></tr>
-          <tr><td>Evaluator 役割</td><td>Reviewer 通過後、<b>UI/UX をブラウザで評価</b> (私系 Evaluator エージェント / Playwright)</td></tr>
+          <tr><td>実装者 (Generator)</td><td>ひとしの Generator (Hikky-dev-Mac 上、Claude Max ベース) — <b>実装 + PR 作成を担当</b></td></tr>
+          <tr><td>Reviewer 役割</td><td>Generator のコードを review (私系 Reviewer エージェント、<code>gh pr review --approve</code>)</td></tr>
+          <tr><td>Evaluator 役割</td><td>Reviewer 通過後、UI/UX をブラウザで評価 (私系 Evaluator、Playwright、<code>gh pr review --approve</code>)<br><span style="color:#1e3a8a;font-size:12px;">※ 画面修正不要な変更 (backend のみ、ドキュメント、リファクタ等) は Evaluator スキップ可</span></td></tr>
+          <tr><td>PR 作成</td><td><b>Generator が常に PR 作成</b> (人間は PR 作成しない、merge のみ)</td></tr>
+          <tr><td>再レビュー依頼</td><td><b>Generator が修正 push 後に再要求</b> (同じ PR ブランチを更新)</td></tr>
+          <tr><td>merge</td><td>両方 approve 後、人間 (ひとし) が <code>gh pr merge --squash</code></td></tr>
           <tr><td>ADR</td><td><span class="pill pill-blue">必須</span></td></tr>
           <tr><td>用途</td><td>大規模実装、ひとし不在時の進行確保、claude-pipeline で効率化できる定型タスク</td></tr>
           <tr><td>例</td><td>ADR-036 (PR #372 schema integrity), ADR-038 (PR #376 QA Smoke), ADR-039 (PR #378), ADR-044 (PR #392 進行中)</td></tr>
         </table>
         <div class="alert alert-info">
-          <b>フロー (しんご系 → 配送 → ひとし系 → Reviewer Loop → Evaluator Loop)</b>
-          ① しんごが ADR (Plan) を起案、develop に PR (base=develop)<br>
-          ② しんご系で Plan review → approve / 差し戻し<br>
-          ③ approve → develop merge (Plan が確定)<br>
-          ④ <code>claude-pipeline</code> 経由で Plan がひとし側に<b>配送</b>される<br>
-          ⑤ <b>ひとしが私の Generator を手動起動</b> (<code>gh workflow run claude-pipeline.yml -f adr_files="docs/adr/ADR-XXX..."</code>)<br>
-          ⑥ Generator が Plan に従い実装 → 自動 PR (base=develop)<br>
-          ⑦ <b>Loop 1: 私の Generator ⇄ 私の Reviewer (コードレビュー)</b> — FAIL なら Generator が修正 → 再 review、PASS で次へ<br>
-          ⑧ <b>Loop 2: 私の Generator ⇄ 私の Evaluator (UI/UX ブラウザ評価)</b> — FAIL なら Generator が修正 → 再評価、PASS で approve<br>
-          ⑨ 両方 PASS で approve → ひとしが develop merge<br>
-          ⑩ Release タイミングで「リリースボタン」(workflow_dispatch) で main 反映
+          <b>フロー (しんご Plan → 配送 → ひとしの Generator が PR 作成 → Reviewer → Evaluator → 人間 merge)</b>
+          ① しんごが ADR (Plan) を起案、<b>Generator 役として develop に PR open</b> (base=develop)<br>
+          ② しんご自身で内容確認 → 自分で develop merge (Plan が確定)<br>
+          ③ <code>claude-pipeline</code> 経由で Plan がひとし側に<b>配送</b>される<br>
+          ④ <b>ひとしがひとしの Generator を手動起動</b> (<code>gh workflow run claude-pipeline.yml -f adr_files="docs/adr/ADR-XXX..."</code>)<br>
+          ⑤ <b>Generator が Plan に従い実装 + 自動 PR 作成</b> (base=develop)<br>
+          ⑥ <b>Loop 1: Generator ⇄ Reviewer (コードレビュー)</b> — Reviewer が <code>gh pr review</code>、FAIL なら <b>Generator が同じ PR ブランチに修正 push</b> → 再 Reviewer<br>
+          ⑦ Reviewer approve → 画面修正があるか判定<br>
+            ・画面修正あり → <b>Loop 2: Generator ⇄ Evaluator (UI/UX)</b> — FAIL なら Generator が修正 push → 再 Reviewer → 再 Evaluator<br>
+            ・画面修正なし → Evaluator スキップ可<br>
+          ⑧ 両方 approve (or Reviewer のみ approve + Evaluator スキップ) → <b>人間 (ひとし) が <code>gh pr merge --squash</code></b><br>
+          ⑨ Release タイミングで「リリースボタン」で main 反映
         </div>
         <div class="alert alert-warn">
           <b>Generator の制約 (ADR-038/039 で確立済)</b>
