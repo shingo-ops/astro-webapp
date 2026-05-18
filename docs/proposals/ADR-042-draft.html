@@ -655,6 +655,75 @@
       ③ Reviewer/Evaluator は <b>系統別</b>: パターン A=しんご系、パターン B 実装側=ひとし系<br>
       ④ main への合法経路は「リリースボタン」(workflow_dispatch) 一本だけ
     </div>
+
+    <h3 style="margin-top: 30px;">3-5. 4 エージェント役割定義 (網羅一覧)</h3>
+    <p>本 ADR で扱う 4 つのエージェント / 役割の責務を 1 表に集約。各エージェントは <code>~/.claude/agents/</code> 配下の md ファイルで定義され、ひとし・しんご両者が同じ定義を持つ (<code>agents-role-clarification-prompt.md</code> で同期)。</p>
+
+    <table>
+      <tr>
+        <th width="100">役割</th>
+        <th>フェーズ</th>
+        <th>担当</th>
+        <th>動作モード</th>
+        <th>入力 → 出力</th>
+        <th>ファイル</th>
+      </tr>
+      <tr style="background: #f3e8ff;">
+        <td><b>Planner</b></td>
+        <td>ADR 起案前段、企画立案・要件整理、<b>仕様書作成や ADR 作成</b></td>
+        <td>しんご (人間)</td>
+        <td><b>Claude Code の Plan mode</b> で起動 (実行系ツール封じる安全モード)</td>
+        <td>アイディア / ビジネス要求<br>→ <b>ADR or 仕様書</b> (Generator に渡す)</td>
+        <td><code>~/.claude/agents/planner.md</code></td>
+      </tr>
+      <tr style="background: #fff9db;">
+        <td><b>Generator</b></td>
+        <td>実装 + PR 作成 + 修正 push</td>
+        <td>(パターン A) しんご本人 (Generator 役として) / (パターン B) AI on Hikky-dev-Mac</td>
+        <td>通常モード</td>
+        <td>ADR or 仕様書 (Planner から)<br>→ コード + <code>gh pr create</code> + Evaluator skip 宣言</td>
+        <td><code>~/.claude/agents/generator.md</code></td>
+      </tr>
+      <tr style="background: #fef3c7;">
+        <td><b>Reviewer</b></td>
+        <td>コードレビュー (Loop 1、静的、ブラウザ不要)</td>
+        <td>エージェント (しんご系 or ひとし系)</td>
+        <td>エージェント常時、PR 単位で起動</td>
+        <td>Generator が open した PR<br>→ <code>gh pr review --approve</code> or <code>--request-changes</code></td>
+        <td><code>~/.claude/agents/reviewer.md</code></td>
+      </tr>
+      <tr style="background: #dbeafe;">
+        <td><b>Evaluator</b></td>
+        <td>UI/UX ブラウザ評価 (Loop 2、動的、Playwright)</td>
+        <td>エージェント (しんご系 or ひとし系)</td>
+        <td>エージェント (画面修正なければスキップ可)</td>
+        <td>Reviewer APPROVE 済 PR<br>→ <code>gh pr review --approve</code> or <code>--request-changes</code></td>
+        <td><code>~/.claude/agents/evaluator.md</code></td>
+      </tr>
+    </table>
+
+    <div class="alert alert-info">
+      <b>Planner の Plan mode 起動について</b>
+      Claude Code の Plan mode は実行系ツール (Edit / Write / Bash 書込み系) を封じる安全モード。
+      ADR 起案や仕様書作成のような「考えながら触る」事故が起きやすいフェーズで、意図しないファイル変更やコマンド実行を構造的に防ぐ。
+      Planner は必ず Plan mode で起動し、ADR / 仕様書が確定したら ExitPlanMode で通常モードに戻る (もしくは Generator フェーズに引き継ぐ)。
+    </div>
+
+    <div class="alert alert-info">
+      <b>役割間のデータフロー</b>
+      Planner (Plan mode で ADR/仕様書作成) → Generator (実装+PR作成) → Reviewer (コード review) → Evaluator (UI/UX、スキップ可) → 人間 merge<br>
+      各エージェント間のハンドオフは「ファイル (ADR / コード)」「PR (Generator 以降)」「`gh pr review` (Reviewer/Evaluator)」を介して行われる。
+    </div>
+
+    <h4 style="margin-top: 20px;">パターン A/B における役割の担当者</h4>
+    <table>
+      <tr><th width="100">役割</th><th>パターン A</th><th>パターン B</th></tr>
+      <tr><td>Planner</td><td>しんご</td><td>しんご</td></tr>
+      <tr><td>Generator</td><td>しんご本人 (Generator 役として実装 + PR)</td><td>AI on Hikky-dev-Mac (ひとしが起動)</td></tr>
+      <tr><td>Reviewer</td><td>しんご系 Reviewer エージェント</td><td>ひとし系 Reviewer エージェント</td></tr>
+      <tr><td>Evaluator</td><td>しんご系 Evaluator エージェント (スキップ可)</td><td>ひとし系 Evaluator エージェント (スキップ可)</td></tr>
+      <tr><td>merge (人間)</td><td>しんご</td><td>ひとし (or しんご)</td></tr>
+    </table>
   </section>
 
   <!-- ===== Patterns A/B ===== -->
