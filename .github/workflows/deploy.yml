@@ -334,6 +334,13 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/054_add_users_theme.sql
 
+            # ADR-041 / ADR-045: 全テナントの tenant_meta_config に granted_scopes JSONB 追加 + backfill（migration 055）
+            #   ADD COLUMN IF NOT EXISTS + UPDATE WHERE granted_scopes IS NULL で idempotent。
+            #   ADR-045 で deploy.yml に追加された自動実行ステップ。未適用のままだと
+            #   tenant_meta_config 系 API が UndefinedColumnError で HTTP 500 になる。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_adr041_granted_scopes.py
+
             # migration 009: 全テナントに notification_channels / notification_logs /
             #   staff_reports / archives テーブルを追加（CREATE TABLE IF NOT EXISTS + RLS、idempotent）
             #   tenant_006 は 2026-05-15 に手動適用済み。以降の新テナントは setup_tenant.py 経由。
@@ -368,7 +375,73 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
             curl -sf https://jarvis-claude.uk/api/health || echo "External health check warning"
+
+            # ADR-045: migration 055 (granted_scopes) 適用検証
+            #   全 active テナントスキーマで tenant_meta_config.granted_scopes 列が
+            #   存在し、かつ NULL のレコードが残っていないことを確認する。
+            #   missing/NULL が 1 件でもあれば RAISE EXCEPTION で本ステップを失敗させる。
+            echo "Verifying ADR-045 migration 055 (granted_scopes)..."
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 <<'VERIFY_EOF'
+            DO $$
+            DECLARE
+                r RECORD;
+                missing_col_count INT := 0;
+                null_rows_total INT := 0;
+                cnt INT;
+            BEGIN
+                FOR r IN
+                    SELECT
+                        id,
+                        tenant_code,
+                        format('tenant_%s', lpad(id::text, 3, '0')) AS schema
+                    FROM public.tenants
+                    WHERE is_active = true
+                    ORDER BY id
+                LOOP
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.tables
+                        WHERE table_schema = r.schema
+                          AND table_name = 'tenant_meta_config'
+                    ) THEN
+                        CONTINUE;
+                    END IF;
+
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_schema = r.schema
+                          AND table_name = 'tenant_meta_config'
+                          AND column_name = 'granted_scopes'
+                    ) THEN
+                        RAISE WARNING 'Missing granted_scopes column: schema=% tenant_code=%',
+                            r.schema, r.tenant_code;
+                        missing_col_count := missing_col_count + 1;
+                        CONTINUE;
+                    END IF;
+
+                    EXECUTE format(
+                        'SELECT COUNT(*) FROM %I.tenant_meta_config WHERE granted_scopes IS NULL',
+                        r.schema
+                    ) INTO cnt;
+                    IF cnt > 0 THEN
+                        RAISE WARNING 'NULL granted_scopes rows: schema=% tenant_code=% count=%',
+                            r.schema, r.tenant_code, cnt;
+                        null_rows_total := null_rows_total + cnt;
+                    END IF;
+                END LOOP;
+
+                IF missing_col_count > 0 OR null_rows_total > 0 THEN
+                    RAISE EXCEPTION
+                        'ADR-045 verification failed: missing_col=% null_rows=%',
+                        missing_col_count, null_rows_total;
+                END IF;
+
+                RAISE NOTICE 'ADR-045 verification OK';
+            END
+            $$;
+            VERIFY_EOF
 
       - name: Deployment Failure Notification
         if: failure()
