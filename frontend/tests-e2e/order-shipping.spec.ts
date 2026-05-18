@@ -264,7 +264,7 @@ test.describe("ADR-021 Sprint 3: 発送情報 MVP", () => {
     });
 
     await page.getByTestId("open-shipping-1").click();
-    await expect(page.getByRole("dialog", { name: /発送情報/ })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: /配送/ })).toBeVisible();
 
     await page.getByTestId("ship-input-recipient_name").fill("John Smith");
     await page.getByTestId("ship-input-address1").fill("1 Main St");
@@ -274,7 +274,7 @@ test.describe("ADR-021 Sprint 3: 発送情報 MVP", () => {
 
     await page.getByTestId("ship-save").click();
 
-    await expect(page.getByRole("dialog", { name: /発送情報/ })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: /配送/ })).toHaveCount(0);
     await expect(page.getByTestId("ship-cell-tracking-1")).toContainText(
       "EL12345JP",
     );
@@ -330,7 +330,7 @@ test.describe("ADR-021 Sprint 3: 発送情報 MVP", () => {
     });
 
     await page.getByTestId("open-shipping-1").click();
-    await expect(page.getByRole("dialog", { name: /発送情報/ })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: /配送/ })).toBeVisible();
 
     // ダウンロードボタンは「既存発送情報あり」で活性化される
     const dl = page.getByTestId("ship-download-csv");

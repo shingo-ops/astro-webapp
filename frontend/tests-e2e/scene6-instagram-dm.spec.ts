@@ -36,8 +36,9 @@ test.describe("Scene 6: Instagram DM", () => {
     });
 
     await page.goto("/lead-chat");
+    // ADR-044: i18n 化により t("inbox.title") = "受信箱"
     await expect(
-      page.getByRole("heading", { name: "受信トレイ" }),
+      page.getByRole("heading", { name: "受信箱" }),
     ).toBeVisible({ timeout: 20_000 });
 
     // 4:44 Instagram 会話アイテム + platform バッジ「Instagram」
@@ -104,9 +105,8 @@ test.describe("Scene 6: Instagram DM", () => {
 
     await page.goto("/lead-chat?lead_id=5002");
 
-    const textarea = page.getByPlaceholder(
-      "返信を入力（Enter で送信、Shift+Enter で改行）",
-    );
+    // ADR-044: i18n 化により placeholder は t("inbox.messagePlaceholder")
+    const textarea = page.getByPlaceholder(/メッセージを入力/);
     await expect(textarea).toBeVisible({ timeout: 20_000 });
 
     const replyText =

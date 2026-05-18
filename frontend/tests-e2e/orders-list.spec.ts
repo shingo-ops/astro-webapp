@@ -151,13 +151,14 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
       timeout: 20_000,
     });
 
-    // 検索ボックス（aria-label で指定、英語UI 影響を受けない）
-    const searchBox = page.getByLabel("受注検索");
+    // 検索ボックス（ADR-044: i18n 化以降 aria-label が t() ベースになったため
+    // testid で指定する。placeholder は t("common.search") = "検索"）
+    const searchBox = page.getByTestId("orders-search-input");
     await expect(searchBox).toBeVisible();
-    await expect(searchBox).toHaveAttribute("placeholder", /受注番号|会社名|担当者名/);
+    await expect(searchBox).toHaveAttribute("placeholder", /検索/);
 
     // ソート対象 select
-    await expect(page.getByLabel("ソート対象")).toBeVisible();
+    await expect(page.getByTestId("orders-sort-by")).toBeVisible();
     // ソート順切替ボタン
     await expect(page.getByTestId("orders-sort-order")).toBeVisible();
 
@@ -194,9 +195,9 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
       timeout: 20_000,
     });
 
-    // ヘッダ「会社」「担当者」列
+    // ヘッダ「会社」「名前」列（ADR-044: i18n 化により担当者 → 名前 t("common.name")）
     await expect(page.getByRole("columnheader", { name: "会社" })).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "担当者" })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "名前" })).toBeVisible();
 
     // データ行（API mock の company_name / contact_display_name が表示）
     await expect(page.getByRole("cell", { name: "ORD-LIST-1" })).toBeVisible();
@@ -220,7 +221,7 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
     await expect(page.getByRole("cell", { name: "ORD-LIST-2" })).toBeVisible();
 
     // 検索: 「アルファ」 → ORD-LIST-1 のみ
-    const searchBox = page.getByLabel("受注検索");
+    const searchBox = page.getByTestId("orders-search-input");
     await searchBox.fill("アルファ");
 
     // debounce 300ms 後に API が叩かれて reload される
@@ -283,8 +284,8 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
     expect(ordersUrls[ordersUrls.length - 1]).toContain("sort_by=updated_at");
     expect(ordersUrls[ordersUrls.length - 1]).toContain("sort_order=desc");
 
-    // sort_by を total_amount に切替
-    await page.getByLabel("ソート対象").selectOption("total_amount");
+    // sort_by を total_amount に切替（ADR-044: testid 経由）
+    await page.getByTestId("orders-sort-by").selectOption("total_amount");
     await expect
       .poll(() => ordersUrls[ordersUrls.length - 1] ?? "", { timeout: 5_000 })
       .toContain("sort_by=total_amount");

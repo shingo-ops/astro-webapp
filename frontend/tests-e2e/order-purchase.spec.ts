@@ -204,12 +204,12 @@ test.describe("ADR-021 Sprint 4: 仕入情報 MVP", () => {
       timeout: 20_000,
     });
 
-    // 列ヘッダ「仕入状況」が存在
+    // ADR-044: i18n 化により列ヘッダは t("orders.purchase") = "仕入"
     await expect(
-      page.getByRole("columnheader", { name: "仕入状況" }),
+      page.getByRole("columnheader", { name: "仕入", exact: true }),
     ).toBeVisible();
-    // 仕入情報未登録なのでセルは「未登録」
-    await expect(page.getByTestId("pur-cell-status-1")).toContainText("未登録");
+    // 仕入情報未登録なのでセルは t("common.notSet") = "未設定"
+    await expect(page.getByTestId("pur-cell-status-1")).toContainText("未設定");
     // 仕入編集ボタンが存在
     await expect(page.getByTestId("open-purchase-1")).toBeVisible();
   });

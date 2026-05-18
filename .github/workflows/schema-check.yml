@@ -157,6 +157,10 @@ jobs:
       # ID 4 が tenant_004 = sync_tenant_schema.py の基準スキーマになる。
       - name: Create test tenants (1-4)
         env:
+          # ADR-044: setup_tenant.py が `from app.xxx import ...` を解決できるよう
+          # PYTHONPATH に backend/ を追加する（schema-check ジョブは backend/ を
+          # working-directory にしているが、subprocess は親 dir を継承しないため明示）。
+          PYTHONPATH: ${{ github.workspace }}/backend
           METADATA_FERNET_KEY: ${{ steps.fernet.outputs.key }}
           META_VERIFY_TOKEN: ci-verify-token
           META_APP_SECRET: ci-app-secret

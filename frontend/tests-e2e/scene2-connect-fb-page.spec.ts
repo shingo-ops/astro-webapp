@@ -44,19 +44,19 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
 
     // ページ見出し
     await expect(
-      page.getByRole("heading", { name: "Channels（Meta連携）" }),
+      page.getByRole("heading", { name: "チャンネル (Meta連携)" }),
     ).toBeVisible({ timeout: 20_000 });
 
-    // 0 件 onboarding（空 state）
+    // 0 件 onboarding（空 state） — ADR-044: i18n 化により t("channels.noChannels")
     await expect(
       page.getByRole("heading", {
-        name: "まだ Facebook Page が接続されていません",
+        name: "接続済みチャンネルがありません",
       }),
     ).toBeVisible();
 
-    // ヘッダの接続ボタン + 空 state の大きい接続ボタンの両方に "Facebook ページを接続" がある
+    // 接続ボタン: t("channels.connect") = "Facebookページを接続"（半角スペースなし）
     const connectButtons = page.getByRole("button", {
-      name: "Facebook ページを接続",
+      name: "Facebookページを接続",
     });
     await expect(connectButtons.first()).toBeVisible();
   });
@@ -101,11 +101,11 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
 
     await page.goto("/channels");
     await expect(
-      page.getByRole("heading", { name: "Channels（Meta連携）" }),
+      page.getByRole("heading", { name: "チャンネル (Meta連携)" }),
     ).toBeVisible({ timeout: 20_000 });
 
-    // 接続ボタンを押す（ヘッダ側を click）
-    await page.getByRole("button", { name: "Facebook ページを接続" }).first().click();
+    // 接続ボタンを押す（ヘッダ側を click） — i18n 化以降は "Facebookページを接続"
+    await page.getByRole("button", { name: "Facebookページを接続" }).first().click();
 
     // POST /meta/connect/start が叩かれるまで待つ
     await expect.poll(() => startCalled, { timeout: 10_000 }).toBe(true);
@@ -147,8 +147,9 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
     await page.waitForURL(/\/channels(\?.*)?$/, { timeout: 20_000 });
 
     // success バナー（status=connected の page_name 付き）
+    // ADR-044: 接続成功メッセージは ChannelsPage.tsx:117 で英語固定文字列
     await expect(
-      page.getByText(/「HIGH LIFE JPN Test Page」の接続が完了しました/),
+      page.getByText(/"HIGH LIFE JPN Test Page" connected successfully/),
     ).toBeVisible({ timeout: 10_000 });
 
     // 1:10–1:18 Page カード描画
@@ -156,13 +157,13 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
       page.getByRole("heading", { name: "HIGH LIFE JPN Test Page" }),
     ).toBeVisible();
 
-    // Active バッジ
-    await expect(page.getByText("接続中", { exact: true })).toBeVisible();
+    // Active バッジ — ADR-044: i18n 化により t("channels.status_active") = "有効"
+    await expect(page.getByText("有効", { exact: true })).toBeVisible();
 
     // Instagram 連携の表示（@highlifejpn_test）
     await expect(page.getByText("@highlifejpn_test")).toBeVisible();
 
-    // page_token_expires_at の残り日数表示（残り N 日）
-    await expect(page.getByText(/残り \d+ 日/)).toBeVisible();
+    // page_token_expires_at の残り日数表示 — t("channels.daysLeft") = "あとN日"
+    await expect(page.getByText(/あと\d+日/)).toBeVisible();
   });
 });
