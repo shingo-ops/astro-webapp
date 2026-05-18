@@ -64,7 +64,9 @@ jobs:
             cd /home/ubuntu/salesanchor
 
             echo "Step 1: Pulling latest code from GitHub..."
-            git pull origin main
+            # divergent branches エラー防止: fetch + reset --hard で常に remote main に合わせる
+            git fetch origin main
+            git reset --hard origin/main
 
             echo "Step 2: Syncing Meta Webhook environment variables from GitHub Secrets..."
             # ADR-025: GitHub Secrets を更新したら必ず VPS .env に反映する。
