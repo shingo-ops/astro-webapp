@@ -76,9 +76,8 @@ test.describe("Scene 4: Reply Messenger", () => {
     await page.goto("/lead-chat?lead_id=5001");
 
     // 入力 textarea（placeholder で特定）
-    const textarea = page.getByPlaceholder(
-      "返信を入力（Enter で送信、Shift+Enter で改行）",
-    );
+    // ADR-044: i18n 化により placeholder は t("inbox.messagePlaceholder")
+    const textarea = page.getByPlaceholder(/メッセージを入力/);
     await expect(textarea).toBeVisible({ timeout: 20_000 });
 
     const replyText =
@@ -92,11 +91,9 @@ test.describe("Scene 4: Reply Messenger", () => {
 
     // POST 実行を確認
     await expect.poll(() => sendCalled, { timeout: 10_000 }).toBe(true);
-    expect(sentBody).toMatchObject({
-      text: replyText,
-      // force_human_agent_tag は false（24h 内なので）
-      force_human_agent_tag: false,
-    });
+    // ADR-044: dac01e3 で force_human_agent_tag option を削除（auto-apply 化）。
+    // body は { text } のみ。
+    expect(sentBody).toMatchObject({ text: replyText });
 
     // 2:56 outbound バブルが描画される（after-send fixture が反映）
     // 左ペイン会話一覧にも last_message_text として出るので main に絞る

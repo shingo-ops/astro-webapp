@@ -47,12 +47,14 @@ test.describe("Scene 1: Dashboard Overview", () => {
       timeout: 20_000,
     });
 
-    // 顧客数 KPI（営業セクション）
-    await expect(page.getByText("顧客数")).toBeVisible();
+    // 顧客 KPI（営業セクション）
+    // ADR-044: i18n 化以降は t("dashboard.customers") = "顧客"
+    await expect(page.getByText("顧客", { exact: true })).toBeVisible();
     // KPI 値が fixture と一致
     const customerCount = await page
-      .locator(".kpi-card", { hasText: "顧客数" })
+      .locator(".kpi-card", { hasText: "顧客" })
       .locator(".kpi-value")
+      .first()
       .innerText();
     expect(customerCount.trim()).toBe(String(dashboardFixture.customer_count));
 
@@ -75,20 +77,18 @@ test.describe("Scene 1: Dashboard Overview", () => {
       timeout: 20_000,
     });
 
-    // Layout の `<nav class="mainnav">` 内に主要メニュー要素がある
-    const nav = page.locator("nav.mainnav");
+    // ADR-044: Meta Business Suite 風 UI 刷新 (ADR-022) で nav 構造が
+    // `<nav class="mainnav">` から sidebar (`<nav class="sidebar-nav-items">`) に変更。
+    // .sidebar-label は折り畳み時 opacity:0 のため、ホバーで展開してから検証する。
+    const sidebar = page.locator("aside.sidebar-panel");
+    await sidebar.hover();
+
+    const nav = page.locator("nav.sidebar-nav-items");
     await expect(nav).toBeVisible();
 
-    // 撮影台本 0:18-0:25 で言及される項目をナビから検出
-    // - Dashboard: NavLink "ダッシュボード"
-    // - リード / 管理: NavDropdown 親 button (label + caret "▾"）として描画
-    await expect(nav.getByRole("link", { name: "ダッシュボード" })).toBeVisible();
-    // NavDropdown は <button>label ▾</button> 構造。 name が "リード ▾" を含む
-    await expect(
-      nav.getByRole("button", { name: /リード/ }),
-    ).toBeVisible();
-    await expect(
-      nav.getByRole("button", { name: /管理/ }),
-    ).toBeVisible();
+    // sidebar 内の主要ラベル: ダッシュボード（NavLink） / リード（Accordion） / 管理（Accordion）
+    await expect(nav.getByText("ダッシュボード", { exact: true })).toBeVisible();
+    await expect(nav.getByText("リード", { exact: true })).toBeVisible();
+    await expect(nav.getByText("管理", { exact: true })).toBeVisible();
   });
 });

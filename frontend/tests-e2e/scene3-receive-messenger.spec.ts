@@ -48,8 +48,9 @@ test.describe("Scene 3: Incoming Messenger", () => {
     await page.goto("/lead-chat");
 
     // 1:34 受信トレイ見出し（左ペイン）
+    // ADR-044: i18n 化により t("inbox.title") = "受信箱"
     await expect(
-      page.getByRole("heading", { name: "受信トレイ" }),
+      page.getByRole("heading", { name: "受信箱" }),
     ).toBeVisible({ timeout: 20_000 });
 
     // 1:53 会話リストに Taro Sender が出ている + 未読バッジ "1"
@@ -68,8 +69,8 @@ test.describe("Scene 3: Incoming Messenger", () => {
     // 2:06 会話クリック → 右ペインに inbound バブル
     await taroBtn.click();
 
-    // 右ペイン: lead 詳細リンク
-    await expect(page.getByRole("link", { name: "リード詳細" })).toBeVisible({
+    // 右ペイン: lead リンク（ADR-044: i18n 化により t("inbox.lead") = "リード"）
+    await expect(page.getByRole("link", { name: "リード", exact: true })).toBeVisible({
       timeout: 10_000,
     });
 
@@ -86,9 +87,10 @@ test.describe("Scene 3: Incoming Messenger", () => {
     const headerArea = page.locator("main main header");
     await expect(headerArea.getByText("Messenger")).toBeVisible();
 
-    // 2:16 24h バナー（緑「通常返信ウィンドウ内」）
+    // ADR-044: dac01e3 で MessagingWindowBanner UI を削除（HUMAN_AGENT auto-apply 化）。
+    // 24h バナー検証は撤去。代わりに右ペインに返信用 textarea が表示されることを確認。
     await expect(
-      page.getByText("通常返信ウィンドウ内（24 時間以内）。返信は RESPONSE タイプで送信されます。"),
+      page.getByPlaceholder(/メッセージを入力/),
     ).toBeVisible();
 
     // 2:22 mark-read API が呼ばれる
@@ -103,8 +105,9 @@ test.describe("Scene 3: Incoming Messenger", () => {
     });
 
     await page.goto("/lead-chat");
+    // ADR-044: i18n 化により t("inbox.title") = "受信箱"
     await expect(
-      page.getByRole("heading", { name: "受信トレイ" }),
+      page.getByRole("heading", { name: "受信箱" }),
     ).toBeVisible({ timeout: 20_000 });
 
     // フィルタボタン群

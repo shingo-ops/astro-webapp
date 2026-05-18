@@ -43,8 +43,9 @@ test.describe("Scene 5: Connect Instagram", () => {
     });
 
     await page.goto("/channels");
+    // ADR-044: i18n 化により t("channels.title") = "チャンネル (Meta連携)"
     await expect(
-      page.getByRole("heading", { name: "Channels（Meta連携）" }),
+      page.getByRole("heading", { name: "チャンネル (Meta連携)" }),
     ).toBeVisible({ timeout: 20_000 });
 
     // Page カード見出し
@@ -52,8 +53,8 @@ test.describe("Scene 5: Connect Instagram", () => {
       page.getByRole("heading", { name: "HIGH LIFE JPN Test Page" }),
     ).toBeVisible();
 
-    // Active バッジ
-    await expect(page.getByText("接続中", { exact: true })).toBeVisible();
+    // Active バッジ — t("channels.status_active") = "有効"
+    await expect(page.getByText("有効", { exact: true })).toBeVisible();
 
     // Instagram username（@highlifejpn_test）
     await expect(page.getByText("@highlifejpn_test")).toBeVisible();
@@ -61,10 +62,10 @@ test.describe("Scene 5: Connect Instagram", () => {
     // Instagram business account ID（17841400000000200）
     await expect(page.getByText("17841400000000200")).toBeVisible();
 
-    // 接続者名
+    // 接続者名 — t("channels.connectedBy") = "接続者"
     await expect(page.getByText(/接続者: E2E Test User/)).toBeVisible();
 
-    // 4:06 切断ボタン（active page に対する）
+    // 4:06 切断ボタン（active page に対する） — t("channels.disconnect") = "切断"
     await expect(page.getByRole("button", { name: "切断" })).toBeVisible();
   });
 

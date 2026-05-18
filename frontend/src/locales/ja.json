@@ -309,7 +309,10 @@
     "expired": "期限切れ",
     "loadError": "チャンネルの読み込みに失敗しました:",
     "reload": "再読み込み",
-    "close": "閉じる"
+    "close": "閉じる",
+    "reauthRequired": "Facebook連携を更新してください。Business Manager管理ページに対応するには再接続が必要です。",
+    "reauthBadge": "再接続が必要",
+    "reauthAction": "Facebookを再接続"
   },
   "deals": {
     "title": "案件管理",
@@ -394,10 +397,10 @@
     "purchase": "仕入",
     "commission": "報酬",
     "status_pending": "未処理",
-    "status_processing": "処理中",
-    "status_shipped": "発送済",
-    "status_delivered": "納品済",
-    "status_returned": "返品",
+    "status_processing": "仕入中",
+    "status_shipped": "配送中",
+    "status_delivered": "完了",
+    "status_returned": "トラブル",
     "status_cancelled": "キャンセル"
   },
   "products": {

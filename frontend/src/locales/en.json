@@ -309,7 +309,10 @@
     "expired": "Expired",
     "loadError": "Failed to load channels:",
     "reload": "Reload",
-    "close": "Close"
+    "close": "Close",
+    "reauthRequired": "Please reconnect Facebook to enable Business Manager Page support.",
+    "reauthBadge": "Reconnect required",
+    "reauthAction": "Reconnect Facebook"
   },
   "deals": {
     "title": "Deal Management",
@@ -394,10 +397,10 @@
     "purchase": "Purchase",
     "commission": "Commission",
     "status_pending": "Pending",
-    "status_processing": "Processing",
-    "status_shipped": "Shipped",
-    "status_delivered": "Delivered",
-    "status_returned": "Returned",
+    "status_processing": "Procuring",
+    "status_shipped": "In Transit",
+    "status_delivered": "Completed",
+    "status_returned": "Trouble",
     "status_cancelled": "Cancelled"
   },
   "products": {
