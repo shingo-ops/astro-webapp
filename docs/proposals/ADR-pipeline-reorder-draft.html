@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADR ドラフト — claude-pipeline state machine 順序逆転 (Reviewer → Evaluator)</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --ink: #1a1a1a;
+    --ink-mute: #5a5a5a;
+    --line: #e4e2dc;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --green: #16a34a;
+    --green-soft: #dcfce7;
+    --red: #dc2626;
+    --red-soft: #fee2e2;
+    --yellow: #ca8a04;
+    --yellow-soft: #fef9c3;
+    --code-bg: #1e293b;
+    --code-ink: #e2e8f0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .container { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  header.doc-header {
+    background: linear-gradient(135deg, #6b21a8 0%, #9333ea 100%);
+    color: white;
+    padding: 40px 24px 32px;
+    margin-bottom: 32px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .doc-header .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+  }
+  .doc-header h1 { font-size: 26px; margin-bottom: 8px; font-weight: 700; }
+  .doc-header .sub { font-size: 15px; opacity: 0.9; }
+  .doc-header .meta { display: flex; gap: 24px; margin-top: 16px; font-size: 13px; flex-wrap: wrap; opacity: 0.85; }
+
+  nav.toc {
+    position: sticky; top: 12px;
+    background: var(--surface); padding: 12px 16px;
+    border-radius: 10px; box-shadow: var(--shadow);
+    margin-bottom: 24px; border: 1px solid var(--line); z-index: 10;
+  }
+  nav.toc ul { list-style: none; display: flex; gap: 6px; flex-wrap: wrap; }
+  nav.toc a {
+    color: var(--ink-mute); text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px;
+    transition: all 0.15s;
+  }
+  nav.toc a:hover { background: var(--accent-soft); color: var(--accent); }
+
+  section.card {
+    background: var(--surface); padding: 28px; margin-bottom: 24px;
+    border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--line);
+  }
+  section.card h2 {
+    font-size: 22px; margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 2px solid #9333ea;
+    display: flex; align-items: center; gap: 10px;
+  }
+  section.card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #9333ea; color: white; font-size: 14px; font-weight: 700;
+  }
+  section.card h3 { font-size: 17px; margin: 20px 0 10px; }
+  section.card p { margin-bottom: 12px; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 14px; background: white;
+  }
+  th, td {
+    text-align: left; padding: 10px 12px;
+    border-bottom: 1px solid var(--line); vertical-align: top;
+  }
+  th {
+    background: #f5f5f0; font-weight: 600;
+    border-bottom: 2px solid var(--ink);
+  }
+  td.center, th.center { text-align: center; }
+
+  pre.code {
+    background: var(--code-bg); color: var(--code-ink);
+    padding: 16px; border-radius: 8px; overflow-x: auto;
+    font-size: 13px; font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+    line-height: 1.55; margin: 12px 0; position: relative;
+  }
+  pre.code .keyword { color: #93c5fd; }
+  pre.code .string { color: #86efac; }
+  pre.code .comment { color: #94a3b8; font-style: italic; }
+  pre.code .var { color: #fbbf24; }
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,0.1); color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 4px 10px; border-radius: 4px;
+    font-size: 11px; cursor: pointer;
+  }
+
+  .alert {
+    padding: 14px 18px; border-radius: 8px; margin: 14px 0;
+    border-left: 4px solid; font-size: 14px;
+  }
+  .alert-info { background: var(--accent-soft); border-color: var(--accent); }
+  .alert-warn { background: var(--yellow-soft); border-color: var(--yellow); }
+  .alert-success { background: var(--green-soft); border-color: var(--green); }
+  .alert-error { background: var(--red-soft); border-color: var(--red); }
+  .alert b { display: block; margin-bottom: 4px; }
+
+  .svg-wrap { background: #f9f9f4; padding: 20px; border-radius: 8px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .svg-wrap svg { max-width: 100%; height: auto; }
+
+  details {
+    background: #f9f9f4; padding: 12px 16px;
+    border-radius: 6px; margin: 10px 0; border: 1px solid var(--line);
+  }
+  details summary {
+    cursor: pointer; font-weight: 600; font-size: 14px;
+    color: #9333ea; padding: 4px 0;
+  }
+  details[open] summary { margin-bottom: 10px; }
+
+  ol.question-list { padding-left: 0; list-style: none; counter-reset: q; }
+  ol.question-list li {
+    counter-increment: q;
+    background: #fef3f9; border: 1px solid #f9a8d4;
+    padding: 14px 18px 14px 50px;
+    margin: 10px 0; border-radius: 8px; position: relative;
+  }
+  ol.question-list li::before {
+    content: "Q" counter(q);
+    position: absolute; left: 14px; top: 14px;
+    background: #ec4899; color: white;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 12px; font-weight: 700;
+  }
+  ol.question-list li b { display: block; margin-bottom: 4px; }
+  ol.question-list .options { font-size: 13px; color: var(--ink-mute); margin-top: 6px; }
+
+  .pill {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 4px; font-size: 12px; font-weight: 600;
+  }
+  .pill-blue { background: var(--accent-soft); color: var(--accent); }
+  .pill-green { background: var(--green-soft); color: var(--green); }
+  .pill-red { background: var(--red-soft); color: var(--red); }
+  .pill-yellow { background: var(--yellow-soft); color: var(--yellow); }
+  .pill-purple { background: #f3e8ff; color: #9333ea; }
+
+  footer { text-align: center; color: var(--ink-mute); font-size: 12px; margin-top: 40px; }
+
+  @media print {
+    body { background: white; font-size: 11pt; }
+    .container { max-width: 100%; padding: 0; }
+    nav.toc { display: none; }
+    section.card { box-shadow: none; border: 1px solid #999; page-break-inside: avoid; }
+    .copy-btn { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="doc-header">
+    <span class="badge">ADR DRAFT — (起案時 番号確定)</span>
+    <h1>claude-pipeline state machine 順序逆転 (Reviewer → Evaluator)</h1>
+    <p class="sub">役割定義 (ADR-042 + agents-role-clarification) との整合 / 早期 fail / status name rename / workflow 順序変更</p>
+    <div class="meta">
+      <span>起案: ひとし (Hikky-dev)</span>
+      <span>持ち込み先: しんごさん</span>
+      <span>作成日: 2026-05-18</span>
+      <span>前提: ADR-042 ドラフト (PR #397) + agents-role-clarification-prompt.md</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <ul>
+      <li><a href="#summary">サマリー</a></li>
+      <li><a href="#background">背景</a></li>
+      <li><a href="#compare">旧 vs 新</a></li>
+      <li><a href="#impact">影響範囲</a></li>
+      <li><a href="#what">What</a></li>
+      <li><a href="#why">Why</a></li>
+      <li><a href="#migration">移行戦略</a></li>
+      <li><a href="#out">Scope外</a></li>
+      <li><a href="#questions">質問</a></li>
+      <li><a href="#appendix">付録</a></li>
+    </ul>
+  </nav>
+
+  <!-- ===== Summary ===== -->
+  <section class="card" id="summary">
+    <h2><span class="num">1</span>サマリー</h2>
+    <div class="alert alert-info">
+      <b>このADRで決めたいこと</b>
+      ① claude-pipeline の順序を <code>Generator → Evaluator → Reviewer</code> から <b><code>Generator → Reviewer → Evaluator</code></b> に逆転<br>
+      ② PR フロー正常化: <b>PR 作成は常に Generator (役割)</b>、人間は PR 作成しない (merge のみ)、Reviewer/Evaluator は <code>gh pr review</code> でレビュー専念<br>
+      ③ status name を新体系へ rename (<code>evaluator_passed</code> 等の legacy 名を整理)<br>
+      ④ 修正サイクル: Reviewer/Evaluator が FAIL → <b>Generator が同じ PR ブランチに修正 push + 再レビュー依頼</b> → Reviewer 再走 → (画面修正あれば) Evaluator 再走 → 両方 PASS で merge ready<br>
+      ⑤ <b>Evaluator スキップ条件</b>: 画面 (UI/UX) 修正が不要な変更 (backend のみ、ドキュメント、リファクタ等) は Evaluator スキップ可<br>
+      ⑥ 最終 merge は人間 (ひとし or しんご) が <code>gh pr merge --squash</code><br>
+      ⑦ 移行期間 (1 ヶ月) は旧 status name を alias で読み込み互換
+    </div>
+
+    <h3>このADRの位置付け</h3>
+    <table>
+      <tr><th>ADR</th><th>役割</th><th>状態</th></tr>
+      <tr><td>ADR-042 (ドラフト中)</td><td>Claude Code ガードレール強化 + リリース運用統一 (CLAUDE.md, リリースボタン, pr-base-guard)</td><td>PR #397 でしんご合意待ち</td></tr>
+      <tr><td>agents-role-clarification-prompt.md</td><td>Reviewer/Evaluator <b>役割</b>を明確化 (コード vs UI/UX)、ひとし・しんご両者の agents/ に適用</td><td>同 PR にて公開</td></tr>
+      <tr><td><b>本 ADR (新規)</b></td><td>役割明確化に伴う <b>順序の逆転と state machine rename</b></td><td>本ドラフト</td></tr>
+    </table>
+
+    <h3>影響範囲</h3>
+    <table>
+      <tr><th>ファイル / 領域</th><th>変更内容</th><th>影響</th></tr>
+      <tr><td><code>~/.claude/agents/generator.md</code></td><td><b>PR 作成 step を追加</b> (実装完了時に <code>gh pr create</code>)、修正時は同じ PR ブランチに push</td><td>中</td></tr>
+      <tr><td><code>~/.claude/agents/reviewer.md</code></td><td>status 操作 (<code>evaluator_passed</code> → <code>in_progress</code>) + <b>PR 作成 step 削除</b>、<code>gh pr review --approve</code> のみに簡素化</td><td>中</td></tr>
+      <tr><td><code>~/.claude/agents/evaluator.md</code></td><td>status 操作 (<code>reviewer_approved</code> 読込 / <code>evaluator_passed</code> 書込) + <code>gh pr review --approve</code> step 追加</td><td>中</td></tr>
+      <tr><td><code>.github/workflows/claude-pipeline.yml</code></td><td>trigger 条件と job 順序を新順序に、PR 作成 step を Generator job に</td><td>大 (workflow 全体)</td></tr>
+      <tr><td><code>.claude-pipeline/state.json</code> / <code>sprints/sprint-NN/status</code></td><td>新 status name 受入 + 旧 name alias 一定期間 + PR URL field 追加</td><td>中</td></tr>
+      <tr><td>進行中 sprint</td><td>新旧両方の status name 受入 (alias) で破壊なし</td><td>低</td></tr>
+    </table>
+  </section>
+
+  <!-- ===== Background ===== -->
+  <section class="card" id="background">
+    <h2><span class="num">2</span>背景</h2>
+
+    <h3>2-1. 役割明確化と順序の不整合</h3>
+    <p>ADR-042 のドラフト議論で Reviewer / Evaluator の役割を以下に確定しました:</p>
+    <table>
+      <tr><th>段階</th><th>エージェント</th><th>役割</th><th>静的/動的</th></tr>
+      <tr><td>Loop 1 (先)</td><td><b>Reviewer</b></td><td>Generator が作成したコードのレビュー (静的読解)</td><td>静的、ブラウザ不要</td></tr>
+      <tr><td>Loop 2 (後)</td><td><b>Evaluator</b></td><td>Reviewer 通過後の UI/UX をブラウザで評価 (Playwright)</td><td>動的、ブラウザ必須</td></tr>
+    </table>
+    <p>しかし、現在の <code>claude-pipeline</code> state machine は <b>逆順</b>で実装されています:</p>
+    <ul style="padding-left:24px;">
+      <li><code>~/.claude/agents/evaluator.md</code> line 8: <code>"4-stage pipeline (Planner → Generator → Evaluator → Reviewer)"</code></li>
+      <li><code>~/.claude/agents/reviewer.md</code> line 10: <code>"last stage of the 4-stage pipeline"</code> + status <code>evaluator_passed</code> を起動条件</li>
+      <li><code>.github/workflows/claude-pipeline.yml</code> の job 順序も同様</li>
+    </ul>
+
+    <h3>2-2. なぜ順序逆転が必要か (現状の問題点)</h3>
+    <table>
+      <tr><th>項目</th><th>現状 (Evaluator 先)</th><th>新方式 (Reviewer 先)</th></tr>
+      <tr><td>役割定義との整合</td><td><span class="pill pill-red">不整合</span> 役割は「Reviewer = コード、Evaluator = UI/UX」と定義したが順序が逆</td><td><span class="pill pill-green">整合</span></td></tr>
+      <tr><td>早期 fail</td><td>コードが汚くても先に重い Playwright を回す (無駄)</td><td>コードレビュー段階で fail → Playwright 回避 (時間・コスト節約)</td></tr>
+      <tr><td>Reviewer 修正後の Evaluator 再実行</td><td>順序的に発生しにくいが、Reviewer が「動かないコード」を見ても fix できない</td><td>Reviewer 通過 = コード合格 → Evaluator が動的検証、両方 PASS で完成</td></tr>
+      <tr><td>ループ構造の明快さ</td><td>不明瞭 (役割と順序がズレているため)</td><td>明快 (静的 → 動的の段階的検証)</td></tr>
+    </table>
+
+    <h3>2-3. 関連</h3>
+    <ul style="padding-left:24px;">
+      <li><b>ADR-042</b> (PR #397): 運用ルール (リリースボタン、ガードレール、CLAUDE.md)</li>
+      <li><b>agents-role-clarification-prompt.md</b>: Reviewer/Evaluator 役割の明文化 (state name は据え置き、文言のみ)</li>
+      <li><b>本 ADR</b>: state machine 実装側を新順序に整合させる</li>
+    </ul>
+  </section>
+
+  <!-- ===== Compare ===== -->
+  <section class="card" id="compare">
+    <h2><span class="num">3</span>旧 vs 新の比較</h2>
+
+    <h3>3-1. 順序フロー比較 (PR 作成は Generator、Reviewer/Evaluator はレビュー専念)</h3>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 940 540" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#5a5a5a"/>
+          </marker>
+          <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/>
+          </marker>
+          <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/>
+          </marker>
+        </defs>
+
+        <!-- ===== 旧順序 ===== -->
+        <rect x="10" y="10" width="920" height="220" rx="8" fill="#fee2e2" fill-opacity="0.3" stroke="#dc2626" stroke-dasharray="6,4"/>
+        <text x="25" y="32" font-size="13" font-weight="700" fill="#dc2626">❌ 旧順序 (Generator → Evaluator → Reviewer): PR 作成が Reviewer (独自設計)、役割と順序がズレている</text>
+
+        <rect x="40" y="55" width="110" height="50" rx="6" fill="white" stroke="#5a5a5a"/>
+        <text x="95" y="78" text-anchor="middle" font-size="12" font-weight="600">Generator</text>
+        <text x="95" y="93" text-anchor="middle" font-size="9" fill="#5a5a5a">実装 commit (PR なし)</text>
+
+        <rect x="200" y="55" width="140" height="50" rx="6" fill="#fef9c3" stroke="#ca8a04"/>
+        <text x="270" y="76" text-anchor="middle" font-size="12" font-weight="700">Evaluator</text>
+        <text x="270" y="91" text-anchor="middle" font-size="9" fill="#5a5a5a">UI/UX (重い Playwright)</text>
+
+        <rect x="390" y="55" width="140" height="50" rx="6" fill="#fef9c3" stroke="#ca8a04"/>
+        <text x="460" y="76" text-anchor="middle" font-size="12" font-weight="700">Reviewer</text>
+        <text x="460" y="91" text-anchor="middle" font-size="9" fill="#5a5a5a">コード review + PR 作成</text>
+
+        <rect x="580" y="55" width="120" height="50" rx="6" fill="#fee2e2" stroke="#dc2626"/>
+        <text x="640" y="78" text-anchor="middle" font-size="11" font-weight="600">PR 作成</text>
+        <text x="640" y="93" text-anchor="middle" font-size="9" fill="#5a5a5a">⚠️ Reviewer が実行</text>
+
+        <line x1="150" y1="80" x2="198" y2="80" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="340" y1="80" x2="388" y2="80" stroke="#5a5a5a" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="530" y1="80" x2="578" y2="80" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+
+        <text x="40" y="135" font-size="11" fill="#dc2626" font-weight="700">問題点 1: 順序逆転</text>
+        <text x="40" y="153" font-size="10" fill="#dc2626">Evaluator (UI/UX、重い) が先 → コードが汚い場合も Playwright 回す = 無駄</text>
+
+        <text x="40" y="175" font-size="11" fill="#dc2626" font-weight="700">問題点 2: PR 作成が Reviewer</text>
+        <text x="40" y="193" font-size="10" fill="#dc2626">GitHub 標準フロー (開発者 = Generator が PR 作成) と乖離、ADR-012 What/How と不整合</text>
+
+        <text x="40" y="213" font-size="10" fill="#dc2626" font-style="italic">→ Reviewer 役割が「コードレビュー」+「PR 作成 + push 権限管理」と肥大化</text>
+
+        <!-- ===== 新順序 ===== -->
+        <rect x="10" y="250" width="920" height="280" rx="8" fill="#dcfce7" fill-opacity="0.3" stroke="#16a34a" stroke-dasharray="6,4"/>
+        <text x="25" y="272" font-size="13" font-weight="700" fill="#16a34a">✅ 新順序: PR 作成 = Generator (GitHub 標準)、Reviewer/Evaluator はレビュー専念</text>
+
+        <rect x="40" y="295" width="115" height="55" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+        <text x="97" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#16a34a">Generator</text>
+        <text x="97" y="330" text-anchor="middle" font-size="9" fill="#5a5a5a">実装 + PR 作成 🆕</text>
+        <text x="97" y="343" text-anchor="middle" font-size="9" fill="#5a5a5a">(gh pr create)</text>
+
+        <rect x="200" y="295" width="160" height="55" rx="6" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="280" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#16a34a">Reviewer (Loop 1)</text>
+        <text x="280" y="330" text-anchor="middle" font-size="9" fill="#5a5a5a">コード review (静的、軽い)</text>
+        <text x="280" y="343" text-anchor="middle" font-size="9" fill="#5a5a5a">gh pr review</text>
+
+        <rect x="405" y="295" width="160" height="55" rx="6" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="485" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#16a34a">Evaluator (Loop 2)</text>
+        <text x="485" y="330" text-anchor="middle" font-size="9" fill="#5a5a5a">UI/UX 評価 (動的、重い)</text>
+        <text x="485" y="343" text-anchor="middle" font-size="9" fill="#5a5a5a">gh pr review</text>
+
+        <rect x="610" y="295" width="160" height="55" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+        <text x="690" y="316" text-anchor="middle" font-size="12" font-weight="700" fill="#2563eb">人間 merge</text>
+        <text x="690" y="330" text-anchor="middle" font-size="9" fill="#5a5a5a">両方 approve 確認後</text>
+        <text x="690" y="343" text-anchor="middle" font-size="9" fill="#5a5a5a">gh pr merge --squash</text>
+
+        <rect x="795" y="295" width="125" height="55" rx="6" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="857" y="316" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">develop</text>
+        <text x="857" y="335" text-anchor="middle" font-size="9" fill="#5a5a5a">統合ブランチ</text>
+
+        <line x1="155" y1="322" x2="198" y2="322" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <text x="176" y="313" text-anchor="middle" font-size="8" fill="#16a34a">PR open</text>
+
+        <line x1="360" y1="322" x2="403" y2="322" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <text x="382" y="313" text-anchor="middle" font-size="8" fill="#16a34a">approve</text>
+
+        <line x1="565" y1="322" x2="608" y2="322" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <text x="586" y="313" text-anchor="middle" font-size="8" fill="#16a34a">approve</text>
+
+        <line x1="770" y1="322" x2="793" y2="322" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+        <!-- ループ矢印 (Loop 1) -->
+        <path d="M 280 295 Q 220 250 100 295" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
+        <text x="155" y="265" font-size="9" fill="#dc2626" font-weight="600">FAIL: 同じ PR に修正 push → 再 Reviewer</text>
+
+        <!-- ループ矢印 (Loop 2 → Generator) -->
+        <path d="M 485 350 Q 350 405 100 355" stroke="#dc2626" stroke-width="1.2" fill="none" stroke-dasharray="3,2" marker-end="url(#arrow-red)"/>
+        <text x="230" y="410" font-size="9" fill="#dc2626" font-weight="600">FAIL: 同じ PR に修正 push → Reviewer 再走 → Evaluator 再走</text>
+
+        <!-- 利点 -->
+        <text x="40" y="455" font-size="11" fill="#16a34a" font-weight="700">利点 1: GitHub 標準フロー準拠</text>
+        <text x="40" y="473" font-size="10" fill="#16a34a">開発者 (Generator) が PR を作る = OSS / 業界標準と同じ、Reviewer は review に専念</text>
+
+        <text x="40" y="495" font-size="11" fill="#16a34a" font-weight="700">利点 2: 役割の単一責任</text>
+        <text x="40" y="513" font-size="10" fill="#16a34a">Reviewer = コードレビュー専門、Evaluator = UI/UX レビュー専門、PR 操作 (作成/merge) は分離</text>
+      </svg>
+    </div>
+
+    <h3>3-2. status 体系比較</h3>
+    <table>
+      <tr><th>段階</th><th>旧 status name</th><th>新 status name</th><th>設定者</th><th>次工程</th></tr>
+      <tr><td>Generator 実装中/完了</td><td><code>in_progress</code></td><td><code>in_progress</code></td><td>Generator</td><td>Reviewer</td></tr>
+      <tr><td>Reviewer 通過、Evaluator 待ち</td><td>(該当なし、Evaluator が先)</td><td><code>reviewer_approved</code> 🆕</td><td>Reviewer</td><td>Evaluator</td></tr>
+      <tr><td>Evaluator 通過 (機能 OK)</td><td><code>evaluator_passed</code> (Reviewer 起動条件)</td><td><code>evaluator_passed</code> (両方 PASS、最終 approve 同等)</td><td>Evaluator</td><td>人間 merge</td></tr>
+      <tr><td>Reviewer 通過 + PR 作成済</td><td><code>approved</code></td><td><code>approved</code> (alias of evaluator_passed)</td><td>Evaluator (新)</td><td>(完了)</td></tr>
+      <tr><td>差し戻し (どちらか FAIL)</td><td><code>changes_requested</code></td><td><code>changes_requested</code> + 別 field で誰が FAIL したか</td><td>Reviewer or Evaluator</td><td>Generator</td></tr>
+    </table>
+
+    <h3>3-3. PR フローと役割分担</h3>
+    <table>
+      <tr><th>操作</th><th>旧 (claude-pipeline 独自)</th><th>新 (GitHub 標準)</th></tr>
+      <tr><td>PR 作成 (<code>gh pr create</code>)</td><td>Reviewer (最終 gate のため)</td><td><b>Generator</b> (実装完了時、GitHub 標準と同じ)</td></tr>
+      <tr><td>Push (実装 commit)</td><td>Generator → status 書込 → Reviewer がまとめて push</td><td><b>Generator</b> (自分の作業ブランチに直接 push)</td></tr>
+      <tr><td>Reviewer の操作</td><td>PR 作成 + push + status 操作</td><td><code>gh pr review --approve</code> or <code>--request-changes</code> のみ (PR は触らない)</td></tr>
+      <tr><td>Evaluator の操作</td><td>status 書込のみ</td><td><code>gh pr review --approve</code> or <code>--request-changes</code> のみ</td></tr>
+      <tr><td>修正サイクル</td><td>Reviewer が CHANGES_REQUESTED → Generator が新規 commit → Reviewer 再走</td><td>Reviewer or Evaluator が <code>--request-changes</code> → Generator が<b>同じ PR ブランチ</b>に push → Reviewer 再走 → Evaluator 再走</td></tr>
+      <tr><td>最終 merge</td><td>Reviewer が PR 作成、人間が merge ボタン</td><td>両方 approve 後、人間 (ひとし or しんご) が <code>gh pr merge --squash</code></td></tr>
+    </table>
+
+    <h3>3-4. なぜ「PR 作成 = Generator」が正しいか</h3>
+    <ol style="padding-left:24px;">
+      <li><b>GitHub 標準フローと一致</b> — オープンソース / 業界標準では「開発者が PR 作成、レビュアーが review、メンテナが merge」</li>
+      <li><b>役割の単一責任</b> — Reviewer = コードレビューだけ、Evaluator = UI/UX だけ。PR の作成/merge は別軸の操作</li>
+      <li><b>Mode B (External PR review) と統一</b> — 既存の Mode B も Reviewer は <code>gh pr review</code> のみ。Mode A も同じパターンに揃える</li>
+      <li><b>修正サイクルの自然さ</b> — Generator は自分の PR を持つ → 修正を push → CI 再走 → レビュアー再 approve、という GitHub ネイティブの流れ</li>
+      <li><b>権限分離</b> — レビュアーが push 権を持たないことで「レビュアーが勝手に書き換える」事故を防ぐ</li>
+    </ol>
+  </section>
+
+  <!-- ===== Impact ===== -->
+  <section class="card" id="impact">
+    <h2><span class="num">4</span>影響範囲</h2>
+
+    <h3>4-1. 修正対象ファイル一覧</h3>
+    <table>
+      <tr><th>ファイル</th><th>修正内容</th><th>サイズ目安</th></tr>
+      <tr><td><code>~/.claude/agents/reviewer.md</code></td><td>① frontmatter description ② Mode A workflow (status 読込先変更) ③ PR 作成 step を Evaluator に移譲 ④ 順序関連 prose 全面修正</td><td>±150 行</td></tr>
+      <tr><td><code>~/.claude/agents/evaluator.md</code></td><td>① frontmatter description ② workflow (status 操作変更、PR 作成 step 追加) ③ 4-stage pipeline 順序記述</td><td>±200 行</td></tr>
+      <tr><td><code>.github/workflows/claude-pipeline.yml</code></td><td>job 順序: Generator → Reviewer → Evaluator → PR、trigger 条件の status name 変更</td><td>±50 行</td></tr>
+      <tr><td><code>.claude-pipeline/sprints/sprint-NN/status</code> 参照箇所</td><td>新 status name 受入 (旧 name は alias 1 ヶ月)</td><td>各所</td></tr>
+      <tr><td>各種 docs (CLAUDE.md, runbooks 等)</td><td>順序記述があれば更新</td><td>各 1-2 行</td></tr>
+    </table>
+
+    <h3>4-2. 進行中 sprint への影響</h3>
+    <div class="alert alert-info">
+      <b>本 ADR 実装時の互換性</b>
+      ① Phase 1 (実装直後): 旧 status name (<code>evaluator_passed</code> 等) を alias として読み込み互換、新 status name も受入<br>
+      ② Phase 2 (1 ヶ月後): 旧 status name 廃止、新 name のみ受入<br>
+      ③ 進行中 sprint は実装時の status を Phase 1 期間中はそのまま動く
+    </div>
+  </section>
+
+  <!-- ===== What ===== -->
+  <section class="card" id="what">
+    <h2><span class="num">5</span>What (実装内容詳細)</h2>
+
+    <h3>5-1. Generator エージェント変更 (PR 作成責務追加)</h3>
+    <details open>
+      <summary>workflow 変更 (PR 作成 step 追加)</summary>
+      <pre class="code"><button class="copy-btn" onclick="copyCode(this)">copy</button><span class="comment"># 現状</span>
+Step Final: commit + write status `in_progress` → ハンドオフ (Reviewer は別ステップで push + PR 作成)
+
+<span class="comment"># 新</span>
+Step Final:
+  1. commit changes
+  2. <span class="var">git push origin HEAD</span>  (feature ブランチ作業 push)
+  3. <span class="var">gh pr create --base develop ...</span>  🆕 (Generator が PR を open)
+  4. PR URL を sprint メタに記録
+  5. write status `in_progress` (Reviewer 起動条件)
+
+<span class="comment"># 修正サイクル時</span>
+- Reviewer / Evaluator が CHANGES_REQUESTED → Generator が同じ feature ブランチに修正 push
+- PR は自動更新される (新規 PR は作らない)
+- status を `in_progress` に戻す → Reviewer 再走</pre>
+    </details>
+
+    <h3>5-2. Reviewer エージェント変更</h3>
+    <details open>
+      <summary>frontmatter description (現状 → 新)</summary>
+      <pre class="code"><button class="copy-btn" onclick="copyCode(this)">copy</button><span class="comment"># 現状</span>
+description: ... after the Evaluator has PASSED a sprint, audit the Generator's code and APPROVE (push + open PR) ...
+
+<span class="comment"># 新</span>
+description: ... <b>the FIRST review stage immediately after the Generator opens a PR</b>. ...
+  ... You audit the Generator's CODE (static reading, no browser).
+  ... APPROVE via <code>gh pr review --approve</code> (Generator's PR advances to Evaluator).
+  ... CHANGES_REQUESTED via <code>gh pr review --request-changes</code> (Generator revises in-place).
+  ... You do NOT create/push/merge PRs (those are Generator's and human's responsibility).</pre>
+    </details>
+
+    <details>
+      <summary>Mode A workflow 変更 (大幅簡素化)</summary>
+      <pre class="code"><button class="copy-btn" onclick="copyCode(this)">copy</button><span class="comment"># 現状 (Reviewer が push + PR 作成、責務肥大)</span>
+Step 1: Read sprint status — must be `evaluator_passed`
+Step 6: If APPROVED → push + gh pr create + write `approved`
+Step 6: If CHANGES_REQUESTED → write `changes_requested`
+
+<span class="comment"># 新 (Reviewer は PR review のみ、Mode B と同じパターン)</span>
+Step 1: Read sprint status — must be `in_progress` AND PR URL exists in sprint meta
+Step 2: gh pr view → 差分取得 → コードレビュー
+Step 3-5: 既存と同じ (10 項目 rubric で audit)
+Step 6: If APPROVED → <span class="var">gh pr review --approve</span> + write status `reviewer_approved`
+Step 6: If CHANGES_REQUESTED → <span class="var">gh pr review --request-changes</span> + write `changes_requested` + fail_stage=reviewer
+  <span class="comment"># PR は触らない、merge も触らない</span></pre>
+    </details>
+
+    <h3>5-3. Evaluator エージェント変更</h3>
+    <details open>
+      <summary>frontmatter description (現状 → 新)</summary>
+      <pre class="code"><button class="copy-btn" onclick="copyCode(this)">copy</button><span class="comment"># 現状</span>
+description: ... after the Generator has completed a sprint and written its report ...
+
+<span class="comment"># 新</span>
+description: ... <b>after the Reviewer has APPROVED the PR (code review passed)</b>. ...
+  ... The Evaluator is the SECOND review stage — UI/UX browser evaluation via Playwright.
+  ... APPROVE via <code>gh pr review --approve</code> (PR ready for human to merge).
+  ... CHANGES_REQUESTED via <code>gh pr review --request-changes</code> (Generator revises, Reviewer re-runs).
+  ... You do NOT create/push/merge PRs.</pre>
+    </details>
+
+    <details>
+      <summary>workflow 変更 (PR review に簡素化)</summary>
+      <pre class="code"><button class="copy-btn" onclick="copyCode(this)">copy</button><span class="comment"># 現状</span>
+Step 1: Read sprint status — must be `in_progress`
+Step Done: Write `evaluator_passed`, hand off to Reviewer (Reviewer がその後 push/PR)
+
+<span class="comment"># 新</span>
+Step 1: Read sprint status — must be `reviewer_approved` AND PR URL exists
+Step 2: Playwright で AC 検証 (既存と同じ)
+Step Done (PASS):
+  <span class="var">gh pr review --approve</span> on PR
+  Write status `evaluator_passed` (両方 PASS、merge ready)
+  Discord 通知: "PR #N ready for human merge"
+Step Done (FAIL):
+  <span class="var">gh pr review --request-changes</span> with bug report
+  Write status `changes_requested` + fail_stage=evaluator
+  <span class="comment"># PR は触らない、merge も触らない (人間が merge)</span></pre>
+    </details>
+
+    <h3>5-3. claude-pipeline.yml 変更</h3>
+    <pre class="code"><button class="copy-btn" onclick="copyCode(this)">copy</button><span class="comment"># 旧 job 順序</span>
+jobs:
+  generator:
+    ...
+  evaluator:
+    needs: generator
+    ...
+  reviewer:
+    needs: evaluator
+    if: status == 'evaluator_passed'
+    ...
+
+<span class="comment"># 新 job 順序</span>
+jobs:
+  generator:
+    ...
+  reviewer:
+    needs: generator
+    if: status == 'in_progress'
+    ...
+  evaluator:
+    needs: reviewer
+    if: status == 'reviewer_approved'  <span class="comment"># 新 status</span>
+    ...
+  # PR 作成は evaluator job 内で実行 (旧は reviewer job 内)</pre>
+
+    <h3>5-4. status 値の rename + alias</h3>
+    <table>
+      <tr><th>旧</th><th>新</th><th>互換期間中 (Phase 1)</th></tr>
+      <tr><td><code>in_progress</code></td><td><code>in_progress</code> (変更なし)</td><td>—</td></tr>
+      <tr><td>(なし)</td><td><code>reviewer_approved</code> 🆕</td><td>新規追加</td></tr>
+      <tr><td><code>evaluator_passed</code> (Reviewer 起動条件)</td><td><code>evaluator_passed</code> (両方 PASS、Evaluator が PR 作成済)</td><td>意味が変わる、注意</td></tr>
+      <tr><td><code>approved</code> (Reviewer が PR 作成済)</td><td><code>approved</code> = alias of <code>evaluator_passed</code></td><td>互換維持</td></tr>
+      <tr><td><code>changes_requested</code></td><td><code>changes_requested</code> + 新 field <code>fail_stage: reviewer | evaluator</code></td><td>互換、field 追加のみ</td></tr>
+    </table>
+  </section>
+
+  <!-- ===== Why ===== -->
+  <section class="card" id="why">
+    <h2><span class="num">6</span>Why</h2>
+    <ol style="padding-left:24px;">
+      <li><b>役割定義 (ADR-042 + agents-role-clarification) との整合</b> — Reviewer = コード (静的)、Evaluator = UI/UX (動的) の順序は静的 → 動的が自然</li>
+      <li><b>早期 fail で重い処理を回避</b> — コードレビュー段階で fail なら Playwright (動的検証) を回さない、CI コスト・時間削減</li>
+      <li><b>修正サイクルの効率化</b> — コード品質 fail → Generator 修正 → 再 Reviewer (軽い)、最終的に UI/UX 検証へ</li>
+      <li><b>ループ構造の明確化</b> — Loop 1 (静的) → Loop 2 (動的) の段階的検証が直感的</li>
+      <li><b>GitHub 標準フロー準拠</b> — 「開発者 (Generator) が PR 作成、レビュアー (Reviewer/Evaluator) がレビュー、メンテナ (人間) が merge」という OSS / 業界標準パターンに揃える</li>
+      <li><b>役割の単一責任化</b> — Reviewer = コードレビューだけ、Evaluator = UI/UX だけ、PR 作成 = Generator だけ、merge = 人間だけ。各役割が単一責任で設計が明快</li>
+      <li><b>Mode B (External PR review) と統一</b> — Reviewer の既存 Mode B (外部 PR レビュー) は <code>gh pr review</code> のみで動作。Mode A も同パターンに揃えれば実装も統一</li>
+      <li><b>Evaluator スキップで重い処理を更に削減</b> — 画面修正不要な変更 (backend のみ、docs、リファクタ) では Playwright を回さない、Reviewer のみで完結</li>
+    </ol>
+
+    <h3>6-1. Evaluator スキップ判定の基準</h3>
+    <table>
+      <tr><th>変更の種類</th><th>Evaluator 実行</th><th>判定理由</th></tr>
+      <tr><td>frontend/src/ の component / page / hook / style 変更</td><td><span class="pill pill-green">必須</span></td><td>UI/UX に影響あり、ブラウザで確認必要</td></tr>
+      <tr><td>frontend の i18n テキスト変更 (ja.json / en.json)</td><td><span class="pill pill-green">必須</span></td><td>表示変わるため</td></tr>
+      <tr><td>backend API 仕様変更 (request/response 形式)</td><td><span class="pill pill-green">必須</span></td><td>frontend 連携影響、UI 動作変わる可能性</td></tr>
+      <tr><td>backend 内部実装のみ (API 仕様不変)</td><td><span class="pill pill-yellow">スキップ可</span></td><td>UI 不変、smoke で十分</td></tr>
+      <tr><td>migration / schema 変更</td><td><span class="pill pill-yellow">条件付きスキップ可</span></td><td>UI 表示影響なければスキップ、影響あれば必須</td></tr>
+      <tr><td>テストコード追加・修正のみ</td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
+      <tr><td>docs / runbook 変更</td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
+      <tr><td>CI workflow / config 変更</td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
+      <tr><td>リファクタ (機能変化なし)</td><td><span class="pill pill-yellow">スキップ可</span></td><td>振る舞い不変なら Reviewer のみで OK</td></tr>
+    </table>
+
+    <div class="alert alert-warn">
+      <b>スキップ判定の責任</b>
+      Generator (or 人間 Generator 役) が PR 本文で「Evaluator スキップ可」を明示宣言する。
+      Reviewer は宣言が妥当か判定し、不当 (例: frontend 変更があるのに「スキップ可」宣言) なら CHANGES_REQUESTED でスキップ宣言を撤回させる。
+      最終的に Reviewer approve = Evaluator 起動有無の合意。
+    </div>
+  </section>
+
+  <!-- ===== Migration ===== -->
+  <section class="card" id="migration">
+    <h2><span class="num">7</span>移行戦略</h2>
+    <div class="svg-wrap">
+      <svg viewBox="0 0 760 180" xmlns="http://www.w3.org/2000/svg">
+        <line x1="40" y1="100" x2="720" y2="100" stroke="#5a5a5a" stroke-width="2"/>
+
+        <circle cx="100" cy="100" r="10" fill="#9333ea"/>
+        <text x="100" y="135" text-anchor="middle" font-size="11" font-weight="700">Phase 0</text>
+        <text x="100" y="150" text-anchor="middle" font-size="10" fill="#5a5a5a">本ドラフト</text>
+        <text x="100" y="80" text-anchor="middle" font-size="10" fill="#9333ea">今</text>
+
+        <circle cx="250" cy="100" r="10" fill="#ca8a04"/>
+        <text x="250" y="135" text-anchor="middle" font-size="11" font-weight="700">Phase 1</text>
+        <text x="250" y="150" text-anchor="middle" font-size="10" fill="#5a5a5a">しんご合意</text>
+
+        <circle cx="400" cy="100" r="10" fill="#2563eb"/>
+        <text x="400" y="135" text-anchor="middle" font-size="11" font-weight="700">Phase 2</text>
+        <text x="400" y="150" text-anchor="middle" font-size="10" fill="#5a5a5a">起案 + 実装 (alias期)</text>
+
+        <circle cx="550" cy="100" r="10" fill="#2563eb"/>
+        <text x="550" y="135" text-anchor="middle" font-size="11" font-weight="700">Phase 3</text>
+        <text x="550" y="150" text-anchor="middle" font-size="10" fill="#5a5a5a">並行運用 1 ヶ月</text>
+
+        <circle cx="680" cy="100" r="10" fill="#16a34a"/>
+        <text x="680" y="135" text-anchor="middle" font-size="11" font-weight="700">Phase 4</text>
+        <text x="680" y="150" text-anchor="middle" font-size="10" fill="#5a5a5a">旧 alias 廃止</text>
+      </svg>
+    </div>
+
+    <table>
+      <tr><th>Phase</th><th>内容</th><th>担当</th><th>所要</th></tr>
+      <tr><td>0</td><td>本 HTML ドラフト</td><td>ひとし</td><td>済</td></tr>
+      <tr><td>1</td><td>しんごさん合意確認 (Discord, 本ドラフト共有)</td><td>ひとし → しんご</td><td>1 日</td></tr>
+      <tr><td>2</td><td>ADR 起案 (空き番号で develop PR) + 実装 (Reviewer.md / Evaluator.md / claude-pipeline.yml)</td><td>パターン B (Generator) or A (本人実装)</td><td>2-3 日</td></tr>
+      <tr><td>3</td><td>並行運用 1 ヶ月 (旧 status name を alias として読込互換)</td><td>運用 (両者)</td><td>1 ヶ月</td></tr>
+      <tr><td>4</td><td>旧 status name 廃止、新 name のみ受入</td><td>ひとし</td><td>1 日</td></tr>
+    </table>
+
+    <h3>並行運用期間の振る舞い (Phase 3)</h3>
+    <ul style="padding-left:24px;">
+      <li>新ロジックは新 status name (<code>reviewer_approved</code>) を書き込む</li>
+      <li>旧 status name (<code>evaluator_passed</code> = Reviewer 起動条件) が残っている場合、Reviewer は読み込んで処理を続ける (alias)</li>
+      <li>進行中 sprint は実装時の status のまま、新旧どちらでも動作</li>
+      <li>1 ヶ月経過で全 sprint が新 status に移行完了している前提</li>
+    </ul>
+  </section>
+
+  <!-- ===== Out of scope ===== -->
+  <section class="card" id="out">
+    <h2><span class="num">8</span>Scope外</h2>
+    <ul style="padding-left:24px;">
+      <li>Reviewer / Evaluator の役割定義そのもの (ADR-042 + agents-role-clarification で対応済)</li>
+      <li><b>しんご Planner 役割の追加</b> — ADR-042 で「ADR 起案前段の企画役」として定義済、本 ADR は実装フェーズ (Generator/Reviewer/Evaluator) の話なのでスコープ外</li>
+      <li>claude-pipeline.yml の Bash allow-list (ADR-039 で対応済)</li>
+      <li>Generator agent の動作詳細 (本 ADR は PR 作成 step 追加のみ、内部実装ロジックは別軸)</li>
+      <li>Reviewer の Mode B (External PR review) の変更 (Mode A のみ影響)</li>
+      <li>Playwright MCP 自体の設定 / 拡張</li>
+      <li>新規 status (例: <code>blocked</code>, <code>on_hold</code> 等) の追加</li>
+    </ul>
+
+    <h3>関連 ADR と本 ADR の責任分担</h3>
+    <table>
+      <tr><th>ADR</th><th>扱う役割</th><th>本 ADR との関係</th></tr>
+      <tr><td>ADR-042</td><td><b>Planner</b> (ADR 起案前段) + ブランチ運用 + リリースボタン</td><td>前提 (Planner の存在を仮定して、本 ADR は Generator 以降を扱う)</td></tr>
+      <tr><td>agents-role-clarification</td><td>Reviewer / Evaluator <b>役割境界</b>の文言定義</td><td>前提 (役割定義を踏まえて、本 ADR は順序と state machine を変更)</td></tr>
+      <tr><td><b>本 ADR (新規)</b></td><td>Generator / Reviewer / Evaluator の<b>順序と state machine</b></td><td>本体</td></tr>
+    </table>
+  </section>
+
+  <!-- ===== Questions ===== -->
+  <section class="card" id="questions">
+    <h2><span class="num">9</span>しんごさんへの質問</h2>
+    <p>ADR 正式起案前に下記 5 点を確認させてください。</p>
+    <ol class="question-list">
+      <li>
+        <b>順序逆転の方針合意</b>
+        Reviewer (コード) → Evaluator (UI/UX) の順序逆転に合意できますか?
+        現状の Generator → Evaluator → Reviewer から Generator → Reviewer → Evaluator への変更で、ADR-042 の役割定義と整合します。
+        <div class="options">▸ 合意 / 修正要望 (___) / 反対 (理由: ___)</div>
+      </li>
+      <li>
+        <b>PR 作成は Generator、Reviewer/Evaluator はレビュー専念に正常化</b>
+        現状の「Reviewer が PR 作成」設計を GitHub 標準フロー (開発者 = Generator が PR 作成、レビュアーは <code>gh pr review</code> のみ) に揃えます。
+        Reviewer/Evaluator は PR の作成/push/merge を行わず、コメントと approve/request-changes のみ。最終 merge は人間 (ひとし or しんご) が <code>gh pr merge --squash</code>。これに合意できますか?
+        <div class="options">▸ 合意 (GitHub 標準フロー) / 維持希望 (Reviewer が PR 作成のまま) / 別案</div>
+      </li>
+      <li>
+        <b>新 status name の正式化</b>
+        <code>reviewer_approved</code> (新規) を導入、<code>evaluator_passed</code> は意味が「両方 PASS = 最終 approve」に変わります。命名で違和感ある場合は別案を。
+        <div class="options">▸ OK / 別案 (例: ___)</div>
+      </li>
+      <li>
+        <b>並行運用期間 (alias 互換) の長さ</b>
+        1 ヶ月で十分か、もっと長く必要か、短くしてよいか?
+        <div class="options">▸ 1 ヶ月 OK / 2 ヶ月 / 1 週間で十分 / その他</div>
+      </li>
+      <li>
+        <b>実装パターン</b>
+        本 ADR 実装は claude-pipeline 経由 (パターン B = Generator) で行うか、ひとし本人実装 (パターン A) で行うか?
+        ファイル数 4-5 程度の中規模変更です。
+        <div class="options">▸ パターン A (本人実装、claude-pipeline 触らない方が安全) / パターン B (Generator、テスト) / どちらでも</div>
+      </li>
+      <li>
+        <b>Evaluator スキップ条件の運用</b>
+        §6-1 のスキップ判定基準 (frontend 変更あり=必須、backend のみ=スキップ可、docs/test=スキップ等) でいいですか?
+        判定責任は Generator が PR 本文で宣言、Reviewer が妥当性チェック、という運用にします。
+        <div class="options">▸ OK / 基準修正要 (___) / 全件 Evaluator 必須 (スキップなし) / その他</div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ===== Appendix ===== -->
+  <section class="card" id="appendix">
+    <h2><span class="num">10</span>付録</h2>
+
+    <h3>関連 ADR / PR</h3>
+    <table>
+      <tr><th>項目</th><th>状態</th><th>関係</th></tr>
+      <tr><td><a href="https://github.com/shingo-ops/salesanchor/pull/397" target="_blank">ADR-042 ドラフト (PR #397)</a></td><td>しんご合意待ち</td><td>運用ルール、本 ADR の前提</td></tr>
+      <tr><td>agents-role-clarification-prompt.md</td><td>同 PR で公開</td><td>役割明文化のプロンプト、本 ADR の前提</td></tr>
+      <tr><td>ADR-039 (Generator Codebase reconnaissance)</td><td>MERGED 2026-05-15</td><td>Generator 制約、本 ADR では触らない</td></tr>
+      <tr><td>ADR-040 (Claude Code ガードレール調査)</td><td>MERGED 2026-05-17</td><td>本 ADR の起点</td></tr>
+      <tr><td>ADR-044 (develop CI 健全性回復)</td><td>進行中 (PR #392)</td><td>並行進行</td></tr>
+    </table>
+
+    <h3>修正対象ファイルの現状 grep</h3>
+    <pre class="code">~/.claude/agents/reviewer.md:
+  line 3   description: ... after the Evaluator has PASSED ...
+  line 10  Mode A — Sprint review: last stage of the 4-stage pipeline (Planner → Generator → Evaluator → Reviewer)
+  line 36  status `evaluator_passed`
+  line 60  must be `evaluator_passed`
+  line 138 - Evaluator: PASS / Reviewer: APPROVED
+  line 258 In Mode A that is the Evaluator's job
+
+~/.claude/agents/evaluator.md:
+  line 3   description: ... after the Generator has completed a sprint ...
+  line 8   4-stage pipeline (Planner → Generator → Evaluator → Reviewer)
+  line 12  the Reviewer's job, which runs next on PASS
+  line 512 Ready for Reviewer (code review + PR)
+  line 522 those are the Reviewer's concerns
+  line 527 Never push, never open PRs (← この制約を解除する)</pre>
+
+    <h3>実装後の状態 (Phase 4 完了)</h3>
+    <table>
+      <tr><th>ファイル</th><th>変更後</th></tr>
+      <tr><td>generator.md</td><td>実装完了時に <code>git push</code> + <code>gh pr create --base develop</code>、PR URL を sprint meta に記録、status <code>in_progress</code> 書込</td></tr>
+      <tr><td>reviewer.md</td><td>"FIRST review stage after Generator opens PR", status <code>in_progress</code> 読込 → <code>reviewer_approved</code> 書込、<code>gh pr review --approve</code> のみ (PR 作成しない)</td></tr>
+      <tr><td>evaluator.md</td><td>"SECOND review stage after Reviewer approves", status <code>reviewer_approved</code> 読込 → <code>evaluator_passed</code> 書込、<code>gh pr review --approve</code> のみ (PR 作成しない)</td></tr>
+      <tr><td>claude-pipeline.yml</td><td>jobs: generator (実装 + PR open) → reviewer (gh pr review) → evaluator (gh pr review)、merge は人間操作</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    ADR ドラフト (claude-pipeline state machine 順序逆転) — しんごさん持ち込み用 — 2026-05-18 — ひとし (Hikky-dev)<br>
+    <small>このファイルはローカル <code>.claude-pipeline/drafts/ADR-pipeline-reorder.html</code> に保存されています</small>
+  </footer>
+
+</div>
+
+<script>
+  function copyCode(btn) {
+    const pre = btn.parentElement;
+    const text = pre.innerText.replace(/^copy\s*/, '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.innerText;
+      btn.innerText = '✓ copied';
+      setTimeout(() => { btn.innerText = orig; }, 1500);
+    });
+  }
+
+  const sections = document.querySelectorAll('section.card');
+  const tocLinks = document.querySelectorAll('nav.toc a');
+  function updateActive() {
+    let current = '';
+    sections.forEach(sec => {
+      const top = sec.getBoundingClientRect().top;
+      if (top < 120) current = sec.id;
+    });
+    tocLinks.forEach(link => {
+      link.style.background = '';
+      link.style.color = '';
+      if (link.getAttribute('href') === '#' + current) {
+        link.style.background = '#9333ea';
+        link.style.color = 'white';
+      }
+    });
+  }
+  window.addEventListener('scroll', updateActive);
+  updateActive();
+</script>
+
+</body>
+</html>
