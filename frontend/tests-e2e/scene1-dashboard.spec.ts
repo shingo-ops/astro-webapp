@@ -79,7 +79,10 @@ test.describe("Scene 1: Dashboard Overview", () => {
 
     // ADR-044: Meta Business Suite 風 UI 刷新 (ADR-022) で nav 構造が
     // `<nav class="mainnav">` から sidebar (`<nav class="sidebar-nav-items">`) に変更。
-    // ホバーで展開する SidebarAccordion 構造のため、ラベルテキストで存在を検証する。
+    // .sidebar-label は折り畳み時 opacity:0 のため、ホバーで展開してから検証する。
+    const sidebar = page.locator("aside.sidebar-panel");
+    await sidebar.hover();
+
     const nav = page.locator("nav.sidebar-nav-items");
     await expect(nav).toBeVisible();
 

@@ -104,7 +104,9 @@ async def _exec(conn, sql: str) -> None:
     for stmt in _split_sql_preserving_do_blocks(sql):
         stmt = stmt.strip()
         if stmt:
-            await conn.execute(text(stmt))
+            # text() はコメント内の `:word` をバインドパラメータとして誤解釈するため
+            # exec_driver_sql でドライバに直接渡す（migration SQL は全て固定値）
+            await conn.exec_driver_sql(stmt)
 
 
 # ---------------------------------------------------------------------------
