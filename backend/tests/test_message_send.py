@@ -431,13 +431,15 @@ async def test_send_within_24h_uses_response_messaging_type(app_client, db_sessi
 
     assert resp.status_code == 201
     body = resp.json()
-    assert body["messaging_type"] == "RESPONSE"
-    assert body["message_tag"] is None
+    # HUMAN_AGENT auto-apply 仕様 (dac01e3) に追随:
+    # 24h 以内でも messaging_type=MESSAGE_TAG / message_tag=HUMAN_AGENT を返す
+    assert body["messaging_type"] == "MESSAGE_TAG"
+    assert body["message_tag"] == "HUMAN_AGENT"
     assert body["message_id"] == "mid-001"
     # Send API に正しい引数が渡る
     assert mocked.await_count == 1
-    assert captured["messaging_type"] == "RESPONSE"
-    assert captured["tag"] is None
+    assert captured["messaging_type"] == "MESSAGE_TAG"
+    assert captured["tag"] == "HUMAN_AGENT"
     assert captured["text"] == "ありがとう"
     assert captured["recipient_id"] == "PSID-1"
 
@@ -655,8 +657,10 @@ async def test_send_success_inserts_outbound_meta_message(app_client, db_session
     assert direction == "outbound"
     assert message_text == "Hello"
     assert recipient_id == "PSID-1"
-    assert messaging_type == "RESPONSE"
-    assert message_tag is None
+    # HUMAN_AGENT auto-apply 仕様 (dac01e3) に追随:
+    # window 内は常に MESSAGE_TAG / HUMAN_AGENT で書き込む
+    assert messaging_type == "MESSAGE_TAG"
+    assert message_tag == "HUMAN_AGENT"
     assert message_id == "mid-success"
     assert platform == "messenger"
     assert sender_id == "page-1"

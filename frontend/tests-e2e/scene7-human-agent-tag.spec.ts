@@ -24,7 +24,7 @@ const conversationsFixture = loadFixture("mock-conversations.json");
 const messagesFixture = loadFixture<Record<string, unknown>>("mock-messages.json");
 
 test.describe("Scene 7: Human Agent Tag", () => {
-  test("5:38 24h 超: バナーが Human Agent Tag 表示に切替", async ({ page }) => {
+  test("5:38 24h 超: 入力フォームが送信可能（バナー UI は dac01e3 で削除）", async ({ page }) => {
     await installAuthBypass(page);
     await mockApi(page, {
       ...commonMocks(),
@@ -35,17 +35,11 @@ test.describe("Scene 7: Human Agent Tag", () => {
 
     await page.goto("/lead-chat?lead_id=5003");
 
-    // バナー文言（24h 超 → 7d 以内）
-    await expect(
-      page.getByText(
-        "24 時間を超過しています。返信は Human Agent Tag 付きで送信されます（24 時間〜7 日以内）。",
-      ),
-    ).toBeVisible({ timeout: 20_000 });
-
-    // 入力フォームは送信可能（can_send_at_all=true）
-    const textarea = page.getByPlaceholder(
-      "返信を入力（Enter で送信、Shift+Enter で改行）",
-    );
+    // ADR-044: dac01e3 (2026-05-15) で MessagingWindowBanner を削除し HUMAN_AGENT auto-apply 化。
+    // 旧バナー文言（"24 時間を超過しています..."）は UI に存在しない。
+    // 24h-7d ウィンドウ内でも入力フォームが送信可能であることのみ検証する。
+    const textarea = page.getByPlaceholder(/メッセージを入力/);
+    await expect(textarea).toBeVisible({ timeout: 20_000 });
     await expect(textarea).toBeEnabled();
   });
 
@@ -96,9 +90,8 @@ test.describe("Scene 7: Human Agent Tag", () => {
 
     await page.goto("/lead-chat?lead_id=5003");
 
-    const textarea = page.getByPlaceholder(
-      "返信を入力（Enter で送信、Shift+Enter で改行）",
-    );
+    // ADR-044: i18n 化により placeholder は t("inbox.messagePlaceholder")
+    const textarea = page.getByPlaceholder(/メッセージを入力/);
     await expect(textarea).toBeVisible({ timeout: 20_000 });
 
     const replyText =
@@ -122,7 +115,7 @@ test.describe("Scene 7: Human Agent Tag", () => {
     });
   });
 
-  test("Human Agent Tag 強制付与 toggle が 24h 内会話で見える（F4-S5）", async ({ page }) => {
+  test("24h 内会話で入力フォームが表示される（旧 F4-S5 toggle は dac01e3 で削除）", async ({ page }) => {
     await installAuthBypass(page);
     await mockApi(page, {
       ...commonMocks(),
@@ -133,9 +126,11 @@ test.describe("Scene 7: Human Agent Tag", () => {
 
     await page.goto("/lead-chat?lead_id=5001");
 
-    // 24h 内（can_send_response=true）でのみ表示される toggle
-    await expect(
-      page.getByText(/Human Agent Tag を強制付与/),
-    ).toBeVisible({ timeout: 20_000 });
+    // ADR-044: dac01e3 で Force Human Agent Tag toggle を削除し HUMAN_AGENT auto-apply 化。
+    // 旧 toggle UI（"Human Agent Tag を強制付与"）は存在しないため、24h 内会話で
+    // 入力フォームが活性化することのみ確認する。
+    const textarea = page.getByPlaceholder(/メッセージを入力/);
+    await expect(textarea).toBeVisible({ timeout: 20_000 });
+    await expect(textarea).toBeEnabled();
   });
 });

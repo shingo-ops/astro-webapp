@@ -228,7 +228,7 @@ test.describe("ADR-021 Sprint 2: 売上計算 MVP", () => {
 
     // 売上編集ボタン押下 → モーダル表示
     await page.getByTestId("open-financial-1").click();
-    await expect(page.getByRole("dialog", { name: /売上情報/ })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: /売上高/ })).toBeVisible();
 
     // 入力: revenue=100000, purchase_cost=60000, paypal_fee=3000
     await page.getByTestId("fin-input-revenue_amount").fill("100000");
@@ -244,7 +244,7 @@ test.describe("ADR-021 Sprint 2: 売上計算 MVP", () => {
     await page.getByTestId("fin-save").click();
 
     // モーダルが閉じ、一覧の売上 / 粗利 / 粗利率が更新される
-    await expect(page.getByRole("dialog", { name: /売上情報/ })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: /売上高/ })).toHaveCount(0);
     await expect(page.getByTestId("fin-cell-revenue-1")).toContainText(/100,000/);
     await expect(page.getByTestId("fin-cell-gross-1")).toContainText(/37,000/);
     await expect(page.getByTestId("fin-cell-rate-1")).toContainText(/37\.0%/);
