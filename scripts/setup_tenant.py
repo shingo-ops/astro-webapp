@@ -199,10 +199,13 @@ async def _apply_catchup_migrations(engine, tenant_id: int, schema_name: str) ->
     logger.info("=== catch-up migration 開始 (schema=%s) ===", schema_name)
 
     # --- 公開スキーマ migration（pg_namespace で全テナントを自動カバーするもの）---
+    # 014: public.current_tenant_id() ヘルパ関数（CREATE OR REPLACE で冪等）
+    #       047〜050 の RLS ポリシーが参照するため、これらより先に実行必須。
     # 042: Meta Inbox 権限 seed（ON CONFLICT DO NOTHING で冪等）
     # 043: public.meta_page_routing テーブル作成（CREATE TABLE IF NOT EXISTS）
     # これらは新テナントが public スキーマに追加されたあとでも有効。
     public_migrations: list[tuple[str, str]] = [
+        ("014_create_current_tenant_id_function.sql", "014: public.current_tenant_id() 関数"),
         ("042_seed_meta_inbox_permissions.sql", "042: Meta inbox permissions seed"),
         ("043_create_meta_page_routing.sql",    "043: public.meta_page_routing 作成"),
     ]
