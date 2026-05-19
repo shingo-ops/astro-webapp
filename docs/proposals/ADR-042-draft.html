@@ -693,14 +693,42 @@
         <td><code>~/.claude/agents/reviewer.md</code></td>
       </tr>
       <tr style="background: #dbeafe;">
-        <td><b>Evaluator</b></td>
-        <td>UI/UX ブラウザ評価 (Loop 2、動的、Playwright)</td>
+        <td><b>Evaluator</b><br><span style="font-size:11px;color:#5a5a5a;">(2 層構造)</span></td>
+        <td>UI/UX ブラウザ評価 (Loop 2、動的)<br><b>Layer 1 (必須)</b>: Playwright MCP<br><b>Layer 2 (オプション)</b>: Claude in Chrome</td>
         <td>エージェント (しんご系 or ひとし系)</td>
-        <td>エージェント (画面修正なければスキップ可)</td>
+        <td>エージェント (画面修正なければスキップ可、method は Generator が PR 本文で宣言)</td>
         <td>Reviewer APPROVE 済 PR<br>→ <code>gh pr review --approve</code> or <code>--request-changes</code></td>
         <td><code>~/.claude/agents/evaluator.md</code></td>
       </tr>
     </table>
+
+    <h4 style="margin-top: 18px;">Evaluator 2 層の使い分け</h4>
+    <table>
+      <tr><th>Layer</th><th>ツール</th><th>用途</th><th>適用シーン</th></tr>
+      <tr>
+        <td><b>Layer 1 (必須)</b></td>
+        <td>Playwright MCP</td>
+        <td>clean な Chromium、再現性、並列実行、自動テスト</td>
+        <td>Sprint 完了時の標準 AC 検証、QA Smoke 8 シナリオ、回帰テスト</td>
+      </tr>
+      <tr>
+        <td><b>Layer 2 (オプション)</b></td>
+        <td>Claude in Chrome (<code>mcp__claude-in-chrome__*</code>)</td>
+        <td>ログイン済 Chrome 直接制御、実セッション、GIF 録画</td>
+        <td>本番デプロイ後の目視、Meta OAuth 検証、撮影前確認、外部システム連携</td>
+      </tr>
+    </table>
+
+    <div class="alert alert-info">
+      <b>Method 宣言の仕組み</b>
+      Generator は PR 本文に Evaluator method を宣言する:<br>
+      <pre style="background:#f5f5f0;padding:8px;border-radius:4px;font-size:12px;margin:6px 0;">## Evaluator method
+- [x] Layer 1: Playwright (default)
+- [ ] Layer 2: Claude in Chrome (必要時、理由: ___)
+- [ ] Skip (画面修正なし)</pre>
+      Layer 2 を選ぶ場合は理由を明記 (例: "Meta OAuth フローの実検証必要"、"本番デプロイ後のログイン済セッションでの確認" 等)。<br>
+      Reviewer は宣言が妥当か確認する。
+    </div>
 
     <div class="alert alert-info">
       <b>Planner の Plan mode 起動について</b>
