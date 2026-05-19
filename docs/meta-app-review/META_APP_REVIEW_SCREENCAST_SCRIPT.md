@@ -2,13 +2,22 @@
 
 | 項目 | 内容 |
 |---|---|
-| ステータス | 2026-05-15 更新版（ADR-027/030/033/034 対応） |
-| 作成日 | 2026-05-15 |
-| 作成者 | Phase 1-D Sprint 7 Generator |
+| ステータス | **2026-05-19 v3**（ADR-041 / ADR-044 / ADR-045 反映、7 permission OAuth + Business Manager 経由対応） |
+| 作成日 | 2026-05-15（v3 改訂: 2026-05-19 by Hikky-dev、Meta 引き継ぎ初日） |
+| 作成者 | Phase 1-D Sprint 7 Generator（v3 改訂: Hikky-dev） |
 | 対象 | Meta App Review 提出用スクリーンキャスト |
 | 想定尺 | 7 分 30 秒（7 シーン × 平均 1 分） |
 | 想定言語 | ナレーション英語 / UI 英語 / 字幕英語焼き込み |
-| 関連ドキュメント | `META_APP_REVIEW_PRE_RECORDING_CHECKLIST.md`, `PHASE_1D_META_INBOX_OVERVIEW.md` |
+| 関連ドキュメント | `META_APP_REVIEW_PRE_RECORDING_CHECKLIST.md`, `PHASE_1D_META_INBOX_OVERVIEW.md`, `docs/adr/ADR-041-meta-page-connection-fallback-implementation.md`, `docs/adr/ADR-044-ci-health-recovery.md`, `docs/adr/ADR-045-migration-055-deploy-automation.md`, `docs/handover/2026-05-18-meta-integration-incident-handover.md` |
+
+### v3 差分サマリー
+
+- **シーン 2 (OAuth) のみ大幅更新**、シーン 1 / 3-8 は変更なし
+- 6 permission → **7 permission** (`business_management` 追加、ADR-041 §1)
+- Page 選択画面の前に **Business Manager 管理 Page 選択画面** が挟まる (ADR-041 §2)
+- ナレーション・撮影注意・テストデータ要件を 7 permission + BM 経由前提に更新
+- 既存テナント向け「再認証バナー」は tenant-review (撮影専用テナント) では **映らない**（initial connection 状態のため）
+- scene 3 / 4 / 7 は PR #392 (ADR-044) で E2E カバレッジが一部縮退している。撮影前に **手動再現テスト** で実機動作を確認すること
 
 ## 0. 撮影上の共通ルール（全シーン共通）
 
@@ -76,7 +85,7 @@ FPS: 60
 | # | 開始 | 終了 | 長さ | テーマ | 申請 Permission |
 |---|---|---|---|---|---|
 | 1 | 0:00 | 0:30 | 30 秒 | Intro: Sales Anchor dashboard overview | (前提) |
-| 2 | 0:30 | 1:30 | 60 秒 | Connect Facebook Page via OAuth | `pages_show_list`, `pages_manage_metadata` |
+| 2 | 0:30 | 1:30 | 60 秒 | Connect Facebook Page via OAuth (7 permission + Business Manager 経由) | `pages_show_list`, `pages_manage_metadata`, `business_management` |
 | 3 | 1:30 | 2:30 | 60 秒 | Incoming Messenger message arrives in inbox | `pages_read_engagement` |
 | 4 | 2:30 | 3:30 | 60 秒 | Sales rep replies to Messenger message | `pages_messaging` |
 | 5 | 3:30 | 4:30 | 60 秒 | Connect Instagram Business account | `instagram_basic` |
@@ -84,7 +93,7 @@ FPS: 60
 | 7 | 5:30 | 6:30 | 60 秒 | Reply outside 24-hour window using Human Agent Tag | Human Agent Tag |
 | 8 | 6:30 | 7:30 | 60 秒 | Data Deletion Callback demonstration | (Required by Meta) |
 
-**カバー Permission**: `pages_show_list` / `pages_manage_metadata` / `pages_messaging` / `pages_read_engagement` / `instagram_basic` / `instagram_manage_messages` + Human Agent Tag + Data Deletion = **6 Permission + Human Agent Tag + Data Deletion 全カバー**。
+**カバー Permission**: `pages_show_list` / `pages_manage_metadata` / `pages_messaging` / `pages_read_engagement` / `instagram_basic` / `instagram_manage_messages` / **`business_management`** + Human Agent Tag + Data Deletion = **7 Permission + Human Agent Tag + Data Deletion 全カバー**（v3 追加: `business_management` は ADR-041 で追加。Business Manager 経由で管理される Page 一覧 (`/me/businesses` → `owned_pages`) を取得するために必要。B2B 顧客の大半が Business Manager で Page 管理しているため、ADR-037 調査で構造的に必要と判明）。
 
 ---
 
@@ -128,52 +137,60 @@ FPS: 60
 ## 3. シーン 2: Connect Facebook Page via OAuth
 
 **時間**: 0:30 - 1:30（60 秒）
-**目的**: `pages_show_list` と `pages_manage_metadata` を実演。Facebook Login で Page 一覧を取得し、選択 → `subscribed_apps` 登録までを通す。
+**目的**: `pages_show_list` / `pages_manage_metadata` / **`business_management`** を実演。Facebook Login で **Business Manager 管理 Page を含む全 Page 一覧**を取得し、選択 → `subscribed_apps` 登録までを通す（v3: ADR-041 反映）。
 
 ### 3-1. 画面操作
 
 | 秒 | 操作 |
 |---|---|
 | 0:30 | サイドバーの「Channels」をクリック → `/channels` へ遷移 |
-| 0:33 | Channels 画面が表示される（接続済 Page 0 件の状態） |
-| 0:36 | 「Facebook ページを接続」ボタンをハイライト → クリック |
-| 0:38 | 別タブ／同タブで Facebook OAuth ダイアログが開く（`facebook.com/v19.0/dialog/oauth`） |
-| 0:44 | Test User がすでにログイン済として表示される。「許可するもの」を確認: |
+| 0:33 | Channels 画面が表示される（"No Facebook Pages connected yet" = 接続済 Page 0 件の状態。`review@salesanchor.jp` (tenant-review) は撮影専用テナントのため再認証バナーは出ない） |
+| 0:36 | 「Connect a Facebook Page」ボタンをハイライト → クリック |
+| 0:38 | 同タブで Facebook OAuth ダイアログに遷移（`facebook.com/v19.0/dialog/oauth`） |
+| 0:42 | Test User がすでにログイン済として表示される。**7 Permission の「許可するもの」を一覧静止 (2 秒以上)** 確認: |
 |  | - Pages Show List |
 |  | - Pages Manage Metadata |
 |  | - Pages Messaging |
 |  | - Pages Read Engagement |
 |  | - Instagram Basic |
 |  | - Instagram Manage Messages |
-| 0:50 | 「次へ」をクリック → Page 選択画面 |
-| 0:54 | `HIGH LIFE JPN Test Page` を選択 → 「次へ」 |
-| 0:58 | Instagram Business Account 連携確認画面（IG アカウント選択） → 「次へ」 |
-| 1:02 | アクセス許可確認画面で「完了」 |
-| 1:06 | Sales Anchor の `/channels/oauth/callback` にリダイレクト |
-| 1:10 | コールバック処理中ローディング → Channels 一覧に `HIGH LIFE JPN Test Page` が表示される |
-| 1:18 | Page カードの「Active」バッジ、`page_token_expires_at`（2 ヶ月後）を確認 |
+|  | - **Business Management** ← v3 で追加 (ADR-041 §1) |
+| 0:50 | 「Continue / 次へ」をクリック |
+| 0:53 | **Business Manager 管理 Page 選択画面** が表示される（v3 で新規追加。`business_management` scope により `/me/businesses` → `owned_pages` 経路で Business Manager 配下の Page が列挙される。**この画面も 2 秒以上静止** して BM 経由の Page 取得を審査担当に明示） |
+| 0:56 | `HIGH LIFE JPN Test Page` を選択 → 「Next」 |
+| 1:00 | Instagram Business Account 連携確認画面（IG アカウント選択） → 「Next」 |
+| 1:04 | アクセス許可確認画面で「Done」 |
+| 1:07 | Sales Anchor の `/channels/oauth/callback` にリダイレクト |
+| 1:10 | コールバック処理中ローディング → Channels 一覧に `HIGH LIFE JPN Test Page` が **Active** バッジ付きで表示される |
+| 1:18 | Page カードの「Active」バッジ、Page ID、Instagram linked (`@...`)、Connected at の表示を確認 |
 | 1:25 | 完了 |
 
 ### 3-2. 英語ナレーション
 
-> "Here in the Channels settings, an admin can connect their Facebook Pages. Clicking 'Connect Facebook Page' starts the standard Facebook Login flow. The user grants the six permissions our app needs: pages_show_list to fetch the Page list, pages_manage_metadata to subscribe to webhooks, pages_messaging and pages_read_engagement for Messenger conversations, plus instagram_basic and instagram_manage_messages for Instagram DMs. After selecting the Page and Instagram account, the app exchanges the short-lived token for a long-lived Page Access Token, registers webhook subscriptions on subscribed_apps, and stores the encrypted token in our database. The Page now appears as Active in the channels list."
+> "Here in the Channels settings, an admin can connect their Facebook Pages. Clicking 'Connect a Facebook Page' starts the standard Facebook Login flow. The user grants the seven permissions our app needs: pages_show_list to fetch the Page list, pages_manage_metadata to subscribe to webhooks, pages_messaging and pages_read_engagement for Messenger conversations, instagram_basic and instagram_manage_messages for Instagram DMs, and business_management to list Pages managed via Business Manager — most of our B2B customers manage their Pages this way. After approving the seven permissions, the user picks the target Page from the Business Manager list and confirms the linked Instagram account. The app exchanges the short-lived token for a long-lived Page Access Token, persists the encrypted token along with the granted scopes in our database, registers webhook subscriptions, and the Page now appears as Active in the channels list."
 
-(約 105 単語 / 55 秒)
+(約 130 単語 / 60 秒。v3: business_management の説明 1 文と Business Manager list 経由の文言を追加)
 
 ### 3-3. 撮影上の注意
 
 - Facebook OAuth ダイアログのレイアウトは Meta 都合で変わる可能性がある。撮影直前に同じ Test User で素振りしておく
-- 6 Permission の一覧が画面に映り込む瞬間を **必ず 2 秒以上** 静止させる（審査担当が確認できるように）
+- **7 Permission** の一覧が画面に映り込む瞬間を **必ず 2 秒以上** 静止させる（審査担当が確認できるように。v3 で `Business Management` が追加され項目数が増えている点を強調）
+- **Business Manager 管理 Page 選択画面**（v3 で追加されたステップ）も同様に **2 秒以上** 静止し、Business Manager 経由で取得した Page 一覧が表示されることを審査担当に明示する
+- 既存テナント向け「再認証バナー」は **`tenant-review` (撮影専用テナント) では映らない**（initial connection 状態のため）。本番テナント (`tenant-highlife-jpn`) でのみ表示される仕様で、撮影外
 - redirect_uri エラー（`URL_NOT_REGISTERED`）が出た場合は撮影中止 → Meta Developer Portal の Valid OAuth Redirect URIs を確認
+- **Security token mismatch** エラーが出た場合は OAuth フロー途中で離脱したことを意味する → 撮影中断、`/channels` 再表示後にやり直し（2026-05-19 引き継ぎ初日の再接続で実機確認済の挙動）
 - callback 後の Channels 一覧で **Page Access Token が一切表示されていない** こと（plaintext 露出 NG）を画面上で確認できるよう、要素検査を一瞬だけ表示すると審査の安心度が上がる（任意）
 
 ### 3-4. テストデータ要件
 
-- Meta Developer Portal で本番 App の **Test Mode 有効** + Test User を 1 名作成
+- Meta Developer Portal で本番 App の **Test Mode 有効** + Test User を 1 名作成（または App Admin / Developer / Tester に登録された FB アカウント）
 - Test User が `HIGH LIFE JPN Test Page` の Admin ロール
+- **Test User が Business Manager Admin ロールを持ち、対象 Page が Business Manager に紐付け済**（v3 で追加要件。`business_management` scope で `/me/businesses` → `owned_pages` 経路が機能するために必須）
 - Test User が Test Instagram Business Account の連携済
 - VPS .env に `META_APP_ID`, `META_APP_SECRET`, `META_OAUTH_REDIRECT_URI=https://app.salesanchor.jp/channels/oauth/callback` が設定済
 - Meta Developer Portal の **Valid OAuth Redirect URIs** に上記 redirect_uri を登録済
+- **migration 055 (granted_scopes 列追加) が tenant-review に適用済み**（ADR-045 で deploy.yml 自動化済。確認方法: `tenant_006.tenant_meta_config` に `granted_scopes JSONB` 列が存在することを SELECT で確認）
+- tenant-review (`tenant_006`) の `tenant_meta_config` を **撮影前にクリーン状態**にしておく推奨（既存 inactive レコードが残っていても UI 上は非表示だが、念のため判断は別途）
 
 ---
 
@@ -479,9 +496,9 @@ FPS: 60
 - Facebook の通知エリア / ホームフィード
 - Shingo の Facebook 個人プロフィール
 
-OAuth ダイアログ（permission 承認画面）は映してよいが、その後 Facebook トップに戻らずに必ず Sales Anchor に戻る経路で撮影する。
+OAuth ダイアログ（permission 承認画面）と **Business Manager 管理 Page 選択画面**（v3 で追加された審査の核心ステップ）は映してよい。ただし、その後 Facebook トップ / Business Suite に戻らずに必ず Sales Anchor に戻る経路で撮影する。Business Manager 配下の他 Page 名や顧客データが選択画面の周辺に表示される可能性があるため、撮影時はカーソルや選択対象 Page 以外を強調しないこと。
 
-撮影用に専用 Chrome プロファイルを作成し、Sales Anchor のみログインした状態で撮影することを推奨。
+撮影用に専用 Chrome プロファイルを作成し、Sales Anchor のみログインした状態で撮影することを推奨。Facebook 側も別 Chrome プロファイルで Test User のみログインした状態にしておくと、`forced_account_switch` 画面が出ず OAuth フローが直線的に進む（2026-05-19 引き継ぎ初日の実機で確認）。
 
 ---
 
@@ -501,12 +518,14 @@ OAuth ダイアログ（permission 承認画面）は映してよいが、その
 ## 12. リハーサル＆撮影成功判定
 
 - [ ] 全 8 シーン（Intro 含む）が連続して 7 分 30 秒前後で撮れた
-- [ ] 申請 6 Permission すべてが、シーン 2-7 のいずれかで実演されている
+- [ ] 申請 **7 Permission** すべてが、シーン 2 で実演されている（特に `business_management` がリストに映っていること）
+- [ ] **Business Manager 管理 Page 選択画面**（v3 追加）が 2 秒以上静止して撮影されている
 - [ ] Human Agent Tag が MESSAGE_TAG + HUMAN_AGENT ラベルとして outbound バブルに表示されている
 - [ ] Data Deletion Callback がシーン 8 で動作確認できている
 - [ ] PII / Secret が一切映っていない
 - [ ] 英語ナレーションが全シーンで聞き取れる
 - [ ] 字幕（英語ハードサブ）が焼き込まれている
 - [ ] ファイル名・解像度・尺の最終チェック完了
+- [ ] **scene 3 / 4 / 7 の機能が手動再現テストで動作確認済**（PR #392 で E2E カバレッジ縮退あり、ADR-044 で起票済）
 
 すべて満たしたら **Master Checklist v1.1** にアップロード URL を記載 → Meta App Review 提出。
