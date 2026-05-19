@@ -219,7 +219,7 @@
       ② PR フロー正常化: <b>PR 作成は常に Generator (役割)</b>、人間は PR 作成しない (merge のみ)、Reviewer/Evaluator は <code>gh pr review</code> でレビュー専念<br>
       ③ status name を新体系へ rename (<code>evaluator_passed</code> 等の legacy 名を整理)<br>
       ④ 修正サイクル: Reviewer/Evaluator が FAIL → <b>Generator が同じ PR ブランチに修正 push + 再レビュー依頼</b> → Reviewer 再走 → (画面修正あれば) Evaluator 再走 → 両方 PASS で merge ready<br>
-      ⑤ <b>Evaluator スキップ条件</b>: 画面 (UI/UX) 修正が不要な変更 (backend のみ、ドキュメント、リファクタ等) は Evaluator スキップ可<br>
+      ⑤ <b>Evaluator 2 層化</b>: Layer 1 (Playwright、default) / Layer 2 (Claude in Chrome、Meta OAuth・本番セッション・撮影前等) / Skip (画面修正不要時)<br>
       ⑥ 最終 merge は人間 (ひとし or しんご) が <code>gh pr merge --squash</code><br>
       ⑦ 移行期間 (1 ヶ月) は旧 status name を alias で読み込み互換
     </div>
@@ -579,26 +579,47 @@ jobs:
       <li><b>Evaluator スキップで重い処理を更に削減</b> — 画面修正不要な変更 (backend のみ、docs、リファクタ) では Playwright を回さない、Reviewer のみで完結</li>
     </ol>
 
-    <h3>6-1. Evaluator スキップ判定の基準</h3>
+    <h3>6-1. Evaluator method 選択基準 (2 層化対応)</h3>
     <table>
-      <tr><th>変更の種類</th><th>Evaluator 実行</th><th>判定理由</th></tr>
-      <tr><td>frontend/src/ の component / page / hook / style 変更</td><td><span class="pill pill-green">必須</span></td><td>UI/UX に影響あり、ブラウザで確認必要</td></tr>
-      <tr><td>frontend の i18n テキスト変更 (ja.json / en.json)</td><td><span class="pill pill-green">必須</span></td><td>表示変わるため</td></tr>
-      <tr><td>backend API 仕様変更 (request/response 形式)</td><td><span class="pill pill-green">必須</span></td><td>frontend 連携影響、UI 動作変わる可能性</td></tr>
-      <tr><td>backend 内部実装のみ (API 仕様不変)</td><td><span class="pill pill-yellow">スキップ可</span></td><td>UI 不変、smoke で十分</td></tr>
-      <tr><td>migration / schema 変更</td><td><span class="pill pill-yellow">条件付きスキップ可</span></td><td>UI 表示影響なければスキップ、影響あれば必須</td></tr>
-      <tr><td>テストコード追加・修正のみ</td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
-      <tr><td>docs / runbook 変更</td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
-      <tr><td>CI workflow / config 変更</td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
-      <tr><td>リファクタ (機能変化なし)</td><td><span class="pill pill-yellow">スキップ可</span></td><td>振る舞い不変なら Reviewer のみで OK</td></tr>
+      <tr><th>変更の種類</th><th>Layer 1 (Playwright)</th><th>Layer 2 (Claude in Chrome)</th><th>判定理由</th></tr>
+      <tr><td>frontend/src/ の component / page / hook / style 変更</td><td><span class="pill pill-green">必須</span></td><td><span class="pill pill-yellow">不要 (通常)</span></td><td>標準 AC 検証で十分</td></tr>
+      <tr><td>frontend の i18n テキスト変更 (ja.json / en.json)</td><td><span class="pill pill-green">必須</span></td><td>—</td><td>表示変わるため</td></tr>
+      <tr><td>backend API 仕様変更 (request/response 形式)</td><td><span class="pill pill-green">必須</span></td><td>—</td><td>frontend 連携影響、UI 動作変わる可能性</td></tr>
+      <tr><td>Meta OAuth / Webhook 関連 (ADR-018, ADR-026, ADR-041 系)</td><td><span class="pill pill-yellow">推奨</span></td><td><span class="pill pill-green">必須</span></td><td>実 Meta セッションでないと検証困難</td></tr>
+      <tr><td>本番デプロイ後の目視確認</td><td>—</td><td><span class="pill pill-green">必須</span></td><td>ログイン済 Chrome 必須</td></tr>
+      <tr><td>Meta App Review 撮影前確認</td><td>—</td><td><span class="pill pill-green">必須</span></td><td>GIF 録画 + 実ブラウザ必須</td></tr>
+      <tr><td>外部システム連携 (GCP/Cloudflare/Firebase live セッション)</td><td>—</td><td><span class="pill pill-green">必須</span></td><td>実セッション必須</td></tr>
+      <tr><td>backend 内部実装のみ (API 仕様不変)</td><td><span class="pill pill-yellow">スキップ可</span></td><td>—</td><td>UI 不変</td></tr>
+      <tr><td>migration / schema 変更 (UI 影響なし)</td><td><span class="pill pill-yellow">条件付きスキップ可</span></td><td>—</td><td>影響あれば Layer 1 必須</td></tr>
+      <tr><td>テストコード追加・修正のみ</td><td><span class="pill pill-red">スキップ</span></td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
+      <tr><td>docs / runbook 変更</td><td><span class="pill pill-red">スキップ</span></td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
+      <tr><td>CI workflow / config 変更</td><td><span class="pill pill-red">スキップ</span></td><td><span class="pill pill-red">スキップ</span></td><td>UI に影響なし</td></tr>
+      <tr><td>リファクタ (機能変化なし)</td><td><span class="pill pill-yellow">スキップ可</span></td><td>—</td><td>振る舞い不変</td></tr>
     </table>
 
     <div class="alert alert-warn">
-      <b>スキップ判定の責任</b>
-      Generator (or 人間 Generator 役) が PR 本文で「Evaluator スキップ可」を明示宣言する。
-      Reviewer は宣言が妥当か判定し、不当 (例: frontend 変更があるのに「スキップ可」宣言) なら CHANGES_REQUESTED でスキップ宣言を撤回させる。
-      最終的に Reviewer approve = Evaluator 起動有無の合意。
+      <b>method 宣言の責任</b>
+      Generator (or 人間 Generator 役) が PR 本文の <code>## Evaluator method</code> セクションで Layer 1 / Layer 2 / Skip を明示宣言する。
+      Reviewer は宣言が妥当か判定:
+      <ul style="margin-top:6px;padding-left:24px;">
+        <li>不当な Skip (frontend 変更あるのに Skip 宣言) → CHANGES_REQUESTED で撤回</li>
+        <li>Layer 2 のみ宣言だが標準 AC test 含まれる → Layer 1 も必須化を要求</li>
+        <li>Meta OAuth 系で Layer 2 未宣言 → Layer 2 追加を要求</li>
+      </ul>
+      最終的に Reviewer approve = Evaluator method の合意。
     </div>
+
+    <h3>6-2. Layer 1 vs Layer 2 の特性</h3>
+    <table>
+      <tr><th>項目</th><th>Layer 1: Playwright MCP</th><th>Layer 2: Claude in Chrome</th></tr>
+      <tr><td>起動環境</td><td>clean な Chromium、毎回新規</td><td>ひとしさんの普段使い Chrome (ログイン済)</td></tr>
+      <tr><td>再現性</td><td>◎</td><td>△ (セッション状態依存)</td></tr>
+      <tr><td>並列実行</td><td>◎</td><td>× (1 Chrome のみ)</td></tr>
+      <tr><td>ログイン状態</td><td>毎回ログインから (test user)</td><td>維持されている (jarvis-claude.uk 等)</td></tr>
+      <tr><td>副作用リスク</td><td>低 (sandbox)</td><td>中 (本番 Chrome 直接制御)</td></tr>
+      <tr><td>自動テスト性</td><td>◎</td><td>△</td></tr>
+      <tr><td>GIF 録画</td><td>screenshot のみ</td><td>◎ (<code>gif_creator</code>)</td></tr>
+    </table>
   </section>
 
   <!-- ===== Migration ===== -->
