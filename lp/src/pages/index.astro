@@ -3,48 +3,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const features = [
   {
-    title: 'Unified Inbox',
+    title: 'You can respond to every channel from one screen',
     description:
-      'Messenger, Instagram, WhatsApp, LINE, Discord, Telegram, and email — all in one screen. No tab switching, no missed messages.',
+      'Messenger, Instagram, WhatsApp, LINE, Discord, Telegram, and email — all in one place. No tab-switching, no missed threads.',
   },
   {
-    title: 'Structured Catalog',
+    title: 'You can manage your catalog without spreadsheets',
     description:
-      'TCG product master with card number, set code, rarity, language, and JAN. Stop managing inventory in spreadsheets.',
+      'Card number, set code, rarity, language, and JAN — structured, searchable, always current. Inventory that reflects reality.',
   },
   {
-    title: 'Automated Invoicing',
+    title: 'You can go from quote to shipment in one click',
     description:
-      'Move from quote to invoice to shipment to order with a single click. Built for the volume of B2B TCG trade.',
+      'Move from quote to invoice to shipment to order without copying and pasting. Built for the volume of B2B TCG trade.',
   },
   {
-    title: 'AI Insights',
+    title: 'You can see your next best action before you ask',
     description:
-      'Conversation history and purchase behavior summarized by Claude. Surface the next best action before you ask.',
+      'Conversation history and purchase behavior summarized by AI. Surface the right move at the right moment.',
   },
 ];
 ---
 
 <BaseLayout
   title="The CRM built for cross-border TCG exporters"
-  description="Sales Anchor is a multi-channel CRM for B2B Trading Card Game exporters. Unified inbox, structured catalog, automated invoicing, and AI insights — built for the volume of cross-border trade."
+  description="Stop juggling Excel tabs, DMs, and invoices. Sales Anchor gives TCG exporters one place to unify every channel, manage catalog, and automate invoicing — so a small team can handle hundreds of B2B deals without losing track."
 >
   <!-- A1. Hero -->
   <section class="py-24 md:py-32 bg-white">
     <div class="max-w-5xl mx-auto px-4 text-center">
-      <h1 class="sr-only">Sales Anchor — B2B CRM for Cross-Border TCG Exporters</h1>
-      <img
-        src="/logo.png"
-        alt=""
-        role="presentation"
-        class="mx-auto w-full max-w-xl md:max-w-2xl h-auto"
-      />
-      <p class="mt-10 text-3xl md:text-4xl font-semibold text-gray-900 tracking-tight max-w-2xl mx-auto leading-tight">
+      <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight max-w-3xl mx-auto leading-tight">
         The CRM built for cross-border TCG exporters.
-      </p>
-      <p class="mt-5 text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
-        Unify every channel, structure your catalog, automate invoicing, and let AI surface the next
-        best action — so a small team can handle hundreds of B2B deals without losing track.
+      </h1>
+      <p class="mt-6 text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+        Unify every channel, every customer, every deal — in one place.<br class="hidden sm:inline" />
+        Control your records and workflows with structure.<br class="hidden sm:inline" />
+        Analyze what's working and find your next move.
       </p>
       <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
         <a
@@ -67,15 +61,21 @@ const features = [
   <section class="py-20 bg-gray-50 border-y border-gray-100">
     <div class="max-w-3xl mx-auto px-4">
       <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-5">
-        Who it's for
+        Sound familiar?
       </h2>
+      <p class="text-gray-600 leading-relaxed text-lg mb-6">
+        It's Tuesday morning. Your LINE thread has 40 unread messages, three Instagram DMs are
+        waiting, and the Excel sheet with this month's orders is open in another tab. Somewhere in
+        there is an invoice you meant to send yesterday.
+      </p>
+      <p class="text-gray-600 leading-relaxed text-lg mb-6">
+        You're running a real B2B TCG export business — selling to stores across North America,
+        Europe, and Southeast Asia. The volume is real. The complexity is real. But the tools
+        you're using were built for something else entirely.
+      </p>
       <p class="text-gray-600 leading-relaxed text-lg">
-        Sales Anchor is built for companies and sole proprietors who export Trading Card Game products
-        to overseas buyers. You manage inquiries from a dozen channels simultaneously — Messenger,
-        Instagram, WhatsApp, LINE, Discord, Telegram, email — while tracking card-level inventory
-        (set code, rarity, language, JAN) and processing invoices for hundreds of orders per month.
-        Sales Anchor brings all of that into one system, so a lean team can operate at scale without
-        dropping threads.
+        Sales Anchor brings every channel, every customer record, and every transaction into one
+        system — so your team can operate at B2B scale without dropping threads.
       </p>
     </div>
   </section>
@@ -83,9 +83,12 @@ const features = [
   <!-- A3. Features -->
   <section id="features" class="py-20 bg-white">
     <div class="max-w-5xl mx-auto px-4">
-      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-14">
-        Features
+      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
+        What you can do with Sales Anchor
       </h2>
+      <p class="text-center text-gray-500 mb-14 max-w-xl mx-auto">
+        Built for the specific workflow of cross-border TCG exporters.
+      </p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         {
           features.map((f) => (
@@ -106,18 +109,17 @@ const features = [
         How we use Meta data
       </h2>
       <p class="text-gray-600 leading-relaxed">
-        Sales Anchor receives messages from Messenger and Instagram Direct Message via the Meta Graph
-        API and displays them in the operator's dashboard. All data obtained from Meta Platform is
-        handled in strict accordance with the following principles:
+        Sales Anchor receives messages from Messenger and Instagram Direct via the Meta Graph API
+        and displays them in your dashboard. All data from Meta Platform is handled as follows:
       </p>
       <ul class="mt-5 space-y-3 text-gray-600">
         <li class="flex gap-3">
           <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Used solely to facilitate communication between client companies and their customers.</span>
+          <span>Used only to facilitate communication between your team and your customers.</span>
         </li>
         <li class="flex gap-3">
           <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Compliant with Article 3 (Data Use) of the Meta Platform Terms.</span>
+          <span>Handled in accordance with Article 3 (Data Use) of the Meta Platform Terms.</span>
         </li>
         <li class="flex gap-3">
           <span class="mt-1 text-gray-400 shrink-0">—</span>
@@ -143,81 +145,17 @@ const features = [
     </div>
   </section>
 
-  <!-- A5. Security & infrastructure -->
+  <!-- A5. Security -->
   <section class="py-20 bg-white">
     <div class="max-w-3xl mx-auto px-4">
       <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-5">
-        Security &amp; infrastructure
+        Your data is safe
       </h2>
-      <ul class="space-y-3 text-gray-600">
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>All data stored on servers located in Japan (SAKURA internet VPS). No transfer outside Japan.</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>All traffic encrypted with TLS 1.3 (Let's Encrypt certificate).</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Sensitive credentials (access tokens, etc.) encrypted at rest with Fernet symmetric encryption.</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>PostgreSQL Row-Level Security enforces strict data isolation between tenants.</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Webhook signature verification (HMAC-SHA256) prevents tampering.</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Audit logs retained for 5 years; access permissions follow the principle of least privilege.</span>
-        </li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- A6. About the operator -->
-  <section class="py-20 bg-gray-50 border-t border-gray-100">
-    <div class="max-w-3xl mx-auto px-4">
-      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-5">
-        About the operator
-      </h2>
-      <dl class="space-y-4 text-sm">
-        <div class="flex flex-col sm:flex-row sm:gap-6">
-          <dt class="font-medium text-gray-900 sm:w-36 shrink-0">Business name</dt>
-          <dd class="text-gray-600">HIGH LIFE JPN</dd>
-        </div>
-        <div class="flex flex-col sm:flex-row sm:gap-6">
-          <dt class="font-medium text-gray-900 sm:w-36 shrink-0">Representative</dt>
-          <dd class="text-gray-600">Shingo Tanizawa</dd>
-        </div>
-        <div class="flex flex-col sm:flex-row sm:gap-6">
-          <dt class="font-medium text-gray-900 sm:w-36 shrink-0">Address</dt>
-          <dd class="text-gray-600">2F, Nishi-Shinjuku Mizuma Building, 3-3-13 Nishi-Shinjuku, Shinjuku-ku, Tokyo 160-0023, Japan</dd>
-        </div>
-        <div class="flex flex-col sm:flex-row sm:gap-6">
-          <dt class="font-medium text-gray-900 sm:w-36 shrink-0">Contact</dt>
-          <dd class="text-gray-600">
-            <a href="mailto:support@salesanchor.jp" class="text-gray-900 hover:text-gray-600 no-underline">
-              support@salesanchor.jp
-            </a>
-          </dd>
-        </div>
-        <div class="flex flex-col sm:flex-row sm:gap-6">
-          <dt class="font-medium text-gray-900 sm:w-36 shrink-0">Support hours</dt>
-          <dd class="text-gray-600">Monday – Friday, 10:00 – 18:00 JST (excluding national holidays)</dd>
-        </div>
-        <div class="flex flex-col sm:flex-row sm:gap-6">
-          <dt class="font-medium text-gray-900 sm:w-36 shrink-0">Website</dt>
-          <dd class="text-gray-600">
-            <a href="https://salesanchor.jp" class="text-gray-900 hover:text-gray-600 no-underline">
-              https://salesanchor.jp
-            </a>
-          </dd>
-        </div>
-      </dl>
+      <p class="text-gray-600 leading-relaxed">
+        Your data is encrypted in transit and at rest, isolated per tenant, stored entirely on
+        servers in Japan, and never sold or shared with third parties. For full technical details,
+        see our <a href="/privacy" class="text-gray-900 hover:text-gray-600 font-medium no-underline">Privacy Policy</a>.
+      </p>
     </div>
   </section>
 </BaseLayout>
