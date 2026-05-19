@@ -1,8 +1,8 @@
 ---
 const navItems = [
-  { href: '/privacy', label: 'プライバシー' },
-  { href: '/terms', label: '利用規約' },
-  { href: '/data-deletion', label: 'データ削除' },
+  { href: '/privacy', label: 'Privacy' },
+  { href: '/terms', label: 'Terms' },
+  { href: '/data-deletion', label: 'Data Deletion' },
 ];
 
 const appUrl = 'https://app.salesanchor.jp';
@@ -10,7 +10,7 @@ const appUrl = 'https://app.salesanchor.jp';
 
 <header class="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-200">
   <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-    <a href="/" class="no-underline flex items-center" aria-label="Sales Anchor ホーム">
+    <a href="/" class="no-underline flex items-center" aria-label="Sales Anchor home">
       <img src="/logo.png" alt="Sales Anchor" class="h-12 w-auto" />
     </a>
 
@@ -19,7 +19,7 @@ const appUrl = 'https://app.salesanchor.jp';
         navItems.map((item) => (
           <a
             href={item.href}
-            class="hidden sm:inline text-sm text-gray-700 hover:text-brand-600 no-underline"
+            class="hidden sm:inline text-sm text-gray-600 hover:text-gray-900 no-underline transition-colors"
           >
             {item.label}
           </a>
@@ -27,9 +27,9 @@ const appUrl = 'https://app.salesanchor.jp';
       }
       <a
         href={appUrl}
-        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-md no-underline transition-colors"
+        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 rounded-md no-underline transition-colors"
       >
-        ログイン
+        Sign in
       </a>
     </nav>
   </div>

@@ -2,101 +2,93 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 <BaseLayout
-  title="データ削除のお申し込み"
-  description="Sales Anchor のデータ削除申請手順について。Meta Platform 経由とメール直接連絡の2つの方法でデータ削除を申請できます。"
+  title="Data Deletion Request"
+  description="How to request deletion of your personal data from Sales Anchor — via Meta Platform or direct email."
 >
   <article class="prose prose-slate max-w-3xl mx-auto px-4 py-12">
-  <h1>データ削除のお申し込み</h1>
-  <p><small>Data Deletion Request</small></p>
-  <p><small>最終更新: 2026-04-29 / Last updated: 2026-04-29</small></p>
+  <h1>Data Deletion Request</h1>
+  <p>Last updated: 2026-05-20</p>
 
-  <h2>このページについて / About This Page</h2>
-  <p class="text-lg">Sales Anchor では、お客さまの個人情報および関連データの削除をご希望の方のために、2つの申請方法をご用意しています。本ページでは、削除のお申し込み方法、削除されるデータの種類、対応にかかる期間をご案内いたします。</p>
-  <p><small>Sales Anchor provides two methods for users who wish to request the deletion of their personal information and related data. This page describes how to request deletion, what data will be deleted, and the timeline for our response.</small></p>
+  <h2>About This Page</h2>
+  <p class="text-lg">Sales Anchor provides two methods for users who wish to request deletion of their personal information and related data. This page describes how to submit a request, what data will be deleted, and the expected timeline for our response.</p>
 
-  <h2>1. 対象となるユーザー / Target Users</h2>
-  <p>削除申請は、以下の2種類のユーザーを対象としています。</p>
-  <p><small>Data deletion requests are available for the following two types of users:</small></p>
+  <h2>1. Who Can Request Deletion</h2>
+  <p>Data deletion requests are available for the following two types of individuals:</p>
   <ul>
-    <li><strong>利用者 (User)</strong>:Sales Anchor にログインしてご利用いただいているクライアント企業のご担当者さま<br><small>Client company staff who log in and use Sales Anchor</small></li>
-    <li><strong>エンドユーザー (End User)</strong>:Messenger、Instagram などを通じて、間接的にデータが処理される方<br><small>Individuals whose data is indirectly processed via Messenger, Instagram, and other channels</small></li>
+    <li><strong>Users</strong> — Client company staff who log in and use Sales Anchor directly.</li>
+    <li><strong>End Users</strong> — Individuals whose data is indirectly processed via Messenger, Instagram, and other channels through which client companies communicate with their customers.</li>
   </ul>
 
-  <h2>2. 削除を申請する2つの方法 / Two Ways to Request Deletion</h2>
+  <h2>2. Two Ways to Request Deletion</h2>
 
-  <h3>方法1: Meta Platform 経由 / Method 1: Via Meta Platform</h3>
-  <p>Facebook または Instagram アカウントのアプリ管理画面から、Sales Anchor アプリへのアクセス許可を取り消すことで、自動的にデータ削除リクエストが Sales Anchor に送信されます。</p>
-    <p><small>By revoking Sales Anchor's app access from your Facebook or Instagram account settings, a data deletion request will be automatically sent to Sales Anchor.</small></p>
-    <p><strong>操作手順 / Steps:</strong></p>
-    <ol>
-      <li>Facebook の「設定とプライバシー」→「設定」→「アプリとウェブサイト」を開く<br><small>Open Facebook "Settings & Privacy" → "Settings" → "Apps and Websites"</small></li>
-      <li>Sales Anchor を見つけて「削除」を選択<br><small>Find Sales Anchor and select "Remove"</small></li>
-      <li>削除リクエストが自動的に Sales Anchor に送信されます<br><small>A deletion request will be automatically sent to Sales Anchor</small></li>
-    </ol>
-  <h3>方法2: メール直接連絡 / Method 2: Direct Email</h3>
-  <p>Sales Anchor サポート窓口宛にメールを送信していただくことでも、削除を申請いただけます。</p>
-    <p><small>You can also request deletion by sending an email to our support address.</small></p>
-    <p>
-      <strong>メールアドレス / Email:</strong> <a href="mailto:support@salesanchor.jp">support@salesanchor.jp</a><br>
-      <strong>推奨件名 / Recommended Subject:</strong> 「データ削除申請 / Data Deletion Request」
-    </p>
-    <p>本人確認のため、お申し込みの際は以下の情報をメール本文にお書き添えください。</p>
-    <p><small>For identity verification, please include the following information in your email:</small></p>
-    <ul>
-      <li>お名前 / Your name</li>
-      <li>Sales Anchor で使用しているメールアドレス、または Facebook / Instagram アカウントの識別情報<br><small>Email address used in Sales Anchor, or your Facebook / Instagram account identifier</small></li>
-      <li>削除を希望する内容 / Description of the data you wish to delete</li>
-    </ul>
-  <h2>3. 削除されるデータ / Data That Will Be Deleted</h2>
-
-  <h3>利用者の場合 / For Users</h3>
-  <ul>
-    <li>アカウント情報(ログイン ID、お名前、メールアドレスなど)<br><small>Account information (login ID, name, email address, etc.)</small></li>
-    <li>セッション情報・ログイン履歴<br><small>Session information and login history</small></li>
-    <li>ご自身が Sales Anchor 上で入力されたデータ<br><small>Data you have entered in Sales Anchor</small></li>
-  </ul>
-
-  <h3>エンドユーザーの場合 / For End Users</h3>
-  <ul>
-    <li>Meta Platform 識別子(Page-Scoped ID、Instagram-Scoped ID など)<br><small>Meta Platform identifiers (Page-Scoped ID, Instagram-Scoped ID, etc.)</small></li>
-    <li>メッセージ履歴(Messenger、Instagram Direct Message)<br><small>Message history (Messenger, Instagram Direct Messages)</small></li>
-    <li>プロフィール情報(お名前、プロフィール画像など)<br><small>Profile information (name, profile picture, etc.)</small></li>
-    <li>メッセージリアクション・既読情報<br><small>Message reactions and read receipts</small></li>
-  </ul>
-
-  <h3>削除できないデータ / Data That Cannot Be Deleted</h3>
-  <p>以下のデータは、法令上の義務により削除できない場合があります。</p>
-  <p><small>The following data may not be deletable due to legal obligations:</small></p>
-  <ul>
-    <li>税務関係書類(法人税法に基づき、7年間保管)<br><small>Tax-related documents (retained for 7 years under the Corporate Tax Act)</small></li>
-    <li>監査ログ(内部統制要件に基づき、5年間保管)<br><small>Audit logs (retained for 5 years for internal control requirements)</small></li>
-    <li>係争中のデータ(法的対応義務がある場合、終結まで保管)<br><small>Litigation-related data (retained until resolution if legally required)</small></li>
-  </ul>
-
-  <h2>4. 対応の流れと期間 / Process and Timeline</h2>
-  <p>削除のお申し込みをいただいた後、以下の流れで対応いたします。</p>
-  <p><small>After receiving your deletion request, we will respond as follows:</small></p>
+  <h3>Method 1: Via Meta Platform</h3>
+  <p>By revoking Sales Anchor's app access from your Facebook or Instagram account settings, a data deletion request will be automatically sent to Sales Anchor.</p>
+  <p><strong>Steps:</strong></p>
   <ol>
-    <li><strong>受領確認</strong>:24時間以内にご返信いたします<br><small><strong>Acknowledgment</strong>: We will reply within 24 hours</small></li>
-    <li><strong>本人確認</strong>:必要に応じて追加情報をお伺いする場合があります<br><small><strong>Identity verification</strong>: We may request additional information if needed</small></li>
-    <li><strong>削除処理開始</strong>:お申し込みから7営業日以内に開始いたします<br><small><strong>Deletion start</strong>: Within 7 business days of your request</small></li>
-    <li><strong>メインデータベース削除完了</strong>:お申し込みから14日以内<br><small><strong>Main database deletion</strong>: Within 14 days of your request</small></li>
-    <li><strong>バックアップを含む完全削除</strong>:お申し込みから30日以内<br><small><strong>Complete deletion (including backups)</strong>: Within 30 days of your request</small></li>
-    <li><strong>完了通知</strong>:確認コード(DEL-YYYYMMDD-xxxx 形式)をメールでお送りします<br><small><strong>Completion notification</strong>: A confirmation code (in DEL-YYYYMMDD-xxxx format) will be emailed to you</small></li>
+    <li>Open Facebook "Settings &amp; Privacy" → "Settings" → "Apps and Websites"</li>
+    <li>Find Sales Anchor and select "Remove"</li>
+    <li>A deletion request will be automatically sent to Sales Anchor</li>
   </ol>
 
-  <h2>5. 削除状況の確認 / Checking Deletion Status</h2>
-  <p>削除完了後にお送りする確認コード(DEL-YYYYMMDD-xxxx)を使用して、以下の URL から削除状況をご確認いただけます。</p>
-  <p><small>After deletion is completed, you can check the status using the confirmation code (DEL-YYYYMMDD-xxxx) at the following URL:</small></p>
+  <h3>Method 2: Direct Email</h3>
+  <p>You can also request deletion by sending an email to our support address.</p>
+  <p>
+    <strong>Email:</strong> <a href="mailto:support@salesanchor.jp">support@salesanchor.jp</a><br>
+    <strong>Recommended Subject:</strong> "Data Deletion Request"
+  </p>
+  <p>For identity verification, please include the following information in your email:</p>
+  <ul>
+    <li>Your name</li>
+    <li>Email address used in Sales Anchor, or your Facebook / Instagram account identifier</li>
+    <li>Description of the data you wish to delete</li>
+  </ul>
+
+  <h2>3. Data That Will Be Deleted</h2>
+
+  <h3>For Users</h3>
+  <ul>
+    <li>Account information (login ID, name, email address, etc.)</li>
+    <li>Session information and login history</li>
+    <li>Data you have entered in Sales Anchor</li>
+  </ul>
+
+  <h3>For End Users</h3>
+  <ul>
+    <li>Meta Platform identifiers (Page-Scoped ID, Instagram-Scoped ID, etc.)</li>
+    <li>Message history (Messenger, Instagram Direct Messages)</li>
+    <li>Profile information (name, profile picture, etc.)</li>
+    <li>Message reactions and read receipts</li>
+  </ul>
+
+  <h3>Data That Cannot Be Deleted</h3>
+  <p>The following data may not be deletable due to legal obligations:</p>
+  <ul>
+    <li>Tax-related documents (retained for 7 years under the Corporate Tax Act)</li>
+    <li>Audit logs (retained for 5 years for internal control requirements)</li>
+    <li>Litigation-related data (retained until resolution if legally required)</li>
+  </ul>
+
+  <h2>4. Process and Timeline</h2>
+  <p>After receiving your deletion request, we will respond as follows:</p>
+  <ol>
+    <li><strong>Acknowledgment</strong> — We will reply within 24 hours</li>
+    <li><strong>Identity verification</strong> — We may request additional information if needed</li>
+    <li><strong>Deletion start</strong> — Within 7 business days of your request</li>
+    <li><strong>Main database deletion</strong> — Within 14 days of your request</li>
+    <li><strong>Complete deletion (including backups)</strong> — Within 30 days of your request</li>
+    <li><strong>Completion notification</strong> — A confirmation code (in <code>DEL-YYYYMMDD-xxxx</code> format) will be emailed to you</li>
+  </ol>
+
+  <h2>5. Checking Deletion Status</h2>
+  <p>After deletion is completed, you can check the status using the confirmation code (<code>DEL-YYYYMMDD-xxxx</code>) at the following URL:</p>
   <p><a href="https://salesanchor.jp/deletion-status">https://salesanchor.jp/deletion-status?code=DEL-YYYYMMDD-xxxx</a></p>
 
-  <h2>6. お問い合わせ / Contact</h2>
-  <p>本ページの内容や削除手続きについてご不明な点がございましたら、下記までお気軽にご連絡ください。</p>
-  <p><small>If you have any questions about this page or the deletion process, please contact us:</small></p>
+  <h2>6. Contact</h2>
+  <p>If you have any questions about this page or the deletion process, please contact us:</p>
   <ul>
-    <li><strong>運営:</strong> HIGH LIFE JPN(代表 Shingo Tanizawa)<br><small><strong>Operated by:</strong> HIGH LIFE JPN (Representative: Shingo Tanizawa)</small></li>
-    <li><strong>メール / Email:</strong> <a href="mailto:support@salesanchor.jp">support@salesanchor.jp</a></li>
-    <li><strong>対応時間 / Hours:</strong> 平日 10:00–18:00 JST<br><small>Monday–Friday, 10:00–18:00 JST</small></li>
+    <li><strong>Operated by:</strong> HIGH LIFE JPN (Representative: Shingo Tanizawa)</li>
+    <li><strong>Email:</strong> <a href="mailto:support@salesanchor.jp">support@salesanchor.jp</a></li>
+    <li><strong>Hours:</strong> Monday – Friday, 10:00 – 18:00 JST</li>
   </ul>
   </article>
 </BaseLayout>
