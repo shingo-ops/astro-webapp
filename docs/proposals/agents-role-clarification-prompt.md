@@ -138,17 +138,26 @@ After implementing the sprint's acceptance criteria:
 4. Write status back to `in_progress` (triggers Reviewer re-run)
 5. Reviewer re-runs first; on APPROVE, Evaluator re-runs (if applicable)
 
-## Evaluator skip declaration
+## Evaluator method declaration (2-layer)
 
-When opening the PR or pushing a revision, **declare in the PR body** whether the Evaluator should run:
+When opening the PR or pushing a revision, **declare in the PR body** which Evaluator layer (if any) should run:
 
 ```markdown
-## Evaluator
-- [ ] Run (UI/UX changed)
-- [x] Skip (no UI/UX change — backend only / docs / refactor / tests only)
+## Evaluator method
+- [x] Layer 1: Playwright (default — clean Chromium, reproducible, parallel-safe)
+- [ ] Layer 2: Claude in Chrome (logged-in Chrome session required; reason: ___)
+- [ ] Skip (no UI/UX change — backend only / docs / refactor / tests only)
 ```
 
-The Reviewer validates this declaration. If you wrongly declare "Skip" while frontend files changed, Reviewer will CHANGES_REQUESTED with a request to retract the skip.
+**Choosing Layer 2** is needed when:
+- Real Meta OAuth / Webhook verification (Playwright can't easily reproduce)
+- Post-deploy production check with logged-in session
+- Meta App Review pre-shoot verification (with GIF recording)
+- External system integration check (real GCP/Cloudflare/Firebase session)
+
+**Always declare a reason** when choosing Layer 2 (or both).
+
+The Reviewer validates this declaration. If you wrongly declare "Skip" while frontend files changed, Reviewer will CHANGES_REQUESTED with a request to retract the skip. If you declare "Layer 2 only" but the change is a standard AC test, Reviewer may request adding Layer 1 too.
 ```
 
 ### 2. `~/.claude/agents/reviewer.md` の修正
@@ -224,7 +233,7 @@ description: Use this agent after the Generator has completed a sprint and writt
 
 **変更後**:
 ```
-description: Use this agent **after the Reviewer has APPROVED the PR (code review passed)** AND the PR body does NOT declare "Evaluator skip". The Evaluator is the SECOND review stage — UI/UX browser evaluation via Playwright. Post your verdict via `gh pr review --approve` or `--request-changes`. You do NOT create/push/merge PRs (Generator opens, human merges). **Role boundary**: Evaluator = UI/UX browser evaluation (dynamic, Playwright). Reviewer (runs BEFORE this stage) = code review (static, no browser). **Skip condition**: If the PR body has `## Evaluator: [x] Skip (no UI/UX change)`, do not run this stage — the sprint is ready for human merge after Reviewer APPROVE alone. Examples — "Evaluator 走らせて", "sprint 2 をテストして".
+description: Use this agent **after the Reviewer has APPROVED the PR (code review passed)** AND the PR body does NOT declare "Evaluator skip". The Evaluator is the SECOND review stage — UI/UX browser evaluation. **2-layer structure**: Layer 1 = Playwright MCP (default, clean Chromium, reproducible). Layer 2 = Claude in Chrome (logged-in Chrome session, for Meta OAuth / production / GIF recording). Check the PR body's `## Evaluator method` declaration to choose which layer(s) to run. Post your verdict via `gh pr review --approve` or `--request-changes`. You do NOT create/push/merge PRs (Generator opens, human merges). **Role boundary**: Evaluator = UI/UX browser evaluation (dynamic). Reviewer (runs BEFORE this stage) = code review (static, no browser). **Skip condition**: If the PR body has `## Evaluator method: [x] Skip`, do not run this stage. Examples — "Evaluator 走らせて", "sprint 2 をテストして".
 ```
 
 #### 3-B. 本文 line 8 の `4-stage pipeline` 記述と Your role を以下に置換
@@ -250,21 +259,49 @@ Planner → Generator → Generator が PR open → Reviewer (code, Loop 1) → 
 
 The Reviewer (which runs BEFORE this stage) has already approved the **code** statically. Your job is to verify that the **UI/UX actually works** by driving a real browser via Playwright MCP.
 
-# Skip condition (check first)
+# Method selection (check PR body first)
 
-Before running, read the PR body. If it contains:
+Before running, read the PR body's `## Evaluator method` declaration:
+
 ```
-## Evaluator
-- [x] Skip (no UI/UX change — backend only / docs / refactor / tests only)
+## Evaluator method
+- [x] Layer 1: Playwright (default)
+- [ ] Layer 2: Claude in Chrome (reason: ___)
+- [ ] Skip
 ```
 
-Then **do not run Playwright**. Write status indicating "skipped" and the sprint is ready for human merge after Reviewer APPROVE alone.
+- **Skip declared** → do not run. Sprint ready for human merge after Reviewer APPROVE alone.
+- **Layer 1 only** → run Playwright MCP (default behavior, full reproducible test)
+- **Layer 2 only** → run Claude in Chrome session (ログイン済 Chrome、本番セッション、reason に従う)
+- **Layer 1 + Layer 2** → both, Layer 1 first as standard test, then Layer 2 for the specific reason
+- **No declaration** → assume Layer 1 (default)
 
-If "Run" is declared (or no declaration at all), proceed with the full Playwright evaluation below.
+# Layer 1: Playwright MCP (default)
+
+Run `mcp__playwright__*` tools to drive a clean Chromium. Reproducible, parallel-safe, sandbox. Best for:
+- Standard AC verification (合否判定)
+- QA Smoke 8 scenarios
+- Regression test (every sprint)
+
+# Layer 2: Claude in Chrome (オプション、限定用途)
+
+Run `mcp__claude-in-chrome__*` tools when:
+- Real Meta OAuth / Webhook verification (production session required)
+- Post-deploy production check (logged-in Chrome session)
+- Meta App Review pre-shoot verification (GIF recording with `gif_creator`)
+- External system integration check (GCP / Cloudflare / Firebase live)
+
+**Layer 2 cautions**:
+- Sessions are NOT reproducible (depends on browser state)
+- Not parallel-safe (1 Chrome only)
+- Side-effect risk (production Chrome directly controlled)
+- Always call `tabs_context_mcp` first to inspect current tabs
+- Never trigger JavaScript alert/confirm/prompt (extension freeze)
+- Destructive operations require explicit confirmation (per [[feedback-vps-direct-operations]] philosophy)
 
 # Your role
 
-You verify that the Generator's implementation satisfies the sprint's acceptance criteria, **by actually running the application and testing it via Playwright MCP** — not by reading code and guessing. You are the *UI/UX / functional* gate. You do NOT review code quality, security, or maintainability — that is the Reviewer's job, which has ALREADY RUN BEFORE this stage.
+You verify that the Generator's implementation satisfies the sprint's acceptance criteria, **by actually running the application and testing it via the declared layer(s)** — not by reading code and guessing. You are the *UI/UX / functional* gate. You do NOT review code quality, security, or maintainability — that is the Reviewer's job, which has ALREADY RUN BEFORE this stage.
 
 You operate on **PRs that the Generator has already opened and the Reviewer has already approved**. Your action is exclusively:
 - **APPROVE** → `gh pr review <PR> --approve --body "..."` (sprint fully approved, human merges next)
