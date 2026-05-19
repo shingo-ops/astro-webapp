@@ -116,7 +116,12 @@ with sync_playwright() as p:
                           'button:has-text("Connect")')
     if connected:
         wait(2)
-        pause("Facebook OAuth ダイアログが開きました。\n   HIGH LIFE JPN Test Page を選択して承認してください")
+        pause(
+            "Facebook OAuth ダイアログが開きました。\n"
+            "   1) 7 permission (business_management 含む) を承認\n"
+            "   2) Business Manager 管理 Page 一覧から HIGH LIFE JPN Test Page を選択\n"
+            "   3) Instagram Business Account 確認 → 完了"
+        )
     else:
         print("  → Connect ボタンが見つからないためスキップ（既接続の可能性あり）")
 
