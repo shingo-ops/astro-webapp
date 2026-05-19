@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meta 連携・App Review 引き継ぎ資料 (2026-05-18)</title>
+<style>
+  :root {
+    --bg: #fafaf7; --surface: #ffffff; --ink: #1a1a1a; --ink-mute: #5a5a5a;
+    --line: #e4e2dc; --accent: #2563eb; --accent-soft: #dbeafe;
+    --green: #16a34a; --green-soft: #dcfce7; --red: #dc2626; --red-soft: #fee2e2;
+    --yellow: #ca8a04; --yellow-soft: #fef9c3;
+    --code-bg: #1e293b; --code-ink: #e2e8f0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.75; font-size: 15px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 80px; }
+  header.doc-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    color: white; padding: 40px 28px 32px; margin-bottom: 32px;
+    border-radius: 12px; box-shadow: var(--shadow);
+  }
+  header.doc-header .badge {
+    display: inline-block; background: rgba(255,255,255,0.2);
+    padding: 4px 12px; border-radius: 999px; font-size: 12px;
+    margin-bottom: 12px; letter-spacing: 0.05em;
+  }
+  header.doc-header h1 { font-size: 26px; margin-bottom: 8px; font-weight: 700; }
+  header.doc-header .meta { display: flex; gap: 24px; margin-top: 12px;
+    font-size: 13px; flex-wrap: wrap; opacity: 0.85; }
+  section.card {
+    background: var(--surface); padding: 28px; margin-bottom: 24px;
+    border-radius: 10px; box-shadow: var(--shadow); border: 1px solid var(--line);
+  }
+  h1 { font-size: 26px; margin: 24px 0 12px; display: none; }
+  h2 { font-size: 20px; margin: 0 0 16px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 10px; }
+  h2 .num { display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: white; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  h3 { font-size: 17px; margin: 20px 0 10px; color: var(--ink); }
+  h4 { font-size: 15px; margin: 16px 0 8px; color: var(--ink-mute); font-weight: 600; }
+  p { margin-bottom: 12px; }
+  ul { margin: 8px 0 12px 20px; }
+  li { margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #f5f5f0; font-weight: 600; border-bottom: 2px solid var(--ink); }
+  pre.code { background: var(--code-bg); color: var(--code-ink); padding: 16px;
+    border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "SF Mono", Monaco, Consolas, monospace; line-height: 1.55; margin: 12px 0; }
+  code { background: #f0f0eb; padding: 2px 5px; border-radius: 4px; font-size: 13px; }
+  pre.code code { background: none; padding: 0; }
+  blockquote { border-left: 4px solid var(--accent); background: var(--accent-soft);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 14px; }
+  hr { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
+  a { color: var(--accent); }
+  .status-ok { color: var(--green); font-weight: 700; }
+  .status-ng { color: var(--red); font-weight: 700; }
+  .status-mid { color: var(--yellow); font-weight: 700; }
+  @media (max-width: 640px) {
+    .container { padding: 16px 12px 60px; }
+    header.doc-header { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+<header class="doc-header">
+  <div class="container" style="padding-top:0;padding-bottom:0">
+    <div class="badge">引き継ぎ資料 — Meta 連携 + App Review 申請</div>
+    <h1>Meta 連携・App Review 引き継ぎ資料</h1>
+    <div class="meta">
+      <span>📅 作成: 2026-05-18（最終更新: 2026-05-19）</span>
+      <span>👤 作成: Terminal Claude Code</span>
+      <span>📦 Repo: shingo-ops/salesanchor</span>
+      <span>🟢 本番: 復旧済み（2026-05-19 05:37 UTC）</span>
+    </div>
+  </div>
+</header>
+<div class="container">
+<h1>Meta 連携・App Review 引き継ぎ資料</h1>
+<p><strong>作成日:</strong> 2026-05-18（最終更新: 2026-05-19）  </p>
+<p><strong>作成者:</strong> Terminal Claude Code（shingo-ops セッション）  </p>
+<p><strong>リポジトリ:</strong> <code>shingo-ops/salesanchor</code></p>
+<hr>
+<section class="card">
+<h2><span class="num">1</span>1. この資料の範囲</h2>
+<h3>対象（引き継ぐもの）</h3>
+<ul>
+<li>Meta（Facebook + Instagram）連携の技術的な問題</li>
+<li>tenant_006（review@salesanchor.jp）の接続障害対応</li>
+<li>Meta App Review 申請（撮影 → 提出）</li>
+</ul>
+<h3>対象外（Shingo + Web Claude で共同開発継続）</h3>
+<ul>
+<li>ADR-042 ワークフロー整理（ひとしとの MTG）</li>
+<li>CLAUDE.md・セッション指示の整合化</li>
+<li>Sales Anchor の他機能（注文管理・顧客マスタ・KPI 等）</li>
+<li>deploy.yml・CI 全般の管理</li>
+<li>撮影の進行（Shingo 主導、パートナーは技術サポート）</li>
+</ul>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">2</span>2. Meta 連携の現状（一言で）</h2>
+<table>
+<tr><th>項目</th><th>状態</th></tr>
+<tr><td>本番デプロイ</td><td>✅ SUCCESS（2026-05-19 05:37 UTC、Run #26078492490）</td></tr>
+<tr><td>migration 055（granted_scopes 列）</td><td>✅ 全テナントに自動適用済み（Verify ステップ通過）</td></tr>
+<tr><td><code>/channels</code> エンドポイント</td><td>✅ HTTP 500 → 復旧のはず（要ブラウザ確認）</td></tr>
+<tr><td>Facebook Page 接続</td><td>要確認（OAuth フロー再テスト必要）</td></tr>
+<tr><td>Meta App Review 撮影</td><td>🔲 未着手（本復旧確認後に着手可能）</td></tr>
+<tr><td>Meta App Review 提出</td><td>🔲 未着手</td></tr>
+</table>
+<p><strong>最初にやること:</strong> <code>https://app.salesanchor.jp/channels</code>（review@salesanchor.jp でログイン）を開いて動作確認する。</p>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">3</span>3. Meta 連携の技術スタック</h2>
+<h3>3-1. 関係するファイル</h3>
+<table>
+<tr><th>ファイル</th><th>役割</th></tr>
+<tr><td><code>backend/app/routers/meta_inbox.py</code></td><td>Meta API エンドポイント（OAuth・Webhook・channels）</td></tr>
+<tr><td><code>backend/app/services/meta_graph.py</code></td><td>Meta Graph API クライアント</td></tr>
+<tr><td><code>backend/app/tasks/verify_meta_subscriptions.py</code></td><td>Webhook 定期検証タスク</td></tr>
+<tr><td><code>frontend/src/pages/ChannelsPage.tsx</code></td><td>接続管理 UI</td></tr>
+<tr><td><code>migrations/055_add_granted_scopes.sql</code></td><td>granted_scopes 列追加（テンプレート、全テナント展開）</td></tr>
+<tr><td><code>scripts/migrate_adr041_granted_scopes.py</code></td><td>migration 055 を全テナントに適用するスクリプト</td></tr>
+<tr><td><code>.github/workflows/deploy.yml</code></td><td>デプロイ時に migration 055 を自動実行（ADR-045 で追加）</td></tr>
+</table>
+<h3>3-2. 重要テーブル: <code>tenant_XXX.tenant_meta_config</code></h3>
+<pre class="code"><code>-- 各テナントスキーマ内に存在（tenant_001, tenant_006 等）
+CREATE TABLE tenant_meta_config (
+    id                              SERIAL PRIMARY KEY,
+    tenant_id                       INTEGER,
+    page_id                         VARCHAR(100),         -- Facebook Page ID
+    page_name                       VARCHAR(255),         -- Facebook Page 名
+    page_access_token_encrypted     BYTEA,                -- Fernet 暗号化済みトークン
+    page_token_expires_at           TIMESTAMPTZ,
+    instagram_business_account_id   VARCHAR(100),
+    instagram_username              VARCHAR(100),
+    subscribed_fields               JSONB,                -- webhook フィールド一覧
+    connected_by_staff_id           INTEGER,
+    connected_at                    TIMESTAMPTZ,
+    is_active                       BOOLEAN,
+    granted_scopes                  JSONB                 -- ← ADR-041/migration 055 で追加
+);</code></pre>
+<p><strong><code>granted_scopes</code> の役割:</strong>  </p>
+<p>OAuth で取得したスコープ一覧を JSON 配列で保存。</p>
+<p><code>business_management</code> が含まれているかどうかで「再認証が必要か」を判定する。</p>
+<h3>3-3. OAuth フロー</h3>
+<pre class="code"><code>ユーザーが /channels で「接続」クリック
+    ↓
+GET /api/v1/meta/oauth/start
+    ↓（Meta 側で承認）
+POST /api/v1/meta/oauth/callback（code を受け取る）
+    ↓
+meta_graph.py: GET /me?fields=id,name,accounts
+                GET /me/accounts（管理 Page 一覧）
+    ↓
+tenant_meta_config に page_access_token + granted_scopes を保存
+    ↓
+webhook 購読設定（subscribed_fields）</code></pre>
+<p><strong>ADR-041 で変更した箇所（<code>meta_inbox.py:284</code> 付近）:</strong></p>
+<ul>
+<li>INSERT 時に <code>granted_scopes</code> カラムを含めるよう変更</li>
+<li><code>GET /channels</code> で <code>granted_scopes</code> の fallback を追加</li>
+</ul>
+<h3>3-4. 環境設定</h3>
+<table>
+<tr><th>変数名</th><th>内容</th></tr>
+<tr><td><code>META_APP_ID</code></td><td>1250869697105619</td></tr>
+<tr><td><code>META_APP_SECRET</code></td><td>GitHub Secret に保存（VPS .env に自動書き込み）</td></tr>
+<tr><td><code>META_VERIFY_TOKEN</code></td><td>Webhook 検証トークン</td></tr>
+<tr><td><code>META_OAUTH_REDIRECT_URI</code></td><td>https://api.salesanchor.jp/api/v1/meta/oauth/callback</td></tr>
+<tr><td><code>METADATA_FERNET_KEY</code></td><td>アクセストークン暗号化キー（Bitwarden にも保管必須）</td></tr>
+</table>
+<blockquote>⚠️ <strong>METADATA_FERNET_KEY を紛失すると全テナントのトークンが永久に復号不能になる。</strong>  </blockquote>
+<blockquote>ローテーション手順: <code>docs/operations/meta_encryption_key_rotation.md</code></blockquote>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">4</span>4. Meta 領域のタイムライン（2026-05-14〜現在）</h2>
+<h3>5/14 — CI を静かに壊したコミット（後で判明）</h3>
+<pre class="code"><code>dac01e3  feat: auto-apply HUMAN_AGENT tag, remove messaging window UI</code></pre>
+<p>このコミットが pytest / Schema Check / E2E を複合的に壊した。</p>
+<p>当時は Meta とは無関係のリリースに紛れて気づかれなかった。</p>
+<h3>5/17 — Facebook Page 接続問題の発覚</h3>
+<p>tenant_006（review@salesanchor.jp）で Meta App Review の撮影準備中に、</p>
+<p>Facebook Page が接続できないことを発見。</p>
+<pre class="code"><code>症状: GET /me/accounts → 空配列 [] が返る
+調査: Facebook 設定ページの Business Integration が削除されていた</code></pre>
+<table>
+<tr><th>PR</th><th>内容</th></tr>
+<tr><td>#383 / #385</td><td>ADR-037 起案 + レポート（Meta ページ接続経路の調査）</td></tr>
+<tr><td>#384 / #386</td><td>ADR-040 起案 + レポート（Claude Code ガードレール調査）</td></tr>
+</table>
+<h3>5/17〜18 — ADR-041 起案・レビュー・改訂</h3>
+<pre class="code"><code>93b81e6  初版起案（ひとし指摘で Major 不備 4 点発見）
+1cf7fde  改訂版（Major #1〜#4 対応）
+f0e1905  PR #388 develop マージ（起案確定）</code></pre>
+<p><strong>ひとし（Hikky-dev）レビューで発覚した主な問題:</strong></p>
+<ul>
+<li>Business Integration 削除の意図・経緯が不明</li>
+<li><code>/me/accounts</code> 空返却時の fallback フロー不明確</li>
+<li><code>granted_scopes</code> の定義と使用箇所が乖離</li>
+</ul>
+<h3>5/18 — ADR-041 自動実装（PR #389）</h3>
+<pre class="code"><code>74dfb6a  Claude Max ADR implementation (20260517-154629) (#389)</code></pre>
+<p><strong>PR #389 で追加された主なもの:</strong></p>
+<ul>
+<li><code>meta_inbox.py</code> の connect_callback に <code>granted_scopes</code> 保存ロジック</li>
+<li><code>meta_inbox.py</code> の list_channels に <code>granted_scopes</code> fallback</li>
+<li><code>migrations/055_add_granted_scopes.sql</code>（テンプレート）</li>
+<li><code>scripts/migrate_adr041_granted_scopes.py</code>（全テナント展開スクリプト）</li>
+</ul>
+<blockquote>⚠️ <strong>ここに後の本番障害の種があった:</strong>  </blockquote>
+<blockquote>migration 055 のスクリプトは追加されたが、<code>deploy.yml</code> への自動実行ステップ追記が漏れた。</blockquote>
+<h3>5/18 朝 — CI 健全性回復（ADR-044）</h3>
+<p>5/14 のコミット以来壊れていた CI を修復。</p>
+<table>
+<tr><th>PR</th><th>修正内容</th></tr>
+<tr><td>#391</td><td>ADR-044 起案</td></tr>
+<tr><td>#392</td><td>Schema Check 修復（PYTHONPATH 追加、migration 014 欠落解消、E2E sidebar hover 修正、i18n ADR-021 準拠）</td></tr>
+<tr><td>#393</td><td>追加修復（<code>exec_driver_sql</code> バインドパラメータ誤解釈、PYTHONPATH 追加）</td></tr>
+</table>
+<h3>5/18 朝 — develop → main リリース（PR #390）</h3>
+<pre class="code"><code>5c5e4e7  Merge pull request #390 from shingo-ops/develop</code></pre>
+<p>CI 全 SUCCESS を確認してマージ。直後に <code>deploy.yml</code> が自動発火。</p>
+<h3>5/18 06:00 UTC — 本番デプロイ失敗 #1</h3>
+<pre class="code"><code>Run ID: 26016317982  conclusion: failure
+fatal: Need to specify how to reconcile divergent branches.</code></pre>
+<p>VPS の <code>git pull origin main</code> が divergent branches エラーで終了。</p>
+<p><strong>修正（PR #394）:</strong></p>
+<pre class="code"><code>- git pull origin main
++ git fetch origin main
++ git reset --hard origin/main</code></pre>
+<h3>5/18 06:10 UTC — 本番デプロイ成功 → 障害発覚</h3>
+<pre class="code"><code>Run ID: 26016671960  conclusion: success</code></pre>
+<p>デプロイ自体は成功したが、<code>/channels</code> が HTTP 500 に。</p>
+<p>→ 後述「§5 本番障害の詳細」参照。</p>
+<h3>5/18 午後 — ADR-045 で障害対応</h3>
+<table>
+<tr><th>PR</th><th>内容</th></tr>
+<tr><td>#395</td><td>ADR-045 起案（migration 055 deploy 自動化）</td></tr>
+<tr><td>#396</td><td>実装：deploy.yml に migration 055 自動実行 + Verify ステップ追加</td></tr>
+<tr><td>#398</td><td>Release: ADR-045 → main マージ</td></tr>
+</table>
+<h3>5/19 05:37 UTC — 本番復旧</h3>
+<pre class="code"><code>Run ID: 26078492490  conclusion: success</code></pre>
+<p><code>migrate_adr041_granted_scopes.py</code> が全テナントに migration 055 を適用。  </p>
+<p>Verify ステップ（全テナント走査、<code>RAISE EXCEPTION</code> で不整合を検出）が通過。</p>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">5</span>5. 本番障害の詳細</h2>
+<h3>5-1. 症状</h3>
+<ul>
+<li>URL: <code>https://app.salesanchor.jp/channels</code>（tenant_006）</li>
+<li>HTTP ステータス: 500 Internal Server Error</li>
+<li>UI: "An internal error occurred. Please contact support."</li>
+<li>影響: 既存 Facebook Page の表示不可 / 新規接続不可</li>
+</ul>
+<h3>5-2. エラーログ（VPS より）</h3>
+<p><strong>一次エラー（connect_callback: <code>meta_inbox.py:284</code>）:</strong></p>
+<pre class="code"><code>UndefinedColumnError: column "granted_scopes" of relation "tenant_meta_config" does not exist
+[SQL: INSERT INTO tenant_meta_config (..., granted_scopes) VALUES (..., CAST($10 AS jsonb)) RETURNING id]</code></pre>
+<p><strong>連鎖エラー（list_channels: <code>meta_inbox.py:794</code>）:</strong></p>
+<pre class="code"><code>InFailedSQLTransactionError: current transaction is aborted, commands ignored until end of transaction block
+→ GET /api/v1/meta/channels HTTP/1.1" 500 Internal Server Error</code></pre>
+<h3>5-3. 根本原因</h3>
+<pre class="code"><code>PR #389（ADR-041 実装）
+  ├── migrations/055_add_granted_scopes.sql 追加 ✅
+  ├── scripts/migrate_adr041_granted_scopes.py 追加 ✅
+  ├── meta_inbox.py が granted_scopes 列を参照するよう変更 ✅
+  └── deploy.yml に migration 実行ステップを追記 ❌ ← 漏れ
+
+↓ main リリース（PR #390）
+
+コード:  granted_scopes を INSERT / SELECT する最新版
+DB:      granted_scopes 列が存在しない旧版
+
+↓
+
+UndefinedColumnError → HTTP 500</code></pre>
+<h3>5-4. 修正内容（PR #396 / ADR-045）</h3>
+<p><code>deploy.yml</code> に 2 つのブロックを追加:</p>
+<p><strong>① migration 実行（deploy ステップ内）:</strong></p>
+<pre class="code"><code># ADR-041 / ADR-045: 全テナントの tenant_meta_config に granted_scopes 追加 + backfill
+docker exec -w /app astro-webapp-backend-1 \
+  python scripts/migrate_adr041_granted_scopes.py</code></pre>
+<p><strong>② Verify ステップ（deploy 後の確認）:</strong></p>
+<pre class="code"><code>DO $$
+DECLARE r RECORD; missing_col_count INT := 0; null_rows_total INT := 0; cnt INT;
+BEGIN
+    FOR r IN SELECT id, tenant_code, ... FROM public.tenants WHERE is_active = true LOOP
+        -- tenant_meta_config.granted_scopes 列の存在チェック
+        -- NULL レコードが残っていないかチェック
+        -- 異常があれば RAISE EXCEPTION でデプロイを止める
+    END LOOP;
+    RAISE NOTICE 'ADR-045 verification OK';
+END $$;</code></pre>
+<p><strong>冪等性:</strong> <code>ADD COLUMN IF NOT EXISTS</code> + <code>UPDATE WHERE granted_scopes IS NULL</code> で再実行安全。</p>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">6</span>6. 関連 ADR / PR（Meta 領域）</h2>
+<table>
+<tr><th>ADR</th><th>ファイル</th><th>PR</th><th>内容</th></tr>
+<tr><td>ADR-024</td><td>ADR-024_meta_integration_structural_fix.md</td><td>—</td><td>Meta 統合の構造的修正（旧版）</td></tr>
+<tr><td>ADR-025</td><td>ADR-025_meta_integration_operational_hardening.md</td><td>—</td><td>Meta 統合の運用強化（3点セット要件）</td></tr>
+<tr><td>ADR-034</td><td>ADR-034-tenant-migration-automation.md</td><td>—</td><td>テナント migration 自動化</td></tr>
+<tr><td>ADR-037</td><td>ADR-037-meta-page-connection-investigation.md</td><td>#383 / #385</td><td>Meta ページ接続経路の現状調査</td></tr>
+<tr><td>ADR-041</td><td>ADR-041-meta-page-connection-fallback-implementation.md</td><td>#388 / #389</td><td>Meta ページ接続フォールバック実装 ← <strong>本体</strong></td></tr>
+<tr><td>ADR-044</td><td>ADR-044-ci-health-recovery.md</td><td>#391 / #392 / #393</td><td>develop CI 健全性回復（ADR-041 関連修復）</td></tr>
+<tr><td>ADR-045</td><td>ADR-045-migration-055-deploy-automation.md</td><td>#395 / #396 / #398</td><td>migration 055 deploy 自動化（本番障害対応）</td></tr>
+</table>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">7</span>7. 残課題（Meta 範囲に絞る）</h2>
+<h3>7-1. 最優先（今すぐ）</h3>
+<ul>
+<li>[ ] ブラウザで <code>https://app.salesanchor.jp/channels</code>（review@salesanchor.jp）を開いて HTTP 200 を確認</li>
+<li>[ ] 既存 Facebook Page（Shingo Tanizawa）が表示されることを確認</li>
+<li>[ ] 「再接続」で OAuth フローが通ることを確認（7 permission 付与）</li>
+</ul>
+<h3>7-2. 高（数日以内）</h3>
+<p><strong>screenplay v3 の作成:</strong></p>
+<ul>
+<li>既存: <code>docs/meta-app-review/META_APP_REVIEW_SCREENCAST_SCRIPT.md</code>（v2）</li>
+<li>変更点:</li>
+<li>7 permission OAuth フロー対応（<code>business_management</code> が追加された）</li>
+<li>Business Manager 管理 Page の選択画面</li>
+<li>既存テナント向け「再認証バナー」は映さない（review 専用テナントでは不要）</li>
+<li>scene1〜7 の全フロー確認</li>
+</ul>
+<p><strong>撮影実施:</strong></p>
+<ul>
+<li><code>scripts/recording/salesanchor_recording.py</code> 参照</li>
+<li>tenant_006 のデモデータ確認（<code>scripts/qa/seed-tenant.sql</code>）</li>
+</ul>
+<p><strong>Meta App Review 提出:</strong></p>
+<ul>
+<li>permissions 申請: <code>pages_messaging</code>, <code>instagram_manage_messages</code>, <code>business_management</code></li>
+<li>Use case demo video を各 permission ごとに用意</li>
+</ul>
+<h3>7-3. 中（撮影一段落後）</h3>
+<ul>
+<li>scene3/4/7 の E2E カバレッジ回復（PR #392 で縮退した部分）</li>
+<li>granted_scopes 再認証バナーの本番テナント向けテスト（HIGH LIFE JPN）</li>
+</ul>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">8</span>8. 引き継ぎ後の行動計画</h2>
+<h3>Day 1（引き継ぎ当日）</h3>
+<ul>
+<li>[ ] この資料 + ADR-041 + ADR-044 + ADR-045 を通読</li>
+<li>[ ] <code>https://app.salesanchor.jp/channels</code> で動作確認（review@salesanchor.jp）</li>
+<li>[ ] Shingo と引き継ぎ MTG（30 分、Meta 領域のみ）</li>
+</ul>
+<h3>Week 1</h3>
+<ul>
+<li>[ ] screenplay v3 作成 → Shingo に確認</li>
+<li>[ ] 撮影実施（Shingo 主導、技術サポート）</li>
+<li>[ ] Meta App Review 提出（Meta 側の審査: 3〜14 日）</li>
+</ul>
+<h3>Week 2 以降</h3>
+<ul>
+<li>[ ] Meta 審査対応（追加質問・修正依頼）</li>
+<li>[ ] scene3/4/7 E2E カバレッジ回復</li>
+<li>[ ] granted_scopes 再認証フローの本番テスト</li>
+</ul>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">9</span>9. 共同開発との境界</h2>
+<p>以下は <strong>このドキュメントの対象外</strong>。Shingo + Web Claude で共同開発を継続:</p>
+<table>
+<tr><th>項目</th><th>担当</th></tr>
+<tr><td>ADR-042 ワークフロー整理（ひとし提案）</td><td>Shingo + Web Claude + ひとし</td></tr>
+<tr><td>CLAUDE.md・セッション指示の整合化</td><td>Shingo + Web Claude</td></tr>
+<tr><td>Sales Anchor の他機能（注文・顧客・KPI 等）</td><td>Shingo + Web Claude</td></tr>
+<tr><td>deploy.yml・CI 全般の管理</td><td>Shingo + Web Claude</td></tr>
+<tr><td>ADR 起案・実装パイプライン</td><td>引き続き claude-pipeline で自動化</td></tr>
+</table>
+<hr>
+
+</section>
+<section class="card">
+<h2><span class="num">10</span>10. 主要参照リンク</h2>
+<table>
+<tr><th>用途</th><th>リンク / パス</th></tr>
+<tr><td>リポジトリ</td><td>github.com/shingo-ops/salesanchor</td></tr>
+<tr><td>本番 App</td><td>https://app.salesanchor.jp/</td></tr>
+<tr><td>本番 API</td><td>https://api.salesanchor.jp/</td></tr>
+<tr><td>旧ドメイン（並行稼働中）</td><td>https://jarvis-claude.uk/</td></tr>
+<tr><td>VPS</td><td>ubuntu@49.212.137.46（SSH: Shingo 権限）</td></tr>
+<tr><td>ADR-041</td><td>docs/adr/ADR-041-meta-page-connection-fallback-implementation.md</td></tr>
+<tr><td>ADR-044</td><td>docs/adr/ADR-044-ci-health-recovery.md</td></tr>
+<tr><td>ADR-045</td><td>docs/adr/ADR-045-migration-055-deploy-automation.md</td></tr>
+<tr><td>撮影台本 v2</td><td>docs/meta-app-review/META_APP_REVIEW_SCREENCAST_SCRIPT.md</td></tr>
+<tr><td>撮影スクリプト</td><td>scripts/recording/salesanchor_recording.py</td></tr>
+<tr><td>QA シード SQL</td><td>scripts/qa/seed-tenant.sql</td></tr>
+<tr><td>Fernet キー操作</td><td>docs/operations/meta_encryption_key_rotation.md</td></tr>
+<tr><td>CLAUDE.md</td><td>/CLAUDE.md（開発ルール共通）</td></tr>
+</table>
+<hr>
+<p>*このドキュメントは Terminal Claude Code が 2026-05-18〜19 のセッション中に作成しました。  </p>
+<p>事実はコミット SHA・PR 番号・VPS ログから引用しています。*</p>
+</section>
+
+</div>
+</body>
+</html>

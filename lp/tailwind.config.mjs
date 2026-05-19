@@ -22,11 +22,11 @@ export default {
       },
       fontFamily: {
         sans: [
-          '"Noto Sans JP"',
-          'Hiragino Sans',
-          '"Yu Gothic"',
+          'Inter',
           'system-ui',
           '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI"',
           'sans-serif',
         ],
       },
