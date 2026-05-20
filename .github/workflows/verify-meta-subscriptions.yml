@@ -1,0 +1,40 @@
+name: Verify Meta Subscriptions (manual)
+
+# ADR-024 / ADR-025 の subscription drift 検知 Cron
+# (backend/app/tasks/verify_meta_subscriptions.py) を workflow_dispatch で
+# 手動実行するためのワークフロー。
+#
+# 通常は Celery Beat により毎日 04:30 JST に自動実行されるが、以下の用途で
+# オンデマンド実行したいケースがある:
+#   - 新規 Meta 連携直後に subscribed_apps 整合を即時確認したい
+#   - Meta App Review 提出前の最終チェック
+#   - 障害復旧後 (ADR-024 / ADR-041 / ADR-045 のような OAuth 経路改修) で
+#     全テナント drift / decrypt_failed の有無を即時 sweep したい
+#
+# 実行結果は audit_logs に記録されつつ、本ワークフローの stdout にも JSON で
+# 出力するため、GitHub Actions のログ画面 1 つで検査結果を完結確認できる。
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run verify_all_meta_subscriptions on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /home/ubuntu/salesanchor
+
+            docker exec -w /app astro-webapp-backend-1 \
+              python -c "
+            import json
+            from app.tasks.verify_meta_subscriptions import verify_all_meta_subscriptions
+            result = verify_all_meta_subscriptions()
+            print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+            "
