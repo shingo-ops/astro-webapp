@@ -50,7 +50,8 @@
     "disabled": "無効",
     "yes": "はい",
     "no": "いいえ",
-    "notAuthenticated": "認証されていません"
+    "notAuthenticated": "認証されていません",
+    "pleaseSelect": "選択してください"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -264,7 +265,23 @@
     "department": "部署",
     "isPrimary": "主担当",
     "allCompanies": "全会社",
-    "searchPlaceholder": "氏名・コード・メールで検索..."
+    "searchPlaceholder": "氏名・コード・メールで検索...",
+    "contactCodeLabel": "担当者コード（CT-00001、未指定で自動採番）",
+    "companyLabel": "所属会社 *",
+    "displayName": "表示名",
+    "primaryContactHint": "主担当者（会社あたり 1 人のみ。切替時に他は自動解除）",
+    "statusPendingDedupOption": "pending_dedup_review（重複確認待ち）",
+    "pendingDedupCount": "重複確認待ち: {{count}} 件",
+    "confirmAsDistinct": "別人として確定",
+    "confirmAsDistinctFull": "別人として確定（active 化）",
+    "mergeAsDuplicate": "重複としてマージ（担当者単位は未実装）",
+    "dedupResolveTitle": "重複確認待ちを解消",
+    "dedupResolveDesc": "この担当者は重複候補として暫定登録されています。別人として独立させるか、既存担当者へマージするか判断してください。",
+    "dedupConfirmTitle": "重複確認待ちの解消",
+    "dedupConfirmMessage": "「{{name}}」({{code}}) を別人として確定し、ステータスを active に変更しますか？\n\n（マージではなく、独立した担当者として承認します。この操作は audit_logs に記録されます）",
+    "changeToActive": "active に変更",
+    "deleteConfirmMessage": "「{{name}}」({{code}}) を削除しますか？ 関連する商談・注文・見積・請求書がある場合は削除できません。",
+    "companyRequired": "所属会社を選択してください"
   },
   "inbox": {
     "title": "受信箱",

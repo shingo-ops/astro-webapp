@@ -50,7 +50,8 @@
     "disabled": "Disabled",
     "yes": "Yes",
     "no": "No",
-    "notAuthenticated": "Not authenticated"
+    "notAuthenticated": "Not authenticated",
+    "pleaseSelect": "Please select"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -264,7 +265,23 @@
     "department": "Department",
     "isPrimary": "Primary",
     "allCompanies": "All companies",
-    "searchPlaceholder": "Search by name, code, or email..."
+    "searchPlaceholder": "Search by name, code, or email...",
+    "contactCodeLabel": "Contact code (CT-00001, auto-generated if blank)",
+    "companyLabel": "Company *",
+    "displayName": "Display name",
+    "primaryContactHint": "Primary contact (only one per company; others auto-cleared on switch)",
+    "statusPendingDedupOption": "pending_dedup_review (pending dedup)",
+    "pendingDedupCount": "Pending dedup review: {{count}}",
+    "confirmAsDistinct": "Confirm as distinct",
+    "confirmAsDistinctFull": "Confirm as distinct (activate)",
+    "mergeAsDuplicate": "Merge as duplicate (per-contact not implemented)",
+    "dedupResolveTitle": "Resolve pending dedup",
+    "dedupResolveDesc": "This contact is provisionally registered as a duplicate candidate. Decide whether to confirm as a distinct contact or merge into an existing one.",
+    "dedupConfirmTitle": "Resolve pending dedup",
+    "dedupConfirmMessage": "Confirm \"{{name}}\" ({{code}}) as a distinct contact and change status to active?\n\n(Not a merge, but approval as an independent contact. Recorded in audit_logs.)",
+    "changeToActive": "Change to active",
+    "deleteConfirmMessage": "Delete \"{{name}}\" ({{code}})? Cannot delete if related deals, orders, quotes, or invoices exist.",
+    "companyRequired": "Please select a company"
   },
   "inbox": {
     "title": "Inbox",
