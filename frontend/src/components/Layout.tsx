@@ -133,8 +133,6 @@ export default function Layout() {
     ...(hasPermission("leads.view") ? [{ to: "/leads", label: t("nav.newLeads") }] : []),
     ...(hasPermission("customers.view") ? [
       { to: "/customers", label: t("nav.routeCustomers") },
-      { to: "/companies", label: t("nav.companies") },
-      { to: "/contacts", label: t("nav.contacts") },
     ] : []),
     { to: "/archive", label: t("nav.archive") },
   ];
@@ -146,6 +144,10 @@ export default function Layout() {
   ];
 
   const adminItems: SubItem[] = [
+    ...(hasPermission("customers.view") ? [
+      { to: "/companies", label: t("nav.companies") },
+      { to: "/contacts", label: t("nav.contacts") },
+    ] : []),
     ...(hasPermission("deals.view") ? [{ to: "/deals", label: t("nav.deals") }] : []),
     ...(hasPermission("suppliers.view") ? [{ to: "/suppliers", label: t("nav.suppliers") }] : []),
     ...(hasPermission("purchase_orders.view") ? [{ to: "/purchase-orders", label: t("nav.purchaseOrders") }] : []),
@@ -202,7 +204,7 @@ export default function Layout() {
                 label={t("nav.leads")}
                 icon={<Users size={20} />}
                 items={leadsItems}
-                activePaths={["/lead-chat", "/leads", "/customers", "/companies", "/contacts", "/archive"]}
+                activePaths={["/lead-chat", "/leads", "/customers", "/archive"]}
                 isExpanded={sidebarExpanded}
                 isOpen={openAccordion === "leads"}
                 onToggle={() => toggleAccordion("leads")}
@@ -251,7 +253,7 @@ export default function Layout() {
                   label={t("nav.admin")}
                   icon={<ShieldCheck size={20} />}
                   items={adminItems}
-                  activePaths={["/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings"]}
+                  activePaths={["/companies", "/contacts", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings"]}
                   isExpanded={sidebarExpanded}
                   isOpen={openAccordion === "admin"}
                   onToggle={() => toggleAccordion("admin")}
