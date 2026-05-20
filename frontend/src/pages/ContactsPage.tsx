@@ -282,14 +282,14 @@ export default function ContactsPage() {
         </h1>
         <div className="page-header-actions">
           <select value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)} className="search-input">
-            <option value="">全会社</option>
+            <option value="">{t("contacts.allCompanies")}</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>{c.name}（{c.company_code}）</option>
             ))}
           </select>
           <input
             type="text"
-            placeholder="氏名・コード・メールで検索..."
+            placeholder={t("contacts.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="search-input"
@@ -323,7 +323,7 @@ export default function ContactsPage() {
               <th>{t("contacts.position")}</th>
               <th>{t("common.email")}</th>
               <th>{t("common.phone")}</th>
-              <th>主担当</th>
+              <th>{t("contacts.isPrimary")}</th>
               <th>{t("common.status")}</th>
               <th>{t("common.actions")}</th>
             </tr>

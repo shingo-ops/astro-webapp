@@ -262,7 +262,9 @@
     "givenName": "名",
     "position": "役職",
     "department": "部署",
-    "isPrimary": "主担当"
+    "isPrimary": "主担当",
+    "allCompanies": "全会社",
+    "searchPlaceholder": "氏名・コード・メールで検索..."
   },
   "inbox": {
     "title": "受信箱",
@@ -604,7 +606,11 @@
     "note": "この機能は現在開発中です。Phase 2 以降のリリースで利用可能になります。"
   },
   "archives": {
-    "title": "アーカイブ"
+    "title": "アーカイブ",
+    "sourceId": "元ID",
+    "restoredAt": "復元日",
+    "restore": "復元",
+    "restored": "復元済"
   },
   "oauth": {
     "processing": "処理中...",
