@@ -23,13 +23,47 @@ const features = [
       'Conversation history and purchase behavior summarized by AI. Surface the right move at the right moment.',
   },
 ];
+
+const metrics = [
+  {
+    stat: '7 channels',
+    label: 'in one inbox',
+  },
+  {
+    stat: 'Hundreds of B2B orders',
+    label: 'per operator per month',
+  },
+  {
+    stat: 'Zero information lost',
+    label: 'every conversation tracked',
+  },
+];
+
+const whyUs = [
+  {
+    title: 'Set up fast',
+    description: 'Quick onboarding, no lengthy implementation. Go live in days, not months.',
+  },
+  {
+    title: 'Scale with confidence',
+    description: 'Built for B2B trade volume. Handle hundreds of deals without dropping threads.',
+  },
+  {
+    title: 'Direct support',
+    description: 'Talk to the team that built it. Real humans who understand TCG export workflows.',
+  },
+  {
+    title: 'Built for cross-border trade',
+    description: 'TCG export workflows in mind — from catalog to international shipment.',
+  },
+];
 ---
 
 <BaseLayout
   title="The CRM built for cross-border TCG exporters"
   description="Stop juggling Excel tabs, DMs, and invoices. Sales Anchor gives TCG exporters one place to unify every channel, manage catalog, and automate invoicing — so a small team can handle hundreds of B2B deals without losing track."
 >
-  <!-- A1. Hero -->
+  <!-- S1. Hero -->
   <section class="py-24 md:py-32 bg-white">
     <div class="max-w-5xl mx-auto px-4 text-center">
       <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight max-w-3xl mx-auto leading-tight">
@@ -57,7 +91,7 @@ const features = [
     </div>
   </section>
 
-  <!-- A2. Who it's for -->
+  <!-- S2. Value lead ("Sound familiar?") -->
   <section class="py-20 bg-gray-50 border-y border-gray-100">
     <div class="max-w-3xl mx-auto px-4">
       <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-5">
@@ -80,7 +114,7 @@ const features = [
     </div>
   </section>
 
-  <!-- A3. Features -->
+  <!-- S3. Feature carousel (4 cards with image plates + CTAs) -->
   <section id="features" class="py-20 bg-white">
     <div class="max-w-5xl mx-auto px-4">
       <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
@@ -89,12 +123,35 @@ const features = [
       <p class="text-center text-gray-500 mb-14 max-w-xl mx-auto">
         Built for the specific workflow of cross-border TCG exporters.
       </p>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-10">
         {
-          features.map((f) => (
-            <div class="p-6 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors">
-              <h3 class="text-base font-semibold text-gray-900">{f.title}</h3>
-              <p class="mt-2 text-sm text-gray-500 leading-relaxed">{f.description}</p>
+          features.map((f, i) => (
+            <div class={`flex flex-col ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-0 rounded-2xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors`}>
+              <!-- Image plate -->
+              <div class="md:w-1/2 bg-blue-50 flex items-center justify-center min-h-48 md:min-h-64">
+                <div class="text-center p-8">
+                  <div class="w-16 h-16 bg-blue-100 rounded-xl mx-auto mb-3 flex items-center justify-center">
+                    <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p class="text-sm text-blue-400 font-medium">Product screenshot — coming soon</p>
+                </div>
+              </div>
+              <!-- Text + CTA -->
+              <div class="md:w-1/2 p-8 flex flex-col justify-center">
+                <h3 class="text-lg font-semibold text-gray-900 leading-snug">{f.title}</h3>
+                <p class="mt-3 text-gray-500 leading-relaxed">{f.description}</p>
+                <a
+                  href="mailto:support@salesanchor.jp?subject=Demo%20request"
+                  class="mt-6 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 no-underline group"
+                >
+                  See it in action
+                  <svg class="ml-1 w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </a>
+              </div>
             </div>
           ))
         }
@@ -102,7 +159,122 @@ const features = [
     </div>
   </section>
 
-  <!-- A4. How we use Meta data -->
+  <!-- S4. Ecosystem diagram -->
+  <section class="py-20 bg-gray-50 border-y border-gray-100">
+    <div class="max-w-5xl mx-auto px-4 text-center">
+      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-4">
+        One platform, every channel
+      </h2>
+      <p class="text-gray-500 max-w-xl mx-auto mb-12">
+        Connect your entire communication stack to one unified inbox. No more switching between apps.
+      </p>
+      <!-- SVG Ecosystem diagram -->
+      <div class="flex justify-center">
+        <svg
+          viewBox="0 0 540 410"
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-full max-w-lg"
+          aria-label="Sales Anchor connects Messenger, Instagram, WhatsApp, LINE, Discord, Telegram, and Email in one platform"
+        >
+          <!-- Connection lines from center to each channel -->
+          <!-- Messenger (top, 270°) -->
+          <line x1="270" y1="210" x2="270" y2="70" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <!-- Instagram (top-right, 321.43°) -->
+          <line x1="270" y1="210" x2="379" y2="123" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <!-- WhatsApp (right, 12.86°) -->
+          <line x1="270" y1="210" x2="407" y2="241" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <!-- LINE (bottom-right, 64.29°) -->
+          <line x1="270" y1="210" x2="331" y2="336" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <!-- Discord (bottom-left, 115.71°) -->
+          <line x1="270" y1="210" x2="209" y2="336" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <!-- Telegram (left, 167.14°) -->
+          <line x1="270" y1="210" x2="134" y2="241" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
+          <!-- Email (top-left, 218.57°) -->
+          <line x1="270" y1="210" x2="161" y2="123" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
+
+          <!-- Center: Sales Anchor -->
+          <circle cx="270" cy="210" r="56" fill="#1e3a5f"/>
+          <text x="270" y="206" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="Inter, sans-serif">Sales</text>
+          <text x="270" y="222" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="Inter, sans-serif">Anchor</text>
+
+          <!-- Messenger (top) -->
+          <circle cx="270" cy="70" r="28" fill="#0866FF"/>
+          <text x="270" y="75" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">M</text>
+          <text x="270" y="114" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Messenger</text>
+
+          <!-- Instagram (top-right) -->
+          <circle cx="379" cy="123" r="28" fill="#C13584"/>
+          <text x="379" y="128" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">In</text>
+          <text x="379" y="167" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Instagram</text>
+
+          <!-- WhatsApp (right) -->
+          <circle cx="407" cy="241" r="28" fill="#25D366"/>
+          <text x="407" y="246" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">W</text>
+          <text x="407" y="285" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">WhatsApp</text>
+
+          <!-- LINE (bottom-right) -->
+          <circle cx="331" cy="336" r="28" fill="#00B900"/>
+          <text x="331" y="341" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">L</text>
+          <text x="331" y="380" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">LINE</text>
+
+          <!-- Discord (bottom-left) -->
+          <circle cx="209" cy="336" r="28" fill="#5865F2"/>
+          <text x="209" y="341" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">D</text>
+          <text x="209" y="380" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Discord</text>
+
+          <!-- Telegram (left) -->
+          <circle cx="134" cy="241" r="28" fill="#2AABEE"/>
+          <text x="134" y="246" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">T</text>
+          <text x="134" y="285" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Telegram</text>
+
+          <!-- Email (top-left) -->
+          <circle cx="161" cy="123" r="28" fill="#6B7280"/>
+          <text x="161" y="128" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">@</text>
+          <text x="161" y="167" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Email</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- S5. Metrics band -->
+  <section class="py-20 bg-blue-900">
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+        {
+          metrics.map((m) => (
+            <div class="px-6 py-8 rounded-2xl bg-blue-800">
+              <p class="text-4xl font-bold text-white leading-tight">{m.stat}</p>
+              <p class="mt-3 text-blue-200 text-sm leading-relaxed">{m.label}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- S6. Why us 4-column -->
+  <section class="py-20 bg-white">
+    <div class="max-w-5xl mx-auto px-4">
+      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
+        Why Sales Anchor
+      </h2>
+      <p class="text-center text-gray-500 mb-14 max-w-xl mx-auto">
+        Purpose-built for cross-border TCG exporters, not adapted from generic CRM tools.
+      </p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        {
+          whyUs.map((w) => (
+            <div class="p-6 rounded-xl border border-gray-100 bg-gray-50">
+              <h3 class="text-base font-semibold text-gray-900 mb-2">{w.title}</h3>
+              <p class="text-sm text-gray-500 leading-relaxed">{w.description}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- S7. Meta data policy -->
   <section class="py-20 bg-gray-50 border-y border-gray-100">
     <div class="max-w-3xl mx-auto px-4">
       <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-5">
