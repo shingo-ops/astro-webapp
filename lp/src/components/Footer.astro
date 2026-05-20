@@ -8,24 +8,29 @@ const legalLinks = [
 ];
 ---
 
-<footer class="bg-gray-900">
-  <div class="max-w-6xl mx-auto px-4 py-12">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<footer class="bg-brand-navy text-slate-400" style="border-top:1px solid rgba(255,255,255,0.06);">
+  <div class="max-w-6xl mx-auto px-4 pt-12 pb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr] gap-10">
       <div>
-        <p class="font-semibold text-white text-base">Sales Anchor</p>
-        <p class="mt-2 text-sm text-gray-400">
-          The CRM built for cross-border TCG exporters.
+        <a href="/" class="font-serif text-xl text-white no-underline block mb-3">
+          Sales<span class="text-brand-500">Anchor</span>
+        </a>
+        <p class="text-sm leading-relaxed">
+          The CRM built for cross-border TCG exporters.<br />
+          Unify every channel, every customer, every deal.
         </p>
       </div>
 
       <div>
-        <p class="font-semibold text-gray-300 text-sm">Operator</p>
-        <ul class="mt-2 space-y-1 text-sm text-gray-400">
+        <h4 class="text-xs font-bold uppercase tracking-widest text-slate-200 mb-4">
+          Operator
+        </h4>
+        <ul class="space-y-2 text-sm">
           <li>HIGH LIFE JPN</li>
           <li>Representative: Shingo Tanizawa</li>
           <li>2F, Nishi-Shinjuku Mizuma Building, 3-3-13 Nishi-Shinjuku, Shinjuku-ku, Tokyo 160-0023, Japan</li>
           <li>
-            <a href="mailto:support@salesanchor.jp" class="hover:text-gray-200 no-underline">
+            <a href="mailto:support@salesanchor.jp" class="text-slate-400 hover:text-white no-underline transition-colors">
               support@salesanchor.jp
             </a>
           </li>
@@ -33,12 +38,14 @@ const legalLinks = [
       </div>
 
       <div>
-        <p class="font-semibold text-gray-300 text-sm">Legal</p>
-        <ul class="mt-2 space-y-1">
+        <h4 class="text-xs font-bold uppercase tracking-widest text-slate-200 mb-4">
+          Legal
+        </h4>
+        <ul class="space-y-2">
           {
             legalLinks.map((link) => (
               <li>
-                <a href={link.href} class="text-sm text-gray-400 hover:text-gray-200 no-underline">
+                <a href={link.href} class="text-sm text-slate-400 hover:text-white no-underline transition-colors">
                   {link.label}
                 </a>
               </li>
@@ -48,7 +55,7 @@ const legalLinks = [
       </div>
     </div>
 
-    <div class="mt-12 pt-6 border-t border-gray-700 text-center text-xs text-gray-500">
+    <div class="mt-10 pt-6 text-xs text-slate-500" style="border-top:1px solid rgba(255,255,255,0.08);">
       &copy; {year} HIGH LIFE JPN. All rights reserved.
     </div>
   </div>
