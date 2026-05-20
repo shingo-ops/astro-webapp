@@ -355,15 +355,15 @@ export default function CompaniesPage() {
         <h1>
           {t("companies.title")}
           {pendingDedupCount > 0 && (
-            <span className="dedup-summary" title="status が pending_dedup_review の会社の数">
-              重複確認待ち: {pendingDedupCount} 件
+            <span className="dedup-summary">
+              {t("companies.pendingDedupCount", { count: pendingDedupCount })}
             </span>
           )}
         </h1>
         <div className="page-header-actions">
           <input
             type="text"
-            placeholder="会社名・コードで検索..."
+            placeholder={t("companies.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="search-input"
@@ -411,7 +411,6 @@ export default function CompaniesPage() {
                 <tr
                   key={c.id}
                   className={c.status === "pending_dedup_review" ? "row-pending-dedup" : ""}
-                  title={c.status === "pending_dedup_review" ? "重複確認待ち。詳細ページから解消できます" : ""}
                 >
                   <td>{c.company_code}</td>
                   <td>
@@ -444,9 +443,9 @@ export default function CompaniesPage() {
             <h2>{editId ? t("companies.editCompany") : t("companies.newCompany")}</h2>
 
             <div className="tabs">
-              <button className={`tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => setActiveTab("basic")}>基本情報</button>
-              <button className={`tab ${activeTab === "billing" ? "active" : ""}`} onClick={() => setActiveTab("billing")}>請求先</button>
-              <button className={`tab ${activeTab === "delivery" ? "active" : ""}`} onClick={() => setActiveTab("delivery")}>配送先</button>
+              <button className={`tab ${activeTab === "basic" ? "active" : ""}`} onClick={() => setActiveTab("basic")}>{t("companies.basicInfo")}</button>
+              <button className={`tab ${activeTab === "billing" ? "active" : ""}`} onClick={() => setActiveTab("billing")}>{t("companies.billing")}</button>
+              <button className={`tab ${activeTab === "delivery" ? "active" : ""}`} onClick={() => setActiveTab("delivery")}>{t("companies.delivery")}</button>
             </div>
 
             <form onSubmit={handleSubmit} className="form-grid">
@@ -454,16 +453,16 @@ export default function CompaniesPage() {
                 <>
                   {!editId && (
                     <div className="form-row">
-                      <label>会社コード（CO-00001、未指定で自動採番）</label>
+                      <label>{t("companies.companyCodeLabel")}</label>
                       <input value={form.company_code} onChange={(e) => setForm({ ...form, company_code: e.target.value })} />
                     </div>
                   )}
                   <div className="form-row">
-                    <label>会社名 *</label>
+                    <label>{t("companies.nameLabel")}</label>
                     <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>英語名</label>
+                    <label>{t("companies.nameEn")}</label>
                     <input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
                   </div>
                   <div className="form-row">
@@ -475,43 +474,43 @@ export default function CompaniesPage() {
                     <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>信頼度（1-5）</label>
+                    <label>{t("companies.trustLevel")}</label>
                     <input type="number" min="1" max="5" value={form.trust_level} onChange={(e) => setForm({ ...form, trust_level: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>重視ポイント</label>
+                    <label>{t("companies.priorityFocus")}</label>
                     <input value={form.priority_focus} onChange={(e) => setForm({ ...form, priority_focus: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>1回発注額</label>
+                    <label>{t("companies.perOrderAmount")}</label>
                     <input value={form.per_order_amount} onChange={(e) => setForm({ ...form, per_order_amount: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>月間頻度</label>
+                    <label>{t("companies.monthlyFrequency")}</label>
                     <input type="number" min="0" value={form.monthly_frequency} onChange={(e) => setForm({ ...form, monthly_frequency: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>月間売上見込額</label>
+                    <label>{t("companies.monthlyForecast")}</label>
                     <input value={form.monthly_forecast} onChange={(e) => setForm({ ...form, monthly_forecast: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>請求書表示名</label>
+                    <label>{t("companies.billingDisplayName")}</label>
                     <input value={form.billing_display_name} onChange={(e) => setForm({ ...form, billing_display_name: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>支払い名義</label>
+                    <label>{t("companies.paymentRecipientName")}</label>
                     <input value={form.payment_recipient_name} onChange={(e) => setForm({ ...form, payment_recipient_name: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>FedEx ID</label>
+                    <label>{t("companies.fedexAccount")}</label>
                     <input value={form.fedex_account} onChange={(e) => setForm({ ...form, fedex_account: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>発送時メモ</label>
+                    <label>{t("companies.shippingNote")}</label>
                     <textarea value={form.shipping_note} onChange={(e) => setForm({ ...form, shipping_note: e.target.value })} />
                   </div>
                   <div className="form-row">
-                    <label>販売チャネル（カンマ区切り）</label>
+                    <label>{t("companies.salesChannelsLabel")}</label>
                     <input value={form.sales_channels} onChange={(e) => setForm({ ...form, sales_channels: e.target.value })} />
                   </div>
                   <div className="form-row">
@@ -541,10 +540,10 @@ export default function CompaniesPage() {
                 return (
                   <>
                     <div className="form-row">
-                      <label>支店名（複数拠点がある場合）</label>
+                      <label>{t("companies.branchNameLabel")}</label>
                       <input value={addr.branch_name} onChange={(e) => setAddr({ branch_name: e.target.value })} />
                     </div>
-                    <div className="form-row"><label>担当者名</label><input value={addr.name} onChange={(e) => setAddr({ name: e.target.value })} /></div>
+                    <div className="form-row"><label>{t("companies.contactName")}</label><input value={addr.name} onChange={(e) => setAddr({ name: e.target.value })} /></div>
                     <div className="form-row"><label>{t("common.email")}</label><input type="email" value={addr.email} onChange={(e) => setAddr({ email: e.target.value })} /></div>
                     <div className="form-row">
                       <label>{t("common.phone")}</label>
@@ -552,12 +551,12 @@ export default function CompaniesPage() {
                       {key === "billing" && phoneError && <span className="field-error">{t("companies.phoneError")}</span>}
                     </div>
                     <div className="form-row"><label>{t("companies.taxId")}</label><input value={addr.tax_id} onChange={(e) => setAddr({ tax_id: e.target.value })} /></div>
-                    <div className="form-row"><label>住所1</label><input value={addr.address_line_1} onChange={(e) => setAddr({ address_line_1: e.target.value })} /></div>
-                    <div className="form-row"><label>住所2</label><input value={addr.address_line_2} onChange={(e) => setAddr({ address_line_2: e.target.value })} /></div>
-                    <div className="form-row"><label>市</label><input value={addr.city} onChange={(e) => setAddr({ city: e.target.value })} /></div>
-                    <div className="form-row"><label>州/県</label><input value={addr.state} onChange={(e) => setAddr({ state: e.target.value })} /></div>
-                    <div className="form-row"><label>郵便番号</label><input value={addr.zip} onChange={(e) => setAddr({ zip: e.target.value })} /></div>
-                    <div className="form-row"><label>国コード（ISO 2文字）</label><input value={addr.country_code} onChange={(e) => setAddr({ country_code: e.target.value })} maxLength={2} /></div>
+                    <div className="form-row"><label>{t("shipping.address1")}</label><input value={addr.address_line_1} onChange={(e) => setAddr({ address_line_1: e.target.value })} /></div>
+                    <div className="form-row"><label>{t("shipping.address2")}</label><input value={addr.address_line_2} onChange={(e) => setAddr({ address_line_2: e.target.value })} /></div>
+                    <div className="form-row"><label>{t("shipping.city")}</label><input value={addr.city} onChange={(e) => setAddr({ city: e.target.value })} /></div>
+                    <div className="form-row"><label>{t("shipping.stateCode")}</label><input value={addr.state} onChange={(e) => setAddr({ state: e.target.value })} /></div>
+                    <div className="form-row"><label>{t("shipping.zipCode")}</label><input value={addr.zip} onChange={(e) => setAddr({ zip: e.target.value })} /></div>
+                    <div className="form-row"><label>{t("companies.countryCodeWithHint")}</label><input value={addr.country_code} onChange={(e) => setAddr({ country_code: e.target.value })} maxLength={2} /></div>
                   </>
                 );
               })()}
@@ -578,7 +577,10 @@ export default function CompaniesPage() {
         title={t("companies.deleteCompany")}
         message={
           deleteTarget
-            ? `「${companyDisplayName(deleteTarget)}」(${deleteTarget.company_code}) を削除しますか？ 関連する商談・注文・見積・請求書・担当者がある場合は削除できません。`
+            ? t("companies.deleteConfirmMessage", {
+                name: companyDisplayName(deleteTarget),
+                code: deleteTarget.company_code,
+              })
             : ""
         }
         confirmLabel={t("common.delete")}
