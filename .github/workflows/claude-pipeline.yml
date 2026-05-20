@@ -16,6 +16,9 @@ jobs:
   claude-worker:
     runs-on: self-hosted
     if: github.actor == 'shingo-ops' || github.actor == 'Hikky-dev'
+    outputs:
+      pr_number: ${{ steps.create-pr.outputs.pr_number }}
+      pr_url: ${{ steps.create-pr.outputs.pr_url }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -91,6 +94,7 @@ jobs:
           実装が完了したら、変更をコミットしてください。後続のステップが自動でPRを作成します。"
 
       - name: Commit, Push, and Open PR
+        id: create-pr
         env:
           ADR_FILES: ${{ inputs.adr_files }}
           GH_TOKEN: ${{ github.token }}
@@ -109,6 +113,8 @@ jobs:
 
           if [ "$HAS_STAGED" = "0" ] && [ "$UNPUSHED" = "0" ]; then
             echo "No changes to commit or push"
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "pr_url=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -135,6 +141,8 @@ jobs:
           echo "PR created: #$PR_NUM ($PR_URL)"
           echo "PR_URL=$PR_URL" >> "$GITHUB_ENV"
           echo "PR_NUM=$PR_NUM" >> "$GITHUB_ENV"
+          echo "pr_number=${PR_NUM}" >> "$GITHUB_OUTPUT"
+          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Notify Discord (Success)
         if: success()
@@ -153,3 +161,192 @@ jobs:
           curl -H "Content-Type: application/json" -X POST \
             -d '{"content": "❌ **Claude Maxの実装が失敗しました。**\nGitHub Actions のログを確認してください。"}' \
             "$WEBHOOK"
+
+  # ADR-051: Reviewer job — claude-worker が PR を作成した場合に自動起動
+  reviewer:
+    needs: claude-worker
+    runs-on: self-hosted
+    if: ${{ needs.claude-worker.outputs.pr_number != '' }}
+    outputs:
+      decision: ${{ steps.run-reviewer.outputs.decision }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PIPELINE_PAT }}
+
+      - name: Notify Discord (Reviewer Start)
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
+        run: |
+          PAYLOAD=$(jq -nc --arg pr "$PR_NUMBER" --arg url "$PR_URL" \
+            '{content: ("🔍 **Reviewer 自動起動** (ADR-051) PR #" + $pr + "\n" + $url)}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+
+      - name: Run Claude Code as Reviewer
+        id: run-reviewer
+        env:
+          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
+          ADR_FILES: ${{ inputs.adr_files }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          rm -f /tmp/reviewer_decision.txt
+          claude -p \
+            --disallowedTools "WebFetch WebSearch" \
+            --allowedTools "Read Grep Glob \
+              Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr review:*) \
+              Bash(git log:*) Bash(git diff:*) Bash(git show:*) Bash(git rev-parse:*) \
+              Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(echo:*) Bash(tee:*)" \
+            --permission-mode bypassPermissions \
+            "PR #${PR_NUMBER} のコードレビューを実施してください。
+
+          まず ~/.claude/agents/reviewer.md を Read ツールで読み込んで reviewer エージェントとして動作してください。
+
+          PR URL: ${PR_URL}
+          リポジトリ: ${REPO}
+          実装対象 ADR: ${ADR_FILES}
+
+          【手順】
+          1. gh pr diff ${PR_NUMBER} で差分を確認してください
+          2. gh pr view ${PR_NUMBER} --json body,title で PR 本文と Evaluator method 宣言を確認してください
+          3. 実装対象 ADR ファイル (${ADR_FILES}) を Read で読み込み、Acceptance Criteria を確認してください
+          4. reviewer エージェントの基準に従いコードレビューを実施してください
+          5. 以下のいずれかを実行してください:
+             - 承認: gh pr review ${PR_NUMBER} --repo ${REPO} --approve --body '承認理由...'
+             - 変更要求: gh pr review ${PR_NUMBER} --repo ${REPO} --request-changes --body '指摘事項...'
+          6. 決定 (APPROVED または CHANGES_REQUESTED) のみを /tmp/reviewer_decision.txt に書き込んでください
+
+          【禁止事項】
+          - コードの変更 (Edit/Write) は行わない
+          - ブラウザは起動しない
+          - PR の作成・push・マージは行わない"
+
+          if [ -f /tmp/reviewer_decision.txt ]; then
+            DECISION=$(cat /tmp/reviewer_decision.txt | tr -d '[:space:]')
+          else
+            DECISION="CHANGES_REQUESTED"
+          fi
+          echo "decision=${DECISION}" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Discord (Reviewer Result)
+        if: always()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
+          DECISION: ${{ steps.run-reviewer.outputs.decision }}
+        run: |
+          if [ "${DECISION}" = "APPROVED" ]; then
+            MSG="✅ **Reviewer APPROVED** PR #${PR_NUMBER} → Evaluator 自動起動\n${PR_URL}"
+          else
+            MSG="🔄 **Reviewer REQUEST_CHANGES** PR #${PR_NUMBER} → Generator による修正が必要です\n${PR_URL}"
+          fi
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+
+  # ADR-051: Evaluator job — Reviewer が APPROVED した場合に自動起動
+  evaluator:
+    needs: [claude-worker, reviewer]
+    runs-on: self-hosted
+    if: ${{ needs.reviewer.outputs.decision == 'APPROVED' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PIPELINE_PAT }}
+
+      - name: Check PR body for Evaluator method
+        id: check-method
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+        run: |
+          PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body' 2>/dev/null || echo "")
+          if echo "$PR_BODY" | grep -qF '- [x] Skip'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Auto-approve (Evaluator Skip declared)
+        if: steps.check-method.outputs.skip == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr review "$PR_NUMBER" --repo "$REPO" --approve \
+            --body "Evaluator Skip 宣言を確認。UI/UX 変更なしとして自動承認。"
+
+      - name: Run Claude Code as Evaluator
+        if: steps.check-method.outputs.skip != 'true'
+        id: run-evaluator
+        env:
+          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
+          ADR_FILES: ${{ inputs.adr_files }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          rm -f /tmp/evaluator_decision.txt
+          claude -p \
+            --disallowedTools "WebFetch WebSearch" \
+            --allowedTools "Read Grep Glob \
+              Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr review:*) \
+              Bash(git log:*) Bash(git diff:*) Bash(git show:*) \
+              Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(curl:*) Bash(echo:*) Bash(tee:*)" \
+            --permission-mode bypassPermissions \
+            "PR #${PR_NUMBER} の Evaluator 評価を実施してください。
+
+          まず ~/.claude/agents/evaluator.md を Read ツールで読み込んで evaluator エージェントとして動作してください。
+
+          PR URL: ${PR_URL}
+          リポジトリ: ${REPO}
+          実装対象 ADR: ${ADR_FILES}
+
+          【手順】
+          1. gh pr view ${PR_NUMBER} --json body で PR 本文の Evaluator method 宣言を確認してください
+          2. 宣言に従って評価を実施してください:
+             - Layer 1 (Playwright): UI/UX テストを実施
+             - Layer 2 (Claude in Chrome): 指定された理由に従い実施
+             - No declaration: Layer 1 をデフォルトとして実施
+          3. 以下のいずれかを実行してください:
+             - 承認: gh pr review ${PR_NUMBER} --repo ${REPO} --approve --body '評価結果...'
+             - 変更要求: gh pr review ${PR_NUMBER} --repo ${REPO} --request-changes --body '問題点...'
+          4. 決定 (APPROVED または CHANGES_REQUESTED) のみを /tmp/evaluator_decision.txt に書き込んでください
+
+          【禁止事項】
+          - コードの変更 (Edit/Write) は行わない
+          - PR の作成・push・マージは行わない"
+
+          if [ -f /tmp/evaluator_decision.txt ]; then
+            EVAL_DECISION=$(cat /tmp/evaluator_decision.txt | tr -d '[:space:]')
+          else
+            EVAL_DECISION="CHANGES_REQUESTED"
+          fi
+          echo "decision=${EVAL_DECISION}" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Discord (Evaluator Result — merge 待ち)
+        if: always()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
+          SKIP: ${{ steps.check-method.outputs.skip }}
+          EVAL_DECISION: ${{ steps.run-evaluator.outputs.decision }}
+        run: |
+          if [ "${SKIP}" = "true" ]; then
+            MSG="✅ **Evaluator Skip 自動承認** PR #${PR_NUMBER} → Shingo が diff 確認後マージしてください\n${PR_URL}"
+          elif [ "${EVAL_DECISION}" = "APPROVED" ]; then
+            MSG="✅ **Evaluator APPROVED** PR #${PR_NUMBER} → Shingo が diff 確認後マージしてください\n${PR_URL}"
+          else
+            MSG="🔄 **Evaluator REQUEST_CHANGES** PR #${PR_NUMBER} → Generator による修正が必要です\n${PR_URL}"
+          fi
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
