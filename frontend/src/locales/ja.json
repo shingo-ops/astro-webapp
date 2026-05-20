@@ -252,7 +252,14 @@
     "dedupResolveConfirmMessage": "「{{name}}」を別会社として確定し、ステータスを active に変更しますか？（マージではなく、独立した会社として承認します。この操作は audit_logs に記録されます）",
     "dedupResolveConfirmLabel": "active に変更",
     "unsavedChangesConfirm": "未保存の変更があります。破棄して移動しますか？",
-    "currentValue": "現在"
+    "currentValue": "現在",
+    "searchPlaceholder": "会社名・コードで検索...",
+    "companyCodeLabel": "会社コード（CO-00001、未指定で自動採番）",
+    "nameLabel": "会社名 *",
+    "pendingDedupCount": "重複確認待ち: {{count}} 件",
+    "branchNameLabel": "支店名（複数拠点がある場合）",
+    "countryCodeWithHint": "国コード（ISO 2文字）",
+    "deleteConfirmMessage": "「{{name}}」({{code}}) を削除しますか？ 関連する商談・注文・見積・請求書・担当者がある場合は削除できません。"
   },
   "contacts": {
     "title": "担当者管理",
