@@ -368,6 +368,19 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # ADR-055: Playwright MCP セットアップ確認 (Layer 1 が使えない場合は早期に気付く)
+      - name: Verify Playwright MCP available
+        if: steps.check-method.outputs.skip != 'true'
+        continue-on-error: true
+        run: |
+          npx playwright --version 2>/dev/null && echo "Playwright CLI: OK" || echo "Playwright CLI: NOT FOUND"
+          ls -d ~/Library/Caches/ms-playwright/chromium-* 2>/dev/null | head -1 >/dev/null \
+            && echo "Chromium browser cache: OK" \
+            || echo "Chromium browser cache: NOT FOUND (run: npx playwright install chromium)"
+          node -e "require('@playwright/mcp')" 2>/dev/null \
+            && echo "Playwright MCP module (@playwright/mcp): OK" \
+            || echo "Playwright MCP module (@playwright/mcp): NOT FOUND (run: npm install -g @playwright/mcp)"
+
       - name: Auto-approve (Evaluator Skip declared)
         if: steps.check-method.outputs.skip == 'true'
         env:
