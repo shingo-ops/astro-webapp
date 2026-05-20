@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>資料請求 | Sales Anchor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Zen Kaku Gothic New', sans-serif; background-color: #fcfcfa; color: #1f1f1f; font-size: 16px; line-height: 1.7; }
+    header { background-color: #fcfcfa; padding: 16px 48px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #2c5282, #4a90e2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 18px; }
+    .logo-text { font-size: 20px; font-weight: 700; color: #1f1f1f; }
+    .header-tel { font-size: 15px; font-weight: 700; color: #1f1f1f; text-decoration: none; }
+    .hero { background-color: #f8f5ee; padding: 72px 48px 80px; }
+    .hero-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 400px; gap: 48px; align-items: start; }
+    .hero-content h1 { font-size: 40px; font-weight: 700; line-height: 1.4; margin-bottom: 24px; }
+    .hero-content p { font-size: 16px; line-height: 1.8; color: #444; }
+    .hero-badges { display: flex; gap: 12px; margin-top: 40px; }
+    .badge { background: white; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 110px; }
+    .badge-label { font-size: 10px; color: #888; text-transform: uppercase; }
+    .badge-title { font-size: 13px; font-weight: 700; color: #2c5282; margin-top: 4px; }
+    .form-card { background-color: #f8f5ee; border-radius: 12px; padding: 36px 32px; border: 1px solid rgba(0,0,0,0.1); }
+    .form-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .required { color: #e53e3e; margin-left: 4px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid rgba(0,0,0,0.2); border-radius: 6px; font-size: 15px; font-family: inherit; background: white; }
+    .form-submit-btn { width: 100%; padding: 14px; background: #2c5282; color: white; font-size: 16px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; margin-top: 8px; transition: background 0.2s; }
+    .form-submit-btn:hover { background: #2a4a7f; }
+    .form-note { font-size: 11px; color: #888; text-align: center; margin-top: 12px; }
+    .platform { padding: 80px 48px; background: #fcfcfa; }
+    .platform-inner { max-width: 1100px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 48px; }
+    .section-header h2 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+    .section-header p { font-size: 16px; color: #555; }
+    .feature-tabs { display: flex; border-bottom: 2px solid rgba(0,0,0,0.1); margin-bottom: 40px; overflow-x: auto; }
+    .feature-tab { padding: 12px 20px; font-size: 14px; font-weight: 500; color: #666; cursor: pointer; white-space: nowrap; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; background: none; font-family: inherit; }
+    .feature-tab.active { color: #2c5282; border-bottom-color: #2c5282; font-weight: 700; }
+    .feature-panel { display: none; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+    .feature-panel.active { display: grid; }
+    .feature-panel-text h3 { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+    .feature-panel-text p { font-size: 15px; color: #555; margin-bottom: 20px; }
+    .feature-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .feature-list li { font-size: 14px; color: #333; display: flex; align-items: center; gap: 6px; }
+    .feature-list li::before { content: ''; width: 6px; height: 6px; background: #2c5282; border-radius: 50%; flex-shrink: 0; }
+    .feature-panel-visual { background: #f0f4ff; border-radius: 12px; height: 280px; display: flex; align-items: center; justify-content: center; color: #a0aec0; font-size: 14px; border: 1px solid rgba(44,82,130,0.15); }
+    .visual-placeholder { text-align: center; }
+    .visual-placeholder-icon { font-size: 48px; margin-bottom: 8px; }
+    footer { background: #1f1f1f; color: rgba(255,255,255,0.7); padding: 32px 48px; text-align: center; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-top: 16px; }
+    .footer-links a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 13px; }
+    .copyright { font-size: 13px; }
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      header, .hero, .platform { padding-left: 24px; padding-right: 24px; }
+      .hero-content h1 { font-size: 28px; }
+      .feature-panel.active { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NOTE for Generator:
+  This is a REFERENCE PROTOTYPE ONLY.
+  The actual Astro implementation must:
+  - Replace Japanese text with English (ADR-047 継承)
+  - Remove badges (2024 Award / No.1 / 月額) — ADR-054 §5-5 禁止
+  - Remove header phone number — ADR-054 §2-4 禁止
+  - Use logo.png instead of SA text icon
+  - Use brand-500 (#1877F2) instead of #2c5282
+  - Add mailto form action
+  - Use Tailwind classes (not inline CSS)
+  - Hero background: bg-gray-50 or bg-brand-50 (not #f8f5ee)
+  - Footer: bg-gray-900 (not #1f1f1f hardcoded)
+  - Remove 料金プラン links from feature tabs
+  See ADR-054 for full spec.
+-->
+
+<header>
+  <a href="#" class="logo">
+    <div class="logo-icon">SA</div>
+    <span class="logo-text">Sales Anchor</span>
+  </a>
+  <a href="tel:0120-000-000" class="header-tel">0120-000-000</a>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <h1>商談管理から顧客情報まで<br>プラットフォームで連携。<br>AI機能と顧客データで、<br>ビジネスの成長を<br>支援します。</h1>
+      <p>ツールやデータが分散していると、チームの動きが鈍くなります。Sales Anchorなら商談・顧客・データをひとつのプラットフォームに統合し、営業活動をシンプルかつ強力に変えます。</p>
+      <div class="hero-badges">
+        <div class="badge">
+          <div class="badge-label">2024 Award</div>
+          <div class="badge-title">Best Sales Tool</div>
+        </div>
+        <div class="badge">
+          <div class="badge-label">User Rating</div>
+          <div class="badge-title">使いやすさ No.1</div>
+        </div>
+        <div class="badge">
+          <div class="badge-label">Result</div>
+          <div class="badge-title">成果実績 No.1</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h2>資料請求はこちら</h2>
+      <form>
+        <div class="form-group">
+          <label>お名前<span class="required">*</span></label>
+          <input type="text" placeholder="例：山田 太郎">
+        </div>
+        <div class="form-group">
+          <label>会社名<span class="required">*</span></label>
+          <input type="text" placeholder="例：株式会社〇〇">
+        </div>
+        <div class="form-group">
+          <label>メールアドレス<span class="required">*</span></label>
+          <input type="email" placeholder="例：taro@example.co.jp">
+        </div>
+        <div class="form-group">
+          <label>電話番号</label>
+          <input type="tel" placeholder="例：03-0000-0000">
+        </div>
+        <div class="form-group">
+          <label>従業員規模</label>
+          <select>
+            <option value="">選択してください</option>
+            <option>1〜10名</option>
+            <option>11〜50名</option>
+            <option>51〜200名</option>
+            <option>201〜500名</option>
+            <option>501名以上</option>
+          </select>
+        </div>
+        <button type="submit" class="form-submit-btn">資料を請求する →</button>
+        <p class="form-note">送信後、担当者より資料をお送りします。</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="platform">
+  <div class="platform-inner">
+    <div class="section-header">
+      <h2>Sales Anchorのカスタマープラットフォーム</h2>
+      <p>データとツールをひとつにつなぎ、営業活動の全てが「わかる」「できる」「つながる」状態を実現します。</p>
+    </div>
+
+    <div class="feature-tabs">
+      <button class="feature-tab active" onclick="switchTab(event,'sales')">営業を支援する</button>
+      <button class="feature-tab" onclick="switchTab(event,'marketing')">マーケティングを強化</button>
+      <button class="feature-tab" onclick="switchTab(event,'customer')">顧客体験を高める</button>
+      <button class="feature-tab" onclick="switchTab(event,'data')">データを一元管理</button>
+      <button class="feature-tab" onclick="switchTab(event,'ai')">AIで自動化する</button>
+    </div>
+
+    <div id="tab-sales" class="feature-panel active">
+      <div class="feature-panel-text">
+        <h3>シンプルで強力な営業支援</h3>
+        <p>Sales Anchorの営業支援ツールは、AIを活用して有望な商談を見極め、クロージング率を高め、長期的な顧客関係を構築します。</p>
+        <ul class="feature-list">
+          <li>商談・パイプライン管理</li><li>顧客情報の自動記録</li>
+          <li>メール・電話の一元管理</li><li>AIによる優先度スコアリング</li>
+          <li>営業レポート・ダッシュボード</li><li>チーム目標の進捗管理</li>
+        </ul>
+      </div>
+      <div class="feature-panel-visual">
+        <div class="visual-placeholder"><div class="visual-placeholder-icon">📊</div><div>Product screenshot — coming soon</div></div>
+      </div>
+    </div>
+
+    <div id="tab-marketing" class="feature-panel">
+      <div class="feature-panel-text">
+        <h3>リード獲得からナーチャリングまで</h3>
+        <p>マーケティング施策をプラットフォームに統合し、リードの獲得・育成・引き渡しをスムーズに行います。</p>
+        <ul class="feature-list">
+          <li>リード獲得フォーム</li><li>Eメールマーケティング</li>
+          <li>SNS連携・投稿管理</li><li>AIコンテンツ生成</li>
+          <li>パーソナライズ配信</li><li>マーケティングレポート</li>
+        </ul>
+      </div>
+      <div class="feature-panel-visual">
+        <div class="visual-placeholder"><div class="visual-placeholder-icon">📧</div><div>Product screenshot — coming soon</div></div>
+      </div>
+    </div>
+
+    <div id="tab-customer" class="feature-panel">
+      <div class="feature-panel-text">
+        <h3>顧客満足度を最大化する</h3>
+        <p>受注後の顧客対応もプラットフォームで一元管理。サポート品質を高め、リピート・紹介につなげます。</p>
+        <ul class="feature-list">
+          <li>カスタマーサポート管理</li><li>チケット管理</li>
+          <li>チャットボット対応</li><li>顧客満足度調査（NPS）</li>
+          <li>対応履歴の自動記録</li><li>SLA管理</li>
+        </ul>
+      </div>
+      <div class="feature-panel-visual">
+        <div class="visual-placeholder"><div class="visual-placeholder-icon">💬</div><div>Product screenshot — coming soon</div></div>
+      </div>
+    </div>
+
+    <div id="tab-data" class="feature-panel">
+      <div class="feature-panel-text">
+        <h3>全データをひとつのCRMに集約</h3>
+        <p>散在する顧客データを統合し、営業・マーケ・CSが同じ情報をリアルタイムで参照できます。</p>
+        <ul class="feature-list">
+          <li>統合CRMデータベース</li><li>カスタムプロパティ設定</li>
+          <li>外部ツール連携（API）</li><li>データクレンジング支援</li>
+          <li>セグメント・フィルタリング</li><li>エクスポート・インポート</li>
+        </ul>
+      </div>
+      <div class="feature-panel-visual">
+        <div class="visual-placeholder"><div class="visual-placeholder-icon">🗄️</div><div>Product screenshot — coming soon</div></div>
+      </div>
+    </div>
+
+    <div id="tab-ai" class="feature-panel">
+      <div class="feature-panel-text">
+        <h3>AIオートメーションで業務を加速</h3>
+        <p>反復的な業務をAIが自動化し、営業担当者が本当に価値ある仕事に集中できる環境を整えます。</p>
+        <ul class="feature-list">
+          <li>AIによる商談要約</li><li>自動フォローアップメール</li>
+          <li>次のアクション提案</li><li>リードスコアリング</li>
+          <li>売上予測</li><li>ワークフロー自動化</li>
+        </ul>
+      </div>
+      <div class="feature-panel-visual">
+        <div class="visual-placeholder"><div class="visual-placeholder-icon">🤖</div><div>Product screenshot — coming soon</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p class="copyright">Copyright © 2026 Sales Anchor, Inc.</p>
+  <div class="footer-links">
+    <a href="#">プライバシーポリシー</a>
+    <a href="#">利用規約</a>
+    <a href="#">セキュリティ</a>
+    <a href="#">お問い合わせ</a>
+  </div>
+</footer>
+
+<script>
+function switchTab(e, tabId) {
+  document.querySelectorAll('.feature-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.feature-panel').forEach(p => p.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+}
+</script>
+</body>
+</html>
