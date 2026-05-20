@@ -101,7 +101,7 @@ FPS: 60
 | Leads（リスト）| **Leads** (top-level) | `/leads` |
 
 **撮影上の注意**:
-- サイドバーは初期状態 **icon-only**（幅 ~60px）。展開トグルは底部の「**More**」(…) アイコンまたはヘッダー（端末によっては「☰」）
+- サイドバーは初期状態 **icon-only**（幅 ~60px）。展開は **サイドバー底部の「More」(…) アイコンをクリック**（2026-05-20 実機検証で確定。`/` 画面で MousePosé のリングが (40, 462) 付近に来る位置）
 - 展開状態を維持して、各シーン冒頭でサブメニューが目視できるようにする
 - ナレーション英文中では引き続き "Inbox" "Channels" "Customers" の英単語を使ってよい（Meta 審査担当は機能ロジックを評価し、UI ラベルの細部一致は不問）
 
@@ -139,7 +139,7 @@ FPS: 60
 | 0:02 | Email 欄に `review@salesanchor.jp` を入力（KeyCastr で表示） |
 | 0:06 | Password 欄に仮パスワードを入力（KeyCastr は伏字） |
 | 0:10 | 「ログイン」ボタンをクリック |
-| 0:12 | Dashboard 画面が表示される（リード件数、商談件数、最新通知などのサマリー） |
+| 0:12 | Dashboard 画面が表示される（Sales / Finance / Inventory & purchasing の 3 セクションの KPI カード群 + Recent customers / Recent deals テーブル）。v3.1: 2026-05-20 実機検証で `Customers / Leads / Inbound・Outbound / Conversion / Open deals / Won deals / Won amount` 等の KPI 構成を確認済 |
 | 0:18 | 左サイドバーを「More」(…) アイコンで展開した状態にし、**Leads** を展開して「Lead Chat」(Inbox に相当) をハイライト → **Admin** を展開して「Channels (Meta)」をハイライト → **Leads > Companies** (Customers に相当) をハイライト の順でマウスをなぞる |
 | 0:25 | カーソルを画面中央に戻す |
 
@@ -233,7 +233,7 @@ FPS: 60
 | 秒 | 操作 |
 |---|---|
 | 1:30 | Sales Anchor のサイドバーで **Leads** メニューを展開 → 「**Lead Chat**」(Inbox 受信箱) をクリック → `/lead-chat` 遷移 |
-| 1:34 | Inbox 画面が表示される（左ペイン: 会話リスト、右ペイン: メッセージ表示エリア） |
+| 1:34 | **Lead Chat (Inbox) 画面**が表示される（左ペイン: 会話リスト、右ペイン: メッセージ表示エリア） |
 | 1:38 | カーソルを Messenger ウィンドウ（別画面）に移動。Messenger Web で `HIGH LIFE JPN Test Page` 宛にメッセージを書く: `Hello, I'd like to ask about your products.` |
 | 1:50 | 送信ボタンクリック |
 | 1:53 | Sales Anchor 側に戻る。10 秒以内（最大 polling 周期）に左ペインに新しい会話が出現 |
