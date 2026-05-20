@@ -202,7 +202,8 @@
     "status_active": "有効",
     "status_inactive": "無効",
     "status_archived": "アーカイブ",
-    "phoneError": "電話番号の形式が正しくありません（例: 03-1234-5678, 090-1234-5678）"
+    "phoneError": "電話番号の形式が正しくありません（例: 03-1234-5678, 090-1234-5678）",
+    "searchPlaceholder": "会社名・顧客コード・請求名義で検索..."
   },
   "companies": {
     "title": "会社管理",
@@ -740,7 +741,12 @@
     "noCompany": "会社が未選択",
     "noContact": "担当者が未選択",
     "companyRequired": "会社を選択してください",
-    "contactRequired": "会社と担当者を選択してください"
+    "contactRequired": "会社と担当者を選択してください",
+    "contact": "担当者",
+    "companyMissing": "選択中の会社が見つかりません",
+    "contactsFetchError": "担当者の取得に失敗しました",
+    "companyNotInList": "指定された会社が一覧に存在しません。再度選択してください。",
+    "primarySuffix": "（主担当）"
   },
   "confirmModal": {
     "defaultConfirm": "OK",
