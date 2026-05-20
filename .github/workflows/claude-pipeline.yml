@@ -1,5 +1,17 @@
 name: Claude Max Auto-Pipeline (Partner Subscription)
 
+# ADR-056: develop までの完全自動化 (Human-in-the-Loop Minimization)
+#
+# トリガー:
+#   - workflow_dispatch: ADR 着手 (claude-worker → reviewer → evaluator → automerge or regenerate)
+#   - pull_request (synchronize): regenerate が PR ブランチに push した後、reviewer 以降を自動再起動
+#
+# 安全装置:
+#   - pause-automation label PR は automerge / regenerate を停止
+#   - auto-retry-1..3 label で最大 3 回までリトライ、超過で needs-human-intervention label を付与し停止
+#   - automerge の --delete-branch は claude-impl/* のみ (ADR-050)
+#   - main の自動 merge は行わない (本 ADR scope 外)
+
 on:
   workflow_dispatch:
     inputs:
@@ -7,23 +19,110 @@ on:
         description: '実装対象のADRファイル（スペース区切り。例: ADR-013.md docs/adr/ADR-014.md）'
         required: true
         type: string
+  pull_request:
+    types: [synchronize]
 
 permissions:
   contents: write
   pull-requests: write
+  issues: write
+
+env:
+  MAX_AUTO_RETRIES: 3
 
 jobs:
-  claude-worker:
+  # ADR-056: 全ジョブで共有する context (event 種別 / PR / ADR files / pause-automation 判定)
+  context:
     runs-on: self-hosted
-    if: github.actor == 'shingo-ops' || github.actor == 'Hikky-dev'
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'pull_request' &&
+        startsWith(github.event.pull_request.head.ref, 'claude-impl/') &&
+        github.event.pull_request.base.ref == 'develop'
+      )
+    outputs:
+      proceed: ${{ steps.gate.outputs.proceed }}
+      halt_reason: ${{ steps.gate.outputs.halt_reason }}
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+      pr_url: ${{ steps.resolve.outputs.pr_url }}
+      pr_head_ref: ${{ steps.resolve.outputs.pr_head_ref }}
+      adr_files: ${{ steps.resolve.outputs.adr_files }}
+      retry_count: ${{ steps.resolve.outputs.retry_count }}
+    steps:
+      - name: Resolve PR / ADR context
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            PR_URL="${{ github.event.pull_request.html_url }}"
+            PR_HEAD_REF="${{ github.event.pull_request.head.ref }}"
+            PR_JSON=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json body,labels)
+            # PR 本文の最初の ``` で囲まれたブロックを ADR file list と解釈する
+            ADR_FILES=$(echo "$PR_JSON" | jq -r '.body' | awk '/^```$/{c++; next} c==1' | tr '\n' ' ' | sed 's/  */ /g' | sed 's/ *$//')
+            RETRY_COUNT=$(echo "$PR_JSON" | jq -r '[.labels[].name | select(startswith("auto-retry-"))] | length')
+          else
+            PR_NUMBER=""
+            PR_URL=""
+            PR_HEAD_REF=""
+            ADR_FILES="${{ inputs.adr_files }}"
+            RETRY_COUNT=0
+          fi
+          {
+            echo "pr_number=$PR_NUMBER"
+            echo "pr_url=$PR_URL"
+            echo "pr_head_ref=$PR_HEAD_REF"
+            echo "adr_files=$ADR_FILES"
+            echo "retry_count=$RETRY_COUNT"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check pause-automation / needs-human-intervention labels
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
+        run: |
+          set -e
+          PROCEED="true"
+          REASON=""
+          if [ -n "$PR_NUMBER" ]; then
+            LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels --jq '.labels[].name')
+            if echo "$LABELS" | grep -qxF "pause-automation"; then
+              PROCEED="false"
+              REASON="pause-automation label present"
+            elif echo "$LABELS" | grep -qxF "needs-human-intervention"; then
+              PROCEED="false"
+              REASON="needs-human-intervention label present"
+            fi
+          fi
+          {
+            echo "proceed=$PROCEED"
+            echo "halt_reason=$REASON"
+          } >> "$GITHUB_OUTPUT"
+          echo "proceed=$PROCEED reason=$REASON"
+
+  claude-worker:
+    needs: context
+    runs-on: self-hosted
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      needs.context.outputs.proceed == 'true' &&
+      (github.actor == 'shingo-ops' || github.actor == 'Hikky-dev')
     outputs:
       pr_number: ${{ steps.create-pr.outputs.pr_number }}
       pr_url: ${{ steps.create-pr.outputs.pr_url }}
+      pr_head_ref: ${{ steps.create-pr.outputs.pr_head_ref }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           # self-hosted runner の ~/.gitconfig credential helper へのフォールバック回避
+          # ADR-056: PIPELINE_PAT は regenerate からの push が pull_request:synchronize を発火させるためにも必須
           token: ${{ secrets.PIPELINE_PAT }}
 
       - name: Validate ADR paths
@@ -50,15 +149,6 @@ jobs:
             fi
           done
           echo "Validated: $ADR_FILES"
-
-      - name: Notify Discord (Start)
-        env:
-          ADR_FILES: ${{ inputs.adr_files }}
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
-        run: |
-          PAYLOAD=$(jq -nc --arg files "$ADR_FILES" \
-            '{content: ("🔨 **手動トリガーでADR実装開始**\nファイル: " + $files)}')
-          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
 
       - name: Run Claude Code
         env:
@@ -115,6 +205,7 @@ jobs:
             echo "No changes to commit or push"
             echo "pr_number=" >> "$GITHUB_OUTPUT"
             echo "pr_url=" >> "$GITHUB_OUTPUT"
+            echo "pr_head_ref=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -130,8 +221,8 @@ jobs:
 
           git push origin "$BRANCH_NAME"
 
-          # PR 本文を組み立て、PR を作成（auto-mergeはしない）
-          PR_BODY=$(printf 'Auto-generated implementation for the following ADR(s):\n\n```\n%s\n```\n\n**This PR is NOT auto-merged.** Web Claude (claude.ai) will verify the diff against AC, then Shingo will merge.' "$ADR_FILES")
+          # ADR-056: PR 本文の最初の ``` ブロックを ADR file list として後続 (regenerate / context) が parse する
+          PR_BODY=$(printf 'Auto-generated implementation for the following ADR(s):\n\n```\n%s\n```\n\nADR-056 により develop までの自動化フローで処理されます:\n- Reviewer + Evaluator が APPROVED → 自動 merge to develop\n- いずれかが REQUEST_CHANGES → regenerate job が自動修正 (最大 3 回)\n- リトライ上限到達時のみ Discord 通知 + `needs-human-intervention` ラベル付与\n- `pause-automation` ラベルを付けると自動化を停止できる' "$ADR_FILES")
           PR_URL=$(gh pr create \
             --base develop \
             --head "$BRANCH_NAME" \
@@ -139,19 +230,11 @@ jobs:
             --body "$PR_BODY")
           PR_NUM=$(basename "$PR_URL")
           echo "PR created: #$PR_NUM ($PR_URL)"
-          echo "PR_URL=$PR_URL" >> "$GITHUB_ENV"
-          echo "PR_NUM=$PR_NUM" >> "$GITHUB_ENV"
-          echo "pr_number=${PR_NUM}" >> "$GITHUB_OUTPUT"
-          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
-
-      - name: Notify Discord (Success)
-        if: success()
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
-        run: |
-          MSG="✅ **Claude Maxの実装が完了しました！**\nPR #${PR_NUM} が作成されました。Web Claudeのdiff検証後、Shingoがマージしてください。\n${PR_URL}"
-          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
-          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+          {
+            echo "pr_number=${PR_NUM}"
+            echo "pr_url=${PR_URL}"
+            echo "pr_head_ref=${BRANCH_NAME}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Notify Discord (Failure)
         if: failure()
@@ -162,35 +245,53 @@ jobs:
             -d '{"content": "❌ **Claude Maxの実装が失敗しました。**\nGitHub Actions のログを確認してください。"}' \
             "$WEBHOOK"
 
-  # ADR-051: Reviewer job — claude-worker が PR を作成した場合に自動起動
+  # ADR-051: Reviewer job — claude-worker が PR を作成した場合 or pull_request:synchronize で起動
   reviewer:
-    needs: claude-worker
+    needs: [context, claude-worker]
     runs-on: self-hosted
-    if: ${{ needs.claude-worker.outputs.pr_number != '' }}
+    if: |
+      always() &&
+      needs.context.outputs.proceed == 'true' &&
+      (
+        (github.event_name == 'workflow_dispatch' && needs.claude-worker.result == 'success' && needs.claude-worker.outputs.pr_number != '') ||
+        (github.event_name == 'pull_request')
+      )
     outputs:
       decision: ${{ steps.run-reviewer.outputs.decision }}
+      pr_number: ${{ steps.resolve-pr.outputs.pr_number }}
+      pr_url: ${{ steps.resolve-pr.outputs.pr_url }}
+      pr_head_ref: ${{ steps.resolve-pr.outputs.pr_head_ref }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PIPELINE_PAT }}
 
-      - name: Notify Discord (Reviewer Start)
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
-          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
-          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
+      - name: Resolve PR (workflow_dispatch vs pull_request)
+        id: resolve-pr
         run: |
-          PAYLOAD=$(jq -nc --arg pr "$PR_NUMBER" --arg url "$PR_URL" \
-            '{content: ("🔍 **Reviewer 自動起動** (ADR-051) PR #" + $pr + "\n" + $url)}')
-          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+          set -e
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_NUMBER="${{ needs.claude-worker.outputs.pr_number }}"
+            PR_URL="${{ needs.claude-worker.outputs.pr_url }}"
+            PR_HEAD_REF="${{ needs.claude-worker.outputs.pr_head_ref }}"
+          else
+            PR_NUMBER="${{ needs.context.outputs.pr_number }}"
+            PR_URL="${{ needs.context.outputs.pr_url }}"
+            PR_HEAD_REF="${{ needs.context.outputs.pr_head_ref }}"
+          fi
+          {
+            echo "pr_number=$PR_NUMBER"
+            echo "pr_url=$PR_URL"
+            echo "pr_head_ref=$PR_HEAD_REF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Run Claude Code as Reviewer
         id: run-reviewer
         env:
-          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
-          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
-          ADR_FILES: ${{ inputs.adr_files }}
+          PR_NUMBER: ${{ steps.resolve-pr.outputs.pr_number }}
+          PR_URL: ${{ steps.resolve-pr.outputs.pr_url }}
+          ADR_FILES: ${{ needs.context.outputs.adr_files }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
@@ -237,27 +338,17 @@ jobs:
           fi
           echo "decision=${DECISION}" >> "$GITHUB_OUTPUT"
 
-      - name: Notify Discord (Reviewer Result)
-        if: always()
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
-          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
-          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
-          DECISION: ${{ steps.run-reviewer.outputs.decision }}
-        run: |
-          if [ "${DECISION}" = "APPROVED" ]; then
-            MSG="✅ **Reviewer APPROVED** PR #${PR_NUMBER} → Evaluator 自動起動\n${PR_URL}"
-          else
-            MSG="🔄 **Reviewer REQUEST_CHANGES** PR #${PR_NUMBER} → Generator による修正が必要です\n${PR_URL}"
-          fi
-          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
-          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
-
   # ADR-051: Evaluator job — Reviewer が APPROVED した場合に自動起動
   evaluator:
-    needs: [claude-worker, reviewer]
+    needs: [context, claude-worker, reviewer]
     runs-on: self-hosted
-    if: ${{ needs.reviewer.outputs.decision == 'APPROVED' }}
+    if: |
+      always() &&
+      needs.context.outputs.proceed == 'true' &&
+      needs.reviewer.outputs.decision == 'APPROVED'
+    outputs:
+      decision: ${{ steps.finalize.outputs.decision }}
+      skip: ${{ steps.check-method.outputs.skip }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -268,7 +359,7 @@ jobs:
         id: check-method
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
         run: |
           PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body' 2>/dev/null || echo "")
           if echo "$PR_BODY" | grep -qF '- [x] Skip'; then
@@ -277,27 +368,40 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # ADR-055: Playwright MCP セットアップ確認 (Layer 1 が使えない場合は早期に気付く)
+      - name: Verify Playwright MCP available
+        if: steps.check-method.outputs.skip != 'true'
+        continue-on-error: true
+        run: |
+          npx playwright --version 2>/dev/null && echo "Playwright CLI: OK" || echo "Playwright CLI: NOT FOUND"
+          ls -d ~/Library/Caches/ms-playwright/chromium-* 2>/dev/null | head -1 >/dev/null \
+            && echo "Chromium browser cache: OK" \
+            || echo "Chromium browser cache: NOT FOUND (run: npx playwright install chromium)"
+          node -e "require('@playwright/mcp')" 2>/dev/null \
+            && echo "Playwright MCP module (@playwright/mcp): OK" \
+            || echo "Playwright MCP module (@playwright/mcp): NOT FOUND (run: npm install -g @playwright/mcp)"
+
       - name: Auto-approve (Evaluator Skip declared)
         if: steps.check-method.outputs.skip == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
           REPO: ${{ github.repository }}
         run: |
           # ADR-053: gh pr review --approve は同一 Bot アカウントによる self-approve 制限で失敗するため、
-          # gh pr comment で判定通知に切り替え。最終 merge は Shingo が手動実行する。
+          # gh pr comment で判定通知に切り替え。最終 merge は automerge job が実行する (ADR-056)。
           gh pr comment "$PR_NUMBER" --repo "$REPO" \
             --body "## Evaluator 判定: APPROVED (Skip)
 
-          Evaluator Skip 宣言を確認。UI/UX 変更なしとして自動承認。Shingo が diff 確認後マージしてください。"
+          Evaluator Skip 宣言を確認。UI/UX 変更なしとして自動承認。automerge job が develop に自動マージします (ADR-056)。"
 
       - name: Run Claude Code as Evaluator
         if: steps.check-method.outputs.skip != 'true'
         id: run-evaluator
         env:
-          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
-          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
-          ADR_FILES: ${{ inputs.adr_files }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          PR_URL: ${{ needs.reviewer.outputs.pr_url }}
+          ADR_FILES: ${{ needs.context.outputs.adr_files }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
@@ -344,21 +448,262 @@ jobs:
           fi
           echo "decision=${EVAL_DECISION}" >> "$GITHUB_OUTPUT"
 
-      - name: Notify Discord (Evaluator Result — merge 待ち)
-        if: always()
+      - name: Finalize evaluator decision (Skip = APPROVED)
+        id: finalize
         env:
-          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
-          PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
-          PR_URL: ${{ needs.claude-worker.outputs.pr_url }}
           SKIP: ${{ steps.check-method.outputs.skip }}
-          EVAL_DECISION: ${{ steps.run-evaluator.outputs.decision }}
+          RUN_DECISION: ${{ steps.run-evaluator.outputs.decision }}
         run: |
           if [ "${SKIP}" = "true" ]; then
-            MSG="✅ **Evaluator Skip 自動承認** PR #${PR_NUMBER} → Shingo が diff 確認後マージしてください\n${PR_URL}"
-          elif [ "${EVAL_DECISION}" = "APPROVED" ]; then
-            MSG="✅ **Evaluator APPROVED** PR #${PR_NUMBER} → Shingo が diff 確認後マージしてください\n${PR_URL}"
+            echo "decision=APPROVED" >> "$GITHUB_OUTPUT"
           else
-            MSG="🔄 **Evaluator REQUEST_CHANGES** PR #${PR_NUMBER} → Generator による修正が必要です\n${PR_URL}"
+            echo "decision=${RUN_DECISION}" >> "$GITHUB_OUTPUT"
           fi
+
+  # ADR-056 §2-5: 両 APPROVE 時に develop へ自動 merge
+  automerge:
+    needs: [context, claude-worker, reviewer, evaluator]
+    runs-on: self-hosted
+    if: |
+      always() &&
+      needs.context.outputs.proceed == 'true' &&
+      needs.reviewer.outputs.decision == 'APPROVED' &&
+      needs.evaluator.outputs.decision == 'APPROVED'
+    steps:
+      - name: Auto-merge to develop
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          PR_HEAD_REF: ${{ needs.reviewer.outputs.pr_head_ref }}
+        run: |
+          set -e
+          # ADR-050: --delete-branch は feature ブランチ (claude-impl/*) のみに適用する
+          # --admin: branch protection rules (required status checks 等) をバイパスして即時マージ
+          if echo "$PR_HEAD_REF" | grep -qE '^claude-impl/'; then
+            echo "Feature branch $PR_HEAD_REF → --squash --delete-branch --admin"
+            gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --delete-branch --admin
+          else
+            echo "Non-feature branch $PR_HEAD_REF → --squash --admin (no --delete-branch)"
+            gh pr merge "$PR_NUMBER" --repo "$REPO" --squash --admin
+          fi
+
+      - name: Notify Discord (develop merged)
+        if: success()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          PR_URL: ${{ needs.reviewer.outputs.pr_url }}
+          ADR_FILES: ${{ needs.context.outputs.adr_files }}
+        run: |
+          MSG="✅ **develop merged** PR #${PR_NUMBER}\nADR: ${ADR_FILES}\n${PR_URL}"
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+
+      - name: Notify Discord (merge failure)
+        if: failure()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          PR_URL: ${{ needs.reviewer.outputs.pr_url }}
+        run: |
+          MSG="❌ **automerge 失敗** PR #${PR_NUMBER}\n${PR_URL}\nGitHub Actions ログを確認してください。"
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+
+  # ADR-056 §2-2: いずれかの reviewer/evaluator が REQUEST_CHANGES を出した場合に自動修正
+  regenerate:
+    needs: [context, claude-worker, reviewer, evaluator]
+    runs-on: self-hosted
+    if: |
+      always() &&
+      needs.context.outputs.proceed == 'true' &&
+      (
+        needs.reviewer.outputs.decision == 'REQUEST_CHANGES' ||
+        needs.evaluator.outputs.decision == 'REQUEST_CHANGES'
+      )
+    steps:
+      - name: Ensure automation labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          # ADR-056: 自動修正のリトライ管理に使うラベルを冪等に作成
+          create_label() {
+            local name="$1"
+            local color="$2"
+            local desc="$3"
+            gh label create "$name" --repo "$REPO" --color "$color" --description "$desc" 2>/dev/null || true
+          }
+          create_label "auto-retry-1" "fbca04" "ADR-056: 自動修正リトライ 1 回目"
+          create_label "auto-retry-2" "fbca04" "ADR-056: 自動修正リトライ 2 回目"
+          create_label "auto-retry-3" "fbca04" "ADR-056: 自動修正リトライ 3 回目 (最終)"
+          create_label "needs-human-intervention" "d73a4a" "ADR-056: 自動修正リトライ上限到達 / 人間介入が必要"
+          create_label "pause-automation" "5319e7" "ADR-056: claude-pipeline 自動化を一時停止 (緊急停止用)"
+
+      - name: Evaluate retry policy
+        id: policy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          CURRENT_RETRY: ${{ needs.context.outputs.retry_count }}
+        run: |
+          set -e
+          NEXT_RETRY=$((CURRENT_RETRY + 1))
+          HALT="false"
+          REASON=""
+
+          if [ "$NEXT_RETRY" -gt "$MAX_AUTO_RETRIES" ]; then
+            HALT="true"
+            REASON="retry-limit-reached (${CURRENT_RETRY}/${MAX_AUTO_RETRIES})"
+          fi
+
+          # ADR-056 §2-3: 同一指摘の繰り返し検出
+          # 直近 2 件の Reviewer/Evaluator 判定コメントを比較し、本文の冒頭 1000 文字が完全一致なら halt
+          if [ "$HALT" = "false" ] && [ "$CURRENT_RETRY" -ge 1 ]; then
+            COMMENTS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+              --jq '[.comments[] | select(.body | test("^## (Reviewer|Evaluator) 判定:"))] | sort_by(.createdAt) | reverse')
+            LATEST=$(echo "$COMMENTS" | jq -r '.[0].body // ""' | head -c 1000)
+            PREVIOUS=$(echo "$COMMENTS" | jq -r '.[1].body // ""' | head -c 1000)
+            if [ -n "$LATEST" ] && [ "$LATEST" = "$PREVIOUS" ]; then
+              HALT="true"
+              REASON="same-feedback-repeated"
+            fi
+          fi
+
+          {
+            echo "halt=$HALT"
+            echo "reason=$REASON"
+            echo "next_retry=$NEXT_RETRY"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Halt — request human intervention
+        if: steps.policy.outputs.halt == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          PR_URL: ${{ needs.reviewer.outputs.pr_url }}
+          REASON: ${{ steps.policy.outputs.reason }}
+        run: |
+          set -e
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "needs-human-intervention"
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "## 🛑 自動修正停止 (ADR-056)
+
+          理由: ${REASON}
+
+          \`needs-human-intervention\` ラベルを付与しました。人間 (しんごさん / Hikky-dev) が PR を確認し、手動で修正を反映してください。
+          自動修正を再開する場合は、ラベルを外して PR ブランチに push してください。"
+          MSG="⚠️ **自動修正停止** PR #${PR_NUMBER}\n理由: ${REASON}\n人間介入が必要です。\n${PR_URL}"
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+          exit 0
+
+      - name: Tag retry attempt
+        if: steps.policy.outputs.halt == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          NEXT_RETRY: ${{ steps.policy.outputs.next_retry }}
+        run: |
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "auto-retry-${NEXT_RETRY}"
+
+      - name: Checkout PR head branch
+        if: steps.policy.outputs.halt == 'false'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PIPELINE_PAT }}
+          ref: ${{ needs.reviewer.outputs.pr_head_ref }}
+          fetch-depth: 0
+
+      - name: Run Claude Code as Generator (regenerate)
+        if: steps.policy.outputs.halt == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          ADR_FILES: ${{ needs.context.outputs.adr_files }}
+          NEXT_RETRY: ${{ steps.policy.outputs.next_retry }}
+        run: |
+          set -e
+          # 直近の Reviewer / Evaluator 判定コメントを抽出 (regenerate プロンプトの入力)
+          REVIEWER_FB=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | test("^## Reviewer 判定:"))] | sort_by(.createdAt) | last | .body // ""')
+          EVAL_FB=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | test("^## Evaluator 判定:"))] | sort_by(.createdAt) | last | .body // ""')
+
+          {
+            echo "===== Reviewer feedback ====="
+            echo "$REVIEWER_FB"
+            echo
+            echo "===== Evaluator feedback ====="
+            echo "$EVAL_FB"
+          } > /tmp/regenerate_feedback.txt
+
+          claude -p \
+            --disallowedTools "WebFetch WebSearch" \
+            --allowedTools "Read Write Edit Grep Glob \
+              Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(mkdir:*) Bash(touch:*) \
+              Bash(git diff:*) Bash(git log:*) Bash(git status:*) Bash(git rev-parse:*) Bash(git fetch:*) Bash(git add:*) Bash(git commit:*) Bash(git checkout:*) Bash(git switch:*) \
+              Bash(gh pr view:*) Bash(gh pr diff:*) \
+              Bash(npm test:*) Bash(npm run:*) Bash(npx playwright test:*) \
+              Bash(pytest:*) Bash(python:*) Bash(python -m:*) \
+              Bash(bash scripts/qa/:*) Bash(bash scripts/smoke/:*) Bash(bash scripts/probe/:*) \
+              Bash(psql:*) Bash(python scripts/probe/:*)" \
+            --permission-mode bypassPermissions \
+            "ADR-056 自動修正フロー (リトライ ${NEXT_RETRY}/${MAX_AUTO_RETRIES})。
+
+          PR #${PR_NUMBER} で Reviewer または Evaluator から REQUEST_CHANGES が出ました。
+          実装対象 ADR: ${ADR_FILES}
+          指摘内容: /tmp/regenerate_feedback.txt を Read で読み込んで確認してください。
+
+          【手順】
+          1. /tmp/regenerate_feedback.txt を Read で読み込み、指摘事項を整理する
+          2. ${ADR_FILES} を Read で読み込み、Acceptance Criteria を再確認する
+          3. gh pr diff ${PR_NUMBER} で現在の差分を確認する
+          4. 指摘された問題のみをピンポイントで修正する (スコープを広げない)
+          5. 変更を git add + commit する (push は次のステップで実施)
+
+          【禁止事項】
+          - ADR のスコープ外の変更は行わない
+          - PR の作成・push・マージは行わない (この場で git commit のみ、push は次のステップで実施)
+          - feedback.md への追記は行わない"
+
+      - name: Commit and push regeneration
+        if: steps.policy.outputs.halt == 'false'
+        env:
+          NEXT_RETRY: ${{ steps.policy.outputs.next_retry }}
+          PR_HEAD_REF: ${{ needs.reviewer.outputs.pr_head_ref }}
+        run: |
+          set -e
+          git config user.email "action@github.com"
+          git config user.name "Claude-Max-Worker"
+          git add -A
+          HAS_STAGED=0
+          git diff --cached --quiet || HAS_STAGED=1
+          if [ "$HAS_STAGED" = "1" ]; then
+            git commit -m "Auto-fix attempt #${NEXT_RETRY} (ADR-056 regenerate)"
+          fi
+          # actions/checkout は detached HEAD になることがあるので refspec で push 先 branch を明示
+          # PIPELINE_PAT で push することで pull_request:synchronize が発火し、reviewer が自動再起動する
+          AHEAD=$(git rev-list --count "origin/${PR_HEAD_REF}..HEAD" 2>/dev/null || echo 0)
+          if [ "$AHEAD" = "0" ]; then
+            echo "regenerate produced no new commits — nothing to push"
+            exit 0
+          fi
+          git push origin "HEAD:refs/heads/${PR_HEAD_REF}"
+
+      - name: Notify Discord (regenerate failure)
+        if: failure() && steps.policy.outputs.halt == 'false'
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          PR_URL: ${{ needs.reviewer.outputs.pr_url }}
+        run: |
+          MSG="❌ **regenerate 失敗** PR #${PR_NUMBER}\n${PR_URL}\nGitHub Actions ログを確認してください。"
           PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
           curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
