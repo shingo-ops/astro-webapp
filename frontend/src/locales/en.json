@@ -202,7 +202,8 @@
     "status_active": "Active",
     "status_inactive": "Inactive",
     "status_archived": "Archived",
-    "phoneError": "Invalid phone number format (e.g. 03-1234-5678, 090-1234-5678)"
+    "phoneError": "Invalid phone number format (e.g. 03-1234-5678, 090-1234-5678)",
+    "searchPlaceholder": "Search by company name, customer code, or billing name..."
   },
   "companies": {
     "title": "Companies",
@@ -740,7 +741,12 @@
     "noCompany": "No company selected",
     "noContact": "No contact selected",
     "companyRequired": "Please select a company",
-    "contactRequired": "Please select a company and contact"
+    "contactRequired": "Please select a company and contact",
+    "contact": "Contact",
+    "companyMissing": "Selected company not found",
+    "contactsFetchError": "Failed to fetch contacts",
+    "companyNotInList": "Selected company is not in the list. Please select again.",
+    "primarySuffix": " (Primary)"
   },
   "confirmModal": {
     "defaultConfirm": "OK",

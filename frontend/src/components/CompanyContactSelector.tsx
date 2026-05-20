@@ -176,9 +176,9 @@ export default function CompanyContactSelector({
   // contacts ドロップダウンのプレースホルダ
   const contactsPlaceholder = (() => {
     if (value.companyId === null) return t("companyContactSelector.companyRequired");
-    if (companyIdMissing) return "選択中の会社が見つかりません";
+    if (companyIdMissing) return t("companyContactSelector.companyMissing");
     if (loadingContacts) return t("common.loading");
-    if (contactsLoadFailed) return "担当者の取得に失敗しました";
+    if (contactsLoadFailed) return t("companyContactSelector.contactsFetchError");
     if (contacts.length === 0) return t("companyContactSelector.noContact");
     return t("companyContactSelector.selectContact");
   })();
@@ -205,12 +205,12 @@ export default function CompanyContactSelector({
             className="error-message"
             style={{ marginTop: 4, fontSize: "0.875rem" }}
           >
-            指定された会社が一覧に存在しません。再度選択してください。
+            {t("companyContactSelector.companyNotInList")}
           </div>
         )}
       </div>
       <div className="form-group">
-        {showLabels && <label>担当者{required ? " *" : ""}</label>}
+        {showLabels && <label>{t("companyContactSelector.contact")}{required ? " *" : ""}</label>}
         <select
           required={required}
           disabled={
@@ -226,7 +226,7 @@ export default function CompanyContactSelector({
           {contacts.map((c) => (
             <option key={c.id} value={c.id}>
               {contactDisplayName(c)}
-              {c.is_primary_contact ? "（主担当）" : ""}
+              {c.is_primary_contact ? t("companyContactSelector.primarySuffix") : ""}
             </option>
           ))}
         </select>
