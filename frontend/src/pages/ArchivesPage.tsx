@@ -30,7 +30,7 @@ export default function ArchivesPage() {
       {error && <div className="error-message">{error}</div>}
       {loading ? <div className="loading">{t("common.loading")}</div> : (
         <table className="data-table">
-          <thead><tr><th>{t("common.type")}</th><th>元ID</th><th>{t("common.date")}</th><th>復元日</th><th>{t("common.actions")}</th></tr></thead>
+          <thead><tr><th>{t("common.type")}</th><th>{t("archives.sourceId")}</th><th>{t("common.date")}</th><th>{t("archives.restoredAt")}</th><th>{t("common.actions")}</th></tr></thead>
           <tbody>
             {archives.map(a => (
               <tr key={a.id}>
@@ -38,8 +38,8 @@ export default function ArchivesPage() {
                 <td>{new Date(a.archived_at).toLocaleDateString()}</td>
                 <td>{a.restored_at ? new Date(a.restored_at).toLocaleDateString() : "-"}</td>
                 <td className="actions">
-                  {!a.restored_at && hasPermission("archive.manage") && <button className="btn-sm btn-primary" onClick={() => restore(a.id)}>復元</button>}
-                  {a.restored_at && <span className="badge badge-won">復元済</span>}
+                  {!a.restored_at && hasPermission("archive.manage") && <button className="btn-sm btn-primary" onClick={() => restore(a.id)}>{t("archives.restore")}</button>}
+                  {a.restored_at && <span className="badge badge-won">{t("archives.restored")}</span>}
                 </td>
               </tr>
             ))}
