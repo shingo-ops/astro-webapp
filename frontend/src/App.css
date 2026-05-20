@@ -1572,3 +1572,202 @@
     justify-content: flex-end;
   }
 }
+
+/* ============================================================
+   CompanyDetailPage / MergeCompanyModal で使われる共通フォームレイアウト
+   2026-05-20 追加: 既存実装は .form-grid / .form-row / .tabs / .tab
+   クラスを参照していたが CSS が未定義で UI が崩れていた。
+   ============================================================ */
+
+.page-container {
+  padding: 24px 32px;
+  max-width: 1200px;
+}
+
+.page-container .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.page-container .page-header h1,
+.page-container .page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 8px 0 0;
+}
+
+.page-container .page-header h1 span,
+.page-container .page-header h2 span {
+  color: var(--text-muted);
+}
+
+.page-container .page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* タブナビゲーション (CompanyDetailPage の 4 タブ用) */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--border);
+  margin: 16px 0 24px;
+  flex-wrap: wrap;
+}
+
+.tabs .tab {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  margin-bottom: -2px;
+  border-radius: 4px 4px 0 0;
+}
+
+.tabs .tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.tabs .tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.tabs .tab.active:hover {
+  background: var(--link-active-bg);
+}
+
+/* フォームグリッド (2 カラムレイアウト、狭い画面では 1 カラム) */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px 24px;
+  background: var(--bg-surface);
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.form-grid > .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-grid > .form-row > label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-grid > .form-row input:not([type="checkbox"]):not([type="radio"]),
+.form-grid > .form-row select,
+.form-grid > .form-row textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.form-grid > .form-row textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-grid > .form-row input:focus,
+.form-grid > .form-row select:focus,
+.form-grid > .form-row textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
+}
+
+.form-grid > .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  grid-column: 1 / -1;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* MergeCompanyModal 等、modal 内で使われる form-row は単カラム */
+.modal-content .form-row,
+.modal-content-wide .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.modal-content .form-row > label,
+.modal-content-wide .form-row > label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.modal-content .form-row input:not([type="checkbox"]):not([type="radio"]),
+.modal-content .form-row select,
+.modal-content .form-row textarea,
+.modal-content-wide .form-row input:not([type="checkbox"]):not([type="radio"]),
+.modal-content-wide .form-row select,
+.modal-content-wide .form-row textarea {
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.modal-content .form-row textarea,
+.modal-content-wide .form-row textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.modal-content .form-row input:focus,
+.modal-content .form-row select:focus,
+.modal-content .form-row textarea:focus,
+.modal-content-wide .form-row input:focus,
+.modal-content-wide .form-row select:focus,
+.modal-content-wide .form-row textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
+}
+
+/* 狭い画面 (~ 720px) では form-grid を 1 カラムに */
+@media (max-width: 720px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .page-container {
+    padding: 16px;
+  }
+}
