@@ -225,6 +225,10 @@ async def _apply_catchup_migrations(engine, tenant_id: int, schema_name: str) ->
     # --- テナント固有 migration（{schema} / {tenant_id} を展開して実行）---
     # deploy.yml の migration runner 追加順序に合わせる（依存関係を考慮した順）。
     tenant_migrations: list[tuple[str, str]] = [
+        # Phase 5: 拡張機能テーブル (shifts / buddy / badges / erp_sync_logs)
+        # NOTE: 2026-05-20 に catch-up 追加。それ以前に作られたテナントは
+        # scripts/migrate_011_phase5_tenant_tables.py で遅延適用される。
+        ("011_add_phase5_tenant_tables.sql",               "011: shifts + buddy + badges + erp_sync_logs"),
         # Phase 1-D: Meta Inbox
         ("040_create_tenant_meta_config.sql",              "040: tenant_meta_config"),
         ("041_extend_meta_messages.sql",                   "041: meta_messages 9列追加"),
