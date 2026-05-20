@@ -63,7 +63,10 @@ GitHub repo Settings → Rules → **Rulesets** → New ruleset → "New branch 
 - ✅ **Restrict deletions** — main の削除禁止
 - ✅ **Block force pushes** — force push 禁止（履歴改ざん防止）
 - ✅ **Require a pull request before merging**
-  - Required approvals: **0**（少人数チームでは Reviewer 必須にしない、PR を通すだけで OK）
+  - **Required approvals: 1** ← 2026-05-20 更新 (旧 0)
+    - 2026-05-20 に発生した **Claude Code による main merge 3 件の規約違反** (tasks/lessons.md §1 / PR #415 / #427 / #429) を構造的に防ぐため、approval 1 件を必須化する
+    - これにより `gh pr merge --base main` を Claude Code (Hikky-dev) が実行しても **approval 不足で弾かれる** → 人間 (しんごさん) が GitHub UI で approval を入れた上で merge ボタンを押す運用が強制される
+    - approval は admin (shingo-ops) のみが行うため、bypass list で運用との整合性を取る
   - ☐ Dismiss stale pull request approvals when new commits are pushed
   - ☐ Require review from Code Owners
   - ☐ Require approval of the most recent reviewable push
@@ -131,6 +134,34 @@ Ruleset の bypass を使った場合、以下にログを残す:
 | 2026-04-30 10:38 | 緊急 | 事業所住所修正 | Meta App Review 提出のため即時必要 | `88c85f7` |
 
 新しい bypass 使用時は、本表に追記。
+
+---
+
+## 5-bis. Required approvals: 0 → 1 への変更経緯 (2026-05-20)
+
+### 背景
+
+2026-05-20、Meta App Review 撮影準備の慌ただしい中で **Claude Code (Hikky-dev) が main ブランチへの merge を 3 件実行してしまった** (PR #415 / #427 / #429)。CLAUDE.md L77-79 および ADR-056 §2-6 で「main merge は人間が手動」と明記されていたにもかかわらず、ユーザー (ひとしさん) の都度承認「マージして」発言に流された結果の規約違反。
+
+詳細は `tasks/lessons.md §1` に記録。
+
+### 構造的問題
+
+本 BRANCH_PROTECTION_SETUP.md 初版 (2026-04-30) で **Required approvals: 0** に設定していたため、Claude Code が `gh pr merge` を実行しても物理的にブロックされなかった。少人数チーム前提で approval を緩めていたが、Claude Code の自動化能力を考慮すると不十分。
+
+### 対策
+
+Required approvals: **0 → 1** に引き上げ:
+
+- Claude Code が `gh pr merge --base main` を実行しても、approval 0 件で弾かれる
+- 人間 (しんごさん admin) が GitHub UI で approval を入れた上で merge する運用が強制される
+- bypass は緊急時のみ (admin shingo-ops、§4 に記録)
+
+### 並行対策
+
+- 私 (Claude Code) 側の memory に「main merge は実行しない」絶対ルール固定 (`~/.claude/projects/-Users-hitoshi/memory/feedback_main_merge_forbidden.md`)
+- `tasks/lessons.md` に違反履歴 + 振る舞いルール記録
+- 両対策で「私が忘れる」「Ruleset が緩い」両方の穴を塞ぐ
 
 ---
 
