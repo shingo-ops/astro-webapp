@@ -199,7 +199,7 @@ jobs:
           claude -p \
             --disallowedTools "WebFetch WebSearch" \
             --allowedTools "Read Grep Glob \
-              Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr review:*) \
+              Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr comment:*) \
               Bash(git log:*) Bash(git diff:*) Bash(git show:*) Bash(git rev-parse:*) \
               Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(echo:*) Bash(tee:*)" \
             --permission-mode bypassPermissions \
@@ -216,20 +216,24 @@ jobs:
           2. gh pr view ${PR_NUMBER} --json body,title で PR 本文と Evaluator method 宣言を確認してください
           3. 実装対象 ADR ファイル (${ADR_FILES}) を Read で読み込み、Acceptance Criteria を確認してください
           4. reviewer エージェントの基準に従いコードレビューを実施してください
-          5. 以下のいずれかを実行してください:
-             - 承認: gh pr review ${PR_NUMBER} --repo ${REPO} --approve --body '承認理由...'
-             - 変更要求: gh pr review ${PR_NUMBER} --repo ${REPO} --request-changes --body '指摘事項...'
-          6. 決定 (APPROVED または CHANGES_REQUESTED) のみを /tmp/reviewer_decision.txt に書き込んでください
+          5. 判定結果を PR コメントとして投稿してください (gh pr review は使わないこと。ADR-053 の self-approve 制限回避のため):
+             gh pr comment ${PR_NUMBER} --repo ${REPO} --body '## Reviewer 判定: APPROVED | REQUEST_CHANGES
+
+             理由 / 指摘事項 ...'
+          6. /tmp/reviewer_decision.txt に以下のフォーマットで書き込んでください:
+             - 1 行目: APPROVED または REQUEST_CHANGES (キーワード 1 単語のみ、他の文字を含めない)
+             - 2 行目以降: 理由本文 (省略可)
 
           【禁止事項】
           - コードの変更 (Edit/Write) は行わない
           - ブラウザは起動しない
-          - PR の作成・push・マージは行わない"
+          - PR の作成・push・マージは行わない
+          - gh pr review --approve / --request-changes は呼ばない (同一 Bot アカウントによる self-approve は GitHub 仕様で禁止されているため、ADR-053 で構造的に回避する設計)"
 
           if [ -f /tmp/reviewer_decision.txt ]; then
-            DECISION=$(cat /tmp/reviewer_decision.txt | tr -d '[:space:]')
+            DECISION=$(head -1 /tmp/reviewer_decision.txt | tr -d '[:space:]' | cut -c1-20)
           else
-            DECISION="CHANGES_REQUESTED"
+            DECISION="REQUEST_CHANGES"
           fi
           echo "decision=${DECISION}" >> "$GITHUB_OUTPUT"
 
@@ -280,8 +284,12 @@ jobs:
           PR_NUMBER: ${{ needs.claude-worker.outputs.pr_number }}
           REPO: ${{ github.repository }}
         run: |
-          gh pr review "$PR_NUMBER" --repo "$REPO" --approve \
-            --body "Evaluator Skip 宣言を確認。UI/UX 変更なしとして自動承認。"
+          # ADR-053: gh pr review --approve は同一 Bot アカウントによる self-approve 制限で失敗するため、
+          # gh pr comment で判定通知に切り替え。最終 merge は Shingo が手動実行する。
+          gh pr comment "$PR_NUMBER" --repo "$REPO" \
+            --body "## Evaluator 判定: APPROVED (Skip)
+
+          Evaluator Skip 宣言を確認。UI/UX 変更なしとして自動承認。Shingo が diff 確認後マージしてください。"
 
       - name: Run Claude Code as Evaluator
         if: steps.check-method.outputs.skip != 'true'
@@ -298,7 +306,7 @@ jobs:
           claude -p \
             --disallowedTools "WebFetch WebSearch" \
             --allowedTools "Read Grep Glob \
-              Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr review:*) \
+              Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr comment:*) \
               Bash(git log:*) Bash(git diff:*) Bash(git show:*) \
               Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(curl:*) Bash(echo:*) Bash(tee:*)" \
             --permission-mode bypassPermissions \
@@ -316,19 +324,23 @@ jobs:
              - Layer 1 (Playwright): UI/UX テストを実施
              - Layer 2 (Claude in Chrome): 指定された理由に従い実施
              - No declaration: Layer 1 をデフォルトとして実施
-          3. 以下のいずれかを実行してください:
-             - 承認: gh pr review ${PR_NUMBER} --repo ${REPO} --approve --body '評価結果...'
-             - 変更要求: gh pr review ${PR_NUMBER} --repo ${REPO} --request-changes --body '問題点...'
-          4. 決定 (APPROVED または CHANGES_REQUESTED) のみを /tmp/evaluator_decision.txt に書き込んでください
+          3. 判定結果を PR コメントとして投稿してください (gh pr review は使わないこと。ADR-053 の self-approve 制限回避のため):
+             gh pr comment ${PR_NUMBER} --repo ${REPO} --body '## Evaluator 判定: APPROVED | REQUEST_CHANGES
+
+             評価結果 / 問題点 ...'
+          4. /tmp/evaluator_decision.txt に以下のフォーマットで書き込んでください:
+             - 1 行目: APPROVED または REQUEST_CHANGES (キーワード 1 単語のみ、他の文字を含めない)
+             - 2 行目以降: 理由本文 (省略可)
 
           【禁止事項】
           - コードの変更 (Edit/Write) は行わない
-          - PR の作成・push・マージは行わない"
+          - PR の作成・push・マージは行わない
+          - gh pr review --approve / --request-changes は呼ばない (同一 Bot アカウントによる self-approve は GitHub 仕様で禁止されているため、ADR-053 で構造的に回避する設計)"
 
           if [ -f /tmp/evaluator_decision.txt ]; then
-            EVAL_DECISION=$(cat /tmp/evaluator_decision.txt | tr -d '[:space:]')
+            EVAL_DECISION=$(head -1 /tmp/evaluator_decision.txt | tr -d '[:space:]' | cut -c1-20)
           else
-            EVAL_DECISION="CHANGES_REQUESTED"
+            EVAL_DECISION="REQUEST_CHANGES"
           fi
           echo "decision=${EVAL_DECISION}" >> "$GITHUB_OUTPUT"
 
