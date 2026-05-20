@@ -178,6 +178,34 @@ When opening the PR or pushing a revision, **declare in the PR body** which Eval
 The Reviewer validates this declaration. If you wrongly declare "Skip" while frontend files changed, Reviewer will CHANGES_REQUESTED with a request to retract the skip. If you declare "Layer 2 only" but the change is a standard AC test, Reviewer may request adding Layer 1 too.
 ```
 
+#### 1-B. workflow 末尾に「マージコマンド提案ルール」セクションを追加（ADR-050）
+
+PR #406 / PR #409 (develop → main の release PR) で `gh pr merge --squash --delete-branch` が提案され、常設ブランチである `develop` が削除される事故になりかけた事案を受け、ブランチタイプ別の `--delete-branch` 判定ルールを明文化する。
+
+**追加内容**:
+```markdown
+## マージコマンド提案ルール（重要）
+
+PR のマージコマンドを提案する際、PR の base ブランチで `--delete-branch` 使用を判定する。
+
+salesanchor は **Pattern A: Git Flow ハイブリッド** を採用しており、**develop は常設ブランチ**（main も常設）として運用される。常設ブランチを `--delete-branch` で削除すると本番運用が破壊されるため、以下のルールを必ず守ること。
+
+| PR base | PR head | コマンド | --delete-branch |
+|---|---|---|---|
+| develop | feature/* or claude-impl/* | `gh pr merge --squash --delete-branch` | ✅ 付ける |
+| main | develop | `gh pr merge --squash` | ❌ **絶対に付けない** |
+| main | hotfix/* | `gh pr merge --squash --delete-branch` | ✅ 付ける |
+| その他常設ブランチ | — | `gh pr merge --squash` | ❌ 付けない |
+
+**判定方法**: PR open 時の `gh pr create --base <X>` の `<X>` で判定。
+- `<X>` が常設ブランチ (main / develop) なら `--delete-branch` 禁止
+- 例外: hotfix/* のような使い捨て head は付ける（削除されるのは head 側）
+
+**追加防御**: GitHub Ruleset で main / develop に「Restrict deletions」を設定済（ADR-050 §2-3）。`--delete-branch` 付きで実行されても GitHub 側が削除を拒否する（merge 自体は成功）。
+
+**背景**: 本ルール未明文化のため Terminal Claude Code が GitHub 一般慣習をデフォルト適用し、release PR (develop → main) でも `--delete-branch` を提案する事象が発生。詳細は `docs/adr/ADR-050-release-pr-workflow-standardization.md`。
+```
+
 ### 2. `~/.claude/agents/reviewer.md` の修正
 
 #### 2-A. frontmatter `description:` 行を以下に置換
@@ -358,6 +386,13 @@ grep -c "gh pr create" ~/.claude/agents/generator.md
 # 期待: 1 以上 (PR 作成 step が追加されている)
 
 grep -c "Evaluator skip declaration" ~/.claude/agents/generator.md
+# 期待: 1 以上
+
+# Generator (ADR-050 マージコマンド提案ルール)
+grep -c "マージコマンド提案ルール" ~/.claude/agents/generator.md
+# 期待: 1 以上
+
+grep -c "develop.*常設" ~/.claude/agents/generator.md
 # 期待: 1 以上
 
 # Reviewer
