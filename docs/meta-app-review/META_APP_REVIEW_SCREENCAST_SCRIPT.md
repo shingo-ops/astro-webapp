@@ -2,15 +2,25 @@
 
 | 項目 | 内容 |
 |---|---|
-| ステータス | **2026-05-19 v3**（ADR-041 / ADR-044 / ADR-045 反映、7 permission OAuth + Business Manager 経由対応） |
-| 作成日 | 2026-05-15（v3 改訂: 2026-05-19 by Hikky-dev、Meta 引き継ぎ初日） |
-| 作成者 | Phase 1-D Sprint 7 Generator（v3 改訂: Hikky-dev） |
+| ステータス | **2026-05-20 v3.1**（v3 + サイドバーナビゲーション実体反映） |
+| 作成日 | 2026-05-15（v3 改訂: 2026-05-19 by Hikky-dev、Meta 引き継ぎ初日 / v3.1 改訂: 2026-05-20 by Hikky-dev、サイドバー実機検証） |
+| 作成者 | Phase 1-D Sprint 7 Generator（v3/v3.1 改訂: Hikky-dev） |
 | 対象 | Meta App Review 提出用スクリーンキャスト |
 | 想定尺 | 7 分 30 秒（7 シーン × 平均 1 分） |
 | 想定言語 | ナレーション英語 / UI 英語 / 字幕英語焼き込み |
 | 関連ドキュメント | `META_APP_REVIEW_PRE_RECORDING_CHECKLIST.md`, `PHASE_1D_META_INBOX_OVERVIEW.md`, `docs/adr/ADR-041-meta-page-connection-fallback-implementation.md`, `docs/adr/ADR-044-ci-health-recovery.md`, `docs/adr/ADR-045-migration-055-deploy-automation.md`, `docs/handover/2026-05-18-meta-integration-incident-handover.md` |
 
-### v3 差分サマリー
+### v3.1 差分サマリー（2026-05-20）
+
+- **サイドバーナビゲーションの実体ラベルを反映**（実機ブラウザ検証で発見）
+  - 旧表記「Inbox」→ 実体 **Leads > Lead Chat**
+  - 旧表記「Channels」→ 実体 **Admin > Channels (Meta)**
+  - 旧表記「Customers」→ 実体 **Leads > Companies**
+- **§0-6 サイドバーナビゲーション (実体)** マッピング表セクションを新規追加
+- **§2-4** Dashboard "最新通知欄" 言及を削除（該当 UI 要素が存在しないことを実機確認）
+- Scene 1 / 2 / 3 / 5 / 6 / 7 の画面操作ステップを実体パスに合わせて更新
+
+### v3 差分サマリー（2026-05-19）
 
 - **シーン 2 (OAuth) のみ大幅更新**、シーン 1 / 3-8 は変更なし
 - 6 permission → **7 permission** (`business_management` 追加、ADR-041 §1)
@@ -78,6 +88,25 @@ FPS: 60
 - **句切り**: 文末で 0.5 秒、シーン切替で 1.5 秒の間
 - **ノイズ**: USB コンデンサマイク + ポップフィルタ推奨、Krisp 等の AI ノイズ除去 OK
 
+### 0-6. サイドバーナビゲーション (実体) — v3.1 追加
+
+撮影本番でクリックするサイドバーパスは以下の通り。v3 旧版の表記（「Inbox」「Channels」「Customers」直下）は **top-level に存在せず**、いずれもサブメニュー配下にある。撮影前にサイドバーを「More」(…) アイコンで展開した状態にしておく。
+
+| 撮影で言及する概念 | 実体サイドバーパス | URL |
+|---|---|---|
+| Dashboard | **Dashboard** (top-level) | `/` |
+| Inbox（受信箱）| **Leads** ▸ **Lead Chat** | `/lead-chat` |
+| Channels（Meta 連携設定）| **Admin** ▸ **Channels (Meta)** | `/channels` |
+| Customers（顧客マスタ）| **Leads** ▸ **Companies** | `/companies` |
+| Leads（リスト）| **Leads** (top-level) | `/leads` |
+
+**撮影上の注意**:
+- サイドバーは初期状態 **icon-only**（幅 ~60px）。展開トグルは底部の「**More**」(…) アイコンまたはヘッダー（端末によっては「☰」）
+- 展開状態を維持して、各シーン冒頭でサブメニューが目視できるようにする
+- ナレーション英文中では引き続き "Inbox" "Channels" "Customers" の英単語を使ってよい（Meta 審査担当は機能ロジックを評価し、UI ラベルの細部一致は不問）
+
+> **将来の改修候補**: top-level に Inbox / Channels / Customers の shortcut を追加する UI 改善 PR は別途検討（Meta App Review 提出後の優先度）
+
 ---
 
 ## 1. シーン構成サマリー
@@ -111,7 +140,7 @@ FPS: 60
 | 0:06 | Password 欄に仮パスワードを入力（KeyCastr は伏字） |
 | 0:10 | 「ログイン」ボタンをクリック |
 | 0:12 | Dashboard 画面が表示される（リード件数、商談件数、最新通知などのサマリー） |
-| 0:18 | 左サイドバーをマウスでなぞり、「Inbox」「Channels」「Leads」「Customers」の項目を順にハイライト |
+| 0:18 | 左サイドバーを「More」(…) アイコンで展開した状態にし、**Leads** を展開して「Lead Chat」(Inbox に相当) をハイライト → **Admin** を展開して「Channels (Meta)」をハイライト → **Leads > Companies** (Customers に相当) をハイライト の順でマウスをなぞる |
 | 0:25 | カーソルを画面中央に戻す |
 
 ### 2-2. 英語ナレーション
@@ -130,7 +159,7 @@ FPS: 60
 
 - `review@salesanchor.jp` アカウントが Owner ロールで作成済
 - Dashboard に最低限のリードが数件表示されていること（空っぽは説得力に欠ける）
-- 最新通知欄に Meta 関連通知が出ていないことを確認（Inbox シーンで初出にしたい）
+- ~~最新通知欄に Meta 関連通知が出ていないことを確認~~（v3.1: 現状の Dashboard UI に「最新通知」セクションは存在しないため不要。Inbox シーンで初出にしたいなら撮影前にテスト DM を削除する形で担保）
 
 ---
 
@@ -143,7 +172,7 @@ FPS: 60
 
 | 秒 | 操作 |
 |---|---|
-| 0:30 | サイドバーの「Channels」をクリック → `/channels` へ遷移 |
+| 0:30 | サイドバーの **Admin** メニューを展開（既に展開済なら省略）→ 「**Channels (Meta)**」をクリック → `/channels` へ遷移 |
 | 0:33 | Channels 画面が表示される（"No Facebook Pages connected yet" = 接続済 Page 0 件の状態。`review@salesanchor.jp` (tenant-review) は撮影専用テナントのため再認証バナーは出ない） |
 | 0:36 | 「Connect a Facebook Page」ボタンをハイライト → クリック |
 | 0:38 | 同タブで Facebook OAuth ダイアログに遷移（`facebook.com/v19.0/dialog/oauth`） |
@@ -203,7 +232,7 @@ FPS: 60
 
 | 秒 | 操作 |
 |---|---|
-| 1:30 | Sales Anchor のサイドバーで「Inbox」をクリック → `/lead-chat` 遷移 |
+| 1:30 | Sales Anchor のサイドバーで **Leads** メニューを展開 → 「**Lead Chat**」(Inbox 受信箱) をクリック → `/lead-chat` 遷移 |
 | 1:34 | Inbox 画面が表示される（左ペイン: 会話リスト、右ペイン: メッセージ表示エリア） |
 | 1:38 | カーソルを Messenger ウィンドウ（別画面）に移動。Messenger Web で `HIGH LIFE JPN Test Page` 宛にメッセージを書く: `Hello, I'd like to ask about your products.` |
 | 1:50 | 送信ボタンクリック |
@@ -288,7 +317,7 @@ FPS: 60
 
 | 秒 | 操作 |
 |---|---|
-| 3:30 | サイドバーの「Channels」をクリック |
+| 3:30 | サイドバーの **Admin > Channels (Meta)** をクリック（Scene 2 と同じパス） |
 | 3:33 | シーン 2 で接続した `HIGH LIFE JPN Test Page` カードを表示 |
 | 3:38 | カードの Instagram セクションを拡大ハイライト: |
 |  | - `instagram_username: @highlifejpn_test` |
@@ -300,7 +329,7 @@ FPS: 60
 |  | - Connected At: 撮影日 |
 | 4:02 | パネルを閉じる |
 | 4:06 | カードの右上「切断」ボタンをマウスで指す（クリックはしない、シーン 8 で扱う） |
-| 4:14 | カーソルを「Inbox」へ移動 → クリック準備（次シーンへの導入） |
+| 4:14 | カーソルを **Leads > Lead Chat** (Inbox) へ移動 → クリック準備（次シーンへの導入） |
 | 4:25 | 完了 |
 
 ### 6-2. 英語ナレーション
@@ -331,7 +360,7 @@ FPS: 60
 
 | 秒 | 操作 |
 |---|---|
-| 4:30 | サイドバーで「Inbox」 → クリック |
+| 4:30 | サイドバーで **Leads > Lead Chat** (Inbox) → クリック |
 | 4:33 | 別ウィンドウで Instagram Web/Mobile を Sender 側で開いておき、`@highlifejpn_test` 宛に DM 送信: `Hi, do you ship internationally?` |
 | 4:44 | Sales Anchor Inbox 左ペインに新しい会話が出現（最大 10 秒）。**platform バッジが「Instagram」** であることを強調表示 |
 | 4:52 | 会話をクリック → 右ペインに inbound バブルで `Hi, do you ship internationally?` 表示 |
@@ -371,7 +400,7 @@ FPS: 60
 
 | 秒 | 操作 |
 |---|---|
-| 5:30 | Inbox を開いた状態で、**24h を経過した会話**（事前に用意）をクリック |
+| 5:30 | **Leads > Lead Chat** (Inbox) を開いた状態で、**24h を経過した会話**（事前に用意）をクリック |
 | 5:34 | 右ペインに過去の inbound メッセージが表示される（25-30h 前のタイムスタンプ） |
 | 5:48 | 返信フォームに `Sorry for the late reply! Our team had a one-day off. Are you still interested in our products?` を入力 |
 | 6:02 | 送信ボタンクリック |
