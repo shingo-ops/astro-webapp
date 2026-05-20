@@ -1,333 +1,345 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-
-const features = [
-  {
-    title: 'You can respond to every channel from one screen',
-    description:
-      'Messenger, Instagram, WhatsApp, LINE, Discord, Telegram, and email — all in one place. No tab-switching, no missed threads.',
-  },
-  {
-    title: 'You can manage your catalog without spreadsheets',
-    description:
-      'Card number, set code, rarity, language, and JAN — structured, searchable, always current. Inventory that reflects reality.',
-  },
-  {
-    title: 'You can go from quote to shipment in one click',
-    description:
-      'Move from quote to invoice to shipment to order without copying and pasting. Built for the volume of B2B TCG trade.',
-  },
-  {
-    title: 'You can see your next best action before you ask',
-    description:
-      'Conversation history and purchase behavior summarized by AI. Surface the right move at the right moment.',
-  },
-];
-
-const metrics = [
-  {
-    stat: '7 channels',
-    label: 'in one inbox',
-  },
-  {
-    stat: 'Hundreds of B2B orders',
-    label: 'per operator per month',
-  },
-  {
-    stat: 'Zero information lost',
-    label: 'every conversation tracked',
-  },
-];
-
-const whyUs = [
-  {
-    title: 'Set up fast',
-    description: 'Quick onboarding, no lengthy implementation. Go live in days, not months.',
-  },
-  {
-    title: 'Scale with confidence',
-    description: 'Built for B2B trade volume. Handle hundreds of deals without dropping threads.',
-  },
-  {
-    title: 'Direct support',
-    description: 'Talk to the team that built it. Real humans who understand TCG export workflows.',
-  },
-  {
-    title: 'Built for cross-border trade',
-    description: 'TCG export workflows in mind — from catalog to international shipment.',
-  },
-];
 ---
 
 <BaseLayout
   title="The CRM built for cross-border TCG exporters"
   description="Stop juggling Excel tabs, DMs, and invoices. Sales Anchor gives TCG exporters one place to unify every channel, manage catalog, and automate invoicing — so a small team can handle hundreds of B2B deals without losing track."
 >
-  <!-- S1. Hero -->
-  <section class="py-24 md:py-32 bg-white">
-    <div class="max-w-5xl mx-auto px-4 text-center">
-      <h1 class="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight max-w-3xl mx-auto leading-tight">
-        The CRM built for cross-border TCG exporters.
-      </h1>
-      <p class="mt-6 text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
-        Unify every channel, every customer, every deal — in one place.<br class="hidden sm:inline" />
-        Control your records and workflows with structure.<br class="hidden sm:inline" />
-        Analyze what's working and find your next move.
-      </p>
-      <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-        <a
-          href="mailto:support@salesanchor.jp?subject=Demo%20request"
-          class="inline-flex items-center justify-center px-7 py-3 text-base font-medium text-white bg-gray-900 hover:bg-gray-700 rounded-md no-underline transition-colors"
-        >
-          Book a demo
-        </a>
-        <a
-          href="https://app.salesanchor.jp"
-          class="inline-flex items-center justify-center px-7 py-3 text-base font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 rounded-md no-underline transition-colors"
-        >
-          Sign in
-        </a>
-      </div>
-    </div>
-  </section>
+  <!-- S1. Hero (split) -->
+  <section class="py-16 md:py-20 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
 
-  <!-- S2. Value lead ("Sound familiar?") -->
-  <section class="py-20 bg-gray-50 border-y border-gray-100">
-    <div class="max-w-3xl mx-auto px-4">
-      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-5">
-        Sound familiar?
-      </h2>
-      <p class="text-gray-600 leading-relaxed text-lg mb-6">
-        It's Tuesday morning. Your LINE thread has 40 unread messages, three Instagram DMs are
-        waiting, and the Excel sheet with this month's orders is open in another tab. Somewhere in
-        there is an invoice you meant to send yesterday.
-      </p>
-      <p class="text-gray-600 leading-relaxed text-lg mb-6">
-        You're running a real B2B TCG export business — selling to stores across North America,
-        Europe, and Southeast Asia. The volume is real. The complexity is real. But the tools
-        you're using were built for something else entirely.
-      </p>
-      <p class="text-gray-600 leading-relaxed text-lg">
-        Sales Anchor brings every channel, every customer record, and every transaction into one
-        system — so your team can operate at B2B scale without dropping threads.
-      </p>
-    </div>
-  </section>
+        <!-- Left: headline + sublines -->
+        <div class="pt-4">
+          <h1 class="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+            The CRM built for cross-border TCG exporters.
+          </h1>
+          <ul class="mt-6 space-y-3 list-none p-0">
+            <li class="text-lg text-gray-600 leading-relaxed">Unify every channel, every customer, every deal — in one place.</li>
+            <li class="text-lg text-gray-600 leading-relaxed">Control your records and workflows with structure.</li>
+            <li class="text-lg text-gray-600 leading-relaxed">Analyze what's working and find your next move.</li>
+          </ul>
+        </div>
 
-  <!-- S3. Feature carousel (4 cards with image plates + CTAs) -->
-  <section id="features" class="py-20 bg-white">
-    <div class="max-w-5xl mx-auto px-4">
-      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
-        What you can do with Sales Anchor
-      </h2>
-      <p class="text-center text-gray-500 mb-14 max-w-xl mx-auto">
-        Built for the specific workflow of cross-border TCG exporters.
-      </p>
-      <div class="space-y-10">
-        {
-          features.map((f, i) => (
-            <div class={`flex flex-col ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-0 rounded-2xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors`}>
-              <!-- Image plate -->
-              <div class="md:w-1/2 bg-blue-50 flex items-center justify-center min-h-48 md:min-h-64">
-                <div class="text-center p-8">
-                  <div class="w-16 h-16 bg-blue-100 rounded-xl mx-auto mb-3 flex items-center justify-center">
-                    <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p class="text-sm text-blue-400 font-medium">Product screenshot — coming soon</p>
-                </div>
+        <!-- Right: form-card -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+          <h2 class="text-xl font-semibold text-gray-900 mb-6">Request a brochure</h2>
+          <form
+            action="mailto:support@salesanchor.jp?subject=Brochure%20request"
+            method="post"
+            enctype="text/plain"
+          >
+            <div class="space-y-4">
+              <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                  Name <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="Name"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                />
               </div>
-              <!-- Text + CTA -->
-              <div class="md:w-1/2 p-8 flex flex-col justify-center">
-                <h3 class="text-lg font-semibold text-gray-900 leading-snug">{f.title}</h3>
-                <p class="mt-3 text-gray-500 leading-relaxed">{f.description}</p>
-                <a
-                  href="mailto:support@salesanchor.jp?subject=Demo%20request"
-                  class="mt-6 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 no-underline group"
+              <div>
+                <label for="company" class="block text-sm font-medium text-gray-700 mb-1">
+                  Company name <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="company"
+                  name="Company"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                />
+              </div>
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span class="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="Email"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                />
+              </div>
+              <div>
+                <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="Phone"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                />
+              </div>
+              <div>
+                <label for="size" class="block text-sm font-medium text-gray-700 mb-1">
+                  Company size
+                </label>
+                <select
+                  id="size"
+                  name="Company size"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white"
                 >
-                  See it in action
-                  <svg class="ml-1 w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                  </svg>
-                </a>
+                  <option value="">Select…</option>
+                  <option value="1-10">1–10</option>
+                  <option value="11-50">11–50</option>
+                  <option value="51-200">51–200</option>
+                  <option value="201-500">201–500</option>
+                  <option value="501+">501+</option>
+                </select>
               </div>
+              <button
+                type="submit"
+                class="w-full py-3 px-4 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded-md transition-colors text-sm mt-2"
+              >
+                Send request →
+              </button>
             </div>
-          ))
-        }
+          </form>
+          <p class="mt-3 text-xs text-gray-400 text-center">Our team will follow up shortly.</p>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- S4. Ecosystem diagram -->
-  <section class="py-20 bg-gray-50 border-y border-gray-100">
-    <div class="max-w-5xl mx-auto px-4 text-center">
-      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-4">
-        One platform, every channel
-      </h2>
-      <p class="text-gray-500 max-w-xl mx-auto mb-12">
-        Connect your entire communication stack to one unified inbox. No more switching between apps.
-      </p>
-      <!-- SVG Ecosystem diagram -->
-      <div class="flex justify-center">
-        <svg
-          viewBox="0 0 540 410"
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-full max-w-lg"
-          aria-label="Sales Anchor connects Messenger, Instagram, WhatsApp, LINE, Discord, Telegram, and Email in one platform"
+  <!-- S2. Feature tabs -->
+  <section class="py-20 bg-white">
+    <div class="max-w-6xl mx-auto px-4">
+
+      <!-- Tab buttons -->
+      <div class="flex border-b border-gray-200 overflow-x-auto" role="tablist">
+        <button
+          role="tab"
+          aria-selected="true"
+          aria-controls="tab-panel-sales"
+          data-tab="sales"
+          class="tab-btn px-5 py-3 text-sm font-medium text-brand-600 border-b-2 border-brand-500 whitespace-nowrap -mb-px focus:outline-none"
         >
-          <!-- Connection lines from center to each channel -->
-          <!-- Messenger (top, 270°) -->
-          <line x1="270" y1="210" x2="270" y2="70" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
-          <!-- Instagram (top-right, 321.43°) -->
-          <line x1="270" y1="210" x2="379" y2="123" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
-          <!-- WhatsApp (right, 12.86°) -->
-          <line x1="270" y1="210" x2="407" y2="241" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
-          <!-- LINE (bottom-right, 64.29°) -->
-          <line x1="270" y1="210" x2="331" y2="336" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
-          <!-- Discord (bottom-left, 115.71°) -->
-          <line x1="270" y1="210" x2="209" y2="336" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
-          <!-- Telegram (left, 167.14°) -->
-          <line x1="270" y1="210" x2="134" y2="241" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
-          <!-- Email (top-left, 218.57°) -->
-          <line x1="270" y1="210" x2="161" y2="123" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="5,4"/>
-
-          <!-- Center: Sales Anchor -->
-          <circle cx="270" cy="210" r="56" fill="#1e3a5f"/>
-          <text x="270" y="206" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="Inter, sans-serif">Sales</text>
-          <text x="270" y="222" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="Inter, sans-serif">Anchor</text>
-
-          <!-- Messenger (top) -->
-          <circle cx="270" cy="70" r="28" fill="#0866FF"/>
-          <text x="270" y="75" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">M</text>
-          <text x="270" y="114" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Messenger</text>
-
-          <!-- Instagram (top-right) -->
-          <circle cx="379" cy="123" r="28" fill="#C13584"/>
-          <text x="379" y="128" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">In</text>
-          <text x="379" y="167" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Instagram</text>
-
-          <!-- WhatsApp (right) -->
-          <circle cx="407" cy="241" r="28" fill="#25D366"/>
-          <text x="407" y="246" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">W</text>
-          <text x="407" y="285" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">WhatsApp</text>
-
-          <!-- LINE (bottom-right) -->
-          <circle cx="331" cy="336" r="28" fill="#00B900"/>
-          <text x="331" y="341" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">L</text>
-          <text x="331" y="380" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">LINE</text>
-
-          <!-- Discord (bottom-left) -->
-          <circle cx="209" cy="336" r="28" fill="#5865F2"/>
-          <text x="209" y="341" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">D</text>
-          <text x="209" y="380" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Discord</text>
-
-          <!-- Telegram (left) -->
-          <circle cx="134" cy="241" r="28" fill="#2AABEE"/>
-          <text x="134" y="246" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">T</text>
-          <text x="134" y="285" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Telegram</text>
-
-          <!-- Email (top-left) -->
-          <circle cx="161" cy="123" r="28" fill="#6B7280"/>
-          <text x="161" y="128" text-anchor="middle" fill="white" font-size="11" font-weight="600" font-family="Inter, sans-serif">@</text>
-          <text x="161" y="167" text-anchor="middle" fill="#374151" font-size="11" font-family="Inter, sans-serif">Email</text>
-        </svg>
+          Sales
+        </button>
+        <button
+          role="tab"
+          aria-selected="false"
+          aria-controls="tab-panel-marketing"
+          data-tab="marketing"
+          class="tab-btn px-5 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap -mb-px focus:outline-none"
+        >
+          Marketing
+        </button>
+        <button
+          role="tab"
+          aria-selected="false"
+          aria-controls="tab-panel-customer"
+          data-tab="customer"
+          class="tab-btn px-5 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap -mb-px focus:outline-none"
+        >
+          Customer
+        </button>
+        <button
+          role="tab"
+          aria-selected="false"
+          aria-controls="tab-panel-data"
+          data-tab="data"
+          class="tab-btn px-5 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap -mb-px focus:outline-none"
+        >
+          Data
+        </button>
+        <button
+          role="tab"
+          aria-selected="false"
+          aria-controls="tab-panel-ai"
+          data-tab="ai"
+          class="tab-btn px-5 py-3 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap -mb-px focus:outline-none"
+        >
+          AI
+        </button>
       </div>
-    </div>
-  </section>
 
-  <!-- S5. Metrics band -->
-  <section class="py-20 bg-blue-900">
-    <div class="max-w-5xl mx-auto px-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-        {
-          metrics.map((m) => (
-            <div class="px-6 py-8 rounded-2xl bg-blue-800">
-              <p class="text-4xl font-bold text-white leading-tight">{m.stat}</p>
-              <p class="mt-3 text-blue-200 text-sm leading-relaxed">{m.label}</p>
+      <!-- Tab panels -->
+      <div class="mt-10">
+
+        <!-- Sales -->
+        <div
+          id="tab-panel-sales"
+          role="tabpanel"
+          class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
+        >
+          <div>
+            <h3 class="text-2xl font-semibold text-gray-900">Sales enablement</h3>
+            <p class="mt-3 text-gray-500 leading-relaxed">
+              Close more deals with AI-powered prioritization and unified communication tools built for B2B TCG trade.
+            </p>
+            <ul class="mt-6 grid grid-cols-2 gap-3 list-none p-0">
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Pipeline management</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Customer record</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Email + call unification</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>AI priority scoring</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Sales report</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Team goal tracking</li>
+            </ul>
+          </div>
+          <div class="bg-brand-50 rounded-xl h-64 flex items-center justify-center border border-brand-100">
+            <div class="text-center">
+              <div class="text-5xl mb-3">📊</div>
+              <p class="text-sm text-brand-400 font-medium">Product screenshot — coming soon</p>
             </div>
-          ))
-        }
-      </div>
-    </div>
-  </section>
+          </div>
+        </div>
 
-  <!-- S6. Why us 4-column -->
-  <section class="py-20 bg-white">
-    <div class="max-w-5xl mx-auto px-4">
-      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-4">
-        Why Sales Anchor
-      </h2>
-      <p class="text-center text-gray-500 mb-14 max-w-xl mx-auto">
-        Purpose-built for cross-border TCG exporters, not adapted from generic CRM tools.
-      </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        {
-          whyUs.map((w) => (
-            <div class="p-6 rounded-xl border border-gray-100 bg-gray-50">
-              <h3 class="text-base font-semibold text-gray-900 mb-2">{w.title}</h3>
-              <p class="text-sm text-gray-500 leading-relaxed">{w.description}</p>
+        <!-- Marketing -->
+        <div
+          id="tab-panel-marketing"
+          role="tabpanel"
+          class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
+          style="display:none"
+        >
+          <div>
+            <h3 class="text-2xl font-semibold text-gray-900">Marketing automation</h3>
+            <p class="mt-3 text-gray-500 leading-relaxed">
+              Capture leads, nurture them with targeted campaigns, and hand off qualified prospects to sales seamlessly.
+            </p>
+            <ul class="mt-6 grid grid-cols-2 gap-3 list-none p-0">
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Lead capture form</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Email campaigns</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Social integration</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>AI content</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Segmentation</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Marketing report</li>
+            </ul>
+          </div>
+          <div class="bg-brand-50 rounded-xl h-64 flex items-center justify-center border border-brand-100">
+            <div class="text-center">
+              <div class="text-5xl mb-3">📧</div>
+              <p class="text-sm text-brand-400 font-medium">Product screenshot — coming soon</p>
             </div>
-          ))
-        }
+          </div>
+        </div>
+
+        <!-- Customer -->
+        <div
+          id="tab-panel-customer"
+          role="tabpanel"
+          class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
+          style="display:none"
+        >
+          <div>
+            <h3 class="text-2xl font-semibold text-gray-900">Customer experience</h3>
+            <p class="mt-3 text-gray-500 leading-relaxed">
+              Deliver consistent, high-quality support that builds long-term loyalty and turns customers into advocates.
+            </p>
+            <ul class="mt-6 grid grid-cols-2 gap-3 list-none p-0">
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Support ticketing</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Chatbot</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>NPS</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Interaction history</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>SLA</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Satisfaction survey</li>
+            </ul>
+          </div>
+          <div class="bg-brand-50 rounded-xl h-64 flex items-center justify-center border border-brand-100">
+            <div class="text-center">
+              <div class="text-5xl mb-3">💬</div>
+              <p class="text-sm text-brand-400 font-medium">Product screenshot — coming soon</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data -->
+        <div
+          id="tab-panel-data"
+          role="tabpanel"
+          class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
+          style="display:none"
+        >
+          <div>
+            <h3 class="text-2xl font-semibold text-gray-900">Unified data</h3>
+            <p class="mt-3 text-gray-500 leading-relaxed">
+              Consolidate every customer record into one structured database that your entire team can trust and act on.
+            </p>
+            <ul class="mt-6 grid grid-cols-2 gap-3 list-none p-0">
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>CRM database</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Custom properties</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>API integration</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Data hygiene</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Segmentation</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Export-import</li>
+            </ul>
+          </div>
+          <div class="bg-brand-50 rounded-xl h-64 flex items-center justify-center border border-brand-100">
+            <div class="text-center">
+              <div class="text-5xl mb-3">🗄️</div>
+              <p class="text-sm text-brand-400 font-medium">Product screenshot — coming soon</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI -->
+        <div
+          id="tab-panel-ai"
+          role="tabpanel"
+          class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-12 items-center"
+          style="display:none"
+        >
+          <div>
+            <h3 class="text-2xl font-semibold text-gray-900">AI automation</h3>
+            <p class="mt-3 text-gray-500 leading-relaxed">
+              Let AI handle repetitive tasks so your team can focus on high-value conversations and relationship building.
+            </p>
+            <ul class="mt-6 grid grid-cols-2 gap-3 list-none p-0">
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Conversation summary</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Auto follow-up</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Next best action</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Lead scoring</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Sales forecast</li>
+              <li class="flex items-center gap-2 text-sm text-gray-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0"></span>Workflow automation</li>
+            </ul>
+          </div>
+          <div class="bg-brand-50 rounded-xl h-64 flex items-center justify-center border border-brand-100">
+            <div class="text-center">
+              <div class="text-5xl mb-3">🤖</div>
+              <p class="text-sm text-brand-400 font-medium">Product screenshot — coming soon</p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- S7. Meta data policy -->
-  <section class="py-20 bg-gray-50 border-y border-gray-100">
-    <div class="max-w-3xl mx-auto px-4">
-      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-5">
-        How we use Meta data
-      </h2>
-      <p class="text-gray-600 leading-relaxed">
-        Sales Anchor receives messages from Messenger and Instagram Direct via the Meta Graph API
-        and displays them in your dashboard. All data from Meta Platform is handled as follows:
-      </p>
-      <ul class="mt-5 space-y-3 text-gray-600">
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Used only to facilitate communication between your team and your customers.</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Handled in accordance with Article 3 (Data Use) of the Meta Platform Terms.</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Never sold to third parties or used for advertising targeting.</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Never used as AI training data.</span>
-        </li>
-        <li class="flex gap-3">
-          <span class="mt-1 text-gray-400 shrink-0">—</span>
-          <span>Data deletion requests accepted both via Meta Platform and direct email.</span>
-        </li>
-      </ul>
-      <div class="mt-6 flex gap-6 text-sm">
-        <a href="/privacy" class="text-gray-900 hover:text-gray-600 font-medium no-underline">
-          Privacy Policy →
-        </a>
-        <a href="/data-deletion" class="text-gray-900 hover:text-gray-600 font-medium no-underline">
-          Data Deletion →
-        </a>
-      </div>
-    </div>
-  </section>
+  <script>
+    const tabs = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
+    const panels = document.querySelectorAll<HTMLElement>('.tab-panel');
 
-  <!-- A5. Security -->
-  <section class="py-20 bg-white">
-    <div class="max-w-3xl mx-auto px-4">
-      <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-5">
-        Your data is safe
-      </h2>
-      <p class="text-gray-600 leading-relaxed">
-        Your data is encrypted in transit and at rest, isolated per tenant, stored entirely on
-        servers in Japan, and never sold or shared with third parties. For full technical details,
-        see our <a href="/privacy" class="text-gray-900 hover:text-gray-600 font-medium no-underline">Privacy Policy</a>.
-      </p>
-    </div>
-  </section>
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+
+        tabs.forEach((t) => {
+          const isActive = t.dataset.tab === target;
+          t.setAttribute('aria-selected', String(isActive));
+          if (isActive) {
+            t.classList.add('text-brand-600', 'border-brand-500');
+            t.classList.remove('text-gray-500', 'border-transparent');
+          } else {
+            t.classList.remove('text-brand-600', 'border-brand-500');
+            t.classList.add('text-gray-500', 'border-transparent');
+          }
+        });
+
+        panels.forEach((panel) => {
+          const isActive = panel.id === `tab-panel-${target}`;
+          panel.style.display = isActive ? '' : 'none';
+        });
+      });
+    });
+  </script>
 </BaseLayout>

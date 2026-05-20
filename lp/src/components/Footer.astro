@@ -8,38 +8,37 @@ const legalLinks = [
 ];
 ---
 
-<footer class="bg-gray-50 border-t border-gray-200">
+<footer class="bg-gray-900">
   <div class="max-w-6xl mx-auto px-4 py-12">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div>
-        <p class="font-semibold text-gray-900 text-base">Sales Anchor</p>
-        <p class="mt-2 text-sm text-gray-500">
+        <p class="font-semibold text-white text-base">Sales Anchor</p>
+        <p class="mt-2 text-sm text-gray-400">
           The CRM built for cross-border TCG exporters.
         </p>
       </div>
 
       <div>
-        <p class="font-semibold text-gray-900 text-sm">Operator</p>
-        <ul class="mt-2 space-y-1 text-sm text-gray-500">
+        <p class="font-semibold text-gray-300 text-sm">Operator</p>
+        <ul class="mt-2 space-y-1 text-sm text-gray-400">
           <li>HIGH LIFE JPN</li>
           <li>Representative: Shingo Tanizawa</li>
           <li>2F, Nishi-Shinjuku Mizuma Building, 3-3-13 Nishi-Shinjuku, Shinjuku-ku, Tokyo 160-0023, Japan</li>
           <li>
-            <a href="mailto:support@salesanchor.jp" class="hover:text-gray-700 no-underline">
+            <a href="mailto:support@salesanchor.jp" class="hover:text-gray-200 no-underline">
               support@salesanchor.jp
             </a>
           </li>
-          <li>Mon–Fri, 10:00–18:00 JST</li>
         </ul>
       </div>
 
       <div>
-        <p class="font-semibold text-gray-900 text-sm">Legal</p>
+        <p class="font-semibold text-gray-300 text-sm">Legal</p>
         <ul class="mt-2 space-y-1">
           {
             legalLinks.map((link) => (
               <li>
-                <a href={link.href} class="text-sm text-gray-500 hover:text-gray-700 no-underline">
+                <a href={link.href} class="text-sm text-gray-400 hover:text-gray-200 no-underline">
                   {link.label}
                 </a>
               </li>
@@ -49,7 +48,7 @@ const legalLinks = [
       </div>
     </div>
 
-    <div class="mt-12 pt-6 border-t border-gray-200 text-center text-xs text-gray-400">
+    <div class="mt-12 pt-6 border-t border-gray-700 text-center text-xs text-gray-500">
       &copy; {year} HIGH LIFE JPN. All rights reserved.
     </div>
   </div>
