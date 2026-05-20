@@ -420,7 +420,7 @@ export default function CustomersPage() {
       <div className="search-bar">
         <input
           type="text"
-          placeholder="会社名・顧客コード・請求名義で検索..."
+          placeholder={t("customers.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

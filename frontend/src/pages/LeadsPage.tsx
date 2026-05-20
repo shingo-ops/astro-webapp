@@ -87,6 +87,20 @@ export default function LeadsPage() {
     t("leads.status_hold"),
   ];
 
+  // backend が返す日本語の lead.status 値を i18n key にマッピング (UI 表示専用、API 送信値はそのまま)
+  const LEAD_STATUS_I18N_KEY: Record<string, string> = {
+    "新規": "leads.status_new",
+    "コンタクト中": "leads.status_contact",
+    "提案中": "leads.status_proposal",
+    "案件化": "leads.status_won",
+    "失注": "leads.status_lost",
+    "保留": "leads.status_hold",
+  };
+  const translateLeadStatus = (status: string) => {
+    const key = LEAD_STATUS_I18N_KEY[status];
+    return key ? t(key) : status;
+  };
+
   const loadLeads = async () => {
     try {
       const params = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
@@ -357,7 +371,7 @@ export default function LeadsPage() {
                 <td className="mono">{l.lead_code || "-"}</td>
                 <td>{l.customer_name}</td>
                 <td>{l.company_name || "-"}</td>
-                <td><span className={`badge lead-badge-${l.status}`}>{l.status}</span></td>
+                <td><span className={`badge lead-badge-${l.status}`}>{translateLeadStatus(l.status)}</span></td>
                 <td>{l.temperature || "-"}</td>
                 <td>{rankBadge(l.prospect_rank)}</td>
                 <td className="actions">
