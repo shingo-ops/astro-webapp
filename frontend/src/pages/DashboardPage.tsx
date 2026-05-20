@@ -66,7 +66,17 @@ export default function DashboardPage() {
   if (error) return <div className="page"><div className="error-message">Error: {error}</div></div>;
   if (!data) return <div className="page"><div className="loading">{t("common.loading")}</div></div>;
 
-  const fmt = (n: number) => `¥${n.toLocaleString()}`;
+  // 通貨フォーマット (円表示)
+  // 背景: backend は Decimal 列を JSON 上は文字列で返すため (例: `amount * probability / 100.0`
+  // から得られる `weighted_amount` は "192000.0000000000000000" のような Postgres NUMERIC 由来
+  // の長い小数文字列になる)、`toLocaleString()` だけだと文字列のまま桁分割もされず表示されてしまう。
+  // 文字列→数値変換 + maximumFractionDigits:0 で「¥1,200,000」のように整円表示に統一する。
+  const fmt = (n: number | string | null | undefined) => {
+    if (n === null || n === undefined) return "¥0";
+    const num = typeof n === "string" ? parseFloat(n) : n;
+    if (Number.isNaN(num)) return "¥0";
+    return `¥${num.toLocaleString("ja-JP", { maximumFractionDigits: 0 })}`;
+  };
 
   const DEAL_STATUS_LABELS: Record<string, string> = {
     open: t("deals.status_open"),
