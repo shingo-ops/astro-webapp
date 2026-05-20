@@ -147,49 +147,51 @@ export default function QuoteCreatePage() {
         </div>
 
         <h3 style={{ marginBottom: 12 }}>{t("quotes.items")}</h3>
-        <table className="data-table" style={{ marginBottom: 16 }}>
-          <thead>
-            <tr>
-              <th>{t("quotes.selectProduct")}</th>
-              <th>{t("quotes.product")}</th>
-              <th>{t("quotes.quantity")}</th>
-              <th>{t("quotes.unitPrice")}</th>
-              <th>{t("quotes.weight")}</th>
-              <th>{t("quotes.subtotal")}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr key={i}>
-                <td>
-                  <select value={item.product_id || ""} onChange={(e) => selectProduct(i, e.target.value)} style={{ minWidth: 120 }}>
-                    <option value="">{t("quotes.customProduct")}</option>
-                    {products.map((p) => <option key={p.id} value={p.id}>{p.name_ja} (在庫:{p.quantity})</option>)}
-                  </select>
-                </td>
-                <td>
-                  <input value={item.product_name} onChange={(e) => updateItem(i, "product_name", e.target.value)} style={{ minWidth: 150 }} />
-                </td>
-                <td>
-                  <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} style={{ width: 70 }} />
-                </td>
-                <td>
-                  <input type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => updateItem(i, "unit_price", Number(e.target.value))} style={{ width: 100 }} />
-                </td>
-                <td>
-                  <input type="number" min="0" step="0.001" value={item.weight || ""} onChange={(e) => updateItem(i, "weight", e.target.value ? Number(e.target.value) : null)} style={{ width: 80 }} />
-                </td>
-                <td style={{ fontWeight: 600 }}>{(item.quantity * item.unit_price).toLocaleString()}</td>
-                <td>
-                  {items.length > 1 && (
-                    <button type="button" className="btn-sm btn-danger" onClick={() => removeItem(i)}>{t("quotes.removeItem")}</button>
-                  )}
-                </td>
+        <div style={{ overflowX: "auto", marginBottom: 16 }}>
+          <table className="data-table" style={{ minWidth: 720 }}>
+            <thead>
+              <tr>
+                <th>{t("quotes.selectProduct")}</th>
+                <th>{t("quotes.product")}</th>
+                <th>{t("quotes.quantity")}</th>
+                <th>{t("quotes.unitPrice")}</th>
+                <th>{t("quotes.weight")}</th>
+                <th>{t("quotes.subtotal")}</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((item, i) => (
+                <tr key={i}>
+                  <td>
+                    <select value={item.product_id || ""} onChange={(e) => selectProduct(i, e.target.value)} style={{ minWidth: 120, maxWidth: "100%" }}>
+                      <option value="">{t("quotes.customProduct")}</option>
+                      {products.map((p) => <option key={p.id} value={p.id}>{p.name_ja} (在庫:{p.quantity})</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <input value={item.product_name} onChange={(e) => updateItem(i, "product_name", e.target.value)} style={{ minWidth: 120, maxWidth: "100%" }} />
+                  </td>
+                  <td>
+                    <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} style={{ width: 70 }} />
+                  </td>
+                  <td>
+                    <input type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => updateItem(i, "unit_price", Number(e.target.value))} style={{ width: 90 }} />
+                  </td>
+                  <td>
+                    <input type="number" min="0" step="0.001" value={item.weight || ""} onChange={(e) => updateItem(i, "weight", e.target.value ? Number(e.target.value) : null)} style={{ width: 80 }} />
+                  </td>
+                  <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{(item.quantity * item.unit_price).toLocaleString()}</td>
+                  <td>
+                    {items.length > 1 && (
+                      <button type="button" className="btn-sm btn-danger" onClick={() => removeItem(i)}>{t("quotes.removeItem")}</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <button type="button" className="btn-secondary" onClick={addItem} style={{ marginBottom: 24 }}>{t("quotes.addItem")}</button>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
