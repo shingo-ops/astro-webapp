@@ -145,7 +145,7 @@ export default function ContactsPage() {
     e.preventDefault();
     setError("");
     if (!form.company_id) {
-      setError("所属会社を選択してください");
+      setError(t("contacts.companyRequired"));
       return;
     }
     const toNull = (v: string) => (v ? v : null);
@@ -275,8 +275,8 @@ export default function ContactsPage() {
         <h1>
           {t("contacts.title")}
           {pendingDedupCount > 0 && (
-            <span className="dedup-summary" title="status が pending_dedup_review の担当者の数">
-              重複確認待ち: {pendingDedupCount} 件
+            <span className="dedup-summary">
+              {t("contacts.pendingDedupCount", { count: pendingDedupCount })}
             </span>
           )}
         </h1>
@@ -336,7 +336,6 @@ export default function ContactsPage() {
                 <tr
                   key={c.id}
                   className={c.status === "pending_dedup_review" ? "row-pending-dedup" : ""}
-                  title={c.status === "pending_dedup_review" ? "重複確認待ち。編集または「別人として確定」で解消できます" : ""}
                 >
                   <td>{c.contact_code}</td>
                   <td>{contactDisplayName(c)}</td>
@@ -355,9 +354,8 @@ export default function ContactsPage() {
                       <button
                         className="btn-sm"
                         onClick={() => setDedupConfirmTarget(c)}
-                        title="重複確認待ちを解消し、別人として active 化します"
                       >
-                        別人として確定
+                        {t("contacts.confirmAsDistinct")}
                       </button>
                     )}
                     {hasPermission("customers.delete") && (
@@ -378,14 +376,14 @@ export default function ContactsPage() {
             <form onSubmit={handleSubmit} className="form-grid">
               {!editId && (
                 <div className="form-row">
-                  <label>担当者コード（CT-00001、未指定で自動採番）</label>
+                  <label>{t("contacts.contactCodeLabel")}</label>
                   <input value={form.contact_code} onChange={(e) => setForm({ ...form, contact_code: e.target.value })} />
                 </div>
               )}
               <div className="form-row">
-                <label>所属会社 *</label>
+                <label>{t("contacts.companyLabel")}</label>
                 <select required value={form.company_id} onChange={(e) => setForm({ ...form, company_id: e.target.value })}>
-                  <option value="">選択してください</option>
+                  <option value="">{t("common.pleaseSelect")}</option>
                   {companies.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}（{c.company_code}）</option>
                   ))}
@@ -400,7 +398,7 @@ export default function ContactsPage() {
                 <input value={form.given_name} onChange={(e) => setForm({ ...form, given_name: e.target.value })} />
               </div>
               <div className="form-row">
-                <label>表示名</label>
+                <label>{t("contacts.displayName")}</label>
                 <input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
               </div>
               <div className="form-row">
@@ -418,7 +416,7 @@ export default function ContactsPage() {
                     checked={form.is_primary_contact}
                     onChange={(e) => setForm({ ...form, is_primary_contact: e.target.checked })}
                   />
-                  {" "}主担当者（会社あたり 1 人のみ。切替時に他は自動解除）
+                  {" "}{t("contacts.primaryContactHint")}
                 </label>
               </div>
               <div className="form-row">
@@ -437,7 +435,7 @@ export default function ContactsPage() {
                   <option value="archived">archived</option>
                   {/* PR #145 Q2: pending_dedup_review を表示・選択可能に。
                       新規付与は通常データ移行スクリプト由来だが、既存データから抜け出す道を確保 */}
-                  <option value="pending_dedup_review">pending_dedup_review（重複確認待ち）</option>
+                  <option value="pending_dedup_review">{t("contacts.statusPendingDedupOption")}</option>
                 </select>
               </div>
               <div className="form-row">
@@ -448,42 +446,31 @@ export default function ContactsPage() {
               {/* PR #145 Q2: 編集中の担当者が pending_dedup_review なら解消セクションを表示 */}
               {editId && form.status === "pending_dedup_review" && (
                 <div className="dedup-resolve-section">
-                  <h3>重複確認待ちを解消</h3>
-                  <p>
-                    この担当者は重複候補として暫定登録されています。
-                    別人として独立させるか、既存担当者へマージするか判断してください。
-                  </p>
+                  <h3>{t("contacts.dedupResolveTitle")}</h3>
+                  <p>{t("contacts.dedupResolveDesc")}</p>
                   <div className="dedup-resolve-actions">
                     {/* PR #163 Reviewer round 1 Minor 3: 編集モーダル内のフォームに
                         未保存変更がある状態で「別人として確定」ボタンを押すと、解消 PATCH
                         と未保存変更の関係が混乱するため、companies 側 CompanyDetailPage と
-                        同じく dirty 状態のときは disabled + tooltip で明示的に防ぐ。 */}
+                        同じく dirty 状態のときは disabled で明示的に防ぐ。 */}
                     <button
                       type="button"
                       className="btn-primary"
                       onClick={() => {
-                        // 編集中の担当者を解消対象として扱う。dirty 時は disabled で防ぐので
-                        // ここに来た時点でフォームは clean。
                         const target = contacts.find((c) => c.id === editId) || null;
                         if (!target) return;
                         setDedupConfirmTarget(target);
                       }}
                       disabled={dedupSubmitting || formDirtyExceptStatus}
-                      title={
-                        formDirtyExceptStatus
-                          ? "未保存の変更があります。先に「更新」を保存するか、変更を破棄してください"
-                          : ""
-                      }
                     >
-                      別人として確定（active 化）
+                      {t("contacts.confirmAsDistinctFull")}
                     </button>
                     <button
                       type="button"
                       disabled
-                      title="担当者単位のマージは将来実装予定です（会社単位のマージは会社詳細ページから利用可能）"
                       style={{ opacity: 0.6, cursor: "not-allowed" }}
                     >
-                      重複としてマージ（担当者単位は未実装）
+                      {t("contacts.mergeAsDuplicate")}
                     </button>
                   </div>
                 </div>
@@ -505,7 +492,10 @@ export default function ContactsPage() {
         title={t("contacts.deleteContact")}
         message={
           deleteTarget
-            ? `「${contactDisplayName(deleteTarget)}」(${deleteTarget.contact_code}) を削除しますか？ 関連する商談・注文・見積・請求書がある場合は削除できません。`
+            ? t("contacts.deleteConfirmMessage", {
+                name: contactDisplayName(deleteTarget),
+                code: deleteTarget.contact_code,
+              })
             : ""
         }
         confirmLabel={t("common.delete")}
@@ -516,13 +506,16 @@ export default function ContactsPage() {
       {/* PR #145 Q2: 別人として確定の確認ダイアログ */}
       <ConfirmModal
         open={dedupConfirmTarget !== null}
-        title="重複確認待ちの解消"
+        title={t("contacts.dedupConfirmTitle")}
         message={
           dedupConfirmTarget
-            ? `「${contactDisplayName(dedupConfirmTarget)}」(${dedupConfirmTarget.contact_code}) を別人として確定し、ステータスを active に変更しますか？\n\n（マージではなく、独立した担当者として承認します。この操作は audit_logs に記録されます）`
+            ? t("contacts.dedupConfirmMessage", {
+                name: contactDisplayName(dedupConfirmTarget),
+                code: dedupConfirmTarget.contact_code,
+              })
             : ""
         }
-        confirmLabel="active に変更"
+        confirmLabel={t("contacts.changeToActive")}
         onConfirm={handleResolveAsDistinct}
         onCancel={() => setDedupConfirmTarget(null)}
       />
