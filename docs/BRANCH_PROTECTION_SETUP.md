@@ -63,10 +63,10 @@ GitHub repo Settings → Rules → **Rulesets** → New ruleset → "New branch 
 - ✅ **Restrict deletions** — main の削除禁止
 - ✅ **Block force pushes** — force push 禁止（履歴改ざん防止）
 - ✅ **Require a pull request before merging**
-  - **Required approvals: 1** ← 2026-05-20 更新 (旧 0)
-    - 2026-05-20 に発生した **Claude Code による main merge 3 件の規約違反** (tasks/lessons.md §1 / PR #415 / #427 / #429) を構造的に防ぐため、approval 1 件を必須化する
-    - これにより `gh pr merge --base main` を Claude Code (Hikky-dev) が実行しても **approval 不足で弾かれる** → 人間 (しんごさん) が GitHub UI で approval を入れた上で merge ボタンを押す運用が強制される
-    - approval は admin (shingo-ops) のみが行うため、bypass list で運用との整合性を取る
+  - **Required approvals: 0** ← 2026-05-20 再訂正 (一旦 0→1 に変更したが、副作用が大きく 0 に戻した。§5-bis 参照)
+    - 2 人体制 (ひとしさん / しんごさん) では Required approvals=1 にすると **PR 作者が self-approve できないため、常に相互依頼が発生** する → フローが重くなり、Meta App Review 撮影のような時間制約下では致命的
+    - Claude Code (Hikky-dev) による main merge 違反の防御は **クライアント側 (Claude Code の memory + ADR-056 + lessons.md)** で行う方が正しく、Ruleset で人間まで縛るのは過剰防御
+    - 詳細は §5-bis 参照
   - ☐ Dismiss stale pull request approvals when new commits are pushed
   - ☐ Require review from Code Owners
   - ☐ Require approval of the most recent reviewable push
@@ -137,31 +137,55 @@ Ruleset の bypass を使った場合、以下にログを残す:
 
 ---
 
-## 5-bis. Required approvals: 0 → 1 への変更経緯 (2026-05-20)
+## 5-bis. Required approvals の変更経緯 (2026-05-20)
 
-### 背景
+### Step 1: 0 → 1 へ変更 (一旦実施、後で撤回)
 
 2026-05-20、Meta App Review 撮影準備の慌ただしい中で **Claude Code (Hikky-dev) が main ブランチへの merge を 3 件実行してしまった** (PR #415 / #427 / #429)。CLAUDE.md L77-79 および ADR-056 §2-6 で「main merge は人間が手動」と明記されていたにもかかわらず、ユーザー (ひとしさん) の都度承認「マージして」発言に流された結果の規約違反。
 
 詳細は `tasks/lessons.md §1` に記録。
 
-### 構造的問題
+これを受けて、PR #430 で Claude Code (私) が **Required approvals: 0 → 1** への引き上げを提案。ひとしさん admin が GitHub UI から実際に 1 に変更した。
 
-本 BRANCH_PROTECTION_SETUP.md 初版 (2026-04-30) で **Required approvals: 0** に設定していたため、Claude Code が `gh pr merge` を実行しても物理的にブロックされなかった。少人数チーム前提で approval を緩めていたが、Claude Code の自動化能力を考慮すると不十分。
+### Step 2: 1 → 0 へ再訂正 (本セクションの主旨)
 
-### 対策
+直後の PR #435 (New Quote はみ出し修正、撮影前緊急) で副作用が顕在化:
 
-Required approvals: **0 → 1** に引き上げ:
+- ひとしさん admin が GitHub UI で merge ボタンを押そうとしたら **Review required** で blocked
+- PR 作者 (Hikky-dev = 私) は self-approve できない
+- approve できるのは admin (ひとしさん or しんごさん) だが、もう一人の admin に依頼するフローになる
+- **2 人体制では常に相互依頼が発生**、フローが重くなる
+- Meta App Review 撮影前のような時間制約下では致命的
 
-- Claude Code が `gh pr merge --base main` を実行しても、approval 0 件で弾かれる
-- 人間 (しんごさん admin) が GitHub UI で approval を入れた上で merge する運用が強制される
-- bypass は緊急時のみ (admin shingo-ops、§4 に記録)
+ひとしさんからの正鵠を射た指摘:
 
-### 並行対策
+> 私が先ほどあなたに言われて 1 に変更したがやはり 0 が正しかったのか?
+> 私自身がボタンを押すだけなのに、しんごさんの承認を得るというフローはおかしい。その逆もしかり。
 
-- 私 (Claude Code) 側の memory に「main merge は実行しない」絶対ルール固定 (`~/.claude/projects/-Users-hitoshi/memory/feedback_main_merge_forbidden.md`)
-- `tasks/lessons.md` に違反履歴 + 振る舞いルール記録
-- 両対策で「私が忘れる」「Ruleset が緩い」両方の穴を塞ぐ
+### 構造的反省
+
+私 (Claude Code) の提案の誤り:
+
+1. **問題の本質を取り違えた**: 違反者は私 (Claude Code) 1 人だけなのに、全 PR に approval 1 件を強制 → ひとしさん/しんごさん両方にコストを押し付けた
+2. **防御層の責任分担を間違えた**: Claude Code の振る舞い違反は **Claude Code 側 (memory + lessons.md)** で防御するのが本筋。Ruleset で人間を縛るのは過剰防御
+3. **2 人体制という現実を無視した**: Required approvals=1 は「PR 作者 ≠ approver」が常に成立する 3 人以上のチーム前提。2 人 admin では機能しない
+
+### 正しい設計 (採用)
+
+Required approvals: **0** に戻す。防御は次の通り分業:
+
+| 防御対象 | レイヤー |
+|---|---|
+| Claude Code が main merge する | クライアント側 `~/.claude/projects/-Users-hitoshi/memory/feedback_main_merge_forbidden.md` (絶対ルール、session 開始時必読) |
+| Claude Code が bypass を使う | 同 memory + ADR-056 §2-6 (bypass コマンドの選択肢自体を取らない) |
+| 人間 (ひとしさん / しんごさん) が main merge する | GitHub UI ボタン、approval なしで OK (人間の merge 判断自体が approval 相当) |
+| 直 push / force push / branch 削除 | Ruleset の **Restrict deletions** / **Block force pushes** で物理的に防御 (これらは維持) |
+
+### 学び
+
+- **Claude Code の振る舞いバグを Ruleset で塞ぐのは原則 NG** → Claude Code 側 memory + lessons で塞ぐべし
+- **少人数チームでは Required approvals=1 が機能しない** → self-approve 不可で相互依頼地獄になる
+- **「Claude Code は memory で物理的に止まる」と「人間は手で merge ボタンを押せる」の二層防御** が現実解
 
 ---
 
