@@ -262,7 +262,9 @@
     "givenName": "First name",
     "position": "Position",
     "department": "Department",
-    "isPrimary": "Primary"
+    "isPrimary": "Primary",
+    "allCompanies": "All companies",
+    "searchPlaceholder": "Search by name, code, or email..."
   },
   "inbox": {
     "title": "Inbox",
@@ -604,7 +606,11 @@
     "note": "This feature is currently under development. It will be available in a future release."
   },
   "archives": {
-    "title": "Archive"
+    "title": "Archive",
+    "sourceId": "Source ID",
+    "restoredAt": "Restored at",
+    "restore": "Restore",
+    "restored": "Restored"
   },
   "oauth": {
     "processing": "Processing...",
