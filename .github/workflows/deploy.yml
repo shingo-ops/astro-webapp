@@ -347,6 +347,15 @@ jobs:
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_009_phase4_tenant_tables.py
 
+            # migration 011 (Phase 5): 全テナントに shifts / buddy_pairs / buddy_feedbacks /
+            #   badge_definitions / user_badges / erp_sync_logs テーブルを追加
+            #   (CREATE TABLE IF NOT EXISTS + RLS、idempotent)
+            #   2026-05-20 までは展開 runner が存在せず、全テナントで shifts 不在 →
+            #   /api/v1/shifts が HTTP 500 ("relation \"shifts\" does not exist") を返す
+            #   状態が継続していた。本ステップで遅延 catch-up する。
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_011_phase5_tenant_tables.py
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
