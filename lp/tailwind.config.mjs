@@ -18,6 +18,7 @@ export default {
           700: '#1463cc',
           800: '#1158b5',
           900: '#0e498f',
+          navy: '#0a1628',
         },
       },
       fontFamily: {
@@ -28,6 +29,14 @@ export default {
           'BlinkMacSystemFont',
           '"Segoe UI"',
           'sans-serif',
+        ],
+        serif: [
+          '"DM Serif Display"',
+          'Georgia',
+          'Cambria',
+          '"Times New Roman"',
+          'Times',
+          'serif',
         ],
       },
       maxWidth: {
