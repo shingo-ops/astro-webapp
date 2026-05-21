@@ -202,39 +202,48 @@ const INBOX_STYLES = `
   margin: 0;
 }
 
-/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
+/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） — Meta実測: h=36, bg=transparent(parent=white) */
 .inbox-full-tab-bar {
   display: flex;
+  align-items: center;
   background: #fff;
   border-bottom: 1px solid #dadde1;
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
   padding: 0 8px;
+  height: 36px;
+  box-sizing: border-box;
 }
 .inbox-full-tab-bar::-webkit-scrollbar { display: none; }
+/* Meta実測: padding=8px 12px, border-radius=4px, font-size=14px, fw=400, color=rgb(28,43,51) */
 .inbox-full-tab {
-  height: 52px;
-  padding: 0 20px;
+  height: 36px;
+  padding: 0 12px;
   border: none;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -1px;
+  border-bottom: none;
   background: transparent;
-  font-size: 15px;
-  font-weight: 600;
-  color: #606770;
+  font-size: 14px;
+  font-weight: 400;
+  color: #1c2b33;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.1s, border-color 0.1s;
+  border-radius: 4px;
+  transition: background 0.1s, color 0.1s;
   font-family: inherit;
+  display: flex;
+  align-items: center;
+  line-height: 1;
 }
-.inbox-full-tab:hover {
-  color: #0064E0;
-  background: rgba(0, 0, 0, 0.03);
+.inbox-full-tab:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.05);
+  color: #0a78be;
 }
+/* Meta実測: active bg=rgb(225,237,247), color=rgb(10,120,190), fw=700 */
 .inbox-full-tab.active {
-  color: #0064E0;
-  border-bottom-color: #0064E0;
+  background: #e1edf7;
+  color: #0a78be;
+  font-weight: 700;
 }
 
 /* 3カラムコンテンツエリア */
@@ -342,31 +351,33 @@ const INBOX_STYLES = `
 }
 .inbox-manage-item:hover { background: var(--bg-subtle); }
 
-/* プラットフォームフィルタバー */
+/* プラットフォームフィルタバー — Meta実測: h=28, bg=rgb(248,249,251), br=4px, p=4px 8px, 12px */
 .inbox-platform-bar {
   display: flex;
-  gap: 6px;
-  padding: 6px 12px 8px;
+  gap: 4px;
+  padding: 4px 12px 6px;
   border-bottom: 1px solid var(--border);
   align-items: center;
   flex-shrink: 0;
-  flex-wrap: wrap;
 }
 .inbox-platform-tab {
-  padding: 4px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: none;
   font-size: 12px;
-  background: transparent;
-  color: var(--text-secondary);
+  background: rgb(248, 249, 251);
+  color: rgb(28, 43, 51);
   cursor: pointer;
-  transition: all 0.1s;
+  transition: background 0.1s, color 0.1s;
   font-family: inherit;
+  white-space: nowrap;
+}
+.inbox-platform-tab:hover {
+  background: rgb(235, 237, 240);
 }
 .inbox-platform-tab.active {
-  background: var(--link-active-bg);
-  color: var(--accent);
-  border-color: var(--accent);
+  background: #e1edf7;
+  color: #0a78be;
   font-weight: 600;
 }
 .inbox-unread-check {
@@ -389,12 +400,12 @@ const INBOX_STYLES = `
   overflow-y: auto;
 }
 
-/* 会話アイテム */
+/* 会話アイテム — Meta実測: padding=12px 0 12px 12px, h~90px */
 .conv-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 8px;
+  gap: 12px;
+  padding: 12px 12px 12px 12px;
   width: 100%;
   border: none;
   border-bottom: 1px solid var(--inbox-separator);
@@ -405,8 +416,8 @@ const INBOX_STYLES = `
   font-family: inherit;
   box-sizing: border-box;
 }
-.conv-item:hover { background: var(--inbox-hover); }
-.conv-item.selected { background: var(--link-active-bg); }
+.conv-item:hover { background: rgb(241, 244, 247); }
+.conv-item.selected { background: #e1edf7; }
 
 /* アバター */
 .conv-avatar-wrap {
@@ -501,13 +512,16 @@ const INBOX_STYLES = `
   background: var(--bg-surface);
   min-width: 0;
 }
+/* Meta実測: padding=12px 0, border-bottom=1px solid rgba(203,210,217,0.6), h=81px */
 .inbox-center-header {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(203, 210, 217, 0.6);
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
+  min-height: 81px;
+  box-sizing: border-box;
 }
 .inbox-center-title {
   font-size: 16px;
