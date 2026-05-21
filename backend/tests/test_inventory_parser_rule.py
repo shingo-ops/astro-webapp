@@ -718,3 +718,77 @@ def test_42_sample_03_iseki_handles_shrink(aliases_sup1):
     conditions = {i.condition for i in result.items if i.condition is not None}
     assert "shrink_yes" in conditions
     assert "shrink_no" in conditions
+
+
+# ---------------------------------------------------------------------------
+# Sprint 3 Reviewer Nit F3 (PR #514) fix:
+#   _split_into_lines の `\s+・ → \n・` 置換は、`商品A・商品B` のような
+#   行内中間中点も改行化していたバグへの修正。行頭の `・` だけが改行化される
+#   ことを確認する。
+# ---------------------------------------------------------------------------
+
+
+def test_43_nit_f3_middle_dot_does_not_split_line():
+    """行内中間の「・」は改行化されず、1 行のままパースされる。
+
+    Sprint 3 Reviewer Nit F3 (PR #514) の修正対象:
+      旧実装は `re.sub(r"\\s+・", "\\n・", normalized)` で行内中点も
+      改行化されていた。例: `商品A・商品B 5BOX@1000円` →
+      `商品A\\n・商品B 5BOX@1000円` のように分断され、`商品A` 単独行と
+      `・商品B...` (policy_line 扱い) になっていた。
+      修正後は行頭の「(空白)+・」だけが改行化される。
+    """
+    from app.services.inventory_parser import _split_into_lines
+
+    # 1 行内に中点を含む文字列。行頭にスペースを置いて旧 regex を引っかける。
+    raw = "商品A・商品B 5BOX@1000円"
+    lines = _split_into_lines(raw)
+    # 旧実装では「・商品B 5BOX@1000円」が 2 行目になっていた。
+    # 新実装では行頭マーカでないので 1 行のまま。
+    assert len(lines) == 1, (
+        f"中間中点で行が分断されてはいけない。lines={lines!r}"
+    )
+    assert "・" in lines[0]
+    assert "商品A" in lines[0] and "商品B" in lines[0]
+
+
+def test_44_nit_f3_leading_dot_still_splits():
+    """行頭の `・` は今まで通り改行化され、別行として認識される。
+
+    Sprint 3 Reviewer Nit F3 (PR #514) の回帰防止:
+      F3 修正で「行頭中点は引き続き分割される」挙動が壊れていないこと。
+    """
+    from app.services.inventory_parser import _split_into_lines
+
+    # 「商品A 100BOX」+ 改行 + 行頭「  ・適格請求書」のパターン
+    raw = "■商品A 100BOX@5,000円\n  ・適格請求書発行事業者"
+    lines = _split_into_lines(raw)
+    # 2 行に分かれる
+    assert len(lines) == 2, f"行頭「・」は分割されるべき。lines={lines!r}"
+    assert "商品A" in lines[0]
+    assert lines[1].startswith("・")
+
+
+def test_45_nit_f3_alias_with_middle_dot_resolves(aliases_sup1):
+    """alias_text 自体に中点が含まれるケースが alias 解決できる。
+
+    Sprint 3 Reviewer Nit F3 (PR #514) の効果検証:
+      将来 supplier_aliases に `エネルギー・カード` のような中点入り
+      alias が登録された場合、旧実装では中点で行分断されて完全一致しなく
+      なっていた。新実装では行頭でない中点は保持され、1 行内で alias
+      完全一致が成立する。
+    """
+    from app.services.inventory_parser import parse_raw_content
+
+    aliases = [
+        AliasRow(id=999, supplier_id=1, alias_text="ホワイト・フレア",
+                 product_id=999),
+    ]
+    raw = "■ホワイト・フレア 5BOX@1000円"
+    result = parse_raw_content(raw, supplier_id=1, aliases=aliases, rules=[])
+    # 中点が消えていないので alias 完全一致で 1 item
+    assert len(result.items) == 1, (
+        f"中点入り alias で 1 item 解決されるべき。items={result.items}"
+    )
+    assert result.items[0].alias_text == "ホワイト・フレア"
+    assert result.items[0].product_id == 999
