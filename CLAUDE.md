@@ -29,9 +29,23 @@
 
 ### マルチテナント運用
 - 本番テナントは `tenant_code=highlife-jpn`（schema: `tenant_004`）
+- 撮影 / Meta App Review 用テナントは `tenant_review`（schema: `tenant_006`、Demo データのみ）
 - 既定値 `test-corp` は空テナントなので、移行 / バッチ実行時は **`TENANT_CODE=highlife-jpn` を明示**
   - `gh workflow run run-*-migration.yml -f tenant_code=highlife-jpn`
   - `docker exec -e TENANT_CODE=highlife-jpn ...`
+
+#### 新規テナント作成時の不変条件チェック（ADR-034 マージまで暫定）
+
+詳細は `docs/adr/ADR-034-tenant-migration-automation.md`。tenant_006 作成時に既存 migration が template に組み込まれておらず 3 件の欠陥（meta_page_routing 未登録 / meta_messages 9 カラム欠落 / message_id VARCHAR(100)）が本番で発覚。**ADR-034 マージ前は新規テナントを作る作業すべてで以下 4 ステップを必須**:
+
+1. Channels 接続後に **実機の Messenger + Instagram DM 送受信**（モック / SQLite 不可、実 webhook）
+2. `SELECT * FROM public.meta_page_routing WHERE tenant_id = :new_tenant_id` で行が存在することを確認
+3. `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'tenant_NNN' AND table_name = 'meta_messages'` で全カラム + `message_id = text` を確認
+4. 不足あれば手動 ALTER / INSERT で埋め、generator.md / evaluator.md に明記
+
+未実施項目を Coverage notes に書いて PASS にしない。**未実施 = FAIL**。ADR-034 マージ後はこのチェックは自動化されるので削除する。
+
+migration を新規追加した場合は、既存全テナントと新規作成テナント両方への適用経路があるかを Generator が説明し、Evaluator が PostgreSQL 実機で確認する。SQLite + AsgiTransport では検証不可能。
 
 ### VPS コンテナの落とし穴（過去事故あり）
 - `/app` 配下は appuser 権限で **書込不可** → スクリプトの出力先は `/tmp` を既定にする
@@ -175,6 +189,25 @@ pushまで完了して初めて作業終了とすること。
 
 ---
 
+## i18n / 翻訳ルール（ADR-027）
+
+詳細は `docs/adr/ADR-027-ui-internationalization.md`。Sales Anchor UI は 2026-05-15 から日本語 / 英語切替対応（`react-i18next`）。要点:
+
+- 全 UI 文字列は `t("key")` 経由で表示（ハードコード日本語は絶対 NG、JSX / エラーメッセージ / `aria-label` / `placeholder` / `title` すべて含む）
+- `frontend/src/locales/ja.json` と `frontend/src/locales/en.json` は **同一キー必須**
+- ユーザーごとの locale は `users.locale VARCHAR(10) DEFAULT 'ja'`（migration 053 で追加済み）に保持
+- 実装 / レビュー時のセルフチェック:
+
+  ```bash
+  git diff --name-only develop...HEAD -- 'frontend/src/**/*.tsx' 'frontend/src/**/*.ts' \
+    | grep -v 'locales/' \
+    | xargs -I{} grep -nE '[ぁ-んァ-ヶ一-龯]' {} 2>/dev/null
+  ```
+
+  ヒット 0 行であること（コメント内の日本語は OK、JSX / 文字列リテラル内は必ず `t()` 化）。
+
+---
+
 ## コア原則
 
 - **シンプル第一**：すべての変更をできる限りシンプルにする。影響するコードを最小限にする。
@@ -288,6 +321,41 @@ ADR-024 で発覚した Meta 連携の不整合は、`tenant_meta_config` レコ
 - 「Phase 2 に持ち越し」が許されるのは **PO が書面で明示的に承認した場合のみ**
 
 > 詳細な背景は `docs/adr/ADR-025_meta_integration_operational_hardening.md` を参照。
+
+---
+
+## 動作確認・受入ゲート（ADR-038）
+
+詳細は `docs/adr/ADR-038-qa-smoke-suite.md`、および Generator / Evaluator agent 定義 `~/.claude/agents/{generator,evaluator}.md`。過去スプリントで Coverage notes に未検証項目を列挙したまま PASS → 本番欠陥が露呈する事故が複数発生したため、以下を Generator / Evaluator / Reviewer 全員の義務とする。
+
+### Generator の自己評価義務（self-eval の前に答える）
+
+1 つでも No なら AC を 4/5 未満で報告し、スプリントを完了させない:
+
+- **変更ファイル全件に検証経路があるか？** `git diff --name-only $base...HEAD` の全ファイルを generator.md の Files changed 表に並べ、AC / 実機テスト経路を記載。orphan change が 1 件でもあれば Evaluator 自動 FAIL（純リファクタは `refactor only — diff inert` と明記）
+- **新規テナント onboarding に影響？** → 上記「新規テナント作成時の不変条件チェック」を実機で通したか
+- **migration を追加？** → 既存全テナント + 新規作成テナント両方への適用経路を generator.md に明記したか
+- **frontend テキストを足した？** → `t("key")` 経由か、ja.json / en.json 同一キーか、上記 i18n grep でハードコード残骸 0 か
+- **連携 endpoint（Webhook / OAuth / 外部 API）を変えた？** → PostgreSQL + 実 Meta API で 1 経路通したか（SQLite + AsgiTransport は「動作確認」ではない）
+- **Blast radius 列挙**: 変更ファイルごとに `Change kind`（universal 15 種、定義は `~/.claude/agents/evaluator.md` Step 3.6）を割り当て、kind 別の grep / SQL / lockfile diff を実機で走らせて出てきた触ってない referent を `## Blast radius pre-flight` 表に並べ、各行に実機検証経路を書いたか
+
+### Evaluator の検証義務（AC スコア前にすべて実施）
+
+検証できない条件は Coverage notes に書いて PASS にせず FAIL にする。**ライブサーバー未起動 / モックのみ / 持ち越し** を理由に未検証を残したら AC スコア最大 3/5（= 自動 FAIL）。
+
+- **変更ファイル全件カバレッジ**: `evaluator.md` の「Changed-file coverage」表に全ファイル + AC / 実機検証経路を記載。orphan change が 1 件でもあれば自動 FAIL
+- マルチテナント検索 / RLS 経路は **PostgreSQL** で実行（SQLite で到達しないパスは無条件 FAIL）
+- 実機 Meta DM 送受信は当該スプリント範囲をすべて通す（Sprint N+1 持ち越しを Coverage notes で逃げない）
+- i18n 影響範囲は上記 grep でハードコード残骸 0 を確認
+- migration 含む変更は `information_schema.columns` 等で全テナント schema 整合を直接確認
+- **隣接機能の regression sweep**: 触った経路と共有テーブル / 共有サービスでつながる既存機能を最低 1 経路だけハッピーパスで通す
+- **QA smoke suite**: ADR-038 の 8 シナリオ Cross-feature smoke + Fresh tenant onboarding を毎スプリント実行、`evaluator.md` の `## Cross-feature smoke suite results` 表 + `## Fresh tenant onboarding` 結果が無ければ自動 FAIL（詳細・seed/reset 仕様は ADR 本文）
+
+### Reviewer の最終ゲート
+
+- ハードコード日本語が混入していないか（上記 i18n grep）
+- migration 追加に対し deploy 経路 / 新規テナント作成スクリプト反映がない → CHANGES_REQUESTED
+- Evaluator が Coverage notes に production-critical な未検証を残して PASS した跡 → CHANGES_REQUESTED + PO 報告
 
 ---
 
