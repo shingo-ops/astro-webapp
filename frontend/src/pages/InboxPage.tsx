@@ -744,8 +744,8 @@ const INBOX_STYLES = `
   margin-bottom: 16px;
 }
 
-/* セクション最初の要素は上線なし（ヘッダー直下） */
-.right-panel-card > .right-panel-section:first-of-type {
+/* セクション最初の要素は上線なし（ヘッダー直後の隣接セレクタ） */
+.right-panel-header + .right-panel-section {
   border-top: none;
   padding-top: 0;
 }
