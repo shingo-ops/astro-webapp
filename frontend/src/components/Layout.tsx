@@ -19,7 +19,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, Package, FileText, BarChart2,
   HelpCircle, Settings, MoreHorizontal, ChevronDown,
-  Search, LogOut, ShieldCheck, MessageCircle,
+  Search, LogOut, ShieldCheck,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
@@ -198,7 +198,14 @@ export default function Layout() {
                   to="/lead-chat"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><MessageCircle size={20} /></span>
+                  <span className="sidebar-icon">
+                    {/* Tabler Icons: brand-wechat (MIT) */}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M16.5 10c3.038 0 5.5 2.015 5.5 4.5c0 1.397 -.72 2.644 -1.861 3.516l.356 1.984l-2.104 -1.028c-.405 .103 -.826 .028 -1.242 .028c-3.038 0 -5.5 -2.015 -5.5 -4.5s2.462 -4.5 5.5 -4.5z" />
+                      <path d="M11.5 6c-3.866 0 -7 2.686 -7 6c0 1.747 .87 3.316 2.253 4.4l-.403 2.6l2.761 -1.399c.684 .19 1.565 .399 2.389 .399c.329 0 .655 -.016 .976 -.047" />
+                    </svg>
+                  </span>
                   <span className="sidebar-label">{t("nav.leadChat")}</span>
                 </NavLink>
               )}
