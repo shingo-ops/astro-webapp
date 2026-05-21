@@ -39,6 +39,7 @@ from app.routers import quotes
 from app.routers import invoices
 from app.routers import suppliers
 from app.routers import purchase_orders
+from app.routers import tenant_profile  # Sprint 8 / F8: PO PDF / メール差出人情報
 from app.routers import duplicates
 from app.routers import analytics
 from app.routers import notifications
@@ -256,6 +257,11 @@ app.include_router(
 )
 app.include_router(
     purchase_orders.router, prefix="/api/v1", tags=["purchase_orders"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# Sprint 8 / F8: テナント発行者情報 (PO PDF / メール差出人) admin CRUD
+app.include_router(
+    tenant_profile.router, prefix="/api/v1", tags=["tenant_profile"],
     dependencies=[Depends(get_current_tenant)],
 )
 app.include_router(

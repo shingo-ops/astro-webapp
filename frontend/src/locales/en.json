@@ -92,7 +92,8 @@
     "signOutMessage": "Are you sure you want to sign out? Any unsaved data will be lost.",
     "superAdminMasters": "Central Masters",
     "superAdminInbound": "Discord Inbound",
-    "inventoryVisibility": "Inventory Visibility"
+    "inventoryVisibility": "Inventory Visibility",
+    "tenantProfile": "Issuer Profile"
   },
   "login": {
     "email": "Email address",
@@ -523,16 +524,39 @@
     "poNumber": "PO number",
     "noPos": "No purchase orders registered",
     "deletePO": "Delete Purchase Order",
+    "allStatuses": "All statuses",
     "status_draft": "Draft",
     "status_pending": "Pending",
     "status_ordered": "Ordered",
     "status_received": "Received",
     "status_cancelled": "Cancelled",
+    "status_error": "Send error",
     "orderedAt": "Order date",
     "receivedAt": "Receipt date",
     "actionOrder": "Order",
     "actionReceive": "Receive",
-    "actionCancel": "Cancel"
+    "actionCancel": "Cancel",
+    "actionDownloadPdf": "PDF",
+    "actionSendEmail": "Send email",
+    "actionResendEmail": "Resend",
+    "emailSent": "Email sent",
+    "emailResent": "Email resent",
+    "emailSendFailed": "Failed to send email"
+  },
+  "tenantProfile": {
+    "title": "Issuer Profile",
+    "subtitle": "Configure the issuer information displayed on PO PDF and email",
+    "companyName": "Company name (Japanese)",
+    "companyNameEn": "Company name (English)",
+    "address": "Address",
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "sealImageUrl": "Seal image URL",
+    "sealHint": "Optional. URL to a seal image embedded into the PDF.",
+    "defaultLanguage": "Default language",
+    "saved": "Issuer profile saved",
+    "permissionRequired": "Viewing this page requires the tenant.profile.view permission"
   },
   "staff": {
     "title": "Staff",

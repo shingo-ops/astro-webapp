@@ -149,6 +149,10 @@ export default function Layout() {
     ...(hasPermission("tenant.inventory_visibility.edit")
       ? [{ to: "/admin/inventory-visibility", label: t("nav.inventoryVisibility") }]
       : []),
+    // spec.md v1.1 F8 (Sprint 8): テナント admin 用「発行者情報」 (PO PDF / メール差出人)
+    ...(hasPermission("tenant.profile.edit") || hasPermission("tenant.profile.view")
+      ? [{ to: "/admin/tenant-profile", label: t("nav.tenantProfile") }]
+      : []),
     // spec.md v1.1 F2 (Sprint 2): 中央 admin 専用「マスタ管理」リンク
     // is_super_admin=true のユーザーにだけ表示。
     // バックエンド側でも require_super_admin で二重ガード（AC2.1）。
@@ -278,7 +282,7 @@ export default function Layout() {
                   label={t("nav.admin")}
                   icon={<ShieldCheck size={20} />}
                   items={adminItems}
-                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/super-admin/masters", "/super-admin/inbound"]}
+                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/admin/tenant-profile", "/super-admin/masters", "/super-admin/inbound"]}
                   isExpanded={sidebarExpanded}
                   isOpen={openAccordion === "admin"}
                   onToggle={() => toggleAccordion("admin")}
