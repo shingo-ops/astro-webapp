@@ -244,6 +244,71 @@ const INBOX_STYLES = `
   overflow: hidden;
 }
 
+/* ページヘッダー（Meta 風: タイトル + サブタイトル） */
+.inbox-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px 12px;
+  background: #fff;
+  border-bottom: 1px solid #dadde1;
+  flex-shrink: 0;
+}
+.inbox-page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1c1e21;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+.inbox-page-subtitle {
+  font-size: 13px;
+  color: #65676B;
+  margin: 0;
+}
+
+/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
+.inbox-full-tab-bar {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid #dadde1;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 8px;
+}
+.inbox-full-tab-bar::-webkit-scrollbar { display: none; }
+.inbox-full-tab {
+  height: 52px;
+  padding: 0 20px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: #65676B;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.1s, border-color 0.1s;
+  font-family: inherit;
+}
+.inbox-full-tab:hover {
+  color: #0064E0;
+  background: rgba(0, 0, 0, 0.03);
+}
+.inbox-full-tab.active {
+  color: #0064E0;
+  border-bottom-color: #0064E0;
+}
+
+/* 3カラムコンテンツエリア */
+.inbox-columns {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
 /* ---- 左パネル ---- */
 .inbox-left-panel {
   width: 280px;
