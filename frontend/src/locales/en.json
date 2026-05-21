@@ -346,6 +346,7 @@
     "markAllRead": "Mark all as read",
     "filterUnread": "Unread",
     "filterFollowUp": "Follow-up",
+    "filterArchive": "Archive",
     "subtitle": "Manage and respond to messages."
   },
   "channels": {
