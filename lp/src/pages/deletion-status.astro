@@ -1,15 +1,16 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import LegalLayout from '../layouts/LegalLayout.astro';
 
 const apiBase = 'https://api.salesanchor.jp/api/v1/meta';
 ---
 
-<BaseLayout
+<LegalLayout
   title="Deletion Status"
   description="Check the processing status of your Sales Anchor data deletion request."
+  subtitle="Enter your confirmation code to check deletion progress."
   noindex={true}
 >
-  <article class="prose prose-slate max-w-3xl mx-auto px-4 py-12">
+  <article>
     <h1>Deletion Status</h1>
 
     <p class="text-base text-gray-700">
@@ -161,4 +162,4 @@ const apiBase = 'https://api.salesanchor.jp/api/v1/meta';
         });
     })();
   </script>
-</BaseLayout>
+</LegalLayout>
