@@ -74,8 +74,8 @@ test.describe("CompaniesPage Edit modal i18n 検証", () => {
 
     await page.goto("/companies");
 
-    // 一覧表示確認 (ja: "会社管理" / en: "Companies")
-    await expect(page.getByRole("heading", { name: /Companies|会社管理/ })).toBeVisible({
+    // 一覧表示確認 (ja: "顧客情報管理" / en: "Client Profiles")（ADR-060 リネーム後）
+    await expect(page.getByRole("heading", { name: /Client Profiles|顧客情報管理/ })).toBeVisible({
       timeout: 20_000,
     });
 
