@@ -187,7 +187,11 @@
     "customerType_price": "価格重視",
     "responseSpeed_24h": "24h以内",
     "responseSpeed_3days": "3日以内",
-    "responseSpeed_over3days": "3日超"
+    "responseSpeed_over3days": "3日超",
+    "tabAll": "すべて",
+    "tabNew": "新規",
+    "tabExisting": "既存",
+    "tabArchive": "アーカイブ"
   },
   "customers": {
     "title": "顧客管理",
