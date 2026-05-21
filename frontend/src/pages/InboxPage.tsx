@@ -47,7 +47,7 @@ const ARCHIVE_STATUSES = ["追客（短期）", "追客（長期）", "対象外
 const NEW_STATUSES = ["新規", "コンタクト中", "AI対応中", "提案中", "保留", "失注"];
 const EXISTING_STATUSES = ["既存顧客", "案件化"];
 
-type LeadStatusFilter = "all" | "new" | "existing" | "archive";
+type LeadStatusFilter = "all" | "leads" | "converted" | "customers";
 
 // ---------------------------------------------------------------------------
 // LeadDetail 型（GET /leads/{id} のレスポンス）
@@ -899,13 +899,13 @@ export default function InboxPage() {
     return conversations
       .filter((c) => {
         if (leadStatusFilter === "all") return true;
-        if (leadStatusFilter === "new") {
+        if (leadStatusFilter === "leads") {
           return c.lead_status != null && NEW_STATUSES.includes(c.lead_status);
         }
-        if (leadStatusFilter === "existing") {
+        if (leadStatusFilter === "converted") {
           return c.lead_status != null && EXISTING_STATUSES.includes(c.lead_status);
         }
-        if (leadStatusFilter === "archive") {
+        if (leadStatusFilter === "customers") {
           // lead_status が null（リード削除済 = LEFT JOIN で NULL）または
           // アーカイブ理由ステータス（追客・対象外）
           return c.lead_status == null || ARCHIVE_STATUSES.includes(c.lead_status);
@@ -978,9 +978,9 @@ export default function InboxPage() {
 
   const leadStatusTabs: { key: LeadStatusFilter; label: string }[] = [
     { key: "all", label: t("inbox.tabAll") },
-    { key: "new", label: t("inbox.tabNew") },
-    { key: "existing", label: t("inbox.tabExisting") },
-    { key: "archive", label: t("inbox.tabArchive") },
+    { key: "leads", label: t("inbox.tabLeads") },
+    { key: "converted", label: t("inbox.tabConverted") },
+    { key: "customers", label: t("inbox.tabCustomers") },
   ];
 
   // ---------------------------------------------------------------------------
