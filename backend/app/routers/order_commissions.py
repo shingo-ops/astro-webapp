@@ -29,8 +29,6 @@ import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 
-logger = logging.getLogger(__name__)
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,6 +61,7 @@ from app.services.commission_calculator import (
 )
 from app.services.time import _jst_month_range_utc
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -133,7 +132,7 @@ async def _fetch_rates(db: AsyncSession, tenant_id: int) -> CommissionRatesConfi
     if isinstance(raw, str):
         try:
             rates_dict = json.loads(raw)
-        except (ValueError, json.JSONDecodeError):
+        except json.JSONDecodeError:
             logger.warning("commission_rates JSON parse failed for tenant_id=%s; using defaults", tenant_id)
             return DEFAULT_COMMISSION_RATES
     else:

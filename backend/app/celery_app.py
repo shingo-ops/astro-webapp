@@ -37,9 +37,6 @@ celery_app.conf.update(
     enable_utc=True,
     # タスク結果の有効期限: 24時間
     result_expires=86400,
-    # 結果バックエンド（Redis）障害時にタスク失敗にならないよう fire-and-forget に設定
-    # Celery タスクは全て非同期バックグラウンド処理のため戻り値を呼び出し元は参照しない
-    task_ignore_result=True,
     # ワーカーがタスクをプリフェッチしすぎないようにする
     worker_prefetch_multiplier=1,
     # タスクの再試行設定

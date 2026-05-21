@@ -82,15 +82,20 @@ async def get_export_status(
     """エクスポートタスクの状態を確認する"""
     from app.celery_app import celery_app
 
-    result = celery_app.AsyncResult(task_id)
+    try:
+        result = celery_app.AsyncResult(task_id)
+        task_status = result.status
+        task_result = result.result if result.ready() else None
+    except Exception:
+        # Redis 結果バックエンド障害時は UNKNOWN を返す（ダウンロード可否は /download で確認）
+        task_status = "UNKNOWN"
+        task_result = None
+
     response = {
         "task_id": task_id,
-        "status": result.status,
-        "result": None,
+        "status": task_status,
+        "result": task_result,
     }
-
-    if result.ready():
-        response["result"] = result.result
 
     return ExportStatusResponse(**response)
 

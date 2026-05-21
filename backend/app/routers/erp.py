@@ -18,8 +18,6 @@ import io
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-
-logger = logging.getLogger(__name__)
 from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -30,6 +28,7 @@ from app.database import get_db
 from app.models import User
 from app.services.audit import record_audit_log
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
