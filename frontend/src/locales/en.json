@@ -187,7 +187,11 @@
     "customerType_price": "Price-focused",
     "responseSpeed_24h": "Within 24h",
     "responseSpeed_3days": "Within 3 days",
-    "responseSpeed_over3days": "Over 3 days"
+    "responseSpeed_over3days": "Over 3 days",
+    "tabAll": "All",
+    "tabNew": "New",
+    "tabExisting": "Existing",
+    "tabArchive": "Archive"
   },
   "customers": {
     "title": "Customers",
