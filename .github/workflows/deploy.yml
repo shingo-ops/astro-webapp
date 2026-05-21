@@ -377,6 +377,14 @@ jobs:
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_inventory_sprint1.py
 
+            # Inventory Sprint 2 (migrations 064-065): super-admin 権限二層構造 (spec.md F2)
+            #   - migration 064: public.users に is_super_admin BOOLEAN NOT NULL DEFAULT FALSE 追加
+            #   - migration 065: public.permissions に central.* キー 6件 seed
+            #   全 SQL は ADD COLUMN IF NOT EXISTS / ON CONFLICT DO NOTHING で冪等。
+            #   関連: .claude-pipeline/spec.md Sprint 2 / F2 / AC2.1 / PR #510
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_inventory_sprint2.py
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
