@@ -17,7 +17,11 @@ from pathlib import Path
 
 import pytest
 
-TEST_PG_URL = os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")
+TEST_PG_URL = os.getenv("TEST_PG_URL")
+# NOTE: RLS_TEST_DATABASE_URL は CI で migration / seed なしの jarvis_test_db
+# を指すため、Sprint 1 のパターン (test_inventory_sprint1_migrations.py) と
+# 同様に **TEST_PG_URL のみ** を見る。CI の bootstrap PR
+# (memory: TEST_PG_URL alias + migration seed) が完了したら or 結合に戻す。
 
 pytestmark = [
     pytest.mark.asyncio,
