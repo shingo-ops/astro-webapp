@@ -776,7 +776,7 @@
     "confirmWarning": "Warning: This action cannot be undone",
     "confirmDesc1": "All contacts, deals, orders, quotes, invoices, addresses and sales channels linked to \"{{sourceName}}\" ({{sourceCode}}) will be reassigned to \"{{masterName}}\" ({{masterCode}}).",
     "confirmDesc2": "The client profile record for \"{{sourceName}}\" will be deleted.",
-    "confirmDesc3": "If the master company was pending_dedup_review, it will automatically be promoted to active.",
+    "confirmDesc3": "If the master client profile was pending_dedup_review, it will automatically be promoted to active.",
     "confirmDesc4": "This action will be recorded in audit_logs.",
     "merging": "Merging...",
     "executeLabel": "Execute merge into \"{{masterName}}\""
