@@ -60,7 +60,18 @@ _LEADS_DDL = """
         type VARCHAR(50),
         status VARCHAR(50) DEFAULT '新規',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        next_action VARCHAR(500),
+        next_action_date DATE,
+        challenge TEXT,
+        meeting_memo TEXT,
+        meeting_impression VARCHAR(50),
+        cs_memo TEXT,
+        sales_form VARCHAR(50),
+        competitor_check BOOLEAN NOT NULL DEFAULT 0,
+        per_order_amount NUMERIC(15, 2),
+        monthly_frequency NUMERIC(10, 2),
+        english_name VARCHAR(255)
     )
 """
 
