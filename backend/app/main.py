@@ -83,6 +83,16 @@ async def lifespan(app: FastAPI):
             "METADATA_FERNET_KEY の検証に失敗しました（Meta OAuth 系統は無効化されます）: %s", e
         )
 
+    # Webhook 必須環境変数チェック
+    # ENFORCE_WEBHOOK_SECRETS=1 の場合は起動を失敗させる
+    _enforce_webhook = os.getenv("ENFORCE_WEBHOOK_SECRETS", "").strip().lower() in ("1", "true", "yes", "on")
+    _startup_logger = _logging.getLogger(__name__)
+    for _var in ("META_APP_SECRET", "META_VERIFY_TOKEN"):
+        if not os.getenv(_var):
+            if _enforce_webhook:
+                raise RuntimeError(f"Required env var {_var} is not set")
+            _startup_logger.warning("必須環境変数 %s が未設定です（ENFORCE_WEBHOOK_SECRETS=1 で起動を強制失敗させられます）", _var)
+
     await init_redis()
     yield
     await close_redis()
