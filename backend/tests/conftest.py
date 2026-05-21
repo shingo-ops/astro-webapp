@@ -368,7 +368,6 @@ async def setup_test_db(test_engine):
                 notes TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                -- ADR-015 商談カルテフィールド
                 next_action VARCHAR(500),
                 next_action_date DATE,
                 challenge TEXT,
