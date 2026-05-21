@@ -15,6 +15,18 @@ import os
 # app.database が import される前に DATABASE_URL を SQLite に差し替える
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
+# Sprint 2 Reviewer Minor (PR #510 follow-up):
+#   多くの実 PG テスト (test_super_admin_*.py / test_tenant_admin_*.py /
+#   test_inventory_sprint1_migrations.py 等) は TEST_PG_URL で skip 判定するが、
+#   CI workflow は RLS_TEST_DATABASE_URL のみ export しているため
+#   Sprint 2 で追加された 12 件のテストが本来動くはずの環境でも全 skip
+#   されていた。
+#   各テスト側の `os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")`
+#   パターンに加え、ここでも env を補完して保険を入れる。
+#   (CI workflow 側にも TEST_PG_URL の明示 export を追加してある二段構え)
+if not os.getenv("TEST_PG_URL") and os.getenv("RLS_TEST_DATABASE_URL"):
+    os.environ["TEST_PG_URL"] = os.environ["RLS_TEST_DATABASE_URL"]
+
 from unittest.mock import patch
 
 # Python 3.14: mock.patch は target の親 package が submodule を attribute として

@@ -118,6 +118,11 @@ jobs:
           # fixture (test_rls_tenant_meta_config.py) も AsyncConnection 化して
           # transaction 二重起動問題を解消済。
           RLS_TEST_DATABASE_URL: postgresql+asyncpg://jarvis_app:apppass@localhost:5432/jarvis_test_db
+          # Sprint 2 Reviewer Minor (PR #510 follow-up):
+          # 新規 inventory 系テスト (test_super_admin_*.py / test_tenant_admin_*.py)
+          # は TEST_PG_URL で skip 判定するため、同じ DSN を二重 export して
+          # CI でも実行されるようにする（conftest.py 側でも保険として補完）。
+          TEST_PG_URL: postgresql+asyncpg://jarvis_app:apppass@localhost:5432/jarvis_test_db
           # Redis（既存 OAuth state ストレージ等で利用）
           REDIS_URL: redis://localhost:6379/0
           # FastAPI lifespan 内でアクセスするため

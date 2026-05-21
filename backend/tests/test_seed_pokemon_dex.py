@@ -21,7 +21,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 from scripts import seed_pokemon_dex  # noqa: E402
 
-TEST_PG_URL = os.getenv("TEST_PG_URL")
+TEST_PG_URL = os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")
 
 
 def test_load_rows_fallback_when_csv_absent(tmp_path, monkeypatch):

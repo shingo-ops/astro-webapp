@@ -14,13 +14,13 @@ from pathlib import Path
 
 import pytest
 
-TEST_PG_URL = os.getenv("TEST_PG_URL")
+TEST_PG_URL = os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")
 
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(
         not TEST_PG_URL,
-        reason="実 PostgreSQL 環境が必要 (TEST_PG_URL 未設定)。",
+        reason="実 PostgreSQL 環境が必要 (TEST_PG_URL / RLS_TEST_DATABASE_URL 未設定)。",
     ),
 ]
 
