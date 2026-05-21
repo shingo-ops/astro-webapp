@@ -120,23 +120,28 @@ test.describe("Sprint 5 / F5 — /super-admin/inbound 一覧", () => {
 
   test("AC5.5 (filter): parse_status フィルタで絞り込み", async ({ page }) => {
     await installAuthBypass(page);
-    // 初回 GET は全件、フィルタ後 GET は 1 件のみ返す
+    // 動的レスポンスを mockApi の function entry で実装する。
+    // (page.route 二重登録だと mockApi 側の 404 fail-fast が先に応答してしまうため、
+    //  単一 mockApi にまとめる)
     let callCount = 0;
-    await page.route("**/api/v1/super-admin/inbound/discord**", async (route) => {
-      callCount += 1;
-      const url = new URL(route.request().url());
-      const status = url.searchParams.get("parse_status");
-      const data =
-        status === "ignored_routing"
-          ? sampleInbound.filter((m) => m.parse_status === "ignored_routing")
-          : sampleInbound;
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(data),
-      });
+    await mockApi(page, {
+      ...baseMocks(true),
+      "GET /super-admin/inbound/discord": async (route) => {
+        callCount += 1;
+        const url = new URL(route.request().url());
+        const status = url.searchParams.get("parse_status");
+        const data =
+          status === "ignored_routing"
+            ? sampleInbound.filter((m) => m.parse_status === "ignored_routing")
+            : sampleInbound;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(data),
+        });
+      },
     });
-    await mockApi(page, baseMocks(true));
+
     await page.goto("/super-admin/inbound");
 
     await expect(page.getByTestId("inbound-table")).toBeVisible();
