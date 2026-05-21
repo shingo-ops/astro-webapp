@@ -167,7 +167,7 @@ const INBOX_STYLES = `
   height: calc(100vh - 56px);
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg-primary);
+  background: #F2F2F2;
 }
 
 /* 左＋中央エリア（ヘッダー・タブ・カラム）— タブバーはここまで */
@@ -187,6 +187,8 @@ const INBOX_STYLES = `
   padding: 16px 24px 12px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
+<<<<<<< HEAD
+=======
   flex-shrink: 0;
 }
 .inbox-page-title {
@@ -244,10 +246,90 @@ const INBOX_STYLES = `
   overflow: hidden;
 }
 
+/* ページヘッダー（Meta 風: タイトル + サブタイトル） */
+.inbox-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px 12px;
+  background: #fff;
+  border-bottom: 1px solid #dadde1;
+>>>>>>> origin/main
+  flex-shrink: 0;
+}
+.inbox-page-title {
+  font-size: 20px;
+  font-weight: 700;
+<<<<<<< HEAD
+  color: var(--text-primary);
+=======
+  color: #1c1e21;
+>>>>>>> origin/main
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+.inbox-page-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
+.inbox-full-tab-bar {
+  display: flex;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 8px;
+}
+.inbox-full-tab-bar::-webkit-scrollbar { display: none; }
+.inbox-full-tab {
+  height: 52px;
+  padding: 0 20px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.1s, border-color 0.1s;
+  font-family: inherit;
+}
+.inbox-full-tab:hover {
+<<<<<<< HEAD
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+.inbox-full-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+=======
+  color: #0064E0;
+  background: rgba(0, 0, 0, 0.03);
+}
+.inbox-full-tab.active {
+  color: #0064E0;
+  border-bottom-color: #0064E0;
+>>>>>>> origin/main
+}
+
+/* 3カラムコンテンツエリア */
+.inbox-columns {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
 /* ---- 左パネル ---- */
 .inbox-left-panel {
-  width: 280px;
+  width: 443px;
   flex-shrink: 0;
+  flex-grow: 0;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   display: flex;
@@ -627,23 +709,19 @@ const INBOX_STYLES = `
 
 /* ---- 右パネル ---- */
 .inbox-right-panel {
-  width: 360px;
+  width: 300px;
   flex-shrink: 0;
-  background: var(--bg-primary);
-  border-left: 1px solid var(--border);
+  flex-grow: 0;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--inbox-separator);
   display: flex;
   flex-direction: column;
-  padding: 12px 10px;
   overflow-y: auto;
-  gap: 10px;
 }
 
-/* カルテカード（右パネル内の独立カード — Meta風） */
+/* カルテカード（右パネル内 — Metaに合わせフラット構成） */
 .right-panel-card {
   background: var(--bg-surface);
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  padding: 20px 16px;
   width: 100%;
   box-sizing: border-box;
   display: flex;
@@ -689,8 +767,9 @@ const INBOX_STYLES = `
 .right-panel-section {
   width: 100%;
   margin-top: 0;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  padding: 16px 12px;
+  border-top: 1px solid var(--inbox-separator);
+  box-sizing: border-box;
 }
 .right-panel-row {
   display: flex;
@@ -741,7 +820,8 @@ const INBOX_STYLES = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 16px;
+  padding: 16px 12px;
+  box-sizing: border-box;
 }
 
 /* セクション最初の要素は上線なし（ヘッダー直後の隣接セレクタ） */
