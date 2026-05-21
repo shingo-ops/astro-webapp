@@ -36,5 +36,9 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         try:
             yield session
-        finally:
-            await session.close()
+        except Exception:
+            # SQLエラー時は明示的にロールバックしてからコネクションを返却する。
+            # ロールバックせずに close() すると INTRANS_INERROR 状態のままプールに
+            # 返却され、次のリクエストで別の SQLAlchemyError が発生することがある。
+            await session.rollback()
+            raise
