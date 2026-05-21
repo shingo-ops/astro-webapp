@@ -179,14 +179,13 @@ const INBOX_STYLES = `
   min-width: 0;
 }
 
-/* ページヘッダー（Meta 風: タイトル + サブタイトル） */
+/* ページヘッダー（Meta 風: タイトル + サブタイトル — フラット/カードなし） */
 .inbox-page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px 12px;
   background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .inbox-page-title {
@@ -351,47 +350,37 @@ const INBOX_STYLES = `
 }
 .inbox-manage-item:hover { background: var(--bg-subtle); }
 
-/* プラットフォームフィルタバー */
-.inbox-platform-bar {
+/* サブフィルターピル（Meta実測: 未読/フォローアップ） */
+.inbox-sub-filter-bar {
   display: flex;
-  gap: 4px;
-  padding: 4px 12px 6px;
-  border-bottom: 1px solid var(--border);
   align-items: center;
+  gap: 4px;
+  padding: 4px 12px 8px;
   flex-shrink: 0;
 }
-.inbox-platform-tab {
+/* Meta実測: 非アクティブ bg=transparent, color=rgb(28,43,51), fs=14px, fw=400, padding=8px 12px, br=4px */
+.inbox-sub-filter-pill {
   padding: 4px 8px;
   border-radius: 4px;
   border: none;
-  font-size: 12px;
-  background: var(--bg-subtle);
+  font-size: 14px;
+  font-weight: 400;
+  background: transparent;
   color: var(--text-primary);
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
   font-family: inherit;
   white-space: nowrap;
+  line-height: 1.5;
 }
-.inbox-platform-tab:hover {
-  background: var(--bg-hover);
-}
-.inbox-platform-tab.active {
+/* Meta実測: アクティブ bg=rgb(225,237,247), color=rgb(10,120,190), fw=700 */
+.inbox-sub-filter-pill.active {
   background: var(--link-active-bg);
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 700;
 }
-.inbox-unread-check {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  white-space: nowrap;
-}
-.inbox-unread-check input[type="checkbox"] {
-  accent-color: var(--accent);
+.inbox-sub-filter-pill:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 /* 会話リスト */
@@ -599,32 +588,57 @@ const INBOX_STYLES = `
 }
 .msg-time.inbound { text-align: left; }
 
-/* 送信エリア — Meta実測: border-topなし */
+/* 送信エリア — Meta実測: 白角丸カード(br=8px) + 左側に送信者アバター */
 .inbox-send-area {
-  padding: 10px 16px;
+  padding: 4px 12px 12px;
   flex-shrink: 0;
   background: var(--bg-surface);
 }
+/* 白い角丸ボックス（Meta実測: bg=white, br=8px, border=1px solid border-color） */
+.send-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* 上段: 送信者アバター + 入力エリア */
+.send-top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 10px 6px;
+}
+/* 入力ラップ（Meta実測: br=18px） */
+.send-input-wrap {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-subtle);
+  border-radius: 18px;
+  padding: 8px 14px;
+  box-sizing: border-box;
+}
 .inbox-textarea {
   width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 10px 16px;
+  border: none;
+  padding: 0;
   font-size: 14px;
   resize: none;
   font-family: inherit;
   outline: none;
-  background: var(--bg-subtle);
+  background: transparent;
   color: var(--text-primary);
   box-sizing: border-box;
   line-height: 1.4;
 }
-.inbox-textarea:focus { border-color: var(--accent); background: var(--bg-surface); }
-.inbox-textarea:disabled { background: var(--bg-subtle); cursor: not-allowed; }
-.inbox-send-row {
+.inbox-textarea:disabled { cursor: not-allowed; opacity: 0.6; }
+/* 下段: 送信ボタン */
+.send-bottom-row {
   display: flex;
   justify-content: flex-end;
-  margin-top: 8px;
+  align-items: center;
+  padding: 0 10px 10px;
 }
 .inbox-send-btn {
   padding: 8px 20px;
@@ -876,9 +890,10 @@ export default function InboxPage() {
   const [convError, setConvError] = useState("");
 
   // フィルタ
-  const [leadStatusFilter, setLeadStatusFilter] = useState<LeadStatusFilter>("all");
-  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
+  const [leadStatusFilter] = useState<LeadStatusFilter>("all");
+  const [platformFilter] = useState<PlatformFilter>("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [followUpOnly, setFollowUpOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Phase 1-E F14-S5: Page フィルタ
@@ -1083,6 +1098,14 @@ export default function InboxPage() {
         return true;
       })
       .filter((c) => {
+        if (!unreadOnly) return true;
+        return (c.unread_count ?? 0) > 0;
+      })
+      .filter((c) => {
+        if (!followUpOnly) return true;
+        return c.lead_status != null && LEADS_STATUSES.includes(c.lead_status);
+      })
+      .filter((c) => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         return (
@@ -1090,7 +1113,7 @@ export default function InboxPage() {
           (c.last_message_text ?? "").toLowerCase().includes(q)
         );
       });
-  }, [conversations, leadStatusFilter, searchQuery]);
+  }, [conversations, leadStatusFilter, unreadOnly, followUpOnly, searchQuery]);
 
   // ---------------------------------------------------------------------------
   // 送信
@@ -1142,17 +1165,6 @@ export default function InboxPage() {
 
   const selectedPlatform = inferPlatform(messagesData?.lead, selectedConversation);
 
-  // ---------------------------------------------------------------------------
-  // リードステータスタブ
-  // ---------------------------------------------------------------------------
-
-  const leadStatusTabs: { key: LeadStatusFilter; label: string }[] = [
-    { key: "all", label: t("inbox.tabAll") },
-    { key: "leads", label: t("inbox.tabLeads") },
-    { key: "converted", label: t("inbox.tabConverted") },
-    { key: "customers", label: t("inbox.tabCustomers") },
-  ];
-
   // 管理ドロップダウン: click-outside で閉じる
   useEffect(() => {
     if (!manageOpen) return;
@@ -1190,22 +1202,6 @@ export default function InboxPage() {
             <h1 className="inbox-page-title">{t("inbox.title")}</h1>
             <p className="inbox-page-subtitle">{t("inbox.subtitle")}</p>
           </div>
-        </div>
-
-        {/* 全幅タブバー（リードステータスフィルタ） */}
-        <div className="inbox-full-tab-bar" role="tablist" aria-label={t("inbox.title")}>
-          {leadStatusTabs.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={leadStatusFilter === tab.key}
-              className={`inbox-full-tab${leadStatusFilter === tab.key ? " active" : ""}`}
-              onClick={() => setLeadStatusFilter(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
         </div>
 
         {/* 3カラムコンテンツ */}
@@ -1250,26 +1246,22 @@ export default function InboxPage() {
             </div>
           </div>
 
-          {/* 3. プラットフォームフィルタ + 未読チェック */}
-          <div className="inbox-platform-bar">
-            {(["all", "messenger", "instagram"] as PlatformFilter[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                className={`inbox-platform-tab${platformFilter === p ? " active" : ""}`}
-                onClick={() => setPlatformFilter(p)}
-              >
-                {p === "all" ? t("inbox.all") : platformLabel(p)}
-              </button>
-            ))}
-            <label className="inbox-unread-check">
-              <input
-                type="checkbox"
-                checked={unreadOnly}
-                onChange={(e) => setUnreadOnly(e.target.checked)}
-              />
-              {t("inbox.unread")}
-            </label>
+          {/* サブフィルターピル（Meta実測: 未読/フォローアップ） */}
+          <div className="inbox-sub-filter-bar">
+            <button
+              type="button"
+              className={`inbox-sub-filter-pill${unreadOnly ? " active" : ""}`}
+              onClick={() => setUnreadOnly((v) => !v)}
+            >
+              {t("inbox.filterUnread")}
+            </button>
+            <button
+              type="button"
+              className={`inbox-sub-filter-pill${followUpOnly ? " active" : ""}`}
+              onClick={() => setFollowUpOnly((v) => !v)}
+            >
+              {t("inbox.filterFollowUp")}
+            </button>
           </div>
 
           {/* Page フィルタ（複数 Page 時） */}
@@ -1495,42 +1487,53 @@ export default function InboxPage() {
                 })}
               </div>
 
-              {/* 送信エリア */}
+              {/* 送信エリア — Meta実測: 白角丸カード + アバター左配置 */}
               <div className="inbox-send-area">
                 {sendError && (
                   <div className="inbox-send-error" role="alert">
                     Send error: {sendError}
                   </div>
                 )}
-                <textarea
-                  className="inbox-textarea"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    canSend
-                      ? t("inbox.messagePlaceholder")
-                      : t("inbox.sendDisabled7d")
-                  }
-                  rows={2}
-                  disabled={!canSend || sending}
-                />
-                <div className="inbox-send-row">
-                  <button
-                    type="button"
-                    className="inbox-send-btn"
-                    onClick={submitSend}
-                    disabled={sendDisabled}
-                    title={
-                      !canSend
-                        ? t("inbox.sendDisabled7d")
-                        : trimmedDraft.length === 0
-                          ? t("inbox.messagePlaceholder")
-                          : t("inbox.send")
-                    }
-                  >
-                    {sending ? t("inbox.sending") : t("inbox.send")}
-                  </button>
+                <div className="send-card">
+                  {/* 上段: 送信者アバター + 入力欄 */}
+                  <div className="send-top-row">
+                    <div className="conv-avatar" style={{ width: 36, height: 36, fontSize: 12, flexShrink: 0 }}>
+                      Me
+                    </div>
+                    <div className="send-input-wrap">
+                      <textarea
+                        className="inbox-textarea"
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={
+                          canSend
+                            ? t("inbox.messagePlaceholder")
+                            : t("inbox.sendDisabled7d")
+                        }
+                        rows={2}
+                        disabled={!canSend || sending}
+                      />
+                    </div>
+                  </div>
+                  {/* 下段: 送信ボタン */}
+                  <div className="send-bottom-row">
+                    <button
+                      type="button"
+                      className="inbox-send-btn"
+                      onClick={submitSend}
+                      disabled={sendDisabled}
+                      title={
+                        !canSend
+                          ? t("inbox.sendDisabled7d")
+                          : trimmedDraft.length === 0
+                            ? t("inbox.messagePlaceholder")
+                            : t("inbox.send")
+                      }
+                    >
+                      {sending ? t("inbox.sending") : t("inbox.send")}
+                    </button>
+                  </div>
                 </div>
               </div>
             </>
