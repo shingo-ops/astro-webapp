@@ -19,6 +19,7 @@ export default {
           800: '#1158b5',
           900: '#0e498f',
           navy: '#0a1628',
+          charcoal: '#111520',
         },
       },
       fontFamily: {
