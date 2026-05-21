@@ -116,6 +116,24 @@ class MetaGraphAPIError(MetaGraphError):
         }
 
 
+class MetaGraphRateLimitError(MetaGraphAPIError):
+    """Meta Graph API のレート制限エラー（429 相当）。
+
+    Meta はレート制限を HTTP 429 または error.code 4 / 32 / 613 で返す。
+    通常の MetaGraphAPIError と区別することで、呼び出し元が 429 を正しく返せる。
+
+    Attributes:
+        retry_after: Retry-After ヘッダー値（秒）。不明時は None。
+    """
+
+    # Meta のレート制限を示す error.code 一覧
+    RATE_LIMIT_CODES = frozenset({4, 32, 613, 17})
+
+    def __init__(self, message: str, *, status_code: int, retry_after: Optional[int] = None, **kwargs) -> None:
+        super().__init__(message, status_code=status_code, **kwargs)
+        self.retry_after = retry_after
+
+
 class MetaGraphTimeoutError(MetaGraphError):
     """Meta Graph API がタイムアウトした。"""
 
@@ -204,14 +222,26 @@ async def _request(
     # Meta のエラー応答は status >= 400 もしくは body に "error" キーを含む
     if isinstance(body, dict) and "error" in body:
         err = body["error"] or {}
-        raise MetaGraphAPIError(
-            err.get("message") or "Meta Graph API error (no message)",
+        error_code = err.get("code")
+        common_kwargs = dict(
             status_code=response.status_code,
             error_type=err.get("type"),
-            error_code=err.get("code"),
+            error_code=error_code,
             error_subcode=err.get("error_subcode"),
             fbtrace_id=err.get("fbtrace_id"),
         )
+        message = err.get("message") or "Meta Graph API error (no message)"
+        # レート制限コード（4=Application rate limit, 32=Page rate limit,
+        # 613=Calls to this API have exceeded the rate limit, 17=User rate limit）
+        # または HTTP 429 の場合は MetaGraphRateLimitError を raise する
+        if response.status_code == 429 or error_code in MetaGraphRateLimitError.RATE_LIMIT_CODES:
+            # Retry-After ヘッダーが存在すれば秒数として渡す
+            retry_after: Optional[int] = None
+            raw_retry = response.headers.get("Retry-After")
+            if raw_retry and raw_retry.isdigit():
+                retry_after = int(raw_retry)
+            raise MetaGraphRateLimitError(message, retry_after=retry_after, **common_kwargs)
+        raise MetaGraphAPIError(message, **common_kwargs)
 
     if response.status_code >= 400:
         raise MetaGraphTransportError(

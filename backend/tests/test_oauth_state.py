@@ -208,11 +208,12 @@ async def test_consume_state_empty_string_returns_none():
 
 
 @pytest.mark.asyncio
-async def test_consume_state_redis_unavailable_returns_none():
-    """Redis 未接続は None（fail-closed: ログイン失敗扱い）。"""
+async def test_consume_state_redis_unavailable_raises_error():
+    """Redis 未接続は OAuthStateError を raise する（#30: Redis障害とstate期限切れを区別）。"""
+    from app.services.oauth_state import OAuthStateError
     with patch("app.services.oauth_state.get_redis", return_value=None):
-        result = await consume_state("any")
-    assert result is None
+        with pytest.raises(OAuthStateError):
+            await consume_state("any")
 
 
 @pytest.mark.asyncio

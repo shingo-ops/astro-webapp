@@ -133,6 +133,9 @@ async def consume_state(state: str) -> Optional[dict[str, object]]:
           - state 文字列が空
           - Redis に該当 key が無い（期限切れ or 改ざん or 既に消費済）
           - Fernet 復号失敗（鍵不一致 等）
+
+    Raises:
+        OAuthStateError: Redis 未接続またはパイプライン実行中に接続エラーが発生した場合。
     """
     if not state:
         return None
@@ -140,7 +143,7 @@ async def consume_state(state: str) -> Optional[dict[str, object]]:
     r = get_redis()
     if r is None:
         logger.error("Redis 未接続のため OAuth state を検証できません")
-        return None
+        raise OAuthStateError("Redis 未接続のため OAuth state を検証できません")
 
     key = _redis_key(state)
     try:
@@ -150,9 +153,9 @@ async def consume_state(state: str) -> Optional[dict[str, object]]:
             pipe.delete(key)
             results = await pipe.execute()
         encrypted = results[0]
-    except Exception:
+    except Exception as exc:
         logger.exception("OAuth state の Redis 取得に失敗")
-        return None
+        raise OAuthStateError("Redis パイプライン実行中に接続エラーが発生しました") from exc
 
     if not encrypted:
         return None

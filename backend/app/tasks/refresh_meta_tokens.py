@@ -414,7 +414,10 @@ def _process_tenant(
     return summary
 
 
-@shared_task(name="app.tasks.refresh_meta_tokens.refresh_all_meta_page_tokens")
+@shared_task(
+    name="app.tasks.refresh_meta_tokens.refresh_all_meta_page_tokens",
+    max_retries=3,
+)
 def refresh_all_meta_page_tokens() -> dict[str, Any]:
     """全テナントの Page Access Token を必要に応じてリフレッシュする。
 
@@ -457,6 +460,16 @@ def refresh_all_meta_page_tokens() -> dict[str, Any]:
                 overall["by_tenant"].append(summary)
         except Exception:
             logger.exception("テナント %d のトークンリフレッシュに失敗", tenant_id)
+            overall["tenants_processed"] += 1
+            overall["failed"] += 1
+            overall["by_tenant"].append({
+                "tenant_id": tenant_id,
+                "scanned": 0,
+                "refreshed": 0,
+                "failed": 1,
+                "deactivated": 0,
+                "error": "tenant_process_failed",
+            })
 
     logger.info(
         "Meta token refresh 完了: tenants=%d scanned=%d refreshed=%d failed=%d deactivated=%d",

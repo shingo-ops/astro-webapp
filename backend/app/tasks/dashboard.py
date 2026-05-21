@@ -138,7 +138,15 @@ def _compute_kpis(session, tenant_id: int) -> dict:
     }
 
 
-@shared_task(name="app.tasks.dashboard.refresh_all_tenant_kpis")
+@shared_task(
+    name="app.tasks.dashboard.refresh_all_tenant_kpis",
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+)
 def refresh_all_tenant_kpis():
     """全テナントのダッシュボードKPIを更新する。"""
     engine = _get_sync_engine()
@@ -167,7 +175,15 @@ def refresh_all_tenant_kpis():
     return {"updated": updated, "total": len(tenant_ids)}
 
 
-@shared_task(name="app.tasks.dashboard.refresh_tenant_kpi")
+@shared_task(
+    name="app.tasks.dashboard.refresh_tenant_kpi",
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+)
 def refresh_tenant_kpi(tenant_id: int):
     """特定テナントのダッシュボードKPIを更新する。"""
     engine = _get_sync_engine()

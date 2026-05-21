@@ -21,6 +21,7 @@ celery_app = Celery(
     include=[
         "app.tasks.dashboard",
         "app.tasks.data_deletion",
+        "app.tasks.email_tasks",
         "app.tasks.maintenance",
         "app.tasks.refresh_meta_tokens",
         "app.tasks.reports",

@@ -51,6 +51,9 @@ class JarvisDiscordClient(discord.Client):
         )
 
 
+_MAX_RECONNECT_ATTEMPTS = 10
+
+
 async def run_gateway(tenant: TenantBotConfig) -> None:
     """1 テナント分の Gateway 接続を維持する。切断時は discord.py が自動再接続する。
 
@@ -58,9 +61,11 @@ async def run_gateway(tenant: TenantBotConfig) -> None:
     main 側で全テナント致命時に非ゼロ終了する。
 
     一般例外は指数バックオフで再起動（最大 60 秒）。
+    _MAX_RECONNECT_ATTEMPTS 回連続失敗したら停止してアラートを発報する。
     """
     backoff = 5
     max_backoff = 60
+    reconnect_count = 0
     while True:
         client = JarvisDiscordClient(tenant)
         try:
@@ -77,12 +82,25 @@ async def run_gateway(tenant: TenantBotConfig) -> None:
             await client.close()
             raise
         except Exception as exc:
+            reconnect_count += 1
             logger.exception(
-                "[discord-gateway] 例外発生 tenant=%s exc_type=%s, %d 秒後に再起動",
+                "[discord-gateway] 例外発生 tenant=%s exc_type=%s, %d 秒後に再起動 (attempt %d/%d)",
                 tenant.tenant_code,
                 type(exc).__name__,
                 backoff,
+                reconnect_count,
+                _MAX_RECONNECT_ATTEMPTS,
             )
+            if reconnect_count >= _MAX_RECONNECT_ATTEMPTS:
+                logger.critical(
+                    "[discord-gateway] 最大再接続回数 (%d) を超えました tenant=%s — "
+                    "手動で Bot Token を確認し再起動してください",
+                    _MAX_RECONNECT_ATTEMPTS,
+                    tenant.tenant_code,
+                )
+                raise RuntimeError(
+                    f"Discord gateway max reconnect attempts reached for tenant={tenant.tenant_code}"
+                ) from exc
             try:
                 await client.close()
             except Exception:
@@ -91,3 +109,4 @@ async def run_gateway(tenant: TenantBotConfig) -> None:
             backoff = min(backoff * 2, max_backoff)
         else:
             backoff = 5
+            reconnect_count = 0

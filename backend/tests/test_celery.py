@@ -48,6 +48,19 @@ class TestCeleryAppConfig:
         assert "app.tasks.maintenance" in celery_app.conf.include
         assert "app.tasks.reports" in celery_app.conf.include
 
+    def test_email_tasks_module_registered(self):
+        """email_tasks が include に登録されていること（Phase 3 追加）"""
+        from app.celery_app import celery_app
+        assert "app.tasks.email_tasks" in celery_app.conf.include
+
+    def test_result_backend_configured(self):
+        """result_expires が設定されており、AsyncResult が機能できる状態であること"""
+        from app.celery_app import celery_app
+        # export_csv はステータスポーリングに AsyncResult を使用するため
+        # task_ignore_result は False（デフォルト）を維持する
+        assert celery_app.conf.task_ignore_result is False
+        assert celery_app.conf.result_expires == 86400
+
 
 class TestDashboardTask:
     """ダッシュボードKPIキャッシュタスクのテスト"""
@@ -255,6 +268,71 @@ class TestReportsAPI:
 
         app.dependency_overrides.clear()
         assert resp.status_code == 404
+
+    async def test_export_status_returns_pending(self):
+        """タスクステータスエンドポイントが PENDING を返すこと"""
+        from app.main import app
+        from app.auth.dependencies import get_current_user, get_current_tenant
+        from app.database import get_db
+        from httpx import AsyncClient, ASGITransport
+        from app.models import User
+
+        mock_user = User()
+        mock_user.id = 999
+        mock_user.tenant_id = 999
+        mock_user.username = "testuser"
+        mock_user.email = "test@example.com"
+        mock_user.role = "admin"
+        mock_user.is_active = True
+
+        app.dependency_overrides[get_db] = lambda: iter([MagicMock()])
+        app.dependency_overrides[get_current_user] = lambda: mock_user
+        app.dependency_overrides[get_current_tenant] = lambda: 999
+
+        mock_async_result = MagicMock()
+        mock_async_result.status = "PENDING"
+        mock_async_result.ready.return_value = False
+        mock_async_result.result = None
+
+        with patch("app.celery_app.celery_app.AsyncResult", return_value=mock_async_result):
+            transport = ASGITransport(app=app)
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                resp = await client.get("/api/v1/reports/some-task-id/status")
+
+        app.dependency_overrides.clear()
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "PENDING"
+
+    async def test_export_status_redis_failure_returns_unknown(self):
+        """結果バックエンド障害時は UNKNOWN ステータスを返すこと"""
+        from app.main import app
+        from app.auth.dependencies import get_current_user, get_current_tenant
+        from app.database import get_db
+        from httpx import AsyncClient, ASGITransport
+        from app.models import User
+
+        mock_user = User()
+        mock_user.id = 999
+        mock_user.tenant_id = 999
+        mock_user.username = "testuser"
+        mock_user.email = "test@example.com"
+        mock_user.role = "admin"
+        mock_user.is_active = True
+
+        app.dependency_overrides[get_db] = lambda: iter([MagicMock()])
+        app.dependency_overrides[get_current_user] = lambda: mock_user
+        app.dependency_overrides[get_current_tenant] = lambda: 999
+
+        with patch("app.celery_app.celery_app.AsyncResult", side_effect=ConnectionError("Redis down")):
+            transport = ASGITransport(app=app)
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                resp = await client.get("/api/v1/reports/some-task-id/status")
+
+        app.dependency_overrides.clear()
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "UNKNOWN"
 
 
 class TestDashboardCacheIntegration:

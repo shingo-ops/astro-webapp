@@ -133,11 +133,13 @@ class TestBlacklist:
         assert await is_token_blacklisted("test-token") is False
 
     async def test_blacklist_no_redis(self):
-        """Redis未接続時はfail-closed（Trueを返す）"""
+        """Redis未接続時はfail-open（Falseを返す）かつblacklist_tokenはFalseを返す"""
         with patch("app.cache._redis", None):
-            await blacklist_token("token")
-            # fail-closed: Redis障害時は安全側に倒してブラックリスト扱い
-            assert await is_token_blacklisted("token") is True
+            result = await blacklist_token("token")
+            # blacklist_token は失敗を bool で返すようになった
+            assert result is False
+            # fail-open: Redis障害時は全ユーザー401よりも可用性を優先
+            assert await is_token_blacklisted("token") is False
 
 
 class TestLogoutEndpoint:
@@ -147,6 +149,7 @@ class TestLogoutEndpoint:
         from httpx import AsyncClient, ASGITransport
 
         with patch("app.routers.auth.blacklist_token", new_callable=AsyncMock) as mock_bl:
+            mock_bl.return_value = True  # 成功を模擬
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 resp = await client.post(

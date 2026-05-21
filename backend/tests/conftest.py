@@ -17,6 +17,10 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
 from unittest.mock import patch
 
+# Python 3.14: mock.patch は target の親 package が submodule を attribute として
+# 保持していることを要求する。app.auth.dependencies を先に import しておく。
+import app.auth.dependencies  # noqa: F401
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport

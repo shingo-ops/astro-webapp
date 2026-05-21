@@ -358,7 +358,13 @@ async def connect_callback(
     6. tenant_meta_config に Fernet 暗号化保存（UPSERT）
     7. audit_log に記録
     """
-    payload = await oauth_state.consume_state(state)
+    try:
+        payload = await oauth_state.consume_state(state)
+    except oauth_state.OAuthStateError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="一時的に OAuth state を検証できません（Redis 接続失敗）",
+        )
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

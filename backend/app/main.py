@@ -1,8 +1,13 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
+
+_logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import get_current_tenant, get_current_admin
 from app.cache import init_redis, close_redis
@@ -78,10 +83,23 @@ async def lifespan(app: FastAPI):
         if _fernet_fail_fast_enforced():
             raise
         # 既定挙動: warning だけ出して起動継続（既存環境への破壊的変更を避ける）
-        import logging as _logging
-        _logging.getLogger(__name__).warning(
+        _logger.warning(
             "METADATA_FERNET_KEY の検証に失敗しました（Meta OAuth 系統は無効化されます）: %s", e
         )
+
+    # 基盤環境変数チェック（DATABASE_URL, REDIS_URL, CELERY_BROKER_URL）
+    for _infra_var in ("DATABASE_URL", "REDIS_URL", "CELERY_BROKER_URL"):
+        if not os.getenv(_infra_var):
+            _logger.warning("インフラ環境変数 %s が未設定です", _infra_var)
+
+    # Webhook 必須環境変数チェック
+    # ENFORCE_WEBHOOK_SECRETS=1 の場合は起動を失敗させる
+    _enforce_webhook = os.getenv("ENFORCE_WEBHOOK_SECRETS", "").strip().lower() in ("1", "true", "yes", "on")
+    for _var in ("META_APP_SECRET", "META_VERIFY_TOKEN"):
+        if not os.getenv(_var):
+            if _enforce_webhook:
+                raise RuntimeError(f"Required env var {_var} is not set")
+            _logger.warning("必須環境変数 %s が未設定です（ENFORCE_WEBHOOK_SECRETS=1 で起動を強制失敗させられます）", _var)
 
     await init_redis()
     yield
@@ -313,6 +331,44 @@ app.include_router(
     tags=["tenant-admin-inventory-visibility"],
     dependencies=[Depends(get_current_tenant)],
 )
+
+
+@app.exception_handler(OperationalError)
+async def db_operational_error_handler(request: Request, exc: OperationalError) -> JSONResponse:
+    """DB接続エラー（OperationalError）を503に変換する。
+
+    コネクションプール枯渇・DB再起動中・タイムアウトなどのインフラ障害を
+    502ではなく503（Service Unavailable）で返す。
+    """
+    _logger.error("Database operational error: %s %s - %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "データベースに接続できません。しばらく待ってから再試行してください。"},
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def db_error_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
+    """その他のSQLAlchemyエラーを500に変換する。"""
+    _logger.error("Database error: %s %s - %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "データベースエラーが発生しました。"},
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """未捕捉例外をすべて 500 に変換してクライアントに返す。
+
+    FastAPI が HTTPException / SQLAlchemyError を先処理するため、
+    それらはここに届かない。予期しない例外の最終防波堤。
+    """
+    _logger.exception("Unhandled exception: %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "内部サーバーエラーが発生しました"},
+    )
 
 
 @app.get("/")

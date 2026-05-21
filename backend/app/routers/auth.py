@@ -145,5 +145,10 @@ async def logout(
     Firebase IDトークンの残存有効期限（最大1時間）をTTLとする。
     """
     token = cred.credentials
-    await blacklist_token(token, ttl=3600)
+    success = await blacklist_token(token, ttl=3600)
+    if not success:
+        raise HTTPException(
+            status_code=503,
+            detail="ログアウト処理に失敗しました。しばらく待ってから再試行してください。",
+        )
     return {"message": "ログアウトしました"}

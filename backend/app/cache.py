@@ -127,20 +127,27 @@ async def get_cached_tenant(tenant_id: int) -> Optional[dict]:
     return None
 
 
-async def blacklist_token(token: str, ttl: int = 3600) -> None:
-    """トークンをブラックリストに追加し、JWTキャッシュも削除する（ログアウト時）。"""
+async def blacklist_token(token: str, ttl: int = 3600) -> bool:
+    """トークンをブラックリストに追加し、JWTキャッシュも削除する（ログアウト時）。
+
+    Returns:
+        True  - ブラックリスト登録成功
+        False - Redis未接続または書き込み失敗（呼び出し元で503を返すこと）
+    """
     r = get_redis()
     if not r:
         logger.critical("Redis未接続: トークンのブラックリスト登録に失敗")
-        return
+        return False
     try:
         token_h = _token_hash(token)
         pipe = r.pipeline()
         pipe.setex(f"blacklist:{token_h}", ttl, "1")
         pipe.delete(f"jwt:{token_h}")
         await pipe.execute()
+        return True
     except Exception:
         logger.critical("ブラックリスト書き込み失敗: トークン無効化が不完全")
+        return False
 
 
 async def cache_user_permissions(tenant_id: int, user_id: int, keys: set[str]) -> None:
@@ -208,15 +215,16 @@ async def invalidate_tenant_permissions(tenant_id: int) -> None:
 async def is_token_blacklisted(token: str) -> bool:
     """
     トークンがブラックリストに含まれているか確認する。
-    Redis障害時はfail-closed（安全側に倒してTrueを返す）。
+    Redis障害時はfail-open（サービス継続優先）。
+    ログアウト済みトークンが誤通過するリスクより全ユーザー401のリスクを優先回避。
     """
     r = get_redis()
     if not r:
-        logger.critical("Redis未接続: ブラックリスト検証不能のためリクエスト拒否")
-        return True
+        logger.warning("Redis未接続: ブラックリスト検証をスキップして認証を継続")
+        return False
     try:
         key = f"blacklist:{_token_hash(token)}"
         return await r.exists(key) > 0
     except Exception:
-        logger.critical("ブラックリスト確認失敗: 安全側に倒してリクエスト拒否")
-        return True
+        logger.warning("ブラックリスト確認失敗: fail-openとして認証を継続")
+        return False

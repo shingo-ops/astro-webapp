@@ -263,8 +263,12 @@ async def receive_messenger_webhook(
     request: Request,
     background_tasks: BackgroundTasks,
 ):
-    # HMAC-SHA256署名検証
+    # META_APP_SECRET が未設定の場合はリクエストを拒否（署名検証バイパス防止）
     app_secret = os.getenv("META_APP_SECRET", "")
+    if not app_secret:
+        raise HTTPException(status_code=500, detail="Webhook署名検証が設定されていません")
+
+    # HMAC-SHA256署名検証
     signature = request.headers.get("X-Hub-Signature-256", "")
     body_bytes = await request.body()
 
@@ -275,7 +279,10 @@ async def receive_messenger_webhook(
     if not hmac.compare_digest(signature, expected):
         raise HTTPException(status_code=403, detail="Invalid signature")
 
-    body = json.loads(body_bytes)
+    try:
+        body = json.loads(body_bytes)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
     # TODO: 本格実装時はCeleryタスクに委譲する
     # （BackgroundTasksはワーカーブロックの懸念あり）

@@ -21,6 +21,21 @@ scrape_configs:
           job: docker
           __path__: /var/log/docker/*log
 
+  # Nginxエラーログ収集（502/504等の上流エラーを Loki で検索可能にする）
+  - job_name: nginx_error
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          log_type: error
+          __path__: /var/log/nginx/error.log
+    pipeline_stages:
+      - regex:
+          expression: '(?P<level>emerg|alert|crit|error|warn|notice|info|debug)'
+      - labels:
+          level:
+
   # docker compose のコンテナラベルからログを取得
   - job_name: containers
     static_configs:

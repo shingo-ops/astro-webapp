@@ -25,7 +25,15 @@ def _get_sync_engine():
     return create_engine(DATABASE_URL, echo=False)
 
 
-@shared_task(name="app.tasks.maintenance.archive_audit_logs")
+@shared_task(
+    name="app.tasks.maintenance.archive_audit_logs",
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+)
 def archive_audit_logs():
     """全テナントの90日以上前の監査ログを削除する。"""
     engine = _get_sync_engine()

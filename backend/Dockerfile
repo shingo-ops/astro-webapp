@@ -27,4 +27,6 @@ USER appuser
 EXPOSE 8000
 
 # Uvicornでアプリケーションを起動
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# workers=2: 512MB VPSでの上限（メモリ制限による）
+# workers=1に戻す場合はメモリ確認後に判断すること
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

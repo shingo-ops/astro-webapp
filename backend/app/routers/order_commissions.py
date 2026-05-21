@@ -25,6 +25,7 @@ ADR-021 Phase 5 / Sprint 5: 担当者報酬計算 MVP
 """
 
 import json
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -60,6 +61,7 @@ from app.services.commission_calculator import (
 )
 from app.services.time import _jst_month_range_utc
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -128,7 +130,11 @@ async def _fetch_rates(db: AsyncSession, tenant_id: int) -> CommissionRatesConfi
         return DEFAULT_COMMISSION_RATES
     raw = row["commission_rates"]
     if isinstance(raw, str):
-        rates_dict = json.loads(raw)
+        try:
+            rates_dict = json.loads(raw)
+        except json.JSONDecodeError:
+            logger.warning("commission_rates JSON parse failed for tenant_id=%s; using defaults", tenant_id)
+            return DEFAULT_COMMISSION_RATES
     else:
         rates_dict = raw or {}
     if not rates_dict:

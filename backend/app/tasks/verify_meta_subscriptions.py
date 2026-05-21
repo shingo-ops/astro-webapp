@@ -286,7 +286,15 @@ def _process_tenant(session: Session, tenant_id: int, *, self_app_id: str) -> di
     return summary
 
 
-@shared_task(name="app.tasks.verify_meta_subscriptions.verify_all_meta_subscriptions")
+@shared_task(
+    name="app.tasks.verify_meta_subscriptions.verify_all_meta_subscriptions",
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+)
 def verify_all_meta_subscriptions() -> dict[str, Any]:
     """全テナントの Meta 接続レコードを順に検証する（ADR-024 AC-5）。
 

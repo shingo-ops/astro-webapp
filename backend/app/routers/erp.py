@@ -15,6 +15,7 @@ ERP連携API（Phase 5）。
 
 import csv
 import io
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
@@ -27,6 +28,7 @@ from app.database import get_db
 from app.models import User
 from app.services.audit import record_audit_log
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -133,9 +135,12 @@ async def export_invoices_for_erp(
         )
 
     except Exception as e:
-        await db.execute(
-            text("UPDATE erp_sync_logs SET status = 'failed', error_message = :err, completed_at = NOW() WHERE id = :id"),
-            {"err": str(e)[:500], "id": log_id},
-        )
-        await db.commit()
+        try:
+            await db.execute(
+                text("UPDATE erp_sync_logs SET status = 'failed', error_message = :err, completed_at = NOW() WHERE id = :id"),
+                {"err": str(e)[:500], "id": log_id},
+            )
+            await db.commit()
+        except Exception:
+            logger.exception("erp_sync_logs の失敗ステータス更新に失敗 log_id=%s", log_id)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"ERP エクスポート失敗: {e}")
