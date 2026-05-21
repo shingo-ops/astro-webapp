@@ -68,6 +68,12 @@
   animation: fadeIn 200ms ease-in;
 }
 
+/* ダークモード時サイドバーロゴを白反転（ADR-066） */
+:root.force-dark .sidebar-logo-icon,
+:root.force-dark .sidebar-logo-text-img {
+  filter: brightness(0) invert(1);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
