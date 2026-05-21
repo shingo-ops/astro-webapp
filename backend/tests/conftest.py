@@ -15,6 +15,15 @@ import os
 # app.database が import される前に DATABASE_URL を SQLite に差し替える
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
+# Sprint 2 Reviewer Out-of-scope #1 (PR #510 follow-up) は別 Issue で起票推奨。
+# 本 PR では各テスト側 (test_super_admin_*.py / test_tenant_admin_*.py 等) で
+#   os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")
+# の alias パターンに統一する方針 (各 test の skipif で対応済)。
+# ここで env 補完 (TEST_PG_URL := RLS_TEST_DATABASE_URL) すると、
+# 以前 skip されていた inventory 系テストが PG migration / seed 未投入の
+# CI 環境で大量に失敗するため、env 補完は CI への migration 適用とセットで
+# 別 PR で扱う。本 PR では各 test 側の or 連結のみで前進する。
+
 from unittest.mock import patch
 
 # Python 3.14: mock.patch は target の親 package が submodule を attribute として

@@ -89,3 +89,63 @@ async def test_tenant_isolation_role_lookup(engine):
         ))
         sp = result.scalar_one()
         assert "tenant_006" in sp
+
+
+async def test_is_system_role_blocks_visibility_edit(engine):
+    """Sprint 2 Reviewer Minor F2 (PR #510) fix の検証。
+
+    is_system=TRUE のロール（owner / system 等）に対する visibility 編集は
+    403 で拒否されること。
+
+    エンドポイント単体テストは search_path / 認証セットアップが重いため、
+    ここでは tenant_admin_inventory_visibility ルーターのガード分岐を
+    最小単位でカバーする統合テスト相当とする:
+      1. tenant_006 schema に is_system=TRUE のロールを 1 件確認 (なければ skip)
+      2. 該当 role_id を引数に set_role_visibility を呼ぶ
+      3. HTTPException 403 が raise されること
+    """
+    from fastapi import HTTPException
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import sessionmaker
+
+    from app.routers.tenant_admin_inventory_visibility import set_role_visibility
+    from app.schemas.central_masters import RoleVisibilityAssign
+
+    async with engine.connect() as conn:
+        tenant_review = (await conn.execute(text(
+            "SELECT tenant_code FROM public.tenants WHERE tenant_code = 'tenant-review'"
+        ))).scalar_one_or_none()
+    if not tenant_review:
+        pytest.skip("tenant_006 (tenant-review) が未作成")
+
+    # tenant_006 内で is_system=TRUE のロールを探す
+    async with engine.begin() as conn:
+        await conn.execute(text("SET search_path = tenant_006, public"))
+        sys_role = (await conn.execute(text(
+            "SELECT id FROM roles WHERE is_system = TRUE LIMIT 1"
+        ))).scalar_one_or_none()
+    if not sys_role:
+        pytest.skip("tenant_006 に is_system=TRUE のロールが存在しない")
+
+    # set_role_visibility を直接呼ぶ
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as session:
+        await session.execute(text("SET search_path = tenant_006, public"))
+        data = RoleVisibilityAssign(
+            role_id=sys_role,
+            visibility_keys=["inventory.visibility.full"],
+        )
+        with pytest.raises(HTTPException) as exc_info:
+            await set_role_visibility(
+                role_id=sys_role,
+                data=data,
+                db=session,
+                tenant_id=6,
+                current_user=None,  # 認証は require_permission で実 endpoint 側、ガードは内部分岐
+            )
+        assert exc_info.value.status_code == 403, (
+            f"is_system ロールは 403 で拒否されるはず: status={exc_info.value.status_code}"
+        )
+        assert "システムロール" in exc_info.value.detail
+        await session.rollback()

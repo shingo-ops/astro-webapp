@@ -124,6 +124,18 @@ async def set_role_visibility(
             detail="指定ロールが自テナント内に見つかりません",
         )
 
+    # Sprint 2 Reviewer Minor F2 (PR #510) fix:
+    #   is_system=TRUE のロール（owner / system / member 等）の visibility 編集を禁止。
+    #   テナント admin が誤って owner ロールから inventory.visibility.full を外すと、
+    #   オーナー自身が在庫マスクされた状態になる事故を防ぐ。
+    #   既存の roles.update / roles.delete (backend/app/routers/roles.py) と同じ
+    #   ガード方針で揃える。
+    if role_row[1]:  # is_system
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="システムロールの visibility は編集できません",
+        )
+
     # 受け取った keys が有効な visibility キーかチェック
     invalid_keys = set(data.visibility_keys) - set(_VISIBILITY_KEYS)
     if invalid_keys:
