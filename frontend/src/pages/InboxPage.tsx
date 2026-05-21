@@ -160,14 +160,23 @@ const platformLabel = libPlatformLabel;
 const INBOX_STYLES = `
 /* ======= Inbox Meta Design (ADR-063) ======= */
 
-/* 全体ラッパー（flex column） */
+/* 全体ラッパー（flex row: 左＋中央エリア | 右パネル） */
 .inbox-wrapper {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: calc(100vh - 56px);
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg-primary);
+}
+
+/* 左＋中央エリア（ヘッダー・タブ・カラム）— タブバーはここまで */
+.inbox-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
 }
 
 /* ページヘッダー（Meta 風: タイトル + サブタイトル） */
@@ -618,15 +627,28 @@ const INBOX_STYLES = `
 
 /* ---- 右パネル ---- */
 .inbox-right-panel {
-  width: 300px;
+  width: 320px;
   flex-shrink: 0;
-  background: var(--bg-surface);
+  background: var(--bg-primary);
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 24px 16px;
+  padding: 12px 10px;
   overflow-y: auto;
+  gap: 10px;
+}
+
+/* カルテカード（右パネル内の独立カード — Meta風） */
+.right-panel-card {
+  background: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .right-panel-avatar {
   width: 72px;
@@ -1120,6 +1142,8 @@ export default function InboxPage() {
       <style>{INBOX_STYLES}</style>
 
       <div className="inbox-wrapper">
+        {/* 左+中央エリア（ヘッダー+タブ+カラム） */}
+        <div className="inbox-main-area">
         {/* ページヘッダー（Meta 風: タイトル + サブタイトル） */}
         <div className="inbox-page-header">
           <div>
@@ -1466,6 +1490,9 @@ export default function InboxPage() {
           )}
         </main>
 
+        </div>{/* /inbox-columns */}
+        </div>{/* /inbox-main-area */}
+
         {/* ============================== 右パネル (商談カルテ) ============================== */}
         <aside className="inbox-right-panel">
           {selectedLeadId === null ? (
@@ -1473,7 +1500,7 @@ export default function InboxPage() {
               <p>{t("inbox.selectConversation")}</p>
             </div>
           ) : leadDetail ? (
-            <>
+            <div className="right-panel-card">
               {/* ヘッダー */}
               <div className="right-panel-header">
                 <div className="right-panel-avatar">
@@ -1618,7 +1645,7 @@ export default function InboxPage() {
               <a href={`/leads?lead_id=${leadDetail.id}`} className="right-panel-link">
                 {t("inbox.viewLead")} →
               </a>
-            </>
+            </div>
           ) : (
             <div className="right-panel-empty">
               <p>{t("inbox.loadingProfile")}</p>
@@ -1626,7 +1653,6 @@ export default function InboxPage() {
           )}
         </aside>
 
-        </div>{/* /inbox-columns */}
       </div>{/* /inbox-wrapper */}
     </>
   );

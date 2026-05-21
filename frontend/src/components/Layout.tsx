@@ -15,7 +15,7 @@
  */
 
 import { useState } from "react";
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, Package, FileText, BarChart2,
   HelpCircle, Settings, MoreHorizontal, ChevronDown,
@@ -104,17 +104,8 @@ export default function Layout() {
 
   const location = useLocation();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim() && hasPermission("leads.view")) {
-      navigate(`/leads?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
 
   const toggleAccordion = (key: string) => {
     const next = openAccordion === key ? null : key;
@@ -304,15 +295,6 @@ export default function Layout() {
       <div className="app-body">
         {/* Top bar */}
         <header className="app-topbar">
-          <form className="topbar-search" onSubmit={handleSearch}>
-            <Search size={16} className="topbar-search-icon" />
-            <input
-              type="search"
-              placeholder={t("nav.searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
           <div className="topbar-user">
             <span className="topbar-email">{user?.email}</span>
             <button
