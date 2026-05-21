@@ -707,7 +707,7 @@ async def test_pg_requires_reauth_false_when_business_management_present(pg_conn
         await pg_conn_scopes.execute(text("""
             INSERT INTO tenant_997.tenant_meta_config
                 (tenant_id, page_id, page_name, page_access_token_encrypted, granted_scopes)
-            VALUES (997, 'pg-7scope', 'PG Full 7', :tok, :scopes::jsonb)
+            VALUES (997, 'pg-7scope', 'PG Full 7', :tok, CAST(:scopes AS jsonb))
         """), {"tok": b"x", "scopes": json.dumps(_FULL_7_SCOPES)})
 
     async with pg_conn_scopes.begin():
@@ -731,7 +731,7 @@ async def test_pg_requires_reauth_true_when_business_management_missing(pg_conn_
         await pg_conn_scopes.execute(text("""
             INSERT INTO tenant_997.tenant_meta_config
                 (tenant_id, page_id, page_name, page_access_token_encrypted, granted_scopes)
-            VALUES (997, 'pg-6scope', 'PG Legacy 6', :tok, :scopes::jsonb)
+            VALUES (997, 'pg-6scope', 'PG Legacy 6', :tok, CAST(:scopes AS jsonb))
         """), {"tok": b"x", "scopes": json.dumps(_LEGACY_6_SCOPES)})
 
     async with pg_conn_scopes.begin():
