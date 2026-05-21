@@ -10,14 +10,15 @@
  *
  * Generator 判断 (Sprint 6):
  *   - product_id NULL の items は採用不可（行を gray-out + "skip 必須" メッセージ）。
- *     Sprint 7 で InventorySearchBar が完成したらインライン product 紐付けに拡張。
- *   - 編集は delta_qty / notes のみインライン可能（product_id 差し替えは Sprint 7）。
+ *     ⇒ Sprint 7 (2026-05-22): InventorySearchBar を行内に埋め込み、インラインで product_id 解決可能化。
+ *   - 編集は delta_qty / notes / product_id (Sprint 7 で追加) をインライン可能。
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../../lib/api";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
+import InventorySearchBar, { InventorySearchCandidate } from "../../components/InventorySearchBar";
 
 interface ReviewItem {
   product_id: number | null;
@@ -347,16 +348,28 @@ export default function ParseReviewPage() {
                     }
                   >
                     <td>{idx}</td>
-                    <td>
+                    <td style={{ minWidth: 240 }}>
                       {row.product_id === null ? (
-                        <em
-                          data-testid={`review-row-${idx}-missing-product`}
-                          style={{ color: "var(--color-warning, #c08a00)" }}
-                        >
-                          {t("superAdmin.inbound.review.missingProduct")}
-                        </em>
+                        <div data-testid={`review-row-${idx}-missing-product`}>
+                          <em
+                            style={{ color: "var(--color-warning, #c08a00)", fontSize: "0.85em" }}
+                          >
+                            {t("superAdmin.inbound.review.missingProduct")}
+                          </em>
+                          {!isFinal && (
+                            <div style={{ marginTop: 4 }}>
+                              <InventorySearchBar
+                                disabled={row.skipped}
+                                testIdPrefix={`review-row-${idx}-inv-search`}
+                                onSelect={(c: InventorySearchCandidate) =>
+                                  updateDraft(idx, { product_id: c.product_id })
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <code>{row.product_id}</code>
+                        <code data-testid={`review-row-${idx}-product-id`}>{row.product_id}</code>
                       )}
                     </td>
                     <td>

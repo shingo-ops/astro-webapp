@@ -6,15 +6,17 @@
  *   2026-04-17: 初版作成（Phase 2）
  *   2026-04-25: Phase 1-B-2 Step 5c-3 — 顧客セレクタを CompanyContactSelector
  *     （company + contact）に置換。
+ *   2026-05-22: Sprint 7 / F7 — 既存 <select> ベースの商品選択を InventorySearchBar
+ *     (全 7 種横断 + AND/OR + 在庫マスク対応) に置換。標準名は
+ *     public.products.name (旧 tenant スキーマの name_ja とは別) を採用 (AC7.4)。
  */
 
-import { useEffect, useState, FormEvent } from "react";
+import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import CompanyContactSelector from "../components/CompanyContactSelector";
-
-interface Product { id: number; product_code: string | null; name_ja: string; unit_price: number | null; weight: number | null; quantity: number; }
+import InventorySearchBar, { InventorySearchCandidate } from "../components/InventorySearchBar";
 
 interface LineItem {
   product_id: number | null;
@@ -22,12 +24,13 @@ interface LineItem {
   quantity: number;
   unit_price: number;
   weight: number | null;
+  /** AC7.5: 在庫 0 商品を選択した行はフラグでマークし、確認 UI を出す。 */
+  zero_stock_warning?: boolean;
 }
 
 export default function QuoteCreatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [contactId, setContactId] = useState<number | null>(null);
   const [selectorError, setSelectorError] = useState("");
@@ -38,11 +41,6 @@ export default function QuoteCreatePage() {
   const [items, setItems] = useState<LineItem[]>([{ product_id: null, product_name: "", quantity: 1, unit_price: 0, weight: null }]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    // backend `/products` は per_page le=100 制約のため 100 を上限に揃える
-    api.get<Product[]>("/products?per_page=100&status=active").then(setProducts).catch(() => {});
-  }, []);
 
   const addItem = () => {
     setItems([...items, { product_id: null, product_name: "", quantity: 1, unit_price: 0, weight: null }]);
@@ -59,19 +57,22 @@ export default function QuoteCreatePage() {
     setItems(newItems);
   };
 
-  const selectProduct = (index: number, productId: string) => {
-    const prod = products.find((p) => p.id === Number(productId));
-    if (prod) {
-      const newItems = [...items];
-      newItems[index] = {
-        product_id: prod.id,
-        product_name: prod.name_ja,
-        quantity: 1,
-        unit_price: prod.unit_price || 0,
-        weight: prod.weight,
-      };
-      setItems(newItems);
-    }
+  /**
+   * InventorySearchBar から選択された商品で対象行を上書きする (AC7.4)。
+   * 標準名 (public.products.name) と標準 unit_price を採用する。
+   */
+  const onPickProduct = (index: number, c: InventorySearchCandidate) => {
+    const newItems = [...items];
+    newItems[index] = {
+      product_id: c.product_id,
+      product_name: c.name, // AC7.4: 標準名 (public.products.name)
+      quantity: 1,
+      unit_price: c.unit_price ?? 0,
+      weight: null,
+      zero_stock_warning:
+        c.stock_quantity !== null && c.stock_quantity <= 0,
+    };
+    setItems(newItems);
   };
 
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
@@ -162,15 +163,24 @@ export default function QuoteCreatePage() {
             </thead>
             <tbody>
               {items.map((item, i) => (
-                <tr key={i}>
-                  <td>
-                    <select value={item.product_id || ""} onChange={(e) => selectProduct(i, e.target.value)} style={{ minWidth: 120, maxWidth: "100%" }}>
-                      <option value="">{t("quotes.customProduct")}</option>
-                      {products.map((p) => <option key={p.id} value={p.id}>{p.name_ja} (在庫:{p.quantity})</option>)}
-                    </select>
+                <tr key={i} data-testid={`quote-item-row-${i}`}>
+                  <td style={{ minWidth: 280 }}>
+                    <InventorySearchBar
+                      onSelect={(c) => onPickProduct(i, c)}
+                      testIdPrefix={`quote-inventory-search-${i}`}
+                    />
+                    {item.zero_stock_warning && (
+                      <div
+                        data-testid={`quote-item-row-${i}-zero-stock-warning`}
+                        className="warning-message"
+                        style={{ marginTop: 4, color: "var(--color-warning, #c08a00)", fontSize: "0.85em" }}
+                      >
+                        {t("inventory.search.zeroStockWarning", { name: item.product_name })}
+                      </div>
+                    )}
                   </td>
                   <td>
-                    <input value={item.product_name} onChange={(e) => updateItem(i, "product_name", e.target.value)} style={{ minWidth: 120, maxWidth: "100%" }} />
+                    <input value={item.product_name} onChange={(e) => updateItem(i, "product_name", e.target.value)} style={{ minWidth: 120, maxWidth: "100%" }} data-testid={`quote-item-row-${i}-name`} />
                   </td>
                   <td>
                     <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} style={{ width: 70 }} />
