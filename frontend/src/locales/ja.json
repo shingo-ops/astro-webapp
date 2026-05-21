@@ -347,7 +347,6 @@
     "markAllRead": "全て既読にする",
     "filterUnread": "未読",
     "filterFollowUp": "フォローアップ",
-    "filterArchive": "アーカイブ",
     "subtitle": "メッセージの管理と返信ができます。"
   },
   "channels": {
