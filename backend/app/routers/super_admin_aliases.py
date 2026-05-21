@@ -237,22 +237,48 @@ async def import_csv(
     if dry_run:
         return {"dry_run": True, "would_insert": len(rows), "preview": rows[:5]}
 
+    # Sprint 2 Reviewer Minor F1 (PR #510) fix:
+    #   ON CONFLICT DO NOTHING は IntegrityError を発生させないため
+    #   try/except では UNIQUE 重複行を検出できない（旧実装では UNIQUE 衝突
+    #   行もすべて inserted カウントに含めていた）。
+    #   PostgreSQL の RETURNING 句で xmax = 0 を返すことで、各行が
+    #   実際に新規挿入されたか既存衝突でスキップされたかを行単位で判定する。
+    #   xmax = 0  → 新規挿入された
+    #   xmax != 0 → 既存行で衝突しスキップされた
+    #   ※ ON CONFLICT DO NOTHING + RETURNING はスキップ行も返す（PG 9.5+）
     inserted = 0
     skipped = 0
+    fk_errors = 0
     for row in rows:
         try:
-            await db.execute(
+            result = await db.execute(
                 text(
                     "INSERT INTO public.supplier_aliases "
                     "(supplier_id, alias_text, language, product_id, confidence, source, created_by) "
                     "VALUES (:supplier_id, :alias_text, :language, :product_id, :confidence, :source, :uid) "
-                    "ON CONFLICT (supplier_id, alias_text, language) DO NOTHING"
+                    "ON CONFLICT (supplier_id, alias_text, language) DO NOTHING "
+                    "RETURNING id, (xmax = 0) AS inserted_flag"
                 ),
                 {**row, "uid": current_user.id},
             )
-            inserted += 1
+            returned = result.mappings().first()
+            if returned is None:
+                # RETURNING が 1 行も返らないケース: ON CONFLICT DO NOTHING の
+                # 古い PG 実装互換、または FK 違反等の前段でブロックされた行。
+                # ここでは「衝突でスキップされた」と扱う。
+                skipped += 1
+            elif returned["inserted_flag"]:
+                inserted += 1
+            else:
+                skipped += 1
         except IntegrityError:
+            # FK 違反等の本物のエラー（supplier_id / product_id が無効など）
             await db.rollback()
-            skipped += 1
+            fk_errors += 1
     await db.commit()
-    return {"dry_run": False, "inserted": inserted, "skipped": skipped}
+    return {
+        "dry_run": False,
+        "inserted": inserted,
+        "skipped": skipped,
+        "fk_errors": fk_errors,
+    }

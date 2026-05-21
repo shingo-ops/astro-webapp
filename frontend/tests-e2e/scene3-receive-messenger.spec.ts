@@ -98,7 +98,7 @@ test.describe("Scene 3: Incoming Messenger", () => {
     await expect.poll(() => markReadCalled, { timeout: 10_000 }).toBe(true);
   });
 
-  test("platform フィルタを Messenger に切替できる", async ({ page }) => {
+  test("サブフィルターピル（未読 / フォローアップ）が機能する", async ({ page }) => {
     await installAuthBypass(page);
     await mockApi(page, {
       ...commonMocks(),
@@ -111,19 +111,19 @@ test.describe("Scene 3: Incoming Messenger", () => {
       page.getByRole("heading", { name: "受信箱" }),
     ).toBeVisible({ timeout: 20_000 });
 
-    // フィルタボタン群（.inbox-platform-bar に絞る — Lead タブの「すべて」と重複しないため）
-    const platformBar = page.locator(".inbox-platform-bar");
-    await expect(platformBar.getByRole("button", { name: "すべて" })).toBeVisible();
-    await expect(
-      platformBar.getByRole("button", { name: "Messenger", exact: true }),
-    ).toBeVisible();
-    await expect(
-      platformBar.getByRole("button", { name: "Instagram", exact: true }),
-    ).toBeVisible();
+    // サブフィルターバー（Inbox 再設計: タブバー削除 → サブフィルターピル追加）
+    const subFilterBar = page.locator(".inbox-sub-filter-bar");
+    const unreadBtn = subFilterBar.getByRole("button", { name: "未読" });
+    const followUpBtn = subFilterBar.getByRole("button", { name: "フォローアップ" });
+    await expect(unreadBtn).toBeVisible();
+    await expect(followUpBtn).toBeVisible();
 
-    // クリックでフィルタが効く（active class が付く）
-    await platformBar.getByRole("button", { name: "Messenger", exact: true }).click();
-    const messengerBtn = platformBar.getByRole("button", { name: "Messenger", exact: true });
-    await expect(messengerBtn).toHaveClass(/active/);
+    // クリックで active class が付く
+    await unreadBtn.click();
+    await expect(unreadBtn).toHaveClass(/active/);
+
+    // もう一度クリックで解除される
+    await unreadBtn.click();
+    await expect(unreadBtn).not.toHaveClass(/active/);
   });
 });

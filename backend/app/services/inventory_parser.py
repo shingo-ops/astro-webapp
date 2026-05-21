@@ -236,6 +236,23 @@ CONDITION_REGEXES: list[tuple[re.Pattern[str], str]] = [
 # Exclude pattern（既定）: rule で上書き / 追加可能
 # 「※」「⚠️」「・配送」「・発送」「・適格」等のヘッダ / フッタ行
 # 「【在庫商品】」「【予約商品】」等のセクションヘッダ
+#
+# TODO(Sprint 5 / Discord Bot 受信): policy_line の長大な alternation
+# (100+ keywords) を public.knowledge_rules に DB seed として移行する。
+# 現状の `policy_line` regex には「商品」「注文」「在庫」「TCG」「商品」等の
+# 汎用語が含まれており、将来 supplier_aliases に
+# 「商品リスト」「TCG カードゲーム」のような alias_text が登録されると
+# `・商品リスト 100BOX@5,000円` のような商品行が誤って exclude される
+# 可能性がある (Sprint 3 Reviewer Minor F1 / PR #514)。
+# 移行方針:
+#   1. migration 0XX で `public.knowledge_rules` に
+#      `category='exclude' / pattern_type='regex' / language='ja'`
+#      の seed 行として現在の各キーワードを個別 row 化
+#   2. ホワイトリスト方式: 「行頭マーカ + キーワード」だけでなく、
+#      「行末まで商品候補 token が無い」条件も加味するロジックを Sprint 5 で導入
+#   3. デフォルトを最小限 (※/⚠️ + 配送/発送/税 専用) に縮退、運用は DB seed で
+#   4. 監査ログ用 metadata (rule_id を ParseResult.excludes[].rule_id に残す)
+# 本 PR (Sprint 2/3 follow-up) ではコメントのみ、実装は Sprint 5 で行う。
 DEFAULT_EXCLUDE_REGEXES: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"^[\s]*(?:お疲れ様|お世話に|ご入用|ご注文|よろしく)"), "greeting"),
     (re.compile(r"^[\s]*(?:【.*?】)\s*$"), "section_header"),

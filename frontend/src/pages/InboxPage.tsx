@@ -52,10 +52,16 @@ const POLL_INTERVAL_MS = 10_000;
 // leads    → 営業進行中リード
 // converted → 案件化（商談開始）
 // customers → 既存顧客（成約済み）
-// ※ 追客（短期）/ 追客（長期）/ 対象外 は「すべて」タブのみに表示（ADR-062 で 追客タブ追加予定）
 const LEADS_STATUSES = ["新規", "コンタクト中", "AI対応中", "提案中", "保留", "失注"];
 const CONVERTED_STATUSES = ["案件化"];
 const CUSTOMERS_STATUSES = ["既存顧客"];
+
+// アーカイブ対象ステータス（失注 + 対象外）
+// 対象外: ADR-062 予定ステータス。DBにCHECK制約なし（VARCHAR）のため既に存在しうる。
+// デフォルト表示では非表示、アーカイブフィルター選択時のみ表示。
+const ARCHIVE_STATUSES = ["失注", "対象外"];
+// フォローアップフィルターから除外するステータス（返信しても意味がない相手）
+const FOLLOWUP_EXCLUDED = new Set(["失注", "対象外"]);
 
 type LeadStatusFilter = "all" | "leads" | "converted" | "customers";
 
@@ -894,6 +900,7 @@ export default function InboxPage() {
   const [platformFilter] = useState<PlatformFilter>("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [followUpOnly, setFollowUpOnly] = useState(false);
+  const [archiveOnly, setArchiveOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Phase 1-E F14-S5: Page フィルタ
@@ -1085,6 +1092,13 @@ export default function InboxPage() {
   const filteredConversations = useMemo(() => {
     return conversations
       .filter((c) => {
+        // アーカイブ選択時: 失注/対象外のみ表示
+        if (archiveOnly) {
+          return ARCHIVE_STATUSES.includes(c.lead_status ?? "");
+        }
+        // 通常時: 対象外を常に非表示
+        if (c.lead_status === "対象外") return false;
+        // leadStatusFilter（内部分類）
         if (leadStatusFilter === "all") return true;
         if (leadStatusFilter === "leads") {
           return c.lead_status != null && LEADS_STATUSES.includes(c.lead_status);
@@ -1103,7 +1117,9 @@ export default function InboxPage() {
       })
       .filter((c) => {
         if (!followUpOnly) return true;
-        return c.lead_status != null && LEADS_STATUSES.includes(c.lead_status);
+        // 顧客が最後にメッセージを送った会話（返信待ち）、かつ失注/対象外は除外
+        return c.last_message_direction === "inbound"
+          && !FOLLOWUP_EXCLUDED.has(c.lead_status ?? "");
       })
       .filter((c) => {
         if (!searchQuery) return true;
@@ -1113,7 +1129,7 @@ export default function InboxPage() {
           (c.last_message_text ?? "").toLowerCase().includes(q)
         );
       });
-  }, [conversations, leadStatusFilter, unreadOnly, followUpOnly, searchQuery]);
+  }, [conversations, leadStatusFilter, unreadOnly, followUpOnly, archiveOnly, searchQuery]);
 
   // ---------------------------------------------------------------------------
   // 送信
@@ -1246,7 +1262,7 @@ export default function InboxPage() {
             </div>
           </div>
 
-          {/* サブフィルターピル（Meta実測: 未読/フォローアップ） */}
+          {/* サブフィルターピル（未読 / フォローアップ / アーカイブ） */}
           <div className="inbox-sub-filter-bar">
             <button
               type="button"
@@ -1261,6 +1277,13 @@ export default function InboxPage() {
               onClick={() => setFollowUpOnly((v) => !v)}
             >
               {t("inbox.filterFollowUp")}
+            </button>
+            <button
+              type="button"
+              className={`inbox-sub-filter-pill${archiveOnly ? " active" : ""}`}
+              onClick={() => setArchiveOnly((v) => !v)}
+            >
+              {t("inbox.filterArchive")}
             </button>
           </div>
 
