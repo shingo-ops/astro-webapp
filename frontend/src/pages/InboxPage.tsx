@@ -167,7 +167,7 @@ const INBOX_STYLES = `
   height: calc(100vh - 56px);
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: #F2F2F2;
+  background: var(--bg-primary);
 }
 
 /* 左＋中央エリア（ヘッダー・タブ・カラム）— タブバーはここまで */
@@ -185,20 +185,20 @@ const INBOX_STYLES = `
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px 12px;
-  background: #fff;
-  border-bottom: 1px solid #dadde1;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .inbox-page-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1c1e21;
+  color: var(--text-primary);
   margin: 0 0 4px;
   line-height: 1.2;
 }
 .inbox-page-subtitle {
   font-size: 13px;
-  color: #606770;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -206,8 +206,8 @@ const INBOX_STYLES = `
 .inbox-full-tab-bar {
   display: flex;
   align-items: center;
-  background: #fff;
-  border-bottom: 1px solid #dadde1;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -216,7 +216,7 @@ const INBOX_STYLES = `
   box-sizing: border-box;
 }
 .inbox-full-tab-bar::-webkit-scrollbar { display: none; }
-/* Meta実測: padding=8px 12px, border-radius=4px, font-size=14px, fw=400, color=rgb(28,43,51) */
+/* Meta実測: padding=8px 12px, border-radius=4px, font-size=14px, fw=400 */
 .inbox-full-tab {
   height: 36px;
   padding: 0 12px;
@@ -225,7 +225,7 @@ const INBOX_STYLES = `
   background: transparent;
   font-size: 14px;
   font-weight: 400;
-  color: #1c2b33;
+  color: var(--text-primary);
   cursor: pointer;
   white-space: nowrap;
   border-radius: 4px;
@@ -237,12 +237,12 @@ const INBOX_STYLES = `
 }
 .inbox-full-tab:hover:not(.active) {
   background: rgba(0, 0, 0, 0.05);
-  color: #0a78be;
+  color: var(--accent);
 }
-/* Meta実測: active bg=rgb(225,237,247), color=rgb(10,120,190), fw=700 */
+/* Meta実測: active bg=link-active-bg, color=accent, fw=700 */
 .inbox-full-tab.active {
-  background: #e1edf7;
-  color: #0a78be;
+  background: var(--link-active-bg);
+  color: var(--accent);
   font-weight: 700;
 }
 
@@ -351,7 +351,7 @@ const INBOX_STYLES = `
 }
 .inbox-manage-item:hover { background: var(--bg-subtle); }
 
-/* プラットフォームフィルタバー — Meta実測: h=28, bg=rgb(248,249,251), br=4px, p=4px 8px, 12px */
+/* プラットフォームフィルタバー */
 .inbox-platform-bar {
   display: flex;
   gap: 4px;
@@ -365,19 +365,19 @@ const INBOX_STYLES = `
   border-radius: 4px;
   border: none;
   font-size: 12px;
-  background: rgb(248, 249, 251);
-  color: rgb(28, 43, 51);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
   font-family: inherit;
   white-space: nowrap;
 }
 .inbox-platform-tab:hover {
-  background: rgb(235, 237, 240);
+  background: var(--bg-hover);
 }
 .inbox-platform-tab.active {
-  background: #e1edf7;
-  color: #0a78be;
+  background: var(--link-active-bg);
+  color: var(--accent);
   font-weight: 600;
 }
 .inbox-unread-check {
@@ -420,7 +420,7 @@ const INBOX_STYLES = `
 /* Meta実測: hover/selected = rgba(0,0,0,0.05) オーバーレイ */
 .conv-item:hover { background: rgba(0, 0, 0, 0.05); }
 .conv-item.selected { background: rgba(0, 0, 0, 0.05); }
-/* Meta実測: 選択中インジケータ = 2px右端ストリップ rgb(24,118,242) */
+/* 選択中インジケータ = 2px右端ストリップ */
 .conv-item.selected::after {
   content: '';
   position: absolute;
@@ -428,7 +428,7 @@ const INBOX_STYLES = `
   top: 0;
   bottom: 0;
   width: 2px;
-  background: rgb(24, 118, 242);
+  background: var(--accent);
 }
 
 /* アバター */
@@ -467,20 +467,20 @@ const INBOX_STYLES = `
   align-items: baseline;
   gap: 6px;
 }
-/* Meta実測: 名前 14px/fw400(既読)/fw700(未読) / color=rgb(28,43,51) */
+/* 名前 14px/fw400(既読)/fw700(未読) */
 .conv-name {
   font-size: 14px;
   font-weight: 400;
-  color: rgb(28, 43, 51);
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .conv-name.unread { font-weight: 700; }
-/* Meta実測: 時刻 12px / color=rgb(70,90,105) */
+/* 時刻 12px */
 .conv-time {
   font-size: 12px;
-  color: rgb(70, 90, 105);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 .conv-preview {
@@ -489,22 +489,22 @@ const INBOX_STYLES = `
   gap: 6px;
   margin-top: 2px;
 }
-/* Meta実測: プレビュー 12px/fw400/rgb(70,90,105)(既読) / fw700/rgb(28,43,51)(未読) */
+/* プレビュー 12px/fw400(既読) / fw700(未読) */
 .conv-preview-text {
   font-size: 12px;
-  color: rgb(70, 90, 105);
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
 }
 .conv-preview-text.unread {
-  color: rgb(28, 43, 51);
+  color: var(--text-primary);
   font-weight: 700;
 }
 .conv-unread-badge {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 10px;
   padding: 1px 6px;
   font-size: 11px;
@@ -573,16 +573,16 @@ const INBOX_STYLES = `
   word-break: break-word;
   white-space: pre-wrap;
 }
-/* Meta実測: outbound bg=rgb(139,46,245) / br=20.8px(全角均一・tailなし) */
+/* outbound バブル */
 .msg-bubble.outbound {
   background: var(--bubble-outbound-bg);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 20.8px;
 }
-/* Meta実測: inbound bg=rgb(239,239,239) / color=black / br=20.8px 20.8px 20.8px 4.8px(左下=tail) */
+/* inbound バブル */
 .msg-bubble.inbound {
   background: var(--bubble-inbound-bg);
-  color: rgb(0, 0, 0);
+  color: var(--text-primary);
   border-radius: 20.8px 20.8px 20.8px 4.8px;
 }
 .msg-bubble.failed {
@@ -630,7 +630,7 @@ const INBOX_STYLES = `
   padding: 8px 20px;
   border-radius: 20px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border: none;
   font-size: 14px;
   font-weight: 600;
@@ -742,14 +742,14 @@ const INBOX_STYLES = `
   font-weight: 500;
   word-break: break-word;
 }
-/* Meta実測: プロフィールを見る = <a>タグ, bg=transparent, color=rgb(10,120,190), fs=14px, fw=400, br=0 */
+/* プロフィールを見る */
 .right-panel-link {
   margin: 12px 0 16px;
   display: inline-block;
   padding: 0;
   border-radius: 0;
   background: transparent;
-  color: rgb(10, 120, 190);
+  color: var(--link);
   font-size: 14px;
   font-weight: 400;
   text-decoration: none;
