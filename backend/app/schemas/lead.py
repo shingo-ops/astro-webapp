@@ -12,7 +12,7 @@ from __future__ import annotations
     不要」の方針に従う。
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 
@@ -143,6 +143,18 @@ class LeadResponse(BaseModel):
     notes: str | None
     created_at: datetime
     updated_at: datetime
+    # ADR-015 商談カルテフィールド
+    next_action: str | None = None
+    next_action_date: date | None = None
+    challenge: str | None = None
+    meeting_memo: str | None = None
+    meeting_impression: str | None = None
+    cs_memo: str | None = None
+    sales_form: str | None = None
+    competitor_check: bool | None = None
+    per_order_amount: Decimal | None = None
+    monthly_frequency: Decimal | None = None
+    english_name: str | None = None
 
     model_config = {"from_attributes": True}
 

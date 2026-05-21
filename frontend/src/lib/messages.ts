@@ -22,6 +22,8 @@ export interface Conversation {
   lead_id: number;
   lead_code: string | null;
   customer_name: string | null;
+  /** リードステータス（例: 新規、既存顧客 など）。紐付きリードがない場合 null */
+  lead_status: string | null | undefined;
   platform: "messenger" | "instagram" | string;
   /** Phase 1-E F14-S5: Messenger 受信のみ Page ID。IG は当面 null */
   page_id: string | null;
