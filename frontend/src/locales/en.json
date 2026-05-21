@@ -191,7 +191,18 @@
     "tabAll": "All",
     "tabNew": "New",
     "tabExisting": "Existing",
-    "tabArchive": "Archive"
+    "tabArchive": "Archive",
+    "nextAction": "Next Action",
+    "nextActionDate": "Next Action Date",
+    "challenge": "Challenges & Needs",
+    "meetingMemo": "Meeting Memo",
+    "meetingImpression": "Meeting Impression",
+    "csMemo": "CS Memo",
+    "salesForm": "Sales Form",
+    "competitorCheck": "Competitor Check",
+    "perOrderAmount": "Per Order Amount",
+    "monthlyFrequency": "Monthly Frequency",
+    "englishName": "English Name"
   },
   "customers": {
     "title": "Customers",
@@ -324,7 +335,12 @@
     "tabArchive": "Archive",
     "viewLead": "View Lead",
     "loadingProfile": "Loading...",
-    "noConversationSelected": "Select a conversation"
+    "noConversationSelected": "Select a conversation",
+    "sectionContact": "Contact",
+    "sectionDeal": "Deal Info",
+    "sectionNextAction": "Next Action",
+    "sectionChallenge": "Challenges & Needs",
+    "sectionMemo": "Memo"
   },
   "channels": {
     "title": "Channels (Meta integration)",

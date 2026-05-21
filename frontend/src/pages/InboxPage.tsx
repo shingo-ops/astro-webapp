@@ -63,6 +63,24 @@ interface LeadDetail {
   phone: string | null;
   status: string;
   temperature: string | null;
+  estimated_scale: string | null;
+  customer_type: string | null;
+  response_speed: string | null;
+  monthly_forecast: string | null;
+  prospect_rank: string | null;
+  notes: string | null;
+  // ADR-015 商談カルテフィールド
+  next_action: string | null;
+  next_action_date: string | null;
+  challenge: string | null;
+  meeting_memo: string | null;
+  meeting_impression: string | null;
+  cs_memo: string | null;
+  sales_form: string | null;
+  competitor_check: boolean | null;
+  per_order_amount: string | null;
+  monthly_frequency: string | null;
+  english_name: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -567,6 +585,70 @@ const INBOX_STYLES = `
   font-size: 14px;
   text-align: center;
   padding: 16px;
+}
+
+/* ヘッダーラッパー */
+.right-panel-header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+/* 英語名 */
+.right-panel-en-name {
+  font-size: 11px;
+  color: #65676B;
+  margin: 2px 0 0;
+  text-align: center;
+}
+
+/* 見込度バッジ */
+.right-panel-rank {
+  margin-top: 6px;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+/* セクションタイトル */
+.right-panel-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #65676B;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #dadde1;
+  margin-bottom: 2px;
+}
+
+/* 長文メモ */
+.right-panel-memo {
+  font-size: 12px;
+  color: #1c1e21;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #F0F2F5;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+/* メモ内サブラベル */
+.right-panel-memo-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #65676B;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 8px;
 }
 
 /* エラー・ローディング */
@@ -1176,7 +1258,7 @@ export default function InboxPage() {
           )}
         </main>
 
-        {/* ============================== 右パネル (顧客カルテ) ============================== */}
+        {/* ============================== 右パネル (商談カルテ) ============================== */}
         <aside className="inbox-right-panel">
           {selectedLeadId === null ? (
             <div className="right-panel-empty">
@@ -1184,14 +1266,31 @@ export default function InboxPage() {
             </div>
           ) : leadDetail ? (
             <>
-              <div className="right-panel-avatar">
-                {getInitials(leadDetail.customer_name)}
+              {/* ヘッダー */}
+              <div className="right-panel-header">
+                <div className="right-panel-avatar">
+                  {getInitials(leadDetail.customer_name)}
+                </div>
+                <h3 className="right-panel-name">{leadDetail.customer_name}</h3>
+                {leadDetail.english_name && (
+                  <p className="right-panel-en-name">{leadDetail.english_name}</p>
+                )}
+                <p className="right-panel-code">{leadDetail.lead_code}</p>
+                <div className="right-panel-status">{leadDetail.status || "—"}</div>
+                {leadDetail.prospect_rank && (
+                  <div className={`right-panel-rank rank-${leadDetail.prospect_rank.replace("+", "plus")}`}>
+                    ランク {leadDetail.prospect_rank}
+                  </div>
+                )}
               </div>
-              <h3 className="right-panel-name">{leadDetail.customer_name}</h3>
-              <p className="right-panel-code">{leadDetail.lead_code}</p>
-              <div className="right-panel-status">{leadDetail.status || "—"}</div>
 
+              {/* セクション1: 連絡先 */}
               <div className="right-panel-section">
+                <div className="right-panel-section-title">{t("inbox.sectionContact")}</div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.companyName")}</span>
+                  <span className="right-panel-value">{leadDetail.company_name || "—"}</span>
+                </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.email")}</span>
                   <span className="right-panel-value">{leadDetail.email || "—"}</span>
@@ -1200,20 +1299,115 @@ export default function InboxPage() {
                   <span className="right-panel-label">{t("leads.phone")}</span>
                   <span className="right-panel-value">{leadDetail.phone || "—"}</span>
                 </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.companyName")}</span>
-                  <span className="right-panel-value">{leadDetail.company_name || "—"}</span>
-                </div>
+              </div>
+
+              {/* セクション2: 商談情報 */}
+              <div className="right-panel-section">
+                <div className="right-panel-section-title">{t("inbox.sectionDeal")}</div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.temperature")}</span>
                   <span className="right-panel-value">{leadDetail.temperature || "—"}</span>
                 </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.estimatedScale")}</span>
+                  <span className="right-panel-value">{leadDetail.estimated_scale || "—"}</span>
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.customerType")}</span>
+                  <span className="right-panel-value">{leadDetail.customer_type || "—"}</span>
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.responseSpeed")}</span>
+                  <span className="right-panel-value">{leadDetail.response_speed || "—"}</span>
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.monthlyForecast")}</span>
+                  <span className="right-panel-value">
+                    {leadDetail.monthly_forecast
+                      ? `¥${Number(leadDetail.monthly_forecast).toLocaleString()}`
+                      : "—"}
+                  </span>
+                </div>
+                {leadDetail.per_order_amount && (
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.perOrderAmount")}</span>
+                    <span className="right-panel-value">
+                      ¥{Number(leadDetail.per_order_amount).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {leadDetail.sales_form && (
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.salesForm")}</span>
+                    <span className="right-panel-value">{leadDetail.sales_form}</span>
+                  </div>
+                )}
+                {leadDetail.competitor_check !== null && (
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.competitorCheck")}</span>
+                    <span className="right-panel-value">
+                      {leadDetail.competitor_check ? "✓ 済" : "未"}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              <a
-                href={`/leads?lead_id=${leadDetail.id}`}
-                className="right-panel-link"
-              >
+              {/* セクション3: 次回アクション */}
+              {(leadDetail.next_action || leadDetail.next_action_date) && (
+                <div className="right-panel-section">
+                  <div className="right-panel-section-title">{t("inbox.sectionNextAction")}</div>
+                  {leadDetail.next_action_date && (
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.nextActionDate")}</span>
+                      <span className="right-panel-value">{leadDetail.next_action_date}</span>
+                    </div>
+                  )}
+                  {leadDetail.next_action && (
+                    <div className="right-panel-memo">{leadDetail.next_action}</div>
+                  )}
+                </div>
+              )}
+
+              {/* セクション4: 課題・ニーズ */}
+              {leadDetail.challenge && (
+                <div className="right-panel-section">
+                  <div className="right-panel-section-title">{t("inbox.sectionChallenge")}</div>
+                  <div className="right-panel-memo">{leadDetail.challenge}</div>
+                </div>
+              )}
+
+              {/* セクション5: メモ */}
+              {(leadDetail.notes || leadDetail.meeting_memo || leadDetail.cs_memo) && (
+                <div className="right-panel-section">
+                  <div className="right-panel-section-title">{t("inbox.sectionMemo")}</div>
+                  {leadDetail.notes && (
+                    <>
+                      <div className="right-panel-memo-label">{t("leads.notes")}</div>
+                      <div className="right-panel-memo">{leadDetail.notes}</div>
+                    </>
+                  )}
+                  {leadDetail.meeting_memo && (
+                    <>
+                      <div className="right-panel-memo-label">{t("leads.meetingMemo")}</div>
+                      <div className="right-panel-memo">{leadDetail.meeting_memo}</div>
+                    </>
+                  )}
+                  {leadDetail.meeting_impression && (
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.meetingImpression")}</span>
+                      <span className="right-panel-value">{leadDetail.meeting_impression}</span>
+                    </div>
+                  )}
+                  {leadDetail.cs_memo && (
+                    <>
+                      <div className="right-panel-memo-label">{t("leads.csMemo")}</div>
+                      <div className="right-panel-memo">{leadDetail.cs_memo}</div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <a href={`/leads?lead_id=${leadDetail.id}`} className="right-panel-link">
                 {t("inbox.viewLead")} →
               </a>
             </>
