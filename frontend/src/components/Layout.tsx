@@ -146,7 +146,6 @@ export default function Layout() {
   const adminItems: SubItem[] = [
     ...(hasPermission("customers.view") ? [
       { to: "/companies", label: t("nav.companies") },
-      { to: "/contacts", label: t("nav.contacts") },
     ] : []),
     ...(hasPermission("deals.view") ? [{ to: "/deals", label: t("nav.deals") }] : []),
     ...(hasPermission("suppliers.view") ? [{ to: "/suppliers", label: t("nav.suppliers") }] : []),
@@ -253,7 +252,7 @@ export default function Layout() {
                   label={t("nav.admin")}
                   icon={<ShieldCheck size={20} />}
                   items={adminItems}
-                  activePaths={["/companies", "/contacts", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings"]}
+                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings"]}
                   isExpanded={sidebarExpanded}
                   isOpen={openAccordion === "admin"}
                   onToggle={() => toggleAccordion("admin")}
