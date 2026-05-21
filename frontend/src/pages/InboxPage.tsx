@@ -167,7 +167,7 @@ const INBOX_STYLES = `
   height: calc(100vh - 56px);
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: #E9EBEE;
+  background: #F0F2F5;
 }
 
 /* ページヘッダー（Meta 風: タイトル + サブタイトル） */
@@ -175,16 +175,16 @@ const INBOX_STYLES = `
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px 12px;
+  padding: 20px 24px;
   background: #fff;
   border-bottom: 1px solid #dadde1;
   flex-shrink: 0;
 }
 .inbox-page-title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: #1c1e21;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   line-height: 1.2;
 }
 .inbox-page-subtitle {
@@ -206,7 +206,7 @@ const INBOX_STYLES = `
 .inbox-full-tab-bar::-webkit-scrollbar { display: none; }
 .inbox-full-tab {
   height: 52px;
-  padding: 0 20px;
+  padding: 0 24px;
   border: none;
   border-bottom: 3px solid transparent;
   margin-bottom: -1px;
@@ -216,16 +216,16 @@ const INBOX_STYLES = `
   color: #65676B;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.1s, border-color 0.1s;
+  transition: color 0.15s, border-color 0.15s;
   font-family: inherit;
 }
 .inbox-full-tab:hover {
-  color: #0064E0;
-  background: rgba(0, 0, 0, 0.03);
+  color: #0866FF;
+  background: rgba(0, 0, 0, 0.04);
 }
 .inbox-full-tab.active {
-  color: #0064E0;
-  border-bottom-color: #0064E0;
+  color: #0866FF;
+  border-bottom-color: #0866FF;
 }
 
 /* 3カラムコンテンツエリア */
@@ -237,7 +237,7 @@ const INBOX_STYLES = `
 
 /* ---- 左パネル ---- */
 .inbox-left-panel {
-  width: 340px;
+  width: 360px;
   flex-shrink: 0;
   background: #fff;
   border-right: 1px solid #dadde1;
@@ -293,7 +293,7 @@ const INBOX_STYLES = `
   align-items: center;
   gap: 5px;
   padding: 7px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid #dadde1;
   background: #fff;
   font-size: 13px;
@@ -313,7 +313,7 @@ const INBOX_STYLES = `
   background: #fff;
   border: 1px solid #dadde1;
   border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   z-index: 100;
   overflow: hidden;
 }
@@ -380,19 +380,18 @@ const INBOX_STYLES = `
 .conv-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: 12px;
+  padding: 12px 16px;
   width: 100%;
   border: none;
-  border-bottom: 1px solid #F0F2F5;
   background: transparent;
   cursor: pointer;
   text-align: left;
-  transition: background 0.1s;
+  transition: background 0.15s;
   font-family: inherit;
   box-sizing: border-box;
 }
-.conv-item:hover { background: rgba(0, 0, 0, 0.04); }
+.conv-item:hover { background: rgba(0, 0, 0, 0.05); }
 .conv-item.selected { background: #E7F3FF; }
 
 /* アバター */
@@ -401,24 +400,24 @@ const INBOX_STYLES = `
   flex-shrink: 0;
 }
 .conv-avatar {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: #E4E6EB;
   color: #1c1e21;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   user-select: none;
 }
 .conv-platform-dot {
   position: absolute;
-  bottom: -1px;
-  right: -1px;
-  width: 16px;
-  height: 16px;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 2px solid #fff;
 }
@@ -439,8 +438,11 @@ const INBOX_STYLES = `
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.conv-name.unread {
+  font-weight: 700;
+}
 .conv-time {
-  font-size: 11px;
+  font-size: 12px;
   color: #65676B;
   flex-shrink: 0;
 }
@@ -1282,7 +1284,7 @@ export default function InboxPage() {
                     {/* 会話情報 */}
                     <div className="conv-info">
                       <div className="conv-header">
-                        <span className="conv-name">
+                        <span className={`conv-name${(conv.unread_count ?? 0) > 0 ? " unread" : ""}`}>
                           {conv.customer_name ?? conv.lead_code ?? `Lead #${conv.lead_id}`}
                         </span>
                         <span className="conv-time">{relativeTime(conv.last_message_at)}</span>
