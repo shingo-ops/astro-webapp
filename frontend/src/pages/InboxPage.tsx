@@ -1126,11 +1126,13 @@ export default function InboxPage() {
         </div>
 
         {/* 全幅タブバー（リードステータスフィルタ） */}
-        <div className="inbox-full-tab-bar">
+        <div className="inbox-full-tab-bar" role="tablist" aria-label={t("inbox.title")}>
           {leadStatusTabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
+              role="tab"
+              aria-selected={leadStatusFilter === tab.key}
               className={`inbox-full-tab${leadStatusFilter === tab.key ? " active" : ""}`}
               onClick={() => setLeadStatusFilter(tab.key)}
             >
@@ -1144,8 +1146,8 @@ export default function InboxPage() {
 
         {/* ============================== 左パネル ============================== */}
         <aside className="inbox-left-panel">
-          {/* アクセシビリティ用タイトル（視覚的に非表示） */}
-          <h2 className="inbox-panel-title">{t("inbox.title")}</h2>
+          {/* アクセシビリティ用タイトル（視覚的・意味論的に非表示：h1が全幅ヘッダーに移動済み） */}
+          <h2 className="inbox-panel-title" aria-hidden="true">{t("inbox.title")}</h2>
 
           {/* 検索 + 管理ボタン */}
           <div className="inbox-search-row">
