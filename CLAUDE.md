@@ -185,6 +185,18 @@ pushまで完了して初めて作業終了とすること。
 
 ## データ手動 DB INSERT の原則禁止（ADR-025）
 
+> **🚧 適用フェーズ**: **本番運用フェーズ移行後**（Meta App Review submitted 以降）にのみ適用。
+>
+> **現在は開発フェーズ**のため、本ルールは effective ではない。スキーマ変更・データ修正・トラブル対応で **DB を直接いじることは頻繁に行う運用を継続**する（migration を毎回切らずに psql / `docker exec psql` で直接 INSERT/UPDATE もOK）。
+>
+> 本ルールが effective になるタイミングはしんごさん／ひとしさん判断で別途明示する。
+>
+> ただし以下は開発フェーズでも常に厳禁:
+> - 暗号化済シークレット (`*_token_encrypted`) の手動投入
+> - destructive 操作（DROP TABLE / TRUNCATE / 重要データの DELETE）を user 確認なしで実行
+>
+> 本ルール文書自体は本番運用時の規範として温存する。
+
 外部 SaaS / OAuth 等の連携機能において、**正規フロー（OAuth コールバック・API 経由の作成エンドポイント等）を経由しない手動 DB INSERT は原則禁止**する。
 
 ### 背景
