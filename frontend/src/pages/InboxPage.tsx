@@ -1103,7 +1103,8 @@ export default function InboxPage() {
       })
       .filter((c) => {
         if (!followUpOnly) return true;
-        return c.lead_status != null && LEADS_STATUSES.includes(c.lead_status);
+        // 顧客が最後にメッセージを送った会話（返信待ち）、かつ失注は除外
+        return c.last_message_direction === "inbound" && c.lead_status !== "失注";
       })
       .filter((c) => {
         if (!searchQuery) return true;
