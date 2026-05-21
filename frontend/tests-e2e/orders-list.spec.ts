@@ -195,8 +195,8 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
       timeout: 20_000,
     });
 
-    // ヘッダ「会社」「名前」列（ADR-044: i18n 化により担当者 → 名前 t("common.name")）
-    await expect(page.getByRole("columnheader", { name: "会社" })).toBeVisible();
+    // ヘッダ「顧客情報」「名前」列（ADR-060: 会社 → 顧客情報 にリネーム）
+    await expect(page.getByRole("columnheader", { name: "顧客情報" })).toBeVisible();
     await expect(page.getByRole("columnheader", { name: "名前" })).toBeVisible();
 
     // データ行（API mock の company_name / contact_display_name が表示）
