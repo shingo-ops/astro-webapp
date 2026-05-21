@@ -1391,6 +1391,13 @@ export default function InboxPage() {
             <>
               {/* ヘッダ */}
               <header className="inbox-center-header">
+                {/* Meta実測: ヘッダーアバター 48×48px 円形 */}
+                <div className="conv-avatar" style={{ flexShrink: 0 }}>
+                  {getInitials(
+                    messagesData?.lead?.customer_name
+                    || selectedConversation?.customer_name
+                  )}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h2 className="inbox-center-title">
                     {messagesData?.lead?.customer_name
