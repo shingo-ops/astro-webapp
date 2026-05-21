@@ -14,17 +14,13 @@ from pathlib import Path
 
 import pytest
 
-# Sprint 2 follow-up: TEST_PG_URL と RLS_TEST_DATABASE_URL の両方を許容する
-# （CI workflow が後者だけを export しているため、新規テストが全 skip される
-#  問題への構造的対応。conftest.py 側で TEST_PG_URL を補完しているため通常は
-#  ここに到達するが、互換性のため明示的に or を残す）
-TEST_PG_URL = os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")
+TEST_PG_URL = os.getenv("TEST_PG_URL")
 
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(
         not TEST_PG_URL,
-        reason="実 PostgreSQL 環境が必要 (TEST_PG_URL / RLS_TEST_DATABASE_URL 未設定)。",
+        reason="実 PostgreSQL 環境が必要 (TEST_PG_URL 未設定)。",
     ),
 ]
 

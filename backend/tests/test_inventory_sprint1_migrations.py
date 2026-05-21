@@ -29,14 +29,14 @@ from pathlib import Path
 import pytest
 
 # 実 Postgres URL が指定されていない場合はモジュール全体を skip
-TEST_PG_URL = os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")
+TEST_PG_URL = os.getenv("TEST_PG_URL")
 
 # pytest-asyncio
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(
         not TEST_PG_URL,
-        reason="実 PostgreSQL 環境が必要 (TEST_PG_URL / RLS_TEST_DATABASE_URL 未設定)。"
+        reason="実 PostgreSQL 環境が必要 (TEST_PG_URL 未設定)。"
                "SQLite では migration / JSONB / search_path / CHECK 制約は検証できない。"
                "spec.md / feedback_evaluator_gap_2026_05_15.md 参照。",
     ),
