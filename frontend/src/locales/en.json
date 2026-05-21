@@ -343,7 +343,8 @@
     "manage": "Manage",
     "markAllRead": "Mark all as read",
     "filterUnread": "Unread",
-    "filterFollowUp": "Follow-up"
+    "filterFollowUp": "Follow-up",
+    "subtitle": "Manage and respond to messages."
   },
   "channels": {
     "title": "Channels (Meta integration)",

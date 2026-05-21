@@ -158,13 +158,81 @@ const platformLabel = libPlatformLabel;
 // ---------------------------------------------------------------------------
 
 const INBOX_STYLES = `
-/* ======= Inbox Meta Design ======= */
-.inbox-page {
+/* ======= Inbox Meta Design (ADR-063) ======= */
+
+/* 全体ラッパー（flex column） */
+.inbox-wrapper {
   display: flex;
+  flex-direction: column;
   height: calc(100vh - 56px);
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: #E9EBEE;
+}
+
+/* ページヘッダー（Meta 風: タイトル + サブタイトル） */
+.inbox-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px 12px;
+  background: #fff;
+  border-bottom: 1px solid #dadde1;
+  flex-shrink: 0;
+}
+.inbox-page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1c1e21;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+.inbox-page-subtitle {
+  font-size: 13px;
+  color: #65676B;
+  margin: 0;
+}
+
+/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
+.inbox-full-tab-bar {
+  display: flex;
+  background: #fff;
+  border-bottom: 1px solid #dadde1;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 8px;
+}
+.inbox-full-tab-bar::-webkit-scrollbar { display: none; }
+.inbox-full-tab {
+  height: 52px;
+  padding: 0 20px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: #65676B;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.1s, border-color 0.1s;
+  font-family: inherit;
+}
+.inbox-full-tab:hover {
+  color: #0064E0;
+  background: rgba(0, 0, 0, 0.03);
+}
+.inbox-full-tab.active {
+  color: #0064E0;
+  border-bottom-color: #0064E0;
+}
+
+/* 3カラムコンテンツエリア */
+.inbox-columns {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 /* ---- 左パネル ---- */
@@ -189,43 +257,6 @@ const INBOX_STYLES = `
   clip: rect(0,0,0,0);
   white-space: nowrap;
   border: 0;
-}
-
-/* リードステータスタブ（最上部・Meta スタイル） */
-.inbox-lead-tabs {
-  display: flex;
-  border-bottom: 1px solid #dadde1;
-  background: #fff;
-  padding: 0;
-  flex-shrink: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.inbox-lead-tabs::-webkit-scrollbar { display: none; }
-.inbox-lead-tab {
-  flex: 1;
-  min-width: 0;
-  height: 52px;
-  border: none;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  color: #65676B;
-  cursor: pointer;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -1px;
-  padding: 0 8px;
-  white-space: nowrap;
-  transition: color 0.1s, border-color 0.1s;
-  font-family: inherit;
-}
-.inbox-lead-tab:hover {
-  color: #0064E0;
-  background: rgba(0, 0, 0, 0.03);
-}
-.inbox-lead-tab.active {
-  color: #0064E0;
-  border-bottom-color: #0064E0;
 }
 
 /* 検索 + 管理ボタン行 */
@@ -1085,28 +1116,38 @@ export default function InboxPage() {
       {/* グローバルスタイル注入 */}
       <style>{INBOX_STYLES}</style>
 
-      <div className="inbox-page">
+      <div className="inbox-wrapper">
+        {/* ページヘッダー（Meta 風: タイトル + サブタイトル） */}
+        <div className="inbox-page-header">
+          <div>
+            <h1 className="inbox-page-title">{t("inbox.title")}</h1>
+            <p className="inbox-page-subtitle">{t("inbox.subtitle")}</p>
+          </div>
+        </div>
+
+        {/* 全幅タブバー（リードステータスフィルタ） */}
+        <div className="inbox-full-tab-bar">
+          {leadStatusTabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={`inbox-full-tab${leadStatusFilter === tab.key ? " active" : ""}`}
+              onClick={() => setLeadStatusFilter(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 3カラムコンテンツ */}
+        <div className="inbox-columns">
+
         {/* ============================== 左パネル ============================== */}
         <aside className="inbox-left-panel">
-          {/* ページタイトル（アクセシビリティ + E2E 検証用） */}
           {/* アクセシビリティ用タイトル（視覚的に非表示） */}
           <h2 className="inbox-panel-title">{t("inbox.title")}</h2>
 
-          {/* 1. リードステータスタブ（最上部） */}
-          <div className="inbox-lead-tabs">
-            {leadStatusTabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                className={`inbox-lead-tab${leadStatusFilter === tab.key ? " active" : ""}`}
-                onClick={() => setLeadStatusFilter(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* 2. 検索 + 管理ボタン */}
+          {/* 検索 + 管理ボタン */}
           <div className="inbox-search-row">
             <input
               type="text"
@@ -1578,7 +1619,9 @@ export default function InboxPage() {
             </div>
           )}
         </aside>
-      </div>
+
+        </div>{/* /inbox-columns */}
+      </div>{/* /inbox-wrapper */}
     </>
   );
 }
