@@ -70,7 +70,8 @@ test.describe("Scene 3: Incoming Messenger", () => {
     await taroBtn.click();
 
     // 右ペイン: lead リンク（ADR-044: i18n 化により t("inbox.lead") = "リード"）
-    await expect(page.getByRole("link", { name: "リード", exact: true })).toBeVisible({
+    // サイドバーにも "リード" NavLink が存在するため main main に絞る（ADR-059）
+    await expect(page.locator("main main").getByRole("link", { name: "リード", exact: true })).toBeVisible({
       timeout: 10_000,
     });
 
