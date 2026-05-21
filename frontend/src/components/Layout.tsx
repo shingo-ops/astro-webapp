@@ -155,6 +155,12 @@ export default function Layout() {
     ...(isSuperAdmin
       ? [{ to: "/super-admin/masters", label: t("nav.superAdminMasters") }]
       : []),
+    // spec.md v1.1 F5 (Sprint 5): 中央 admin 専用「Discord 受信一覧」リンク
+    // is_super_admin=true のユーザーにだけ表示。
+    // バックエンド側でも require_super_admin で二重ガード（AC5.5 / AC6.8 と同パターン）。
+    ...(isSuperAdmin
+      ? [{ to: "/super-admin/inbound", label: t("nav.superAdminInbound") }]
+      : []),
   ];
 
   const moreItems: SubItem[] = [
@@ -272,7 +278,7 @@ export default function Layout() {
                   label={t("nav.admin")}
                   icon={<ShieldCheck size={20} />}
                   items={adminItems}
-                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/super-admin/masters"]}
+                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/super-admin/masters", "/super-admin/inbound"]}
                   isExpanded={sidebarExpanded}
                   isOpen={openAccordion === "admin"}
                   onToggle={() => toggleAccordion("admin")}

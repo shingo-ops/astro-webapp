@@ -59,6 +59,8 @@ from app.routers import super_admin_dex
 from app.routers import super_admin_suppliers
 # spec.md v1.1 F4 (Sprint 4): LLM 予算管理 admin UI
 from app.routers import super_admin_llm_budget
+# spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧 admin UI
+from app.routers import super_admin_inbound
 from app.routers import tenant_admin_inventory_visibility
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
@@ -330,6 +332,10 @@ app.include_router(
 # Sprint 4 (F4): LLM 予算管理 (public.tenant_llm_budgets) 中央 admin
 app.include_router(
     super_admin_llm_budget.router, prefix="/api/v1", tags=["super-admin"],
+)
+# Sprint 5 (F5): Discord Inbound 受信メッセージ一覧 (public.discord_inbound_messages) 中央 admin
+app.include_router(
+    super_admin_inbound.router, prefix="/api/v1", tags=["super-admin"],
 )
 # テナント admin 用 inventory visibility は get_current_tenant 必須
 app.include_router(

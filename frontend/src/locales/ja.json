@@ -91,6 +91,7 @@
     "signOutTitle": "サインアウト",
     "signOutMessage": "サインアウトしますか？未保存のデータは失われます。",
     "superAdminMasters": "マスタ管理（中央）",
+    "superAdminInbound": "Discord 受信一覧",
     "inventoryVisibility": "在庫表示権限"
   },
   "login": {
@@ -920,6 +921,37 @@
         "hardStop": "上限到達時に停止",
         "notifyAdmin": "Admin に通知",
         "lastResetAt": "前回リセット"
+      }
+    },
+    "inbound": {
+      "title": "Discord 受信メッセージ",
+      "subtitle": "仕入元からの Discord メッセージ受信ログ。解析結果と承認状況を確認できます。",
+      "noRows": "まだ受信メッセージはありません。",
+      "filters": {
+        "status": "解析ステータス",
+        "statusAny": "全て",
+        "search": "本文検索",
+        "searchPlaceholder": "本文に含まれる文字..."
+      },
+      "columns": {
+        "receivedAt": "受信時刻",
+        "supplier": "仕入元",
+        "parseStatus": "解析ステータス",
+        "preview": "本文プレビュー",
+        "engine": "解析エンジン",
+        "llmCost": "LLM コスト"
+      },
+      "parseStatus": {
+        "pending": "未解析",
+        "parsing": "解析中",
+        "parsed": "解析済",
+        "parsed_rule_only": "解析済（ルール）",
+        "parsed_llm": "解析済（LLM）",
+        "unparsed": "解析失敗",
+        "budget_exhausted": "予算超過",
+        "ignored_routing": "ルーティング未登録",
+        "approved": "承認済",
+        "rejected": "差し戻し"
       }
     }
   },
