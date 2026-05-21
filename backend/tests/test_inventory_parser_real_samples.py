@@ -149,6 +149,41 @@ def _split_sql_preserving_do_blocks(sql: str) -> list[str]:
     return statements
 
 
+# Sprint 3 Reviewer Minor F2 (PR #514) fix:
+#   冪等性違反だけを pass、それ以外の本物のエラーは raise する。
+#
+#   PostgreSQL SQLSTATE (Class 42 syntax/access + 23 integrity) のうち、
+#   IF NOT EXISTS 系の migration を再投入したときに発生する種類だけを
+#   ホワイトリスト化する。これら以外は raise して、将来 non-idempotent
+#   な migration が紛れた場合に CI で気付ける状態にする。
+_IDEMPOTENT_PG_SQLSTATES = frozenset(
+    {
+        "42P07",  # duplicate_table
+        "42710",  # duplicate_object (CONSTRAINT, INDEX, FUNCTION 等)
+        "42701",  # duplicate_column
+        "42P06",  # duplicate_schema
+        "42723",  # duplicate_function
+        "42P03",  # duplicate_cursor
+    }
+)
+
+
+def _is_idempotent_migration_error(exc: BaseException) -> bool:
+    """`migration を再投入したときに発生する系統だけ` を True で返す。
+
+    asyncpg / psycopg2 のいずれの driver でも、SQLAlchemy 経由なら
+    `exc.orig.sqlstate` でアクセスできる。属性が無いケースは False を返し、
+    呼び出し側で raise される。
+    """
+    orig = getattr(exc, "orig", None)
+    if orig is None:
+        return False
+    sqlstate = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
+    if sqlstate and sqlstate in _IDEMPOTENT_PG_SQLSTATES:
+        return True
+    return False
+
+
 async def _ensure_inventory_schema(engine) -> None:
     """migrations 056-058 が適用済か確認。未適用なら適用する（idempotent）。
 
@@ -159,6 +194,13 @@ async def _ensure_inventory_schema(engine) -> None:
 
     各 statement を独立した transaction で実行することで、
     既存テーブルへの制約再付与等で失敗した時に後続の statement が止まらないようにする。
+
+    Sprint 3 Reviewer Minor F2 (PR #514) fix:
+      旧実装は `except Exception: pass` で全ての例外を握り潰しており、
+      将来 non-idempotent な migration が紛れた場合に silently green に
+      なるリスクがあった。SQLSTATE 42P07/42710/42701 等の
+      「冪等系 duplicate エラー」だけ pass し、それ以外は raise する
+      ホワイトリスト方式に変更。
     """
     MIGRATIONS_DIR = pathlib.Path(__file__).parents[2] / "migrations"
     needed = [
@@ -175,10 +217,13 @@ async def _ensure_inventory_schema(engine) -> None:
             try:
                 async with engine.begin() as conn:
                     await conn.exec_driver_sql(stmt)
-            except Exception:
-                # 冪等な migration なので、既存オブジェクトへの操作失敗は無視。
-                # 次の statement で recover される。
-                pass
+            except Exception as exc:
+                # 既知の冪等性違反（duplicate_table/object/column）だけ無視。
+                # それ以外（FK 違反 / syntax error / data type mismatch 等）は
+                # 本物のバグなので raise する。
+                if _is_idempotent_migration_error(exc):
+                    continue
+                raise
 
 
 async def _seed_supplier_with_aliases(
