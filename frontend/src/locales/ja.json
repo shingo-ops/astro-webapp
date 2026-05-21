@@ -339,7 +339,11 @@
     "sectionDeal": "商談情報",
     "sectionNextAction": "次回アクション",
     "sectionChallenge": "課題・ニーズ",
-    "sectionMemo": "メモ"
+    "sectionMemo": "メモ",
+    "manage": "管理",
+    "markAllRead": "全て既読にする",
+    "filterUnread": "未読",
+    "filterFollowUp": "フォローアップ"
   },
   "channels": {
     "title": "チャンネル (Meta連携)",

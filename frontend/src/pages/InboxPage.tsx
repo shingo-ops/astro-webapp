@@ -1,5 +1,5 @@
 /**
- * Inbox ページ（Phase 1-D Sprint 4 / Sprint 5 / Sprint 6 redesign）。
+ * Inbox ページ（Phase 1-D Sprint 4 / Sprint 5 / Sprint 6 / Sprint 7 redesign）。
  *
  * Meta Business Suite 風の 3 カラムレイアウト。
  *
@@ -8,14 +8,20 @@
  *   2026-04-30: Sprint 5 — lib/messages.ts ヘルパ経由に切替 + 送信機能 enable
  *   2026-05-21: Sprint 6 — Meta Business Suite 風 UI に全面再設計
  *       - 3 カラムレイアウト（左: 会話リスト, 中央: メッセージ, 右: 顧客カルテ）
- *       - All / New / Existing / Archive タブ（lead_status ベース）
+ *       - All / Leads / Converted / Customers タブ（lead_status ベース）
  *       - プラットフォームフィルタをピル型に変更
  *       - イニシャルアバター + プラットフォームドット
  *       - バブルデザイン: outbound 紫(#7C3AED) / inbound グレー(#E4E6EB)
  *       - 右パネル: GET /leads/{id} で顧客詳細を表示
+ *   2026-05-21: Sprint 7 — Meta インボックス忠実再現
+ *       - タブを左パネル最上部に移動（検索の上）
+ *       - 検索 + 管理ボタンを横並びに配置
+ *       - 管理ドロップダウン（全て既読にする）
+ *       - パネルタイトルを視覚的に非表示化（スクリーンリーダー用に保持）
  */
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
@@ -168,37 +174,46 @@ const INBOX_STYLES = `
   overflow: hidden;
 }
 
-/* パネルタイトル（アクセシビリティ用、視覚的に小さめ） */
+/* パネルタイトル（スクリーンリーダー専用 — 視覚的に非表示） */
 .inbox-panel-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1c1e21;
-  margin: 0;
-  padding: 10px 12px 8px;
-  border-bottom: 1px solid #dadde1;
-  flex-shrink: 0;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
 }
 
-/* リードステータスタブ */
+/* リードステータスタブ（最上部・Meta スタイル） */
 .inbox-lead-tabs {
   display: flex;
   border-bottom: 1px solid #dadde1;
   background: #fff;
-  padding: 0 4px;
+  padding: 0;
   flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.inbox-lead-tabs::-webkit-scrollbar { display: none; }
 .inbox-lead-tab {
   flex: 1;
-  height: 48px;
+  min-width: 0;
+  height: 52px;
   border: none;
   background: transparent;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #65676B;
   cursor: pointer;
   border-bottom: 3px solid transparent;
   margin-bottom: -1px;
+  padding: 0 8px;
+  white-space: nowrap;
   transition: color 0.1s, border-color 0.1s;
+  font-family: inherit;
 }
 .inbox-lead-tab:hover {
   color: #0064E0;
@@ -209,13 +224,17 @@ const INBOX_STYLES = `
   border-bottom-color: #0064E0;
 }
 
-/* 検索エリア */
-.inbox-search-area {
-  padding: 8px 12px 4px;
+/* 検索 + 管理ボタン行 */
+.inbox-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 4px;
   flex-shrink: 0;
 }
 .inbox-search-input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 8px 12px;
   border-radius: 20px;
   border: none;
@@ -228,6 +247,55 @@ const INBOX_STYLES = `
 .inbox-search-input::placeholder {
   color: #65676B;
 }
+
+/* 管理ボタン */
+.inbox-manage-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.inbox-manage-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid #dadde1;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c1e21;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+.inbox-manage-btn:hover { background: #F0F2F5; }
+.inbox-manage-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #dadde1;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  z-index: 100;
+  overflow: hidden;
+}
+.inbox-manage-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  color: #1c1e21;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.inbox-manage-item:hover { background: #F0F2F5; }
 
 /* プラットフォームフィルタバー */
 .inbox-platform-bar {
@@ -732,6 +800,10 @@ export default function InboxPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
 
+  // 管理ドロップダウン
+  const [manageOpen, setManageOpen] = useState(false);
+  const manageRef = useRef<HTMLDivElement | null>(null);
+
   // スクロール用 ref
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const skipNextPollRef = useRef(false);
@@ -983,6 +1055,25 @@ export default function InboxPage() {
     { key: "customers", label: t("inbox.tabCustomers") },
   ];
 
+  // 管理ドロップダウン: click-outside で閉じる
+  useEffect(() => {
+    if (!manageOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (manageRef.current && !manageRef.current.contains(e.target as Node)) {
+        setManageOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [manageOpen]);
+
+  // 全て既読にする（現在フィルタ済みの未読会話を一括既読化）
+  const handleMarkAllRead = useCallback(async () => {
+    setManageOpen(false);
+    const unreadConvs = filteredConversations.filter((c) => c.unread_count > 0);
+    await Promise.all(unreadConvs.map((c) => markRead(c.lead_id)));
+  }, [filteredConversations, markRead]);
+
   // ---------------------------------------------------------------------------
   // 描画
   // ---------------------------------------------------------------------------
@@ -996,8 +1087,10 @@ export default function InboxPage() {
         {/* ============================== 左パネル ============================== */}
         <aside className="inbox-left-panel">
           {/* ページタイトル（アクセシビリティ + E2E 検証用） */}
+          {/* アクセシビリティ用タイトル（視覚的に非表示） */}
           <h2 className="inbox-panel-title">{t("inbox.title")}</h2>
-          {/* リードステータスタブ */}
+
+          {/* 1. リードステータスタブ（最上部） */}
           <div className="inbox-lead-tabs">
             {leadStatusTabs.map((tab) => (
               <button
@@ -1011,8 +1104,8 @@ export default function InboxPage() {
             ))}
           </div>
 
-          {/* 検索ボックス */}
-          <div className="inbox-search-area">
+          {/* 2. 検索 + 管理ボタン */}
+          <div className="inbox-search-row">
             <input
               type="text"
               className="inbox-search-input"
@@ -1020,9 +1113,32 @@ export default function InboxPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            <div className="inbox-manage-wrap" ref={manageRef}>
+              <button
+                type="button"
+                className="inbox-manage-btn"
+                onClick={() => setManageOpen((v) => !v)}
+                aria-expanded={manageOpen}
+              >
+                <SlidersHorizontal size={13} />
+                {t("inbox.manage")}
+              </button>
+              {manageOpen && (
+                <div className="inbox-manage-dropdown" role="menu">
+                  <button
+                    type="button"
+                    className="inbox-manage-item"
+                    role="menuitem"
+                    onClick={handleMarkAllRead}
+                  >
+                    {t("inbox.markAllRead")}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* プラットフォームフィルタ + 未読チェック */}
+          {/* 3. プラットフォームフィルタ + 未読チェック */}
           <div className="inbox-platform-bar">
             {(["all", "messenger", "instagram"] as PlatformFilter[]).map((p) => (
               <button

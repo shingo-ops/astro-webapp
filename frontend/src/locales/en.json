@@ -339,7 +339,11 @@
     "sectionDeal": "Deal Info",
     "sectionNextAction": "Next Action",
     "sectionChallenge": "Challenges & Needs",
-    "sectionMemo": "Memo"
+    "sectionMemo": "Memo",
+    "manage": "Manage",
+    "markAllRead": "Mark all as read",
+    "filterUnread": "Unread",
+    "filterFollowUp": "Follow-up"
   },
   "channels": {
     "title": "Channels (Meta integration)",
