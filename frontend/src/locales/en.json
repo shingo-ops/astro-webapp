@@ -401,6 +401,34 @@
     "stage_lost": "Lost",
     "stage_on_hold": "On hold"
   },
+  "inventory": {
+    "search": {
+      "placeholder": "Search by product name, card number, JAN, expansion code, or supplier alias",
+      "opGroupLabel": "Multi-keyword join mode",
+      "opAnd": "AND (all match)",
+      "opOr": "OR (any match)",
+      "candidatesLabel": "Search candidates",
+      "noResults": "No matching products",
+      "stockLabel": "Stock",
+      "stockMaskedNote": "You do not have permission to view stock counts (shown as ***)",
+      "zeroStockWarning": "\"{{name}}\" has 0 stock. Verify supplier and stock before quoting.",
+      "matchedVia": {
+        "products_name_exact": "Name exact match",
+        "products_name_en_exact": "English name exact match",
+        "products_card_number_exact": "Card number exact match",
+        "products_jan_code_exact": "JAN exact match",
+        "products_name": "Name",
+        "products_name_en": "English name",
+        "products_card_number": "Card number",
+        "products_jan_code": "JAN code",
+        "products_expansion_code": "Expansion code",
+        "pokemon_dex": "Pokemon dex",
+        "trainer_dex": "Trainer dex",
+        "tcg_series": "TCG series",
+        "supplier_alias": "Supplier alias"
+      }
+    }
+  },
   "quotes": {
     "title": "Quotes",
     "newQuote": "New Quote",

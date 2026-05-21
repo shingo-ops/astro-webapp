@@ -401,6 +401,34 @@
     "stage_lost": "失注",
     "stage_on_hold": "保留"
   },
+  "inventory": {
+    "search": {
+      "placeholder": "商品名・カード番号・JAN・型番・仕入元 alias で検索",
+      "opGroupLabel": "複数キーワードの結合方法",
+      "opAnd": "AND（全部一致）",
+      "opOr": "OR（いずれか一致）",
+      "candidatesLabel": "検索候補",
+      "noResults": "該当する商品がありません",
+      "stockLabel": "在庫",
+      "stockMaskedNote": "在庫数の閲覧権限がありません（***表示）",
+      "zeroStockWarning": "「{{name}}」は在庫が 0 です。仕入元と在庫を確認してください。",
+      "matchedVia": {
+        "products_name_exact": "商品名一致",
+        "products_name_en_exact": "英名一致",
+        "products_card_number_exact": "カード番号完全一致",
+        "products_jan_code_exact": "JAN 完全一致",
+        "products_name": "商品名",
+        "products_name_en": "英名",
+        "products_card_number": "カード番号",
+        "products_jan_code": "JAN コード",
+        "products_expansion_code": "拡張型番",
+        "pokemon_dex": "ポケモン図鑑",
+        "trainer_dex": "トレーナー図鑑",
+        "tcg_series": "TCG シリーズ",
+        "supplier_alias": "仕入元 alias"
+      }
+    }
+  },
   "quotes": {
     "title": "見積管理",
     "newQuote": "新規見積",

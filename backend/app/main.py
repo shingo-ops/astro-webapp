@@ -64,6 +64,8 @@ from app.routers import super_admin_inbound
 # spec.md v1.1 F6 (Sprint 6): 解析結果レビュー UI + 在庫差分反映
 from app.routers import parse_review
 from app.routers import tenant_admin_inventory_visibility
+# spec.md v1.1 F7 (Sprint 7): 在庫検索 API (全 7 種横断 + AND/OR + visibility マスク)
+from app.routers import inventory_search
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -347,6 +349,14 @@ app.include_router(
 app.include_router(
     tenant_admin_inventory_visibility.router, prefix="/api/v1",
     tags=["tenant-admin-inventory-visibility"],
+    dependencies=[Depends(get_current_tenant)],
+)
+
+# spec.md v1.1 F7 (Sprint 7): 在庫検索 API (営業向け、QuoteCreatePage 等から呼び出し)
+# tenant search_path 設定 + token 認証必須 (load_user_permissions で権限判定)
+app.include_router(
+    inventory_search.router, prefix="/api/v1",
+    tags=["inventory-search"],
     dependencies=[Depends(get_current_tenant)],
 )
 
