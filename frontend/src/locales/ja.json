@@ -92,7 +92,8 @@
     "signOutMessage": "サインアウトしますか？未保存のデータは失われます。",
     "superAdminMasters": "マスタ管理（中央）",
     "superAdminInbound": "Discord 受信一覧",
-    "inventoryVisibility": "在庫表示権限"
+    "inventoryVisibility": "在庫表示権限",
+    "tenantProfile": "発行者情報"
   },
   "login": {
     "email": "メールアドレス",
@@ -523,16 +524,39 @@
     "poNumber": "発注番号",
     "noPos": "発注が登録されていません",
     "deletePO": "発注を削除",
+    "allStatuses": "全ステータス",
     "status_draft": "下書き",
     "status_pending": "未処理",
     "status_ordered": "発注済",
     "status_received": "受領済",
     "status_cancelled": "キャンセル",
+    "status_error": "送信エラー",
     "orderedAt": "発注日",
     "receivedAt": "入荷日",
     "actionOrder": "発注",
     "actionReceive": "入荷",
-    "actionCancel": "取消"
+    "actionCancel": "取消",
+    "actionDownloadPdf": "PDF",
+    "actionSendEmail": "メール送信",
+    "actionResendEmail": "再送",
+    "emailSent": "メール送信しました",
+    "emailResent": "メールを再送しました",
+    "emailSendFailed": "メール送信に失敗しました"
+  },
+  "tenantProfile": {
+    "title": "発行者情報",
+    "subtitle": "発注書 PDF / メールの差出人欄に表示される会社情報を設定します",
+    "companyName": "会社名 (日本語)",
+    "companyNameEn": "会社名 (英語)",
+    "address": "住所",
+    "phone": "電話番号",
+    "email": "メールアドレス",
+    "website": "ウェブサイト",
+    "sealImageUrl": "印鑑画像 URL",
+    "sealHint": "印鑑画像の URL を入力すると PDF に表示されます (オプション)",
+    "defaultLanguage": "既定言語",
+    "saved": "発行者情報を保存しました",
+    "permissionRequired": "この画面の閲覧には tenant.profile.view 権限が必要です"
   },
   "staff": {
     "title": "スタッフ管理",

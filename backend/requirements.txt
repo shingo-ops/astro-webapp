@@ -24,8 +24,16 @@ cryptography>=42.0.0,<46.0.0
 # Sprint 4 (F4): Gemini 2.5 Flash LLM フォールバック（在庫メッセージ解析）
 # structured output (response_mime_type=application/json + response_schema) を使うため 0.8.0+
 google-generativeai>=0.8.0,<0.9.0
+# Sprint 8 (F8): PO PDF レンダリング (発注書 PDF + alias 置換 + 敬称分岐 + テナント名義)
+# reportlab: 純 Python (BSD-3-Clause)、商用 OK、TrueType 日本語フォント embedding 対応
+# 日本語フォント (NotoSansJP / IPA) は OS 側 or 環境変数 PO_PDF_FONT_PATH で参照
+reportlab>=4.0.0,<5.0.0
 # テスト用
 pytest==8.3.5
 pytest-asyncio==0.25.3
 pytest-cov==6.1.1
 aiosqlite==0.21.0
+# Sprint 8 (F8) テスト: PDF テキスト抽出 (alias_text が PDF に含まれることを assert)
+pdfminer.six>=20231228
+# Sprint 8 (F8) テスト: ローカル SMTP capture (メール送信内容 assert)
+aiosmtpd>=1.4.5

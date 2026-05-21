@@ -1079,6 +1079,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_tenant_meta_config_active_page
 CREATE INDEX IF NOT EXISTS idx_tenant_meta_config_ig_id
     ON {schema}.tenant_meta_config (instagram_business_account_id)
     WHERE instagram_business_account_id IS NOT NULL;
+
+-- Sprint 8 / migration 069: テナント発行者情報 (PO PDF / メール差出人)
+-- ADR-034: 新規テナント作成時に最初から保持される。
+-- 1 テナント 1 行運用、admin UI で内容編集。
+CREATE TABLE IF NOT EXISTS {schema}.tenant_profile (
+    id                  SERIAL PRIMARY KEY,
+    company_name        VARCHAR(255),
+    company_name_en     VARCHAR(255),
+    address             TEXT,
+    phone               VARCHAR(50),
+    email               VARCHAR(255),
+    website             VARCHAR(255),
+    seal_image_url      TEXT,
+    default_language    CHAR(2) NOT NULL DEFAULT 'ja',
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT tenant_profile_default_language_check
+        CHECK (default_language IN ('ja', 'en', 'ko', 'zh'))
+);
+-- 既定行を 1 行投入 (admin が UI で後から埋める)
+INSERT INTO {schema}.tenant_profile (default_language)
+SELECT 'ja' WHERE NOT EXISTS (SELECT 1 FROM {schema}.tenant_profile);
 """
 
 # RLS有効化のALTER TABLE群（;で安全に分割可能）

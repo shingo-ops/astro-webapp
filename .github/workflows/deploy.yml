@@ -385,6 +385,18 @@ jobs:
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_inventory_sprint2.py
 
+            # Inventory Sprint 8 (migration 069): PO PDF / メール差出人テナント情報 (spec.md F8)
+            #   - migration 069: {tenant_xxx}.tenant_profile 作成 + 既定行 seed
+            #     + public.permissions に tenant.profile.view / edit を追加
+            #     + 既存 オーナー / システム管理者ロールに権限割当
+            #   全 SQL は CREATE TABLE IF NOT EXISTS / WHERE NOT EXISTS /
+            #   ON CONFLICT (key) DO NOTHING で冪等。
+            #   ADR-034: 新規テナントは backend/app/services/tenant.py の
+            #   _TENANT_TABLES_SQL テンプレートで tenant_profile を持つ。
+            #   関連: .claude-pipeline/spec.md Sprint 8 / F8 / AC8.7
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_inventory_sprint8.py
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

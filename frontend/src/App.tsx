@@ -43,6 +43,8 @@ import CommissionSettingsPage from "./pages/CommissionSettingsPage";
 // spec.md v1.1 F2 (Sprint 2): マスタ編集 UI（中央 admin + テナント admin の二層）
 import SuperAdminMastersPage from "./pages/super-admin/MastersPage";
 import InventoryVisibilityPage from "./pages/admin/InventoryVisibilityPage";
+// spec.md v1.1 F8 (Sprint 8): テナント発行者情報 (PO PDF / メール差出人) admin UI
+import TenantProfilePage from "./pages/admin/TenantProfilePage";
 // spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧（中央 admin）
 import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
@@ -173,6 +175,11 @@ function App() {
                   <Route
                     path="/admin/inventory-visibility"
                     element={<InventoryVisibilityPage />}
+                  />
+                  {/* Sprint 8 / F8: テナント admin (tenant.profile.edit / view) */}
+                  <Route
+                    path="/admin/tenant-profile"
+                    element={<TenantProfilePage />}
                   />
                 </Route>
               </Routes>
