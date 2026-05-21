@@ -116,9 +116,9 @@ export default function ParseReviewPage() {
 
   const inboundId = useMemo(() => (id ? Number.parseInt(id, 10) : NaN), [id]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async ({ preserveError = false }: { preserveError?: boolean } = {}) => {
     if (!inboundId || Number.isNaN(inboundId)) return;
-    setError("");
+    if (!preserveError) setError("");
     setLoading(true);
     try {
       const d = await api.get<ParseReviewDetail>(
@@ -186,7 +186,8 @@ export default function ParseReviewPage() {
       if (e instanceof ApiError && e.status === 409) {
         setError(t("superAdmin.inbound.review.versionConflict"));
         // 自動で最新版を取得し直す（AC6.5 UI 動作）
-        await load();
+        // preserveError: 409 conflict メッセージを load() 冒頭の setError("") でクリアさせない
+        await load({ preserveError: true });
       } else {
         setError(e instanceof Error ? e.message : t("common.operationError"));
       }
@@ -220,7 +221,8 @@ export default function ParseReviewPage() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
         setError(t("superAdmin.inbound.review.versionConflict"));
-        await load();
+        // preserveError: 409 conflict メッセージを load() 冒頭の setError("") でクリアさせない
+        await load({ preserveError: true });
       } else {
         setError(e instanceof Error ? e.message : t("common.operationError"));
       }
