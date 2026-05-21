@@ -102,6 +102,7 @@ export default function Layout() {
   const { prefs, loading: uiPrefsLoading } = useUiPrefs();
   const navLoading = permsLoading || uiPrefsLoading;
 
+  const location = useLocation();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
@@ -128,14 +129,7 @@ export default function Layout() {
 
   /* ---- permission-filtered sub-item lists ---- */
 
-  const leadsItems: SubItem[] = [
-    ...(prefs.show_chat_menu ? [{ to: "/lead-chat", label: t("nav.leadChat") }] : []),
-    ...(hasPermission("leads.view") ? [{ to: "/leads", label: t("nav.newLeads") }] : []),
-    ...(hasPermission("customers.view") ? [
-      { to: "/customers", label: t("nav.routeCustomers") },
-    ] : []),
-    { to: "/archive", label: t("nav.archive") },
-  ];
+  const showLeadsLink = hasPermission("leads.view") || hasPermission("customers.view");
 
   const salesItems: SubItem[] = [
     ...(hasPermission("quotes.create") ? [{ to: "/quotes/new", label: t("nav.newQuote") }] : []),
@@ -200,15 +194,31 @@ export default function Layout() {
                 </NavLink>
               )}
 
-              <SidebarAccordion
-                label={t("nav.leads")}
-                icon={<Users size={20} />}
-                items={leadsItems}
-                activePaths={["/lead-chat", "/leads", "/customers", "/archive"]}
-                isExpanded={sidebarExpanded}
-                isOpen={openAccordion === "leads"}
-                onToggle={() => toggleAccordion("leads")}
-              />
+              {prefs.show_chat_menu && (
+                <NavLink
+                  to="/lead-chat"
+                  className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                >
+                  <span className="sidebar-icon"><Users size={20} /></span>
+                  <span className="sidebar-label">{t("nav.leadChat")}</span>
+                </NavLink>
+              )}
+
+              {showLeadsLink && (
+                <NavLink
+                  to="/leads"
+                  className={() => {
+                    const onLeadsSection =
+                      location.pathname.startsWith("/leads") ||
+                      location.pathname.startsWith("/customers") ||
+                      location.pathname.startsWith("/archive");
+                    return `sidebar-item${onLeadsSection ? " active" : ""}`;
+                  }}
+                >
+                  <span className="sidebar-icon"><Users size={20} /></span>
+                  <span className="sidebar-label">{t("nav.leads")}</span>
+                </NavLink>
+              )}
 
               {hasPermission("products.view") && (
                 <NavLink
