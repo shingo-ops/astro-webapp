@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "supplier_code": "シンソク",
+    "supplier_name": "シンソク",
+    "file": "sample_01_シンソク.txt",
+    "content_length": 1170,
+    "expected_items_count": 21,
+    "notes": "複数のポケモンカード・遊戯王商品の在庫案内、1170文字"
+  },
+  {
+    "id": 2,
+    "supplier_code": "島田",
+    "supplier_name": "島田",
+    "file": "sample_02_島田.txt",
+    "content_length": 997,
+    "expected_items_count": 17,
+    "notes": "複数のポケモンカード・遊戯王商品の在庫案内、997文字"
+  },
+  {
+    "id": 3,
+    "supplier_code": "イセキ",
+    "supplier_name": "イセキ",
+    "file": "sample_03_イセキ.txt",
+    "content_length": 1280,
+    "expected_items_count": 16,
+    "notes": "複数のポケモンカード・遊戯王商品の在庫案内、1280文字"
+  },
+  {
+    "id": 4,
+    "supplier_code": "Yasu Kishi",
+    "supplier_name": "Yasu Kishi",
+    "file": "sample_04_yasu_kishi.txt",
+    "content_length": 1106,
+    "expected_items_count": 10,
+    "notes": "複数のポケモンカード・遊戯王商品の在庫案内、1106文字"
+  },
+  {
+    "id": 5,
+    "supplier_code": "三海",
+    "supplier_name": "三海",
+    "file": "sample_05_三海.txt",
+    "content_length": 1061,
+    "expected_items_count": 8,
+    "notes": "複数のポケモンカード・遊戯王商品の在庫案内、1061文字"
+  }
+]
