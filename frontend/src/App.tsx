@@ -40,6 +40,9 @@ import InboxPage from "./pages/InboxPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 // ADR-021 Phase 5 / Sprint 5: 担当者報酬計算 MVP
 import CommissionSettingsPage from "./pages/CommissionSettingsPage";
+// spec.md v1.1 F2 (Sprint 2): マスタ編集 UI（中央 admin + テナント admin の二層）
+import SuperAdminMastersPage from "./pages/super-admin/MastersPage";
+import InventoryVisibilityPage from "./pages/admin/InventoryVisibilityPage";
 import "./App.css";
 
 function App() {
@@ -118,6 +121,12 @@ function App() {
               <Route path="/knowledge" element={<BuddyPage />} />
               <Route path="/prompts" element={<BadgesPage />} />
               <Route path="/templates" element={<ComingSoonPage title={t("templates.title")} description={t("templates.description")} />} />
+
+              {/* spec.md v1.1 F2 (Sprint 2): マスタ編集 UI */}
+              {/* 中央 admin（is_super_admin=true のみ。SuperAdminMastersPage 内で 403 ガード） */}
+              <Route path="/super-admin/masters" element={<SuperAdminMastersPage />} />
+              {/* テナント admin（tenant.inventory_visibility.edit 権限が必要、Page 内で 403 ガード） */}
+              <Route path="/admin/inventory-visibility" element={<InventoryVisibilityPage />} />
             </Route>
           </Routes>
           </ThemeProvider>

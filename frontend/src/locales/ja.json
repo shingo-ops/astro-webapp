@@ -89,7 +89,9 @@
     "searchPlaceholder": "顧客名またはリードIDで検索...",
     "signOut": "サインアウト",
     "signOutTitle": "サインアウト",
-    "signOutMessage": "サインアウトしますか？未保存のデータは失われます。"
+    "signOutMessage": "サインアウトしますか？未保存のデータは失われます。",
+    "superAdminMasters": "マスタ管理（中央）",
+    "inventoryVisibility": "在庫表示権限"
   },
   "login": {
     "email": "メールアドレス",
@@ -807,5 +809,114 @@
     "confirmDesc4": "監査ログ (audit_logs) に操作内容が記録されます。",
     "merging": "マージ中...",
     "executeLabel": "「{{masterName}}」へマージを実行"
+  },
+  "superAdmin": {
+    "title": "マスタ管理（Jarvis 運用 admin 専用）",
+    "subtitle": "マーケットプレイス中央マスタの編集（全テナント共有）",
+    "accessDenied": "このページには Jarvis 運用 admin（中央 admin）のみアクセスできます。",
+    "tabs": {
+      "knowledge": "正規化ルール / 別名",
+      "tcg": "TCG シリーズ",
+      "dex": "ポケモン / トレーナー図鑑",
+      "suppliers": "仕入元"
+    },
+    "knowledge": {
+      "title": "正規化辞書 (knowledge_rules) + 仕入元別名 (supplier_aliases)",
+      "rulesSection": "正規化ルール",
+      "aliasesSection": "仕入元別名",
+      "newRule": "ルール新規作成",
+      "newAlias": "別名新規作成",
+      "fields": {
+        "category": "カテゴリ",
+        "patternType": "パターン種別",
+        "pattern": "パターン",
+        "normalizedTo": "正規化先",
+        "priority": "優先度",
+        "language": "言語",
+        "isActive": "有効",
+        "supplierId": "仕入元 ID",
+        "aliasText": "別名テキスト"
+      },
+      "csvImport": "CSV インポート",
+      "csvExport": "CSV エクスポート",
+      "csvDryRun": "プレビュー（dry-run）",
+      "csvCommit": "反映する",
+      "csvErrors": "CSV エラー",
+      "previewWouldInsert": "挿入予定件数",
+      "invalidCsv": "CSV フォーマットが不正です"
+    },
+    "tcg": {
+      "title": "TCG シリーズマスタ",
+      "newSeries": "シリーズ新規作成",
+      "fields": {
+        "tcgType": "TCG 種別",
+        "seriesCode": "シリーズコード",
+        "nameJa": "名称（日本語）",
+        "nameEn": "名称（英語）",
+        "releaseDate": "発売日",
+        "category": "カテゴリ"
+      },
+      "types": {
+        "pokemon": "ポケモンカード",
+        "one_piece": "ワンピース",
+        "dragon_ball": "ドラゴンボール",
+        "union_arena": "ユニオンアリーナ",
+        "yugioh": "遊戯王"
+      }
+    },
+    "dex": {
+      "title": "ポケモン / トレーナー図鑑",
+      "kinds": {
+        "pokemon": "ポケモン",
+        "trainer": "トレーナー"
+      },
+      "newEntry": "図鑑エントリ新規作成",
+      "fields": {
+        "dexNumber": "図鑑番号",
+        "nameJa": "名称（日本語）",
+        "nameEn": "名称（英語）",
+        "generation": "世代",
+        "region": "地方",
+        "era": "時代"
+      }
+    },
+    "suppliersAdmin": {
+      "title": "仕入元マスタ（中央 admin）",
+      "newSupplier": "仕入元新規作成",
+      "fields": {
+        "name": "仕入元名",
+        "supplierType": "法人 / 個人",
+        "defaultLanguage": "既定言語",
+        "contactName": "担当者名",
+        "email": "メール",
+        "phone": "電話",
+        "address": "住所",
+        "notes": "備考",
+        "isActive": "有効"
+      },
+      "types": {
+        "individual": "個人",
+        "corporate": "法人"
+      },
+      "discordRouting": "Discord 紐付け",
+      "addRouting": "Discord 紐付け追加",
+      "guildId": "Guild ID",
+      "channelId": "Channel ID"
+    }
+  },
+  "inventoryVisibility": {
+    "title": "在庫表示権限の設定",
+    "subtitle": "自社内ロールに対し、在庫の数量・単価・状態をどこまで見せるかを設定します。",
+    "roleColumn": "ロール",
+    "keys": {
+      "full": "全閲覧（数量・単価・状態すべて）",
+      "staff": "一部閲覧（品名・単価のみ、数量はマスク）",
+      "viewer": "最小閲覧（品名のみ、単価・数量マスク）"
+    },
+    "save": "保存",
+    "saved": "保存しました",
+    "loadingMatrix": "マトリクスを読み込み中…",
+    "noRoles": "ロールが見つかりません",
+    "permissionRequired": "この画面の編集には tenant.inventory_visibility.edit 権限が必要です"
   }
 }
