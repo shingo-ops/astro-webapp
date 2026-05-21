@@ -111,18 +111,19 @@ test.describe("Scene 3: Incoming Messenger", () => {
       page.getByRole("heading", { name: "受信箱" }),
     ).toBeVisible({ timeout: 20_000 });
 
-    // フィルタボタン群
-    await expect(page.getByRole("button", { name: "すべて" })).toBeVisible();
+    // フィルタボタン群（.inbox-platform-bar に絞る — Lead タブの「すべて」と重複しないため）
+    const platformBar = page.locator(".inbox-platform-bar");
+    await expect(platformBar.getByRole("button", { name: "すべて" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Messenger", exact: true }),
+      platformBar.getByRole("button", { name: "Messenger", exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Instagram", exact: true }),
+      platformBar.getByRole("button", { name: "Instagram", exact: true }),
     ).toBeVisible();
 
-    // クリックでフィルタが効く（active class が btn-primary になる）
-    await page.getByRole("button", { name: "Messenger", exact: true }).click();
-    const messengerBtn = page.getByRole("button", { name: "Messenger", exact: true });
-    await expect(messengerBtn).toHaveClass(/btn-primary/);
+    // クリックでフィルタが効く（active class が付く）
+    await platformBar.getByRole("button", { name: "Messenger", exact: true }).click();
+    const messengerBtn = platformBar.getByRole("button", { name: "Messenger", exact: true });
+    await expect(messengerBtn).toHaveClass(/active/);
   });
 });

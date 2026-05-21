@@ -168,6 +168,17 @@ const INBOX_STYLES = `
   overflow: hidden;
 }
 
+/* パネルタイトル（アクセシビリティ用、視覚的に小さめ） */
+.inbox-panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1c1e21;
+  margin: 0;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #dadde1;
+  flex-shrink: 0;
+}
+
 /* リードステータスタブ */
 .inbox-lead-tabs {
   display: flex;
@@ -355,6 +366,14 @@ const INBOX_STYLES = `
   padding: 1px 6px;
   font-size: 11px;
   font-weight: 700;
+  flex-shrink: 0;
+}
+.conv-platform-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #F0F2F5;
+  color: #65676B;
   flex-shrink: 0;
 }
 
@@ -976,6 +995,8 @@ export default function InboxPage() {
       <div className="inbox-page">
         {/* ============================== 左パネル ============================== */}
         <aside className="inbox-left-panel">
+          {/* ページタイトル（アクセシビリティ + E2E 検証用） */}
+          <h2 className="inbox-panel-title">{t("inbox.title")}</h2>
           {/* リードステータスタブ */}
           <div className="inbox-lead-tabs">
             {leadStatusTabs.map((tab) => (
@@ -1083,7 +1104,7 @@ export default function InboxPage() {
                   <button
                     key={conv.lead_id}
                     type="button"
-                    className={`conv-item${isSelected ? " selected" : ""}`}
+                    className={`conv-item conversation-item${isSelected ? " selected" : ""}`}
                     onClick={() => selectLead(conv.lead_id)}
                   >
                     {/* アバター */}
@@ -1106,6 +1127,12 @@ export default function InboxPage() {
                         <span className="conv-time">{relativeTime(conv.last_message_at)}</span>
                       </div>
                       <div className="conv-preview">
+                        {/* platform バッジ（E2E 検証 + アクセシビリティ） */}
+                        {conv.platform && (
+                          <span className="badge conv-platform-badge">
+                            {platformLabel(conv.platform)}
+                          </span>
+                        )}
                         <span className={`conv-preview-text${conv.unread_count > 0 ? " unread" : ""}`}>
                           {conv.last_message_direction === "outbound" && (
                             <span style={{ opacity: 0.7 }}>You: </span>
@@ -1113,7 +1140,7 @@ export default function InboxPage() {
                           {conv.last_message_text ?? ""}
                         </span>
                         {conv.unread_count > 0 && (
-                          <span className="conv-unread-badge">{conv.unread_count}</span>
+                          <span className="badge conv-unread-badge">{conv.unread_count}</span>
                         )}
                       </div>
                     </div>
@@ -1163,6 +1190,21 @@ export default function InboxPage() {
                     )}
                   </div>
                 </div>
+                <a
+                  href={`/leads?lead_id=${selectedLeadId}`}
+                  style={{
+                    fontSize: 12,
+                    color: "#0866FF",
+                    textDecoration: "none",
+                    padding: "4px 10px",
+                    borderRadius: 12,
+                    background: "#E7F3FF",
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}
+                >
+                  {t("inbox.lead")}
+                </a>
               </header>
 
               {/* メッセージリスト */}
