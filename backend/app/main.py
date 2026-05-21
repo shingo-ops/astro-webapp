@@ -45,6 +45,7 @@ from app.routers import badges
 from app.routers import erp
 from app.routers import staff
 from app.routers import bots
+from app.routers import contact  # LP問い合わせフォーム受付
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -119,6 +120,8 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(webhook.router, prefix="/api/v1", tags=["webhook"])
 # Meta Data Deletion Callback + Status API（認証不要 - 公開エンドポイント）
 app.include_router(meta.router, prefix="/api/v1", tags=["meta"])
+# LP問い合わせフォーム受付（認証不要 - salesanchor.jp からのフォーム送信）
+app.include_router(contact.router, prefix="/api/v1", tags=["contact"])
 
 # --- 認証必須なルーター（デフォルトで認証が強制される） ---
 # dependencies=[Depends(get_current_tenant)] により、
