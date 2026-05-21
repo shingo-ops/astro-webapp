@@ -9,7 +9,24 @@
     "preview": "vite preview",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:install": "playwright install --with-deps chromium"
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "check:css-colors": "node scripts/check-css-hardcoded-colors.js",
+    "check:dark-parity": "node scripts/check-dark-parity.js",
+    "check:all": "npm run lint && npm run check:css-colors && npm run check:dark-parity",
+    "prepare": "cd .. && husky frontend/.husky"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --max-warnings=0"
+    ],
+    "src/**/*.css": [
+      "node scripts/check-css-hardcoded-colors.js"
+    ],
+    "src/index.css": [
+      "node scripts/check-dark-parity.js"
+    ]
   },
   "dependencies": {
     "firebase": "^11.0.0",
@@ -24,7 +41,14 @@
     "@playwright/test": "^1.59.1",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "@typescript-eslint/parser": "^8.59.4",
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
     "typescript": "^5.7.3",
     "vite": "^6.0.11"
   }

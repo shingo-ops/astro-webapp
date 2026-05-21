@@ -1,0 +1,21 @@
+#!/bin/sh
+# ADR-067: ダークモード色規約の強制
+# このフックはコミット前に以下のチェックを実行します:
+#   1. ESLint — TSXインラインスタイルへのhex色禁止
+#   2. CSS hex色チェック — App.css等のhex色禁止
+#   3. ダークモード変数パリティチェック — :root と :root.force-dark の変数一致
+
+cd "$(git rev-parse --show-toplevel)/frontend"
+
+echo "🔍 ADR-067: ダークモード色規約チェック中..."
+
+# lint-staged で変更ファイルのみチェック
+npx lint-staged
+
+# index.css が変更された場合はパリティチェック
+if git diff --cached --name-only | grep -q "frontend/src/index.css"; then
+  echo "📋 index.css 変更検出 → ダークモード変数パリティチェック実行"
+  node scripts/check-dark-parity.js
+fi
+
+echo "✅ ADR-067チェック完了"
