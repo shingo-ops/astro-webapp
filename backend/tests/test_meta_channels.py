@@ -179,21 +179,28 @@ async def _insert_channel(
     page_token_expires_at: str | None = None,
     connected_by_staff_id: int | None = None,
     token_plain: str = "fake-page-token",
+    granted_scopes: list[str] | None = None,
 ):
-    """tenant_meta_config に 1 行 INSERT するヘルパー。"""
+    """tenant_meta_config に 1 行 INSERT するヘルパー。
+
+    granted_scopes は ADR-041 で追加された再認証判定用 JSONB 列。SQLite では TEXT に
+    JSON 文字列で格納する（meta_inbox._parse_scopes が JSONB / TEXT 両方を扱う）。
+    None を渡すと列を NULL のまま残し、ADR-041 以前の接続を再現できる。
+    """
     encrypted = encryption.encrypt(token_plain).encode("ascii")
+    scopes_json = json.dumps(granted_scopes) if granted_scopes is not None else None
     sql = """
         INSERT INTO tenant_meta_config
             (tenant_id, page_id, page_name, page_access_token_encrypted,
              instagram_business_account_id, instagram_username,
              subscribed_fields, connected_by_staff_id,
-             connected_at, page_token_expires_at, is_active)
+             connected_at, page_token_expires_at, is_active, granted_scopes)
         VALUES
             (:tenant_id, :page_id, :page_name, :token,
              :ig_id, :ig_user,
              '[]', :staff_id,
              COALESCE(:connected_at, CURRENT_TIMESTAMP),
-             :expires_at, :is_active)
+             :expires_at, :is_active, :granted_scopes)
     """
     await db_session.execute(text(sql), {
         "tenant_id": tenant_id,
@@ -206,6 +213,7 @@ async def _insert_channel(
         "connected_at": connected_at,
         "expires_at": page_token_expires_at,
         "is_active": 1 if is_active else 0,
+        "granted_scopes": scopes_json,
     })
     await db_session.commit()
 
@@ -381,3 +389,97 @@ async def test_list_channels_returns_token_expires_at_when_set(app_client, db_se
     # SQLite は str 返却、PostgreSQL は datetime（_format_dt で str 化）。
     # ともかく "2026" を含む文字列であれば OK
     assert "2026" in ch["page_token_expires_at"]
+
+
+# ---------------------------------------------------------------------------
+# ADR-041: 再認証バナー判定（requires_reauth）
+# ---------------------------------------------------------------------------
+#
+# meta_inbox.list_channels の判定式（meta_inbox.py:802-805）:
+#   requires_reauth = (
+#       granted_scopes is not None
+#       and "business_management" not in granted_scopes
+#   )
+#
+# 3 分岐をユニットレベルで網羅する。本番テナント (tenant_004) は 2026-05-21 時点で
+# Meta 連携を本格運用していないため実機観察ができない代わりに、ロジック検証を
+# ここで担保する（F task の代替検証）。
+# ---------------------------------------------------------------------------
+
+
+_FULL_7_SCOPES = [
+    "pages_show_list",
+    "pages_manage_metadata",
+    "pages_messaging",
+    "pages_read_engagement",
+    "instagram_basic",
+    "instagram_manage_messages",
+    "business_management",
+]
+
+_LEGACY_6_SCOPES = [
+    "pages_show_list",
+    "pages_manage_metadata",
+    "pages_messaging",
+    "pages_read_engagement",
+    "instagram_basic",
+    "instagram_manage_messages",
+]
+
+
+@pytest.mark.asyncio
+async def test_list_channels_requires_reauth_false_when_business_management_present(
+    app_client, db_session,
+):
+    """granted_scopes に business_management 含む 7 scope → requires_reauth=False。"""
+    await _insert_channel(
+        db_session, tenant_id=999, page_id="page-7scope", page_name="Full 7 scope",
+        granted_scopes=_FULL_7_SCOPES,
+    )
+    resp = await app_client.get("/api/v1/meta/channels")
+    assert resp.status_code == 200
+    ch = resp.json()["channels"][0]
+    assert ch["granted_scopes"] == _FULL_7_SCOPES
+    assert ch["requires_reauth"] is False
+
+
+@pytest.mark.asyncio
+async def test_list_channels_requires_reauth_true_when_business_management_missing(
+    app_client, db_session,
+):
+    """granted_scopes に business_management 欠落の 6 scope → requires_reauth=True。
+
+    ADR-041 以前 (旧 6 scope) で接続済の本番テナントを再現するシナリオ。
+    UI 側で再認証バナーが表示される。
+    """
+    await _insert_channel(
+        db_session, tenant_id=999, page_id="page-6scope", page_name="Legacy 6 scope",
+        granted_scopes=_LEGACY_6_SCOPES,
+    )
+    resp = await app_client.get("/api/v1/meta/channels")
+    assert resp.status_code == 200
+    ch = resp.json()["channels"][0]
+    assert ch["granted_scopes"] == _LEGACY_6_SCOPES
+    assert "business_management" not in ch["granted_scopes"]
+    assert ch["requires_reauth"] is True
+
+
+@pytest.mark.asyncio
+async def test_list_channels_requires_reauth_false_when_granted_scopes_null(
+    app_client, db_session,
+):
+    """granted_scopes が NULL（ADR-041 適用前の接続）→ requires_reauth=False。
+
+    意図: ADR-041 で granted_scopes 列が追加されたが、旧接続はこの列が NULL の
+    まま残る。判定式が `is not None` 前提なので NULL は「不明 → 強制再認証を
+    避ける」方針で False を返す（既存運用への破壊的影響を防ぐ）。
+    """
+    await _insert_channel(
+        db_session, tenant_id=999, page_id="page-null", page_name="Pre-ADR-041",
+        granted_scopes=None,
+    )
+    resp = await app_client.get("/api/v1/meta/channels")
+    assert resp.status_code == 200
+    ch = resp.json()["channels"][0]
+    assert ch["granted_scopes"] is None
+    assert ch["requires_reauth"] is False
