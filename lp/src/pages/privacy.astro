@@ -175,9 +175,9 @@ import LegalLayout from '../layouts/LegalLayout.astro';
   <h2>6. Data Storage and Retention</h2>
 
   <h3>6.1 Storage Location</h3>
-  <p>All data for the Service is stored on a Virtual Private Server (VPS) provided by SAKURA internet Inc., located in Japan.</p>
+  <p>The primary database and file storage for the Service are hosted on a Virtual Private Server (VPS) provided by SAKURA internet Inc., physically located in Japan.</p>
 
-  <p>Data is NOT transferred outside of Japan. However, during communication with Meta Platform, data is processed according to Meta Platforms, Inc. regulations.</p>
+  <p>However, the Service relies on third-party service providers that process certain data outside Japan. Specifically, authentication data is processed by Google LLC (United States), message data passes through Meta Platforms, Inc. infrastructure (United States), DNS queries are processed by Cloudflare, Inc. (United States), and source code is managed on GitHub, Inc. servers (United States). These transfers are described in detail in Section 7. EU residents: see Section 13 for the legal basis for cross-border transfers.</p>
 
   <h3>6.2 Encryption</h3>
   <p>Data is encrypted using the following methods:</p>
@@ -195,6 +195,7 @@ import LegalLayout from '../layouts/LegalLayout.astro';
     <tbody>
       <tr><td>User Account</td><td>During account active period</td></tr>
       <tr><td>Message History</td><td>Main DB: Recent 3 years / Archive DB: Beyond 3 years (deletable upon client request)</td></tr>
+      <tr><td>End User Identifiers (PSID / IGSID)</td><td>Same as message history; deleted upon data deletion request</td></tr>
       <tr><td>Authentication Tokens</td><td>Maximum 60 days (Meta specification)</td></tr>
       <tr><td>Access Logs</td><td>12 months</td></tr>
       <tr><td>Audit Logs</td><td>5 years (for legal compliance)</td></tr>
@@ -366,6 +367,7 @@ import LegalLayout from '../layouts/LegalLayout.astro';
       <tr><td>1.3</td><td>2026-04-30</td><td>Service name notation unified to "Sales Anchor" (with space)</td></tr>
       <tr><td>1.4</td><td>2026-05-20</td><td>Full conversion to English-only; professional SaaS redesign (ADR-046)</td></tr>
       <tr><td>1.5</td><td>2026-05-21</td><td>Effective Date updated to today; GDPR mention added; Cookie table added; Data Deletion Callback flow clarified</td></tr>
+      <tr><td>1.6</td><td>2026-05-21</td><td>§6.1 corrected: replaced inaccurate "no transfer outside Japan" with accurate description of US-provider data flows; §6.3 added PSID/IGSID retention period</td></tr>
     </tbody>
   </table>
 
