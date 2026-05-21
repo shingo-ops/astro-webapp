@@ -80,6 +80,10 @@
   --instagram-bg: #FCE3F0;
   --instagram-text: #C13584;
 
+  /* Inbox 専用カラートークン（Meta Business Suite 準拠 / ADR-064） */
+  --inbox-separator: #e4e6eb;
+  --inbox-hover: #f2f3f5;
+
   /* color-scheme: OS非依存（ADR-033: アプリ設定を優先） */
   color-scheme: light;
 }
@@ -152,6 +156,10 @@
   /* Instagram ブランド（ダーク） */
   --instagram-bg: #3d1028;
   --instagram-text: #e879b9;
+
+  /* Inbox 専用カラートークン（ダーク / ADR-064） */
+  --inbox-separator: #374151;
+  --inbox-hover: #243046;
 
   color-scheme: dark;
 }

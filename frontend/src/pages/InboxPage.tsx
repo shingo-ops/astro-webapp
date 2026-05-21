@@ -160,14 +160,23 @@ const platformLabel = libPlatformLabel;
 const INBOX_STYLES = `
 /* ======= Inbox Meta Design (ADR-063) ======= */
 
-/* 全体ラッパー（flex column） */
+/* 全体ラッパー（flex row: 左＋中央エリア | 右パネル） */
 .inbox-wrapper {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: calc(100vh - 56px);
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: #F0F2F5;
+  background: var(--bg-primary);
+}
+
+/* 左＋中央エリア（ヘッダー・タブ・カラム）— タブバーはここまで */
+.inbox-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
 }
 
 /* ページヘッダー（Meta 風: タイトル + サブタイトル） */
@@ -175,29 +184,29 @@ const INBOX_STYLES = `
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
-  background: #fff;
-  border-bottom: 1px solid #dadde1;
+  padding: 16px 24px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .inbox-page-title {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
-  color: #1c1e21;
-  margin: 0 0 6px;
+  color: var(--text-primary);
+  margin: 0 0 4px;
   line-height: 1.2;
 }
 .inbox-page-subtitle {
   font-size: 13px;
-  color: #65676B;
+  color: var(--text-secondary);
   margin: 0;
 }
 
 /* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
 .inbox-full-tab-bar {
   display: flex;
-  background: #fff;
-  border-bottom: 1px solid #dadde1;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -206,26 +215,26 @@ const INBOX_STYLES = `
 .inbox-full-tab-bar::-webkit-scrollbar { display: none; }
 .inbox-full-tab {
   height: 52px;
-  padding: 0 24px;
+  padding: 0 20px;
   border: none;
   border-bottom: 3px solid transparent;
   margin-bottom: -1px;
   background: transparent;
   font-size: 15px;
   font-weight: 600;
-  color: #65676B;
+  color: var(--text-secondary);
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.1s, border-color 0.1s;
   font-family: inherit;
 }
 .inbox-full-tab:hover {
-  color: #0866FF;
-  background: rgba(0, 0, 0, 0.04);
+  color: var(--accent);
+  background: var(--bg-hover);
 }
 .inbox-full-tab.active {
-  color: #0866FF;
-  border-bottom-color: #0866FF;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 /* 3カラムコンテンツエリア */
@@ -302,10 +311,10 @@ const INBOX_STYLES = `
 
 /* ---- 左パネル ---- */
 .inbox-left-panel {
-  width: 360px;
+  width: 280px;
   flex-shrink: 0;
-  background: #fff;
-  border-right: 1px solid #dadde1;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -338,14 +347,14 @@ const INBOX_STYLES = `
   padding: 8px 12px;
   border-radius: 20px;
   border: none;
-  background: #F0F2F5;
+  background: var(--bg-subtle);
   font-size: 14px;
-  color: #1c1e21;
+  color: var(--text-primary);
   outline: none;
   box-sizing: border-box;
 }
 .inbox-search-input::placeholder {
-  color: #65676B;
+  color: var(--text-secondary);
 }
 
 /* 管理ボタン */
@@ -358,27 +367,27 @@ const INBOX_STYLES = `
   align-items: center;
   gap: 5px;
   padding: 7px 12px;
-  border-radius: 8px;
-  border: 1px solid #dadde1;
-  background: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
   font-size: 13px;
   font-weight: 600;
-  color: #1c1e21;
+  color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
   transition: background 0.1s;
   white-space: nowrap;
 }
-.inbox-manage-btn:hover { background: #F0F2F5; }
+.inbox-manage-btn:hover { background: var(--bg-subtle); }
 .inbox-manage-dropdown {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
   min-width: 180px;
-  background: #fff;
-  border: 1px solid #dadde1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   z-index: 100;
   overflow: hidden;
 }
@@ -390,19 +399,19 @@ const INBOX_STYLES = `
   background: transparent;
   text-align: left;
   font-size: 13px;
-  color: #1c1e21;
+  color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
   transition: background 0.1s;
 }
-.inbox-manage-item:hover { background: #F0F2F5; }
+.inbox-manage-item:hover { background: var(--bg-subtle); }
 
 /* プラットフォームフィルタバー */
 .inbox-platform-bar {
   display: flex;
   gap: 6px;
   padding: 6px 12px 8px;
-  border-bottom: 1px solid #dadde1;
+  border-bottom: 1px solid var(--border);
   align-items: center;
   flex-shrink: 0;
   flex-wrap: wrap;
@@ -410,18 +419,18 @@ const INBOX_STYLES = `
 .inbox-platform-tab {
   padding: 4px 12px;
   border-radius: 20px;
-  border: 1px solid #dadde1;
+  border: 1px solid var(--border);
   font-size: 12px;
   background: transparent;
-  color: #65676B;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.1s;
   font-family: inherit;
 }
 .inbox-platform-tab.active {
-  background: #E7F3FF;
-  color: #0866FF;
-  border-color: #0866FF;
+  background: var(--link-active-bg);
+  color: var(--accent);
+  border-color: var(--accent);
   font-weight: 600;
 }
 .inbox-unread-check {
@@ -430,9 +439,12 @@ const INBOX_STYLES = `
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #65676B;
+  color: var(--text-secondary);
   cursor: pointer;
   white-space: nowrap;
+}
+.inbox-unread-check input[type="checkbox"] {
+  accent-color: var(--accent);
 }
 
 /* 会話リスト */
@@ -445,19 +457,20 @@ const INBOX_STYLES = `
 .conv-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 12px 8px;
   width: 100%;
   border: none;
+  border-bottom: 1px solid var(--inbox-separator);
   background: transparent;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s;
+  transition: background 0.1s;
   font-family: inherit;
   box-sizing: border-box;
 }
-.conv-item:hover { background: rgba(0, 0, 0, 0.05); }
-.conv-item.selected { background: #E7F3FF; }
+.conv-item:hover { background: var(--inbox-hover); }
+.conv-item.selected { background: var(--link-active-bg); }
 
 /* アバター */
 .conv-avatar-wrap {
@@ -465,26 +478,26 @@ const INBOX_STYLES = `
   flex-shrink: 0;
 }
 .conv-avatar {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: #E4E6EB;
-  color: #1c1e21;
+  background: var(--bg-hover);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   user-select: none;
 }
 .conv-platform-dot {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 18px;
-  height: 18px;
+  bottom: -1px;
+  right: -1px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 2px solid #fff;
+  border: 2.5px solid var(--bg-surface);
 }
 
 /* 会話情報 */
@@ -496,19 +509,16 @@ const INBOX_STYLES = `
   gap: 6px;
 }
 .conv-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: #1c1e21;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.conv-name.unread {
-  font-weight: 700;
-}
 .conv-time {
-  font-size: 12px;
-  color: #65676B;
+  font-size: 13px;
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 .conv-preview {
@@ -519,18 +529,18 @@ const INBOX_STYLES = `
 }
 .conv-preview-text {
   font-size: 13px;
-  color: #65676B;
+  color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
 }
 .conv-preview-text.unread {
-  color: #1c1e21;
+  color: var(--text-primary);
   font-weight: 600;
 }
 .conv-unread-badge {
-  background: #1877F2;
+  background: var(--accent);
   color: #fff;
   border-radius: 10px;
   padding: 1px 6px;
@@ -542,8 +552,8 @@ const INBOX_STYLES = `
   font-size: 10px;
   padding: 1px 5px;
   border-radius: 3px;
-  background: #F0F2F5;
-  color: #65676B;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
@@ -552,12 +562,12 @@ const INBOX_STYLES = `
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--bg-surface);
   min-width: 0;
 }
 .inbox-center-header {
   padding: 12px 16px;
-  border-bottom: 1px solid #dadde1;
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -566,7 +576,7 @@ const INBOX_STYLES = `
 .inbox-center-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1c1e21;
+  color: var(--text-primary);
   margin: 0;
 }
 .inbox-platform-badge {
@@ -597,19 +607,19 @@ const INBOX_STYLES = `
   white-space: pre-wrap;
 }
 .msg-bubble.outbound {
-  background: #7C3AED;
+  background: var(--bubble-outbound-bg);
   color: #fff;
   border-radius: 18px 18px 4px 18px;
 }
 .msg-bubble.inbound {
-  background: #E4E6EB;
-  color: #1c1e21;
+  background: var(--bubble-inbound-bg);
+  color: var(--text-primary);
   border-radius: 18px 18px 18px 4px;
 }
 .msg-bubble.failed {
-  background: #fdecea;
-  color: #a50e0e;
-  border: 2px solid #a50e0e;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 2px solid var(--danger);
   border-radius: 12px;
 }
 .msg-time {
@@ -622,27 +632,27 @@ const INBOX_STYLES = `
 
 /* 送信エリア */
 .inbox-send-area {
-  border-top: 1px solid #dadde1;
+  border-top: 1px solid var(--border);
   padding: 10px 16px;
   flex-shrink: 0;
-  background: #fff;
+  background: var(--bg-surface);
 }
 .inbox-textarea {
   width: 100%;
-  border: 1px solid #dadde1;
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 10px 16px;
   font-size: 14px;
   resize: none;
   font-family: inherit;
   outline: none;
-  background: #F0F2F5;
-  color: #1c1e21;
+  background: var(--bg-subtle);
+  color: var(--text-primary);
   box-sizing: border-box;
   line-height: 1.4;
 }
-.inbox-textarea:focus { border-color: #0866FF; background: #fff; }
-.inbox-textarea:disabled { background: #F0F2F5; cursor: not-allowed; }
+.inbox-textarea:focus { border-color: var(--accent); background: var(--bg-surface); }
+.inbox-textarea:disabled { background: var(--bg-subtle); cursor: not-allowed; }
 .inbox-send-row {
   display: flex;
   justify-content: flex-end;
@@ -651,7 +661,7 @@ const INBOX_STYLES = `
 .inbox-send-btn {
   padding: 8px 20px;
   border-radius: 20px;
-  background: #0866FF;
+  background: var(--accent);
   color: #fff;
   border: none;
   font-size: 14px;
@@ -660,10 +670,10 @@ const INBOX_STYLES = `
   font-family: inherit;
   transition: background 0.1s;
 }
-.inbox-send-btn:hover:not(:disabled) { background: #0756d6; }
+.inbox-send-btn:hover:not(:disabled) { background: var(--accent-hover); }
 .inbox-send-btn:disabled {
-  background: #E4E6EB;
-  color: #65676B;
+  background: var(--bg-active);
+  color: var(--text-secondary);
   cursor: not-allowed;
 }
 
@@ -674,7 +684,7 @@ const INBOX_STYLES = `
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #65676B;
+  color: var(--text-secondary);
   font-size: 15px;
   gap: 12px;
 }
@@ -682,22 +692,35 @@ const INBOX_STYLES = `
 
 /* ---- 右パネル ---- */
 .inbox-right-panel {
-  width: 300px;
+  width: 360px;
   flex-shrink: 0;
-  background: #fff;
-  border-left: 1px solid #dadde1;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  overflow-y: auto;
+  gap: 10px;
+}
+
+/* カルテカード（右パネル内の独立カード — Meta風） */
+.right-panel-card {
+  background: var(--bg-surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 20px 16px;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 16px;
-  overflow-y: auto;
 }
 .right-panel-avatar {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: #E4E6EB;
-  color: #1c1e21;
+  background: var(--bg-hover);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -709,13 +732,13 @@ const INBOX_STYLES = `
 .right-panel-name {
   font-size: 17px;
   font-weight: 700;
-  color: #1c1e21;
+  color: var(--text-primary);
   text-align: center;
   margin: 0;
 }
 .right-panel-code {
   font-size: 12px;
-  color: #65676B;
+  color: var(--text-secondary);
   margin-top: 4px;
   text-align: center;
 }
@@ -723,31 +746,33 @@ const INBOX_STYLES = `
   margin-top: 10px;
   padding: 4px 14px;
   border-radius: 20px;
-  background: #E7F3FF;
-  color: #0866FF;
+  background: var(--link-active-bg);
+  color: var(--accent);
   font-size: 12px;
   font-weight: 600;
 }
 .right-panel-section {
   width: 100%;
-  margin-top: 20px;
+  margin-top: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 .right-panel-row {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 10px 0;
-  border-bottom: 1px solid #F0F2F5;
+  border-bottom: 1px solid var(--bg-subtle);
 }
 .right-panel-label {
   font-size: 11px;
-  color: #65676B;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 .right-panel-value {
   font-size: 13px;
-  color: #1c1e21;
+  color: var(--text-primary);
   font-weight: 500;
   word-break: break-word;
 }
@@ -756,20 +781,20 @@ const INBOX_STYLES = `
   display: inline-block;
   padding: 8px 20px;
   border-radius: 20px;
-  background: #E7F3FF;
-  color: #0866FF;
+  background: var(--link-active-bg);
+  color: var(--accent);
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   transition: background 0.1s;
 }
-.right-panel-link:hover { background: #d0e8ff; }
+.right-panel-link:hover { background: var(--link-active-bg-hover); }
 .right-panel-empty {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #65676B;
+  color: var(--text-secondary);
   font-size: 14px;
   text-align: center;
   padding: 16px;
@@ -781,13 +806,19 @@ const INBOX_STYLES = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 16px;
+}
+
+/* セクション最初の要素は上線なし（ヘッダー直後の隣接セレクタ） */
+.right-panel-header + .right-panel-section {
+  border-top: none;
+  padding-top: 0;
 }
 
 /* 英語名 */
 .right-panel-en-name {
   font-size: 11px;
-  color: #65676B;
+  color: var(--text-secondary);
   margin: 2px 0 0;
   text-align: center;
 }
@@ -799,30 +830,29 @@ const INBOX_STYLES = `
   border-radius: 20px;
   font-size: 11px;
   font-weight: 700;
-  background: #FFF3E0;
-  color: #E65100;
+  background: var(--rank-bg);
+  color: var(--rank-text);
 }
 
 /* セクションタイトル */
 .right-panel-section-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  color: #65676B;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #dadde1;
-  margin-bottom: 2px;
+  margin-bottom: 10px;
+  padding-bottom: 0;
 }
 
 /* 長文メモ */
 .right-panel-memo {
   font-size: 12px;
-  color: #1c1e21;
+  color: var(--text-primary);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  background: #F0F2F5;
+  background: var(--bg-subtle);
   border-radius: 6px;
   padding: 8px 10px;
   margin-top: 4px;
@@ -833,7 +863,7 @@ const INBOX_STYLES = `
 .right-panel-memo-label {
   font-size: 10px;
   font-weight: 700;
-  color: #65676B;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-top: 8px;
@@ -842,9 +872,9 @@ const INBOX_STYLES = `
 /* エラー・ローディング */
 .inbox-error-banner {
   padding: 8px 12px;
-  background: #fdecea;
-  color: #a50e0e;
-  border: 1px solid #f5c2c2;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger);
   border-radius: 8px;
   font-size: 13px;
   margin: 8px 12px;
@@ -852,9 +882,9 @@ const INBOX_STYLES = `
 .inbox-send-error {
   padding: 6px 10px;
   border-radius: 8px;
-  background: #fdecea;
-  color: #a50e0e;
-  border: 1px solid #f5c2c2;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger);
   font-size: 12px;
   margin-bottom: 6px;
 }
@@ -1184,6 +1214,8 @@ export default function InboxPage() {
       <style>{INBOX_STYLES}</style>
 
       <div className="inbox-wrapper">
+        {/* 左+中央エリア（ヘッダー+タブ+カラム） */}
+        <div className="inbox-main-area">
         {/* ページヘッダー（Meta 風: タイトル + サブタイトル） */}
         <div className="inbox-page-header">
           <div>
@@ -1284,8 +1316,9 @@ export default function InboxPage() {
                   padding: "4px 8px",
                   fontSize: "12px",
                   borderRadius: 16,
-                  border: "1px solid #dadde1",
-                  background: "white",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-surface)",
+                  color: "var(--text-primary)",
                   fontFamily: "inherit",
                 }}
               >
@@ -1312,16 +1345,16 @@ export default function InboxPage() {
               </div>
             )}
             {convLoading ? (
-              <div style={{ padding: 24, textAlign: "center", color: "#65676B", fontSize: 14 }}>
+              <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: 14 }}>
                 {t("common.loading")}
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div style={{ padding: 24, textAlign: "center", color: "#65676B", fontSize: 14 }}>
+              <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: 14 }}>
                 {unreadOnly ? t("inbox.noUnread") : t("inbox.noMessages")}
                 {!unreadOnly && (
                   <div style={{ marginTop: 8, fontSize: 12 }}>
                     {t("inbox.channelsHint")}{" "}
-                    <a href="/channels" style={{ color: "#0866FF" }}>{t("inbox.channelsLink")}</a>
+                    <a href="/channels" style={{ color: "var(--accent)" }}>{t("inbox.channelsLink")}</a>
                   </div>
                 )}
               </div>
@@ -1398,7 +1431,7 @@ export default function InboxPage() {
                   </h2>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
                     {messagesData?.lead?.lead_code && (
-                      <span style={{ fontSize: 12, color: "#65676B" }}>
+                      <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                         {messagesData.lead.lead_code}
                       </span>
                     )}
@@ -1407,10 +1440,10 @@ export default function InboxPage() {
                         className="inbox-platform-badge"
                         style={
                           selectedPlatform === "messenger"
-                            ? { background: "#E7F3FF", color: "#0866FF" }
+                            ? { background: "var(--link-active-bg)", color: "var(--accent)" }
                             : selectedPlatform === "instagram"
-                              ? { background: "#FCE3F0", color: "#C13584" }
-                              : { background: "#eee", color: "#555" }
+                              ? { background: "var(--instagram-bg)", color: "var(--instagram-text)" }
+                              : { background: "var(--bg-subtle)", color: "var(--text-secondary)" }
                         }
                       >
                         {platformLabel(selectedPlatform)}
@@ -1422,11 +1455,11 @@ export default function InboxPage() {
                   href={`/leads?lead_id=${selectedLeadId}`}
                   style={{
                     fontSize: 12,
-                    color: "#0866FF",
+                    color: "var(--accent)",
                     textDecoration: "none",
                     padding: "4px 10px",
                     borderRadius: 12,
-                    background: "#E7F3FF",
+                    background: "var(--link-active-bg)",
                     fontWeight: 600,
                     flexShrink: 0,
                   }}
@@ -1438,7 +1471,7 @@ export default function InboxPage() {
               {/* メッセージリスト */}
               <div ref={messageListRef} className="inbox-messages">
                 {msgLoading && !messagesData && (
-                  <div style={{ textAlign: "center", color: "#65676B", padding: 16 }}>
+                  <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: 16 }}>
                     {t("common.loading")}
                   </div>
                 )}
@@ -1446,7 +1479,7 @@ export default function InboxPage() {
                   <div className="inbox-error-banner">{msgError}</div>
                 )}
                 {messagesData && messagesData.messages.length === 0 && !msgError && (
-                  <div style={{ textAlign: "center", color: "#65676B", padding: 32 }}>
+                  <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: 32 }}>
                     {t("inbox.noMessages")}
                   </div>
                 )}
@@ -1529,6 +1562,9 @@ export default function InboxPage() {
           )}
         </main>
 
+        </div>{/* /inbox-columns */}
+        </div>{/* /inbox-main-area */}
+
         {/* ============================== 右パネル (商談カルテ) ============================== */}
         <aside className="inbox-right-panel">
           {selectedLeadId === null ? (
@@ -1536,7 +1572,7 @@ export default function InboxPage() {
               <p>{t("inbox.selectConversation")}</p>
             </div>
           ) : leadDetail ? (
-            <>
+            <div className="right-panel-card">
               {/* ヘッダー */}
               <div className="right-panel-header">
                 <div className="right-panel-avatar">
@@ -1681,7 +1717,7 @@ export default function InboxPage() {
               <a href={`/leads?lead_id=${leadDetail.id}`} className="right-panel-link">
                 {t("inbox.viewLead")} →
               </a>
-            </>
+            </div>
           ) : (
             <div className="right-panel-empty">
               <p>{t("inbox.loadingProfile")}</p>
@@ -1689,7 +1725,6 @@ export default function InboxPage() {
           )}
         </aside>
 
-        </div>{/* /inbox-columns */}
       </div>{/* /inbox-wrapper */}
     </>
   );
