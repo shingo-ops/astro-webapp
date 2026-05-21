@@ -938,7 +938,9 @@
         "parseStatus": "Parse status",
         "preview": "Body preview",
         "engine": "Engine",
-        "llmCost": "LLM cost"
+        "llmCost": "LLM cost",
+        "actions": "Actions",
+        "openReview": "Review"
       },
       "parseStatus": {
         "pending": "Pending",
@@ -951,6 +953,32 @@
         "ignored_routing": "Routing unmapped",
         "approved": "Approved",
         "rejected": "Rejected"
+      },
+      "review": {
+        "title": "Parse Result Review",
+        "subtitle": "Review parsed Discord inbound items row-by-row: accept / skip / edit / reject.",
+        "backToList": "Back to list",
+        "versionLabel": "Version",
+        "rawContent": "Raw content",
+        "noItems": "No parsed items.",
+        "missingProduct": "Product not linked (must skip)",
+        "operatorComment": "Reviewer comment",
+        "approveBtn": "Approve and apply to stock",
+        "rejectBtn": "Reject",
+        "rejectDialogTitle": "Enter rejection reason",
+        "rejectReasonLabel": "exclude_reason (required)",
+        "rejectConfirmBtn": "Confirm rejection",
+        "rejectReasonRequired": "Please enter a rejection reason",
+        "approveSuccess": "Approved {{count}} item(s), skipped {{skipped}}.",
+        "rejectSuccess": "Rejected.",
+        "versionConflict": "Another reviewer updated this item first. Reloaded — please review again.",
+        "col": {
+          "productId": "Product ID",
+          "deltaQty": "Delta Qty",
+          "alias": "Supplier alias",
+          "notes": "Notes",
+          "skip": "Skip"
+        }
       }
     }
   },
