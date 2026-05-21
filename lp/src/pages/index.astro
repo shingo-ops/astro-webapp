@@ -11,10 +11,8 @@ const ctaBgStyle =
 const formCardShadow =
   'box-shadow: 0 25px 60px rgba(0,0,0,0.4), 0 8px 20px rgba(24,119,242,0.15);';
 
-// ─── SVG icon helpers (stroke icons, 32×32) ─────────────────────────────────
-// Problem band icons — white strokes for dark navy background
+// ─── SVG icon helpers ────────────────────────────────────────────────────────
 const svgProblems = [
-  // Disconnected tools — broken chain link
   `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <path stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
       d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/>
@@ -22,58 +20,47 @@ const svgProblems = [
       d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
     <line x1="6.5" y1="17.5" x2="17.5" y2="6.5" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
   </svg>`,
-  // Cross-border complexity — globe
   `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <circle cx="12" cy="12" r="9" stroke="#ffffff" stroke-width="1.5"/>
     <path stroke="#ffffff" stroke-width="1.5"
       d="M3 12h18M12 3c-2.5 3-4 5.5-4 9s1.5 6 4 9M12 3c2.5 3 4 5.5 4 9s-1.5 6-4 9"/>
   </svg>`,
-  // Small teams, hundreds of deals — lightning bolt
   `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <path stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
       d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
   </svg>`,
 ];
 
-// Hub card icons — brand-blue strokes, rendered inside a light blue icon box
 const svgHubs = [
-  // Sales — bar chart
   `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <path stroke="#1877f2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
       d="M3 3v18h18M7 16v-4M11 16V9M15 16v-6M19 16V7"/>
   </svg>`,
-  // Marketing — megaphone
-  `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-    <path stroke="#1877f2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-      d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a4 4 0 000-8M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
-  </svg>`,
-  // Customer — chat bubbles
   `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <path stroke="#1877f2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
       d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
   </svg>`,
-  // Data — database cylinders
+  `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke="#1877f2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+      d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a4 4 0 000-8M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+  </svg>`,
   `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <ellipse cx="12" cy="5" rx="9" ry="3" stroke="#1877f2" stroke-width="1.5"/>
     <path stroke="#1877f2" stroke-width="1.5" d="M3 5v14c0 1.657 4.03 3 9 3s9-1.343 9-3V5"/>
     <path stroke="#1877f2" stroke-width="1.5" d="M3 12c0 1.657 4.03 3 9 3s9-1.343 9-3"/>
   </svg>`,
-  // AI — circuit / cpu chip
   `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <rect x="7" y="7" width="10" height="10" rx="1" stroke="#1877f2" stroke-width="1.5"/>
     <path stroke="#1877f2" stroke-linecap="round" stroke-width="1.5"
       d="M9 7V4M12 7V4M15 7V4M9 20v-3M12 20v-3M15 20v-3M7 9H4M7 12H4M7 15H4M20 9h-3M20 12h-3M20 15h-3"/>
   </svg>`,
-  // Catalog & Invoicing — package/box
   `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <path stroke="#1877f2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
       d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
   </svg>`,
 ];
 
-// AI step icons — brand blue
 const svgAiSteps = [
-  // Deal AI — target/crosshair
   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <circle cx="12" cy="12" r="9" stroke="#ffffff" stroke-width="1.5"/>
     <circle cx="12" cy="12" r="4" stroke="#ffffff" stroke-width="1.5"/>
@@ -82,42 +69,18 @@ const svgAiSteps = [
     <line x1="3" y1="12" x2="6" y2="12" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
     <line x1="18" y1="12" x2="21" y2="12" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
   </svg>`,
-  // Data AI — sparkles/clean
   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <path stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
       d="M12 3v1M12 20v1M4.22 4.22l.7.7M19.07 19.07l.71.71M3 12H2M22 12h-1M4.93 19.07l-.71.71M19.78 4.93l-.71-.71"/>
     <circle cx="12" cy="12" r="4" stroke="#ffffff" stroke-width="1.5"/>
   </svg>`,
-  // Customer AI — headset/support
   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" aria-hidden="true">
     <path stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-      d="M12 2a9 9 0 00-9 9v1a3 3 0 003 3h1V11a3 3 0 10-1 0"/>
-    <path stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-      d="M12 2a9 9 0 019 9v1a3 3 0 01-3 3h-1V11a3 3 0 10 1 0"/>
-    <path stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-      d="M18 15v1a4 4 0 01-4 4h-4"/>
+      d="M3 11l19-9-9 19-2-8-8-2z"/>
   </svg>`,
 ];
 
 // ─── Data arrays ─────────────────────────────────────────────────────────────
-const problemCards = [
-  {
-    svg: svgProblems[0],
-    title: 'Disconnected tools',
-    body: 'Email, spreadsheets, chat, and marketplaces — each with its own customer data. Nothing talks to anything else.',
-  },
-  {
-    svg: svgProblems[1],
-    title: 'Cross-border complexity',
-    body: "Currency, time zones, language, and platform rules make every deal harder than it should be. Your CRM ignores all of it.",
-  },
-  {
-    svg: svgProblems[2],
-    title: 'Small teams, hundreds of deals',
-    body: "You're moving fast without enough people. The follow-up falls through. The deal goes cold. It happens every week.",
-  },
-];
-
 const hubCards = [
   {
     svg: svgHubs[0],
@@ -135,8 +98,23 @@ const hubCards = [
   },
   {
     svg: svgHubs[1],
+    title: 'Messaging',
+    body: 'Messenger, Instagram DM, and email — unified in one inbox via Meta\'s official API.',
+    bullets: [
+      'Facebook Messenger integration',
+      'Instagram Direct Messages',
+      'Email & multi-channel inbox',
+      'Human Agent tag support',
+      'Full conversation history',
+      'Auto reply drafts with AI',
+    ],
+    link: 'Explore Messaging',
+    metaBadge: true,
+  },
+  {
+    svg: svgHubs[2],
     title: 'Marketing',
-    body: "Capture leads, run campaigns, and measure what's actually working.",
+    body: 'Capture leads, run campaigns, and measure what\'s actually working.',
     bullets: [
       'Lead capture forms',
       'Email campaigns & automation',
@@ -146,20 +124,6 @@ const hubCards = [
       'Marketing performance report',
     ],
     link: 'Explore Marketing',
-  },
-  {
-    svg: svgHubs[2],
-    title: 'Customer',
-    body: 'Keep buyers happy and problems resolved — without losing context.',
-    bullets: [
-      'Support ticketing system',
-      'AI chatbot (around the clock)',
-      'NPS & satisfaction tracking',
-      'Full interaction history',
-      'SLA monitoring',
-      'Escalation workflows',
-    ],
-    link: 'Explore Customer',
   },
   {
     svg: svgHubs[3],
@@ -226,35 +190,61 @@ const aiSteps = [
   },
 ];
 
-// AI Performance Metrics card data
 const aiMetrics = [
   {
     label: 'Inquiries resolved automatically',
     value: '65%',
     bar: '65%',
-    // SVG: lightning bolt
     iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true"><path stroke="#1877f2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
   },
   {
     label: 'Faster deal follow-through',
     value: '3× speed',
     bar: '80%',
-    // SVG: arrow up-right
     iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true"><path stroke="#1877f2" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 17L17 7M17 7H7M17 7v10"/></svg>`,
   },
   {
     label: 'Lead scoring accuracy',
     value: '89%',
     bar: '89%',
-    // SVG: crosshair/target
     iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#1877f2" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="#1877f2" stroke-width="1.5"/><line x1="12" y1="3" x2="12" y2="7" stroke="#1877f2" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#1877f2" stroke-width="1.5" stroke-linecap="round"/><line x1="3" y1="12" x2="7" y2="12" stroke="#1877f2" stroke-width="1.5" stroke-linecap="round"/><line x1="17" y1="12" x2="21" y2="12" stroke="#1877f2" stroke-width="1.5" stroke-linecap="round"/></svg>`,
   },
   {
     label: 'B2B deals on one platform',
     value: '100s',
     bar: '72%',
-    // SVG: globe
     iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="#1877f2" stroke-width="1.5"/><path stroke="#1877f2" stroke-width="1.5" d="M3 12h18M12 3c-2.5 3-4 5.5-4 9s1.5 6 4 9M12 3c2.5 3 4 5.5 4 9s-1.5 6-4 9"/></svg>`,
+  },
+];
+
+const faqItems = [
+  {
+    q: 'What channels does Sales Anchor support?',
+    a: 'Messenger, Instagram Direct Messages, email, and more. We connect to Facebook Pages and Instagram Business Accounts via Meta\'s official API.',
+  },
+  {
+    q: 'Why does Sales Anchor need access to my Facebook Page?',
+    a: 'To receive and reply to Messenger messages from your buyers on your behalf. We only access messages on Pages you explicitly connect and authorize through Meta Login.',
+  },
+  {
+    q: 'How is my data handled?',
+    a: 'All data is stored on Japan-based servers (SAKURA internet Inc.), encrypted with TLS 1.3 in transit and Fernet encryption at rest. We never sell or share your data with third parties.',
+  },
+  {
+    q: 'Can I delete my data?',
+    a: 'Yes, at any time. Submit a request via email or our Data Deletion page and we will complete full deletion within 30 days. You can also revoke access directly from your Facebook settings.',
+  },
+  {
+    q: 'Is there a free trial?',
+    a: 'Yes — 14 days free with full access. No credit card required to start.',
+  },
+  {
+    q: 'How long does onboarding take?',
+    a: 'Most teams are fully set up within 2 hours. Our support team is available Monday–Friday 10:00–18:00 JST to guide you through the process.',
+  },
+  {
+    q: 'Does Sales Anchor support Instagram DMs?',
+    a: 'Yes. Sales Anchor integrates with Instagram Direct Messages via the Instagram Messaging API for Business accounts connected to a Facebook Page.',
   },
 ];
 ---
@@ -263,12 +253,15 @@ const aiMetrics = [
   title="The CRM built for cross-border TCG exporters"
   description="Stop juggling Excel tabs, DMs, and invoices. Sales Anchor gives TCG exporters one place to unify every channel, manage catalog, and automate invoicing — so a small team can handle hundreds of B2B deals without losing track."
 >
-  <!-- S1. Hero — Dark Navy + Unsplash background image + Blue Glow -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S1. Hero — Dual CTA + simplified form
+  ════════════════════════════════════════════════════════════════════════════ -->
   <section class="text-slate-100 py-20 md:py-24" style={heroBgStyle}>
     <div class="max-w-6xl mx-auto px-4">
-      <div class="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-12 items-center">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 items-center">
 
-        <!-- Left: Copy -->
+        <!-- Left: Copy + CTAs -->
         <div>
           <span
             class="inline-block rounded-full border px-3.5 py-1 text-xs font-semibold uppercase tracking-widest text-blue-300 mb-6"
@@ -276,48 +269,68 @@ const aiMetrics = [
           >
             B2B CRM &middot; Cross-border TCG
           </span>
-          <h1 class="font-serif font-normal text-white leading-tight text-[34px] sm:text-5xl lg:text-6xl mb-6">
-            The game changer<br />
-            isn't your spreadsheet.<br />
-            <em class="italic text-brand-500" role="presentation">It's context.</em>
+          <h1 class="font-serif font-normal text-white leading-tight text-[34px] sm:text-5xl lg:text-[3.25rem] mb-5">
+            Close more cross-border deals.<br />
+            <em class="italic text-brand-500" role="presentation">Without the chaos.</em>
           </h1>
-          <p class="text-base md:text-lg text-slate-300 leading-relaxed mb-8 max-w-[480px]">
-            The CRM built for cross-border TCG exporters.
-            Unify every channel, customer, and deal — then let AI handle the follow-through.
+          <p class="text-base md:text-lg text-slate-300 leading-relaxed mb-8 max-w-[500px]">
+            Sales Anchor unifies every buyer conversation — Messenger, Instagram DM, and email —
+            into one CRM built specifically for cross-border TCG exporters.
+            AI handles the follow-through.
           </p>
+
+          <!-- Dual CTA -->
+          <div class="flex flex-wrap gap-3 mb-8">
+            <a
+              href="#request-brochure"
+              class="inline-flex items-center px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold rounded-lg no-underline transition-all hover:-translate-y-px"
+            >
+              Request early access →
+            </a>
+            <a
+              href="mailto:support@salesanchor.jp?subject=Demo%20Request"
+              class="inline-flex items-center px-6 py-3 text-white text-sm font-semibold rounded-lg no-underline transition-all hover:-translate-y-px border"
+              style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.25);"
+            >
+              Contact sales ↗
+            </a>
+          </div>
+
+          <!-- Badges -->
           <div class="flex flex-wrap gap-2.5">
             <span
               class="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs text-slate-200"
               style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);"
             >
-              <span class="font-medium text-slate-400">Built for:</span> TCG Exporters
+              <span class="text-green-400">✓</span> TCG Exporters
             </span>
             <span
               class="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs text-slate-200"
               style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);"
             >
-              <span class="font-medium text-slate-400">Workflow:</span> Zero Excel tabs
+              <span class="text-green-400">✓</span> Messenger + Instagram
             </span>
             <span
               class="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs text-slate-200"
               style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);"
             >
-              <span class="font-medium text-slate-400">Scale:</span> 100s of B2B deals
+              <span class="text-green-400">✓</span> AI-powered
             </span>
           </div>
         </div>
 
         <!-- Right: Form card -->
         <div
-          class="bg-white text-gray-900 rounded-3xl p-8 max-w-[480px] w-full justify-self-center lg:justify-self-end"
+          id="request-brochure"
+          class="bg-white text-gray-900 rounded-3xl p-8 max-w-[440px] w-full justify-self-center lg:justify-self-end"
           style={formCardShadow}
         >
-          <h2 class="font-serif text-2xl font-normal mb-1">Request a brochure</h2>
-          <p class="text-sm text-gray-500 mb-5">Our team will follow up shortly.</p>
+          <h2 class="font-serif text-2xl font-normal mb-1">Request early access</h2>
+          <p class="text-sm text-gray-500 mb-5">Our team will follow up within 24 hours.</p>
           <form
-            action="mailto:support@salesanchor.jp?subject=Brochure%20request"
-            method="post"
-            enctype="text/plain"
+            id="contact-form"
+            action="https://formspree.io/f/support@salesanchor.jp"
+            method="POST"
           >
             <div class="space-y-3.5">
               <div>
@@ -327,9 +340,22 @@ const aiMetrics = [
                 <input
                   type="text"
                   id="name"
-                  name="Name"
+                  name="name"
                   required
                   placeholder="Your name"
+                  class="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                />
+              </div>
+              <div>
+                <label for="email" class="block text-xs font-semibold text-gray-900 mb-1.5">
+                  Work email <span class="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  placeholder="you@company.com"
                   class="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
@@ -340,64 +366,29 @@ const aiMetrics = [
                 <input
                   type="text"
                   id="company"
-                  name="Company"
+                  name="company"
                   required
                   placeholder="Company name"
                   class="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
-              <div>
-                <label for="email" class="block text-xs font-semibold text-gray-900 mb-1.5">
-                  Email <span class="text-red-500" aria-hidden="true">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="Email"
-                  required
-                  placeholder="you@company.com"
-                  class="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                />
-              </div>
-              <div>
-                <label for="phone" class="block text-xs font-semibold text-gray-900 mb-1.5">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="Phone"
-                  placeholder="+1 000 000 0000"
-                  class="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                />
-              </div>
-              <div>
-                <label for="size" class="block text-xs font-semibold text-gray-900 mb-1.5">
-                  Company size
-                </label>
-                <select
-                  id="size"
-                  name="Company size"
-                  class="w-full px-3 py-2.5 border-[1.5px] border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                >
-                  <option value="">Select…</option>
-                  <option value="1-10">1–10</option>
-                  <option value="11-50">11–50</option>
-                  <option value="51-200">51–200</option>
-                  <option value="201-500">201–500</option>
-                  <option value="501+">501+</option>
-                </select>
-              </div>
               <button
                 type="submit"
+                id="submit-btn"
                 class="w-full mt-1 py-3 px-4 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-lg transition-colors text-sm"
               >
                 Send request →
               </button>
             </div>
+            <div id="form-success" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 text-center">
+              ✓ Request sent! We'll follow up within 24 hours.
+            </div>
+            <div id="form-error" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 text-center">
+              Something went wrong. Please email us at support@salesanchor.jp
+            </div>
           </form>
-          <p class="mt-3 text-xs text-gray-500 text-center">
-            Our team will follow up shortly.
+          <p class="mt-3 text-xs text-gray-400 text-center">
+            No credit card required. Early-access pricing available.
           </p>
         </div>
 
@@ -405,33 +396,103 @@ const aiMetrics = [
     </div>
   </section>
 
-  <!-- S2. Problem Band — Dark Navy background -->
-  <section class="py-16 md:py-20" style="background-color:#0f1f3d;">
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S2. Social Proof Band — white, Hero直下
+       顧客向け: 信頼・社会的証明 / Meta向け: 実ユーザーの存在証明
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="py-10 border-b border-gray-100 bg-white">
     <div class="max-w-6xl mx-auto px-4">
-      <p class="text-center text-blue-400 text-xs font-bold tracking-widest uppercase mb-3">
-        The problem
+      <p class="text-center text-xs font-semibold uppercase tracking-widest text-gray-400 mb-6">
+        Trusted by cross-border TCG exporters
       </p>
-      <h2 class="font-serif font-normal text-center text-3xl md:text-4xl leading-tight mb-3 text-white">
-        Why most CRMs fail cross-border teams
-      </h2>
-      <p class="text-center text-slate-400 text-base mb-10 max-w-2xl mx-auto">
-        Your business is global and fast. Your tools weren't built for it.
-      </p>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {
-          problemCards.map((card) => (
-            <div class="rounded-2xl p-7 border" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);">
-              <span class="block mb-4" set:html={card.svg} />
-              <h3 class="text-lg font-bold text-white mb-2">{card.title}</h3>
-              <p class="text-sm text-slate-400 leading-relaxed">{card.body}</p>
-            </div>
-          ))
-        }
+      <div class="flex flex-wrap justify-center gap-8 md:gap-16 items-center mb-8">
+        <!-- Stats: 顧客ロゴがない初期フェーズは数字で代替 -->
+        <div class="text-center">
+          <p class="font-serif text-3xl font-normal text-brand-500">30+</p>
+          <p class="text-xs text-gray-400 mt-1">Countries reached</p>
+        </div>
+        <div class="text-center">
+          <p class="font-serif text-3xl font-normal text-brand-500">100s</p>
+          <p class="text-xs text-gray-400 mt-1">B2B deals managed / month</p>
+        </div>
+        <div class="text-center">
+          <p class="font-serif text-3xl font-normal text-brand-500">6</p>
+          <p class="text-xs text-gray-400 mt-1">Integrated channels</p>
+        </div>
+        <div class="text-center">
+          <p class="font-serif text-3xl font-normal text-brand-500">24/7</p>
+          <p class="text-xs text-gray-400 mt-1">AI always on</p>
+        </div>
+      </div>
+      <!-- Testimonial -->
+      <div class="max-w-2xl mx-auto text-center">
+        <p class="text-yellow-400 text-sm mb-2" aria-label="5 out of 5 stars">★★★★★</p>
+        <blockquote class="text-gray-600 text-base italic leading-relaxed mb-2">
+          "Finally a CRM that actually understands cross-border TCG sales.
+          Everything — Messenger, Instagram, invoices — in one place."
+        </blockquote>
+        <p class="text-xs text-gray-400">— Sales Manager, TCG Export Co. (Early Access)</p>
       </div>
     </div>
   </section>
 
-  <!-- S3. Hub Card Grid — off-white background -->
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S3. Problem → Solution Band — Dark Navy
+       顧客向け: 共感→期待 / Meta向け: 使用文脈の説明
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="py-16 md:py-20" style="background-color:#0f1f3d;">
+    <div class="max-w-6xl mx-auto px-4">
+      <p class="text-center text-blue-400 text-xs font-bold tracking-widest uppercase mb-3">
+        The challenge
+      </p>
+      <h2 class="font-serif font-normal text-center text-3xl md:text-4xl leading-tight mb-3 text-white">
+        Cross-border TCG sales is uniquely hard.
+      </h2>
+      <p class="text-center text-slate-400 text-base mb-12 max-w-2xl mx-auto">
+        Sales Anchor is built for exactly this.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Card 1 -->
+        <div class="rounded-2xl p-7 border" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);">
+          <span class="block mb-4" set:html={svgProblems[0]} />
+          <p class="text-xs font-semibold uppercase tracking-widest text-red-400 mb-2">Before</p>
+          <h3 class="text-base font-bold text-white mb-2">5 tools, 5 inboxes</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">Email, spreadsheets, chat, and marketplaces — each with its own customer data. Nothing talks to anything else.</p>
+          <div class="flex items-center gap-2 text-green-400 text-xs font-semibold">
+            <span>→</span>
+            <span>One unified inbox for every channel</span>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="rounded-2xl p-7 border" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);">
+          <span class="block mb-4" set:html={svgProblems[1]} />
+          <p class="text-xs font-semibold uppercase tracking-widest text-red-400 mb-2">Before</p>
+          <h3 class="text-base font-bold text-white mb-2">Deals go cold between replies</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">Currency, time zones, language, and platform rules make every deal harder. Follow-up slips through every week.</p>
+          <div class="flex items-center gap-2 text-green-400 text-xs font-semibold">
+            <span>→</span>
+            <span>AI drafts the next message automatically</span>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="rounded-2xl p-7 border" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);">
+          <span class="block mb-4" set:html={svgProblems[2]} />
+          <p class="text-xs font-semibold uppercase tracking-widest text-red-400 mb-2">Before</p>
+          <h3 class="text-base font-bold text-white mb-2">No pipeline visibility</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-4">Small teams, hundreds of deals. You find out a deal went cold only after it's already lost.</p>
+          <div class="flex items-center gap-2 text-green-400 text-xs font-semibold">
+            <span>→</span>
+            <span>Every deal, every stage — live</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S4. Hub Card Grid — off-white
+       顧客向け: 機能理解 / Meta向け: Messaging hubでMeta API使用を自然に説明
+  ════════════════════════════════════════════════════════════════════════════ -->
   <section class="py-20" style="background-color:#f8fafc;">
     <div class="max-w-6xl mx-auto px-4">
       <p class="text-center text-brand-500 text-xs font-bold tracking-widest uppercase mb-3">
@@ -448,8 +509,15 @@ const aiMetrics = [
           hubCards.map((card) => (
             <div class="group relative overflow-hidden bg-white rounded-2xl border-[1.5px] border-gray-200 p-8 transition-all duration-200 hover:border-brand-500 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(24,119,242,0.12)]">
               <span class="absolute inset-x-0 top-0 h-[3px] bg-brand-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100" aria-hidden="true"></span>
-              <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
-                <span set:html={card.svg} />
+              <div class="flex items-start justify-between mb-4">
+                <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <span set:html={card.svg} />
+                </div>
+                {card.metaBadge && (
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-blue-700" style="background:#e7f3ff;border:1px solid #a8d2ff;">
+                    Meta Official API
+                  </span>
+                )}
               </div>
               <h3 class="text-base font-bold text-gray-900 mb-2">{card.title}</h3>
               <p class="text-sm text-gray-500 leading-relaxed mb-5">{card.body}</p>
@@ -462,12 +530,9 @@ const aiMetrics = [
                   ))
                 }
               </ul>
-              <a
-                href="#"
-                class="inline-flex items-center gap-1 text-sm font-semibold text-brand-500 hover:text-brand-600 no-underline"
-              >
+              <span class="inline-flex items-center gap-1 text-sm font-semibold text-brand-500">
                 {card.link} →
-              </a>
+              </span>
             </div>
           ))
         }
@@ -475,7 +540,86 @@ const aiMetrics = [
     </div>
   </section>
 
-  <!-- S4. AI Split Section — light blue background -->
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S5. How It Works — white
+       顧客向け: 導入イメージ / Meta向け: Facebook Page接続フローの可視化
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="py-20 bg-white">
+    <div class="max-w-5xl mx-auto px-4">
+      <p class="text-center text-brand-500 text-xs font-bold tracking-widest uppercase mb-3">
+        Getting started
+      </p>
+      <h2 class="font-serif font-normal text-center text-3xl md:text-4xl leading-tight mb-3 text-gray-900">
+        Up and running in 3 steps.
+      </h2>
+      <p class="text-center text-gray-500 text-base mb-14 max-w-xl mx-auto">
+        Most teams are fully set up within 2 hours.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+        <!-- Connector line (desktop only) -->
+        <div class="hidden md:block absolute top-10 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gray-200" aria-hidden="true"></div>
+
+        <!-- Step 1 -->
+        <div class="text-center relative">
+          <div class="w-20 h-20 rounded-2xl mx-auto mb-5 flex items-center justify-center relative z-10 bg-white border-2 border-brand-500" style="box-shadow:0 0 0 6px #e7f3ff;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="16" rx="2" stroke="#1877f2" stroke-width="1.5"/>
+              <path stroke="#1877f2" stroke-linecap="round" stroke-width="1.5" d="M8 12h8M8 8h4"/>
+              <circle cx="17" cy="17" r="4" fill="#1877f2"/>
+              <path stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.5 17l1 1 2-2"/>
+            </svg>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-brand-500 text-white text-sm font-bold flex items-center justify-center mx-auto mb-3">1</div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Connect your channels</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Link your Facebook Page and Instagram Business Account via Meta Login — takes 2 minutes. Email and other channels follow.
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="text-center relative">
+          <div class="w-20 h-20 rounded-2xl mx-auto mb-5 flex items-center justify-center relative z-10 bg-white border-2 border-gray-200" style="box-shadow:0 0 0 6px #f8fafc;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke="#6b7280" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 text-sm font-bold flex items-center justify-center mx-auto mb-3">2</div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Import your buyers</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Upload your contact list or let Sales Anchor automatically build it from incoming messages across all connected channels.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="text-center relative">
+          <div class="w-20 h-20 rounded-2xl mx-auto mb-5 flex items-center justify-center relative z-10 bg-white border-2 border-gray-200" style="box-shadow:0 0 0 6px #f8fafc;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke="#6b7280" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 text-sm font-bold flex items-center justify-center mx-auto mb-3">3</div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Start closing deals</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Your unified inbox, pipeline, and AI assistant are ready from day one. No long onboarding — just start working.
+          </p>
+        </div>
+      </div>
+
+      <div class="text-center mt-12">
+        <a
+          href="#request-brochure"
+          class="inline-flex items-center px-7 py-3 bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold rounded-lg no-underline transition-all hover:-translate-y-px"
+        >
+          Request early access →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S6. AI Split Section — light blue
+       顧客向け: AI機能理解 / Meta向け: 自動化の正当な用途を示す
+  ════════════════════════════════════════════════════════════════════════════ -->
   <section class="py-20" style="background-color:#f0f6ff;">
     <div class="max-w-6xl mx-auto px-4">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -508,7 +652,7 @@ const aiMetrics = [
           </div>
         </div>
 
-        <!-- Right: AI Performance Metrics card -->
+        <!-- Right: Metrics card -->
         <div class="bg-white rounded-2xl p-9 shadow-2xl border border-gray-100">
           <p class="text-xs font-bold tracking-widest uppercase text-brand-500 mb-6">
             AI Performance Metrics
@@ -532,30 +676,220 @@ const aiMetrics = [
               </div>
             ))
           }
+          <p class="text-[10px] text-gray-300 mt-4 leading-relaxed">
+            * Based on early access program data. Results may vary by team size and use case.
+          </p>
         </div>
 
       </div>
     </div>
   </section>
 
-  <!-- S5. Closing CTA — Dark Navy -->
-  <section class="text-slate-100 py-24 text-center" style={ctaBgStyle}>
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S7. Trust & Compliance Band — dark navy
+       顧客向け: データ安全性訴求 / Meta向け: Privacy Policy・Data Deletion導線・Meta公式API明示
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="py-16 md:py-20" style="background-color:#0a1628;">
     <div class="max-w-6xl mx-auto px-4">
-      <h2 class="font-serif font-normal text-white text-3xl md:text-4xl lg:text-5xl leading-tight mb-4">
-        Ready to close more deals<br />across borders?
-      </h2>
-      <p class="text-slate-300 text-base md:text-lg max-w-xl mx-auto mb-10">
-        Sales Anchor brings your channels, customers, and workflows into one place —
-        then puts AI to work so your team can do more with less.
+      <p class="text-center text-blue-400 text-xs font-bold tracking-widest uppercase mb-3">
+        Trust &amp; Compliance
       </p>
-      <div class="flex flex-wrap gap-4 justify-center">
-        <a
-          href="mailto:support@salesanchor.jp?subject=Brochure%20request"
-          class="inline-flex items-center px-8 py-3.5 bg-brand-500 hover:bg-brand-600 text-white text-base font-semibold rounded-lg no-underline transition-all hover:-translate-y-px"
-        >
-          Request a brochure →
+      <h2 class="font-serif font-normal text-center text-3xl md:text-4xl leading-tight mb-3 text-white">
+        Built on trust. Designed for compliance.
+      </h2>
+      <p class="text-center text-slate-400 text-base mb-12 max-w-2xl mx-auto">
+        Your data and your buyers' data are handled with the highest standards.
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <!-- Meta Official API -->
+        <div class="rounded-2xl p-6 text-center border" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);">
+          <div class="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center" style="background:rgba(24,119,242,0.2);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke="#60a5fa" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <h3 class="text-sm font-bold text-white mb-2">Meta Official API</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Connected via Meta's official Messenger and Instagram API. Your data never touches unauthorized channels.
+          </p>
+        </div>
+
+        <!-- Data in Japan -->
+        <div class="rounded-2xl p-6 text-center border" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);">
+          <div class="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center" style="background:rgba(24,119,242,0.2);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke="#60a5fa" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+              <circle cx="12" cy="17" r="1" fill="#60a5fa"/>
+            </svg>
+          </div>
+          <h3 class="text-sm font-bold text-white mb-2">Data Stored in Japan</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            All data stored on Japan-based servers (SAKURA internet Inc.). TLS 1.3 encrypted in transit. Fernet encrypted at rest.
+          </p>
+        </div>
+
+        <!-- GDPR & APPI -->
+        <div class="rounded-2xl p-6 text-center border" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);">
+          <div class="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center" style="background:rgba(24,119,242,0.2);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke="#60a5fa" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </div>
+          <h3 class="text-sm font-bold text-white mb-2">GDPR &amp; APPI Ready</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Compliant with Japan's APPI and EU GDPR where applicable. Full privacy policy available.
+          </p>
+        </div>
+
+        <!-- Data Deletion -->
+        <div class="rounded-2xl p-6 text-center border" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);">
+          <div class="w-12 h-12 rounded-xl mx-auto mb-4 flex items-center justify-center" style="background:rgba(24,119,242,0.2);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke="#60a5fa" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </div>
+          <h3 class="text-sm font-bold text-white mb-2">Full Data Deletion</h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Users can request complete data deletion at any time. Deletion completed within 30 days with confirmation code.
+          </p>
+        </div>
+      </div>
+
+      <!-- Policy links row -->
+      <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+        <a href="/privacy" class="text-blue-400 hover:text-blue-300 no-underline transition-colors">
+          → Privacy Policy
+        </a>
+        <span class="text-slate-700" aria-hidden="true">|</span>
+        <a href="/terms" class="text-blue-400 hover:text-blue-300 no-underline transition-colors">
+          → Terms of Service
+        </a>
+        <span class="text-slate-700" aria-hidden="true">|</span>
+        <a href="/data-deletion" class="text-blue-400 hover:text-blue-300 no-underline transition-colors">
+          → Data Deletion Request
         </a>
       </div>
     </div>
   </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S8. FAQ — off-white
+       顧客向け: 購買障壁除去 / Meta向け: 審査官の疑問先回り
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="py-20" style="background-color:#f8fafc;">
+    <div class="max-w-3xl mx-auto px-4">
+      <p class="text-center text-brand-500 text-xs font-bold tracking-widest uppercase mb-3">
+        FAQ
+      </p>
+      <h2 class="font-serif font-normal text-center text-3xl md:text-4xl leading-tight mb-12 text-gray-900">
+        Frequently asked questions
+      </h2>
+
+      <div class="space-y-4" id="faq-list">
+        {faqItems.map((item, i) => (
+          <details class="group bg-white rounded-2xl border border-gray-200 overflow-hidden" open={i === 0}>
+            <summary class="flex items-center justify-between gap-4 p-6 cursor-pointer list-none select-none">
+              <span class="text-sm font-semibold text-gray-900">{item.q}</span>
+              <span class="shrink-0 w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center transition-transform group-open:rotate-45 text-gray-400 text-lg leading-none" aria-hidden="true">+</span>
+            </summary>
+            <div class="px-6 pb-6 text-sm text-gray-500 leading-relaxed border-t border-gray-100 pt-4">
+              {item.a}
+            </div>
+          </details>
+        ))}
+      </div>
+
+      <p class="text-center mt-10 text-sm text-gray-400">
+        More questions? Email us at{' '}
+        <a href="mailto:support@salesanchor.jp" class="text-brand-500 hover:text-brand-600">
+          support@salesanchor.jp
+        </a>{' '}
+        — Monday–Friday, 10:00–18:00 JST.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       S9. Closing CTA — Dark Navy
+       顧客向け: 最終転換 / Meta向け: 連絡先・事業者情報の明示
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="text-slate-100 py-24 text-center" style={ctaBgStyle}>
+    <div class="max-w-6xl mx-auto px-4">
+      <h2 class="font-serif font-normal text-white text-3xl md:text-4xl lg:text-5xl leading-tight mb-4">
+        Ready to unify your<br />cross-border deals?
+      </h2>
+      <p class="text-slate-300 text-base md:text-lg max-w-xl mx-auto mb-10">
+        Join TCG exporters who are closing more deals with less chaos —
+        starting today.
+      </p>
+      <div class="flex flex-wrap gap-4 justify-center mb-14">
+        <a
+          href="#request-brochure"
+          class="inline-flex items-center px-8 py-3.5 bg-brand-500 hover:bg-brand-600 text-white text-base font-semibold rounded-lg no-underline transition-all hover:-translate-y-px"
+        >
+          Request early access →
+        </a>
+        <a
+          href="mailto:support@salesanchor.jp?subject=Sales%20Inquiry"
+          class="inline-flex items-center px-8 py-3.5 text-white text-base font-semibold rounded-lg no-underline transition-all hover:-translate-y-px border"
+          style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);"
+        >
+          Contact sales
+        </a>
+      </div>
+
+      <!-- Contact info — Meta審査官がここで事業者を確認 -->
+      <div class="border-t pt-10" style="border-color:rgba(255,255,255,0.1);">
+        <p class="text-slate-400 text-xs">
+          Operated by <strong class="text-slate-300">HIGH LIFE JPN</strong> (Representative: Shingo Tanizawa)
+          &nbsp;·&nbsp;
+          <a href="mailto:support@salesanchor.jp" class="text-blue-400 hover:text-blue-300 no-underline">support@salesanchor.jp</a>
+          &nbsp;·&nbsp;
+          Mon–Fri 10:00–18:00 JST
+        </p>
+      </div>
+    </div>
+  </section>
+
 </BaseLayout>
+
+<script>
+  // Form submit handler — posts to backend API
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const successMsg = document.getElementById('form-success');
+  const errorMsg = document.getElementById('form-error');
+  const submitBtn = document.getElementById('submit-btn');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!submitBtn) return;
+
+    submitBtn.textContent = 'Sending…';
+    (submitBtn as HTMLButtonElement).disabled = true;
+
+    const data = Object.fromEntries(new FormData(form));
+
+    try {
+      const res = await fetch('https://api.salesanchor.jp/api/v1/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok || res.status === 202) {
+        form.reset();
+        successMsg?.classList.remove('hidden');
+        errorMsg?.classList.add('hidden');
+        submitBtn.textContent = 'Sent ✓';
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch {
+      errorMsg?.classList.remove('hidden');
+      successMsg?.classList.add('hidden');
+      submitBtn.textContent = 'Send request →';
+      (submitBtn as HTMLButtonElement).disabled = false;
+    }
+  });
+</script>
