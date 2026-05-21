@@ -1,0 +1,67 @@
+name: Migration Guard
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/app/models.py'
+
+jobs:
+  check:
+    name: models.py に新 Column → deploy.yml にマイグレーション追記必須
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 新規 Column 追加を検出
+        id: detect
+        run: |
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+
+          # models.py の差分で追加行に Column( が含まれるか
+          NEW_COLUMNS=$(git diff "$BASE" "$HEAD" -- backend/app/models.py \
+            | grep '^+' | grep -v '^+++' | grep 'Column(' || true)
+
+          if [ -z "$NEW_COLUMNS" ]; then
+            echo "new_columns=false" >> "$GITHUB_OUTPUT"
+            echo "✅ models.py に新規 Column 追加なし — スキップ"
+          else
+            echo "new_columns=true" >> "$GITHUB_OUTPUT"
+            echo "🔍 新規 Column を検出:"
+            echo "$NEW_COLUMNS"
+          fi
+
+      - name: deploy.yml にマイグレーション追記を確認
+        if: steps.detect.outputs.new_columns == 'true'
+        run: |
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+
+          # deploy.yml の差分で migrate_ スクリプト呼び出しが追加されているか
+          DEPLOY_UPDATED=$(git diff "$BASE" "$HEAD" -- .github/workflows/deploy.yml \
+            | grep '^+' | grep -v '^+++' | grep 'migrate_' || true)
+
+          if [ -n "$DEPLOY_UPDATED" ]; then
+            echo "✅ deploy.yml にマイグレーション追記を確認:"
+            echo "$DEPLOY_UPDATED"
+            exit 0
+          fi
+
+          # deploy.yml に変更がない場合はエラー
+          echo ""
+          echo "❌ MIGRATION GUARD FAILED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "backend/app/models.py に新規 Column が追加されましたが、"
+          echo ".github/workflows/deploy.yml への マイグレーションステップ追記が見つかりません。"
+          echo ""
+          echo "【対応手順】"
+          echo "1. migrations/ に SQL ファイルを作成（ADD COLUMN IF NOT EXISTS で冪等に）"
+          echo "2. scripts/ に Python 実行スクリプトを作成"
+          echo "3. deploy.yml の「新しいマイグレーションはここに追加」の直前に実行ステップを追記"
+          echo ""
+          echo "参考: PR #518 の変更内容を確認してください"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          exit 1
