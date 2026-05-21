@@ -51,34 +51,35 @@ async def register_tenant(
             detail=f"テナントコード '{data.tenant_code}' は既に使用されています",
         )
 
-    # テナント作成
-    tenant = Tenant(
-        tenant_name=data.tenant_name,
-        tenant_code=data.tenant_code,
-        is_active=True,
-    )
-    db.add(tenant)
-    await db.flush()  # IDを確定させる（commit前にIDが必要）
+    # テナント作成（ロールバック保証: db.begin() で明示的なトランザクション開始）
+    # create_tenant_schema が途中で失敗した場合も tenant レコードが残らないよう保証する。
+    async with db.begin():
+        tenant = Tenant(
+            tenant_name=data.tenant_name,
+            tenant_code=data.tenant_code,
+            is_active=True,
+        )
+        db.add(tenant)
+        await db.flush()  # IDを確定させる（commit前にIDが必要）
 
-    # 専用スキーマを自動生成（テーブル + RLSポリシー込み）
-    schema_name = await create_tenant_schema(db, tenant.id)
+        # 専用スキーマを自動生成（テーブル + RLSポリシー込み）
+        schema_name = await create_tenant_schema(db, tenant.id)
 
-    # 監査ログ記録
-    await record_audit_log(
-        db=db,
-        tenant_id=current_user.tenant_id,
-        user_id=current_user.id,
-        action="create",
-        table_name="tenants",
-        record_id=tenant.id,
-        new_data={
-            "tenant_name": tenant.tenant_name,
-            "tenant_code": tenant.tenant_code,
-            "schema_name": schema_name,
-        },
-    )
-
-    await db.commit()
+        # 監査ログ記録
+        await record_audit_log(
+            db=db,
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id,
+            action="create",
+            table_name="tenants",
+            record_id=tenant.id,
+            new_data={
+                "tenant_name": tenant.tenant_name,
+                "tenant_code": tenant.tenant_code,
+                "schema_name": schema_name,
+            },
+        )
+    # async with db.begin() がコミットを行う（例外時は自動ロールバック）
 
     return TenantResponse(
         id=tenant.id,

@@ -414,7 +414,10 @@ def _process_tenant(
     return summary
 
 
-@shared_task(name="app.tasks.refresh_meta_tokens.refresh_all_meta_page_tokens")
+@shared_task(
+    name="app.tasks.refresh_meta_tokens.refresh_all_meta_page_tokens",
+    max_retries=3,
+)
 def refresh_all_meta_page_tokens() -> dict[str, Any]:
     """全テナントの Page Access Token を必要に応じてリフレッシュする。
 

@@ -71,7 +71,15 @@ def _delete_meta_messages_in_tenant(session, schema: str, sender_id: str) -> int
     return result.rowcount or 0
 
 
-@shared_task(name="app.tasks.data_deletion.process_data_deletion")
+@shared_task(
+    name="app.tasks.data_deletion.process_data_deletion",
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+)
 def process_data_deletion(request_id: str) -> dict:
     """
     data_deletion_logs.request_id に対応する削除リクエストを処理する。

@@ -30,7 +30,7 @@ from app.schemas.lead import LeadConvertRequest, LeadCreate, LeadResponse, LeadU
 from app.services import encryption, meta_graph
 from app.services import messaging_window as mw
 from app.services.audit import record_audit_log
-from app.services.meta_graph import MetaGraphAPIError, MetaGraphError
+from app.services.meta_graph import MetaGraphAPIError, MetaGraphError, MetaGraphRateLimitError, MetaGraphTimeoutError
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -993,6 +993,40 @@ async def send_lead_message(
                 messaging_type=messaging_type,
                 tag=message_tag,
             )
+    except MetaGraphRateLimitError as e:
+        logger.warning("Meta Send API rate limit for lead %s: retry_after=%s", lead_id, e.retry_after)
+        await _record_send_audit_safely(
+            db, tenant_id=tenant_id, user_id=current_user.id,
+            action="meta_message_send_failed", record_id=config_id,
+            new_data={
+                "lead_id": lead_id,
+                "platform": platform,
+                "messaging_type": messaging_type,
+                "message_tag": message_tag,
+                "meta_error": e.to_audit_dict(),
+            },
+        )
+        detail: dict = {"detail": "Meta APIのレート制限に達しました"}
+        if e.retry_after:
+            detail["retry_after"] = e.retry_after
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=detail)
+    except MetaGraphTimeoutError as e:
+        logger.warning("Meta Send API timeout for lead %s: %s", lead_id, e)
+        await _record_send_audit_safely(
+            db, tenant_id=tenant_id, user_id=current_user.id,
+            action="meta_message_send_failed", record_id=config_id,
+            new_data={
+                "lead_id": lead_id,
+                "platform": platform,
+                "messaging_type": messaging_type,
+                "message_tag": message_tag,
+                "transport_error": str(e),
+            },
+        )
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Meta Send API がタイムアウトしました",
+        )
     except MetaGraphAPIError as e:
         meta_error_payload = e.to_audit_dict()
         logger.warning("Meta Send API error for lead %s: %s", lead_id, e.error_type)
