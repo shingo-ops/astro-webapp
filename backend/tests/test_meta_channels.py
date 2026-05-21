@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import os
 from contextlib import ExitStack
+from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 # DATABASE_URL を SQLite に必ず差し替え（モジュール import 順の罠回避）
@@ -468,11 +469,23 @@ async def test_list_channels_requires_reauth_true_when_business_management_missi
 async def test_list_channels_requires_reauth_false_when_granted_scopes_null(
     app_client, db_session,
 ):
-    """granted_scopes が NULL（ADR-041 適用前の接続）→ requires_reauth=False。
+    """granted_scopes が NULL → requires_reauth=False。
 
-    意図: ADR-041 で granted_scopes 列が追加されたが、旧接続はこの列が NULL の
-    まま残る。判定式が `is not None` 前提なので NULL は「不明 → 強制再認証を
-    避ける」方針で False を返す（既存運用への破壊的影響を防ぐ）。
+    意味付け (PR #487 follow-up で更新):
+    本番の migration 055 適用済テナントでは、既存行は旧 6 scope で backfill される
+    ため NULL 行は存在しない。したがって NULL を観測するのは以下の 2 ケースに限られる:
+
+    1. `sql_no_scopes` フォールバック経路 (meta_inbox.py:748-764)
+       — granted_scopes 列がまだ存在しない古い tenant schema を SELECT したとき、
+         例外を受けて NULL を返す再試行 SQL が走り、`_parse_scopes(NULL) → None`
+         で `requires_reauth=False` に落ちる
+    2. migration 055 未適用の新規テナント
+       — ADR-034 (新規テナント migration 自動適用) で本来は防がれるはずだが、
+         自動適用の取りこぼし・手動 schema 作成等で列が NULL のまま残るケース
+
+    判定式が `granted_scopes is not None and "business_management" not in granted_scopes`
+    のため、NULL は「不明 → 強制再認証を避ける」方針で False を返す
+    (既存運用への破壊的影響を防ぐ)。
     """
     await _insert_channel(
         db_session, tenant_id=999, page_id="page-null", page_name="Pre-ADR-041",
@@ -483,3 +496,275 @@ async def test_list_channels_requires_reauth_false_when_granted_scopes_null(
     ch = resp.json()["channels"][0]
     assert ch["granted_scopes"] is None
     assert ch["requires_reauth"] is False
+
+
+@pytest.mark.asyncio
+async def test_list_channels_requires_reauth_true_when_granted_scopes_empty(
+    app_client, db_session,
+):
+    """granted_scopes が空配列 [] → requires_reauth=True。
+
+    PR #487 follow-up で追加。OAuth callback race / 手動修正 / migration glitch で
+    `[]` が観測される可能性があり、6 scope と同じ「business_management 不在」分岐
+    に落ちることを保証する。`_parse_scopes("[]") → []` で `requires_reauth` 判定式
+    の `granted_scopes is not None and "business_management" not in granted_scopes`
+    が True になる経路。
+    """
+    await _insert_channel(
+        db_session, tenant_id=999, page_id="page-empty", page_name="Empty scopes",
+        granted_scopes=[],
+    )
+    resp = await app_client.get("/api/v1/meta/channels")
+    assert resp.status_code == 200
+    ch = resp.json()["channels"][0]
+    assert ch["granted_scopes"] == []
+    assert ch["requires_reauth"] is True
+
+
+# ---------------------------------------------------------------------------
+# PR #487 follow-up: _parse_scopes の unit test
+# ---------------------------------------------------------------------------
+#
+# meta_inbox.py:822-839 の `_parse_scopes` は granted_scopes 列の値を list[str] /
+# None に正規化する。これまで `list_channels` 経由でしか間接的にカバーされていな
+# かったため、関数自体の挙動を直接検証する unit test を追加する。
+#
+# 仕様（実装の実態）:
+#   - None → None
+#   - list (JSONB ネイティブ) → list[str] に str 化
+#   - JSON 文字列 (TEXT 列) で list → list[str]
+#   - 空文字列 / whitespace のみ → None
+#   - 不正 JSON (CSV 含む) → None ※CSV は意図的にサポートしない
+#   - 空配列 "[]" → [] (空 list を返す。requires_reauth=True に落ちる)
+#   - JSON list 以外 (dict, scalar) → None
+#   - その他の型 (int 等) → None
+# ---------------------------------------------------------------------------
+
+
+from app.routers.meta_inbox import _parse_scopes  # noqa: E402
+
+
+class TestParseScopes:
+    """`meta_inbox._parse_scopes` の直接 unit test (PR #487 follow-up)。"""
+
+    def test_none_returns_none(self):
+        """None 入力は None を返す（granted_scopes 列が NULL のケース）。"""
+        assert _parse_scopes(None) is None
+
+    def test_list_returns_string_list(self):
+        """list 入力 (JSONB ネイティブ) は list[str] にして返す。"""
+        assert _parse_scopes(["a", "b"]) == ["a", "b"]
+
+    def test_list_with_non_string_items_stringified(self):
+        """list 内の非文字列要素は str() で変換される。"""
+        assert _parse_scopes([1, 2, "x"]) == ["1", "2", "x"]
+
+    def test_empty_list_returns_empty_list(self):
+        """空 list は空 list を返す（None には落とさない）。"""
+        assert _parse_scopes([]) == []
+
+    def test_json_string_list(self):
+        """TEXT 列に JSON 文字列で list が入っているケース。"""
+        assert _parse_scopes('["a","b","c"]') == ["a", "b", "c"]
+
+    def test_json_string_empty_list(self):
+        """JSON 文字列の空配列は空 list。requires_reauth 判定では「不在」扱い。"""
+        assert _parse_scopes("[]") == []
+
+    def test_empty_string_returns_none(self):
+        """空文字列は None を返す（NULL と同等に扱う）。"""
+        assert _parse_scopes("") is None
+
+    def test_whitespace_only_returns_none(self):
+        """空白のみの文字列も None を返す。"""
+        assert _parse_scopes("   ") is None
+
+    def test_invalid_json_returns_none(self):
+        """不正な JSON 文字列は None を返す（例外を投げない）。"""
+        assert _parse_scopes("not a json") is None
+
+    def test_csv_returns_none(self):
+        """CSV 形式は意図的にサポートしない（不正 JSON として None を返す）。
+
+        granted_scopes は OAuth callback 時に JSONB として書き込まれる前提で、
+        CSV が混入することはないため。CSV 互換が必要になれば実装側に分岐を
+        足す形になるが、現状は None フォールバックでセーフに倒す。
+        """
+        assert _parse_scopes("a,b,c") is None
+
+    def test_json_dict_returns_none(self):
+        """list 以外の JSON (dict) は None。"""
+        assert _parse_scopes('{"key": "value"}') is None
+
+    def test_json_scalar_returns_none(self):
+        """list 以外の JSON (scalar) は None。"""
+        assert _parse_scopes('"single-string"') is None
+        assert _parse_scopes("42") is None
+
+    def test_other_types_return_none(self):
+        """list / str / None 以外の型は None。"""
+        assert _parse_scopes(42) is None
+        assert _parse_scopes(3.14) is None
+        assert _parse_scopes({"a": 1}) is None
+        assert _parse_scopes(("a", "b")) is None  # tuple は list 扱いしない
+
+
+# ---------------------------------------------------------------------------
+# PR #487 follow-up: Postgres 統合テスト (requires_reauth 3 ケース)
+# ---------------------------------------------------------------------------
+#
+# 既存の SQLite モック 3 ケース (7 scope / 6 scope / NULL) と同等のシナリオを
+# 本物の PostgreSQL + JSONB で実行し、JSONB のネイティブ list 型が `_parse_scopes`
+# を正しく通ることを保証する。
+#
+# 実行条件:
+#   環境変数 `RLS_TEST_DATABASE_URL` が設定されているとき (CI で自動設定)。
+#   ローカルでは SQLite のみで skip される。test_rls_tenant_meta_config.py と
+#   同じ skipif gating パターン。
+#
+# 設計メモ:
+#   list_channels endpoint の HTTP 経路までは通さず、SQL レベルで JSONB 列を
+#   読み出して `_parse_scopes` + requires_reauth 判定の同等ロジックを検証する。
+#   理由は HTTP 経路には別途 tenant schema / RLS / dependency override の準備が
+#   重く、ここで保証したいのは「JSONB list → _parse_scopes → list[str] →
+#   requires_reauth 判定」のデータ型 round-trip のみのため。
+# ---------------------------------------------------------------------------
+
+
+_PG_DSN: Optional[str] = os.getenv("RLS_TEST_DATABASE_URL")
+
+_pg_skip = pytest.mark.skipif(
+    not _PG_DSN,
+    reason=(
+        "PostgreSQL ベースの requires_reauth 統合テストは "
+        "環境変数 RLS_TEST_DATABASE_URL が設定されたときだけ実行する"
+    ),
+)
+
+
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
+async def pg_engine_for_scopes():
+    assert _PG_DSN
+    eng = create_async_engine(_PG_DSN, echo=False, future=True)
+    yield eng
+    await eng.dispose()
+
+
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
+async def pg_setup_scopes_schema(pg_engine_for_scopes):
+    """tenant_997 schema + tenant_meta_config + granted_scopes JSONB 列を作る。
+
+    test_rls_tenant_meta_config.py と schema 番号がぶつからないように 997 を使う。
+    """
+    async with pg_engine_for_scopes.begin() as conn:
+        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS tenant_997"))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS tenant_997.tenant_meta_config (
+                id SERIAL PRIMARY KEY,
+                tenant_id INTEGER NOT NULL DEFAULT 997,
+                page_id VARCHAR(50) NOT NULL,
+                page_name VARCHAR(200) NOT NULL,
+                page_access_token_encrypted BYTEA NOT NULL,
+                granted_scopes JSONB,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                connected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """))
+
+    yield
+
+    async with pg_engine_for_scopes.begin() as conn:
+        await conn.execute(text("DROP SCHEMA IF EXISTS tenant_997 CASCADE"))
+
+
+@pytest_asyncio.fixture(loop_scope="module")
+async def pg_conn_scopes(pg_engine_for_scopes, pg_setup_scopes_schema):
+    """各テストごとに独立 AsyncConnection。テスト前に TRUNCATE。"""
+    async with pg_engine_for_scopes.connect() as conn:
+        async with conn.begin():
+            await conn.execute(text(
+                "TRUNCATE tenant_997.tenant_meta_config RESTART IDENTITY CASCADE"
+            ))
+        yield conn
+
+
+def _eval_requires_reauth(scopes_raw) -> tuple[Optional[list[str]], bool]:
+    """meta_inbox.list_channels と同じ判定ロジックを再現するヘルパー。"""
+    parsed = _parse_scopes(scopes_raw)
+    requires_reauth = (
+        parsed is not None and "business_management" not in parsed
+    )
+    return parsed, requires_reauth
+
+
+@_pg_skip
+@pytest.mark.asyncio(loop_scope="module")
+async def test_pg_requires_reauth_false_when_business_management_present(pg_conn_scopes):
+    """[Postgres] granted_scopes JSONB に business_management 含む 7 scope → False。"""
+    async with pg_conn_scopes.begin():
+        await pg_conn_scopes.execute(text("""
+            INSERT INTO tenant_997.tenant_meta_config
+                (tenant_id, page_id, page_name, page_access_token_encrypted, granted_scopes)
+            VALUES (997, 'pg-7scope', 'PG Full 7', :tok, CAST(:scopes AS jsonb))
+        """), {"tok": b"x", "scopes": json.dumps(_FULL_7_SCOPES)})
+
+    async with pg_conn_scopes.begin():
+        row = (await pg_conn_scopes.execute(text(
+            "SELECT granted_scopes FROM tenant_997.tenant_meta_config WHERE page_id='pg-7scope'"
+        ))).fetchone()
+
+    assert row is not None
+    parsed, requires_reauth = _eval_requires_reauth(row[0])
+    # JSONB は asyncpg が list として返すことを保証
+    assert isinstance(row[0], list), f"JSONB should be list, got {type(row[0])}"
+    assert parsed == _FULL_7_SCOPES
+    assert requires_reauth is False
+
+
+@_pg_skip
+@pytest.mark.asyncio(loop_scope="module")
+async def test_pg_requires_reauth_true_when_business_management_missing(pg_conn_scopes):
+    """[Postgres] granted_scopes JSONB が 6 scope (旧) → True。"""
+    async with pg_conn_scopes.begin():
+        await pg_conn_scopes.execute(text("""
+            INSERT INTO tenant_997.tenant_meta_config
+                (tenant_id, page_id, page_name, page_access_token_encrypted, granted_scopes)
+            VALUES (997, 'pg-6scope', 'PG Legacy 6', :tok, CAST(:scopes AS jsonb))
+        """), {"tok": b"x", "scopes": json.dumps(_LEGACY_6_SCOPES)})
+
+    async with pg_conn_scopes.begin():
+        row = (await pg_conn_scopes.execute(text(
+            "SELECT granted_scopes FROM tenant_997.tenant_meta_config WHERE page_id='pg-6scope'"
+        ))).fetchone()
+
+    assert row is not None
+    parsed, requires_reauth = _eval_requires_reauth(row[0])
+    assert isinstance(row[0], list)
+    assert parsed == _LEGACY_6_SCOPES
+    assert "business_management" not in parsed
+    assert requires_reauth is True
+
+
+@_pg_skip
+@pytest.mark.asyncio(loop_scope="module")
+async def test_pg_requires_reauth_false_when_granted_scopes_null(pg_conn_scopes):
+    """[Postgres] granted_scopes JSONB が NULL → False (sql_no_scopes 経路相当)。"""
+    async with pg_conn_scopes.begin():
+        await pg_conn_scopes.execute(text("""
+            INSERT INTO tenant_997.tenant_meta_config
+                (tenant_id, page_id, page_name, page_access_token_encrypted, granted_scopes)
+            VALUES (997, 'pg-null', 'PG NULL', :tok, NULL)
+        """), {"tok": b"x"})
+
+    async with pg_conn_scopes.begin():
+        row = (await pg_conn_scopes.execute(text(
+            "SELECT granted_scopes FROM tenant_997.tenant_meta_config WHERE page_id='pg-null'"
+        ))).fetchone()
+
+    assert row is not None
+    parsed, requires_reauth = _eval_requires_reauth(row[0])
+    assert row[0] is None
+    assert parsed is None
+    assert requires_reauth is False
