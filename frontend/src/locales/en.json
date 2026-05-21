@@ -91,6 +91,7 @@
     "signOutTitle": "Sign Out",
     "signOutMessage": "Are you sure you want to sign out? Any unsaved data will be lost.",
     "superAdminMasters": "Central Masters",
+    "superAdminInbound": "Discord Inbound",
     "inventoryVisibility": "Inventory Visibility"
   },
   "login": {
@@ -920,6 +921,37 @@
         "hardStop": "Hard stop on overrun",
         "notifyAdmin": "Notify admin",
         "lastResetAt": "Last reset"
+      }
+    },
+    "inbound": {
+      "title": "Discord Inbound Messages",
+      "subtitle": "Inbound message log from suppliers on Discord. Inspect parse results and approval status.",
+      "noRows": "No inbound messages yet.",
+      "filters": {
+        "status": "Parse status",
+        "statusAny": "All",
+        "search": "Search body",
+        "searchPlaceholder": "Substring of message body..."
+      },
+      "columns": {
+        "receivedAt": "Received at",
+        "supplier": "Supplier",
+        "parseStatus": "Parse status",
+        "preview": "Body preview",
+        "engine": "Engine",
+        "llmCost": "LLM cost"
+      },
+      "parseStatus": {
+        "pending": "Pending",
+        "parsing": "Parsing",
+        "parsed": "Parsed",
+        "parsed_rule_only": "Parsed (rule)",
+        "parsed_llm": "Parsed (LLM)",
+        "unparsed": "Parse failed",
+        "budget_exhausted": "Budget exhausted",
+        "ignored_routing": "Routing unmapped",
+        "approved": "Approved",
+        "rejected": "Rejected"
       }
     }
   },

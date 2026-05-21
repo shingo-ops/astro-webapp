@@ -1,20 +1,57 @@
+"""Discord Bot Gateway client (ADR-009 M3).
+
+Sprint 5 (F5) で M2 から M3 に拡張:
+  - `on_message` を実装し、`public.supplier_discord_routing` で照合した
+    メッセージを `public.discord_inbound_messages` に冪等保存する。
+  - 未登録 guild/channel は `parse_status='ignored_routing'` で保存し、
+    F3 解析は走らせない (AC5.3)。
+  - 登録済の場合は `inventory_parser.parse_inventory_message` を
+    `asyncio.create_task` で fire-and-forget で起動する (spec L157)。
+  - `on_resumed` で、切断中に取り逃したメッセージを REST `channel.history()`
+    で補完取得し、漏れなく `discord_inbound_messages` に追加する (AC5.4)。
+
+参照:
+  - .claude-pipeline/spec.md F5 AC5.1〜5.5
+  - backend/app/discord_gateway/inbound_writer.py (DB I/O ヘルパ)
+"""
+from __future__ import annotations
+
 import asyncio
 import logging
+from typing import Any, Callable
 
 import discord
 
+from app.discord_gateway import inbound_writer
 from app.discord_gateway.config import TenantBotConfig
 
 logger = logging.getLogger(__name__)
 
 
-class JarvisDiscordClient(discord.Client):
-    """ADR-009 M2: Skeleton client。READY と heartbeat のみログ出力する。
+# ---------------------------------------------------------------------------
+# JarvisDiscordClient (M3)
+# ---------------------------------------------------------------------------
 
-    M3 で MESSAGE_CREATE → raw_webhook_events 投入を追加予定。
+
+class JarvisDiscordClient(discord.Client):
+    """ADR-009 M3: MESSAGE_CREATE / RESUMED ハンドラ実装版。
+
+    - on_message:    routing 照合 → 冪等 INSERT → parse タスク投入
+    - on_resumed:    missed messages を REST history で補完
+    - on_disconnect: warning ログのみ（再接続は discord.py に任せる）
     """
 
-    def __init__(self, tenant: TenantBotConfig) -> None:
+    def __init__(
+        self,
+        tenant: TenantBotConfig,
+        *,
+        db_factory: Callable[[], Any] | None = None,
+    ) -> None:
+        """Args:
+            tenant: TenantBotConfig
+            db_factory: AsyncSession factory (テスト時に差し込み可能)。
+                None なら `app.database.AsyncSessionLocal` を遅延 import。
+        """
         intents = discord.Intents.none()
         intents.guilds = True
         intents.guild_messages = True
@@ -23,6 +60,20 @@ class JarvisDiscordClient(discord.Client):
         intents.members = True
         super().__init__(intents=intents)
         self.tenant = tenant
+        self._db_factory_override = db_factory
+        # 補完済 channel_id を記録（resumed で重複補完しないため）
+        self._resumed_completed: set[str] = set()
+
+    # --- helpers ---------------------------------------------------------
+
+    def _db_factory(self) -> Any:
+        if self._db_factory_override is not None:
+            return self._db_factory_override
+        # 遅延 import: 起動時 DB 接続コストを避ける
+        from app.database import AsyncSessionLocal
+        return AsyncSessionLocal
+
+    # --- event handlers --------------------------------------------------
 
     async def on_ready(self) -> None:
         user = self.user
@@ -37,11 +88,18 @@ class JarvisDiscordClient(discord.Client):
         )
 
     async def on_resumed(self) -> None:
+        """切断 → 再接続後の missed messages を補完 (AC5.4)。
+
+        - 全 guild × text channel を走査
+        - 各 channel の MAX(received_at) を取得し、それ以降を REST history で取得
+        - 通常の on_message と同じ経路で処理する（routing 照合 + 冪等 INSERT）
+        """
         logger.info(
-            "[discord-gateway] RESUMED tenant=%s tenant_id=%d",
+            "[discord-gateway] RESUMED tenant=%s tenant_id=%d — fetching missed messages",
             self.tenant.tenant_code,
             self.tenant.tenant_id,
         )
+        await self._resume_missed_messages()
 
     async def on_disconnect(self) -> None:
         logger.warning(
@@ -49,6 +107,125 @@ class JarvisDiscordClient(discord.Client):
             self.tenant.tenant_code,
             self.tenant.tenant_id,
         )
+
+    async def on_message(self, message: discord.Message) -> None:  # type: ignore[override]
+        """MESSAGE_CREATE: routing 照合 → 冪等 INSERT → 解析タスク投入。
+
+        AC5.1: 受信から 5 秒以内に discord_inbound_messages 1 行追加
+        AC5.2: 同一 discord_message_id 2 回 → 1 行のみ
+        AC5.3: routing 未登録 guild → parse_status='ignored_routing'、解析走らない
+        """
+        # Bot 自身 / 他 Bot は無視
+        if getattr(message.author, "bot", False):
+            return
+        # DM (guild=None) は当面 ignored_routing 扱い（仕入元は guild 経由のみ）
+        await self._process_message(message)
+
+    # --- internal --------------------------------------------------------
+
+    async def _process_message(self, message: discord.Message) -> None:
+        payload = inbound_writer.message_to_inbound_payload(message)
+        guild_id = payload["discord_guild_id"]
+        channel_id = payload["discord_channel_id"]
+        msg_id = payload["discord_message_id"]
+        raw = payload["raw_content"]
+        received_at = payload["received_at"]
+
+        db_factory = self._db_factory()
+        async with db_factory() as session:  # type: ignore[misc]
+            routing = None
+            if guild_id and channel_id:
+                routing = await inbound_writer.lookup_routing(
+                    session, guild_id=guild_id, channel_id=channel_id
+                )
+
+            if routing is None:
+                # AC5.3: routing 未登録 → ignored_routing で記録、解析しない
+                ins = await inbound_writer.write_inbound(
+                    session,
+                    discord_message_id=msg_id,
+                    discord_channel_id=channel_id or "",
+                    supplier_id=None,
+                    raw_content=raw,
+                    parse_status="ignored_routing",
+                    received_at=received_at,
+                )
+                if ins.inserted:
+                    logger.info(
+                        "[discord-gateway] ignored_routing tenant=%s msg_id=%s ch=%s",
+                        self.tenant.tenant_code,
+                        msg_id,
+                        channel_id,
+                    )
+                return
+
+            # AC5.1/AC5.2: routing 登録済 → pending で INSERT → 解析投入
+            ins = await inbound_writer.write_inbound(
+                session,
+                discord_message_id=msg_id,
+                discord_channel_id=channel_id,
+                supplier_id=routing.supplier_id,
+                raw_content=raw,
+                parse_status="pending",
+                received_at=received_at,
+            )
+
+        if not ins.inserted:
+            # AC5.2: 既存メッセージ。解析を再投入しない (冪等)
+            logger.debug(
+                "[discord-gateway] duplicate msg_id=%s skip parse task",
+                msg_id,
+            )
+            return
+
+        # 解析タスク投入 (fire-and-forget)
+        assert ins.inbound_id is not None
+        await inbound_writer.schedule_parse(
+            db_factory=db_factory,
+            inbound_id=ins.inbound_id,
+            raw_content=raw,
+            supplier_id=routing.supplier_id,
+            language=routing.default_language,
+            tenant_id=self.tenant.tenant_id,
+        )
+
+    async def _resume_missed_messages(self) -> None:
+        """全 guild × text channel について REST history で補完。"""
+        db_factory = self._db_factory()
+        for guild in self.guilds:
+            for channel in guild.text_channels:
+                ch_id = str(channel.id)
+                try:
+                    async with db_factory() as session:  # type: ignore[misc]
+                        last_at = (
+                            await inbound_writer.get_last_received_at_for_channel(
+                                session, ch_id
+                            )
+                        )
+                    missed = await inbound_writer.fetch_missed_messages(
+                        channel, after=last_at, limit=100
+                    )
+                except asyncio.CancelledError:
+                    raise
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        "[discord-gateway] resume fetch failed tenant=%s ch=%s: %s",
+                        self.tenant.tenant_code,
+                        ch_id,
+                        exc,
+                    )
+                    continue
+                for m in missed:
+                    if getattr(m.author, "bot", False):
+                        continue
+                    try:
+                        await self._process_message(m)
+                    except Exception as exc:  # noqa: BLE001
+                        logger.warning(
+                            "[discord-gateway] resume process failed msg_id=%s: %s",
+                            getattr(m, "id", "?"),
+                            exc,
+                        )
 
 
 _MAX_RECONNECT_ATTEMPTS = 10

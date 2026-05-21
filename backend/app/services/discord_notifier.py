@@ -65,6 +65,11 @@ async def _post_discord_webhook(url: str, content: str) -> bool:
         return False
 
 
+# Sprint 5 (F5) で追加: 連投抑止の de-bounce ウィンドウ (1 時間)。
+# migration 066 で追加した `last_hard_stop_notified_at` を参照。
+_HARD_STOP_NOTIFY_DEBOUNCE_SECONDS = 60 * 60  # 1h
+
+
 async def notify_budget_exhausted(
     db: AsyncSession,
     tenant_id: int,
@@ -76,15 +81,30 @@ async def notify_budget_exhausted(
 
     Returns:
         True : webhook が正常に POST された
-        False: webhook 未設定 or POST 失敗 (log のみ)
+        False: webhook 未設定 / 1h de-bounce で skip / POST 失敗 (log のみ)
 
     AC4.3: budget 超過後の 1 件目で 1 回通知。
+    Sprint 5 申し送り対応: 1h 以内の再通知は skip (PR #517 Reviewer 指摘)。
+        migration 066 で `last_hard_stop_notified_at` 列を追加し、
+        UPDATE ... WHERE last_hard_stop_notified_at IS NULL
+                       OR last_hard_stop_notified_at < NOW() - INTERVAL '1 hour'
+        RETURNING tenant_id で「row が返ったら今回が通知タイミング」と判定。
+        並列実行されても DB レベルで 1 行だけ RETURNING されるため race-free。
     """
     url = _get_webhook_url()
     if not url:
         logger.info(
             "[discord_notifier] ADMIN_NOTIFICATION_DISCORD_WEBHOOK 未設定、"
             "tenant_id=%s の予算超過通知を skip",
+            tenant_id,
+        )
+        return False
+
+    # 1h de-bounce: 行を UPDATE して RETURNING で「今回通知すべきか」を判定
+    debounce_ok = await _try_debounce_acquire(db, tenant_id)
+    if not debounce_ok:
+        logger.info(
+            "[discord_notifier] tenant_id=%s の予算超過通知は de-bounce 内 (1h) で skip",
             tenant_id,
         )
         return False
@@ -105,7 +125,68 @@ async def notify_budget_exhausted(
             "[discord_notifier] budget exhausted notification sent for tenant_id=%s",
             tenant_id,
         )
+    else:
+        # POST 失敗時は de-bounce ロックを解除（次回再試行可能にする）
+        await _release_debounce(db, tenant_id)
     return ok
+
+
+async def _try_debounce_acquire(db: AsyncSession, tenant_id: int) -> bool:
+    """1h de-bounce の lock 取得を atomic に試みる。
+
+    成功すると `last_hard_stop_notified_at = NOW()` で UPDATE され True を返す。
+    1h 以内に既に通知済の場合は WHERE 条件で更新されず False を返す。
+    """
+    try:
+        result = await db.execute(
+            text(
+                """
+                UPDATE public.tenant_llm_budgets
+                   SET last_hard_stop_notified_at = NOW()
+                 WHERE tenant_id = :tid
+                   AND (last_hard_stop_notified_at IS NULL
+                        OR last_hard_stop_notified_at <
+                           NOW() - make_interval(secs => :secs))
+                RETURNING tenant_id
+                """
+            ),
+            {"tid": tenant_id, "secs": _HARD_STOP_NOTIFY_DEBOUNCE_SECONDS},
+        )
+        row = result.first()
+        await db.commit()
+        return row is not None
+    except Exception as exc:  # noqa: BLE001
+        # 列未マイグレーション (migration 066 適用前) は素通しにして従来動作維持
+        logger.warning(
+            "[discord_notifier] de-bounce lookup failed, fallthrough: %s", exc
+        )
+        try:
+            await db.rollback()
+        except Exception:  # noqa: BLE001
+            pass
+        return True
+
+
+async def _release_debounce(db: AsyncSession, tenant_id: int) -> None:
+    """POST 失敗時に de-bounce ロックを解除（次回再試行可能にする）。"""
+    try:
+        await db.execute(
+            text(
+                """
+                UPDATE public.tenant_llm_budgets
+                   SET last_hard_stop_notified_at = NULL
+                 WHERE tenant_id = :tid
+                """
+            ),
+            {"tid": tenant_id},
+        )
+        await db.commit()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[discord_notifier] de-bounce release failed: %s", exc)
+        try:
+            await db.rollback()
+        except Exception:  # noqa: BLE001
+            pass
 
 
 async def _resolve_tenant_code(db: AsyncSession, tenant_id: int) -> str:
