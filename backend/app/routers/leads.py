@@ -39,7 +39,10 @@ _LEAD_COLUMNS = """
     id, lead_code, customer_name, company_name, email, phone,
     source, type, status, temperature, estimated_scale, customer_type,
     response_speed, monthly_forecast, prospect_rank, assigned_to,
-    converted_deal_id, notes, created_at, updated_at
+    converted_deal_id, notes, created_at, updated_at,
+    next_action, next_action_date, challenge, meeting_memo, meeting_impression,
+    cs_memo, sales_form, competitor_check, per_order_amount, monthly_frequency,
+    english_name
 """
 
 _UPDATABLE_COLUMNS = {

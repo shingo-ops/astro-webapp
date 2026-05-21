@@ -6,11 +6,9 @@
  *   2026-04-16: 初版作成（Phase 1）
  *   2026-04-25: Phase 1-B-2 Step 5c-3 — 案件化モーダルの顧客セレクタを
  *     CompanyContactSelector（company + contact）に置換。
- *   2026-05-21: ADR-059 — すべて/新規/既存/アーカイブ タブを追加
  */
 
 import { useCallback, useEffect, useState, FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
@@ -68,156 +66,12 @@ const emptyForm: FormState = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Existing tab — simple customer list                                  */
-/* ------------------------------------------------------------------ */
-
-interface CustomerSimple {
-  id: number;
-  customer_code: string;
-  company_name: string | null;
-  billing_display_name: string | null;
-  status: string;
-}
-
-function ExistingTabContent() {
-  const { t } = useTranslation();
-  const [customers, setCustomers] = useState<CustomerSimple[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const load = useCallback(() => {
-    api.get<CustomerSimple[]>("/customers")
-      .then(setCustomers)
-      .catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")))
-      .finally(() => setLoading(false));
-  }, [t]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const displayName = (c: CustomerSimple) =>
-    c.billing_display_name || c.company_name || c.customer_code;
-
-  if (loading) return <div className="loading">{t("common.loading")}</div>;
-  if (error) return <div className="error-message">{error}</div>;
-
-  return (
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>{t("common.code")}</th>
-          <th>{t("customers.title")}</th>
-          <th>{t("customers.companyName")}</th>
-          <th>{t("common.status")}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {customers.map((c) => (
-          <tr key={c.id}>
-            <td className="mono">{c.customer_code}</td>
-            <td>{displayName(c)}</td>
-            <td>{c.company_name || "-"}</td>
-            <td>{c.status}</td>
-          </tr>
-        ))}
-        {customers.length === 0 && (
-          <tr><td colSpan={4} className="empty">{t("customers.noCustomers")}</td></tr>
-        )}
-      </tbody>
-    </table>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Archive tab — leads archives only                                    */
-/* ------------------------------------------------------------------ */
-
-interface Archive {
-  id: number;
-  source_table: string;
-  source_id: number;
-  archived_by: number | null;
-  archived_at: string;
-  restored_at: string | null;
-}
-
-function ArchiveTabContent() {
-  const { t } = useTranslation();
-  const { hasPermission } = usePermissions();
-  const [archives, setArchives] = useState<Archive[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const load = useCallback(() => {
-    setLoading(true);
-    api.get<Archive[]>("/archives?source_table=leads")
-      .then(setArchives)
-      .catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")))
-      .finally(() => setLoading(false));
-  }, [t]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const restore = async (id: number) => {
-    try {
-      await api.post(`/archives/${id}/restore`, {});
-      load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("common.operationError"));
-    }
-  };
-
-  if (loading) return <div className="loading">{t("common.loading")}</div>;
-  if (error) return <div className="error-message">{error}</div>;
-
-  return (
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>{t("common.type")}</th>
-          <th>{t("archives.sourceId")}</th>
-          <th>{t("common.date")}</th>
-          <th>{t("archives.restoredAt")}</th>
-          <th>{t("common.actions")}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {archives.map((a) => (
-          <tr key={a.id}>
-            <td>{a.source_table}</td>
-            <td>{a.source_id}</td>
-            <td>{new Date(a.archived_at).toLocaleDateString()}</td>
-            <td>{a.restored_at ? new Date(a.restored_at).toLocaleDateString() : "-"}</td>
-            <td className="actions">
-              {!a.restored_at && hasPermission("archive.manage") && (
-                <button className="btn-sm btn-primary" onClick={() => restore(a.id)}>
-                  {t("archives.restore")}
-                </button>
-              )}
-              {a.restored_at && <span className="badge badge-won">{t("archives.restored")}</span>}
-            </td>
-          </tr>
-        ))}
-        {archives.length === 0 && (
-          <tr><td colSpan={5} className="empty">{t("common.noData")}</td></tr>
-        )}
-      </tbody>
-    </table>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Main LeadsPage                                                       */
 /* ------------------------------------------------------------------ */
 
 export default function LeadsPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const VALID_TABS = ["all", "new", "existing", "archive"] as const;
-  const rawTab = searchParams.get("tab") || "all";
-  const activeTab = VALID_TABS.includes(rawTab as (typeof VALID_TABS)[number]) ? rawTab : "all";
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
@@ -259,9 +113,7 @@ export default function LeadsPage() {
   const loadLeads = useCallback(async () => {
     setLoading(true);
     try {
-      // tab=new のとき「新規」ステータスでプリセット
-      const effectiveFilter = activeTab === "new" ? "新規" : statusFilter;
-      const params = effectiveFilter ? `?status=${encodeURIComponent(effectiveFilter)}` : "";
+      const params = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "";
       const data = await api.get<Lead[]>(`/leads${params}`);
       setLeads(data);
     } catch (e) {
@@ -269,13 +121,11 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, statusFilter, t]);
+  }, [statusFilter, t]);
 
   useEffect(() => {
-    if (activeTab === "all" || activeTab === "new") {
-      loadLeads();
-    }
-  }, [activeTab, statusFilter, loadLeads]);
+    loadLeads();
+  }, [loadLeads]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -386,214 +236,179 @@ export default function LeadsPage() {
     return <span className={`badge ${colorMap[rank] || ""}`}>{rank}</span>;
   };
 
-  const tabs = [
-    { key: "all", label: t("leads.tabAll") },
-    { key: "new", label: t("leads.tabNew") },
-    { key: "existing", label: t("leads.tabExisting") },
-    { key: "archive", label: t("leads.tabArchive") },
-  ];
-
-  const isLeadsTab = activeTab === "all" || activeTab === "new";
-
   return (
     <div className="page">
       <div className="page-header">
         <h2>{t("leads.title")}</h2>
-        {isLeadsTab && hasPermission("leads.create") && (
+        {hasPermission("leads.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("leads.newLead")}</button>
         )}
       </div>
 
-      {/* Tab navigation */}
-      <div className="lead-tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            className={`lead-tab-btn${activeTab === tab.key ? " active" : ""}`}
-            onClick={() => setSearchParams({ tab: tab.key })}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="filter-bar">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="">{t("leads.allStatuses")}</option>
+          {LEAD_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
       </div>
 
-      {/* Tab: all / new — leads list */}
-      {isLeadsTab && (
-        <>
-          <div className="filter-bar">
-            {activeTab === "all" && (
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                <option value="">{t("leads.allStatuses")}</option>
-                {LEAD_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            )}
+      {error && <div className="error-message">{error}</div>}
+
+      {showForm && (
+        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{editId ? t("leads.editLead") : t("leads.newLeadTitle")}</h3>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group"><label>{t("leads.customerName")} *</label>
+                <input required value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} />
+              </div>
+              <div className="form-group"><label>{t("leads.companyName")}</label>
+                <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
+              </div>
+              <div className="form-group"><label>{t("leads.email")}</label>
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="form-group"><label>{t("leads.phone")}</label>
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <div className="form-group"><label>{t("leads.source")}</label>
+                <input placeholder={t("leads.sourcePlaceholder")} value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
+              </div>
+              <div className="form-group"><label>{t("leads.type")}</label>
+                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                  <option value="">{t("common.notSet")}</option>
+                  <option value="Inbound">{t("leads.type_inbound")}</option>
+                  <option value="Outbound">{t("leads.type_outbound")}</option>
+                </select>
+              </div>
+              <div className="form-group"><label>{t("leads.status")}</label>
+                <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                  {LEAD_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="form-group"><label>{t("leads.temperature")}</label>
+                <select value={form.temperature} onChange={(e) => setForm({ ...form, temperature: e.target.value })}>
+                  <option value="">{t("common.notSet")}</option>
+                  <option value="Hot">{t("leads.temp_hot")}</option>
+                  <option value="Warm">{t("leads.temp_warm")}</option>
+                  <option value="Cold">{t("leads.temp_cold")}</option>
+                </select>
+              </div>
+              <div className="form-group"><label>{t("leads.estimatedScale")}</label>
+                <select value={form.estimated_scale} onChange={(e) => setForm({ ...form, estimated_scale: e.target.value })}>
+                  <option value="">{t("common.notSet")}</option>
+                  <option value="Small">{t("leads.scale_small")}</option>
+                  <option value="Medium">{t("leads.scale_medium")}</option>
+                  <option value="Large">{t("leads.scale_large")}</option>
+                </select>
+              </div>
+              <div className="form-group"><label>{t("leads.customerType")}</label>
+                <select value={form.customer_type} onChange={(e) => setForm({ ...form, customer_type: e.target.value })}>
+                  <option value="">{t("common.notSet")}</option>
+                  <option value="信頼重視">{t("leads.customerType_trust")}</option>
+                  <option value="価格重視">{t("leads.customerType_price")}</option>
+                </select>
+              </div>
+              <div className="form-group"><label>{t("leads.responseSpeed")}</label>
+                <select value={form.response_speed} onChange={(e) => setForm({ ...form, response_speed: e.target.value })}>
+                  <option value="">{t("common.notSet")}</option>
+                  <option value="24h以内">{t("leads.responseSpeed_24h")}</option>
+                  <option value="3日以内">{t("leads.responseSpeed_3days")}</option>
+                  <option value="3日超">{t("leads.responseSpeed_over3days")}</option>
+                </select>
+              </div>
+              <div className="form-group"><label>{t("leads.monthlyForecast")}</label>
+                <input type="number" min="0" step="1" value={form.monthly_forecast} onChange={(e) => setForm({ ...form, monthly_forecast: e.target.value })} />
+              </div>
+              <div className="form-group"><label>{t("leads.notes")}</label>
+                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              </div>
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{editId ? t("common.update") : t("common.register")}</button>
+              </div>
+            </form>
           </div>
-
-          {error && <div className="error-message">{error}</div>}
-
-          {showForm && (
-            <div className="modal-overlay" onClick={() => setShowForm(false)}>
-              <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <h3>{editId ? t("leads.editLead") : t("leads.newLeadTitle")}</h3>
-                <form onSubmit={handleSubmit}>
-                  <div className="form-group"><label>{t("leads.customerName")} *</label>
-                    <input required value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>{t("leads.companyName")}</label>
-                    <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>{t("leads.email")}</label>
-                    <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>{t("leads.phone")}</label>
-                    <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>{t("leads.source")}</label>
-                    <input placeholder={t("leads.sourcePlaceholder")} value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>{t("leads.type")}</label>
-                    <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                      <option value="">{t("common.notSet")}</option>
-                      <option value="Inbound">{t("leads.type_inbound")}</option>
-                      <option value="Outbound">{t("leads.type_outbound")}</option>
-                    </select>
-                  </div>
-                  <div className="form-group"><label>{t("leads.status")}</label>
-                    <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                      {LEAD_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group"><label>{t("leads.temperature")}</label>
-                    <select value={form.temperature} onChange={(e) => setForm({ ...form, temperature: e.target.value })}>
-                      <option value="">{t("common.notSet")}</option>
-                      <option value="Hot">{t("leads.temp_hot")}</option>
-                      <option value="Warm">{t("leads.temp_warm")}</option>
-                      <option value="Cold">{t("leads.temp_cold")}</option>
-                    </select>
-                  </div>
-                  <div className="form-group"><label>{t("leads.estimatedScale")}</label>
-                    <select value={form.estimated_scale} onChange={(e) => setForm({ ...form, estimated_scale: e.target.value })}>
-                      <option value="">{t("common.notSet")}</option>
-                      <option value="Small">{t("leads.scale_small")}</option>
-                      <option value="Medium">{t("leads.scale_medium")}</option>
-                      <option value="Large">{t("leads.scale_large")}</option>
-                    </select>
-                  </div>
-                  <div className="form-group"><label>{t("leads.customerType")}</label>
-                    <select value={form.customer_type} onChange={(e) => setForm({ ...form, customer_type: e.target.value })}>
-                      <option value="">{t("common.notSet")}</option>
-                      <option value="信頼重視">{t("leads.customerType_trust")}</option>
-                      <option value="価格重視">{t("leads.customerType_price")}</option>
-                    </select>
-                  </div>
-                  <div className="form-group"><label>{t("leads.responseSpeed")}</label>
-                    <select value={form.response_speed} onChange={(e) => setForm({ ...form, response_speed: e.target.value })}>
-                      <option value="">{t("common.notSet")}</option>
-                      <option value="24h以内">{t("leads.responseSpeed_24h")}</option>
-                      <option value="3日以内">{t("leads.responseSpeed_3days")}</option>
-                      <option value="3日超">{t("leads.responseSpeed_over3days")}</option>
-                    </select>
-                  </div>
-                  <div className="form-group"><label>{t("leads.monthlyForecast")}</label>
-                    <input type="number" min="0" step="1" value={form.monthly_forecast} onChange={(e) => setForm({ ...form, monthly_forecast: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>{t("leads.notes")}</label>
-                    <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-                  </div>
-                  <div className="form-actions">
-                    <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
-                    <button type="submit" className="btn-primary">{editId ? t("common.update") : t("common.register")}</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {convertTarget && (
-            <div className="modal-overlay" onClick={closeConvert}>
-              <div className="modal" onClick={(e) => e.stopPropagation()}>
-                <h3>{t("leads.convertLead")}</h3>
-                <p>{t("leads.title")} <strong>{convertTarget.customer_name}</strong> {t("leads.convertConfirm")}</p>
-                <form onSubmit={performConvert}>
-                  <CompanyContactSelector
-                    value={{ companyId: convertCompanyId, contactId: convertContactId }}
-                    onChange={({ companyId, contactId }) => {
-                      setConvertCompanyId(companyId);
-                      setConvertContactId(contactId);
-                    }}
-                    required
-                    error={convertSelectorError}
-                  />
-                  <div className="form-group"><label>{t("leads.dealTitle")} *</label>
-                    <input required value={convertForm.title} onChange={(e) => setConvertForm({ ...convertForm, title: e.target.value })} />
-                  </div>
-                  <div className="form-group"><label>{t("leads.dealAmount")}</label>
-                    <input type="number" min="0" step="1" value={convertForm.amount} onChange={(e) => setConvertForm({ ...convertForm, amount: e.target.value })} />
-                  </div>
-                  <div className="form-actions">
-                    <button type="button" className="btn-secondary" onClick={closeConvert}>{t("common.cancel")}</button>
-                    <button type="submit" className="btn-primary">{t("leads.convert")}</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {loading ? (
-            <div className="loading">{t("common.loading")}</div>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>{t("leads.code")}</th>
-                  <th>{t("leads.customerName")}</th>
-                  <th>{t("leads.companyName")}</th>
-                  <th>{t("leads.status")}</th>
-                  <th>{t("leads.temperature")}</th>
-                  <th>{t("leads.prospectRank")}</th>
-                  <th>{t("leads.actions")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leads.map((l) => (
-                  <tr key={l.id}>
-                    <td className="mono">{l.lead_code || "-"}</td>
-                    <td>{l.customer_name}</td>
-                    <td>{l.company_name || "-"}</td>
-                    <td><span className={`badge lead-badge-${l.status}`}>{translateLeadStatus(l.status)}</span></td>
-                    <td>{l.temperature || "-"}</td>
-                    <td>{rankBadge(l.prospect_rank)}</td>
-                    <td className="actions">
-                      {hasPermission("leads.update") && <button className="btn-sm" onClick={() => handleEdit(l)}>{t("common.edit")}</button>}
-                      {hasPermission("leads.convert") && l.status !== "案件化" && (
-                        <button className="btn-sm btn-primary" onClick={() => setConvertTarget(l)}>{t("leads.convert")}</button>
-                      )}
-                      {hasPermission("leads.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(l)}>{t("common.delete")}</button>}
-                    </td>
-                  </tr>
-                ))}
-                {leads.length === 0 && <tr><td colSpan={7} className="empty">{t("leads.noLeads")}</td></tr>}
-              </tbody>
-            </table>
-          )}
-
-          <ConfirmModal
-            open={!!deleteTarget}
-            title={t("leads.deleteLead")}
-            message={<><strong>{deleteTarget?.customer_name}</strong> {t("leads.deleteConfirm")}<br />{t("common.irreversible")}</>}
-            confirmLabel={t("common.delete")}
-            danger
-            onConfirm={performDelete}
-            onCancel={() => setDeleteTarget(null)}
-          />
-        </>
+        </div>
       )}
 
-      {/* Tab: existing */}
-      {activeTab === "existing" && <ExistingTabContent />}
+      {convertTarget && (
+        <div className="modal-overlay" onClick={closeConvert}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{t("leads.convertLead")}</h3>
+            <p>{t("leads.title")} <strong>{convertTarget.customer_name}</strong> {t("leads.convertConfirm")}</p>
+            <form onSubmit={performConvert}>
+              <CompanyContactSelector
+                value={{ companyId: convertCompanyId, contactId: convertContactId }}
+                onChange={({ companyId, contactId }) => {
+                  setConvertCompanyId(companyId);
+                  setConvertContactId(contactId);
+                }}
+                required
+                error={convertSelectorError}
+              />
+              <div className="form-group"><label>{t("leads.dealTitle")} *</label>
+                <input required value={convertForm.title} onChange={(e) => setConvertForm({ ...convertForm, title: e.target.value })} />
+              </div>
+              <div className="form-group"><label>{t("leads.dealAmount")}</label>
+                <input type="number" min="0" step="1" value={convertForm.amount} onChange={(e) => setConvertForm({ ...convertForm, amount: e.target.value })} />
+              </div>
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={closeConvert}>{t("common.cancel")}</button>
+                <button type="submit" className="btn-primary">{t("leads.convert")}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-      {/* Tab: archive */}
-      {activeTab === "archive" && <ArchiveTabContent />}
+      {loading ? (
+        <div className="loading">{t("common.loading")}</div>
+      ) : (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>{t("leads.code")}</th>
+              <th>{t("leads.customerName")}</th>
+              <th>{t("leads.companyName")}</th>
+              <th>{t("leads.status")}</th>
+              <th>{t("leads.temperature")}</th>
+              <th>{t("leads.prospectRank")}</th>
+              <th>{t("leads.actions")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {leads.map((l) => (
+              <tr key={l.id}>
+                <td className="mono">{l.lead_code || "-"}</td>
+                <td>{l.customer_name}</td>
+                <td>{l.company_name || "-"}</td>
+                <td><span className={`badge lead-badge-${l.status}`}>{translateLeadStatus(l.status)}</span></td>
+                <td>{l.temperature || "-"}</td>
+                <td>{rankBadge(l.prospect_rank)}</td>
+                <td className="actions">
+                  {hasPermission("leads.update") && <button className="btn-sm" onClick={() => handleEdit(l)}>{t("common.edit")}</button>}
+                  {hasPermission("leads.convert") && l.status !== "案件化" && (
+                    <button className="btn-sm btn-primary" onClick={() => setConvertTarget(l)}>{t("leads.convert")}</button>
+                  )}
+                  {hasPermission("leads.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(l)}>{t("common.delete")}</button>}
+                </td>
+              </tr>
+            ))}
+            {leads.length === 0 && <tr><td colSpan={7} className="empty">{t("leads.noLeads")}</td></tr>}
+          </tbody>
+        </table>
+      )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title={t("leads.deleteLead")}
+        message={<><strong>{deleteTarget?.customer_name}</strong> {t("leads.deleteConfirm")}<br />{t("common.irreversible")}</>}
+        confirmLabel={t("common.delete")}
+        danger
+        onConfirm={performDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

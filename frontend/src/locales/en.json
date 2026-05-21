@@ -56,7 +56,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "leads": "Leads",
-    "leadChat": "Lead Chat",
+    "leadChat": "Inbox",
     "newLeads": "New Leads",
     "routeCustomers": "Route Customers",
     "companies": "Client Profiles",
@@ -191,7 +191,18 @@
     "tabAll": "All",
     "tabNew": "New",
     "tabExisting": "Existing",
-    "tabArchive": "Archive"
+    "tabArchive": "Archive",
+    "nextAction": "Next Action",
+    "nextActionDate": "Next Action Date",
+    "challenge": "Challenges & Needs",
+    "meetingMemo": "Meeting Memo",
+    "meetingImpression": "Meeting Impression",
+    "csMemo": "CS Memo",
+    "salesForm": "Sales Form",
+    "competitorCheck": "Competitor Check",
+    "perOrderAmount": "Per Order Amount",
+    "monthlyFrequency": "Monthly Frequency",
+    "englishName": "English Name"
   },
   "customers": {
     "title": "Customers",
@@ -317,7 +328,18 @@
     "windowOpen": "Messaging window open",
     "noLead": "Lead not found.",
     "lead": "Lead",
-    "unread": "unread"
+    "unread": "unread",
+    "tabAll": "All",
+    "tabLeads": "Leads",
+    "tabConverted": "Converted",
+    "tabCustomers": "Customers",
+    "viewLead": "View Lead",
+    "loadingProfile": "Loading...",
+    "sectionContact": "Contact",
+    "sectionDeal": "Deal Info",
+    "sectionNextAction": "Next Action",
+    "sectionChallenge": "Challenges & Needs",
+    "sectionMemo": "Memo"
   },
   "channels": {
     "title": "Channels (Meta integration)",
