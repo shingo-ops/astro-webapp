@@ -400,24 +400,36 @@ const INBOX_STYLES = `
   overflow-y: auto;
 }
 
-/* 会話アイテム — Meta実測: padding=12px 0 12px 12px, h~90px */
+/* 会話アイテム — Meta実測: padding=12px 0 12px 12px, h=92px, borderなし */
 .conv-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 12px 12px 12px;
+  padding: 12px 0 12px 12px;
   width: 100%;
+  min-height: 92px;
   border: none;
-  border-bottom: 1px solid var(--inbox-separator);
   background: transparent;
   cursor: pointer;
   text-align: left;
   transition: background 0.1s;
   font-family: inherit;
   box-sizing: border-box;
+  position: relative;
 }
-.conv-item:hover { background: rgb(241, 244, 247); }
-.conv-item.selected { background: #e1edf7; }
+/* Meta実測: hover/selected = rgba(0,0,0,0.05) オーバーレイ */
+.conv-item:hover { background: rgba(0, 0, 0, 0.05); }
+.conv-item.selected { background: rgba(0, 0, 0, 0.05); }
+/* Meta実測: 選択中インジケータ = 2px右端ストリップ rgb(24,118,242) */
+.conv-item.selected::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgb(24, 118, 242);
+}
 
 /* アバター */
 .conv-avatar-wrap {
@@ -455,17 +467,20 @@ const INBOX_STYLES = `
   align-items: baseline;
   gap: 6px;
 }
+/* Meta実測: 名前 14px/fw400(既読)/fw700(未読) / color=rgb(28,43,51) */
 .conv-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 400;
+  color: rgb(28, 43, 51);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.conv-name.unread { font-weight: 700; }
+/* Meta実測: 時刻 12px / color=rgb(70,90,105) */
 .conv-time {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 12px;
+  color: rgb(70, 90, 105);
   flex-shrink: 0;
 }
 .conv-preview {
@@ -474,17 +489,18 @@ const INBOX_STYLES = `
   gap: 6px;
   margin-top: 2px;
 }
+/* Meta実測: プレビュー 12px/fw400/rgb(70,90,105)(既読) / fw700/rgb(28,43,51)(未読) */
 .conv-preview-text {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 12px;
+  color: rgb(70, 90, 105);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
 }
 .conv-preview-text.unread {
-  color: var(--text-primary);
-  font-weight: 600;
+  color: rgb(28, 43, 51);
+  font-weight: 700;
 }
 .conv-unread-badge {
   background: var(--accent);
@@ -548,23 +564,26 @@ const INBOX_STYLES = `
 .inbox-msg-row { display: flex; }
 .inbox-msg-row.outbound { justify-content: flex-end; }
 .inbox-msg-row.inbound { justify-content: flex-start; }
+/* Meta実測: バブル 16px / padding=8px 12px */
 .msg-bubble {
   max-width: 70%;
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.45;
   word-break: break-word;
   white-space: pre-wrap;
 }
+/* Meta実測: outbound bg=rgb(139,46,245) / br=20.8px(全角均一・tailなし) */
 .msg-bubble.outbound {
   background: var(--bubble-outbound-bg);
   color: #fff;
-  border-radius: 18px 18px 4px 18px;
+  border-radius: 20.8px;
 }
+/* Meta実測: inbound bg=rgb(239,239,239) / color=black / br=20.8px 20.8px 20.8px 4.8px(左下=tail) */
 .msg-bubble.inbound {
   background: var(--bubble-inbound-bg);
-  color: var(--text-primary);
-  border-radius: 18px 18px 18px 4px;
+  color: rgb(0, 0, 0);
+  border-radius: 20.8px 20.8px 20.8px 4.8px;
 }
 .msg-bubble.failed {
   background: var(--danger-bg);
@@ -580,9 +599,8 @@ const INBOX_STYLES = `
 }
 .msg-time.inbound { text-align: left; }
 
-/* 送信エリア */
+/* 送信エリア — Meta実測: border-topなし */
 .inbox-send-area {
-  border-top: 1px solid var(--border);
   padding: 10px 16px;
   flex-shrink: 0;
   background: var(--bg-surface);
@@ -661,18 +679,19 @@ const INBOX_STYLES = `
   flex-direction: column;
   align-items: center;
 }
+/* Meta実測: 右パネルアバター 52×52px */
 .right-panel-avatar {
-  width: 72px;
-  height: 72px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: var(--bg-hover);
   color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   user-select: none;
 }
 .right-panel-name {
@@ -723,19 +742,20 @@ const INBOX_STYLES = `
   font-weight: 500;
   word-break: break-word;
 }
+/* Meta実測: プロフィールを見る = <a>タグ, bg=transparent, color=rgb(10,120,190), fs=14px, fw=400, br=0 */
 .right-panel-link {
-  margin-top: 20px;
+  margin: 12px 0 16px;
   display: inline-block;
-  padding: 8px 20px;
-  border-radius: 20px;
-  background: var(--link-active-bg);
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgb(10, 120, 190);
+  font-size: 14px;
+  font-weight: 400;
   text-decoration: none;
-  transition: background 0.1s;
+  transition: opacity 0.1s;
 }
-.right-panel-link:hover { background: var(--link-active-bg-hover); }
+.right-panel-link:hover { opacity: 0.75; }
 .right-panel-empty {
   display: flex;
   align-items: center;
