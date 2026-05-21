@@ -15,17 +15,14 @@ import os
 # app.database が import される前に DATABASE_URL を SQLite に差し替える
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
-# Sprint 2 Reviewer Minor (PR #510 follow-up):
-#   多くの実 PG テスト (test_super_admin_*.py / test_tenant_admin_*.py /
-#   test_inventory_sprint1_migrations.py 等) は TEST_PG_URL で skip 判定するが、
-#   CI workflow は RLS_TEST_DATABASE_URL のみ export しているため
-#   Sprint 2 で追加された 12 件のテストが本来動くはずの環境でも全 skip
-#   されていた。
-#   各テスト側の `os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")`
-#   パターンに加え、ここでも env を補完して保険を入れる。
-#   (CI workflow 側にも TEST_PG_URL の明示 export を追加してある二段構え)
-if not os.getenv("TEST_PG_URL") and os.getenv("RLS_TEST_DATABASE_URL"):
-    os.environ["TEST_PG_URL"] = os.environ["RLS_TEST_DATABASE_URL"]
+# Sprint 2 Reviewer Out-of-scope #1 (PR #510 follow-up) は別 Issue で起票推奨。
+# 本 PR では各テスト側 (test_super_admin_*.py / test_tenant_admin_*.py 等) で
+#   os.getenv("TEST_PG_URL") or os.getenv("RLS_TEST_DATABASE_URL")
+# の alias パターンに統一する方針 (各 test の skipif で対応済)。
+# ここで env 補完 (TEST_PG_URL := RLS_TEST_DATABASE_URL) すると、
+# 以前 skip されていた inventory 系テストが PG migration / seed 未投入の
+# CI 環境で大量に失敗するため、env 補完は CI への migration 適用とセットで
+# 別 PR で扱う。本 PR では各 test 側の or 連結のみで前進する。
 
 from unittest.mock import patch
 
