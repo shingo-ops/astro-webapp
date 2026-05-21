@@ -19,7 +19,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, Package, FileText, BarChart2,
   HelpCircle, Settings, MoreHorizontal, ChevronDown,
-  Search, LogOut, ShieldCheck,
+  Search, LogOut, ShieldCheck, MessageSquare,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
@@ -198,7 +198,7 @@ export default function Layout() {
                   to="/lead-chat"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><Users size={20} /></span>
+                  <span className="sidebar-icon"><MessageSquare size={20} /></span>
                   <span className="sidebar-label">{t("nav.leadChat")}</span>
                 </NavLink>
               )}
