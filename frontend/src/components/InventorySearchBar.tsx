@@ -157,7 +157,15 @@ export default function InventorySearchBar({
         setZeroStockWarning("");
       }
       onSelect(c);
+      // 候補確定後は listbox を閉じ、入力欄もリセットして次の検索に備える。
+      // (Major F3 fix) query を残したまま閉じると、同一キーワードで再検索した時に
+      //   React の controlled value 同値判定で onChange / useEffect が発火せず
+      //   listbox が再 open できないため、明示的に空文字へ戻す。
       setOpen(false);
+      setQuery("");
+      setResults([]);
+      setActiveIndex(-1);
+      lastQueryRef.current = "";
     },
     [onSelect, t],
   );
