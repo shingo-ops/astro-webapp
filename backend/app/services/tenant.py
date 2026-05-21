@@ -1033,7 +1033,9 @@ CREATE TABLE IF NOT EXISTS {schema}.meta_messages (
     platform    VARCHAR(20) NOT NULL DEFAULT 'messenger',
     sender_id   VARCHAR(100) NOT NULL,
     sender_name VARCHAR(200),
-    message_id  VARCHAR(100),
+    -- ADR-026 / migration 052: Instagram の mid は 157 文字に達するため TEXT を使う。
+    -- 既存テナントは migration 052 で TEXT 化済 → 新規テナント provisioning も整合させる。
+    message_id  TEXT,
     message_text TEXT,
     direction   VARCHAR(10) NOT NULL DEFAULT 'inbound',
     raw_payload JSONB,
