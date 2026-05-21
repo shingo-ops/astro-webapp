@@ -109,10 +109,57 @@ SUPPLIER_ALIASES: dict[int, list[str]] = {
 }
 
 
-async def _ensure_inventory_schema(conn) -> None:
-    """migrations 056-058 が適用済か確認。未適用なら適用する（idempotent）。"""
-    from sqlalchemy import text
+def _split_sql_preserving_do_blocks(sql: str) -> list[str]:
+    """SQL を ; で split しつつ、DO $$ ... $$ や $tag$ ... $tag$ ブロックは丸ごと保持する。
 
+    scripts/migrate_inventory_sprint1.py / test_inventory_sprint1_migrations.py
+    と同じロジック（重複コード回避のため inline、外部 import 依存を持たない）。
+    """
+    statements: list[str] = []
+    buf: list[str] = []
+    i = 0
+    in_dollar = False
+    dollar_tag = ""
+    while i < len(sql):
+        if sql[i] == "$":
+            j = i + 1
+            while j < len(sql) and (sql[j].isalnum() or sql[j] == "_"):
+                j += 1
+            if j < len(sql) and sql[j] == "$":
+                tag = sql[i : j + 1]
+                if not in_dollar:
+                    in_dollar = True
+                    dollar_tag = tag
+                elif tag == dollar_tag:
+                    in_dollar = False
+                    dollar_tag = ""
+                buf.append(tag)
+                i = j + 1
+                continue
+        ch = sql[i]
+        if ch == ";" and not in_dollar:
+            statements.append("".join(buf))
+            buf = []
+            i += 1
+            continue
+        buf.append(ch)
+        i += 1
+    if buf:
+        statements.append("".join(buf))
+    return statements
+
+
+async def _ensure_inventory_schema(engine) -> None:
+    """migrations 056-058 が適用済か確認。未適用なら適用する（idempotent）。
+
+    asyncpg の prepared statement は複数 SQL command を 1 つの execute に渡せないため、
+    DO ブロックを保護した split で 1 文ずつ exec する。
+    すべての statement は CREATE TABLE IF NOT EXISTS / CREATE INDEX IF NOT EXISTS /
+    冪等な DO $$ ... $$ なので、複数回実行しても安全。
+
+    各 statement を独立した transaction で実行することで、
+    既存テーブルへの制約再付与等で失敗した時に後続の statement が止まらないようにする。
+    """
     MIGRATIONS_DIR = pathlib.Path(__file__).parents[2] / "migrations"
     needed = [
         "056_add_suppliers_type_and_promote_public.sql",
@@ -121,24 +168,17 @@ async def _ensure_inventory_schema(conn) -> None:
     ]
     for fn in needed:
         sql = (MIGRATIONS_DIR / fn).read_text("utf-8")
-        # 単純に複数 statement を流すために exec_driver_sql を使う
-        # CREATE TABLE IF NOT EXISTS で冪等性確保
-        # 1 文ずつ split できない DO ブロックがあるため、まとめて投入を試みる
-        # 失敗時は statement ごとに分解（test_inventory_sprint1_migrations と同手法）
-        try:
-            await conn.exec_driver_sql(sql)
-        except Exception:
-            # DO ブロック保護つきの split を使う
-            from backend.tests.test_inventory_sprint1_migrations import (  # type: ignore
-                _split_sql_preserving_do_blocks,
-            )
-            for stmt in _split_sql_preserving_do_blocks(sql):
-                stmt = stmt.strip()
-                if stmt:
-                    try:
-                        await conn.exec_driver_sql(stmt)
-                    except Exception:
-                        pass
+        for stmt in _split_sql_preserving_do_blocks(sql):
+            stmt = stmt.strip()
+            if not stmt:
+                continue
+            try:
+                async with engine.begin() as conn:
+                    await conn.exec_driver_sql(stmt)
+            except Exception:
+                # 冪等な migration なので、既存オブジェクトへの操作失敗は無視。
+                # 次の statement で recover される。
+                pass
 
 
 async def _seed_supplier_with_aliases(
@@ -214,8 +254,8 @@ async def test_ac3_2_parse_real_supplier_sample(engine, fixture_samples, sample_
     from sqlalchemy.orm import sessionmaker
 
     AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    await _ensure_inventory_schema(engine)
     async with engine.begin() as conn:
-        await _ensure_inventory_schema(conn)
         supplier_id = await _seed_supplier_with_aliases(
             conn, supplier_code, sample["supplier_name"], alias_texts
         )
@@ -261,8 +301,8 @@ async def test_ac3_2_db_wrapper_loads_aliases_and_rules(engine):
     AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     supplier_code = "TEST-AC3-2-WRAPPER"
 
+    await _ensure_inventory_schema(engine)
     async with engine.begin() as conn:
-        await _ensure_inventory_schema(conn)
         supplier_id = await _seed_supplier_with_aliases(
             conn, supplier_code, "AC3.2 DB wrapper test", ["ムニキスゼロ"]
         )
@@ -296,8 +336,8 @@ async def test_ac3_3_idempotency_real_db(engine, fixture_samples):
     raw_content = sample_path.read_text(encoding="utf-8")
 
     supplier_code = "TEST-AC3-3-IDEMP"
+    await _ensure_inventory_schema(engine)
     async with engine.begin() as conn:
-        await _ensure_inventory_schema(conn)
         supplier_id = await _seed_supplier_with_aliases(
             conn, supplier_code, "AC3.3 idempotency test", SUPPLIER_ALIASES[1]
         )
@@ -329,8 +369,8 @@ async def test_ac3_4_unparsed_classification_real_db(engine):
     AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     supplier_code = "TEST-AC3-4-UNPARSED"
 
+    await _ensure_inventory_schema(engine)
     async with engine.begin() as conn:
-        await _ensure_inventory_schema(conn)
         supplier_id = await _seed_supplier_with_aliases(
             conn, supplier_code, "AC3.4 unparsed test", ["既知商品A"]
         )
