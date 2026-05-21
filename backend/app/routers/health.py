@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 
@@ -50,15 +51,19 @@ async def health_check(db: AsyncSession = Depends(get_db)):
         checks["redis"] = "disconnected"
 
     # ── Celery チェック（degraded 扱い、timeout=2秒）────
+    # control.ping() は同期ブロッキング呼び出しのため asyncio.to_thread で実行する
     try:
         celery_broker = os.getenv("CELERY_BROKER_URL", "")
         if celery_broker:
             from app.celery_app import celery_app
-            result_inspect = celery_app.control.ping(timeout=2)
+            result_inspect = await asyncio.wait_for(
+                asyncio.to_thread(celery_app.control.ping),
+                timeout=2.0,
+            )
             checks["celery"] = "connected" if result_inspect else "no_workers"
         else:
             checks["celery"] = "not_configured"
-    except Exception as e:
+    except (asyncio.TimeoutError, Exception) as e:
         logger.warning("Health check: celery failed - %s", e)
         checks["celery"] = "disconnected"
 

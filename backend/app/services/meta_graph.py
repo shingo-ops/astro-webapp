@@ -235,7 +235,12 @@ async def _request(
         # 613=Calls to this API have exceeded the rate limit, 17=User rate limit）
         # または HTTP 429 の場合は MetaGraphRateLimitError を raise する
         if response.status_code == 429 or error_code in MetaGraphRateLimitError.RATE_LIMIT_CODES:
-            raise MetaGraphRateLimitError(message, **common_kwargs)
+            # Retry-After ヘッダーが存在すれば秒数として渡す
+            retry_after: Optional[int] = None
+            raw_retry = response.headers.get("Retry-After")
+            if raw_retry and raw_retry.isdigit():
+                retry_after = int(raw_retry)
+            raise MetaGraphRateLimitError(message, retry_after=retry_after, **common_kwargs)
         raise MetaGraphAPIError(message, **common_kwargs)
 
     if response.status_code >= 400:

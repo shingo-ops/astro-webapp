@@ -1006,10 +1006,10 @@ async def send_lead_message(
                 "meta_error": e.to_audit_dict(),
             },
         )
-        detail: dict = {"detail": "Meta APIのレート制限に達しました"}
+        rate_detail: dict = {"message": "Meta APIのレート制限に達しました"}
         if e.retry_after:
-            detail["retry_after"] = e.retry_after
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=detail)
+            rate_detail["retry_after"] = e.retry_after
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=rate_detail)
     except MetaGraphTimeoutError as e:
         logger.warning("Meta Send API timeout for lead %s: %s", lead_id, e)
         await _record_send_audit_safely(

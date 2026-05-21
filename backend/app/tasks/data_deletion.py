@@ -75,10 +75,10 @@ def _delete_meta_messages_in_tenant(session, schema: str, sender_id: str) -> int
     name="app.tasks.data_deletion.process_data_deletion",
     max_retries=3,
     default_retry_delay=60,
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_backoff_max=300,
-    retry_jitter=True,
+    # autoretry_for は意図的に設定しない:
+    # process_data_deletion は status='processing' への更新→削除→完了の状態遷移を持ち、
+    # 途中失敗後の自動リトライは二重削除のリスクがある（冪等性未保証）。
+    # 再試行はオペレーターが手動で行うか、status ガードを追加した後に有効化すること。
 )
 def process_data_deletion(request_id: str) -> dict:
     """
