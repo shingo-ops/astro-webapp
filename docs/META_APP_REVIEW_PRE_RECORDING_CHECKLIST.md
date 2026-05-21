@@ -2,10 +2,11 @@
 
 | 項目 | 内容 |
 |---|---|
-| ステータス | Sprint 7 完成版 |
+| ステータス | v1.1（ADR-041 で 6→7 permission に拡張、tenant_006 撮影テナント運用反映） |
 | 作成日 | 2026-04-30 |
+| 最終更新 | 2026-05-21 |
 | 対象 | スクリーンキャスト撮影者（しんごさん想定） |
-| 関連 | `META_APP_REVIEW_SCREENCAST_SCRIPT.md`, `PHASE_1D_META_INBOX_OVERVIEW.md` |
+| 関連 | `meta-app-review/META_APP_REVIEW_SCREENCAST_SCRIPT.md` (v3.1), `PHASE_1D_META_INBOX_OVERVIEW.md`, ADR-041 / ADR-045 |
 
 > このチェックリストは撮影開始前に **すべて ✅** にしないと撮影本番に入らないこと。1 つでも未対応だと撮影やり直しになる可能性大。
 
@@ -67,10 +68,10 @@
 - [ ] Object: `instagram` で subscribe 済（Sprint 6 で対応）
 - [ ] Subscription Fields (page): `messages`, `messaging_postbacks`, `messaging_optins`, `message_deliveries`, `message_reads`
 - [ ] Subscription Fields (instagram): `messages`, `messaging_postbacks`
-- [ ] Callback URL: `https://salesanchor.jp/api/v1/webhook/messenger`（既存）
+- [ ] Callback URL: `https://api.salesanchor.jp/api/v1/webhook/messenger`（Phase 5 で `api.salesanchor.jp` サブドメインに切替済）
 - [ ] Verify Token: `META_VERIFY_TOKEN` と VPS 設定値が一致
 
-### A-4. Permission 申請対象
+### A-4. Permission 申請対象（7 permission — ADR-041 で `business_management` 追加）
 
 - [ ] `pages_show_list`（Standard、即承認）
 - [ ] `pages_manage_metadata`（Standard）
@@ -78,26 +79,32 @@
 - [ ] `pages_read_engagement`（Advanced、要審査）
 - [ ] `instagram_basic`（Advanced、要審査）
 - [ ] `instagram_manage_messages`（Advanced、要審査）
+- [ ] `business_management`（Advanced、要審査）— **Business Manager 経由で管理する Page を `/me/businesses` から取得するために必須**
 
 各 Permission について、Use Case Description が記載済（Master Checklist v1.1 §A）。
 
-### A-5. Test Mode テストユーザー
+**実装上の正準リスト**: `backend/app/routers/meta_inbox.py` の `_OAUTH_SCOPE`（変更時は本リストと同期）。
 
-- [ ] Test User 1（Page Admin 用）: `Test Page Admin User` 作成済
-  - Email: 任意の Test User Email
-  - 役割: Page Admin
-- [ ] Test User 2（Page Fan / Sender 用）: `Test Sender User` 作成済
-  - Email: 任意
-  - Page と関係なし（過去履歴クリーン）
-- [ ] Test Page: `HIGH LIFE JPN Test Page` 作成済（Test User 1 が Admin）
-- [ ] Test Instagram Business Account: `@highlifejpn_test` 作成済
-  - Test Page にリンク済（Page Roles → Instagram Account Linking）
+> ⚠️ **既存接続テナント**（ADR-041 以前に 6 permission で接続済）には UI に「再認証してください」バナーが出る（`granted_scopes` に `business_management` を含まない接続が判定対象）。撮影テナントは A-5 の新規接続で 7 permission をすべて取得すること。
+
+### A-5. 撮影用 Facebook / Instagram アカウント
+
+> ADR-028 以降、撮影は **専用テナント `tenant_006` (tenant-review)** で実施する。本番テナント（`tenant_004` highlife-jpn）には触らない。
+
+- [ ] **Facebook Page**: `Shingo Tanizawa` Page（しんごさん個人運用、Business Manager 配下）
+  - Page ID: `664490526747447`
+  - Admin: しんごさん（Business Manager Admin 必須 — `business_management` scope で取得するため）
+- [ ] **Instagram Business Account**: `@treasureislandjapan`
+  - IG ID: `17841466869358023`
+  - 上記 Page にリンク済（Meta Business Suite → Instagram → アカウントの連携）
+- [ ] **Sender 用アカウント**（撮影で DM を送る側）: しんごさんの私用 FB/IG アカウント or テスト用アカウント。撮影テナントの Page と過去履歴がないアカウント推奨
+- [ ] **Business Manager Admin 権限**: OAuth 同意画面で `business_management` を許可するには接続者が Business Manager の Admin である必要あり。`review@salesanchor.jp` でログイン後の OAuth ボタン押下時は **しんごさん自身の Facebook セッション** で同意する流れ（forced_account_switch 注意 → D-2 参照）
 
 ---
 
 ## B. VPS 環境変数 / コンテナ稼働確認
 
-### B-1. .env 設定値（VPS `/home/ubuntu/jarvis/.env`）
+### B-1. .env 設定値（VPS `/home/ubuntu/salesanchor/.env`）
 
 - [ ] `METADATA_FERNET_KEY=<32 bytes urlsafe base64>` 注入済（Bitwarden に同値あり）
 - [ ] `META_APP_ID=<App ID>` 注入済
@@ -114,7 +121,7 @@
 ```bash
 # VPS 側
 ssh ubuntu@49.212.137.46
-cd /home/ubuntu/jarvis
+cd /home/ubuntu/salesanchor
 
 # 全コンテナ Healthy 確認
 docker compose ps
@@ -140,16 +147,22 @@ docker compose exec backend curl -s http://localhost:8000/openapi.json | jq '.pa
 ### B-3. Migration 適用確認
 
 ```bash
-# VPS 側
-docker compose exec postgres psql -U myapp_user -d myapp_db \
-  -c "SELECT schemaname, tablename FROM pg_tables WHERE tablename IN ('tenant_meta_config', 'meta_messages') ORDER BY schemaname;"
+# VPS 側（撮影テナント tenant_006 を確認）
+docker compose exec postgres psql -U jarvis -d jarvis_db \
+  -c "SELECT schemaname, tablename FROM pg_tables WHERE tablename IN ('tenant_meta_config', 'meta_messages') AND schemaname IN ('tenant_006','tenant_004') ORDER BY schemaname;"
 
-# tenant_004 の tenant_meta_config と meta_messages 両方が並ぶことを確認
+# tenant_006 / tenant_004 両方で tenant_meta_config と meta_messages が並ぶことを確認
+
+# tenant_006 の tenant_meta_config に granted_scopes 列があるか（ADR-041 / migration 055）
+docker compose exec postgres psql -U jarvis -d jarvis_db \
+  -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='tenant_006' AND table_name='tenant_meta_config' AND column_name IN ('granted_scopes','scope_count') ORDER BY column_name;"
 ```
 
 期待:
-- `tenant_004.tenant_meta_config` あり（migration 040）
+- `tenant_006.tenant_meta_config` / `tenant_006.meta_messages` あり（migration 040〜041、ADR-045 で新規テナント自動適用）
+- `tenant_006.tenant_meta_config` に `granted_scopes` (jsonb) と `scope_count` (int) 列あり（migration 055）
 - `tenant_004.meta_messages` の `recipient_id`, `messaging_type`, `message_tag`, `sent_by_staff_id`, `error_code`, `error_message`, `message_id`, `seen_at`, `seen_by_staff_id` 列あり（migration 041）
+- `tenant_004.meta_messages.message_id` が `text` 型（ADR-026 / migration 052 で IG 157 文字対応）
 - `public.permissions` に `channels.view`, `channels.manage`, `messaging.view`, `messaging.send` の 4 件 + Owner/Admin role に付与あり（migration 042）
 
 ### B-4. Webhook 受信疎通
@@ -167,23 +180,26 @@ docker compose logs backend | grep -i "webhook" | tail -20
 
 ## C. テストアカウント / テストデータ準備
 
-### C-1. Sales Anchor アカウント
+### C-1. Sales Anchor アカウント（撮影テナント tenant_006）
 
-- [ ] `review@salesanchor.jp` (Owner ロール) を本番 DB に作成済
+- [ ] `review@salesanchor.jp` (Owner ロール) を `tenant_006.staff` に作成済（ADR-028 `setup_review_tenant.py` で投入）
   ```sql
   -- VPS 上の psql で
   -- 既存 staff の場合は確認のみ
-  SELECT id, email, role_id FROM tenant_004.staff WHERE email = 'review@salesanchor.jp';
+  SELECT id, email, role_id FROM tenant_006.staff WHERE email = 'review@salesanchor.jp';
   ```
-- [ ] パスワードを Bitwarden に保管
-- [ ] Firebase Auth で同 Email を 1 アカウント作成 + 当該 staff_id と紐付け済
+- [ ] パスワードを Bitwarden に保管（**注意**: 過去 setup ではコンテナ `/tmp` 保存で再起動消失リスクあり。今後の setup は Bitwarden 永続保管必須）
+- [ ] Firebase Auth で同 Email を 1 アカウント作成 + 当該 `tenant_006.staff.id` と紐付け済
+- [ ] tenant_006 ログイン後の URL 末尾が `?tenant_code=tenant-review` 等で識別できることを確認
 
-### C-2. Test Facebook Page / IG
+### C-2. Facebook Page / IG 接続
 
 - [ ] A-5 完了済
-- [ ] Test User 1 で `https://app.salesanchor.jp/channels` から OAuth 通しが成功する（リハ済）
-  - 失敗ケース: redirect_uri 不一致 / scope 不一致 / state 期限切れ
-- [ ] Test Page の `subscribed_apps` に App が登録済（OAuth 成功時に自動）
+- [ ] `review@salesanchor.jp` ログイン後、`https://app.salesanchor.jp/channels` で 7 permission OAuth 通しが成功する（リハ済）
+  - **失敗ケース**: redirect_uri 不一致 / scope 不一致 / state 期限切れ / `forced_account_switch`（既存 FB セッションが別アカウント → D-2 別プロファイル分離で回避）/ Business Manager Admin 未付与
+  - 接続成功時、`/channels` に Page カードが Active 表示され `IG linked='@treasureislandjapan'` / `scope_count=7` / `has_business_management=True` を満たす
+- [ ] Page の `subscribed_apps` に App が登録済（OAuth 成功時に自動）
+- [ ] tenant_006 に既存の inactive レコード（過去 6 permission 接続分など）がある場合、撮影で映る場合は事前に整理判断（Channels ページに残る場合あり）
 
 ### C-3. 24h 経過済会話の準備（シーン 7 用）
 
@@ -204,7 +220,7 @@ docker compose logs backend | grep -i "webhook" | tail -20
 
 ```sql
 -- 撮影直前に当該 lead の最新 inbound created_at を 25h 前に書き換え
-UPDATE tenant_004.meta_messages
+UPDATE tenant_006.meta_messages  -- 撮影テナント
 SET created_at = NOW() - INTERVAL '25 hours'
 WHERE lead_id = <target_lead_id> AND direction = 'inbound'
 ORDER BY id DESC LIMIT 1;
@@ -238,6 +254,7 @@ ORDER BY id DESC LIMIT 1;
 - [ ] ズーム 100%（Cmd+0）
 - [ ] DevTools 閉じる
 - [ ] 履歴・自動入力候補をクリア（撮影中に Email 候補ポップアップを防ぐ）
+- [ ] **既存 Facebook セッションは事前ログアウト** — OAuth で `forced_account_switch` 画面を回避するため、撮影プロファイルにはしんごさんの FB アカウント（Business Manager Admin 持ち）でログイン状態を作っておく
 - [ ] 開く必要のあるタブ:
   - Sales Anchor (`https://app.salesanchor.jp/login`)
   - Messenger Web (`https://www.messenger.com`)
@@ -296,10 +313,15 @@ ORDER BY id DESC LIMIT 1;
 |---|---|
 | Webhook 着信が遅い | docker compose logs backend で 502 / 429 がないか確認、polling 周期を一時的に 5s に短縮（撮影後戻す） |
 | OAuth で `URL_NOT_REGISTERED` | A-2 redirect_uri を再確認 |
-| OAuth で `Permissions Error` | A-4 Permission 申請 status 確認 |
+| OAuth で `Permissions Error` | A-4 Permission 申請 status 確認、特に `business_management` が承認/取得済か |
+| OAuth で `Security token mismatch` | フロー途中離脱の signal、再試行で解消することが多い |
+| OAuth で `forced_account_switch` 画面 | 既存 FB セッションと別アカウントで OAuth 必要 → D-2 別 Chrome プロファイル分離で回避 |
+| Page カードに「再認証してください」バナー | `granted_scopes` に `business_management` を含まない（ADR-041 以前の接続）→ 新規 OAuth でやり直し |
+| Page 一覧に対象 Page が出ない | BM Admin でないか、`business_management` 拒否、または FB 側 Page Role 未付与 |
 | Page Access Token 復号失敗 | METADATA_FERNET_KEY が VPS と DB で一致しているか確認 |
 | Inbox 描画崩れ | ブラウザのズームを 100% に戻す、ハードリロード (Cmd+Shift+R) |
 | 24h 経過会話がない | C-3 の手順で前日に DM 送信、または DB 操作（推奨しない） |
+| Meta UI の Webhooks「テスト」ボタンが効かない | Meta UI 側の CSP バグ。Graph API Explorer か Live フローで疎通確認（撮影には影響しない） |
 
 ### E-3. リハ完了基準
 
@@ -344,11 +366,12 @@ ORDER BY id DESC LIMIT 1;
 
 ## I. 撮影後フォロー
 
-- [ ] 撮影で投入した Test Mode の `subscribed_apps` を切断（`/channels` で「切断」ボタン）
+- [ ] 撮影で投入した `subscribed_apps` を切断（`/channels` で「切断」ボタン）— **撮影テナント tenant_006 限定**、本番 tenant_004 は無関係
 - [ ] 撮影で送受信したテスト DM を DB から削除（任意）
   ```sql
-  -- 撮影日に作った meta_messages を削除
-  DELETE FROM tenant_004.meta_messages WHERE created_at >= 'YYYY-MM-DD' AND lead_id IN (<test_lead_ids>);
+  -- 撮影日に作った meta_messages を削除（tenant_006）
+  DELETE FROM tenant_006.meta_messages WHERE created_at >= 'YYYY-MM-DD' AND lead_id IN (<test_lead_ids>);
   ```
 - [ ] 24h 経過用に作った lead の archive
 - [ ] 撮影記録を `docs/INTERNAL_TEST_RECORD.md` の形式で残す（任意）
+- [ ] **本番 tenant_004 (highlife-jpn) の再認証バナーテスト**は別途実施（granted_scopes 6 permission の既存接続が判定通り再認証要求されるか）
