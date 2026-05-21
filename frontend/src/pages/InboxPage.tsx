@@ -1,36 +1,24 @@
 /**
- * Inbox ページ（Phase 1-D Sprint 4 / Sprint 5）。
+ * Inbox ページ（Phase 1-D Sprint 4 / Sprint 5 / Sprint 6 redesign）。
  *
- * 既存 `/lead-chat` の ComingSoonPage を置き換える。Messenger / Instagram の
- * メッセージ表示 + 返信送信を担当する 2 ペイン構成。
- *
- * 仕様: spec §5-3 / §5-4 / §5-5 / §5-6 / §7-2
- *
- * 主な機能:
- *  - 左ペイン: GET /api/v1/conversations の会話リスト
- *      - platform フィルタ（all / messenger / instagram）
- *      - unread_only トグル
- *      - 最新メッセージ要約 + 未読バッジ + 相対時刻
- *  - 右ペイン: 選択中 lead の GET /api/v1/leads/{id}/messages
- *      - direction で吹き出し位置切替（inbound 左 / outbound 右）
- *      - 24h messaging window のバナー（緑/黄/赤）
- *      - 返信送信フォーム（Sprint 5 で追加）
- *          - Enter で送信、Shift+Enter で改行
- *          - 送信中 loading、成功で textarea クリア + メッセージ再取得
- *          - 7d 超過時は disabled、24h-7d 時は HUMAN_AGENT 注記
- *      - lead 切替時に POST /messages/mark-read で既読化
- *  - 10 秒 polling（会話リスト + 選択中メッセージ）
- *  - URL ?lead_id=XXX で deep link
+ * Meta Business Suite 風の 3 カラムレイアウト。
  *
  * 変更履歴:
  *   2026-04-30: Sprint 4 初版（送信ボタン disabled）
  *   2026-04-30: Sprint 5 — lib/messages.ts ヘルパ経由に切替 + 送信機能 enable
+ *   2026-05-21: Sprint 6 — Meta Business Suite 風 UI に全面再設計
+ *       - 3 カラムレイアウト（左: 会話リスト, 中央: メッセージ, 右: 顧客カルテ）
+ *       - All / New / Existing / Archive タブ（lead_status ベース）
+ *       - プラットフォームフィルタをピル型に変更
+ *       - イニシャルアバター + プラットフォームドット
+ *       - バブルデザイン: outbound 紫(#7C3AED) / inbound グレー(#E4E6EB)
+ *       - 右パネル: GET /leads/{id} で顧客詳細を表示
  */
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
-import { ApiError } from "../lib/api";
+import { api, ApiError } from "../lib/api";
 import {
   Conversation,
   MessagesResponse,
@@ -49,6 +37,33 @@ import {
 // ---------------------------------------------------------------------------
 
 const POLL_INTERVAL_MS = 10_000;
+
+// ---------------------------------------------------------------------------
+// リードステータス分類定数
+// ---------------------------------------------------------------------------
+
+const NEW_STATUSES = [
+  "新規", "コンタクト中", "AI対応中", "提案中",
+  "追客（短期）", "追客（長期）", "保留", "失注", "対象外",
+];
+const EXISTING_STATUSES = ["既存顧客", "案件化"];
+
+type LeadStatusFilter = "all" | "new" | "existing" | "archive";
+
+// ---------------------------------------------------------------------------
+// LeadDetail 型（GET /leads/{id} のレスポンス）
+// ---------------------------------------------------------------------------
+
+interface LeadDetail {
+  id: number;
+  lead_code: string | null;
+  customer_name: string;
+  company_name: string | null;
+  email: string | null;
+  phone: string | null;
+  status: string;
+  temperature: string | null;
+}
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -86,18 +101,494 @@ function formatAbsolute(iso: string | null): string {
   });
 }
 
+/** イニシャルアバター文字（最大 2 文字）。 */
+function getInitials(name: string | null | undefined): string {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+/** プラットフォームのグラデーション背景（ドット用）。 */
+function platformGradient(platform: string | null): string {
+  if (platform === "messenger") {
+    return "linear-gradient(90deg, #08f, #a033ff 55.81%, #ff5c87 109.33%)";
+  }
+  if (platform === "instagram") {
+    return "linear-gradient(135deg, #ffd600, #ff7a00, #ff0169, #d300c5 75%)";
+  }
+  return "#999";
+}
+
 // Phase 1-E F24-S5: lib/messages.ts の libPlatformLabel に集約。後方互換のため alias 維持。
 const platformLabel = libPlatformLabel;
 
-function platformBadgeStyle(p: string | null): React.CSSProperties {
-  if (p === "messenger") {
-    return { background: "#E7F3FF", color: "#0866FF", borderColor: "#0866FF" };
-  }
-  if (p === "instagram") {
-    return { background: "#FCE3F0", color: "#C13584", borderColor: "#C13584" };
-  }
-  return { background: "#eee", color: "#666", borderColor: "#999" };
+// ---------------------------------------------------------------------------
+// グローバルスタイル（<style> タグ経由で挿入）
+// ---------------------------------------------------------------------------
+
+const INBOX_STYLES = `
+/* ======= Inbox Meta Design ======= */
+.inbox-page {
+  display: flex;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+  font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #E9EBEE;
 }
+
+/* ---- 左パネル ---- */
+.inbox-left-panel {
+  width: 340px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid #dadde1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* リードステータスタブ */
+.inbox-lead-tabs {
+  display: flex;
+  border-bottom: 1px solid #dadde1;
+  background: #fff;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.inbox-lead-tab {
+  flex: 1;
+  height: 48px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: #65676B;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.1s, border-color 0.1s;
+}
+.inbox-lead-tab:hover {
+  color: #0064E0;
+  background: rgba(0, 0, 0, 0.03);
+}
+.inbox-lead-tab.active {
+  color: #0064E0;
+  border-bottom-color: #0064E0;
+}
+
+/* 検索エリア */
+.inbox-search-area {
+  padding: 8px 12px 4px;
+  flex-shrink: 0;
+}
+.inbox-search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: none;
+  background: #F0F2F5;
+  font-size: 14px;
+  color: #1c1e21;
+  outline: none;
+  box-sizing: border-box;
+}
+.inbox-search-input::placeholder {
+  color: #65676B;
+}
+
+/* プラットフォームフィルタバー */
+.inbox-platform-bar {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px 8px;
+  border-bottom: 1px solid #dadde1;
+  align-items: center;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.inbox-platform-tab {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid #dadde1;
+  font-size: 12px;
+  background: transparent;
+  color: #65676B;
+  cursor: pointer;
+  transition: all 0.1s;
+  font-family: inherit;
+}
+.inbox-platform-tab.active {
+  background: #E7F3FF;
+  color: #0866FF;
+  border-color: #0866FF;
+  font-weight: 600;
+}
+.inbox-unread-check {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #65676B;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* 会話リスト */
+.inbox-conversation-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 会話アイテム */
+.conv-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #F0F2F5;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.conv-item:hover { background: rgba(0, 0, 0, 0.04); }
+.conv-item.selected { background: #E7F3FF; }
+
+/* アバター */
+.conv-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.conv-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #E4E6EB;
+  color: #1c1e21;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  user-select: none;
+}
+.conv-platform-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+/* 会話情報 */
+.conv-info { flex: 1; min-width: 0; }
+.conv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+.conv-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1c1e21;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.conv-time {
+  font-size: 11px;
+  color: #65676B;
+  flex-shrink: 0;
+}
+.conv-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+.conv-preview-text {
+  font-size: 13px;
+  color: #65676B;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.conv-preview-text.unread {
+  color: #1c1e21;
+  font-weight: 600;
+}
+.conv-unread-badge {
+  background: #1877F2;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ---- 中央パネル ---- */
+.inbox-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  min-width: 0;
+}
+.inbox-center-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #dadde1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.inbox-center-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1c1e21;
+  margin: 0;
+}
+.inbox-platform-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.inbox-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inbox-msg-row { display: flex; }
+.inbox-msg-row.outbound { justify-content: flex-end; }
+.inbox-msg-row.inbound { justify-content: flex-start; }
+.msg-bubble {
+  max-width: 70%;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.msg-bubble.outbound {
+  background: #7C3AED;
+  color: #fff;
+  border-radius: 18px 18px 4px 18px;
+}
+.msg-bubble.inbound {
+  background: #E4E6EB;
+  color: #1c1e21;
+  border-radius: 18px 18px 18px 4px;
+}
+.msg-bubble.failed {
+  background: #fdecea;
+  color: #a50e0e;
+  border: 2px solid #a50e0e;
+  border-radius: 12px;
+}
+.msg-time {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 4px;
+  text-align: right;
+}
+.msg-time.inbound { text-align: left; }
+
+/* 送信エリア */
+.inbox-send-area {
+  border-top: 1px solid #dadde1;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  background: #fff;
+}
+.inbox-textarea {
+  width: 100%;
+  border: 1px solid #dadde1;
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-size: 14px;
+  resize: none;
+  font-family: inherit;
+  outline: none;
+  background: #F0F2F5;
+  color: #1c1e21;
+  box-sizing: border-box;
+  line-height: 1.4;
+}
+.inbox-textarea:focus { border-color: #0866FF; background: #fff; }
+.inbox-textarea:disabled { background: #F0F2F5; cursor: not-allowed; }
+.inbox-send-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.inbox-send-btn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  background: #0866FF;
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.inbox-send-btn:hover:not(:disabled) { background: #0756d6; }
+.inbox-send-btn:disabled {
+  background: #E4E6EB;
+  color: #65676B;
+  cursor: not-allowed;
+}
+
+/* 空状態 */
+.inbox-empty-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #65676B;
+  font-size: 15px;
+  gap: 12px;
+}
+.inbox-empty-icon { font-size: 48px; }
+
+/* ---- 右パネル ---- */
+.inbox-right-panel {
+  width: 300px;
+  flex-shrink: 0;
+  background: #fff;
+  border-left: 1px solid #dadde1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+.right-panel-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #E4E6EB;
+  color: #1c1e21;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  user-select: none;
+}
+.right-panel-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1c1e21;
+  text-align: center;
+  margin: 0;
+}
+.right-panel-code {
+  font-size: 12px;
+  color: #65676B;
+  margin-top: 4px;
+  text-align: center;
+}
+.right-panel-status {
+  margin-top: 10px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: #E7F3FF;
+  color: #0866FF;
+  font-size: 12px;
+  font-weight: 600;
+}
+.right-panel-section {
+  width: 100%;
+  margin-top: 20px;
+}
+.right-panel-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid #F0F2F5;
+}
+.right-panel-label {
+  font-size: 11px;
+  color: #65676B;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.right-panel-value {
+  font-size: 13px;
+  color: #1c1e21;
+  font-weight: 500;
+  word-break: break-word;
+}
+.right-panel-link {
+  margin-top: 20px;
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 20px;
+  background: #E7F3FF;
+  color: #0866FF;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.1s;
+}
+.right-panel-link:hover { background: #d0e8ff; }
+.right-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #65676B;
+  font-size: 14px;
+  text-align: center;
+  padding: 16px;
+}
+
+/* エラー・ローディング */
+.inbox-error-banner {
+  padding: 8px 12px;
+  background: #fdecea;
+  color: #a50e0e;
+  border: 1px solid #f5c2c2;
+  border-radius: 8px;
+  font-size: 13px;
+  margin: 8px 12px;
+}
+.inbox-send-error {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #a50e0e;
+  border: 1px solid #f5c2c2;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+`;
 
 // ---------------------------------------------------------------------------
 // メイン
@@ -111,29 +602,39 @@ export default function InboxPage() {
     ? Number(initialLeadIdRaw)
     : null;
 
+  // 会話リスト
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [convLoading, setConvLoading] = useState(true);
   const [convError, setConvError] = useState("");
+
+  // フィルタ
+  const [leadStatusFilter, setLeadStatusFilter] = useState<LeadStatusFilter>("all");
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
-  // Phase 1-E F14-S5: Page フィルタ（複数 Page 接続時の絞り込み）
-  // 空文字 = "すべての Page"。URL ?page_id= でも初期値を読み取る
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Phase 1-E F14-S5: Page フィルタ
   const initialPageId = searchParams.get("page_id") || "";
   const [pageIdFilter, setPageIdFilter] = useState<string>(initialPageId);
-  // 会話一覧から自動抽出した既知の page_id 集合（フィルタなしの結果から作る）
   const [availablePageIds, setAvailablePageIds] = useState<string[]>([]);
 
+  // 選択中会話
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(initialLeadId);
   const [messagesData, setMessagesData] = useState<MessagesResponse | null>(null);
   const [msgLoading, setMsgLoading] = useState(false);
   const [msgError, setMsgError] = useState("");
 
+  // 右パネル (顧客カルテ)
+  const [leadDetail, setLeadDetail] = useState<LeadDetail | null>(null);
+
   // 入力欄
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
-  // メッセージ末尾への自動スクロール用 ref
+
+  // スクロール用 ref
   const messageListRef = useRef<HTMLDivElement | null>(null);
+  const skipNextPollRef = useRef(false);
 
   // ---------------------------------------------------------------------------
   // データ取得
@@ -142,7 +643,6 @@ export default function InboxPage() {
   const loadConversations = useCallback(async () => {
     setConvError("");
     try {
-      // Phase 1-E F14-S5: page_id フィルタは backend へ転送
       const data = await listConversations({
         platform: platformFilter,
         unread_only: unreadOnly,
@@ -159,21 +659,20 @@ export default function InboxPage() {
     }
   }, [platformFilter, unreadOnly, pageIdFilter]);
 
-  // Phase 1-E F14-S5: ドロップダウン用に既知 page_id 一覧を初回のみ取得
-  // フィルタ変更で選択肢が消えないよう、無条件・フィルタなしの fetch を使う
+  // Page ID ドロップダウン用（フィルタなしで初回取得）
   useEffect(() => {
     let cancelled = false;
-    listConversations({}).then(data => {
+    listConversations({}).then((data) => {
       if (cancelled) return;
       const ids = Array.from(
         new Set(
           (data.conversations || [])
-            .map(c => c.page_id)
+            .map((c) => c.page_id)
             .filter((p): p is string => !!p),
         ),
       ).sort();
       setAvailablePageIds(ids);
-    }).catch(() => {/* ドロップダウンは無くても致命的ではないので無視 */});
+    }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -198,17 +697,25 @@ export default function InboxPage() {
     }
   }, []);
 
+  const loadLeadDetail = useCallback(async (leadId: number) => {
+    try {
+      const data = await api.get<LeadDetail>(`/leads/${leadId}`);
+      setLeadDetail(data);
+    } catch {
+      setLeadDetail(null);
+    }
+  }, []);
+
   const markRead = useCallback(async (leadId: number) => {
     try {
       const res = await apiMarkRead(leadId);
-      // ローカル状態の unread_count も即座に 0 にする
       if (res.marked_count > 0) {
-        setConversations(prev =>
-          prev.map(c => c.lead_id === leadId ? { ...c, unread_count: 0 } : c)
+        setConversations((prev) =>
+          prev.map((c) => c.lead_id === leadId ? { ...c, unread_count: 0 } : c)
         );
       }
     } catch {
-      // 既読化失敗は致命的では無いので無視（次回再試行）
+      // 既読化失敗は致命的ではないので無視
     }
   }, []);
 
@@ -222,11 +729,8 @@ export default function InboxPage() {
   }, [loadConversations]);
 
   // ---------------------------------------------------------------------------
-  // 10s polling（会話リスト + 選択中メッセージ）
-  // Phase 1-E F13-S5: 送信成功直後の loadMessages と polling の二重取得を回避するため、
-  // 送信時に skipNextPollRef = true を立て、次の 1 回だけ polling を skip する
+  // 10s polling
   // ---------------------------------------------------------------------------
-  const skipNextPollRef = useRef(false);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -243,23 +747,22 @@ export default function InboxPage() {
   }, [loadConversations, loadMessages, selectedLeadId]);
 
   // ---------------------------------------------------------------------------
-  // lead 選択時 → メッセージ取得 + 既読化 + URL クエリ反映
+  // lead 選択時 → メッセージ取得 + 既読化 + URL 更新 + 右パネル
   // ---------------------------------------------------------------------------
 
   const selectLead = useCallback((leadId: number) => {
     setSelectedLeadId(leadId);
     setDraft("");
     setSendError("");
-    // URL クエリ反映（deep link 維持）
     const params = new URLSearchParams(searchParams);
     params.set("lead_id", String(leadId));
     setSearchParams(params, { replace: true });
   }, [searchParams, setSearchParams]);
 
-  // Phase 1-E F14-S5: Page フィルタ変更時に URL を更新
   const onPageFilterChange = useCallback((value: string) => {
     setPageIdFilter(value);
     setSelectedLeadId(null);
+    setLeadDetail(null);
     const params = new URLSearchParams(searchParams);
     if (value) {
       params.set("page_id", value);
@@ -273,30 +776,57 @@ export default function InboxPage() {
   useEffect(() => {
     if (selectedLeadId === null) {
       setMessagesData(null);
+      setLeadDetail(null);
       return;
     }
     loadMessages(selectedLeadId);
-    // 既読マーク（fire-and-forget）
     markRead(selectedLeadId);
-  }, [selectedLeadId, loadMessages, markRead]);
+    loadLeadDetail(selectedLeadId);
+  }, [selectedLeadId, loadMessages, markRead, loadLeadDetail]);
 
-  // メッセージリスト読み込み完了後、最下部にスクロール
+  // メッセージリスト末尾へ自動スクロール
   useEffect(() => {
     if (!messagesData) return;
     const el = messageListRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messagesData]);
 
   // ---------------------------------------------------------------------------
-  // 送信（Sprint 5）
+  // フィルタリング（useMemo）
   // ---------------------------------------------------------------------------
 
-  const messagingWindow = messagesData?.messaging_window;
+  const filteredConversations = useMemo(() => {
+    return conversations
+      .filter((c) => {
+        if (leadStatusFilter === "all") return true;
+        if (leadStatusFilter === "new") {
+          return c.lead_status != null && NEW_STATUSES.includes(c.lead_status);
+        }
+        if (leadStatusFilter === "existing") {
+          return c.lead_status != null && EXISTING_STATUSES.includes(c.lead_status);
+        }
+        if (leadStatusFilter === "archive") {
+          return c.lead_status == null;
+        }
+        return true;
+      })
+      .filter((c) => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+          (c.customer_name ?? "").toLowerCase().includes(q) ||
+          (c.last_message_text ?? "").toLowerCase().includes(q)
+        );
+      });
+  }, [conversations, leadStatusFilter, searchQuery]);
+
+  // ---------------------------------------------------------------------------
+  // 送信
+  // ---------------------------------------------------------------------------
+
+  const messagingWindow: MessagingWindow | undefined = messagesData?.messaging_window;
   const canSend = !!messagingWindow?.can_send_at_all;
   const trimmedDraft = draft.trim();
-  // 入力が空 / 送信中 / 7d 超 / lead 未選択 のとき送信ボタン disabled
   const sendDisabled = sending || !canSend || trimmedDraft.length === 0 || selectedLeadId === null;
 
   const submitSend = useCallback(async () => {
@@ -306,11 +836,8 @@ export default function InboxPage() {
     try {
       await sendMessage(selectedLeadId, { text: trimmedDraft });
       setDraft("");
-      // 成功直後に即座にメッセージ再取得（楽観的更新ではなく確実な再描画）
-      // Phase 1-E F13-S5: 直後の polling 1 回を skip して二重取得を回避
       skipNextPollRef.current = true;
       await loadMessages(selectedLeadId);
-      // 会話リストも更新（最終メッセージ要約 / 並び順反映）
       loadConversations();
     } catch (e) {
       if (e instanceof ApiError) {
@@ -325,7 +852,6 @@ export default function InboxPage() {
     }
   }, [sendDisabled, selectedLeadId, trimmedDraft, loadMessages, loadConversations]);
 
-  /** Enter で送信、Shift+Enter で改行（chat UX 標準）。日本語 IME 変換中は無視。 */
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
@@ -334,403 +860,291 @@ export default function InboxPage() {
   }, [submitSend]);
 
   // ---------------------------------------------------------------------------
-  // 描画
+  // 選択中会話
   // ---------------------------------------------------------------------------
 
   const selectedConversation = useMemo(
-    () => conversations.find(c => c.lead_id === selectedLeadId) || null,
+    () => conversations.find((c) => c.lead_id === selectedLeadId) || null,
     [conversations, selectedLeadId],
   );
 
+  const selectedPlatform = inferPlatform(messagesData?.lead, selectedConversation);
+
+  // ---------------------------------------------------------------------------
+  // リードステータスタブ
+  // ---------------------------------------------------------------------------
+
+  const leadStatusTabs: { key: LeadStatusFilter; label: string }[] = [
+    { key: "all", label: t("inbox.tabAll") },
+    { key: "new", label: t("inbox.tabNew") },
+    { key: "existing", label: t("inbox.tabExisting") },
+    { key: "archive", label: t("inbox.tabArchive") },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // 描画
+  // ---------------------------------------------------------------------------
+
   return (
-    <div
-      className="page inbox-page"
-      style={{
-        display: "flex",
-        gap: 0,
-        height: "calc(100vh - 80px)",
-        overflow: "hidden",
-      }}
-    >
-      {/* ----------------------- 左ペイン: 会話リスト ----------------------- */}
-      <aside
-        style={{
-          width: 320,
-          flexShrink: 0,
-          borderRight: "1px solid var(--border-color, #e0e0e0)",
-          display: "flex",
-          flexDirection: "column",
-          background: "var(--bg-secondary, #fafafa)",
-        }}
-      >
-        <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-color, #e0e0e0)" }}>
-          <h2 style={{ margin: "0 0 12px 0", fontSize: "1.1rem" }}>{t("inbox.title")}</h2>
-          <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
-            {(["all", "messenger", "instagram"] as PlatformFilter[]).map(p => (
+    <>
+      {/* グローバルスタイル注入 */}
+      <style>{INBOX_STYLES}</style>
+
+      <div className="inbox-page">
+        {/* ============================== 左パネル ============================== */}
+        <aside className="inbox-left-panel">
+          {/* リードステータスタブ */}
+          <div className="inbox-lead-tabs">
+            {leadStatusTabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={`inbox-lead-tab${leadStatusFilter === tab.key ? " active" : ""}`}
+                onClick={() => setLeadStatusFilter(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 検索ボックス */}
+          <div className="inbox-search-area">
+            <input
+              type="text"
+              className="inbox-search-input"
+              placeholder={t("common.search")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* プラットフォームフィルタ + 未読チェック */}
+          <div className="inbox-platform-bar">
+            {(["all", "messenger", "instagram"] as PlatformFilter[]).map((p) => (
               <button
                 key={p}
                 type="button"
-                className={platformFilter === p ? "btn-sm btn-primary" : "btn-sm"}
+                className={`inbox-platform-tab${platformFilter === p ? " active" : ""}`}
                 onClick={() => setPlatformFilter(p)}
-                style={{ fontSize: "0.8rem" }}
               >
                 {p === "all" ? t("inbox.all") : platformLabel(p)}
               </button>
             ))}
+            <label className="inbox-unread-check">
+              <input
+                type="checkbox"
+                checked={unreadOnly}
+                onChange={(e) => setUnreadOnly(e.target.checked)}
+              />
+              {t("inbox.unread")}
+            </label>
           </div>
-          {/* Phase 1-E F14-S5: 複数 Page 接続時、または URL deep link で page_id 指定時に表示。
-              deep link 着地直後は availablePageIds がまだ空なので、フィルタ値そのものでも判定する。 */}
+
+          {/* Page フィルタ（複数 Page 時） */}
           {(availablePageIds.length > 1 || !!pageIdFilter) && (
-            <div style={{ marginBottom: 8 }}>
+            <div style={{ padding: "4px 12px 6px" }}>
               <select
                 value={pageIdFilter}
-                onChange={e => onPageFilterChange(e.target.value)}
+                onChange={(e) => onPageFilterChange(e.target.value)}
                 aria-label="Filter by Page"
                 style={{
                   width: "100%",
-                  padding: "4px 6px",
-                  fontSize: "0.85rem",
-                  borderRadius: 4,
-                  border: "1px solid var(--border-color, #ccc)",
+                  padding: "4px 8px",
+                  fontSize: "12px",
+                  borderRadius: 16,
+                  border: "1px solid #dadde1",
                   background: "white",
+                  fontFamily: "inherit",
                 }}
               >
                 <option value="">{t("inbox.allPages")}</option>
-                {availablePageIds.map(pid => (
-                  <option key={pid} value={pid}>
-                    Page: {pid}
-                  </option>
+                {availablePageIds.map((pid) => (
+                  <option key={pid} value={pid}>Page: {pid}</option>
                 ))}
               </select>
             </div>
           )}
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={unreadOnly}
-              onChange={e => setUnreadOnly(e.target.checked)}
-            />
-            {t("inbox.showUnreadOnly")}
-          </label>
-        </div>
 
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {convError && (
-            <div className="error" style={{ margin: 12 }}>
-              {convError}
-              <button
-                type="button"
-                className="btn-sm"
-                style={{ marginLeft: 8 }}
-                onClick={() => loadConversations()}
-              >
-                {t("common.reload")}
-              </button>
-            </div>
-          )}
-          {convLoading ? (
-            <div className="loading" style={{ padding: 16, textAlign: "center", color: "var(--text-muted)" }}>
-              {t("common.loading")}
-            </div>
-          ) : conversations.length === 0 ? (
-            <div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)", fontSize: "0.9rem" }}>
-              {unreadOnly
-                ? t("inbox.noUnread")
-                : t("inbox.noMessages")}
-              <br />
-              {!unreadOnly && (
-                <span style={{ fontSize: "0.8rem" }}>
-                  {t("inbox.channelsHint")}{" "}
-                  <a href="/channels">{t("inbox.channelsLink")}</a>
-                </span>
-              )}
-            </div>
-          ) : (
-            conversations.map(conv => {
-              const isSelected = conv.lead_id === selectedLeadId;
-              return (
+          {/* 会話リスト */}
+          <div className="inbox-conversation-list">
+            {convError && (
+              <div className="inbox-error-banner">
+                {convError}
                 <button
-                  key={conv.lead_id}
                   type="button"
-                  onClick={() => selectLead(conv.lead_id)}
-                  className="conversation-item"
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "none",
-                    borderBottom: "1px solid var(--border-color, #e8e8e8)",
-                    background: isSelected ? "var(--bg-selected, #e8f0fe)" : "transparent",
-                    color: isSelected ? "#1a202c" : "inherit",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                  }}
+                  style={{ marginLeft: 8, fontSize: 12, cursor: "pointer" }}
+                  onClick={() => loadConversations()}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                      <span
-                        className="badge"
-                        style={{
-                          fontSize: "0.7rem",
-                          padding: "2px 6px",
-                          borderRadius: 3,
-                          border: "1px solid",
-                          flexShrink: 0,
-                          ...platformBadgeStyle(conv.platform),
-                        }}
-                      >
-                        {platformLabel(conv.platform)}
-                      </span>
-                      <strong
-                        style={{
-                          fontSize: "0.95rem",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          minWidth: 0,
-                        }}
-                      >
-                        {conv.customer_name || conv.lead_code || `Lead #${conv.lead_id}`}
-                      </strong>
-                    </div>
-                    {conv.unread_count > 0 && (
-                      <span
-                        className="badge"
-                        style={{
-                          background: "#1a73e8",
-                          color: "#fff",
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          fontSize: "0.75rem",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {conv.unread_count}
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.85rem",
-                      color: isSelected ? "#4a5568" : "var(--text-muted, #666)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {conv.last_message_direction === "outbound" && (
-                      <span style={{ color: isSelected ? "#4a5568" : "#666" }}>You: </span>
-                    )}
-                    {conv.last_message_text || "(no message)"}
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: isSelected ? "#718096" : "var(--text-muted, #999)" }}>
-                    {relativeTime(conv.last_message_at)}
-                  </div>
+                  {t("common.reload")}
                 </button>
-              );
-            })
-          )}
-        </div>
-      </aside>
-
-      {/* ----------------------- 右ペイン: メッセージ ----------------------- */}
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {selectedLeadId === null ? (
-          <div
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--text-muted, #888)",
-              padding: 32,
-              textAlign: "center",
-            }}
-          >
-            {t("inbox.selectConversation")}
-          </div>
-        ) : (
-          <>
-            {/* ヘッダ */}
-            <header
-              style={{
-                padding: "12px 16px",
-                borderBottom: "1px solid var(--border-color, #e0e0e0)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 16,
-              }}
-            >
-              <div>
-                <h3 style={{ margin: 0, fontSize: "1.05rem" }}>
-                  {messagesData?.lead?.customer_name
-                    || selectedConversation?.customer_name
-                    || `Lead #${selectedLeadId}`}
-                </h3>
-                <div style={{ fontSize: "0.8rem", color: "var(--text-muted, #666)", marginTop: 2 }}>
-                  {messagesData?.lead?.lead_code && (
-                    <span style={{ marginRight: 8 }}>{messagesData.lead.lead_code}</span>
-                  )}
-                  <span
-                    className="badge"
-                    style={{
-                      fontSize: "0.7rem",
-                      padding: "2px 6px",
-                      borderRadius: 3,
-                      border: "1px solid",
-                      ...platformBadgeStyle(inferPlatform(messagesData?.lead, selectedConversation)),
-                    }}
-                  >
-                    {platformLabel(inferPlatform(messagesData?.lead, selectedConversation))}
-                  </span>
-                </div>
               </div>
-              <a
-                href={`/leads?lead_id=${selectedLeadId}`}
-                className="btn-sm"
-                style={{ fontSize: "0.8rem" }}
-              >
-                {t("inbox.lead")}
-              </a>
-            </header>
-
-            {/* メッセージリスト */}
-            <div
-              ref={messageListRef}
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                padding: 16,
-                background: "var(--bg-content, #fff)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              {msgLoading && !messagesData && (
-                <div className="loading" style={{ textAlign: "center", color: "var(--text-muted)" }}>
-                  {t("common.loading")}
-                </div>
-              )}
-              {msgError && (
-                <div className="error">{msgError}</div>
-              )}
-              {messagesData && messagesData.messages.length === 0 && !msgError && (
-                <div style={{ textAlign: "center", color: "var(--text-muted, #888)", padding: 32 }}>
-                  {t("inbox.noMessages")}
-                </div>
-              )}
-              {messagesData?.messages.map(msg => {
-                const outbound = msg.direction === "outbound";
-                // Phase 1-E F12-S5: error_code が設定されたメッセージは送信失敗扱い
-                // (現状の Sprint 5 実装では送信失敗時に INSERT しない設計だが、
-                // 将来 retry queue 化したとき or 既存 error_code 列を持つ
-                // メッセージへの defensive UI として赤枠を表示する)
-                const failed = !!msg.error_code;
+            )}
+            {convLoading ? (
+              <div style={{ padding: 24, textAlign: "center", color: "#65676B", fontSize: 14 }}>
+                {t("common.loading")}
+              </div>
+            ) : filteredConversations.length === 0 ? (
+              <div style={{ padding: 24, textAlign: "center", color: "#65676B", fontSize: 14 }}>
+                {unreadOnly ? t("inbox.noUnread") : t("inbox.noMessages")}
+                {!unreadOnly && (
+                  <div style={{ marginTop: 8, fontSize: 12 }}>
+                    {t("inbox.channelsHint")}{" "}
+                    <a href="/channels" style={{ color: "#0866FF" }}>{t("inbox.channelsLink")}</a>
+                  </div>
+                )}
+              </div>
+            ) : (
+              filteredConversations.map((conv) => {
+                const isSelected = conv.lead_id === selectedLeadId;
                 return (
-                  <div
-                    key={msg.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: outbound ? "flex-end" : "flex-start",
-                    }}
+                  <button
+                    key={conv.lead_id}
+                    type="button"
+                    className={`conv-item${isSelected ? " selected" : ""}`}
+                    onClick={() => selectLead(conv.lead_id)}
                   >
-                    <div
-                      role={failed ? "alert" : undefined}
-                      style={{
-                        maxWidth: "70%",
-                        padding: "8px 12px",
-                        borderRadius: 12,
-                        background: failed
-                          ? "#fdecea"
-                          : outbound ? "#1a73e8" : "#f1f3f4",
-                        color: failed
-                          ? "#a50e0e"
-                          : outbound ? "#fff" : "var(--text-primary, #202124)",
-                        borderTopRightRadius: outbound ? 4 : 12,
-                        borderTopLeftRadius: outbound ? 12 : 4,
-                        border: failed ? "2px solid #a50e0e" : "none",
-                        wordBreak: "break-word",
-                        whiteSpace: "pre-wrap",
-                      }}
-                      title={
-                        failed
-                          ? `Send failed: ${msg.error_code}${msg.error_message ? ` — ${msg.error_message}` : ""}`
-                          : formatAbsolute(msg.created_at)
-                      }
-                    >
-                      {msg.message_tag && !failed && (
-                        <div
-                          style={{
-                            fontSize: "0.7rem",
-                            opacity: 0.85,
-                            marginBottom: 4,
-                            fontWeight: 600,
-                          }}
-                        >
-                          {msg.message_tag === "HUMAN_AGENT" ? "Human Agent" : msg.message_tag}
-                        </div>
-                      )}
-                      {failed && (
-                        <div
-                          style={{
-                            fontSize: "0.7rem",
-                            fontWeight: 600,
-                            marginBottom: 4,
-                          }}
-                        >
-                          ⚠ Send failed ({msg.error_code})
-                        </div>
-                      )}
-                      <div>{msg.message_text || "(no body)"}</div>
+                    {/* アバター */}
+                    <div className="conv-avatar-wrap">
+                      <div className="conv-avatar">
+                        {getInitials(conv.customer_name)}
+                      </div>
                       <div
-                        style={{
-                          fontSize: "0.7rem",
-                          opacity: 0.75,
-                          marginTop: 4,
-                          textAlign: outbound ? "right" : "left",
-                        }}
-                      >
-                        {relativeTime(msg.created_at)}
+                        className="conv-platform-dot"
+                        style={{ background: platformGradient(conv.platform) }}
+                      />
+                    </div>
+
+                    {/* 会話情報 */}
+                    <div className="conv-info">
+                      <div className="conv-header">
+                        <span className="conv-name">
+                          {conv.customer_name ?? conv.lead_code ?? `Lead #${conv.lead_id}`}
+                        </span>
+                        <span className="conv-time">{relativeTime(conv.last_message_at)}</span>
+                      </div>
+                      <div className="conv-preview">
+                        <span className={`conv-preview-text${conv.unread_count > 0 ? " unread" : ""}`}>
+                          {conv.last_message_direction === "outbound" && (
+                            <span style={{ opacity: 0.7 }}>You: </span>
+                          )}
+                          {conv.last_message_text ?? ""}
+                        </span>
+                        {conv.unread_count > 0 && (
+                          <span className="conv-unread-badge">{conv.unread_count}</span>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
-              })}
-            </div>
+              })
+            )}
+          </div>
+        </aside>
 
-            {/* messaging window バナー + 入力 */}
-            <div
-              style={{
-                borderTop: "1px solid var(--border-color, #e0e0e0)",
-                padding: 12,
-                background: "var(--bg-secondary, #fafafa)",
-              }}
-            >
-              {sendError && (
-                <div
-                  className="error"
-                  role="alert"
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: 4,
-                    background: "#fdecea",
-                    color: "#a50e0e",
-                    border: "1px solid #a50e0e",
-                    fontSize: "0.8rem",
-                    marginBottom: 8,
-                  }}
-                >
-                  Send error: {sendError}
+        {/* ============================== 中央パネル ============================== */}
+        <main className="inbox-center">
+          {selectedLeadId === null ? (
+            <div className="inbox-empty-center">
+              <div className="inbox-empty-icon">💬</div>
+              <p>{t("inbox.selectConversation")}</p>
+            </div>
+          ) : (
+            <>
+              {/* ヘッダ */}
+              <header className="inbox-center-header">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 className="inbox-center-title">
+                    {messagesData?.lead?.customer_name
+                      || selectedConversation?.customer_name
+                      || `Lead #${selectedLeadId}`}
+                  </h2>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+                    {messagesData?.lead?.lead_code && (
+                      <span style={{ fontSize: 12, color: "#65676B" }}>
+                        {messagesData.lead.lead_code}
+                      </span>
+                    )}
+                    {selectedPlatform && (
+                      <span
+                        className="inbox-platform-badge"
+                        style={
+                          selectedPlatform === "messenger"
+                            ? { background: "#E7F3FF", color: "#0866FF" }
+                            : selectedPlatform === "instagram"
+                              ? { background: "#FCE3F0", color: "#C13584" }
+                              : { background: "#eee", color: "#555" }
+                        }
+                      >
+                        {platformLabel(selectedPlatform)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              </header>
+
+              {/* メッセージリスト */}
+              <div ref={messageListRef} className="inbox-messages">
+                {msgLoading && !messagesData && (
+                  <div style={{ textAlign: "center", color: "#65676B", padding: 16 }}>
+                    {t("common.loading")}
+                  </div>
+                )}
+                {msgError && (
+                  <div className="inbox-error-banner">{msgError}</div>
+                )}
+                {messagesData && messagesData.messages.length === 0 && !msgError && (
+                  <div style={{ textAlign: "center", color: "#65676B", padding: 32 }}>
+                    {t("inbox.noMessages")}
+                  </div>
+                )}
+                {messagesData?.messages.map((msg) => {
+                  const outbound = msg.direction === "outbound";
+                  const failed = !!msg.error_code;
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`inbox-msg-row${outbound ? " outbound" : " inbound"}`}
+                    >
+                      <div
+                        role={failed ? "alert" : undefined}
+                        className={`msg-bubble${failed ? " failed" : outbound ? " outbound" : " inbound"}`}
+                        title={
+                          failed
+                            ? `Send failed: ${msg.error_code}${msg.error_message ? ` — ${msg.error_message}` : ""}`
+                            : formatAbsolute(msg.created_at)
+                        }
+                      >
+                        {msg.message_tag && !failed && (
+                          <div style={{ fontSize: 11, opacity: 0.85, marginBottom: 4, fontWeight: 600 }}>
+                            {msg.message_tag === "HUMAN_AGENT" ? "Human Agent" : msg.message_tag}
+                          </div>
+                        )}
+                        {failed && (
+                          <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>
+                            Send failed ({msg.error_code})
+                          </div>
+                        )}
+                        <div>{msg.message_text || "(no body)"}</div>
+                        <div className={`msg-time${outbound ? "" : " inbound"}`}>
+                          {relativeTime(msg.created_at)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 送信エリア */}
+              <div className="inbox-send-area">
+                {sendError && (
+                  <div className="inbox-send-error" role="alert">
+                    Send error: {sendError}
+                  </div>
+                )}
                 <textarea
+                  className="inbox-textarea"
                   value={draft}
-                  onChange={e => setDraft(e.target.value)}
+                  onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={
                     canSend
@@ -739,39 +1153,77 @@ export default function InboxPage() {
                   }
                   rows={2}
                   disabled={!canSend || sending}
-                  style={{
-                    flex: 1,
-                    padding: 8,
-                    borderRadius: 6,
-                    border: "1px solid var(--border-color, #ccc)",
-                    fontFamily: "inherit",
-                    fontSize: "0.9rem",
-                    resize: "vertical",
-                    background: !canSend ? "#f5f5f5" : "white",
-                    color: "#1a202c",
-                  }}
                 />
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={submitSend}
-                  disabled={sendDisabled}
-                  title={
-                    !canSend
-                      ? t("inbox.sendDisabled7d")
-                      : trimmedDraft.length === 0
-                        ? t("inbox.messagePlaceholder")
-                        : t("inbox.send")
-                  }
-                >
-                  {sending ? t("inbox.sending") : t("inbox.send")}
-                </button>
+                <div className="inbox-send-row">
+                  <button
+                    type="button"
+                    className="inbox-send-btn"
+                    onClick={submitSend}
+                    disabled={sendDisabled}
+                    title={
+                      !canSend
+                        ? t("inbox.sendDisabled7d")
+                        : trimmedDraft.length === 0
+                          ? t("inbox.messagePlaceholder")
+                          : t("inbox.send")
+                    }
+                  >
+                    {sending ? t("inbox.sending") : t("inbox.send")}
+                  </button>
+                </div>
               </div>
+            </>
+          )}
+        </main>
+
+        {/* ============================== 右パネル (顧客カルテ) ============================== */}
+        <aside className="inbox-right-panel">
+          {selectedLeadId === null ? (
+            <div className="right-panel-empty">
+              <p>{t("inbox.selectConversation")}</p>
             </div>
-          </>
-        )}
-      </main>
-    </div>
+          ) : leadDetail ? (
+            <>
+              <div className="right-panel-avatar">
+                {getInitials(leadDetail.customer_name)}
+              </div>
+              <h3 className="right-panel-name">{leadDetail.customer_name}</h3>
+              <p className="right-panel-code">{leadDetail.lead_code}</p>
+              <div className="right-panel-status">{leadDetail.status || "—"}</div>
+
+              <div className="right-panel-section">
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.email")}</span>
+                  <span className="right-panel-value">{leadDetail.email || "—"}</span>
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.phone")}</span>
+                  <span className="right-panel-value">{leadDetail.phone || "—"}</span>
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.companyName")}</span>
+                  <span className="right-panel-value">{leadDetail.company_name || "—"}</span>
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.temperature")}</span>
+                  <span className="right-panel-value">{leadDetail.temperature || "—"}</span>
+                </div>
+              </div>
+
+              <a
+                href={`/leads?lead_id=${leadDetail.id}`}
+                className="right-panel-link"
+              >
+                {t("inbox.viewLead")} →
+              </a>
+            </>
+          ) : (
+            <div className="right-panel-empty">
+              <p>{t("inbox.loadingProfile")}</p>
+            </div>
+          )}
+        </aside>
+      </div>
+    </>
   );
 }
-
