@@ -818,7 +818,8 @@
       "knowledge": "Rules / Aliases",
       "tcg": "TCG Series",
       "dex": "Pokemon / Trainer Dex",
-      "suppliers": "Suppliers"
+      "suppliers": "Suppliers",
+      "llmBudget": "LLM Budget"
     },
     "knowledge": {
       "title": "Normalization Rules (knowledge_rules) + Supplier Aliases",
@@ -902,6 +903,23 @@
       "addRouting": "Add Discord Routing",
       "guildId": "Guild ID",
       "channelId": "Channel ID"
+    },
+    "llmBudget": {
+      "title": "Monthly LLM Budget (Gemini 2.5 Flash)",
+      "subtitle": "Manage per-tenant LLM fallback usage and monthly cap.",
+      "noRows": "No budget rows have been registered yet.",
+      "savedNotice": "Saved.",
+      "editTitle": "Edit budget for tenant {{tenant_id}}",
+      "fields": {
+        "tenantId": "Tenant ID",
+        "tenantName": "Tenant Name",
+        "monthlyBudget": "Monthly Budget (USD)",
+        "currentMonth": "Used This Month",
+        "utilization": "Utilization",
+        "hardStop": "Hard stop on overrun",
+        "notifyAdmin": "Notify admin",
+        "lastResetAt": "Last reset"
+      }
     }
   },
   "inventoryVisibility": {

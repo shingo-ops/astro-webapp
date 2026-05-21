@@ -94,16 +94,24 @@ jobs:
               -e '/^META_APP_ID=/d' \
               -e '/^META_OAUTH_REDIRECT_URI=/d' \
               -e '/^METADATA_FERNET_KEY=/d' \
+              -e '/^GEMINI_API_KEY=/d' \
+              -e '/^ADMIN_NOTIFICATION_DISCORD_WEBHOOK=/d' \
               .env
             rm -f .env.bak
             # YAML `|` ブロックの共通インデント (12 スペース) はパース時に自動除去される。
             # したがって heredoc 本文の各行は実行時に行頭スペースなしで届く。
+            # Sprint 4 (F4): GEMINI_API_KEY / ADMIN_NOTIFICATION_DISCORD_WEBHOOK は
+            #   ADR-025 trap 回避のため同じ「sed 削除 → append」パターンに合流。
+            #   secret 未設定でも空値で append される（後段 LLM サービスは空判定して
+            #   parsed_rule_only に graceful degrade、AC4.5）。
             cat >> .env <<'ENV_EOF'
             META_VERIFY_TOKEN=${{ secrets.META_VERIFY_TOKEN }}
             META_APP_SECRET=${{ secrets.META_APP_SECRET }}
             META_APP_ID=${{ secrets.META_APP_ID }}
             META_OAUTH_REDIRECT_URI=${{ secrets.META_OAUTH_REDIRECT_URI }}
             METADATA_FERNET_KEY=${{ secrets.METADATA_FERNET_KEY }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            ADMIN_NOTIFICATION_DISCORD_WEBHOOK=${{ secrets.ADMIN_NOTIFICATION_DISCORD_WEBHOOK }}
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."

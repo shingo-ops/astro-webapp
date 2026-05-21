@@ -122,6 +122,10 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           # FastAPI lifespan 内でアクセスするため
           ENVIRONMENT: test
+          # Sprint 4 (F4): Gemini 2.5 Flash 実 API テスト用 (AC4.1)。
+          # GitHub Secrets に未登録だと test_inventory_parser_llm_real_api.py が SKIP される
+          # （課金抑制のため）。SKIP_REAL_LLM_TESTS=1 を指定すれば常に SKIP 可能。
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           pytest -q --tb=short
 

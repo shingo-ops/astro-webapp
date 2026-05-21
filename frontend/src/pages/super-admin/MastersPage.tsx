@@ -1,13 +1,14 @@
 /**
  * /super-admin/masters — 中央 admin マスタ編集タブコンテナ。
  *
- * spec.md v1.1 F2 (Sprint 2) / AC2.1:
+ * spec.md v1.1 F2 (Sprint 2) / AC2.1 / F4 (Sprint 4) AC4.6:
  *   - is_super_admin=true のみアクセス可（false なら 403 メッセージを表示し、
  *     サイドバーからの誤導線もない、二重ガード）
- *   - 4 タブ: Knowledge / TCG / Dex / Suppliers
+ *   - 5 タブ: Knowledge / TCG / Dex / Suppliers / LLM Budget
  *
  * 変更履歴:
- *   2026-05-21: 初版（Sprint 2）
+ *   2026-05-21: 初版（Sprint 2、4 タブ）
+ *   2026-05-22: Sprint 4 で LLM Budget タブ追加（5 タブ）
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,8 +17,9 @@ import KnowledgeAliasesTab from "./KnowledgeAliasesTab";
 import TcgSeriesTab from "./TcgSeriesTab";
 import DexTab from "./DexTab";
 import SuppliersAdminTab from "./SuppliersAdminTab";
+import LLMBudgetTab from "./LLMBudgetTab";
 
-type TabKey = "knowledge" | "tcg" | "dex" | "suppliers";
+type TabKey = "knowledge" | "tcg" | "dex" | "suppliers" | "llmBudget";
 
 export default function MastersPage() {
   const { t } = useTranslation();
@@ -46,6 +48,7 @@ export default function MastersPage() {
     { key: "tcg", label: t("superAdmin.tabs.tcg") },
     { key: "dex", label: t("superAdmin.tabs.dex") },
     { key: "suppliers", label: t("superAdmin.tabs.suppliers") },
+    { key: "llmBudget", label: t("superAdmin.tabs.llmBudget") },
   ];
 
   return (
@@ -79,6 +82,7 @@ export default function MastersPage() {
         {tab === "tcg" && <TcgSeriesTab />}
         {tab === "dex" && <DexTab />}
         {tab === "suppliers" && <SuppliersAdminTab />}
+        {tab === "llmBudget" && <LLMBudgetTab />}
       </div>
     </div>
   );

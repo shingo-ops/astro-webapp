@@ -818,7 +818,8 @@
       "knowledge": "正規化ルール / 別名",
       "tcg": "TCG シリーズ",
       "dex": "ポケモン / トレーナー図鑑",
-      "suppliers": "仕入元"
+      "suppliers": "仕入元",
+      "llmBudget": "LLM 予算"
     },
     "knowledge": {
       "title": "正規化辞書 (knowledge_rules) + 仕入元別名 (supplier_aliases)",
@@ -902,6 +903,23 @@
       "addRouting": "Discord 紐付け追加",
       "guildId": "Guild ID",
       "channelId": "Channel ID"
+    },
+    "llmBudget": {
+      "title": "LLM 月次予算（Gemini 2.5 Flash）",
+      "subtitle": "テナント別の LLM フォールバック使用量と上限を管理します。",
+      "noRows": "予算行がまだ登録されていません。",
+      "savedNotice": "保存しました。",
+      "editTitle": "テナント {{tenant_id}} の予算を編集",
+      "fields": {
+        "tenantId": "テナント ID",
+        "tenantName": "テナント名",
+        "monthlyBudget": "月次予算 (USD)",
+        "currentMonth": "今月の使用量",
+        "utilization": "消化率",
+        "hardStop": "上限到達時に停止",
+        "notifyAdmin": "Admin に通知",
+        "lastResetAt": "前回リセット"
+      }
     }
   },
   "inventoryVisibility": {
