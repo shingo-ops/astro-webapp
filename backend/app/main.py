@@ -61,6 +61,8 @@ from app.routers import super_admin_suppliers
 from app.routers import super_admin_llm_budget
 # spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧 admin UI
 from app.routers import super_admin_inbound
+# spec.md v1.1 F6 (Sprint 6): 解析結果レビュー UI + 在庫差分反映
+from app.routers import parse_review
 from app.routers import tenant_admin_inventory_visibility
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
@@ -336,6 +338,10 @@ app.include_router(
 # Sprint 5 (F5): Discord Inbound 受信メッセージ一覧 (public.discord_inbound_messages) 中央 admin
 app.include_router(
     super_admin_inbound.router, prefix="/api/v1", tags=["super-admin"],
+)
+# Sprint 6 (F6): 解析結果レビュー UI + 在庫差分反映 (public.inventory_movements + products) 中央 admin
+app.include_router(
+    parse_review.router, prefix="/api/v1", tags=["super-admin"],
 )
 # テナント admin 用 inventory visibility は get_current_tenant 必須
 app.include_router(

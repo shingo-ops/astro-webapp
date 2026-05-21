@@ -939,7 +939,9 @@
         "parseStatus": "解析ステータス",
         "preview": "本文プレビュー",
         "engine": "解析エンジン",
-        "llmCost": "LLM コスト"
+        "llmCost": "LLM コスト",
+        "actions": "操作",
+        "openReview": "レビュー"
       },
       "parseStatus": {
         "pending": "未解析",
@@ -952,6 +954,32 @@
         "ignored_routing": "ルーティング未登録",
         "approved": "承認済",
         "rejected": "差し戻し"
+      },
+      "review": {
+        "title": "解析結果レビュー",
+        "subtitle": "Discord 受信メッセージの解析結果を行単位で確認し、採用 / スキップ / 編集 / 差戻しを行います。",
+        "backToList": "一覧へ戻る",
+        "versionLabel": "バージョン",
+        "rawContent": "受信本文",
+        "noItems": "解析行がありません。",
+        "missingProduct": "商品未紐付け（スキップ必須）",
+        "operatorComment": "レビュー担当者メモ",
+        "approveBtn": "承認して在庫反映",
+        "rejectBtn": "差し戻し",
+        "rejectDialogTitle": "差し戻し理由を入力",
+        "rejectReasonLabel": "exclude_reason（必須）",
+        "rejectConfirmBtn": "差し戻しを確定",
+        "rejectReasonRequired": "差し戻し理由を入力してください",
+        "approveSuccess": "{{count}} 件を承認し、{{skipped}} 件をスキップしました。",
+        "rejectSuccess": "差し戻しました。",
+        "versionConflict": "他のレビュアーが先に更新しました。最新版を再読み込みしたので再操作してください。",
+        "col": {
+          "productId": "商品 ID",
+          "deltaQty": "差分数量",
+          "alias": "仕入元呼称",
+          "notes": "メモ",
+          "skip": "スキップ"
+        }
       }
     }
   },

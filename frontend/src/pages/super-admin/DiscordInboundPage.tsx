@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
 
@@ -127,21 +128,34 @@ export default function DiscordInboundPage() {
         <p className="page-subtitle">{t("superAdmin.inbound.subtitle")}</p>
       </div>
 
-      {error && <div className="error-message" role="alert">{error}</div>}
+      {error && (
+        <div className="error-message" role="alert">
+          {error}
+        </div>
+      )}
 
       <div
         className="filter-bar"
-        style={{ display: "flex", gap: "0.5rem", margin: "1rem 0", alignItems: "center" }}
+        style={{
+          display: "flex",
+          gap: "0.5rem",
+          margin: "1rem 0",
+          alignItems: "center",
+        }}
       >
         <label>
           {t("superAdmin.inbound.filters.status")}
           <select
             data-testid="filter-parse-status"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as ParseStatus | "")}
+            onChange={(e) =>
+              setFilterStatus(e.target.value as ParseStatus | "")
+            }
             style={{ marginLeft: "0.25rem" }}
           >
-            <option value="">{t("superAdmin.inbound.filters.statusAny")}</option>
+            <option value="">
+              {t("superAdmin.inbound.filters.statusAny")}
+            </option>
             {PARSE_STATUS_VALUES.map((s) => (
               <option key={s} value={s}>
                 {t(`superAdmin.inbound.parseStatus.${s}`, s)}
@@ -180,6 +194,7 @@ export default function DiscordInboundPage() {
               <th>{t("superAdmin.inbound.columns.preview")}</th>
               <th>{t("superAdmin.inbound.columns.engine")}</th>
               <th>{t("superAdmin.inbound.columns.llmCost")}</th>
+              <th>{t("superAdmin.inbound.columns.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -196,19 +211,38 @@ export default function DiscordInboundPage() {
                     className={statusBadgeClass(m.parse_status)}
                     data-testid={`status-${m.id}`}
                   >
-                    {t(`superAdmin.inbound.parseStatus.${m.parse_status}`, m.parse_status)}
+                    {t(
+                      `superAdmin.inbound.parseStatus.${m.parse_status}`,
+                      m.parse_status,
+                    )}
                   </span>
                 </td>
-                <td style={{ maxWidth: "400px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <td
+                  style={{
+                    maxWidth: "400px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
                   {m.raw_content_preview}
                 </td>
                 <td>
-                  <code style={{ fontSize: "0.85em" }}>{m.parse_engine ?? "—"}</code>
+                  <code style={{ fontSize: "0.85em" }}>
+                    {m.parse_engine ?? "—"}
+                  </code>
                 </td>
                 <td>
                   {m.llm_cost_usd
                     ? `$${Number.parseFloat(m.llm_cost_usd).toFixed(4)}`
                     : "—"}
+                </td>
+                <td>
+                  <Link
+                    to={`/super-admin/inbound/${m.id}/review`}
+                    data-testid={`review-link-${m.id}`}
+                  >
+                    {t("superAdmin.inbound.columns.openReview")}
+                  </Link>
                 </td>
               </tr>
             ))}
