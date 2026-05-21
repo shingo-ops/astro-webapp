@@ -171,13 +171,15 @@ def process_data_deletion(request_id: str) -> dict:
         )
         session.commit()
 
-    # 4) 完了通知メール（環境変数あれば）
+    # 4) 完了通知メール（Celery タスクとして非同期送信）
+    # SMTP タイムアウト（最大15秒）をこのタスクに含めないよう、別タスクに分離する。
     try:
-        from app.services.email_sender import send_deletion_completion_email
-        send_deletion_completion_email(request_id)
+        from app.tasks.email_tasks import send_deletion_completion_email_task
+        send_deletion_completion_email_task.delay(request_id)
+        logger.info("[data_deletion] deletion email task queued for %s", request_id)
     except Exception as e:  # noqa: BLE001
-        # メール失敗は致命ではない（log のみ）。Meta App Review はメール必須ではない。
-        logger.warning(f"[data_deletion] mail send failed: {e}")
+        # キュー失敗は致命ではない（log のみ）
+        logger.warning("[data_deletion] failed to queue email task: %s", e)
 
     return {
         "request_id": request_id,
