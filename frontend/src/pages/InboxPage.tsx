@@ -42,10 +42,9 @@ const POLL_INTERVAL_MS = 10_000;
 // リードステータス分類定数
 // ---------------------------------------------------------------------------
 
-const NEW_STATUSES = [
-  "新規", "コンタクト中", "AI対応中", "提案中",
-  "追客（短期）", "追客（長期）", "保留", "失注", "対象外",
-];
+// アーカイブ理由ステータス（ADR-015 §6: 追客・対象外）
+const ARCHIVE_STATUSES = ["追客（短期）", "追客（長期）", "対象外"];
+const NEW_STATUSES = ["新規", "コンタクト中", "AI対応中", "提案中", "保留", "失注"];
 const EXISTING_STATUSES = ["既存顧客", "案件化"];
 
 type LeadStatusFilter = "all" | "new" | "existing" | "archive";
@@ -888,7 +887,9 @@ export default function InboxPage() {
           return c.lead_status != null && EXISTING_STATUSES.includes(c.lead_status);
         }
         if (leadStatusFilter === "archive") {
-          return c.lead_status == null;
+          // lead_status が null（リード削除済 = LEFT JOIN で NULL）または
+          // アーカイブ理由ステータス（追客・対象外）
+          return c.lead_status == null || ARCHIVE_STATUSES.includes(c.lead_status);
         }
         return true;
       })
