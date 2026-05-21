@@ -206,8 +206,8 @@
 .app-topbar {
   display: flex;
   align-items: center;
-  background: #ffffff;
-  border-bottom: 1px solid #E4E4E7;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
   padding: 0 24px;
   height: 56px;
   gap: 16px;
@@ -223,8 +223,8 @@
   align-items: center;
   gap: 8px;
   max-width: 480px;
-  background: #F5F5F7;
-  border: 1px solid #E4E4E7;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0 12px;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -1121,11 +1121,11 @@
   font-weight: 500;
 }
 
-.badge-open, .badge-pending { background: #fefcbf; color: #975a16; }
-.badge-negotiating { background: #bee3f8; color: #2b6cb0; }
-.badge-won, .badge-confirmed, .badge-delivered { background: #c6f6d5; color: #276749; }
-.badge-lost, .badge-cancelled { background: #fed7d7; color: #9b2c2c; }
-.badge-on_hold, .badge-shipped { background: #e9d8fd; color: #553c9a; }
+.badge-open, .badge-pending { background: var(--warning-bg); color: var(--warning-text); }
+.badge-negotiating { background: var(--info-bg); color: var(--info-text); }
+.badge-won, .badge-confirmed, .badge-delivered { background: var(--success-bg); color: var(--success-text); }
+.badge-lost, .badge-cancelled { background: var(--danger-bg); color: var(--danger-text); }
+.badge-on_hold, .badge-shipped { background: var(--purple-bg); color: var(--purple-text); }
 
 /* PR #145 Q2: pending_dedup_review の status badge と行ハイライト
    companies / contacts の <span class="status-badge status-pending_dedup_review">
@@ -1139,10 +1139,10 @@
   background: #e2e8f0;
   color: var(--text-primary);
 }
-.status-badge.status-active { background: #c6f6d5; color: #276749; }
-.status-badge.status-inactive { background: #e2e8f0; color: var(--text-muted); }
-.status-badge.status-archived { background: #cbd5e0; color: #2d3748; }
-.status-badge.status-pending_dedup_review { background: #fefcbf; color: #975a16; }
+.status-badge.status-active { background: var(--success-bg); color: var(--success-text); }
+.status-badge.status-inactive { background: var(--bg-hover); color: var(--text-muted); }
+.status-badge.status-archived { background: var(--bg-active); color: var(--text-secondary); }
+.status-badge.status-pending_dedup_review { background: var(--warning-bg); color: var(--warning-text); }
 
 .row-pending-dedup td {
   background: #fffbeb;

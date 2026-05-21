@@ -56,6 +56,32 @@
 
   /* テーブルの交互背景 */
   --row-hover: #edf2f7;
+
+  /* Inbox メッセージバブル */
+  --bubble-inbound-bg: #E4E6EB;
+  --bubble-outbound-bg: #7C3AED;
+
+  /* 見込度バッジ（オレンジ系） */
+  --rank-bg: #FFF3E0;
+  --rank-text: #E65100;
+
+  /* リンクアクティブ hover */
+  --link-active-bg-hover: #d0e8ff;
+
+  /* info バッジ（水色系） */
+  --info-bg: #bee3f8;
+  --info-text: #2b6cb0;
+
+  /* purple バッジ（保留・発送済み） */
+  --purple-bg: #e9d8fd;
+  --purple-text: #553c9a;
+
+  /* Instagram ブランド */
+  --instagram-bg: #FCE3F0;
+  --instagram-text: #C13584;
+
+  /* color-scheme: OS非依存（ADR-033: アプリ設定を優先） */
+  color-scheme: light;
 }
 
 /* ダーク変数の定義（ADR-033）:
@@ -103,6 +129,31 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
 
   --row-hover: #2d3b52;
+
+  /* Inbox メッセージバブル（ダーク） */
+  --bubble-inbound-bg: #334155;
+  --bubble-outbound-bg: #6d28d9;
+
+  /* 見込度バッジ（ダーク） */
+  --rank-bg: #3d2200;
+  --rank-text: #fb923c;
+
+  /* リンクアクティブ hover（ダーク） */
+  --link-active-bg-hover: #1e3a8a;
+
+  /* info バッジ（ダーク） */
+  --info-bg: #1e3a5f;
+  --info-text: #93c5fd;
+
+  /* purple バッジ（ダーク） */
+  --purple-bg: #3b1f6e;
+  --purple-text: #d8b4fe;
+
+  /* Instagram ブランド（ダーク） */
+  --instagram-bg: #3d1028;
+  --instagram-text: #e879b9;
+
+  color-scheme: dark;
 }
 
 * {
@@ -120,7 +171,6 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
-  color-scheme: light dark;
 }
 
 #root {
