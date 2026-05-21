@@ -508,9 +508,13 @@ class TestRefreshAllOrchestration:
                           ]):
             result = m.refresh_all_meta_page_tokens()
 
-        # 2 件分（tenant 1, 3）が処理された
-        assert result["tenants_processed"] == 2
+        # 3 テナント全てが処理（失敗した tenant 2 も集計に含まれる - #29 修正）
+        assert result["tenants_processed"] == 3
         assert result["refreshed"] == 2
+        # 失敗したテナントも failed カウントに反映される
+        assert result["failed"] == 1
+        # by_tenant に全 3 テナントのサマリが入る
+        assert len(result["by_tenant"]) == 3
 
 
 # -------------------------------------------------------------------------

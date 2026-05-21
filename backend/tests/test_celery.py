@@ -48,6 +48,16 @@ class TestCeleryAppConfig:
         assert "app.tasks.maintenance" in celery_app.conf.include
         assert "app.tasks.reports" in celery_app.conf.include
 
+    def test_email_tasks_module_registered(self):
+        """email_tasks が include に登録されていること（Phase 3 追加）"""
+        from app.celery_app import celery_app
+        assert "app.tasks.email_tasks" in celery_app.conf.include
+
+    def test_task_ignore_result_is_set(self):
+        """task_ignore_result=True で Redis 結果バックエンド障害対策がされていること"""
+        from app.celery_app import celery_app
+        assert celery_app.conf.task_ignore_result is True
+
 
 class TestDashboardTask:
     """ダッシュボードKPIキャッシュタスクのテスト"""

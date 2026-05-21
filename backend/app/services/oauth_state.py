@@ -140,7 +140,7 @@ async def consume_state(state: str) -> Optional[dict[str, object]]:
     r = get_redis()
     if r is None:
         logger.error("Redis 未接続のため OAuth state を検証できません")
-        return None
+        raise OAuthStateError("Redis 未接続のため OAuth state を検証できません")
 
     key = _redis_key(state)
     try:

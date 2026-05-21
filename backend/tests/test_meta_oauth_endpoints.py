@@ -50,6 +50,7 @@ from app.auth.dependencies import (
 from app.database import get_db
 from app.routers import meta_inbox
 from app.services import encryption
+from app.services.meta_graph import MetaGraphTimeoutError, MetaGraphTransportError
 
 
 # ---------------------------------------------------------------------------
@@ -765,3 +766,52 @@ async def test_callback_verifies_subscribed_apps_after_subscribe(app_client, db_
         method == "GET" and path.endswith("/page-1/subscribed_apps")
         for method, path in seen_paths
     ), f"GET /page-1/subscribed_apps not called. seen={seen_paths}"
+
+
+# ---------------------------------------------------------------------------
+# #18: 未テスト3経路 (callback: Redis障害 / Timeout / Transport)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_callback_503_when_redis_down(app_client):
+    """Redis 未接続時に consume_state が OAuthStateError を raise → 503。"""
+    with patch("app.services.oauth_state.get_redis", return_value=None):
+        resp = await app_client.get(
+            "/api/v1/meta/connect/callback?code=c&state=some-state"
+        )
+    assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_callback_504_when_meta_token_exchange_times_out(app_client):
+    """token exchange で MetaGraphTimeoutError → 504。"""
+    redis_mock, _ = _make_redis_with_state({
+        "tenant_id": 999, "staff_id": 0, "created_at": "x", "nonce": "y",
+    })
+    with patch("app.services.oauth_state.get_redis", return_value=redis_mock), \
+         patch(
+             "app.services.meta_graph.exchange_code_for_short_token",
+             new=AsyncMock(side_effect=MetaGraphTimeoutError("timeout")),
+         ):
+        resp = await app_client.get(
+            "/api/v1/meta/connect/callback?code=the-code&state=ok-state"
+        )
+    assert resp.status_code == 504
+
+
+@pytest.mark.asyncio
+async def test_callback_502_when_meta_token_exchange_transport_error(app_client):
+    """token exchange で MetaGraphTransportError → 502。"""
+    redis_mock, _ = _make_redis_with_state({
+        "tenant_id": 999, "staff_id": 0, "created_at": "x", "nonce": "y",
+    })
+    with patch("app.services.oauth_state.get_redis", return_value=redis_mock), \
+         patch(
+             "app.services.meta_graph.exchange_code_for_short_token",
+             new=AsyncMock(side_effect=MetaGraphTransportError("network error")),
+         ):
+        resp = await app_client.get(
+            "/api/v1/meta/connect/callback?code=the-code&state=ok-state"
+        )
+    assert resp.status_code == 502

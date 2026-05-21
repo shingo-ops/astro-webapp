@@ -11,10 +11,9 @@ Sprint 2 Generator Known Limitations で持ち越し。
 - GET /meta/channels (channels.view)
 
 設計判断:
-- FastAPI の HTTPBearer は credentials missing → 403 を返す（仕様）
+- FastAPI 0.115+ の HTTPBearer は credentials missing → 401 を返す
 - require_permission は permission missing → 403 を返す
-- なので「auth missing」も「perm missing」も結果として 403 になる場合があるが、
-  メッセージや code で区別する。
+- なので「auth missing」は 401、「perm missing」は 403 になる。
 - 既存 test_meta_oauth_endpoints.py は permission 全付与 + user override で
   正常系を扱うため、本ファイルは permission/user override せずに 403 を確認する。
 """
@@ -51,7 +50,7 @@ async def app_no_auth():
     """auth dependency を override しない FastAPI app。
 
     リクエスト時に Authorization header が無いため、HTTPBearer が
-    HTTPException(403, "Not authenticated") を返す。
+    HTTPException(401, "Not authenticated") を返す（FastAPI 0.115+ の挙動）。
     """
     app = FastAPI()
     app.include_router(meta_inbox.router, prefix="/api/v1")
@@ -106,9 +105,10 @@ async def app_no_perm(monkeypatch):
 
 # POST /api/v1/meta/connect/start (channels.manage)
 @pytest.mark.asyncio
-async def test_connect_start_no_auth_returns_403(app_no_auth):
+async def test_connect_start_no_auth_returns_401(app_no_auth):
     res = await app_no_auth.post("/api/v1/meta/connect/start")
-    assert res.status_code == 403, f"expected 403 (no auth), got {res.status_code}"
+    # FastAPI 0.115+ は認証ヘッダー未送信時に 401 を返す（旧 403 から変更）
+    assert res.status_code == 401, f"expected 401 (no auth), got {res.status_code}"
     assert "authenticated" in res.json().get("detail", "").lower() or \
            res.json().get("detail") == "Not authenticated"
 
@@ -121,9 +121,9 @@ async def test_connect_start_no_perm_returns_403(app_no_perm):
 
 # GET /api/v1/meta/connect/callback (channels.manage)
 @pytest.mark.asyncio
-async def test_connect_callback_no_auth_returns_403(app_no_auth):
+async def test_connect_callback_no_auth_returns_401(app_no_auth):
     res = await app_no_auth.get("/api/v1/meta/connect/callback?code=x&state=y")
-    assert res.status_code == 403, f"expected 403 (no auth), got {res.status_code}"
+    assert res.status_code == 401, f"expected 401 (no auth), got {res.status_code}"
 
 
 @pytest.mark.asyncio
@@ -134,9 +134,9 @@ async def test_connect_callback_no_perm_returns_403(app_no_perm):
 
 # DELETE /api/v1/meta/connect/{page_id} (channels.manage)
 @pytest.mark.asyncio
-async def test_connect_delete_no_auth_returns_403(app_no_auth):
+async def test_connect_delete_no_auth_returns_401(app_no_auth):
     res = await app_no_auth.delete("/api/v1/meta/connect/123456")
-    assert res.status_code == 403, f"expected 403 (no auth), got {res.status_code}"
+    assert res.status_code == 401, f"expected 401 (no auth), got {res.status_code}"
 
 
 @pytest.mark.asyncio
@@ -147,9 +147,9 @@ async def test_connect_delete_no_perm_returns_403(app_no_perm):
 
 # GET /api/v1/meta/channels (channels.view)
 @pytest.mark.asyncio
-async def test_channels_list_no_auth_returns_403(app_no_auth):
+async def test_channels_list_no_auth_returns_401(app_no_auth):
     res = await app_no_auth.get("/api/v1/meta/channels")
-    assert res.status_code == 403, f"expected 403 (no auth), got {res.status_code}"
+    assert res.status_code == 401, f"expected 401 (no auth), got {res.status_code}"
 
 
 @pytest.mark.asyncio
