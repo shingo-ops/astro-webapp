@@ -9,7 +9,7 @@
  *   2026-05-21: ADR-059 — すべて/新規/既存/アーカイブ タブを追加
  */
 
-import { useEffect, useState, FormEvent } from "react";
+import { useCallback, useEffect, useState, FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
@@ -85,12 +85,16 @@ function ExistingTabContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api.get<CustomerSimple[]>("/customers")
       .then(setCustomers)
       .catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const displayName = (c: CustomerSimple) =>
     c.billing_display_name || c.company_name || c.customer_code;
@@ -145,15 +149,15 @@ function ArchiveTabContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     api.get<Archive[]>("/archives?source_table=leads")
       .then(setArchives)
       .catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")))
       .finally(() => setLoading(false));
-  };
+  }, [t]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const restore = async (id: number) => {
     try {
@@ -211,7 +215,9 @@ export default function LeadsPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "all";
+  const VALID_TABS = ["all", "new", "existing", "archive"] as const;
+  const rawTab = searchParams.get("tab") || "all";
+  const activeTab = VALID_TABS.includes(rawTab as (typeof VALID_TABS)[number]) ? rawTab : "all";
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
@@ -250,7 +256,7 @@ export default function LeadsPage() {
     return key ? t(key) : status;
   };
 
-  const loadLeads = async () => {
+  const loadLeads = useCallback(async () => {
     setLoading(true);
     try {
       // tab=new のとき「新規」ステータスでプリセット
@@ -263,13 +269,13 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, statusFilter, t]);
 
   useEffect(() => {
     if (activeTab === "all" || activeTab === "new") {
       loadLeads();
     }
-  }, [statusFilter, activeTab]);
+  }, [activeTab, statusFilter, loadLeads]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
