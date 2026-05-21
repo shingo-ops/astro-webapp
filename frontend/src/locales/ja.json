@@ -343,7 +343,8 @@
     "manage": "管理",
     "markAllRead": "全て既読にする",
     "filterUnread": "未読",
-    "filterFollowUp": "フォローアップ"
+    "filterFollowUp": "フォローアップ",
+    "subtitle": "メッセージの管理と返信ができます。"
   },
   "channels": {
     "title": "チャンネル (Meta連携)",
