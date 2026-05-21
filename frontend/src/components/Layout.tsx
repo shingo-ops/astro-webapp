@@ -27,6 +27,7 @@ import { useLocale } from "../contexts/LocaleContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useUiPrefs } from "../contexts/UiPrefsContext";
 import { usePermissions } from "../hooks/usePermissions";
+import { useSuperAdmin } from "../hooks/useSuperAdmin";
 import ConfirmModal from "./ConfirmModal";
 
 /* ------------------------------------------------------------------ */
@@ -99,6 +100,7 @@ export default function Layout() {
   const { theme, changeTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { hasPermission, hasAny, loading: permsLoading } = usePermissions();
+  const { isSuperAdmin } = useSuperAdmin();
   const { prefs, loading: uiPrefsLoading } = useUiPrefs();
   const navLoading = permsLoading || uiPrefsLoading;
 
@@ -143,6 +145,16 @@ export default function Layout() {
     ...(hasPermission("erp.view") ? [{ to: "/data", label: t("nav.dataManagement") }] : []),
     ...(hasPermission("orders.view") ? [{ to: "/commission-settings", label: t("nav.commissionSettings") }] : []),
     ...(hasPermission("channels.view") ? [{ to: "/channels", label: t("nav.channels") }] : []),
+    // spec.md v1.1 F2 (Sprint 2): テナント admin 用「在庫表示権限」
+    ...(hasPermission("tenant.inventory_visibility.edit")
+      ? [{ to: "/admin/inventory-visibility", label: t("nav.inventoryVisibility") }]
+      : []),
+    // spec.md v1.1 F2 (Sprint 2): 中央 admin 専用「マスタ管理」リンク
+    // is_super_admin=true のユーザーにだけ表示。
+    // バックエンド側でも require_super_admin で二重ガード（AC2.1）。
+    ...(isSuperAdmin
+      ? [{ to: "/super-admin/masters", label: t("nav.superAdminMasters") }]
+      : []),
   ];
 
   const moreItems: SubItem[] = [
@@ -260,7 +272,7 @@ export default function Layout() {
                   label={t("nav.admin")}
                   icon={<ShieldCheck size={20} />}
                   items={adminItems}
-                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings"]}
+                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/super-admin/masters"]}
                   isExpanded={sidebarExpanded}
                   isOpen={openAccordion === "admin"}
                   onToggle={() => toggleAccordion("admin")}

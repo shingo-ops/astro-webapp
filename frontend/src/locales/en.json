@@ -89,7 +89,9 @@
     "searchPlaceholder": "Search by customer name or lead ID...",
     "signOut": "Sign out",
     "signOutTitle": "Sign Out",
-    "signOutMessage": "Are you sure you want to sign out? Any unsaved data will be lost."
+    "signOutMessage": "Are you sure you want to sign out? Any unsaved data will be lost.",
+    "superAdminMasters": "Central Masters",
+    "inventoryVisibility": "Inventory Visibility"
   },
   "login": {
     "email": "Email address",
@@ -807,5 +809,114 @@
     "confirmDesc4": "This action will be recorded in audit_logs.",
     "merging": "Merging...",
     "executeLabel": "Execute merge into \"{{masterName}}\""
+  },
+  "superAdmin": {
+    "title": "Master Data (Central Admin Only)",
+    "subtitle": "Edit marketplace central masters (shared across all tenants)",
+    "accessDenied": "Only Jarvis operations admins (central admins) can access this page.",
+    "tabs": {
+      "knowledge": "Rules / Aliases",
+      "tcg": "TCG Series",
+      "dex": "Pokemon / Trainer Dex",
+      "suppliers": "Suppliers"
+    },
+    "knowledge": {
+      "title": "Normalization Rules (knowledge_rules) + Supplier Aliases",
+      "rulesSection": "Normalization Rules",
+      "aliasesSection": "Supplier Aliases",
+      "newRule": "New Rule",
+      "newAlias": "New Alias",
+      "fields": {
+        "category": "Category",
+        "patternType": "Pattern Type",
+        "pattern": "Pattern",
+        "normalizedTo": "Normalized To",
+        "priority": "Priority",
+        "language": "Language",
+        "isActive": "Active",
+        "supplierId": "Supplier ID",
+        "aliasText": "Alias Text"
+      },
+      "csvImport": "CSV Import",
+      "csvExport": "CSV Export",
+      "csvDryRun": "Preview (dry-run)",
+      "csvCommit": "Commit",
+      "csvErrors": "CSV Errors",
+      "previewWouldInsert": "Rows would be inserted",
+      "invalidCsv": "Invalid CSV format"
+    },
+    "tcg": {
+      "title": "TCG Series Master",
+      "newSeries": "New Series",
+      "fields": {
+        "tcgType": "TCG Type",
+        "seriesCode": "Series Code",
+        "nameJa": "Name (Japanese)",
+        "nameEn": "Name (English)",
+        "releaseDate": "Release Date",
+        "category": "Category"
+      },
+      "types": {
+        "pokemon": "Pokemon TCG",
+        "one_piece": "One Piece TCG",
+        "dragon_ball": "Dragon Ball TCG",
+        "union_arena": "Union Arena",
+        "yugioh": "Yu-Gi-Oh!"
+      }
+    },
+    "dex": {
+      "title": "Pokemon / Trainer Dex",
+      "kinds": {
+        "pokemon": "Pokemon",
+        "trainer": "Trainer"
+      },
+      "newEntry": "New Dex Entry",
+      "fields": {
+        "dexNumber": "Dex Number",
+        "nameJa": "Name (Japanese)",
+        "nameEn": "Name (English)",
+        "generation": "Generation",
+        "region": "Region",
+        "era": "Era"
+      }
+    },
+    "suppliersAdmin": {
+      "title": "Supplier Master (Central Admin)",
+      "newSupplier": "New Supplier",
+      "fields": {
+        "name": "Supplier Name",
+        "supplierType": "Corporate / Individual",
+        "defaultLanguage": "Default Language",
+        "contactName": "Contact",
+        "email": "Email",
+        "phone": "Phone",
+        "address": "Address",
+        "notes": "Notes",
+        "isActive": "Active"
+      },
+      "types": {
+        "individual": "Individual",
+        "corporate": "Corporate"
+      },
+      "discordRouting": "Discord Routing",
+      "addRouting": "Add Discord Routing",
+      "guildId": "Guild ID",
+      "channelId": "Channel ID"
+    }
+  },
+  "inventoryVisibility": {
+    "title": "Inventory Visibility Settings",
+    "subtitle": "Configure how much inventory data each role can see (quantity / unit price / status).",
+    "roleColumn": "Role",
+    "keys": {
+      "full": "Full (quantity, unit price, status)",
+      "staff": "Partial (name + unit price; quantity masked)",
+      "viewer": "Minimum (name only; unit price + quantity masked)"
+    },
+    "save": "Save",
+    "saved": "Saved",
+    "loadingMatrix": "Loading matrix...",
+    "noRoles": "No roles found",
+    "permissionRequired": "You need tenant.inventory_visibility.edit permission to edit this screen"
   }
 }

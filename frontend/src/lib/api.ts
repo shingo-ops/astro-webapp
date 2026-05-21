@@ -99,6 +99,67 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   throw lastError || new Error("リクエストに失敗しました");
 }
 
+/**
+ * Blob 取得用（CSV エクスポート等）。Authorization ヘッダー付きで Blob を返す。
+ * spec.md v1.1 F2 (Sprint 2) で導入。リトライは GET と同じ扱い。
+ */
+async function requestBlob(path: string): Promise<Blob> {
+  const headers = await getAuthHeaders();
+  // Blob 取得は Content-Type を勝手に上書きしない（サーバー側の text/csv を尊重）
+  const { "Content-Type": _ct, ...authOnly } = headers as Record<string, string>;
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await sleep(BASE_DELAY_MS * Math.pow(2, attempt - 1));
+    }
+    try {
+      const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers: authOnly });
+      if (RETRYABLE_STATUS.has(res.status) && attempt < MAX_RETRIES) {
+        lastError = new Error(`HTTP ${res.status}`);
+        continue;
+      }
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new ApiError(body || `HTTP ${res.status}`, res.status, body);
+      }
+      return await res.blob();
+    } catch (err) {
+      if (err instanceof TypeError && attempt < MAX_RETRIES) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError || new Error("Blob 取得に失敗しました");
+}
+
+/**
+ * multipart/form-data POST（CSV import 等）。
+ * fetch に FormData を渡すと boundary 付き Content-Type を自動付与してくれるため、
+ * 既存の application/json ヘッダーは上書きする必要がある。
+ */
+async function requestForm<T>(path: string, body: FormData): Promise<T> {
+  const headers = await getAuthHeaders();
+  const { "Content-Type": _ct, ...authOnly } = headers as Record<string, string>;
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: authOnly,
+    body,
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const detail = (errBody as { detail?: unknown }).detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : (detail as { detail?: string })?.detail || `HTTP ${res.status}`;
+    throw new ApiError(message, res.status, detail);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, data: unknown) =>
@@ -109,4 +170,7 @@ export const api = {
     request<T>(path, { method: "PATCH", body: JSON.stringify(data) }),
   delete: (path: string) =>
     request<void>(path, { method: "DELETE" }),
+  // spec.md v1.1 F2 (Sprint 2)
+  getBlob: (path: string) => requestBlob(path),
+  postForm: <T>(path: string, body: FormData) => requestForm<T>(path, body),
 };

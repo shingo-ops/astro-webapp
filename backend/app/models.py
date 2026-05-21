@@ -27,6 +27,10 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(255))
     role = Column(String(50), default="user")
+    # spec.md v1.1 F2 (Sprint 2): マーケットプレイス中央 admin フラグ。
+    # テナント admin (role='admin') とは独立、Jarvis 運用 admin のみ true。
+    # 詳細: migrations/064_add_users_is_super_admin.sql
+    is_super_admin = Column(Boolean, default=False, nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_active = Column(Boolean, default=True, index=True)

@@ -114,9 +114,17 @@ async def get_my_permissions(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    """現在のユーザーの有効権限キー集合を返す（フロントUIのメニュー制御に使用）"""
+    """現在のユーザーの有効権限キー集合を返す（フロントUIのメニュー制御に使用）
+
+    spec.md v1.1 F2 (Sprint 2):
+      is_super_admin フラグも返す（フロント側で /super-admin/masters への
+      導線を出すかどうかの判定に使用）。
+    """
     keys = await load_user_permissions(db, tenant_id, current_user.id)
-    return {"permissions": sorted(keys)}
+    return {
+        "permissions": sorted(keys),
+        "is_super_admin": bool(getattr(current_user, "is_super_admin", False)),
+    }
 
 
 # =========================================================================

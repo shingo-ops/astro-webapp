@@ -1,0 +1,166 @@
+"""
+中央 admin 用 public.pokemon_dex / public.trainer_dex CRUD ルーター。
+
+spec.md v1.1 F2 (Sprint 2) / AC2.4:
+  - dex_kind = 'pokemon' or 'trainer' でテーブル切替
+  - pokemon_dex(generation, region), trainer_dex(era)
+
+API:
+  GET    /api/v1/super-admin/dex/{dex_kind}
+  POST   /api/v1/super-admin/dex/{dex_kind}
+  PATCH  /api/v1/super-admin/dex/{dex_kind}/{id}
+  DELETE /api/v1/super-admin/dex/{dex_kind}/{id}
+"""
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth.dependencies import require_super_admin
+from app.database import get_db
+from app.schemas.central_masters import (
+    PokemonDexCreate,
+    PokemonDexResponse,
+    PokemonDexUpdate,
+    TrainerDexCreate,
+    TrainerDexResponse,
+    TrainerDexUpdate,
+)
+
+router = APIRouter()
+
+_POKEMON_COLS = "id, dex_number, name_ja, name_en, generation, region"
+_TRAINER_COLS = "id, dex_number, name_ja, name_en, era"
+
+_POKEMON_UPDATABLE = {"dex_number", "name_ja", "name_en", "generation", "region"}
+_TRAINER_UPDATABLE = {"dex_number", "name_ja", "name_en", "era"}
+
+
+def _table(dex_kind: str) -> tuple[str, str]:
+    if dex_kind == "pokemon":
+        return ("public.pokemon_dex", _POKEMON_COLS)
+    if dex_kind == "trainer":
+        return ("public.trainer_dex", _TRAINER_COLS)
+    raise HTTPException(status_code=404, detail="dex_kind は pokemon または trainer のみ")
+
+
+@router.get(
+    "/super-admin/dex/{dex_kind}",
+    dependencies=[Depends(require_super_admin)],
+)
+async def list_dex(
+    dex_kind: str,
+    q: str | None = Query(default=None, max_length=255),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=200, ge=1, le=2000),
+    db: AsyncSession = Depends(get_db),
+):
+    table, cols = _table(dex_kind)
+    offset = (page - 1) * per_page
+    conditions: list[str] = []
+    params: dict = {"limit": per_page, "offset": offset}
+    if q:
+        conditions.append("(name_ja ILIKE :q OR name_en ILIKE :q OR CAST(dex_number AS TEXT) = :exact)")
+        params["q"] = f"%{q}%"
+        params["exact"] = q
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    result = await db.execute(
+        text(
+            f"SELECT {cols} FROM {table} {where} "
+            f"ORDER BY dex_number, id LIMIT :limit OFFSET :offset"
+        ),
+        params,
+    )
+    rows = [dict(row) for row in result.mappings().all()]
+    return rows
+
+
+@router.post(
+    "/super-admin/dex/{dex_kind}",
+    status_code=201,
+    dependencies=[Depends(require_super_admin)],
+)
+async def create_dex(
+    dex_kind: str,
+    data: dict,  # 動的に PokemonDexCreate / TrainerDexCreate を分岐
+    db: AsyncSession = Depends(get_db),
+):
+    table, cols = _table(dex_kind)
+    if dex_kind == "pokemon":
+        validated = PokemonDexCreate(**data).model_dump()
+        sql = (
+            f"INSERT INTO {table} (dex_number, name_ja, name_en, generation, region) "
+            f"VALUES (:dex_number, :name_ja, :name_en, :generation, :region) "
+            f"RETURNING {cols}"
+        )
+    else:
+        validated = TrainerDexCreate(**data).model_dump()
+        sql = (
+            f"INSERT INTO {table} (dex_number, name_ja, name_en, era) "
+            f"VALUES (:dex_number, :name_ja, :name_en, :era) "
+            f"RETURNING {cols}"
+        )
+    try:
+        result = await db.execute(text(sql), validated)
+    except IntegrityError as exc:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"重複: {exc.orig}")
+    row = result.mappings().first()
+    await db.commit()
+    if dex_kind == "pokemon":
+        return PokemonDexResponse(**dict(row)).model_dump()
+    return TrainerDexResponse(**dict(row)).model_dump()
+
+
+@router.patch(
+    "/super-admin/dex/{dex_kind}/{entry_id}",
+    dependencies=[Depends(require_super_admin)],
+)
+async def update_dex(
+    dex_kind: str,
+    entry_id: int,
+    data: dict,
+    db: AsyncSession = Depends(get_db),
+):
+    table, cols = _table(dex_kind)
+    if dex_kind == "pokemon":
+        validated = PokemonDexUpdate(**data).model_dump(exclude_unset=True)
+        updatable = _POKEMON_UPDATABLE
+    else:
+        validated = TrainerDexUpdate(**data).model_dump(exclude_unset=True)
+        updatable = _TRAINER_UPDATABLE
+    validated = {k: v for k, v in validated.items() if k in updatable}
+    if not validated:
+        raise HTTPException(status_code=400, detail="更新するフィールドを指定してください")
+    set_clauses = ", ".join(f"{k} = :{k}" for k in validated)
+    validated["id"] = entry_id
+    result = await db.execute(
+        text(f"UPDATE {table} SET {set_clauses} WHERE id = :id RETURNING {cols}"),
+        validated,
+    )
+    row = result.mappings().first()
+    if not row:
+        raise HTTPException(status_code=404, detail="図鑑エントリが見つかりません")
+    await db.commit()
+    return dict(row)
+
+
+@router.delete(
+    "/super-admin/dex/{dex_kind}/{entry_id}",
+    status_code=204,
+    dependencies=[Depends(require_super_admin)],
+)
+async def delete_dex(
+    dex_kind: str,
+    entry_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    table, _ = _table(dex_kind)
+    result = await db.execute(
+        text(f"DELETE FROM {table} WHERE id = :id"), {"id": entry_id}
+    )
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="図鑑エントリが見つかりません")
+    await db.commit()
