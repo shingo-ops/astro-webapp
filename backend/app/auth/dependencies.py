@@ -231,6 +231,37 @@ async def get_current_admin(
     return current_user
 
 
+async def require_super_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Jarvis 運用 admin（マーケットプレイス中央 admin）を要求する Dependency。
+
+    背景:
+      spec.md v1.1 F2 (Sprint 2) の二層権限構造:
+        - 中央 admin (is_super_admin = true): /super-admin/masters 配下で
+          public schema のマスタを編集（knowledge_rules / supplier_aliases /
+          tcg_series_master / pokemon_dex / trainer_dex / suppliers /
+          supplier_discord_routing）
+        - テナント admin (role = 'admin'): 自テナント内の操作のみ
+          （/admin/inventory-visibility 等）
+
+    判定:
+      public.users.is_super_admin = TRUE のユーザーのみ通過。
+      テナント admin (role='admin') でも is_super_admin=false なら 403。
+
+    使用例:
+        @router.get("/super-admin/...",
+                    dependencies=[Depends(require_super_admin)])
+    """
+    if not getattr(current_user, "is_super_admin", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="この操作にはJarvis運用admin（中央admin）権限が必要です",
+        )
+    return current_user
+
+
 async def load_user_permissions(
     db: AsyncSession,
     tenant_id: int,

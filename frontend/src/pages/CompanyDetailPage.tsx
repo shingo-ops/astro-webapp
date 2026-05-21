@@ -448,7 +448,7 @@ export default function CompanyDetailPage() {
       <div className="page-header">
         <div>
           <button className="btn-sm" onClick={() => navigate("/companies")}>&larr; {t("common.back")}</button>
-          <h1>{company.name} <span style={{ color: "#888", fontSize: "0.7em" }}>({company.company_code})</span></h1>
+          <h1>{company.name} <span style={{ color: "var(--text-muted)", fontSize: "0.7em" }}>({company.company_code})</span></h1>
         </div>
         <div className="page-header-actions">
           <span className={`status-badge status-${company.status}`}>{company.status}</span>

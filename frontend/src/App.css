@@ -15,8 +15,8 @@
 /* --- Sidebar panel --- */
 .sidebar-panel {
   width: var(--sidebar-width-collapsed, 68px);
-  background: var(--sidebar-bg, #ffffff);
-  border-right: 1px solid var(--sidebar-border, #E4E4E7);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -39,7 +39,7 @@
   gap: 12px;
   padding: 12px 16px;
   height: 64px;
-  border-bottom: 1px solid var(--sidebar-border, #E4E4E7);
+  border-bottom: 1px solid var(--sidebar-border);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -54,7 +54,7 @@
 .sidebar-logo-text {
   font-weight: 700;
   font-size: 1.05rem;
-  color: var(--accent, #1877F2);
+  color: var(--accent);
   letter-spacing: 0.05em;
   white-space: nowrap;
   animation: fadeIn 200ms ease-in;
@@ -114,15 +114,15 @@
 }
 
 .sidebar-item:hover {
-  background: var(--sidebar-item-hover-bg, #E7F3FF);
-  color: var(--sidebar-item-active-color, #1877F2);
+  background: var(--sidebar-item-hover-bg);
+  color: var(--sidebar-item-active-color);
 }
 
 .sidebar-item.active {
-  background: var(--sidebar-item-active-bg, #E7F3FF);
-  color: var(--sidebar-item-active-color, #1877F2);
+  background: var(--sidebar-item-active-bg);
+  color: var(--sidebar-item-active-color);
   font-weight: 600;
-  border-left-color: var(--sidebar-item-active-border, #1877F2);
+  border-left-color: var(--sidebar-item-active-border);
 }
 
 .sidebar-icon {
@@ -167,8 +167,8 @@
 }
 
 .sidebar-accordion-menu {
-  background: var(--bg-subtle, #F7FAFC);
-  border-bottom: 1px solid var(--border, #E4E4E7);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
 }
 
 .sidebar-sub-item {
@@ -182,14 +182,14 @@
 }
 
 .sidebar-sub-item:hover {
-  background: var(--sidebar-item-hover-bg, #E7F3FF);
-  color: var(--sidebar-item-active-color, #1877F2);
+  background: var(--sidebar-item-hover-bg);
+  color: var(--sidebar-item-active-color);
 }
 
 .sidebar-sub-item.active {
-  color: var(--sidebar-item-active-color, #1877F2);
+  color: var(--sidebar-item-active-color);
   font-weight: 600;
-  background: var(--link-active-bg, #E7F3FF);
+  background: var(--link-active-bg);
 }
 
 .sidebar-loading-dot {
@@ -332,7 +332,7 @@
   gap: 8px;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--nav-brand-text);
   white-space: nowrap;
 }
 
@@ -361,7 +361,7 @@
   background: transparent;
   border: none;
   padding: 8px 12px;
-  color: #fff;
+  color: var(--nav-brand-text);
   font-size: 0.9rem;
 }
 
@@ -377,14 +377,14 @@
   padding: 0 14px;
   background: transparent;
   border: none;
-  color: #cbd5e0;
+  color: var(--text-secondary);
   cursor: pointer;
   font-size: 0.95rem;
 }
 
 .brandbar-search button:hover {
-  background: #2a4365;
-  color: #fff;
+  background: var(--nav-search-bg);
+  color: var(--nav-brand-text);
 }
 
 /* 下段: 白ナビゲーションバー
@@ -537,7 +537,7 @@
 }
 .color-swatch.selected {
   border-color: var(--text-primary);
-  box-shadow: 0 0 0 2px #fff inset, 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 0 0 2px var(--bg-surface) inset, 0 2px 4px rgba(0,0,0,0.2);
 }
 .color-swatch-legacy {
   /* 旧パレット由来の色（現在のロールに設定されている色がパレットにない場合）を区別 */
@@ -607,15 +607,15 @@
   margin-top: 16px;
 }
 
-/* 旧 topnav（後方互換維持） */
+/* 旧 topnav（削除済み / ADR-067） */
 .topnav {
   display: flex;
   align-items: center;
-  background: #1a202c;
-  color: #e2e8f0;
+  background: var(--nav-brand-bg);
+  color: var(--nav-brand-text);
   padding: 0 24px;
   height: 56px;
-  border-bottom: 3px solid #667eea;
+  border-bottom: 3px solid var(--nav-brand-accent);
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   gap: 32px;
 }
@@ -623,7 +623,7 @@
 .topnav-brand h1 {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--nav-brand-text);
   margin: 0;
   white-space: nowrap;
 }
@@ -638,7 +638,7 @@
 
 .topnav-links a {
   padding: 8px 14px;
-  color: #cbd5e0;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.9rem;
   border-radius: 4px;
@@ -647,13 +647,13 @@
 }
 
 .topnav-links a:hover {
-  background: #2d3748;
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--nav-brand-text);
 }
 
 .topnav-links a.active {
-  background: #4a5568;
-  color: #fff;
+  background: var(--bg-active);
+  color: var(--nav-brand-text);
   font-weight: 600;
 }
 
@@ -701,8 +701,8 @@
 
 .sidebar {
   width: 240px;
-  background: #1a202c;
-  color: #e2e8f0;
+  background: var(--nav-brand-bg);
+  color: var(--nav-brand-text);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -710,13 +710,13 @@
 
 .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid #2d3748;
+  border-bottom: 1px solid var(--border);
 }
 
 .sidebar-header h1 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--nav-brand-text);
   margin: 0;
 }
 
@@ -735,19 +735,19 @@
 }
 
 .sidebar-nav a:hover {
-  background: #2d3748;
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--nav-brand-text);
 }
 
 .sidebar-nav a.active {
-  background: #4a5568;
-  color: #fff;
-  border-left: 3px solid #667eea;
+  background: var(--bg-active);
+  color: var(--nav-brand-text);
+  border-left: 3px solid var(--accent);
 }
 
 .sidebar-footer {
   padding: 16px 20px;
-  border-top: 1px solid #2d3748;
+  border-top: 1px solid var(--border);
 }
 
 .user-info {
@@ -761,7 +761,7 @@
   width: 100%;
   padding: 6px 12px;
   background: transparent;
-  border: 1px solid #4a5568;
+  border: 1px solid var(--border-strong);
   color: var(--text-muted);
   border-radius: 4px;
   cursor: pointer;
@@ -769,8 +769,8 @@
 }
 
 .btn-logout:hover {
-  background: #2d3748;
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--nav-brand-text);
 }
 
 .main-content {
@@ -857,9 +857,9 @@
 
 /* Meta 風ログインフォーム — 入力欄（.login-card スコープ限定） */
 .login-card .form-group input {
-  background: #ffffff;
-  color: #1c1e21;
-  border: 1px solid #ccd0d5;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 12px 16px;
   font-size: 1rem;
@@ -867,15 +867,15 @@
 
 .login-card .form-group input:focus {
   outline: none;
-  border-color: #1877f2;
+  border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
 }
 
 /* Meta 風ログインボタン（.login-card スコープ限定） */
 .login-card .btn-primary {
   width: 100%;
-  background: #1877f2;
-  color: #ffffff;
+  background: var(--accent);
+  color: var(--on-accent);
   border: none;
   border-radius: 6px;
   padding: 12px 16px;
@@ -886,7 +886,7 @@
 }
 
 .login-card .btn-primary:hover:not(:disabled) {
-  background: #166fe5;
+  background: var(--accent-hover);
 }
 
 /* --- Forms --- */
@@ -939,7 +939,7 @@
 .btn-primary {
   padding: 8px 20px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border: none;
   border-radius: 4px;
   font-size: 0.9rem;
@@ -965,7 +965,7 @@
 .btn-sm {
   padding: 4px 10px;
   font-size: 0.8rem;
-  background: #edf2f7;
+  background: var(--bg-hover);
   border: none;
   border-radius: 3px;
   cursor: pointer;
@@ -1057,8 +1057,8 @@
 }
 
 .kpi-card.accent {
-  background: var(--accent, #1877F2);
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .kpi-value {
@@ -1109,7 +1109,7 @@
   padding: 8px 0;
   font-size: 0.85rem;
   color: var(--text-primary);
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--border);
 }
 
 .dashboard-tables {
@@ -1142,7 +1142,7 @@
   border-radius: 10px;
   font-size: 0.75rem;
   font-weight: 500;
-  background: #e2e8f0;
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 .status-badge.status-active { background: var(--success-bg); color: var(--success-text); }
@@ -1151,24 +1151,24 @@
 .status-badge.status-pending_dedup_review { background: var(--warning-bg); color: var(--warning-text); }
 
 .row-pending-dedup td {
-  background: #fffbeb;
-  border-left: 3px solid #ecc94b;
+  background: var(--warning-bg);
+  border-left: 3px solid var(--warning-text);
 }
 .data-table tr.row-pending-dedup:hover td {
-  background: #fef3c7;
+  background: var(--row-hover);
 }
 
 .dedup-resolve-section {
   margin-top: 16px;
   padding: 16px;
-  background: #fffbeb;
-  border: 1px solid #ecc94b;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-text);
   border-radius: 8px;
 }
 .dedup-resolve-section h3 {
   margin: 0 0 8px;
   font-size: 1rem;
-  color: #975a16;
+  color: var(--warning-text);
 }
 .dedup-resolve-section p {
   margin: 0 0 12px;
@@ -1186,8 +1186,8 @@
   padding: 2px 10px;
   border-radius: 10px;
   font-size: 0.75rem;
-  background: #fefcbf;
-  color: #975a16;
+  background: var(--warning-bg);
+  color: var(--warning-text);
   font-weight: 500;
 }
 
@@ -1266,11 +1266,11 @@
   margin-bottom: -1px;
 }
 .tab-nav button:hover {
-  color: var(--accent, #1877F2);
+  color: var(--accent);
 }
 .tab-nav button.tab-active {
-  color: var(--accent, #1877F2);
-  border-bottom-color: var(--accent, #1877F2);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
   font-weight: 600;
 }
 .mono {
@@ -1279,16 +1279,16 @@
   color: var(--text-secondary);
 }
 
-/* リードステータスバッジ */
-.lead-badge-新規 { background: #bee3f8; color: #2a4365; padding: 2px 8px; border-radius: 4px; }
-.lead-badge-コンタクト中 { background: #fbd38d; color: #744210; padding: 2px 8px; border-radius: 4px; }
-.lead-badge-提案中 { background: #d6bcfa; color: #44337a; padding: 2px 8px; border-radius: 4px; }
-.lead-badge-案件化 { background: #c6f6d5; color: #22543d; padding: 2px 8px; border-radius: 4px; }
-.lead-badge-失注 { background: #fed7d7; color: #742a2a; padding: 2px 8px; border-radius: 4px; }
-.lead-badge-保留 { background: #e2e8f0; color: var(--text-primary); padding: 2px 8px; border-radius: 4px; }
+/* リードステータスバッジ（ADR-067: CSS変数使用） */
+.lead-badge-新規       { background: var(--info-bg);           color: var(--info-text);     padding: 2px 8px; border-radius: 4px; }
+.lead-badge-コンタクト中 { background: var(--lead-contact-bg);   color: var(--lead-contact-text); padding: 2px 8px; border-radius: 4px; }
+.lead-badge-提案中     { background: var(--purple-bg);         color: var(--purple-text);   padding: 2px 8px; border-radius: 4px; }
+.lead-badge-案件化     { background: var(--success-bg);        color: var(--success-text);  padding: 2px 8px; border-radius: 4px; }
+.lead-badge-失注       { background: var(--danger-bg);         color: var(--danger-text);   padding: 2px 8px; border-radius: 4px; }
+.lead-badge-保留       { background: var(--bg-hover);          color: var(--text-primary);  padding: 2px 8px; border-radius: 4px; }
 
 /* ランクバッジ拡張 */
-.badge-confirmed { background: #bee3f8; color: #2a4365; }
+.badge-confirmed { background: var(--info-bg); color: var(--info-text); }
 
 /* --- Phase 1.1: ロール・権限ページ split-view --- */
 .roles-page {
@@ -1342,7 +1342,7 @@
 }
 .role-item.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   transform: translateX(2px);
 }
 .role-item.active:hover {
@@ -1484,7 +1484,7 @@
 .permission-item-key {
   font-size: 0.72rem;
   color: var(--text-muted);
-  background: #edf2f7;
+  background: var(--bg-hover);
   padding: 1px 6px;
   border-radius: 3px;
   display: inline-block;

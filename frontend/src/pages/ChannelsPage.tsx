@@ -265,9 +265,9 @@ export default function ChannelsPage() {
             padding: "12px 16px",
             borderRadius: 4,
             marginBottom: 16,
-            background: "#fff4e5",
-            color: "#a45a00",
-            border: "1px solid #a45a00",
+            background: "var(--warning-bg)",
+            color: "var(--warning-text)",
+            border: "1px solid var(--warning-text)",
             display: "flex",
             alignItems: "center",
             gap: 12,
@@ -359,11 +359,11 @@ export default function ChannelsPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                     <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{ch.page_name}</h3>
                     {ch.is_active ? (
-                      <span className="badge" style={{ background: "#e6f4ea", color: "#137333" }}>
+                      <span className="badge" style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
                         {t("channels.status_active")}
                       </span>
                     ) : (
-                      <span className="badge" style={{ background: "#eee", color: "#666" }}>
+                      <span className="badge" style={{ background: "var(--bg-hover)", color: "var(--text-muted)" }}>
                         {t("channels.status_inactive")}
                       </span>
                     )}
@@ -371,7 +371,7 @@ export default function ChannelsPage() {
                       <span
                         className="badge"
                         data-testid="channel-reauth-badge"
-                        style={{ background: "#fff4e5", color: "#a45a00" }}
+                        style={{ background: "var(--warning-bg)", color: "var(--warning-text)" }}
                       >
                         {t("channels.reauthBadge")}
                       </span>
@@ -396,7 +396,7 @@ export default function ChannelsPage() {
                       {ch.connected_by_staff_name && ` / ${t("channels.connectedBy")}: ${ch.connected_by_staff_name}`}
                     </div>
                     {ch.page_token_expires_at && (
-                      <div style={tokenWarn ? { color: "#a45a00", fontWeight: 600 } : undefined}>
+                      <div style={tokenWarn ? { color: "var(--warning-text)", fontWeight: 600 } : undefined}>
                         <strong>{t("channels.tokenExpires")}:</strong> {formatDate(ch.page_token_expires_at)}
                         {expiresIn !== null && (
                           <span style={{ marginLeft: 6 }}>

@@ -46,6 +46,13 @@ from app.routers import erp
 from app.routers import staff
 from app.routers import bots
 from app.routers import contact  # LP問い合わせフォーム受付
+# spec.md v1.1 F2 (Sprint 2): マスタ編集 UI（中央 admin + テナント admin の二層）
+from app.routers import super_admin_knowledge
+from app.routers import super_admin_aliases
+from app.routers import super_admin_tcg
+from app.routers import super_admin_dex
+from app.routers import super_admin_suppliers
+from app.routers import tenant_admin_inventory_visibility
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -275,6 +282,35 @@ app.include_router(
 # Phase 1-D Sprint 2: Meta Inbox OAuth 接続バックエンド
 app.include_router(
     meta_inbox.router, prefix="/api/v1", tags=["meta-inbox"],
+    dependencies=[Depends(get_current_tenant)],
+)
+
+# spec.md v1.1 F2 (Sprint 2): マスタ編集 UI（中央 admin）
+#
+# super-admin/* は public schema のマスタを操作するため、get_current_tenant
+# ではなく require_super_admin を各ルーターレベルで適用。
+# get_current_tenant を付けない理由: search_path を tenant に固定すると
+# public schema 直書きの SQL が tenant schema を先に見てしまう可能性がある。
+# テストでは get_current_tenant は不要 (DB は SQLite で search_path 非対応)。
+app.include_router(
+    super_admin_knowledge.router, prefix="/api/v1", tags=["super-admin"],
+)
+app.include_router(
+    super_admin_aliases.router, prefix="/api/v1", tags=["super-admin"],
+)
+app.include_router(
+    super_admin_tcg.router, prefix="/api/v1", tags=["super-admin"],
+)
+app.include_router(
+    super_admin_dex.router, prefix="/api/v1", tags=["super-admin"],
+)
+app.include_router(
+    super_admin_suppliers.router, prefix="/api/v1", tags=["super-admin"],
+)
+# テナント admin 用 inventory visibility は get_current_tenant 必須
+app.include_router(
+    tenant_admin_inventory_visibility.router, prefix="/api/v1",
+    tags=["tenant-admin-inventory-visibility"],
     dependencies=[Depends(get_current_tenant)],
 )
 

@@ -356,6 +356,19 @@ jobs:
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_011_phase5_tenant_tables.py
 
+            # Inventory Sprint 1 (migrations 056-063): マーケットプレイス型在庫基盤 (spec.md F1)
+            #   - public schema migrations 056-062: 一括 1 回適用 (suppliers / supplier_aliases /
+            #     knowledge_rules / discord_inbound_messages + idempotency / supplier_discord_routing /
+            #     pokemon_dex / trainer_dex / tcg_series_master / products / inventory_movements /
+            #     tenant_llm_budgets)
+            #   - tenant_xxx migration 063: 全テナント schema に inventory.visibility.* permissions
+            #     と purchase_orders.{company,contact_info}_snapshot 列を追加
+            #   全 SQL は CREATE TABLE IF NOT EXISTS / ADD COLUMN IF NOT EXISTS /
+            #   ON CONFLICT DO NOTHING で構成、idempotent。
+            #   関連: .claude-pipeline/spec.md Sprint 1 / F1 / A6 マーケットプレイス型確定
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_inventory_sprint1.py
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

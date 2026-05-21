@@ -305,7 +305,7 @@ export default function StaffPage() {
                 <td>{s.surname_jp} {s.given_name_jp}</td>
                 <td>
                   {s.primary_email}
-                  {s.emails.length > 0 && <span style={{ fontSize: "0.8em", color: "#888" }}> (+{s.emails.length})</span>}
+                  {s.emails.length > 0 && <span style={{ fontSize: "0.8em", color: "var(--text-muted)" }}> (+{s.emails.length})</span>}
                 </td>
                 <td>{s.role_name || "-"}</td>
                 <td><span className={`badge badge-${s.status === "active" ? "won" : "lost"}`}>{s.status === "active" ? t("staff.status_active") : s.status === "inactive" ? t("staff.status_inactive") : s.status}</span></td>

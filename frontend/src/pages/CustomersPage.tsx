@@ -582,7 +582,7 @@ export default function CustomersPage() {
               )}
               {activeTab === "channels" && (
                 <>
-                  <div style={{ fontSize: "0.9em", color: "#666", marginBottom: 12 }}>
+                  <div style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: 12 }}>
                     1 顧客が複数の連絡ツールを用途別に持てます（例: WhatsApp=商談用、Discord=発送通知用）。
                     「主」にチェックできるのは 1 つだけ（基本情報タブの「主連絡ツール」と同期）。
                   </div>
@@ -668,7 +668,7 @@ export default function CustomersPage() {
                     </>
                   )}
                   {editId && !discordTouched && (
-                    <div style={{ fontSize: "0.85em", color: "#666", marginTop: 8 }}>
+                    <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: 8 }}>
                       ※ 何も変更しなければ Discord 情報は既存のまま保持されます
                     </div>
                   )}

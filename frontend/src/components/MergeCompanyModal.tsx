@@ -147,7 +147,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
         style={{ maxWidth: 640 }}
       >
         <h2>{t("mergeCompany.title")}</h2>
-        <p style={{ color: "#666", fontSize: "0.9em", marginTop: 4 }}>
+        <p style={{ color: "var(--text-muted)", fontSize: "0.9em", marginTop: 4 }}>
           {t("mergeCompany.sourceDesc", { name: source.name, code: source.company_code })}
         </p>
 
@@ -167,13 +167,13 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
             {resultsCapped && (
               <div
                 style={{
-                  background: "#fff3cd",
-                  border: "1px solid #ffeeba",
+                  background: "var(--warning-bg)",
+                  border: "1px solid var(--warning-text)",
                   padding: 8,
                   borderRadius: 4,
                   marginTop: 8,
                   fontSize: "0.85em",
-                  color: "#856404",
+                  color: "var(--warning-text)",
                 }}
               >
                 {t("mergeCompany.resultsCapped", { count: PER_PAGE_CAP })}
@@ -192,7 +192,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
               {loading ? (
                 <p style={{ padding: 16, textAlign: "center" }}>{t("common.loading")}</p>
               ) : filteredCandidates.length === 0 ? (
-                <p style={{ padding: 16, textAlign: "center", color: "#888" }}>
+                <p style={{ padding: 16, textAlign: "center", color: "var(--text-muted)" }}>
                   {t("mergeCompany.noResults")}
                 </p>
               ) : (
@@ -274,8 +274,8 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
           <form onSubmit={handleConfirmSubmit}>
             <div
               style={{
-                background: "#fff3cd",
-                border: "1px solid #ffeeba",
+                background: "var(--warning-bg)",
+                border: "1px solid var(--warning-text)",
                 padding: 12,
                 borderRadius: 4,
                 marginBottom: 16,
@@ -304,8 +304,8 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
             {reason.trim() && (
               <div
                 style={{
-                  background: "#f8f9fa",
-                  border: "1px solid #e9ecef",
+                  background: "var(--bg-subtle)",
+                  border: "1px solid var(--border)",
                   padding: 8,
                   borderRadius: 4,
                   marginBottom: 16,

@@ -57,9 +57,9 @@
   /* テーブルの交互背景 */
   --row-hover: #edf2f7;
 
-  /* Inbox メッセージバブル */
-  --bubble-inbound-bg: #E4E6EB;
-  --bubble-outbound-bg: #7C3AED;
+  /* Inbox メッセージバブル（Meta実測値 ADR-063 Phase5完了） */
+  --bubble-inbound-bg: #EFEFEF;
+  --bubble-outbound-bg: #8B2EF5;
 
   /* 見込度バッジ（オレンジ系） */
   --rank-bg: #FFF3E0;
@@ -83,6 +83,13 @@
   /* Inbox 専用カラートークン（Meta Business Suite 準拠 / ADR-064） */
   --inbox-separator: #e4e6eb;
   --inbox-hover: #f2f3f5;
+
+  /* accent背景上のテキスト（常に白） */
+  --on-accent: #ffffff;
+
+  /* リードバッジ: コンタクト中（orange系 — 既存変数に対応なし） */
+  --lead-contact-bg:   #fbd38d;
+  --lead-contact-text: #744210;
 
   /* color-scheme: OS非依存（ADR-033: アプリ設定を優先） */
   color-scheme: light;
@@ -160,6 +167,21 @@
   /* Inbox 専用カラートークン（ダーク / ADR-064） */
   --inbox-separator: #374151;
   --inbox-hover: #243046;
+
+  /* サイドバー（ダーク / ADR-067） */
+  --sidebar-bg:                 #1e293b;
+  --sidebar-border:             #334155;
+  --sidebar-item-hover-bg:      #1e3a8a;
+  --sidebar-item-active-bg:     #1e3a8a;
+  --sidebar-item-active-color:  #93c5fd;
+  --sidebar-item-active-border: #818cf8;
+
+  /* accent背景上のテキスト（常に白） */
+  --on-accent: #ffffff;
+
+  /* リードバッジ: コンタクト中（ダーク） */
+  --lead-contact-bg:   #3d2b00;
+  --lead-contact-text: #fbd38d;
 
   color-scheme: dark;
 }
