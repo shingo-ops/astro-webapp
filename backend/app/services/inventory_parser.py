@@ -297,15 +297,7 @@ def _split_into_lines(raw_content: str) -> list[str]:
     # 「・」は箇条書きの先頭にも policy line の先頭にも使われるが、行頭セパレータ
     # として有効なケースが多いので改行を入れる。ただし「・適格請求書」のような
     # policy line も改行されることになるが、exclude pattern で吸収される。
-    #
-    # Sprint 3 Reviewer Nit F3 (PR #514) fix:
-    #   旧実装 `re.sub(r"\s+・", "\n・", normalized)` は `商品A・商品B` のような
-    #   行内中間の中点も改行化してしまっていた。
-    #   行頭判定 (直前が改行、もしくは文字列先頭) を加え、行頭の
-    #   「(空白)+・」だけを改行化する。
-    #   `(?:^|(?<=\n))` で文字列先頭か直前が改行という anchor を保証、
-    #   その後に空白 1 文字以上 + 「・」を消費するパターンに限定。
-    normalized = re.sub(r"(?:^|(?<=\n))\s+・", "\n・", normalized)
+    normalized = re.sub(r"\s+・", "\n・", normalized)
     # 行頭マーカ「●」「■」「◆」「◇」「・」を保持したまま、改行で split。
     lines = [ln.strip() for ln in normalized.split("\n")]
     return [ln for ln in lines if ln]
