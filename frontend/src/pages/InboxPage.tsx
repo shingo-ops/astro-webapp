@@ -48,10 +48,14 @@ const POLL_INTERVAL_MS = 10_000;
 // リードステータス分類定数
 // ---------------------------------------------------------------------------
 
-// アーカイブ理由ステータス（ADR-015 §6: 追客・対象外）
-const ARCHIVE_STATUSES = ["追客（短期）", "追客（長期）", "対象外"];
-const NEW_STATUSES = ["新規", "コンタクト中", "AI対応中", "提案中", "保留", "失注"];
-const EXISTING_STATUSES = ["既存顧客", "案件化"];
+// タブ別ステータス定義
+// leads    → 営業進行中リード
+// converted → 案件化（商談開始）
+// customers → 既存顧客（成約済み）
+// ※ 追客（短期）/ 追客（長期）/ 対象外 は「すべて」タブのみに表示（ADR-062 で 追客タブ追加予定）
+const LEADS_STATUSES = ["新規", "コンタクト中", "AI対応中", "提案中", "保留", "失注"];
+const CONVERTED_STATUSES = ["案件化"];
+const CUSTOMERS_STATUSES = ["既存顧客"];
 
 type LeadStatusFilter = "all" | "leads" | "converted" | "customers";
 
@@ -972,15 +976,13 @@ export default function InboxPage() {
       .filter((c) => {
         if (leadStatusFilter === "all") return true;
         if (leadStatusFilter === "leads") {
-          return c.lead_status != null && NEW_STATUSES.includes(c.lead_status);
+          return c.lead_status != null && LEADS_STATUSES.includes(c.lead_status);
         }
         if (leadStatusFilter === "converted") {
-          return c.lead_status != null && EXISTING_STATUSES.includes(c.lead_status);
+          return c.lead_status != null && CONVERTED_STATUSES.includes(c.lead_status);
         }
         if (leadStatusFilter === "customers") {
-          // lead_status が null（リード削除済 = LEFT JOIN で NULL）または
-          // アーカイブ理由ステータス（追客・対象外）
-          return c.lead_status == null || ARCHIVE_STATUSES.includes(c.lead_status);
+          return c.lead_status != null && CUSTOMERS_STATUSES.includes(c.lead_status);
         }
         return true;
       })
