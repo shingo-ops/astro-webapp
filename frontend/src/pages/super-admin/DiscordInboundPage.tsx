@@ -151,7 +151,7 @@ export default function DiscordInboundPage() {
             onChange={(e) =>
               setFilterStatus(e.target.value as ParseStatus | "")
             }
-            style={{ marginLeft: "0.25rem" }}
+            style={{ marginLeft: "var(--space-1)" }}
           >
             <option value="">
               {t("superAdmin.inbound.filters.statusAny")}
@@ -170,7 +170,7 @@ export default function DiscordInboundPage() {
             value={filterQ}
             onChange={(e) => setFilterQ(e.target.value)}
             placeholder={t("superAdmin.inbound.filters.searchPlaceholder")}
-            style={{ marginLeft: "0.25rem" }}
+            style={{ marginLeft: "var(--space-1)" }}
           />
         </label>
         <button onClick={() => void load()} className="btn-secondary">

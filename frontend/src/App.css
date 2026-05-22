@@ -943,10 +943,10 @@
 }
 
 .page h2 {
-  font-size: var(--font-2xl);
-  font-weight: var(--font-weight-semi);
-  color: var(--text-primary);
-  margin: 0 0 20px;
+  font-size: var(--role-page-title-size);
+  font-weight: var(--role-page-title-weight);
+  color: var(--role-page-title-color);
+  margin: 0 0 var(--space-5);
 }
 
 .page-header {
@@ -957,7 +957,56 @@
 }
 
 .page-header h2 {
+  font-size: var(--role-page-title-size);
+  font-weight: var(--role-page-title-weight);
+  color: var(--role-page-title-color);
+  line-height: var(--role-page-title-lh);
   margin: 0;
+}
+
+/* ============================================================
+   Typography utility classes（Shopify Polaris / Meta 準拠の2層設計）
+   primitive token → role token → utility class の3層構造。
+   ページ内で直接 className に指定して使う。
+   ============================================================ */
+
+/* ページタイトル: ダッシュボード・受信箱など左上の主見出し */
+.text-page-title {
+  font-size:   var(--role-page-title-size);
+  font-weight: var(--role-page-title-weight);
+  color:       var(--role-page-title-color);
+  line-height: var(--role-page-title-lh);
+  margin: 0;
+}
+
+/* セクション見出し: 営業・財務などのグループ名 */
+.text-section-title {
+  font-size:   var(--role-section-title-size);
+  font-weight: var(--role-section-title-weight);
+  color:       var(--role-section-title-color);
+  margin: 0;
+}
+
+/* カード・テーブル上部の見出し */
+.text-card-title {
+  font-size:   var(--role-card-title-size);
+  font-weight: var(--role-card-title-weight);
+  color:       var(--role-card-title-color);
+  margin: 0;
+}
+
+/* 本文・テーブルセル・説明文 */
+.text-body {
+  font-size:   var(--role-body-size);
+  font-weight: var(--role-body-weight);
+  color:       var(--role-body-color);
+}
+
+/* 補足・ラベル・バッジ・タイムスタンプ */
+.text-caption {
+  font-size:   var(--role-caption-size);
+  font-weight: var(--role-caption-weight);
+  color:       var(--role-caption-color);
 }
 
 /* --- Login (ADR-030: アプリ本体デザインと整合) --- */
@@ -1757,10 +1806,11 @@
 
 .page-container .page-header h1,
 .page-container .page-header h2 {
-  font-size: var(--font-2xl);
-  font-weight: var(--font-weight-semi);
-  color: var(--text-primary);
-  margin: 8px 0 0;
+  font-size: var(--role-page-title-size);
+  font-weight: var(--role-page-title-weight);
+  color: var(--role-page-title-color);
+  line-height: var(--role-page-title-lh);
+  margin: var(--space-2) 0 0;
 }
 
 .page-container .page-header h1 span,

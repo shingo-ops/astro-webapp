@@ -1306,7 +1306,7 @@ export default function InboxPage() {
                 style={{
                   width: "100%",
                   padding: "4px 8px",
-                  fontSize: "12px",
+                  fontSize: "var(--font-xs)",
                   borderRadius: 16,
                   border: "1px solid var(--border)",
                   background: "var(--bg-surface)",
@@ -1329,7 +1329,7 @@ export default function InboxPage() {
                 {convError}
                 <button
                   type="button"
-                  style={{ marginLeft: 8, fontSize: 12, cursor: "pointer" }}
+                  style={{ marginLeft: "var(--space-2)", fontSize: "var(--font-xs)", cursor: "pointer" }}
                   onClick={() => loadConversations()}
                 >
                   {t("common.reload")}
@@ -1337,14 +1337,14 @@ export default function InboxPage() {
               </div>
             )}
             {convLoading ? (
-              <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: 14 }}>
+              <div style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-secondary)", fontSize: 14 }}>
                 {t("common.loading")}
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div style={{ padding: 24, textAlign: "center", color: "var(--text-secondary)", fontSize: 14 }}>
+              <div style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-secondary)", fontSize: 14 }}>
                 {unreadOnly ? t("inbox.noUnread") : t("inbox.noMessages")}
                 {!unreadOnly && (
-                  <div style={{ marginTop: 8, fontSize: 12 }}>
+                  <div style={{ marginTop: "var(--space-2)", fontSize: "var(--font-xs)" }}>
                     {t("inbox.channelsHint")}{" "}
                     <a href="/channels" style={{ color: "var(--accent)" }}>{t("inbox.channelsLink")}</a>
                   </div>
@@ -1429,9 +1429,9 @@ export default function InboxPage() {
                       || selectedConversation?.customer_name
                       || `Lead #${selectedLeadId}`}
                   </h2>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: 2 }}>
                     {messagesData?.lead?.lead_code && (
-                      <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                      <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
                         {messagesData.lead.lead_code}
                       </span>
                     )}
@@ -1454,13 +1454,13 @@ export default function InboxPage() {
                 <a
                   href={`/leads?lead_id=${selectedLeadId}`}
                   style={{
-                    fontSize: 12,
+                    fontSize: "var(--font-xs)",
                     color: "var(--accent)",
                     textDecoration: "none",
                     padding: "4px 10px",
                     borderRadius: 12,
                     background: "var(--link-active-bg)",
-                    fontWeight: 600,
+                    fontWeight: "var(--font-weight-semi)",
                     flexShrink: 0,
                   }}
                 >
@@ -1471,7 +1471,7 @@ export default function InboxPage() {
               {/* メッセージリスト */}
               <div ref={messageListRef} className="inbox-messages">
                 {msgLoading && !messagesData && (
-                  <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: 16 }}>
+                  <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "var(--space-4)" }}>
                     {t("common.loading")}
                   </div>
                 )}
@@ -1479,7 +1479,7 @@ export default function InboxPage() {
                   <div className="inbox-error-banner">{msgError}</div>
                 )}
                 {messagesData && messagesData.messages.length === 0 && !msgError && (
-                  <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: 32 }}>
+                  <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "var(--space-8)" }}>
                     {t("inbox.noMessages")}
                   </div>
                 )}
@@ -1501,12 +1501,12 @@ export default function InboxPage() {
                         }
                       >
                         {msg.message_tag && !failed && (
-                          <div style={{ fontSize: 11, opacity: 0.85, marginBottom: 4, fontWeight: 600 }}>
+                          <div style={{ fontSize: "var(--font-2xs)", opacity: 0.85, marginBottom: "var(--space-1)", fontWeight: "var(--font-weight-semi)" }}>
                             {msg.message_tag === "HUMAN_AGENT" ? "Human Agent" : msg.message_tag}
                           </div>
                         )}
                         {failed && (
-                          <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>
+                          <div style={{ fontSize: "var(--font-2xs)", fontWeight: "var(--font-weight-semi)", marginBottom: "var(--space-1)" }}>
                             Send failed ({msg.error_code})
                           </div>
                         )}
@@ -1530,7 +1530,7 @@ export default function InboxPage() {
                 <div className="send-card">
                   {/* 上段: 送信者アバター + 入力欄 */}
                   <div className="send-top-row">
-                    <div className="conv-avatar" style={{ width: 36, height: 36, fontSize: 12, flexShrink: 0 }}>
+                    <div className="conv-avatar" style={{ width: 36, height: 36, fontSize: "var(--font-xs)", flexShrink: 0 }}>
                       Me
                     </div>
                     <div className="send-input-wrap">
@@ -1597,7 +1597,7 @@ export default function InboxPage() {
                 <div className="right-panel-status">{leadDetail.status || "—"}</div>
                 {leadDetail.prospect_rank && (
                   <div className={`right-panel-rank rank-${leadDetail.prospect_rank.replace("+", "plus")}`}>
-                    ランク {leadDetail.prospect_rank}
+                    {t("leads.rank")} {leadDetail.prospect_rank}
                   </div>
                 )}
               </div>
@@ -1665,8 +1665,8 @@ export default function InboxPage() {
                     <span className="right-panel-label">{t("leads.competitorCheck")}</span>
                     <span className="right-panel-value">
                       {leadDetail.competitor_check
-                        ? <><STATUS_ICONS.check size={14} aria-hidden="true" />{" 済"}</>
-                        : "未"}
+                        ? <><STATUS_ICONS.check size={14} aria-hidden="true" />{" "}{t("leads.competitorDone")}</>
+                        : t("leads.competitorNotDone")}
                     </span>
                   </div>
                 )}

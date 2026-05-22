@@ -122,8 +122,8 @@ export default function QuoteCreatePage() {
 
       {error && <div className="error-message">{error}</div>}
 
-      <form onSubmit={handleSubmit} style={{ background: "var(--bg-surface)", padding: 24, borderRadius: 8, boxShadow: "var(--shadow-sm)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <form onSubmit={handleSubmit} style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: 8, boxShadow: "var(--shadow-sm)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
           <CompanyContactSelector
             value={{ companyId, contactId }}
             onChange={({ companyId: c, contactId: ct }) => {
@@ -134,7 +134,7 @@ export default function QuoteCreatePage() {
             error={selectorError}
           />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
           <div className="form-group"><label>{t("common.currency")}</label>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
               <option value="JPY">JPY</option>
@@ -147,8 +147,8 @@ export default function QuoteCreatePage() {
           </div>
         </div>
 
-        <h3 style={{ marginBottom: 12 }}>{t("quotes.items")}</h3>
-        <div style={{ overflowX: "auto", marginBottom: 16 }}>
+        <h3 style={{ marginBottom: "var(--space-3)" }}>{t("quotes.items")}</h3>
+        <div style={{ overflowX: "auto", marginBottom: "var(--space-4)" }}>
           <table className="data-table" style={{ minWidth: 720 }}>
             <thead>
               <tr>
@@ -173,7 +173,7 @@ export default function QuoteCreatePage() {
                       <div
                         data-testid={`quote-item-row-${i}-zero-stock-warning`}
                         className="warning-message"
-                        style={{ marginTop: 4, color: "var(--color-warning)", fontSize: "0.85em" }}
+                        style={{ marginTop: "var(--space-1)", color: "var(--color-warning)", fontSize: "0.85em" }}
                       >
                         {t("inventory.search.zeroStockWarning", { name: item.product_name })}
                       </div>
@@ -191,7 +191,7 @@ export default function QuoteCreatePage() {
                   <td>
                     <input type="number" min="0" step="0.001" value={item.weight || ""} onChange={(e) => updateItem(i, "weight", e.target.value ? Number(e.target.value) : null)} style={{ width: 80 }} />
                   </td>
-                  <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{(item.quantity * item.unit_price).toLocaleString()}</td>
+                  <td style={{ fontWeight: "var(--font-weight-semi)", whiteSpace: "nowrap" }}>{(item.quantity * item.unit_price).toLocaleString()}</td>
                   <td>
                     {items.length > 1 && (
                       <button type="button" className="btn-sm btn-danger" onClick={() => removeItem(i)}>{t("quotes.removeItem")}</button>
@@ -202,9 +202,9 @@ export default function QuoteCreatePage() {
             </tbody>
           </table>
         </div>
-        <button type="button" className="btn-secondary" onClick={addItem} style={{ marginBottom: 24 }}>{t("quotes.addItem")}</button>
+        <button type="button" className="btn-secondary" onClick={addItem} style={{ marginBottom: "var(--space-6)" }}>{t("quotes.addItem")}</button>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
           <div className="form-group"><label>{t("quotes.shippingFee")}</label>
             <input type="number" min="0" step="1" value={shippingFee} onChange={(e) => setShippingFee(e.target.value)} />
           </div>
@@ -212,7 +212,7 @@ export default function QuoteCreatePage() {
             <input type="number" min="0" step="1" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} />
           </div>
           <div className="form-group"><label>{t("quotes.total")}</label>
-            <div style={{ padding: "8px 12px", fontWeight: 700, fontSize: "1.1rem" }}>{total.toLocaleString()} {currency}</div>
+            <div style={{ padding: "8px 12px", fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{total.toLocaleString()} {currency}</div>
           </div>
         </div>
 

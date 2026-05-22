@@ -240,10 +240,10 @@ export default function TenantProfilePage() {
               onChange={handleChange("default_language")}
               disabled={!canEdit}
             >
-              <option value="ja">日本語 (ja)</option>
+              <option value="ja">{t("language.ja")} (ja)</option>
               <option value="en">English (en)</option>
               <option value="ko">한국어 (ko)</option>
-              <option value="zh">中文 (zh)</option>
+              <option value="zh">{t("language.zh")} (zh)</option>
             </select>
           </div>
 

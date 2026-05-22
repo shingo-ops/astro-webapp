@@ -30,7 +30,7 @@ export default function ConfirmModal({
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
         <h3>{title}</h3>
-        <div style={{ marginBottom: 16, lineHeight: 1.6 }}>{message}</div>
+        <div style={{ marginBottom: "var(--space-4)", lineHeight: 1.6 }}>{message}</div>
         <div className="form-actions">
           <button type="button" className="btn-secondary" onClick={onCancel}>{resolvedCancelLabel}</button>
           <button

@@ -18,6 +18,7 @@
   --font-lg:            1.1rem;     /* 17.6px — セクション見出し（1.1〜1.2rem を吸収） */
   --font-xl:            1.25rem;    /* 20px   — ページ見出し（1.25〜1.3rem を吸収） */
   --font-2xl:           1.5rem;     /* 24px   — KPI値・大見出し */
+  --font-3xl:           2rem;      /* 32px   — バッジアイコン等の特大表示 */
 
   /* 意味的例外（スケールに収まらない役割固有値） */
   --font-sidebar-brand: 1.05rem;   /* サイドバーブランドロゴ文字 */
@@ -34,6 +35,36 @@
   --line-height-tight:  1.25;
   --line-height-base:   1.5;
   --line-height-loose:  1.75;
+
+  /* ---- Typography roles（Shopify Polaris / Meta 準拠の2層設計）
+     primitive token を組み合わせて「役割」として定義する。
+     コンポーネントはこの role 変数を参照し、直接 font-size を書かない。  ---- */
+
+  /* ページタイトル（ダッシュボード・受信箱など左上の主見出し） */
+  --role-page-title-size:   var(--font-xl);
+  --role-page-title-weight: var(--font-weight-semi);
+  --role-page-title-color:  var(--text-primary);
+  --role-page-title-lh:     var(--line-height-tight);
+
+  /* セクション見出し（営業・財務などのグループ名） */
+  --role-section-title-size:   var(--font-lg);
+  --role-section-title-weight: var(--font-weight-semi);
+  --role-section-title-color:  var(--text-primary);
+
+  /* カード内見出し（テーブル上部・モーダル内タイトルなど） */
+  --role-card-title-size:   var(--font-md);
+  --role-card-title-weight: var(--font-weight-semi);
+  --role-card-title-color:  var(--text-primary);
+
+  /* 本文（テーブルセル・説明文） */
+  --role-body-size:   var(--font-base);
+  --role-body-weight: var(--font-weight-normal);
+  --role-body-color:  var(--text-secondary);
+
+  /* 補足・ラベル（フォームラベル・バッジ・タイムスタンプなど） */
+  --role-caption-size:   var(--font-xs);
+  --role-caption-weight: var(--font-weight-normal);
+  --role-caption-color:  var(--text-muted);
 
   /* ---- Spacing ---- */
   --space-1:  4px;

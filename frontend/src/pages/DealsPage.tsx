@@ -326,8 +326,8 @@ export default function DealsPage() {
         title={t("deals.deleteDeal")}
         message={
           <>
-            <strong>{deleteTarget?.title}</strong> を削除します。<br />
-            関連する注文がある場合は削除できません（先に注文を削除してください）。<br />
+            <strong>{deleteTarget?.title}</strong> {t("deals.deleteConfirmSuffix")}<br />
+            {t("deals.deleteConstraint")}<br />
             {t("common.irreversible")}
           </>
         }

@@ -195,7 +195,7 @@ export default function ChannelsPage() {
     ? {
         padding: "12px 16px",
         borderRadius: 4,
-        marginBottom: 16,
+        marginBottom: "var(--space-4)",
         background:
           banner.type === "success"
             ? "#e6f4ea"
@@ -236,7 +236,7 @@ export default function ChannelsPage() {
 
       {banner && (
         <div style={bannerStyle} role={banner.type === "error" ? "alert" : "status"}>
-          <span style={{ marginRight: 8 }} aria-hidden="true">
+          <span style={{ marginRight: "var(--space-2)" }} aria-hidden="true">
             {banner.type === "success"
               ? <STATUS_ICONS.check size={14} />
               : banner.type === "warning"
@@ -252,7 +252,7 @@ export default function ChannelsPage() {
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              fontSize: "1rem",
+              fontSize: "var(--font-md)",
               lineHeight: 1,
             }}
             aria-label={t("channels.close")}
@@ -269,13 +269,13 @@ export default function ChannelsPage() {
           style={{
             padding: "12px 16px",
             borderRadius: 4,
-            marginBottom: 16,
+            marginBottom: "var(--space-4)",
             background: "var(--warning-bg)",
             color: "var(--warning-text)",
             border: "1px solid var(--warning-text)",
             display: "flex",
             alignItems: "center",
-            gap: 12,
+            gap: "var(--space-3)",
           }}
         >
           <span style={{ flex: 1 }}>
@@ -295,16 +295,16 @@ export default function ChannelsPage() {
       )}
 
       {connectError && (
-        <div className="error" style={{ marginBottom: 16 }}>{connectError}</div>
+        <div className="error" style={{ marginBottom: "var(--space-4)" }}>{connectError}</div>
       )}
 
       {loadError && (
-        <div className="error" style={{ marginBottom: 16 }}>
+        <div className="error" style={{ marginBottom: "var(--space-4)" }}>
           {t("channels.loadError")} {loadError}
           <button
             type="button"
             className="btn-sm"
-            style={{ marginLeft: 8 }}
+            style={{ marginLeft: "var(--space-2)" }}
             onClick={loadChannels}
           >
             {t("channels.reload")}
@@ -324,7 +324,7 @@ export default function ChannelsPage() {
           }}
         >
           <h3 style={{ marginTop: 0 }}>{t("channels.noChannels")}</h3>
-          <p style={{ color: "var(--text-muted)", marginBottom: 24 }}>
+          <p style={{ color: "var(--text-muted)", marginBottom: "var(--space-6)" }}>
             {t("channels.noChannelsDesc")}
           </p>
           {canManage ? (
@@ -332,7 +332,7 @@ export default function ChannelsPage() {
               className="btn-primary"
               onClick={handleConnect}
               disabled={connecting}
-              style={{ fontSize: "1rem", padding: "12px 24px" }}
+              style={{ fontSize: "var(--font-md)", padding: "12px 24px" }}
             >
               {connecting ? t("channels.connecting") : t("channels.connect")}
             </button>
@@ -344,7 +344,7 @@ export default function ChannelsPage() {
         </div>
       ) : (
         // ----- 接続済リスト -----
-        <div className="channel-list" style={{ display: "grid", gap: 12 }}>
+        <div className="channel-list" style={{ display: "grid", gap: "var(--space-3)" }}>
           {channels.map((ch) => {
             const expiresIn = daysUntil(ch.page_token_expires_at);
             const tokenWarn = expiresIn !== null && expiresIn <= 30;
@@ -353,16 +353,16 @@ export default function ChannelsPage() {
                 key={ch.page_id}
                 className="card"
                 style={{
-                  padding: 16,
+                  padding: "var(--space-4)",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
-                  gap: 16,
+                  gap: "var(--space-4)",
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{ch.page_name}</h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-1)" }}>
+                    <h3 style={{ margin: 0, fontSize: "var(--font-sidebar-brand)" }}>{ch.page_name}</h3>
                     {ch.is_active ? (
                       <span className="badge" style={{ background: "var(--success-bg)", color: "var(--success-text)" }}>
                         {t("channels.status_active")}
@@ -382,7 +382,7 @@ export default function ChannelsPage() {
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", lineHeight: 1.7 }}>
+                  <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", lineHeight: 1.7 }}>
                     <div>
                       <strong>Page ID:</strong> <span className="mono">{ch.page_id}</span>
                     </div>
@@ -401,7 +401,7 @@ export default function ChannelsPage() {
                       {ch.connected_by_staff_name && ` / ${t("channels.connectedBy")}: ${ch.connected_by_staff_name}`}
                     </div>
                     {ch.page_token_expires_at && (
-                      <div style={tokenWarn ? { color: "var(--warning-text)", fontWeight: 600 } : undefined}>
+                      <div style={tokenWarn ? { color: "var(--warning-text)", fontWeight: "var(--font-weight-semi)" } : undefined}>
                         <strong>{t("channels.tokenExpires")}:</strong> {formatDate(ch.page_token_expires_at)}
                         {expiresIn !== null && (
                           <span style={{ marginLeft: 6 }}>

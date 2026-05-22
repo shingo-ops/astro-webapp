@@ -51,7 +51,10 @@
     "yes": "はい",
     "no": "いいえ",
     "notAuthenticated": "認証されていません",
-    "pleaseSelect": "選択してください"
+    "pleaseSelect": "選択してください",
+    "detail": "詳細",
+    "done": "済",
+    "notDone": "未"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -110,7 +113,8 @@
     "label": "言語",
     "ja": "日本語",
     "en": "English",
-    "switchTo": "言語を切り替え"
+    "switchTo": "言語を切り替え",
+    "zh": "中文"
   },
   "dashboard": {
     "title": "ダッシュボード",
@@ -211,7 +215,10 @@
     "competitorCheck": "競合確認",
     "perOrderAmount": "1件単価",
     "monthlyFrequency": "月間頻度",
-    "englishName": "英語名"
+    "englishName": "英語名",
+    "rank": "ランク",
+    "competitorDone": "済",
+    "competitorNotDone": "未"
   },
   "customers": {
     "title": "顧客管理",
@@ -457,7 +464,9 @@
     "stage_proposal": "提案済",
     "stage_won": "成約",
     "stage_lost": "失注",
-    "stage_on_hold": "保留"
+    "stage_on_hold": "保留",
+    "deleteConfirmSuffix": "を削除します。",
+    "deleteConstraint": "関連する注文がある場合は削除できません（先に注文を削除してください）。"
   },
   "inventory": {
     "search": {
@@ -529,7 +538,10 @@
     "status_sent": "送付済",
     "status_paid": "入金済",
     "status_overdue": "期限超過",
-    "status_cancelled": "キャンセル"
+    "status_cancelled": "キャンセル",
+    "jpyEquiv": "JPY換算",
+    "issuedAt": "発行日",
+    "paidAt": "入金日"
   },
   "orders": {
     "title": "受注管理",
@@ -918,7 +930,11 @@
     "confirmDesc3": "master 側が pending_dedup_review だった場合、自動的に active に昇格します。",
     "confirmDesc4": "監査ログ (audit_logs) に操作内容が記録されます。",
     "merging": "マージ中...",
-    "executeLabel": "「{{masterName}}」へマージを実行"
+    "executeLabel": "「{{masterName}}」へマージを実行",
+    "col_code": "顧客コード",
+    "col_name": "顧客名",
+    "col_status": "ステータス",
+    "reasonTitle": "マージ理由"
   },
   "superAdmin": {
     "title": "マスタ管理（Jarvis 運用 admin 専用）",

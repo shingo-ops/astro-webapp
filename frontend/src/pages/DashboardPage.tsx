@@ -97,7 +97,7 @@ export default function DashboardPage() {
       <h2>{t("dashboard.title")}</h2>
 
       {/* === 営業 KPI === */}
-      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>{t("dashboard.sales")}</h3>
+      <h3 style={{ marginTop: "var(--space-4)", marginBottom: "var(--space-2)", color: "var(--text-secondary)" }}>{t("dashboard.sales")}</h3>
       <div className="kpi-grid">
         <div className="kpi-card"><div className="kpi-value">{data.customer_count}</div><div className="kpi-label">{t("dashboard.customers")}</div></div>
         <div className="kpi-card"><div className="kpi-value">{data.lead_count}</div><div className="kpi-label">{t("dashboard.leads")}</div></div>
@@ -111,8 +111,8 @@ export default function DashboardPage() {
       {/* === パイプライン === */}
       {data.pipeline_by_stage.length > 0 && (
         <>
-          <h3 style={{ marginTop: 24, marginBottom: 8, color: "var(--text-secondary)" }}>{t("dashboard.pipeline")}</h3>
-          <div style={{ background: "var(--bg-surface)", borderRadius: 8, padding: 16, boxShadow: "var(--shadow-sm)", marginBottom: 24 }}>
+          <h3 style={{ marginTop: "var(--space-6)", marginBottom: "var(--space-2)", color: "var(--text-secondary)" }}>{t("dashboard.pipeline")}</h3>
+          <div style={{ background: "var(--bg-surface)", borderRadius: 8, padding: "var(--space-4)", boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
             <table className="data-table">
               <thead>
                 <tr><th>{t("dashboard.stage")}</th><th>{t("dashboard.count")}</th><th>{t("dashboard.amount")}</th><th>{t("dashboard.weightedAmount")}</th></tr>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
                     <td>{STAGE_LABELS[s.stage] || s.stage}</td>
                     <td>{s.count}</td>
                     <td>{fmt(s.amount)}</td>
-                    <td style={{ fontWeight: 600 }}>{fmt(s.weighted_amount)}</td>
+                    <td style={{ fontWeight: "var(--font-weight-semi)" }}>{fmt(s.weighted_amount)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -133,7 +133,7 @@ export default function DashboardPage() {
       )}
 
       {/* === 財務 KPI === */}
-      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>{t("dashboard.finance")}</h3>
+      <h3 style={{ marginTop: "var(--space-4)", marginBottom: "var(--space-2)", color: "var(--text-secondary)" }}>{t("dashboard.finance")}</h3>
       <div className="kpi-grid">
         <div className="kpi-card"><div className="kpi-value">{data.quote_count}</div><div className="kpi-label">{t("dashboard.quotes")}</div></div>
         <div className="kpi-card"><div className="kpi-value">{fmt(data.quote_approved_amount)}</div><div className="kpi-label">{t("dashboard.approvedQuoteAmount")}</div></div>
@@ -146,7 +146,7 @@ export default function DashboardPage() {
       </div>
 
       {/* === 在庫・仕入 KPI === */}
-      <h3 style={{ marginTop: 16, marginBottom: 8, color: "var(--text-secondary)" }}>{t("dashboard.inventoryPurchasing")}</h3>
+      <h3 style={{ marginTop: "var(--space-4)", marginBottom: "var(--space-2)", color: "var(--text-secondary)" }}>{t("dashboard.inventoryPurchasing")}</h3>
       <div className="kpi-grid">
         <div className="kpi-card"><div className="kpi-value">{data.product_count}</div><div className="kpi-label">{t("dashboard.products")}</div></div>
         <div className="kpi-card"><div className="kpi-value">{fmt(data.inventory_value)}</div><div className="kpi-label">{t("dashboard.inventoryValue")}</div></div>

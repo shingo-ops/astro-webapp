@@ -548,7 +548,7 @@ export default function CustomersPage() {
                           onChange={(e) => { updateAddr({ telephone: e.target.value }); if (phoneError && key === "billing") setPhoneError(null); }}
                           onBlur={(e) => { if (key === "billing") setPhoneError(validatePhoneClient(e.target.value)); }}
                         />
-                        {key === "billing" && phoneError && <div className="error-message" style={{ marginTop: 4 }}>{t("customers.phoneError")}</div>}
+                        {key === "billing" && phoneError && <div className="error-message" style={{ marginTop: "var(--space-1)" }}>{t("customers.phoneError")}</div>}
                       </div>
                       <div className="form-group"><label>{t("customers.addr_taxId")}</label>
                         <input value={addr.tax_id} onChange={(e) => updateAddr({ tax_id: e.target.value })} />
@@ -582,12 +582,12 @@ export default function CustomersPage() {
               )}
               {activeTab === "channels" && (
                 <>
-                  <div style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: 12 }}>
+                  <div style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "var(--space-3)" }}>
                     {t("customers.channels_desc")}
                   </div>
                   {form.contact_channels.map((ch, idx) => (
-                    <div key={idx} className="form-group" style={{ border: "1px solid var(--border-light)", padding: 8, borderRadius: 4, marginBottom: 8 }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                    <div key={idx} className="form-group" style={{ border: "1px solid var(--border-light)", padding: "var(--space-2)", borderRadius: 4, marginBottom: "var(--space-2)" }}>
+                      <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "flex-end" }}>
                         <div style={{ flex: 1 }}>
                           <label>{t("customers.channel_label")}</label>
                           <select value={ch.channel} onChange={(e) => {
@@ -667,7 +667,7 @@ export default function CustomersPage() {
                     </>
                   )}
                   {editId && !discordTouched && (
-                    <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: 8 }}>
+                    <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
                       {t("customers.discord_unchanged")}
                     </div>
                   )}
