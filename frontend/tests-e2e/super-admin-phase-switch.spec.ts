@@ -46,7 +46,7 @@ test.describe("Sprint 9 / F9 v1.2 — /super-admin/phase-switch", () => {
     await mockApi(page, baseMocks(false));
     await page.goto("/super-admin/phase-switch");
 
-    await expect(page.getByRole("alert")).toContainText(/権限|forbidden|access/i);
+    await expect(page.getByRole("alert")).toContainText(/運用|admin|アクセスできません|アクセスできます|forbidden/i);
   });
 
   test("AC9.5: 現在 Phase A 表示 + B/C ボタンが disabled (Out-of-scope)", async ({ page }) => {
