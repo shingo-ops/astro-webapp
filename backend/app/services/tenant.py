@@ -1598,6 +1598,22 @@ async def create_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
     )
     await _execute_statements_preserving_do_blocks(db, trigger_sql)
 
+    # 6. Sprint 9 / F9 v1.2: public.tenant_settings に Phase='A' で初期行を seed。
+    #    migration 070 未適用環境では tenant_settings テーブルが存在しないので
+    #    best-effort で実行する。phase_gate.get_phase は 'A' fallback してくれる。
+    try:
+        await db.execute(
+            text(
+                "INSERT INTO public.tenant_settings (tenant_id, spreadsheet_phase) "
+                "VALUES (:tid, 'A') "
+                "ON CONFLICT (tenant_id) DO NOTHING"
+            ),
+            {"tid": safe_id},
+        )
+    except Exception:
+        # migration 070 未適用環境では skip
+        pass
+
     # commitは呼び出し元で行う（監査ログ等と一括でcommitするため）
     return schema_name
 
