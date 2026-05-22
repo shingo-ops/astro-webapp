@@ -180,7 +180,7 @@ export default function CommissionSettingsPage() {
         <>
           {error && <div className="error-message">{error}</div>}
           {info && (
-            <div className="info-message" style={{ color: "var(--success, #2e7d32)" }}>
+            <div className="info-message" style={{ color: "var(--success)" }}>
               {info}
             </div>
           )}

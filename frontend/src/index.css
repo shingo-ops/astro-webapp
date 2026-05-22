@@ -91,6 +91,15 @@
   --lead-contact-bg:   #fbd38d;
   --lead-contact-text: #744210;
 
+  /* デザイントークン拡張（フォールバック hex 排除のため追加） */
+  --success: #2e7d32;
+  --color-warning: #c08a00;
+  --bg-disabled: #f7f7f7;
+  --border-color: #cccccc;
+  --border-light: #eeeeee;
+  --accent-bg: #2d6cdf;
+  --bg-badge: #eeeeff;
+
   /* color-scheme: OS非依存（ADR-033: アプリ設定を優先） */
   color-scheme: light;
 }
@@ -182,6 +191,15 @@
   /* リードバッジ: コンタクト中（ダーク） */
   --lead-contact-bg:   #3d2b00;
   --lead-contact-text: #fbd38d;
+
+  /* デザイントークン拡張（ダーク） */
+  --success: #4ade80;
+  --color-warning: #fde68a;
+  --bg-disabled: #2d3b52;
+  --border-color: #475569;
+  --border-light: #334155;
+  --accent-bg: #818cf8;
+  --bg-badge: #3b2d5c;
 
   color-scheme: dark;
 }

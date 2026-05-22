@@ -185,6 +185,8 @@ const INBOX_STYLES = `
   --link-active-bg: rgb(225, 237, 247);
   --text-primary:   rgb(28, 43, 51);
   --border:         rgb(218, 221, 225);
+  --avatar-bg:      rgb(241, 244, 247);
+  --indicator:      rgb(24, 118, 242);
 }
 /* ダークモード時は dark 値に戻す */
 html.force-dark .inbox-wrapper {
@@ -192,6 +194,8 @@ html.force-dark .inbox-wrapper {
   --link-active-bg: #1e3a8a;
   --text-primary:   #f1f5f9;
   --border:         #334155;
+  --avatar-bg:      #334155;
+  --indicator:      #818cf8;
 }
 
 /* 左＋中央エリア（ヘッダー・タブ・カラム）— タブバーはここまで */
@@ -438,7 +442,7 @@ html.force-dark .inbox-wrapper {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--accent);
+  background: var(--indicator);
 }
 
 /* アバター */
@@ -450,7 +454,7 @@ html.force-dark .inbox-wrapper {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--bg-hover);
+  background: var(--avatar-bg);
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -719,7 +723,7 @@ html.force-dark .inbox-wrapper {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--bg-hover);
+  background: var(--avatar-bg);
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -837,11 +841,9 @@ html.force-dark .inbox-wrapper {
 
 /* セクションタイトル */
 .right-panel-section-title {
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--text-primary);
   margin-bottom: 10px;
   padding-bottom: 0;
 }

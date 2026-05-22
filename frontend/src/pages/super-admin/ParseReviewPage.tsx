@@ -392,7 +392,7 @@ export default function ParseReviewPage() {
                       row.skipped
                         ? {
                             opacity: 0.55,
-                            background: "var(--bg-disabled, #f7f7f7)",
+                            background: "var(--bg-disabled)",
                           }
                         : undefined
                     }
@@ -402,7 +402,7 @@ export default function ParseReviewPage() {
                       {row.product_id === null ? (
                         <div data-testid={`review-row-${idx}-missing-product`}>
                           <em
-                            style={{ color: "var(--color-warning, #c08a00)", fontSize: "0.85em" }}
+                            style={{ color: "var(--color-warning)", fontSize: "0.85em" }}
                           >
                             {t("superAdmin.inbound.review.missingProduct")}
                           </em>
@@ -524,7 +524,7 @@ export default function ParseReviewPage() {
               style={{
                 marginTop: "1rem",
                 padding: "1rem",
-                border: "1px solid var(--border-color, #ccc)",
+                border: "1px solid var(--border-color)",
               }}
             >
               <h3>{t("superAdmin.inbound.review.rejectDialogTitle")}</h3>

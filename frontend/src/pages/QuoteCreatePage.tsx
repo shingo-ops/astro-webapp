@@ -173,7 +173,7 @@ export default function QuoteCreatePage() {
                       <div
                         data-testid={`quote-item-row-${i}-zero-stock-warning`}
                         className="warning-message"
-                        style={{ marginTop: 4, color: "var(--color-warning, #c08a00)", fontSize: "0.85em" }}
+                        style={{ marginTop: 4, color: "var(--color-warning)", fontSize: "0.85em" }}
                       >
                         {t("inventory.search.zeroStockWarning", { name: item.product_name })}
                       </div>
