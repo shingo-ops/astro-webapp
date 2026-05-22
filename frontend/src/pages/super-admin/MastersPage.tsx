@@ -61,7 +61,7 @@ export default function MastersPage() {
         className="super-admin-tabs"
         role="tablist"
         aria-label="super-admin master tabs"
-        style={{ display: "flex", gap: "0.5rem", margin: "1rem 0", borderBottom: "1px solid #ddd" }}
+        style={{ display: "flex", gap: "0.5rem", margin: "1rem 0", borderBottom: "1px solid var(--border-light)" }}
       >
         {tabs.map((tt) => (
           <button

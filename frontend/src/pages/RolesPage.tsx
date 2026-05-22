@@ -342,7 +342,7 @@ export default function RolesPage() {
                 <li key={r.id} style={{ marginLeft: `${level * 16}px` }}>
                   <button
                     className={`role-item ${r.id === selectedRoleId ? "active" : ""}`}
-                    style={{ borderLeft: `4px solid ${r.color || "#cbd5e0"}` }}
+                    style={{ borderLeft: `4px solid ${r.color || "var(--border-color)"}` }}
                     onClick={() => selectRole(r.id)}
                   >
                     <span className="role-item-name">{r.name}</span>

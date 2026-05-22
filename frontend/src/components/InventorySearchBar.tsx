@@ -236,7 +236,7 @@ export default function InventorySearchBar({
               padding: "4px 10px",
               border: "none",
               background: op === "and" ? "var(--accent-bg)" : "transparent",
-              color: op === "and" ? "white" : "inherit",
+              color: op === "and" ? "var(--on-accent)" : "inherit",
               cursor: disabled ? "not-allowed" : "pointer",
             }}
           >
@@ -252,7 +252,7 @@ export default function InventorySearchBar({
               padding: "4px 10px",
               border: "none",
               background: op === "or" ? "var(--accent-bg)" : "transparent",
-              color: op === "or" ? "white" : "inherit",
+              color: op === "or" ? "var(--on-accent)" : "inherit",
               cursor: disabled ? "not-allowed" : "pointer",
             }}
           >
@@ -301,7 +301,7 @@ export default function InventorySearchBar({
             margin: "2px 0 0 0",
             padding: 0,
             listStyle: "none",
-            background: "var(--bg-surface, white)",
+            background: "var(--bg-surface)",
             border: "1px solid var(--border-color)",
             borderRadius: 4,
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
@@ -389,7 +389,7 @@ export default function InventorySearchBar({
                         style={{
                           padding: "1px 6px",
                           marginRight: 6,
-                          border: "1px solid #ccd",
+                          border: "1px solid var(--border-color)",
                           borderRadius: 10,
                           background: "var(--bg-badge)",
                         }}

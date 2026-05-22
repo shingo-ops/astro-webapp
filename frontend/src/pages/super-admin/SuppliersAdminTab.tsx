@@ -273,7 +273,7 @@ export default function SuppliersAdminTab() {
           <div
             className="modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ background: "white", padding: "1rem", borderRadius: "8px", minWidth: "600px", maxWidth: "90%" }}
+            style={{ background: "var(--bg-surface)", padding: "1rem", borderRadius: "8px", minWidth: "600px", maxWidth: "90%" }}
           >
             <h4>
               {t("superAdmin.suppliersAdmin.discordRouting")} — {routingFor.name}
