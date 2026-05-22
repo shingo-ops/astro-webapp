@@ -10,6 +10,7 @@
  * - BadgesPage の icon フィールドはユーザー入力値のためスコープ外
  */
 
+import "./platform-icon.css";
 import type { LucideIcon } from "lucide-react";
 import {
   Moon, Sun, Globe,
@@ -117,10 +118,7 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
   // Mail / Email
   if (platform === "mail" || platform === "email") {
     return (
-      <span style={{
-        display: "inline-flex", alignItems: "center", justifyContent: "center",
-        width: size, height: size, background: "#EA4335", borderRadius: "999px",
-      }}>
+      <span className="platform-icon-wrap platform-icon-wrap--mail" style={{ width: size, height: size }}>
         <Mail size={Math.round(size * 0.7)} color="white" aria-hidden="true" />
       </span>
     );
@@ -130,18 +128,12 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
   if (!icon) {
     // 未知プラットフォーム: グレー丸
     return (
-      <span style={{
-        display: "inline-block", width: size, height: size,
-        background: "#999", borderRadius: "999px",
-      }} />
+      <span className="platform-icon-wrap--unknown" style={{ width: size, height: size }} />
     );
   }
 
   return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", justifyContent: "center",
-      width: size, height: size, background: "#fff", borderRadius: "999px",
-    }}>
+    <span className="platform-icon-wrap" style={{ width: size, height: size }}>
       <svg viewBox="0 0 24 24" width={Math.round(size * 0.72)} height={Math.round(size * 0.72)} fill={icon.fill} aria-hidden="true">
         <path d={icon.path} />
       </svg>
