@@ -21,7 +21,7 @@
  */
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { NAV_ICONS, PAGE_ICONS, STATUS_ICONS } from "../constants/icons";
+import { NAV_ICONS, PAGE_ICONS, PlatformIcon, STATUS_ICONS } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
@@ -149,17 +149,6 @@ function getInitials(name: string | null | undefined): string {
     .join("")
     .slice(0, 2)
     .toUpperCase();
-}
-
-/** プラットフォームのグラデーション背景（ドット用）。 */
-function platformGradient(platform: string | null): string {
-  if (platform === "messenger") {
-    return "linear-gradient(90deg, #08f, #a033ff 55.81%, #ff5c87 109.33%)";
-  }
-  if (platform === "instagram") {
-    return "linear-gradient(135deg, #ffd600, #ff7a00, #ff0169, #d300c5 75%)";
-  }
-  return "#999";
 }
 
 // Phase 1-E F24-S5: lib/messages.ts の libPlatformLabel に集約。後方互換のため alias 維持。
@@ -465,12 +454,17 @@ html.force-dark .inbox-wrapper {
 }
 .conv-platform-dot {
   position: absolute;
-  bottom: -1px;
-  right: -1px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2.5px solid var(--bg-surface);
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 2px solid var(--bg-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  line-height: 0;
 }
 
 /* 会話情報 */
@@ -1372,10 +1366,9 @@ export default function InboxPage() {
                       <div className="conv-avatar">
                         {getInitials(conv.customer_name)}
                       </div>
-                      <div
-                        className="conv-platform-dot"
-                        style={{ background: platformGradient(conv.platform) }}
-                      />
+                      <span className="conv-platform-dot">
+                        <PlatformIcon platform={conv.platform} size={18} />
+                      </span>
                     </div>
 
                     {/* 会話情報 */}
