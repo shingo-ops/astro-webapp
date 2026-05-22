@@ -1973,8 +1973,8 @@
   box-shadow: var(--focus-ring-shadow);
 }
 
-/* 狭い画面 (~ 720px) では form-grid を 1 カラムに */
-@media (max-width: 720px) {
+/* タブレット縦 (~ 768px) では form-grid を 1 カラムに */
+@media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
     padding: var(--space-4);
