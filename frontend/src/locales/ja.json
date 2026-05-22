@@ -532,7 +532,8 @@
     "status_sent": "送付済",
     "status_approved": "承認済",
     "status_rejected": "却下",
-    "status_expired": "期限切れ"
+    "status_expired": "期限切れ",
+    "itemsRequired": "各明細行に商品名と単価を入力してください"
   },
   "invoices": {
     "title": "請求書管理",

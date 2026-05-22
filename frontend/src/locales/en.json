@@ -532,7 +532,8 @@
     "status_sent": "Sent",
     "status_approved": "Approved",
     "status_rejected": "Rejected",
-    "status_expired": "Expired"
+    "status_expired": "Expired",
+    "itemsRequired": "Please enter product name and unit price for each line item"
   },
   "invoices": {
     "title": "Invoices",

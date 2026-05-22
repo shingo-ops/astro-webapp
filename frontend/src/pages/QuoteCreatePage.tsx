@@ -86,7 +86,7 @@ export default function QuoteCreatePage() {
     setSelectorError("");
     if (contactId === null) { setSelectorError(t("companyContactSelector.contactRequired")); return; }
     if (items.some((i) => !i.product_name || i.unit_price <= 0)) {
-      setError("各明細行に商品名と単価を入力してください");
+      setError(t("quotes.itemsRequired"));
       return;
     }
     setSaving(true);
