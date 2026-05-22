@@ -223,7 +223,7 @@ export default function InventorySearchBar({
         <div
           role="radiogroup"
           aria-label={t("inventory.search.opGroupLabel")}
-          style={{ display: "inline-flex", gap: 0, border: "1px solid var(--border-color, #ccc)", borderRadius: 4 }}
+          style={{ display: "inline-flex", gap: 0, border: "1px solid var(--border-color)", borderRadius: 4 }}
           data-testid={`${testIdPrefix}-op-toggle`}
         >
           <button
@@ -235,7 +235,7 @@ export default function InventorySearchBar({
             style={{
               padding: "4px 10px",
               border: "none",
-              background: op === "and" ? "var(--accent-bg, #2d6cdf)" : "transparent",
+              background: op === "and" ? "var(--accent-bg)" : "transparent",
               color: op === "and" ? "white" : "inherit",
               cursor: disabled ? "not-allowed" : "pointer",
             }}
@@ -251,7 +251,7 @@ export default function InventorySearchBar({
             style={{
               padding: "4px 10px",
               border: "none",
-              background: op === "or" ? "var(--accent-bg, #2d6cdf)" : "transparent",
+              background: op === "or" ? "var(--accent-bg)" : "transparent",
               color: op === "or" ? "white" : "inherit",
               cursor: disabled ? "not-allowed" : "pointer",
             }}
@@ -278,7 +278,7 @@ export default function InventorySearchBar({
           data-testid={`${testIdPrefix}-zero-stock`}
           style={{
             marginTop: 4,
-            color: "var(--color-warning, #c08a00)",
+            color: "var(--color-warning)",
             fontSize: "0.9em",
           }}
         >
@@ -302,7 +302,7 @@ export default function InventorySearchBar({
             padding: 0,
             listStyle: "none",
             background: "var(--bg-surface, white)",
-            border: "1px solid var(--border-color, #ccc)",
+            border: "1px solid var(--border-color)",
             borderRadius: 4,
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
             zIndex: 50,
@@ -348,10 +348,10 @@ export default function InventorySearchBar({
                     padding: "8px 10px",
                     cursor: "pointer",
                     background: isActive
-                      ? "var(--bg-hover, #f0f4ff)"
+                      ? "var(--bg-hover)"
                       : "transparent",
                     opacity: isZero ? 0.55 : 1,
-                    borderBottom: "1px solid var(--border-light, #eee)",
+                    borderBottom: "1px solid var(--border-light)",
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -391,7 +391,7 @@ export default function InventorySearchBar({
                           marginRight: 6,
                           border: "1px solid #ccd",
                           borderRadius: 10,
-                          background: "var(--bg-badge, #eef)",
+                          background: "var(--bg-badge)",
                         }}
                       >
                         {t(matchedViaKey(c.matched_via), c.matched_via)}

@@ -252,7 +252,7 @@ export default function OrderFinancialPanel({
               style={{
                 marginTop: "0.75rem",
                 padding: "0.75rem",
-                background: "var(--bg-subtle, #f5f5f5)",
+                background: "var(--bg-subtle)",
                 borderRadius: 6,
                 display: "grid",
                 gridTemplateColumns: "repeat(2, 1fr)",

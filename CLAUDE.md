@@ -482,6 +482,18 @@ style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}
 | 危険背景 | `var(--danger-bg)` |
 | 成功背景 | `var(--success-bg)` |
 
+### 禁止: `var()` のフォールバック hex
+
+```tsx
+// ❌ フォールバック hex はダークモードを無効化する（変数が存在するのに hex が優先される）
+style={{ color: "var(--success, #2e7d32)" }}
+
+// ✅ 変数のみ使う
+style={{ color: "var(--success)" }}
+```
+
+変数が `index.css` に未定義の場合は、`:root` と `:root.force-dark` 両方に追加してから参照すること。フォールバック hex で回避しない。
+
 ### チェックコマンド（ローカルで事前確認）
 
 ```bash
@@ -491,3 +503,63 @@ npm run check:css-colors  # CSS hex 色チェック
 npm run check:dark-parity # index.css パリティチェック
 npm run check:all         # 上記 3 つを一括実行
 ```
+
+---
+
+## アイコン管理規約（ADR-067 拡張）— 単一ソース管理
+
+> すべての UI アイコンは `frontend/src/constants/icons.tsx` から import する。
+> `lucide-react` からの直接 import は禁止（`constants/icons.tsx` に追加してから使う）。
+
+### 構造
+
+```tsx
+// constants/icons.tsx — アイコンの唯一の定義場所
+export const STATUS_ICONS = { check: Check, warning: AlertTriangle, error: X } satisfies Record<string, LucideIcon>;
+export const NAV_ICONS    = { dashboard: LayoutDashboard, leads: Users, ... } satisfies Record<string, LucideIcon>;
+export const PAGE_ICONS   = { comingSoon: Construction, inboxEmpty: MessageSquare } satisfies Record<string, LucideIcon>;
+export const THEME_ICONS  = { light: Moon, dark: Sun } satisfies Record<string, LucideIcon>;
+export const CATEGORY_ICONS: Record<string, LucideIcon> = { "レポート": BarChart2, ..., "_default": Folder };
+export const GlobeIcon: LucideIcon = Globe;
+export function LeadChatIcon(...) { /* カスタム SVG */ }
+```
+
+### 使用例
+
+```tsx
+// ❌ 禁止: lucide-react 直接 import
+import { Check } from "lucide-react";
+<Check size={14} />
+
+// ✅ 正しい: constants/icons.tsx 経由
+import { STATUS_ICONS } from "../constants/icons";
+const CheckIcon = STATUS_ICONS.check;
+<CheckIcon size={14} aria-hidden="true" />
+```
+
+### 絵文字・テキスト記号を使わない
+
+```tsx
+// ❌ 禁止
+<div>✓</div>
+<div>⚠</div>
+<span>🚧</span>
+
+// ✅ 正しい
+<STATUS_ICONS.check size={14} aria-hidden="true" />
+<STATUS_ICONS.warning size={14} aria-hidden="true" />
+<PAGE_ICONS.comingSoon size={48} aria-hidden="true" />
+```
+
+### 新しいアイコンを追加する手順
+
+1. `lucide-react` に目的のアイコンがあるか確認（`npx lucide-react --list` 等）
+2. `constants/icons.tsx` の適切なグループに追加（新グループが必要なら `satisfies Record<string, LucideIcon>` を使う）
+3. 利用ファイルで `constants/icons.tsx` から import
+4. SVG には必ず `aria-hidden="true"` または意味のある `aria-label` を付与
+
+### スコープ外（変更対象外）
+
+- `BadgesPage.tsx` の `icon: string | null`（API から来るユーザー定義絵文字）
+- `KnowledgeAliasesTab.tsx` のテンプレートリテラル内 `✓`（文字列に JSX 不可）
+- `lp/src/` 以下（Astro スタック・lucide-react 未使用）
