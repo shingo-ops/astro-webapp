@@ -83,12 +83,7 @@ const COLOR_PALETTE = [
 ];
 
 // 優先順位は旧GAS版に合わせて第1-第4順位の4段階。priority数値とのマッピング。
-const PRIORITY_OPTIONS = [
-  { value: 1000, label: "第1順位（最上位）" },
-  { value: 900, label: "第2順位" },
-  { value: 500, label: "第3順位" },
-  { value: 300, label: "第4順位" },
-];
+const PRIORITY_VALUES = [1000, 900, 500, 300];
 
 const emptyRoleForm = { name: "", color: COLOR_PALETTE[0], priority: 500, description: "" };
 
@@ -234,7 +229,7 @@ export default function RolesPage() {
 
   // ロール選択切替（未保存なら確認）
   const selectRole = (id: number) => {
-    if (dirty && !window.confirm(t("roles.unsavedChanges") + "破棄して切り替えますか？")) return;
+    if (dirty && !window.confirm(t("roles.unsavedChanges") + t("roles.discardAndSwitch"))) return;
     setSelectedRoleId(id);
   };
 
@@ -371,13 +366,13 @@ export default function RolesPage() {
                     >
                       {selectedRole.name}
                     </span>
-                    <span style={{ fontWeight: 400, color: "var(--text-secondary)" }}>の権限</span>
+                    <span style={{ fontWeight: 400, color: "var(--text-secondary)" }}>{t("roles.permissionSuffix")}</span>
                   </h2>
                   {selectedRole.description && (
                     <p className="role-description">{selectedRole.description}</p>
                   )}
                   {isSystemRole && (
-                    <p className="role-note">※ {t("roles.systemRole")}（権限編集は {hasPermission("roles.update") ? "不可" : "権限不足"}）</p>
+                    <p className="role-note">※ {t("roles.systemRole")}{t("roles.systemRoleNote", { reason: hasPermission("roles.update") ? t("roles.cannotEdit") : t("roles.noPermission") })}</p>
                   )}
                 </div>
                 <div className="roles-main-actions">
@@ -411,27 +406,27 @@ export default function RolesPage() {
                           <span className="permission-group-icon" aria-hidden="true">
                             <CategoryIcon size={16} />
                           </span>
-                          <span>{category}ページ権限</span>
+                          <span>{t("roles.categoryPagePerm", { category })}</span>
                         </div>
                         <div className="permission-group-toggles">
-                          <label className="chk-label" title="このカテゴリ全ての権限を一括操作">
+                          <label className="chk-label" title={t("roles.toggleAllTitle")}>
                             <input
                               type="checkbox"
                               checked={allChecked}
                               disabled={!canEditPerms}
                               onChange={(e) => toggleCategory(category, e.target.checked)}
                             />
-                            全選択
+                            {t("roles.selectAll")}
                           </label>
                           {MENU_VIEW_KEY[category] && (
-                            <label className="chk-label" title=".view 権限をON/OFFしてサイドバー表示を切り替え">
+                            <label className="chk-label" title={t("roles.menuVisibilityTitle")}>
                               <input
                                 type="checkbox"
                                 checked={menuVisible}
                                 disabled={!canEditPerms}
                                 onChange={(e) => toggleMenuVisibility(category, e.target.checked)}
                               />
-                              メニュー表示
+                              {t("roles.showMenu")}
                             </label>
                           )}
                         </div>
@@ -459,12 +454,12 @@ export default function RolesPage() {
               {dirty && (
                 <div className="unsaved-banner">
                   <STATUS_ICONS.warning size={14} aria-hidden="true" />
-                  {" "}{t("roles.unsavedChanges")}「{t("roles.saveChanges")}」ボタンをクリックして変更を反映してください。
+                  {" "}{t("roles.unsavedChanges")}{t("roles.unsavedClickHint", { btn: t("roles.saveChanges") })}
                 </div>
               )}
             </>
           ) : (
-            <div className="empty">左から役割を選択してください</div>
+            <div className="empty">{t("roles.selectRoleHint")}</div>
           )}
         </main>
       </div>
@@ -485,7 +480,7 @@ export default function RolesPage() {
                     <label
                       className="color-swatch selected color-swatch-legacy"
                       style={{ background: roleForm.color }}
-                      title={`現在の色（${roleForm.color}）`}
+                      title={t("roles.currentColorTitle", { color: roleForm.color })}
                     >
                       <input
                         type="radio"
@@ -519,11 +514,11 @@ export default function RolesPage() {
                   value={roleForm.priority}
                   onChange={(e) => setRoleForm({ ...roleForm, priority: Number(e.target.value) })}
                 >
-                  {PRIORITY_OPTIONS.map((p) => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
+                  {PRIORITY_VALUES.map((v) => (
+                    <option key={v} value={v}>{t(`roles.priority_${v}`)}</option>
                   ))}
-                  {!PRIORITY_OPTIONS.find((p) => p.value === roleForm.priority) && (
-                    <option value={roleForm.priority}>カスタム (P{roleForm.priority})</option>
+                  {!PRIORITY_VALUES.includes(roleForm.priority) && (
+                    <option value={roleForm.priority}>{t("roles.customPriority", { priority: roleForm.priority })}</option>
                   )}
                 </select>
               </div>
@@ -544,10 +539,10 @@ export default function RolesPage() {
         <div className="modal-overlay" onClick={closeUserAssign}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>{t("roles.assignUsers")}</h3>
-            <div className="form-group"><label>対象ユーザーID *</label>
+            <div className="form-group"><label>{t("roles.targetUserId")} *</label>
               <input type="number" min="1" required value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)} />
             </div>
-            <div className="form-group"><label>付与するロール</label>
+            <div className="form-group"><label>{t("roles.grantRoles")}</label>
               {roles.map((r) => (
                 <label key={r.id} style={{ display: "block", padding: "var(--space-1)" }}>
                   <input type="checkbox" checked={selectedRoleIds.has(r.id)} onChange={() => toggleUserRole(r.id)} />{" "}
@@ -568,7 +563,7 @@ export default function RolesPage() {
       <ConfirmModal
         open={!!deleteTarget}
         title={t("roles.deleteRole")}
-        message={<><strong>{deleteTarget?.name}</strong> を削除します。<br />このロールを持つユーザーは自動的に剥奪されます。</>}
+        message={<><strong>{deleteTarget?.name}</strong>{t("common.deleteConfirmSuffix")}<br />{t("roles.deleteConfirmNote")}</>}
         confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}

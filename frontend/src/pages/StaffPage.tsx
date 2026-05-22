@@ -210,8 +210,8 @@ export default function StaffPage() {
             <form onSubmit={handleSubmit}>
               {!editId && (
                 <div className="form-group">
-                  <label>{t("staff.staffCode")}（空欄なら自動採番 EMP-00001 形式）</label>
-                  <input value={form.staff_code} placeholder="例: EMP-00001" onChange={(e) => setForm({ ...form, staff_code: e.target.value })} />
+                  <label>{t("staff.staffCodeLabel")}</label>
+                  <input value={form.staff_code} placeholder={t("staff.staffCodePlaceholder")} onChange={(e) => setForm({ ...form, staff_code: e.target.value })} />
                 </div>
               )}
               <div className="form-group"><label>{t("staff.surnameJp")} *</label>
@@ -220,10 +220,10 @@ export default function StaffPage() {
               <div className="form-group"><label>{t("staff.givenNameJp")} *</label>
                 <input required value={form.given_name_jp} onChange={(e) => setForm({ ...form, given_name_jp: e.target.value })} />
               </div>
-              <div className="form-group"><label>苗字ふりがな</label>
+              <div className="form-group"><label>{t("staff.surnameKana")}</label>
                 <input value={form.surname_kana} onChange={(e) => setForm({ ...form, surname_kana: e.target.value })} />
               </div>
-              <div className="form-group"><label>名前ふりがな</label>
+              <div className="form-group"><label>{t("staff.givenNameKana")}</label>
                 <input value={form.given_name_kana} onChange={(e) => setForm({ ...form, given_name_kana: e.target.value })} />
               </div>
               <div className="form-group"><label>{t("staff.surnameEn")}</label>
@@ -240,7 +240,7 @@ export default function StaffPage() {
               </div>
               <div className="form-group"><label>{t("staff.role")} *</label>
                 <select required value={form.role_id} onChange={(e) => setForm({ ...form, role_id: e.target.value })}>
-                  <option value="">選択してください</option>
+                  <option value="">{t("common.pleaseSelect")}</option>
                   {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
@@ -248,7 +248,7 @@ export default function StaffPage() {
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                   <option value="active">{t("staff.status_active")}</option>
                   <option value="inactive">{t("staff.status_inactive")}</option>
-                  <option value="pending">保留</option>
+                  <option value="pending">{t("staff.status_pending")}</option>
                 </select>
               </div>
               <h4>{t("staff.uiPreferences")}</h4>
@@ -276,7 +276,7 @@ export default function StaffPage() {
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "送信中..." : editId ? t("common.update") : t("common.register")}
+                  {submitting ? t("common.submitting") : editId ? t("common.update") : t("common.register")}
                 </button>
               </div>
             </form>
@@ -291,7 +291,7 @@ export default function StaffPage() {
           <thead>
             <tr>
               <th>{t("common.code")}</th>
-              <th>氏名</th>
+              <th>{t("staff.fullName")}</th>
               <th>{t("common.email")}</th>
               <th>{t("staff.role")}</th>
               <th>{t("staff.status")}</th>
@@ -323,7 +323,7 @@ export default function StaffPage() {
       <ConfirmModal
         open={!!deleteTarget}
         title={t("staff.deleteStaff")}
-        message={<><strong>{deleteTarget?.surname_jp} {deleteTarget?.given_name_jp}</strong> を削除します。<br />この操作は取り消せません。</>}
+        message={<><strong>{deleteTarget?.surname_jp} {deleteTarget?.given_name_jp}</strong>{t("common.deleteConfirmSuffix")}<br />{t("common.irreversible")}</>}
         confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}

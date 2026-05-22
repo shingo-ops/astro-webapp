@@ -161,7 +161,7 @@ export default function TeamsPage() {
               <div className="form-group"><label>{t("teams.teamName")} *</label>
                 <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
-              <div className="form-group"><label>リーダーユーザーID（任意）</label>
+              <div className="form-group"><label>{t("teams.leaderUserIdLabel")}</label>
                 <input type="number" min="1" value={form.leader_id} onChange={(e) => setForm({ ...form, leader_id: e.target.value })} />
               </div>
               <div className="form-group"><label>{t("common.description")}</label>
@@ -179,17 +179,17 @@ export default function TeamsPage() {
       {membersPanel && (
         <div className="modal-overlay" onClick={() => setMembersPanel(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>メンバー管理 - {membersPanel.name}</h3>
+            <h3>{t("teams.manageMembersTitle", { name: membersPanel.name })}</h3>
             {hasPermission("teams.manage_members") && (
               <form onSubmit={addMember} style={{ marginBottom: "var(--space-4)" }}>
-                <div className="form-group"><label>{t("common.add")}するユーザーID</label>
+                <div className="form-group"><label>{t("teams.addUserIdLabel")}</label>
                   <input type="number" min="1" required value={newMemberId} onChange={(e) => setNewMemberId(e.target.value)} />
                 </div>
                 <button type="submit" className="btn-primary">{t("common.add")}</button>
               </form>
             )}
             <table className="data-table">
-              <thead><tr><th>ユーザー名</th><th>{t("common.email")}</th><th>加入日</th><th>{t("common.actions")}</th></tr></thead>
+              <thead><tr><th>{t("teams.colUsername")}</th><th>{t("common.email")}</th><th>{t("teams.colJoinedAt")}</th><th>{t("common.actions")}</th></tr></thead>
               <tbody>
                 {members.map((m) => (
                   <tr key={m.user_id}>
@@ -203,7 +203,7 @@ export default function TeamsPage() {
                     </td>
                   </tr>
                 ))}
-                {members.length === 0 && <tr><td colSpan={4} className="empty">メンバーがいません</td></tr>}
+                {members.length === 0 && <tr><td colSpan={4} className="empty">{t("teams.noMembers")}</td></tr>}
               </tbody>
             </table>
             <div className="form-actions">
@@ -218,7 +218,7 @@ export default function TeamsPage() {
       ) : (
         <table className="data-table">
           <thead>
-            <tr><th>{t("teams.teamName")}</th><th>{t("common.description")}</th><th>メンバー数</th><th>リーダーID</th><th>{t("common.actions")}</th></tr>
+            <tr><th>{t("teams.teamName")}</th><th>{t("common.description")}</th><th>{t("teams.colMemberCount")}</th><th>{t("teams.colLeaderId")}</th><th>{t("common.actions")}</th></tr>
           </thead>
           <tbody>
             {teams.map((team) => (
@@ -228,7 +228,7 @@ export default function TeamsPage() {
                 <td>{team.member_count ?? 0}</td>
                 <td>{team.leader_id ?? "-"}</td>
                 <td className="actions">
-                  <button className="btn-sm" onClick={() => openMembers(team)}>メンバー</button>
+                  <button className="btn-sm" onClick={() => openMembers(team)}>{t("teams.membersBtn")}</button>
                   {hasPermission("teams.update") && <button className="btn-sm" onClick={() => handleEdit(team)}>{t("common.edit")}</button>}
                   {hasPermission("teams.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(team)}>{t("common.delete")}</button>}
                 </td>
@@ -242,7 +242,7 @@ export default function TeamsPage() {
       <ConfirmModal
         open={!!deleteTarget}
         title={t("teams.deleteTeam")}
-        message={<><strong>{deleteTarget?.name}</strong> を削除します。<br />メンバー情報も同時に削除されます。</>}
+        message={<><strong>{deleteTarget?.name}</strong>{t("common.deleteConfirmSuffix")}<br />{t("teams.memberDeleteNote")}</>}
         confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}

@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: width 250ms ease;
+  transition: width var(--transition-sidebar);
   overflow: hidden;
   position: sticky;
   top: 0;
@@ -103,7 +103,7 @@
   text-decoration: none;
   font-size: var(--font-sm);
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--transition-fast), color var(--transition-fast);
   border: none;
   border-left: 3px solid transparent;
   background: transparent;
@@ -138,7 +138,7 @@
   text-overflow: ellipsis;
   /* 細幅時は透明にして見えなくする。widthはsidebarのoverflow:hiddenで制御 */
   opacity: 0;
-  transition: opacity 150ms ease 80ms;
+  transition: opacity var(--transition-fast) 80ms;
 }
 
 .sidebar-expanded .sidebar-label {
@@ -159,7 +159,7 @@
   display: flex;
   align-items: center;
   margin-left: auto;
-  transition: transform 200ms ease;
+  transition: transform var(--transition-base);
 }
 
 .sidebar-caret.open {
@@ -178,7 +178,7 @@
   text-decoration: none;
   font-size: var(--font-sm);
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .sidebar-sub-item:hover {
@@ -238,12 +238,12 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 0 12px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .topbar-search:focus-within {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.12);
+  box-shadow: var(--focus-ring-shadow);
 }
 
 .topbar-search-icon {
@@ -293,7 +293,7 @@
   color: var(--text-secondary);
   font-size: var(--font-sm);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -333,7 +333,7 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-avatar);
-  transition: background 0.15s, transform 0.1s;
+  transition: background var(--transition-fast), transform var(--transition-micro);
   box-shadow: var(--shadow-md);
   text-transform: uppercase;
   line-height: 1;
@@ -348,7 +348,7 @@
 .user-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay-bg);
   z-index: var(--z-backdrop);
   animation: fadeBackdrop 200ms ease;
 }
@@ -369,7 +369,7 @@
   border-left: 1px solid var(--border);
   z-index: var(--z-drawer);
   transform: translateX(100%);
-  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--transition-slow);
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-md);
@@ -403,7 +403,7 @@
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   line-height: 1;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .user-drawer-close:hover {
@@ -441,7 +441,7 @@
   cursor: pointer;
   font-size: var(--font-base);
   color: var(--text-secondary);
-  transition: background 0.15s;
+  transition: background var(--transition-fast);
   text-align: left;
 }
 
@@ -548,7 +548,7 @@
   align-items: center;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-xs);
   padding: 0 24px;
   gap: var(--space-4);
   min-height: var(--space-12);
@@ -579,7 +579,7 @@
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.15s;
+  transition: color var(--transition-fast);
   border-bottom: 2px solid transparent;
 }
 
@@ -615,7 +615,7 @@
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-md);
   padding: 4px 0;
   z-index: var(--z-sidebar-overlay);
 }
@@ -684,7 +684,7 @@
   cursor: pointer;
   border: 2px solid transparent;
   box-sizing: border-box;
-  transition: transform 0.1s, box-shadow 0.15s;
+  transition: transform var(--transition-micro), box-shadow var(--transition-fast);
 }
 .color-swatch:hover {
   transform: scale(1.08);
@@ -724,7 +724,7 @@
   background: var(--bg-surface);
   padding: 48px 32px;
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .coming-soon-icon {
@@ -773,7 +773,7 @@
   padding: 0 24px;
   height: 56px;
   border-bottom: 3px solid var(--nav-brand-accent);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-sm);
   gap: var(--space-8);
 }
 
@@ -800,7 +800,7 @@
   font-size: var(--font-base);
   border-radius: var(--radius-sm);
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .topnav-links a:hover {
@@ -888,7 +888,7 @@
   color: var(--text-muted);
   text-decoration: none;
   font-size: var(--font-base);
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .sidebar-nav a:hover {
@@ -1074,7 +1074,7 @@
 .login-card .form-group input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+  box-shadow: var(--focus-ring-shadow);
 }
 
 /* Meta 風ログインボタン（.login-card スコープ限定） */
@@ -1088,7 +1088,7 @@
   font-size: var(--font-md);
   font-weight: var(--font-weight-semi);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--transition-fast);
 }
 
 .login-card .btn-primary:hover:not(:disabled) {
@@ -1126,7 +1126,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
+  box-shadow: var(--focus-ring-shadow);
 }
 
 .form-group textarea {
@@ -1150,7 +1150,7 @@
   border-radius: var(--radius-sm);
   font-size: var(--font-base);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--transition-fast);
 }
 
 .btn-primary:hover { background: var(--accent-hover); }
@@ -1210,7 +1210,7 @@
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .data-table th {
@@ -1401,7 +1401,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1416,7 +1416,7 @@
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-modal);
 }
 
 .modal h3 {
@@ -1510,7 +1510,7 @@
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-sm);
   position: sticky;
   top: var(--space-5);
 }
@@ -1540,7 +1540,7 @@
   border-radius: var(--radius-md);
   margin-bottom: 6px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--transition-fast);
 }
 .role-item:hover {
   background: var(--bg-hover);
@@ -1573,7 +1573,7 @@
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-sm);
 }
 .roles-main-header {
   display: flex;
@@ -1667,7 +1667,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 .permission-item:hover {
   background: var(--bg-hover);
@@ -1843,7 +1843,7 @@
   font-size: var(--font-base);
   font-weight: var(--font-weight-medium);
   color: var(--text-secondary);
-  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  transition: color var(--transition-fast) ease, background-color var(--transition-fast) ease, border-color var(--transition-fast) ease;
   margin-bottom: -2px;
   border-radius: 4px 4px 0 0;
 }
@@ -1910,7 +1910,7 @@
 .form-grid > .form-row textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
+  box-shadow: var(--focus-ring-shadow);
 }
 
 .form-grid > .form-actions {
@@ -1970,7 +1970,7 @@
 .modal-content-wide .form-row textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15);
+  box-shadow: var(--focus-ring-shadow);
 }
 
 /* 狭い画面 (~ 720px) では form-grid を 1 カラムに */

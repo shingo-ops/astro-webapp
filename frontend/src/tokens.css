@@ -94,4 +94,21 @@
   --z-avatar:        300;
   --z-modal:         400;
   --z-toast:         500;
+
+  /* ---- Motion / Transitions ---- */
+  /* duration tokens — 値は ms 統一（Material Design 3 / Tailwind 準拠） */
+  --transition-micro:   100ms ease;                          /* ボタン押下・スウォッチ */
+  --transition-fast:    150ms ease;                          /* hover・カラー変化 */
+  --transition-base:    200ms ease;                          /* フェードイン・スケール */
+  --transition-sidebar: 250ms ease;                          /* サイドバー幅アニメーション */
+  --transition-slow:    280ms cubic-bezier(0.4, 0, 0.2, 1); /* ドロワー・モーダル展開 */
+
+  /* easing 単体（multi-property transition で利用） */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* Material/Meta 標準 */
+  --ease-enter:    cubic-bezier(0, 0, 0.2, 1);    /* 要素が画面に入る */
+  --ease-exit:     cubic-bezier(0.4, 0, 1, 1);    /* 要素が画面から出る */
+
+  /* ---- Focus ring（寸法のみ — 色は index.css で定義） ---- */
+  --focus-ring-width:  3px;
+  --focus-ring-offset: 2px;
 }

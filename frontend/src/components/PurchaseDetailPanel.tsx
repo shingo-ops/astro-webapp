@@ -170,7 +170,7 @@ export default function PurchaseDetailPanel({
         } else {
           if (!cancelled) {
             setError(
-              e instanceof Error ? e.message : "仕入情報の取得に失敗しました",
+              e instanceof Error ? e.message : t("purchase.fetchError"),
             );
           }
         }
@@ -227,7 +227,7 @@ export default function PurchaseDetailPanel({
       onSaved?.(saved);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "保存に失敗しました");
+      setError(e instanceof Error ? e.message : t("common.saveError"));
     } finally {
       setSaving(false);
     }
@@ -251,7 +251,7 @@ export default function PurchaseDetailPanel({
       setExisting(saved);
       setForm((prev) => ({ ...prev, purchase_status: saved.purchase_status ?? "" }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "確定に失敗しました");
+      setError(e instanceof Error ? e.message : t("purchase.confirmError"));
     } finally {
       setConfirming(false);
     }
@@ -264,7 +264,7 @@ export default function PurchaseDetailPanel({
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 880, maxHeight: "90vh", overflowY: "auto" }}
         role="dialog"
-        aria-label="仕入情報"
+        aria-label={t("purchase.modalAriaLabel")}
       >
         <h3>{t("purchase.sectionStaffTx")} — {orderNumber}</h3>
         {loading ? (
@@ -432,11 +432,11 @@ export default function PurchaseDetailPanel({
                 data-testid="pur-confirm"
                 title={
                   existing
-                    ? "ステータスを「確定済み」に切り替え"
-                    : "仕入情報を保存後に確定できます"
+                    ? t("purchase.confirmTitle")
+                    : t("purchase.confirmTitleDisabled")
                 }
               >
-                {confirming ? "確定中..." : "確定"}
+                {confirming ? t("purchase.confirming") : t("purchase.confirm")}
               </button>
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
@@ -445,7 +445,7 @@ export default function PurchaseDetailPanel({
                   onClick={onClose}
                   disabled={saving}
                 >
-                  キャンセル
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -453,7 +453,7 @@ export default function PurchaseDetailPanel({
                   disabled={saving}
                   data-testid="pur-save"
                 >
-                  {saving ? "保存中..." : existing ? "更新" : "登録"}
+                  {saving ? t("common.saving") : existing ? t("common.update") : t("common.register")}
                 </button>
               </div>
             </div>

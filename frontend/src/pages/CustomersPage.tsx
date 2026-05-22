@@ -401,7 +401,7 @@ export default function CustomersPage() {
       case "active": return t("customers.status_active");
       case "inactive": return t("customers.status_inactive");
       case "archived": return t("customers.status_archived");
-      case "pending_dedup_review": return "重複確認待ち";
+      case "pending_dedup_review": return t("customers.status_pending_dedup");
       default: return s;
     }
   };
@@ -449,7 +449,7 @@ export default function CustomersPage() {
                   {!editId && (
                     <div className="form-group">
                       <label>{t("customers.field_customerCodeFull")}</label>
-                      <input value={form.customer_code} placeholder="例: CT-00001" onChange={(e) => setForm({ ...form, customer_code: e.target.value })} />
+                      <input value={form.customer_code} placeholder={t("customers.field_customerCodePlaceholder")} onChange={(e) => setForm({ ...form, customer_code: e.target.value })} />
                     </div>
                   )}
                   <div className="form-group">
@@ -488,7 +488,7 @@ export default function CustomersPage() {
                   </div>
                   <div className="form-group">
                     <label>{t("customers.field_priorityFocus")}</label>
-                    <input value={form.priority_focus} placeholder="例: 価格重視 / 信頼重視 / 品質重視" onChange={(e) => setForm({ ...form, priority_focus: e.target.value })} />
+                    <input value={form.priority_focus} placeholder={t("customers.field_priorityFocusPlaceholder")} onChange={(e) => setForm({ ...form, priority_focus: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label>{t("customers.field_perOrderAmount")}</label>
@@ -544,7 +544,7 @@ export default function CustomersPage() {
                       <div className="form-group"><label>{t("customers.addr_phone")}</label>
                         <input
                           value={addr.telephone}
-                          placeholder="例: +81-90-1234-5678 / 03-1234-5678"
+                          placeholder={t("customers.field_phonePlaceholder")}
                           onChange={(e) => { updateAddr({ telephone: e.target.value }); if (phoneError && key === "billing") setPhoneError(null); }}
                           onBlur={(e) => { if (key === "billing") setPhoneError(validatePhoneClient(e.target.value)); }}
                         />
@@ -609,7 +609,7 @@ export default function CustomersPage() {
                         </div>
                         <div style={{ flex: 2 }}>
                           <label>{t("customers.channel_purpose")}</label>
-                          <input value={ch.purpose} placeholder="例: 商談用 / 発送通知用" onChange={(e) => {
+                          <input value={ch.purpose} placeholder={t("customers.channel_purposePlaceholder")} onChange={(e) => {
                             const next = [...form.contact_channels];
                             next[idx] = { ...ch, purpose: e.target.value };
                             setForm({ ...form, contact_channels: next });

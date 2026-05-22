@@ -54,12 +54,6 @@ const emptyForm: FormState = {
   discord_user_id: "", sender_email: "", owner_staff_id: "",
 };
 
-const PURPOSE_LABEL: Record<string, string> = {
-  invoice: "請求書送付", shipment: "発送通知", notification: "通知", custom: "カスタム",
-};
-const STATUS_LABEL: Record<string, string> = {
-  active: "稼働中", inactive: "停止中", maintenance: "メンテ",
-};
 
 export default function BotsPage() {
   const { t } = useTranslation();
@@ -75,6 +69,9 @@ export default function BotsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Bot | null>(null);
   const [rotateTarget, setRotateTarget] = useState<Bot | null>(null);
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
+
+  const purposeLabel = (p: string) => (({ invoice: t("bots.purposeInvoice"), shipment: t("bots.purposeShipment"), notification: t("bots.purposeNotification"), custom: t("bots.purposeCustom") } as Record<string, string>)[p] ?? p);
+  const statusLabel  = (s: string) => (({ active: t("bots.statusActive"), inactive: t("bots.statusInactive"), maintenance: t("bots.statusMaintenance") } as Record<string, string>)[s] ?? s);
 
   const loadAll = async () => {
     try {
@@ -180,57 +177,57 @@ export default function BotsPage() {
 
       {newApiKey && (
         <div className="notice" style={{ padding: "var(--space-4)", background: "var(--warning-bg)", border: "1px solid var(--warning-text)", borderRadius: 4, margin: "16px 0" }}>
-          <strong><STATUS_ICONS.warning size={14} aria-hidden="true" /> APIキーが発行されました（この画面を閉じると再取得できません）:</strong>
+          <strong><STATUS_ICONS.warning size={14} aria-hidden="true" /> {t("bots.apiKeyIssued")}</strong>
           <div className="mono" style={{ padding: "var(--space-2)", background: "var(--bg-surface)", marginTop: "var(--space-2)", wordBreak: "break-all" }}>{newApiKey}</div>
-          <button className="btn-sm" onClick={() => setNewApiKey(null)} style={{ marginTop: "var(--space-2)" }}>確認した・非表示にする</button>
+          <button className="btn-sm" onClick={() => setNewApiKey(null)} style={{ marginTop: "var(--space-2)" }}>{t("bots.apiKeyConfirm")}</button>
         </div>
       )}
 
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editId ? "Bot 編集" : "新規 Bot 登録"}</h3>
+            <h3>{editId ? t("bots.editBot") : t("bots.newBot")}</h3>
             <form onSubmit={handleSubmit}>
               {!editId && (
                 <div className="form-group">
-                  <label>Botコード（空欄なら自動採番 BOT-00001 形式）</label>
-                  <input value={form.bot_code} placeholder="例: BOT-00001" onChange={(e) => setForm({ ...form, bot_code: e.target.value })} />
+                  <label>{t("bots.botCodeLabel")}</label>
+                  <input value={form.bot_code} placeholder={t("bots.botCodePlaceholder")} onChange={(e) => setForm({ ...form, bot_code: e.target.value })} />
                 </div>
               )}
-              <div className="form-group"><label>表示名 *</label>
+              <div className="form-group"><label>{t("bots.displayName")} *</label>
                 <input required value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
               </div>
-              <div className="form-group"><label>用途 *</label>
+              <div className="form-group"><label>{t("bots.purposeLabel")} *</label>
                 <select required value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })}>
-                  <option value="invoice">請求書送付</option>
-                  <option value="shipment">発送通知</option>
-                  <option value="notification">通知</option>
-                  <option value="custom">カスタム</option>
+                  <option value="invoice">{t("bots.purposeInvoice")}</option>
+                  <option value="shipment">{t("bots.purposeShipment")}</option>
+                  <option value="notification">{t("bots.purposeNotification")}</option>
+                  <option value="custom">{t("bots.purposeCustom")}</option>
                 </select>
               </div>
               <div className="form-group"><label>{t("common.status")}</label>
                 <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                  <option value="active">稼働中</option>
-                  <option value="inactive">停止中</option>
-                  <option value="maintenance">メンテ</option>
+                  <option value="active">{t("bots.statusActive")}</option>
+                  <option value="inactive">{t("bots.statusInactive")}</option>
+                  <option value="maintenance">{t("bots.statusMaintenance")}</option>
                 </select>
               </div>
-              <div className="form-group"><label>管理責任スタッフ *</label>
+              <div className="form-group"><label>{t("bots.ownerStaff")} *</label>
                 <select required value={form.owner_staff_id} onChange={(e) => setForm({ ...form, owner_staff_id: e.target.value })}>
-                  <option value="">選択してください</option>
+                  <option value="">{t("common.pleaseSelect")}</option>
                   {staff.map((s) => <option key={s.id} value={s.id}>{s.staff_code} {s.surname_jp} {s.given_name_jp}</option>)}
                 </select>
               </div>
               <div className="form-group"><label>Discord Bot ID</label>
                 <input value={form.discord_user_id} onChange={(e) => setForm({ ...form, discord_user_id: e.target.value })} />
               </div>
-              <div className="form-group"><label>送信元メールアドレス</label>
+              <div className="form-group"><label>{t("bots.senderEmail")}</label>
                 <input type="email" value={form.sender_email} onChange={(e) => setForm({ ...form, sender_email: e.target.value })} />
               </div>
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowForm(false)} disabled={submitting}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? "送信中..." : editId ? t("common.update") : "登録（APIキー発行）"}
+                  {submitting ? t("common.submitting") : editId ? t("common.update") : t("bots.registerIssueKey")}
                 </button>
               </div>
             </form>
@@ -246,11 +243,11 @@ export default function BotsPage() {
             <tr>
               <th>{t("common.code")}</th>
               <th>{t("common.name")}</th>
-              <th>用途</th>
+              <th>{t("bots.purposeLabel")}</th>
               <th>{t("common.status")}</th>
-              <th>管理者</th>
-              <th>実行回数</th>
-              <th>最終実行</th>
+              <th>{t("bots.ownerStaff")}</th>
+              <th>{t("bots.executionCount")}</th>
+              <th>{t("bots.lastExecuted")}</th>
               <th>{t("common.actions")}</th>
             </tr>
           </thead>
@@ -259,14 +256,14 @@ export default function BotsPage() {
               <tr key={b.id}>
                 <td className="mono">{b.bot_code}</td>
                 <td>{b.display_name}</td>
-                <td>{PURPOSE_LABEL[b.purpose] || b.purpose}</td>
-                <td><span className={`badge badge-${b.status === "active" ? "won" : "lost"}`}>{STATUS_LABEL[b.status] || b.status}</span></td>
+                <td>{purposeLabel(b.purpose)}</td>
+                <td><span className={`badge badge-${b.status === "active" ? "won" : "lost"}`}>{statusLabel(b.status)}</span></td>
                 <td>{b.owner_staff_name || "-"}</td>
                 <td>{b.execution_count.toLocaleString("ja-JP")}</td>
                 <td>{b.last_executed_at ? new Date(b.last_executed_at).toLocaleDateString("ja-JP") : "-"}</td>
                 <td className="actions">
                   {hasPermission("bots.update") && <button className="btn-sm" onClick={() => handleEdit(b)}>{t("common.edit")}</button>}
-                  {hasPermission("bots.update") && <button className="btn-sm" onClick={() => setRotateTarget(b)}>鍵再発行</button>}
+                  {hasPermission("bots.update") && <button className="btn-sm" onClick={() => setRotateTarget(b)}>{t("bots.rotateKey")}</button>}
                   {hasPermission("bots.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(b)}>{t("common.delete")}</button>}
                 </td>
               </tr>
@@ -278,8 +275,8 @@ export default function BotsPage() {
 
       <ConfirmModal
         open={!!deleteTarget}
-        title="Bot を削除"
-        message={<><strong>{deleteTarget?.display_name}</strong> を削除します。<br />この操作は取り消せません。</>}
+        title={t("bots.deleteBot")}
+        message={<><strong>{deleteTarget?.display_name}</strong>{t("common.deleteConfirmSuffix")}<br />{t("common.irreversible")}</>}
         confirmLabel={t("common.delete")}
         danger
         onConfirm={performDelete}
@@ -287,15 +284,15 @@ export default function BotsPage() {
       />
       <ConfirmModal
         open={!!rotateTarget}
-        title="APIキーを再発行"
+        title={t("bots.rotateKeyTitle")}
         message={
           <>
-            <strong>{rotateTarget?.display_name}</strong> のAPIキーを再発行します。<br />
-            <strong>旧キーは即座に無効化され、このBot経由の外部連携は一時停止します。</strong><br />
-            新キーは表示された時に必ずコピー・保存してください（再取得不能）。
+            <strong>{rotateTarget?.display_name}</strong>{t("bots.rotateKeyDescSuffix")}<br />
+            <strong>{t("bots.rotateKeyWarn1")}</strong><br />
+            {t("bots.rotateKeyWarn2")}
           </>
         }
-        confirmLabel="再発行する"
+        confirmLabel={t("bots.rotateKeyConfirm")}
         danger
         onConfirm={performRotate}
         onCancel={() => setRotateTarget(null)}
