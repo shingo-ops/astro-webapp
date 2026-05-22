@@ -79,6 +79,7 @@ export const NAV_ICONS = {
   logout:      LogOut,
   filter:      SlidersHorizontal,
   search:      Search,
+  close:       X,
 } satisfies Record<string, LucideIcon>;
 
 // ============================================================
