@@ -46,13 +46,13 @@ export default function ShiftsPage() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{t("shifts.newShift")}</h3>
             <form onSubmit={handleSubmit}>
-              <div className="form-group"><label>ユーザーID *</label><input type="number" min="1" required value={form.user_id} onChange={e => setForm({ ...form, user_id: e.target.value })} /></div>
+              <div className="form-group"><label>{t("shifts.userId")} *</label><input type="number" min="1" required value={form.user_id} onChange={e => setForm({ ...form, user_id: e.target.value })} /></div>
               <div className="form-group"><label>{t("common.date")} *</label><input type="date" required value={form.shift_date} onChange={e => setForm({ ...form, shift_date: e.target.value })} /></div>
-              <div className="form-group"><label>開始時刻 *</label><input type="time" required value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></div>
-              <div className="form-group"><label>終了時刻 *</label><input type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></div>
-              <div className="form-group"><label>種別</label>
+              <div className="form-group"><label>{t("shifts.startTime")} *</label><input type="time" required value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} /></div>
+              <div className="form-group"><label>{t("shifts.endTime")} *</label><input type="time" required value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} /></div>
+              <div className="form-group"><label>{t("shifts.shiftType")}</label>
                 <select value={form.shift_type} onChange={e => setForm({ ...form, shift_type: e.target.value })}>
-                  <option value="normal">通常</option><option value="early">早番</option><option value="late">遅番</option><option value="night">夜勤</option><option value="off">休日</option>
+                  <option value="normal">{t("shifts.type_normal")}</option><option value="early">{t("shifts.type_early")}</option><option value="late">{t("shifts.type_late")}</option><option value="night">{t("shifts.type_night")}</option><option value="off">{t("shifts.type_off")}</option>
                 </select>
               </div>
               <div className="form-actions">
@@ -65,7 +65,7 @@ export default function ShiftsPage() {
       )}
       {loading ? <div className="loading">{t("common.loading")}</div> : (
         <table className="data-table">
-          <thead><tr><th>{t("common.date")}</th><th>ユーザーID</th><th>開始</th><th>終了</th><th>種別</th><th>{t("common.actions")}</th></tr></thead>
+          <thead><tr><th>{t("common.date")}</th><th>{t("shifts.userId")}</th><th>{t("shifts.colStart")}</th><th>{t("shifts.colEnd")}</th><th>{t("shifts.shiftType")}</th><th>{t("common.actions")}</th></tr></thead>
           <tbody>
             {shifts.map(s => (
               <tr key={s.id}>

@@ -84,7 +84,7 @@ export default function InvoiceDetailPage() {
   };
 
   const handleVoid = async () => {
-    if (!voidReason.trim()) { setError("無効化理由を入力してください"); return; }
+    if (!voidReason.trim()) { setError(t("invoices.voidReasonRequired")); return; }
     await doAction("void", { reason: voidReason });
     setShowVoidForm(false);
     setVoidReason("");
@@ -101,13 +101,13 @@ export default function InvoiceDetailPage() {
         <h2>{t("invoices.title")} — {invoice.invoice_number || `#${invoice.id}`}</h2>
         <div className="actions" style={{ display: "flex", gap: "var(--space-2)" }}>
           {invoice.status === "draft" && hasPermission("invoices.create") && (
-            <button className="btn-primary" onClick={() => doAction("issue")}>発行する</button>
+            <button className="btn-primary" onClick={() => doAction("issue")}>{t("invoices.issueAction")}</button>
           )}
           {(invoice.status === "issued" || invoice.status === "overdue") && hasPermission("invoices.update") && (
-            <button className="btn-primary" onClick={() => doAction("pay")}>入金登録</button>
+            <button className="btn-primary" onClick={() => doAction("pay")}>{t("invoices.payAction")}</button>
           )}
           {invoice.status !== "voided" && hasPermission("invoices.void") && (
-            <button className="btn-danger" onClick={() => setShowVoidForm(true)}>無効化</button>
+            <button className="btn-danger" onClick={() => setShowVoidForm(true)}>{t("invoices.voidAction")}</button>
           )}
           <button className="btn-secondary" onClick={() => navigate("/invoices/new")}>{t("common.back")}</button>
         </div>
@@ -117,12 +117,12 @@ export default function InvoiceDetailPage() {
 
       {showVoidForm && (
         <div style={{ background: "var(--danger-bg)", padding: "var(--space-4)", borderRadius: 8, marginBottom: "var(--space-4)" }}>
-          <label style={{ display: "block", marginBottom: "var(--space-2)", fontWeight: "var(--font-weight-semi)", color: "var(--danger-text)" }}>無効化理由 *</label>
+          <label style={{ display: "block", marginBottom: "var(--space-2)", fontWeight: "var(--font-weight-semi)", color: "var(--danger-text)" }}>{t("invoices.voidReasonLabel")} *</label>
           <input style={{ width: "100%", padding: "var(--space-2)", borderRadius: 4, border: "1px solid var(--border)" }}
-                 value={voidReason} onChange={(e) => setVoidReason(e.target.value)} placeholder="無効化の理由を入力..." />
+                 value={voidReason} onChange={(e) => setVoidReason(e.target.value)} placeholder={t("invoices.voidReasonPlaceholder")} />
           <div style={{ marginTop: "var(--space-2)", display: "flex", gap: "var(--space-2)" }}>
             <button className="btn-secondary" onClick={() => setShowVoidForm(false)}>{t("common.cancel")}</button>
-            <button className="btn-danger" onClick={handleVoid}>無効化実行</button>
+            <button className="btn-danger" onClick={handleVoid}>{t("invoices.voidExecute")}</button>
           </div>
         </div>
       )}
@@ -131,14 +131,14 @@ export default function InvoiceDetailPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--space-4)" }}>
           <div><strong>{t("common.status")}:</strong> <span className={`badge badge-${invoice.status === "paid" ? "won" : invoice.status === "voided" ? "lost" : "pending"}`}>{t(`invoices.status_${invoice.status}`)}</span></div>
           <div><strong>{t("common.currency")}:</strong> {invoice.currency}</div>
-          <div><strong>支払方法:</strong> {invoice.payment_method || "-"}</div>
-          <div><strong>発行日:</strong> {invoice.issued_at ? new Date(invoice.issued_at).toLocaleDateString() : "-"}</div>
+          <div><strong>{t("invoices.paymentMethod")}:</strong> {invoice.payment_method || "-"}</div>
+          <div><strong>{t("invoices.issuedAt")}:</strong> {invoice.issued_at ? new Date(invoice.issued_at).toLocaleDateString() : "-"}</div>
           <div><strong>{t("invoices.dueDate")}:</strong> {invoice.due_date || "-"}</div>
-          <div><strong>入金日:</strong> {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString() : "-"}</div>
-          <div><strong>為替 JPY:</strong> {invoice.exchange_rate_jpy ?? "-"}</div>
-          <div><strong>為替 USD:</strong> {invoice.exchange_rate_usd ?? "-"}</div>
+          <div><strong>{t("invoices.paidAt")}:</strong> {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString() : "-"}</div>
+          <div><strong>{t("invoices.exchangeRateJpy")}:</strong> {invoice.exchange_rate_jpy ?? "-"}</div>
+          <div><strong>{t("invoices.exchangeRateUsd")}:</strong> {invoice.exchange_rate_usd ?? "-"}</div>
           <div><strong>ERP Key:</strong> <span className="mono">{invoice.erp_key || "-"}</span></div>
-          {invoice.void_reason && <div style={{ gridColumn: "1 / -1" }}><strong>無効化理由:</strong> {invoice.void_reason}</div>}
+          {invoice.void_reason && <div style={{ gridColumn: "1 / -1" }}><strong>{t("invoices.voidReasonLabel")}:</strong> {invoice.void_reason}</div>}
           {invoice.notes && <div style={{ gridColumn: "1 / -1" }}><strong>{t("common.notes")}:</strong> {invoice.notes}</div>}
         </div>
       </div>
@@ -164,8 +164,8 @@ export default function InvoiceDetailPage() {
           <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.shippingFee")}</td><td>{fmt(invoice.shipping_fee)}</td></tr>
           <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.tax")}</td><td>{fmt(invoice.tax_amount)}</td></tr>
           <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{t("quotes.total")}</td><td style={{ fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{fmt(invoice.total_amount)} {invoice.currency}</td></tr>
-          {invoice.amount_jpy != null && <tr><td colSpan={4} style={{ textAlign: "right", color: "var(--text-muted)" }}>JPY換算</td><td style={{ color: "var(--text-muted)" }}>¥{invoice.amount_jpy.toLocaleString()}</td></tr>}
-          {invoice.amount_usd != null && <tr><td colSpan={4} style={{ textAlign: "right", color: "var(--text-muted)" }}>USD換算</td><td style={{ color: "var(--text-muted)" }}>${invoice.amount_usd.toLocaleString()}</td></tr>}
+          {invoice.amount_jpy != null && <tr><td colSpan={4} style={{ textAlign: "right", color: "var(--text-muted)" }}>{t("invoices.jpyEquiv")}</td><td style={{ color: "var(--text-muted)" }}>¥{invoice.amount_jpy.toLocaleString()}</td></tr>}
+          {invoice.amount_usd != null && <tr><td colSpan={4} style={{ textAlign: "right", color: "var(--text-muted)" }}>{t("invoices.usdConvert")}</td><td style={{ color: "var(--text-muted)" }}>${invoice.amount_usd.toLocaleString()}</td></tr>}
         </tfoot>
       </table>
     </div>
