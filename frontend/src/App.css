@@ -45,8 +45,8 @@
 }
 
 .sidebar-logo-icon {
-  width: 36px;
-  height: 36px;
+  width: var(--logo-size);
+  height: var(--logo-size);
   flex-shrink: 0;
   object-fit: contain;
 }
@@ -276,7 +276,7 @@
 .topbar-email {
   font-size: var(--font-sm);
   color: var(--text-muted);
-  max-width: 200px;
+  max-width: var(--max-width-truncate);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -496,7 +496,7 @@
 }
 
 .brandbar-logo-img {
-  height: 36px;
+  height: var(--logo-size);
   width: auto;
   display: block;
 }
@@ -649,7 +649,7 @@
 .mainnav-email {
   font-size: var(--font-xs);
   color: var(--text-muted);
-  max-width: 200px;
+  max-width: var(--max-width-truncate);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -830,7 +830,7 @@
 .topnav-email {
   font-size: var(--font-xs);
   color: var(--text-muted);
-  max-width: 200px;
+  max-width: var(--max-width-truncate);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -939,7 +939,7 @@
 /* --- Page --- */
 .page {
   padding: 2var(--space-1) var(--space-8);
-  max-width: 1200px;
+  max-width: var(--max-width-page);
 }
 
 .page h2 {
@@ -1793,7 +1793,7 @@
 
 .page-container {
   padding: 2var(--space-1) var(--space-8);
-  max-width: 1200px;
+  max-width: var(--max-width-page);
 }
 
 .page-container .page-header {
