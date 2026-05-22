@@ -63,7 +63,7 @@ test.describe("Scene 1: Dashboard Overview", () => {
     await expect(page.getByText("成約金額")).toBeVisible();
   });
 
-  test("0:18–0:25: メインナビにダッシュボード / リード / 管理メニューが出ている", async ({
+  test("0:18–0:25: メインナビにダッシュボード / 顧客管理 / 管理メニューが出ている", async ({
     page,
   }) => {
     await installAuthBypass(page);
@@ -86,9 +86,9 @@ test.describe("Scene 1: Dashboard Overview", () => {
     const nav = page.locator("nav.sidebar-nav-items");
     await expect(nav).toBeVisible();
 
-    // sidebar 内の主要ラベル: ダッシュボード（NavLink） / リード（Accordion） / 管理（Accordion）
+    // sidebar 内の主要ラベル: ダッシュボード（NavLink） / 顧客管理（Accordion, PR #531） / 管理（Accordion）
     await expect(nav.getByText("ダッシュボード", { exact: true })).toBeVisible();
-    await expect(nav.getByText("リード", { exact: true })).toBeVisible();
+    await expect(nav.getByText("顧客管理", { exact: true })).toBeVisible();
     await expect(nav.getByText("管理", { exact: true })).toBeVisible();
   });
 });
