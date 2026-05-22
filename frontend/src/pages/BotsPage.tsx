@@ -179,10 +179,10 @@ export default function BotsPage() {
       {error && <div className="error-message">{error}</div>}
 
       {newApiKey && (
-        <div className="notice" style={{ padding: 16, background: "var(--warning-bg)", border: "1px solid var(--warning-text)", borderRadius: 4, margin: "16px 0" }}>
+        <div className="notice" style={{ padding: "var(--space-4)", background: "var(--warning-bg)", border: "1px solid var(--warning-text)", borderRadius: 4, margin: "16px 0" }}>
           <strong><STATUS_ICONS.warning size={14} aria-hidden="true" /> APIキーが発行されました（この画面を閉じると再取得できません）:</strong>
-          <div className="mono" style={{ padding: 8, background: "var(--bg-surface)", marginTop: 8, wordBreak: "break-all" }}>{newApiKey}</div>
-          <button className="btn-sm" onClick={() => setNewApiKey(null)} style={{ marginTop: 8 }}>確認した・非表示にする</button>
+          <div className="mono" style={{ padding: "var(--space-2)", background: "var(--bg-surface)", marginTop: "var(--space-2)", wordBreak: "break-all" }}>{newApiKey}</div>
+          <button className="btn-sm" onClick={() => setNewApiKey(null)} style={{ marginTop: "var(--space-2)" }}>確認した・非表示にする</button>
         </div>
       )}
 

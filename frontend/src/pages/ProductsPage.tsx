@@ -261,7 +261,7 @@ export default function ProductsPage() {
 
               {/* Phase 1-C M-MVP: TCG 列 */}
               <fieldset style={{ border: "1px solid var(--border)", padding: "0.75rem", marginBottom: "1rem" }}>
-                <legend style={{ padding: "0 0.5rem", fontSize: "0.85rem", color: "var(--text-secondary)" }}>TCG</legend>
+                <legend style={{ padding: "0 0.5rem", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>TCG</legend>
                 <div className="form-group"><label>JAN/EAN</label>
                   <input maxLength={20} value={form.jan_code} onChange={(e) => setForm({ ...form, jan_code: e.target.value })} />
                 </div>
@@ -291,7 +291,7 @@ export default function ProductsPage() {
 
               {/* 価格 */}
               <fieldset style={{ border: "1px solid var(--border)", padding: "0.75rem", marginBottom: "1rem" }}>
-                <legend style={{ padding: "0 0.5rem", fontSize: "0.85rem", color: "var(--text-secondary)" }}>{t("products.unitPrice")}</legend>
+                <legend style={{ padding: "0 0.5rem", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.unitPrice")}</legend>
                 <div className="form-group"><label>{t("products.unitPrice")} (JPY)</label>
                   <input type="number" min="0" step="0.01" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} />
                 </div>
@@ -353,7 +353,7 @@ export default function ProductsPage() {
               <tr key={p.id} style={p.is_archived ? { opacity: 0.5 } : undefined}>
                 <td className="mono">{p.product_code || "-"}</td>
                 <td>
-                  {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: 4, objectFit: "cover", verticalAlign: "middle", borderRadius: 2 }} />}
+                  {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: 2 }} />}
                   {p.name_ja}
                   {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: 6 }}>{t("products.status_discontinued")}</span>}
                 </td>
@@ -364,7 +364,7 @@ export default function ProductsPage() {
                 <td>
                   {p.unit_price != null ? `¥${p.unit_price.toLocaleString()}` : "-"}
                   {(p.unit_price_usd != null || p.unit_price_eur != null) && (
-                    <span style={{ display: "block", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                    <span style={{ display: "block", fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
                       {p.unit_price_usd != null ? `$${p.unit_price_usd}` : ""}
                       {p.unit_price_usd != null && p.unit_price_eur != null ? " / " : ""}
                       {p.unit_price_eur != null ? `€${p.unit_price_eur}` : ""}

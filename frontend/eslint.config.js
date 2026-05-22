@@ -25,11 +25,19 @@ export default [
       // CSS変数を使ってください: style={{ color: 'var(--text-primary)' }}
       'no-restricted-syntax': [
         'error',
+        // 純粋なhex値: style={{ color: "#fff" }}
         {
           selector:
             "JSXAttribute[name.name='style'] Property > Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
           message:
             "❌ インラインスタイルへのhex色ハードコード禁止（ADR-067）。CSS変数を使ってください: style={{ color: 'var(--text-primary)' }}",
+        },
+        // 複合文字列に埋め込まれたhex値: style={{ border: "1px solid #ddd" }}
+        {
+          selector:
+            "JSXAttribute[name.name='style'] Property > Literal[value=/#[0-9a-fA-F]{3,8}/][value!=/^#[0-9a-fA-F]{3,8}$/]",
+          message:
+            "❌ インラインスタイルへのhex色ハードコード禁止（ADR-067）。CSS変数を使ってください: style={{ border: '1px solid var(--border-color)' }}",
         },
       ],
 

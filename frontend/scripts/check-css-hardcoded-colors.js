@@ -17,7 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC_DIR = join(__dirname, '../src');
 
 // 変数定義ファイルは除外（hex が値定義として書かれる）
-const EXCLUDE_FILES = new Set(['index.css']);
+const EXCLUDE_FILES = new Set(['index.css', 'tokens.css']);
 
 // hex カラーパターン（rgba の中の hex は除外）
 const HEX_PATTERN = /#[0-9a-fA-F]{3,8}(?![0-9a-fA-F])/;

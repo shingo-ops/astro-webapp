@@ -62,8 +62,8 @@ export default function BadgesPage() {
         <>
           {leaderboard.length > 0 && (
             <>
-              <h3 style={{ marginBottom: 12 }}>{t("badges.leaderboard")}</h3>
-              <table className="data-table" style={{ marginBottom: 24 }}>
+              <h3 style={{ marginBottom: "var(--space-3)" }}>{t("badges.leaderboard")}</h3>
+              <table className="data-table" style={{ marginBottom: "var(--space-6)" }}>
                 <thead><tr><th>{t("badges.rank")}</th><th>{t("badges.user")}</th><th>{t("badges.badgeCount")}</th><th>{t("badges.points")}</th></tr></thead>
                 <tbody>
                   {leaderboard.map((e, i) => (
@@ -71,21 +71,21 @@ export default function BadgesPage() {
                       <td style={{ fontWeight: i < 3 ? 700 : 400 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`}</td>
                       <td>{e.username || `User #${e.user_id}`}</td>
                       <td>{e.badge_count}</td>
-                      <td style={{ fontWeight: 600 }}>{e.total_points} pt</td>
+                      <td style={{ fontWeight: "var(--font-weight-semi)" }}>{e.total_points} pt</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </>
           )}
-          <h3 style={{ marginBottom: 12 }}>{t("badges.badgeList")}</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 16 }}>
+          <h3 style={{ marginBottom: "var(--space-3)" }}>{t("badges.badgeList")}</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "var(--space-4)" }}>
             {badges.map(b => (
-              <div key={b.id} style={{ background: "var(--bg-surface)", borderRadius: 8, padding: 16, boxShadow: "var(--shadow-sm)", textAlign: "center" }}>
-                <div style={{ fontSize: "2rem" }}>{b.icon || "🏅"}</div>
-                <div style={{ fontWeight: 600, marginTop: 8 }}>{b.name}</div>
-                <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: 4 }}>{b.description || "-"}</div>
-                <div style={{ marginTop: 8, fontWeight: 600, color: "var(--accent)" }}>{b.points} pt</div>
+              <div key={b.id} style={{ background: "var(--bg-surface)", borderRadius: 8, padding: "var(--space-4)", boxShadow: "var(--shadow-sm)", textAlign: "center" }}>
+                <div style={{ fontSize: "var(--font-3xl)" }}>{b.icon || "🏅"}</div>
+                <div style={{ fontWeight: "var(--font-weight-semi)", marginTop: "var(--space-2)" }}>{b.name}</div>
+                <div style={{ color: "var(--text-muted)", fontSize: "var(--font-sm)", marginTop: "var(--space-1)" }}>{b.description || "-"}</div>
+                <div style={{ marginTop: "var(--space-2)", fontWeight: "var(--font-weight-semi)", color: "var(--accent)" }}>{b.points} pt</div>
               </div>
             ))}
             {badges.length === 0 && <div style={{ color: "var(--text-muted)" }}>{t("badges.noBadges")}</div>}

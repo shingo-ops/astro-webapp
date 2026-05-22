@@ -79,11 +79,11 @@ export default function InvoicesPage() {
               <th>{t("invoices.invoiceCode")}</th>
               <th>{t("common.currency")}</th>
               <th>{t("common.amount")}</th>
-              <th>JPY換算</th>
+              <th>{t("invoices.jpyEquiv")}</th>
               <th>{t("common.status")}</th>
-              <th>発行日</th>
+              <th>{t("invoices.issuedAt")}</th>
               <th>{t("invoices.dueDate")}</th>
-              <th>入金日</th>
+              <th>{t("invoices.paidAt")}</th>
               <th>{t("common.actions")}</th>
             </tr>
           </thead>
@@ -101,7 +101,7 @@ export default function InvoicesPage() {
                 <td>{inv.due_date || "-"}</td>
                 <td>{inv.paid_at ? new Date(inv.paid_at).toLocaleDateString() : "-"}</td>
                 <td className="actions">
-                  <button className="btn-sm" onClick={() => navigate(`/invoices/${inv.id}`)}>詳細</button>
+                  <button className="btn-sm" onClick={() => navigate(`/invoices/${inv.id}`)}>{t("common.detail")}</button>
                 </td>
               </tr>
             ))}

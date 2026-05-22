@@ -63,8 +63,8 @@ export default function BuddyPage() {
       )}
       {loading ? <div className="loading">{t("common.loading")}</div> : (
         <>
-          <h3 style={{ marginBottom: 12 }}>{t("buddy.pairsTitle")}</h3>
-          <table className="data-table" style={{ marginBottom: 24 }}>
+          <h3 style={{ marginBottom: "var(--space-3)" }}>{t("buddy.pairsTitle")}</h3>
+          <table className="data-table" style={{ marginBottom: "var(--space-6)" }}>
             <thead><tr><th>{t("buddy.coachId")}</th><th>{t("buddy.menteeId")}</th><th>{t("common.status")}</th><th>{t("buddy.startedAt")}</th><th>{t("common.actions")}</th></tr></thead>
             <tbody>
               {pairs.map(p => (
@@ -78,7 +78,7 @@ export default function BuddyPage() {
               {pairs.length === 0 && <tr><td colSpan={5} className="empty">{t("buddy.noPairs")}</td></tr>}
             </tbody>
           </table>
-          <h3 style={{ marginBottom: 12 }}>{t("buddy.feedbackTitle")}</h3>
+          <h3 style={{ marginBottom: "var(--space-3)" }}>{t("buddy.feedbackTitle")}</h3>
           <table className="data-table">
             <thead><tr><th>{t("buddy.pairId")}</th><th>{t("common.type")}</th><th>{t("buddy.reason")}</th><th>{t("buddy.postedAt")}</th></tr></thead>
             <tbody>

@@ -204,7 +204,7 @@ export default function InventorySearchBar({
       style={{ position: "relative", width: "100%" }}
       data-testid={`${testIdPrefix}-root`}
     >
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
         <input
           type="text"
           value={query}
@@ -236,7 +236,7 @@ export default function InventorySearchBar({
               padding: "4px 10px",
               border: "none",
               background: op === "and" ? "var(--accent-bg)" : "transparent",
-              color: op === "and" ? "white" : "inherit",
+              color: op === "and" ? "var(--on-accent)" : "inherit",
               cursor: disabled ? "not-allowed" : "pointer",
             }}
           >
@@ -252,7 +252,7 @@ export default function InventorySearchBar({
               padding: "4px 10px",
               border: "none",
               background: op === "or" ? "var(--accent-bg)" : "transparent",
-              color: op === "or" ? "white" : "inherit",
+              color: op === "or" ? "var(--on-accent)" : "inherit",
               cursor: disabled ? "not-allowed" : "pointer",
             }}
           >
@@ -266,7 +266,7 @@ export default function InventorySearchBar({
           className="error-message"
           role="alert"
           data-testid={`${testIdPrefix}-error`}
-          style={{ marginTop: 4 }}
+          style={{ marginTop: "var(--space-1)" }}
         >
           {error}
         </div>
@@ -277,7 +277,7 @@ export default function InventorySearchBar({
           role="status"
           data-testid={`${testIdPrefix}-zero-stock`}
           style={{
-            marginTop: 4,
+            marginTop: "var(--space-1)",
             color: "var(--color-warning)",
             fontSize: "0.9em",
           }}
@@ -301,7 +301,7 @@ export default function InventorySearchBar({
             margin: "2px 0 0 0",
             padding: 0,
             listStyle: "none",
-            background: "var(--bg-surface, white)",
+            background: "var(--bg-surface)",
             border: "1px solid var(--border-color)",
             borderRadius: 4,
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
@@ -354,13 +354,13 @@ export default function InventorySearchBar({
                     borderBottom: "1px solid var(--border-light)",
                     display: "flex",
                     alignItems: "center",
-                    gap: 8,
+                    gap: "var(--space-2)",
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontWeight: 600,
+                        fontWeight: "var(--font-weight-semi)",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -389,7 +389,7 @@ export default function InventorySearchBar({
                         style={{
                           padding: "1px 6px",
                           marginRight: 6,
-                          border: "1px solid #ccd",
+                          border: "1px solid var(--border-color)",
                           borderRadius: 10,
                           background: "var(--bg-badge)",
                         }}
@@ -422,7 +422,7 @@ export default function InventorySearchBar({
                       <span
                         data-testid={`${testIdPrefix}-result-${i}-stock`}
                         style={{
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semi)",
                           color: isZero ? "var(--color-warning)" : "inherit",
                         }}
                       >

@@ -608,7 +608,7 @@ export default function CompanyDetailPage() {
         <div>
           <h2>{t("companies.billing")}{t("companies.address")} ({billingAddresses.length})
             {canEdit && (
-              <button className="btn-sm" style={{ marginLeft: 12 }} onClick={() => openAddressNew("billing")}>+ {t("common.add")}</button>
+              <button className="btn-sm" style={{ marginLeft: "var(--space-3)" }} onClick={() => openAddressNew("billing")}>+ {t("common.add")}</button>
             )}
           </h2>
           {billingAddresses.length === 0 ? <p>{t("companies.billing")}{t("companies.address")}{t("common.noData")}</p> : (
@@ -637,9 +637,9 @@ export default function CompanyDetailPage() {
             </table>
           )}
 
-          <h2 style={{ marginTop: 24 }}>{t("companies.delivery")}{t("companies.address")} ({deliveryAddresses.length})
+          <h2 style={{ marginTop: "var(--space-6)" }}>{t("companies.delivery")}{t("companies.address")} ({deliveryAddresses.length})
             {canEdit && (
-              <button className="btn-sm" style={{ marginLeft: 12 }} onClick={() => openAddressNew("delivery")}>+ {t("common.add")}</button>
+              <button className="btn-sm" style={{ marginLeft: "var(--space-3)" }} onClick={() => openAddressNew("delivery")}>+ {t("common.add")}</button>
             )}
           </h2>
           {deliveryAddresses.length === 0 ? <p>{t("companies.delivery")}{t("companies.address")}{t("common.noData")}</p> : (
@@ -672,7 +672,7 @@ export default function CompanyDetailPage() {
 
       {activeTab === "contacts" && (
         <div>
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: "var(--space-3)" }}>
             <Link to={`/contacts?company_id=${company.id}`} className="btn-sm">{t("contacts.title")}で{t("common.edit")}</Link>
           </div>
           {contacts.length === 0 ? <p>{t("contacts.noContacts")}</p> : (

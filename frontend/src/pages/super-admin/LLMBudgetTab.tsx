@@ -171,7 +171,7 @@ export default function LLMBudgetTab() {
         <form
           onSubmit={submit}
           style={{
-            border: "1px solid #ccc",
+            border: "1px solid var(--border-color)",
             padding: "1rem",
             marginTop: "1rem",
             borderRadius: "4px",

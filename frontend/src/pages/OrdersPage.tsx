@@ -580,7 +580,7 @@ export default function OrdersPage() {
               {editId && (
                 <p
                   style={{
-                    fontSize: "0.85rem",
+                    fontSize: "var(--font-sm)",
                     color: "var(--text-secondary)",
                     marginTop: -8,
                   }}

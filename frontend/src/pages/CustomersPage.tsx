@@ -433,96 +433,96 @@ export default function CustomersPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>{editId ? t("customers.editCustomer") : t("customers.newCustomer")}</h3>
             <div className="tab-nav">
-              <button type="button" className={activeTab === "basic" ? "tab-active" : ""} onClick={() => setActiveTab("basic")}>基本情報</button>
-              <button type="button" className={activeTab === "billing" ? "tab-active" : ""} onClick={() => setActiveTab("billing")}>請求先</button>
-              <button type="button" className={activeTab === "delivery" ? "tab-active" : ""} onClick={() => setActiveTab("delivery")}>配送先</button>
-              <button type="button" className={activeTab === "channels" ? "tab-active" : ""} onClick={() => setActiveTab("channels")}>連絡ツール</button>
-              <button type="button" className={activeTab === "discord" ? "tab-active" : ""} onClick={() => setActiveTab("discord")}>Discord</button>
+              <button type="button" className={activeTab === "basic" ? "tab-active" : ""} onClick={() => setActiveTab("basic")}>{t("customers.tab_basic")}</button>
+              <button type="button" className={activeTab === "billing" ? "tab-active" : ""} onClick={() => setActiveTab("billing")}>{t("customers.tab_billing")}</button>
+              <button type="button" className={activeTab === "delivery" ? "tab-active" : ""} onClick={() => setActiveTab("delivery")}>{t("customers.tab_delivery")}</button>
+              <button type="button" className={activeTab === "channels" ? "tab-active" : ""} onClick={() => setActiveTab("channels")}>{t("customers.tab_channels")}</button>
+              <button type="button" className={activeTab === "discord" ? "tab-active" : ""} onClick={() => setActiveTab("discord")}>{t("customers.tab_discord")}</button>
             </div>
             <form onSubmit={handleSubmit}>
               {activeTab === "basic" && (
                 <>
                   <div className="form-group">
-                    <label>会社名 / 顧客名</label>
+                    <label>{t("customers.field_companyName")}</label>
                     <input value={form.company_name} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
                   </div>
                   {!editId && (
                     <div className="form-group">
-                      <label>顧客コード（空欄なら自動採番 CT-00001 形式）</label>
+                      <label>{t("customers.field_customerCodeFull")}</label>
                       <input value={form.customer_code} placeholder="例: CT-00001" onChange={(e) => setForm({ ...form, customer_code: e.target.value })} />
                     </div>
                   )}
                   <div className="form-group">
-                    <label>請求書宛名（会社名と別にする場合のみ）</label>
+                    <label>{t("customers.field_billingName")}</label>
                     <input value={form.billing_display_name} onChange={(e) => setForm({ ...form, billing_display_name: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label>支払い名義（WISE/PayPal 送金時の名義が違う場合）</label>
+                    <label>{t("customers.field_paymentRecipient")}</label>
                     <input value={form.payment_recipient_name} onChange={(e) => setForm({ ...form, payment_recipient_name: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label>主連絡ツール</label>
+                    <label>{t("customers.field_primaryChannel")}</label>
                     <select value={form.primary_contact_channel} onChange={(e) => setForm({ ...form, primary_contact_channel: e.target.value })}>
-                      <option value="">（未選択）</option>
+                      <option value="">{t("customers.option_unselected")}</option>
                       <option value="whatsapp">WhatsApp</option>
                       <option value="instagram">Instagram</option>
                       <option value="facebook_messenger">Facebook Messenger</option>
                       <option value="discord">Discord</option>
                       <option value="line_id">LINE</option>
                       <option value="telegram">Telegram</option>
-                      <option value="email">メール</option>
-                      <option value="phone">電話</option>
-                      <option value="referral">紹介</option>
+                      <option value="email">{t("customers.option_email")}</option>
+                      <option value="phone">{t("customers.option_phone")}</option>
+                      <option value="referral">{t("customers.option_referral")}</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>販売チャネル（カンマ区切り。例: EC, 実店舗, 配信）</label>
+                    <label>{t("customers.field_salesChannels")}</label>
                     <input value={form.sales_channels} onChange={(e) => setForm({ ...form, sales_channels: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label>信頼度（1〜5）</label>
+                    <label>{t("customers.field_trustLevelFull")}</label>
                     <select value={form.trust_level} onChange={(e) => setForm({ ...form, trust_level: e.target.value })}>
-                      <option value="">（未設定）</option>
+                      <option value="">{t("customers.option_unset")}</option>
                       {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>重視ポイント</label>
+                    <label>{t("customers.field_priorityFocus")}</label>
                     <input value={form.priority_focus} placeholder="例: 価格重視 / 信頼重視 / 品質重視" onChange={(e) => setForm({ ...form, priority_focus: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label>1回発注額</label>
+                    <label>{t("customers.field_perOrderAmount")}</label>
                     <input type="number" min="0" step="0.01" value={form.per_order_amount} onChange={(e) => setForm({ ...form, per_order_amount: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label>月間頻度</label>
+                    <label>{t("customers.field_monthlyFrequency")}</label>
                     <input type="number" min="0" value={form.monthly_frequency} onChange={(e) => setForm({ ...form, monthly_frequency: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label>月間売上見込額</label>
+                    <label>{t("customers.field_monthlyForecast")}</label>
                     <input type="number" min="0" step="0.01" value={form.monthly_forecast} onChange={(e) => setForm({ ...form, monthly_forecast: e.target.value })} />
                   </div>
                   <div className="form-group">
                     <label>
                       <input type="checkbox" checked={form.meeting_requested} onChange={(e) => setForm({ ...form, meeting_requested: e.target.checked })} />
-                      {" "}面談希望
+                      {" "}{t("customers.field_meetingRequested")}
                     </label>
                   </div>
                   <div className="form-group">
-                    <label>FedEx アカウント</label>
+                    <label>{t("customers.field_fedexAccount")}</label>
                     <input value={form.fedex_account} onChange={(e) => setForm({ ...form, fedex_account: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label>発送時メモ</label>
+                    <label>{t("customers.field_shippingNote")}</label>
                     <textarea value={form.shipping_note} onChange={(e) => setForm({ ...form, shipping_note: e.target.value })} />
                   </div>
                   <div className="form-group">
-                    <label>ステータス</label>
+                    <label>{t("customers.status")}</label>
                     <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                       <option value="active">{t("customers.status_active")}</option>
                       <option value="inactive">{t("customers.status_inactive")}</option>
                       <option value="archived">{t("customers.status_archived")}</option>
-                      <option value="pending_dedup_review">重複確認待ち</option>
+                      <option value="pending_dedup_review">{t("customers.status_pending_dedup")}</option>
                     </select>
                   </div>
                 </>
@@ -535,45 +535,45 @@ export default function CustomersPage() {
                     setForm({ ...form, [key]: { ...addr, ...patch } });
                   return (
                     <>
-                      <div className="form-group"><label>宛名</label>
+                      <div className="form-group"><label>{t("customers.addr_name")}</label>
                         <input value={addr.name} onChange={(e) => updateAddr({ name: e.target.value })} />
                       </div>
-                      <div className="form-group"><label>メール</label>
+                      <div className="form-group"><label>{t("customers.addr_email")}</label>
                         <input type="email" value={addr.email} onChange={(e) => updateAddr({ email: e.target.value })} />
                       </div>
-                      <div className="form-group"><label>電話番号</label>
+                      <div className="form-group"><label>{t("customers.addr_phone")}</label>
                         <input
                           value={addr.telephone}
                           placeholder="例: +81-90-1234-5678 / 03-1234-5678"
                           onChange={(e) => { updateAddr({ telephone: e.target.value }); if (phoneError && key === "billing") setPhoneError(null); }}
                           onBlur={(e) => { if (key === "billing") setPhoneError(validatePhoneClient(e.target.value)); }}
                         />
-                        {key === "billing" && phoneError && <div className="error-message" style={{ marginTop: 4 }}>{t("customers.phoneError")}</div>}
+                        {key === "billing" && phoneError && <div className="error-message" style={{ marginTop: "var(--space-1)" }}>{t("customers.phoneError")}</div>}
                       </div>
-                      <div className="form-group"><label>税番号（VAT / EIN 等）</label>
+                      <div className="form-group"><label>{t("customers.addr_taxId")}</label>
                         <input value={addr.tax_id} onChange={(e) => updateAddr({ tax_id: e.target.value })} />
                       </div>
-                      <div className="form-group"><label>住所行1</label>
+                      <div className="form-group"><label>{t("customers.addr_line1")}</label>
                         <input value={addr.address_line_1} onChange={(e) => updateAddr({ address_line_1: e.target.value })} />
                       </div>
-                      <div className="form-group"><label>住所行2</label>
+                      <div className="form-group"><label>{t("customers.addr_line2")}</label>
                         <input value={addr.address_line_2} onChange={(e) => updateAddr({ address_line_2: e.target.value })} />
                       </div>
                       {key === "delivery" && (
-                        <div className="form-group"><label>住所行3</label>
+                        <div className="form-group"><label>{t("customers.addr_line3")}</label>
                           <input value={addr.address_line_3} onChange={(e) => updateAddr({ address_line_3: e.target.value })} />
                         </div>
                       )}
-                      <div className="form-group"><label>市区町村</label>
+                      <div className="form-group"><label>{t("customers.addr_city")}</label>
                         <input value={addr.city} onChange={(e) => updateAddr({ city: e.target.value })} />
                       </div>
-                      <div className="form-group"><label>州・県</label>
+                      <div className="form-group"><label>{t("customers.addr_state")}</label>
                         <input value={addr.state} onChange={(e) => updateAddr({ state: e.target.value })} />
                       </div>
-                      <div className="form-group"><label>郵便番号</label>
+                      <div className="form-group"><label>{t("customers.addr_zip")}</label>
                         <input value={addr.zip} onChange={(e) => updateAddr({ zip: e.target.value })} />
                       </div>
-                      <div className="form-group"><label>国コード（ISO 3166-1 alpha-2、例: JP, US, GB）</label>
+                      <div className="form-group"><label>{t("customers.addr_country")}</label>
                         <input maxLength={2} style={{ textTransform: "uppercase" }} value={addr.country_code} onChange={(e) => updateAddr({ country_code: e.target.value.toUpperCase() })} />
                       </div>
                     </>
@@ -582,34 +582,33 @@ export default function CustomersPage() {
               )}
               {activeTab === "channels" && (
                 <>
-                  <div style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: 12 }}>
-                    1 顧客が複数の連絡ツールを用途別に持てます（例: WhatsApp=商談用、Discord=発送通知用）。
-                    「主」にチェックできるのは 1 つだけ（基本情報タブの「主連絡ツール」と同期）。
+                  <div style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "var(--space-3)" }}>
+                    {t("customers.channels_desc")}
                   </div>
                   {form.contact_channels.map((ch, idx) => (
-                    <div key={idx} className="form-group" style={{ border: "1px solid #ddd", padding: 8, borderRadius: 4, marginBottom: 8 }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                    <div key={idx} className="form-group" style={{ border: "1px solid var(--border-light)", padding: "var(--space-2)", borderRadius: 4, marginBottom: "var(--space-2)" }}>
+                      <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "flex-end" }}>
                         <div style={{ flex: 1 }}>
-                          <label>チャネル</label>
+                          <label>{t("customers.channel_label")}</label>
                           <select value={ch.channel} onChange={(e) => {
                             const next = [...form.contact_channels];
                             next[idx] = { ...ch, channel: e.target.value };
                             setForm({ ...form, contact_channels: next });
                           }}>
-                            <option value="">（選択）</option>
+                            <option value="">{t("customers.channel_select")}</option>
                             <option value="whatsapp">WhatsApp</option>
                             <option value="instagram">Instagram</option>
                             <option value="facebook_messenger">Facebook Messenger</option>
                             <option value="discord">Discord</option>
                             <option value="line_id">LINE</option>
                             <option value="telegram">Telegram</option>
-                            <option value="email">メール</option>
-                            <option value="phone">電話</option>
-                            <option value="referral">紹介</option>
+                            <option value="email">{t("customers.option_email")}</option>
+                            <option value="phone">{t("customers.option_phone")}</option>
+                            <option value="referral">{t("customers.option_referral")}</option>
                           </select>
                         </div>
                         <div style={{ flex: 2 }}>
-                          <label>用途</label>
+                          <label>{t("customers.channel_purpose")}</label>
                           <input value={ch.purpose} placeholder="例: 商談用 / 発送通知用" onChange={(e) => {
                             const next = [...form.contact_channels];
                             next[idx] = { ...ch, purpose: e.target.value };
@@ -625,7 +624,7 @@ export default function CustomersPage() {
                               }));
                               setForm({ ...form, contact_channels: next });
                             }} />
-                            {" "}主
+                            {" "}{t("customers.channel_primary")}
                           </label>
                         </div>
                         <button type="button" className="btn-sm btn-danger" onClick={() => {
@@ -640,7 +639,7 @@ export default function CustomersPage() {
                       ...form,
                       contact_channels: [...form.contact_channels, { channel: "", purpose: "", is_primary: false }],
                     });
-                  }}>+ 連絡ツールを追加</button>
+                  }}>{t("customers.channel_add")}</button>
                 </>
               )}
               {activeTab === "discord" && (
@@ -648,28 +647,28 @@ export default function CustomersPage() {
                   <div className="form-group">
                     <label>
                       <input type="checkbox" checked={form.discord_enabled} onChange={(e) => { setForm({ ...form, discord_enabled: e.target.checked }); setDiscordTouched(true); }} />
-                      {" "}Discord 連携を有効にする
+                      {" "}{t("customers.discord_enable")}
                     </label>
                   </div>
                   {form.discord_enabled && (
                     <>
-                      <div className="form-group"><label>チャンネル ID</label>
+                      <div className="form-group"><label>{t("customers.discord_channelId")}</label>
                         <input value={form.discord_channel_id} onChange={(e) => { setForm({ ...form, discord_channel_id: e.target.value }); setDiscordTouched(true); }} />
                       </div>
-                      <div className="form-group"><label>ユーザー ID</label>
+                      <div className="form-group"><label>{t("customers.discord_userId")}</label>
                         <input value={form.discord_user_id} onChange={(e) => { setForm({ ...form, discord_user_id: e.target.value }); setDiscordTouched(true); }} />
                       </div>
-                      <div className="form-group"><label>請求書 Webhook URL</label>
+                      <div className="form-group"><label>{t("customers.discord_invoiceWebhook")}</label>
                         <input value={form.discord_invoice_webhook} onChange={(e) => { setForm({ ...form, discord_invoice_webhook: e.target.value }); setDiscordTouched(true); }} />
                       </div>
-                      <div className="form-group"><label>発送通知 Webhook URL</label>
+                      <div className="form-group"><label>{t("customers.discord_shipmentWebhook")}</label>
                         <input value={form.discord_shipment_webhook} onChange={(e) => { setForm({ ...form, discord_shipment_webhook: e.target.value }); setDiscordTouched(true); }} />
                       </div>
                     </>
                   )}
                   {editId && !discordTouched && (
-                    <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: 8 }}>
-                      ※ 何も変更しなければ Discord 情報は既存のまま保持されます
+                    <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
+                      {t("customers.discord_unchanged")}
                     </div>
                   )}
                 </>
@@ -735,8 +734,8 @@ export default function CustomersPage() {
         title={t("customers.deleteCustomer")}
         message={
           <>
-            <strong>{deleteTarget && customerDisplayName(deleteTarget)}</strong> を削除します。<br />
-            関連する商談・注文・見積・請求書がある場合は削除できません（先にそれらを削除してください）。<br />
+            <strong>{deleteTarget && customerDisplayName(deleteTarget)}</strong> {t("customers.deleteConfirmSuffix")}<br />
+            {t("customers.deleteConstraint")}<br />
             {t("common.irreversible")}
           </>
         }
