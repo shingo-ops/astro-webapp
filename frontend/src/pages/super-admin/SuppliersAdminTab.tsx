@@ -16,6 +16,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import { STATUS_ICONS } from "../../constants/icons";
+import { ICON } from "../../constants/iconSizes";
 
 interface CentralSupplier {
   id: number;
@@ -243,7 +244,7 @@ export default function SuppliersAdminTab() {
               <td>{s.name}</td>
               <td>{t(`superAdmin.suppliersAdmin.types.${s.supplier_type}`)}</td>
               <td>{s.default_language}</td>
-              <td>{s.is_active ? <STATUS_ICONS.check size={14} aria-hidden="true" /> : "—"}</td>
+              <td>{s.is_active ? <STATUS_ICONS.check size={ICON.sm} aria-hidden="true" /> : "—"}</td>
               <td>
                 <button onClick={() => startEdit(s)} className="btn-secondary">
                   {t("common.edit")}
@@ -322,7 +323,7 @@ export default function SuppliersAdminTab() {
                     <td>
                       <code>{r.discord_channel_id}</code>
                     </td>
-                    <td>{r.is_active ? <STATUS_ICONS.check size={14} aria-hidden="true" /> : "—"}</td>
+                    <td>{r.is_active ? <STATUS_ICONS.check size={ICON.sm} aria-hidden="true" /> : "—"}</td>
                     <td>
                       <button onClick={() => deleteRouting(r.id)} className="btn-danger-link">
                         {t("common.delete")}

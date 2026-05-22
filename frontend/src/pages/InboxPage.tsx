@@ -25,6 +25,7 @@ import { NAV_ICONS, PAGE_ICONS, PlatformIcon, STATUS_ICONS } from "../constants/
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
+import { ICON } from "../constants/iconSizes";
 import {
   Conversation,
   MessagesResponse,
@@ -1408,7 +1409,7 @@ export default function InboxPage() {
           {selectedLeadId === null ? (
             <div className="inbox-empty-center">
               <div className="inbox-empty-icon" aria-hidden="true">
-                <PAGE_ICONS.inboxEmpty size={48} />
+                <PAGE_ICONS.inboxEmpty size={ICON.xl} />
               </div>
               <p>{t("inbox.selectConversation")}</p>
             </div>
@@ -1665,7 +1666,7 @@ export default function InboxPage() {
                     <span className="right-panel-label">{t("leads.competitorCheck")}</span>
                     <span className="right-panel-value">
                       {leadDetail.competitor_check
-                        ? <><STATUS_ICONS.check size={14} aria-hidden="true" />{" "}{t("leads.competitorDone")}</>
+                        ? <><STATUS_ICONS.check size={ICON.sm} aria-hidden="true" />{" "}{t("leads.competitorDone")}</>
                         : t("leads.competitorNotDone")}
                     </span>
                   </div>

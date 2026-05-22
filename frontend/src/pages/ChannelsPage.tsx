@@ -24,6 +24,7 @@ import { ApiError, api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
 import { STATUS_ICONS } from "../constants/icons";
+import { ICON } from "../constants/iconSizes";
 
 interface Channel {
   page_id: string;
@@ -238,10 +239,10 @@ export default function ChannelsPage() {
         <div style={bannerStyle} role={banner.type === "error" ? "alert" : "status"}>
           <span style={{ marginRight: "var(--space-2)" }} aria-hidden="true">
             {banner.type === "success"
-              ? <STATUS_ICONS.check size={14} />
+              ? <STATUS_ICONS.check size={ICON.sm} />
               : banner.type === "warning"
-              ? <STATUS_ICONS.warning size={14} />
-              : <STATUS_ICONS.error size={14} />}
+              ? <STATUS_ICONS.warning size={ICON.sm} />
+              : <STATUS_ICONS.error size={ICON.sm} />}
           </span>
           {banner.text}
           <button
@@ -279,7 +280,7 @@ export default function ChannelsPage() {
           }}
         >
           <span style={{ flex: 1 }}>
-            <strong><STATUS_ICONS.warning size={14} aria-hidden="true" />{" "}</strong>
+            <strong><STATUS_ICONS.warning size={ICON.sm} aria-hidden="true" />{" "}</strong>
             {t("channels.reauthRequired")}
           </span>
           {canManage && (

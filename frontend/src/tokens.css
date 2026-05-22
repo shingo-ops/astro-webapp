@@ -111,4 +111,22 @@
   /* ---- Focus ring（寸法のみ — 色は index.css で定義） ---- */
   --focus-ring-width:  3px;
   --focus-ring-offset: 2px;
+
+  /* ---- Component sizes ---- */
+  /* btn-min-height: 現行ボタンはpadding主体のため最小高として定義（height固定ではない） */
+  --btn-min-height-sm:  32px;   /* 小ボタン — shadcn/ui sm 準拠 */
+  --btn-min-height-md:  40px;   /* 標準ボタン — industry consensus */
+  --input-min-height:   40px;   /* テキスト入力・セレクト最小高 */
+  --textarea-min-h:     80px;   /* テキストエリア最小高 */
+  --topbar-height:      56px;   /* トップバー・ブランドバー高さ */
+  --drawer-width:      300px;   /* ユーザードロワー幅 */
+
+  /* ---- Icon sizes ---- */
+  /* Mirror: src/constants/iconSizes.ts — keep values in sync */
+  --icon-sm:    14px;   /* ステータスアイコン・テーブル内 */
+  --icon-md:    16px;   /* コントロールアイコン（閉じる・テーマ切替） */
+  --icon-base:  20px;   /* 標準アイコン（サイドバーナビ・カード内） */
+  --icon-lg:    24px;   /* 大アイコン */
+  --icon-xl:    48px;   /* 空状態アイコン（empty state） */
+  /* 注: ComingSoonPage の 64px アイコンは意図的に除外（一箇所のみの特殊値） */
 }

@@ -14,6 +14,7 @@ import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
 import { STATUS_ICONS } from "../constants/icons";
+import { ICON } from "../constants/iconSizes";
 
 interface CompanyMini {
   id: number;
@@ -344,7 +345,7 @@ export default function ContactsPage() {
                   <td>{c.job_title || "-"}</td>
                   <td>{c.primary_email || "-"}</td>
                   <td>{c.primary_phone || "-"}</td>
-                  <td>{c.is_primary_contact ? <STATUS_ICONS.check size={14} aria-hidden="true" /> : ""}</td>
+                  <td>{c.is_primary_contact ? <STATUS_ICONS.check size={ICON.sm} aria-hidden="true" /> : ""}</td>
                   <td><span className={`status-badge status-${c.status}`}>{c.status}</span></td>
                   <td>
                     {hasPermission("customers.update") && (
