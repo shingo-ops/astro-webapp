@@ -385,6 +385,22 @@ jobs:
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_inventory_sprint2.py
 
+            # Inventory Sprint 5/6/7 (migrations 066/067/068): catch-up hotfix (spec.md F5/F6/F7)
+            #   PR #518 と同じパターン (deploy.yml 追記漏れ) の再発として、
+            #   Sprint 5/6/7 の migration 実行ステップが本 deploy.yml から漏れていた。
+            #   本番 DB に未適用だった 3 migration を 1 本のランナーで順序適用する。
+            #     - migration 066 (Sprint 5/F5): public.tenant_llm_budgets.last_hard_stop_notified_at +
+            #         tenant_004 / tenant_006 seed
+            #     - migration 067 (Sprint 6/F6): public.discord_inbound_messages.version 列 +
+            #         central.parse_review.{approve,reject} permissions seed
+            #     - migration 068 (Sprint 7/F7): pg_trgm extension + 12 GIN indexes
+            #         (検索 API p95 ≤ 500ms)
+            #   全 SQL は ADD COLUMN IF NOT EXISTS / CREATE EXTENSION IF NOT EXISTS /
+            #   ON CONFLICT DO NOTHING で冪等。論理順序維持のため Sprint 8 の前段に配置。
+            #   関連: PR #518 / .claude-pipeline/spec.md F5 / F6 / F7
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_inventory_sprint5_to_7.py
+
             # Inventory Sprint 8 (migration 069): PO PDF / メール差出人テナント情報 (spec.md F8)
             #   - migration 069: {tenant_xxx}.tenant_profile 作成 + 既定行 seed
             #     + public.permissions に tenant.profile.view / edit を追加
@@ -396,6 +412,19 @@ jobs:
             #   関連: .claude-pipeline/spec.md Sprint 8 / F8 / AC8.7
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_inventory_sprint8.py
+
+            # Inventory Sprint 9 (migration 070): Spreadsheet Phase 切替 (spec.md F9)
+            #   PR #518 と同じパターン (deploy.yml 追記漏れ) の再発として、
+            #   `scripts/migrate_inventory_sprint9.py` は存在したが deploy.yml への
+            #   実行ステップが漏れていた。本番 DB に migration 070 が未適用のままで
+            #   /super-admin/phase-switch が public.tenant_settings 不在で HTTP 500。
+            #     - migration 070: public.tenant_settings テーブル新設 +
+            #         既存テナント seed + public.permissions に phase.switch を追加
+            #   全 SQL は CREATE TABLE IF NOT EXISTS / ON CONFLICT (key|tenant_id) DO NOTHING
+            #   で冪等。論理順序維持のため Sprint 8 の後段に配置。
+            #   関連: PR #518 / .claude-pipeline/spec.md F9
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_inventory_sprint9.py
 
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
