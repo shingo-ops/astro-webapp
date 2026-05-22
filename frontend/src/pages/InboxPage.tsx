@@ -21,14 +21,10 @@
  */
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LogOut, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
-import { useAuth } from "../contexts/AuthContext";
-import { useLocale } from "../contexts/LocaleContext";
-import { useTheme } from "../contexts/ThemeContext";
-import ConfirmModal from "../components/ConfirmModal";
 import {
   Conversation,
   MessagesResponse,
@@ -325,30 +321,6 @@ html.force-dark .inbox-wrapper {
 .inbox-search-input::placeholder {
   color: var(--text-secondary);
 }
-
-/* topbar移設ボタン群（テーマ・言語・ログアウト） */
-.inbox-util-btns {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-.inbox-util-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: none;
-  background: transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--text-secondary);
-  transition: background 0.1s;
-}
-.inbox-util-btn:hover { background: rgba(0,0,0,0.06); }
-.inbox-util-btn--signout { color: var(--text-muted); }
 
 /* 管理ボタン */
 .inbox-manage-wrap {
@@ -924,10 +896,6 @@ html.force-dark .inbox-wrapper {
 
 export default function InboxPage() {
   const { t } = useTranslation();
-  const { user, signOut } = useAuth();
-  const { locale, changeLanguage } = useLocale();
-  const { theme, changeTheme } = useTheme();
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialLeadIdRaw = searchParams.get("lead_id");
   const initialLeadId = initialLeadIdRaw && !isNaN(Number(initialLeadIdRaw))
@@ -1311,30 +1279,6 @@ export default function InboxPage() {
                   </button>
                 </div>
               )}
-            </div>
-            {/* topbar 移設ボタン群（ログアウト・テーマ・言語） */}
-            <div className="inbox-util-btns">
-              <button
-                className="inbox-util-btn"
-                onClick={() => changeTheme(theme === "light" ? "dark" : "light")}
-                title={theme === "light" ? "ダークモードに切り替え" : "ライトモードに切り替え"}
-              >
-                {theme === "light" ? "🌙" : "☀️"}
-              </button>
-              <button
-                className="inbox-util-btn"
-                onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
-                title={t("language.switchTo")}
-              >
-                🌐
-              </button>
-              <button
-                className="inbox-util-btn inbox-util-btn--signout"
-                onClick={() => setShowLogoutConfirm(true)}
-                title={t("nav.signOut")}
-              >
-                <LogOut size={14} />
-              </button>
             </div>
           </div>
 
@@ -1796,15 +1740,6 @@ export default function InboxPage() {
         </aside>
 
       </div>{/* /inbox-wrapper */}
-
-      <ConfirmModal
-        open={showLogoutConfirm}
-        title={t("nav.signOutTitle")}
-        message={t("nav.signOutMessage")}
-        confirmLabel={t("nav.signOut")}
-        onConfirm={() => { setShowLogoutConfirm(false); signOut(); }}
-        onCancel={() => setShowLogoutConfirm(false)}
-      />
     </>
   );
 }
