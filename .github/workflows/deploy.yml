@@ -48,8 +48,20 @@ jobs:
 
       # ============================================
       # 既存: VPS 上で git pull + docker compose up + migrations
+      #
+      # 2026-05-22 hotfix: GitHub Actions の 1 script block あたりの
+      #   expression length 上限 (21000 文字) を超過していたため、
+      #   元の単一 `Deploy to VPS` step を 3 つに分割した:
+      #     1. Deploy to VPS (code + env + docker compose)
+      #          git pull / env 注入 / docker compose up まで
+      #     2. Run database migrations (part 1)
+      #          docker cp + Meta Phase 2 〜 ADR-021 Sprint 5/J1 までの migrations
+      #     3. Run database migrations (part 2) + finalize
+      #          ADR-026 〜 Inventory Sprint 9 + health check + cleanup
+      #   GitHub Actions のデフォルト挙動として、前段 step が失敗したら
+      #   後段 step は自動的に skip される。順序保証は維持される。
       # ============================================
-      - name: Deploy to VPS
+      - name: Deploy to VPS (code + env + docker compose)
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -58,7 +70,7 @@ jobs:
           script: |
             set -e
             echo "============================================"
-            echo "Starting deployment..."
+            echo "Starting deployment (code + env + docker compose)..."
             echo "============================================"
 
             cd /home/ubuntu/salesanchor
@@ -121,7 +133,25 @@ jobs:
             echo "Step 4: Waiting for services to become healthy..."
             sleep 20
 
-            echo "Step 5: Running database migrations..."
+            echo "============================================"
+            echo "Code + env + docker compose phase done."
+            echo "============================================"
+
+      - name: Run database migrations (part 1)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "============================================"
+            echo "Running database migrations (part 1)..."
+            echo "============================================"
+
+            cd /home/ubuntu/salesanchor
+
+            echo "Step 5: Running database migrations (part 1)..."
             # scripts/ と migrations/ は backend イメージに含まれていないため都度コピー
             docker cp scripts astro-webapp-backend-1:/app/
             docker cp migrations astro-webapp-backend-1:/app/
@@ -322,6 +352,30 @@ jobs:
             #   WHERE status='confirmed' で自然に冪等。2 回目以降は 0 行更新。
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_adr021_remove_confirmed_status.py
+
+            echo "============================================"
+            echo "Migrations (part 1) done."
+            echo "============================================"
+
+      - name: Run database migrations (part 2) and finalize
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "============================================"
+            echo "Running database migrations (part 2) and finalize..."
+            echo "============================================"
+
+            cd /home/ubuntu/salesanchor
+
+            echo "Step 5 (cont.): Running database migrations (part 2)..."
+            # scripts/ と migrations/ は backend イメージに含まれていないため都度コピー
+            # (part 1 step と独立したシェル invocation のため改めて同期する)
+            docker cp scripts astro-webapp-backend-1:/app/
+            docker cp migrations astro-webapp-backend-1:/app/
 
             # ADR-026: 全テナントの meta_messages.message_id を VARCHAR(100) → TEXT（migration 052）
             #   data_type='text' 確認済みテナントは skip する冪等設計。
