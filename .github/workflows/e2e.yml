@@ -15,16 +15,15 @@ on:
     branches:
       - main
       - develop
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/e2e.yml'
   push:
     branches:
       - develop
       - main
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/e2e.yml'
+# NOTE (2026-05-22): paths フィルタ削除。Required check 設定 (Lint & Dark Mode
+# Check ADR-067) が paths にマッチしない PR で "Expected — Waiting for status
+# to be reported" のまま pending → merge blocked デッドロックが PR #534 で発生。
+# Issue #523 ② で migration-guard と同じく「paths 条件なし常時実行 + 不要時即
+# pass」パターンに統一。frontend 未変更時は各 step 内で対象ファイル 0 件 → 即 pass。
 
 jobs:
   # ─── ADR-067: ダークモード色規約チェック ───────────────────────────────────
