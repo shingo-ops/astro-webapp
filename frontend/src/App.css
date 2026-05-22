@@ -579,8 +579,11 @@
 }
 
 .coming-soon-icon {
-  font-size: 4rem;
   margin-bottom: 16px;
+}
+.coming-soon-icon svg {
+  width: 64px;
+  height: 64px;
 }
 
 .coming-soon h2 {

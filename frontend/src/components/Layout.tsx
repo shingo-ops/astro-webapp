@@ -292,14 +292,14 @@ export default function Layout() {
                   to="/settings"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><Settings size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.settings size={20} /></span>
                   <span className="sidebar-label">{t("nav.settings")}</span>
                 </NavLink>
               )}
 
               <SidebarAccordion
                 label={t("nav.more")}
-                icon={<MoreHorizontal size={20} />}
+                icon={<NAV_ICONS.more size={20} />}
                 items={moreItems}
                 activePaths={["/knowledge", "/prompts", "/templates"]}
                 isExpanded={sidebarExpanded}
@@ -322,20 +322,23 @@ export default function Layout() {
               title={theme === "light" ? "ダークモードに切り替え" : "ライトモードに切り替え"}
               style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1rem", color: "var(--text-secondary)" }}
             >
-              {theme === "light" ? "🌙" : "☀️"}
+              {theme === "light"
+                ? <THEME_ICONS.light size={16} aria-hidden="true" />
+                : <THEME_ICONS.dark size={16} aria-hidden="true" />}
             </button>
             <button
               onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
               title={t("language.switchTo")}
               style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-secondary)" }}
             >
-              🌐 {locale === "ja" ? t("language.en") : t("language.ja")}
+              <GlobeIcon size={14} aria-hidden="true" />
+              {" "}{locale === "ja" ? t("language.en") : t("language.ja")}
             </button>
             <button
               className="btn-signout"
               onClick={() => setShowLogoutConfirm(true)}
             >
-              <LogOut size={15} />
+              <NAV_ICONS.logout size={15} />
               <span>{t("nav.signOut")}</span>
             </button>
           </div>

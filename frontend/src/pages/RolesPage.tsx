@@ -13,10 +13,12 @@
  */
 
 import { useEffect, useMemo, useState, FormEvent } from "react";
+import type { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
+import { CATEGORY_ICONS, STATUS_ICONS } from "../constants/icons";
 
 interface Role {
   id: number;
@@ -38,16 +40,16 @@ interface Permission {
   category: string;
 }
 
-// カテゴリ表示順とアイコン（絵文字使用、追加依存なし）
-const CATEGORY_META: Record<string, { icon: string; order: number }> = {
-  "レポート": { icon: "📊", order: 1 },
-  "顧客": { icon: "👤", order: 2 },
-  "リード": { icon: "🎯", order: 3 },
-  "案件": { icon: "💼", order: 4 },
-  "注文": { icon: "📦", order: 5 },
-  "チーム": { icon: "👥", order: 6 },
-  "ロール": { icon: "🔑", order: 7 },
-  "システム": { icon: "⚙️", order: 99 },
+// カテゴリ表示順とアイコン（constants/icons.tsx で一元管理）
+const CATEGORY_META: Record<string, { icon: LucideIcon; order: number }> = {
+  "レポート": { icon: CATEGORY_ICONS["レポート"], order: 1  },
+  "顧客":     { icon: CATEGORY_ICONS["顧客"],     order: 2  },
+  "リード":   { icon: CATEGORY_ICONS["リード"],   order: 3  },
+  "案件":     { icon: CATEGORY_ICONS["案件"],     order: 4  },
+  "注文":     { icon: CATEGORY_ICONS["注文"],     order: 5  },
+  "チーム":   { icon: CATEGORY_ICONS["チーム"],   order: 6  },
+  "ロール":   { icon: CATEGORY_ICONS["ロール"],   order: 7  },
+  "システム": { icon: CATEGORY_ICONS["システム"], order: 99 },
 };
 
 // 各カテゴリの「メニュー表示」に対応する view系権限キー
@@ -398,14 +400,17 @@ export default function RolesPage() {
 
               <div className="permission-groups">
                 {grouped.map(([category, perms]) => {
-                  const meta = CATEGORY_META[category] ?? { icon: "📁", order: 100 };
+                  const meta = CATEGORY_META[category] ?? { icon: CATEGORY_ICONS["_default"], order: 100 };
+                  const CategoryIcon = meta.icon;
                   const menuVisible = isCategoryMenuVisible(category);
                   const allChecked = perms.every((p) => editedPermIds.has(p.id));
                   return (
                     <section key={category} className="permission-group">
                       <header className="permission-group-header">
                         <div className="permission-group-title">
-                          <span className="permission-group-icon">{meta.icon}</span>
+                          <span className="permission-group-icon" aria-hidden="true">
+                            <CategoryIcon size={16} />
+                          </span>
                           <span>{category}ページ権限</span>
                         </div>
                         <div className="permission-group-toggles">
@@ -453,7 +458,8 @@ export default function RolesPage() {
 
               {dirty && (
                 <div className="unsaved-banner">
-                  ⚠ {t("roles.unsavedChanges")}「{t("roles.saveChanges")}」ボタンをクリックして変更を反映してください。
+                  <STATUS_ICONS.warning size={14} aria-hidden="true" />
+                  {" "}{t("roles.unsavedChanges")}「{t("roles.saveChanges")}」ボタンをクリックして変更を反映してください。
                 </div>
               )}
             </>

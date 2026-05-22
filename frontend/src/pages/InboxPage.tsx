@@ -21,7 +21,7 @@
  */
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { NAV_ICONS, PAGE_ICONS, STATUS_ICONS } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
@@ -691,7 +691,7 @@ html.force-dark .inbox-wrapper {
   font-size: 15px;
   gap: 12px;
 }
-.inbox-empty-icon { font-size: 48px; }
+.inbox-empty-icon svg { width: 48px; height: 48px; }
 
 /* ---- 右パネル ---- */
 .inbox-right-panel {
@@ -1265,7 +1265,7 @@ export default function InboxPage() {
                 onClick={() => setManageOpen((v) => !v)}
                 aria-expanded={manageOpen}
               >
-                <SlidersHorizontal size={13} />
+                <NAV_ICONS.filter size={13} />
                 {t("inbox.manage")}
               </button>
               {manageOpen && (
@@ -1413,7 +1413,9 @@ export default function InboxPage() {
         <main className="inbox-center">
           {selectedLeadId === null ? (
             <div className="inbox-empty-center">
-              <div className="inbox-empty-icon">💬</div>
+              <div className="inbox-empty-icon" aria-hidden="true">
+                <PAGE_ICONS.inboxEmpty size={48} />
+              </div>
               <p>{t("inbox.selectConversation")}</p>
             </div>
           ) : (
@@ -1668,7 +1670,9 @@ export default function InboxPage() {
                   <div className="right-panel-row">
                     <span className="right-panel-label">{t("leads.competitorCheck")}</span>
                     <span className="right-panel-value">
-                      {leadDetail.competitor_check ? "✓ 済" : "未"}
+                      {leadDetail.competitor_check
+                        ? <><STATUS_ICONS.check size={14} aria-hidden="true" />{" 済"}</>
+                        : "未"}
                     </span>
                   </div>
                 )}
