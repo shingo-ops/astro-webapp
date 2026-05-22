@@ -19,6 +19,7 @@ import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
 import { CATEGORY_ICONS, STATUS_ICONS } from "../constants/icons";
+import { ICON } from "../constants/iconSizes";
 
 interface Role {
   id: number;
@@ -404,7 +405,7 @@ export default function RolesPage() {
                       <header className="permission-group-header">
                         <div className="permission-group-title">
                           <span className="permission-group-icon" aria-hidden="true">
-                            <CategoryIcon size={16} />
+                            <CategoryIcon size={ICON.md} />
                           </span>
                           <span>{t("roles.categoryPagePerm", { category })}</span>
                         </div>
@@ -453,7 +454,7 @@ export default function RolesPage() {
 
               {dirty && (
                 <div className="unsaved-banner">
-                  <STATUS_ICONS.warning size={14} aria-hidden="true" />
+                  <STATUS_ICONS.warning size={ICON.sm} aria-hidden="true" />
                   {" "}{t("roles.unsavedChanges")}{t("roles.unsavedClickHint", { btn: t("roles.saveChanges") })}
                 </div>
               )}

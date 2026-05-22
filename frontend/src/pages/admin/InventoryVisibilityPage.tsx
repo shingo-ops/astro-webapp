@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import { usePermissions } from "../../hooks/usePermissions";
 import { STATUS_ICONS } from "../../constants/icons";
+import { ICON } from "../../constants/iconSizes";
 
 interface MatrixRow {
   role_id: number;
@@ -174,7 +175,7 @@ export default function InventoryVisibilityPage() {
                   </button>
                   {savedFor === row.role_id && (
                     <span style={{ marginLeft: "0.5rem", color: "green" }}>
-                      <STATUS_ICONS.check size={14} aria-hidden="true" />{" "}{t("inventoryVisibility.saved")}
+                      <STATUS_ICONS.check size={ICON.sm} aria-hidden="true" />{" "}{t("inventoryVisibility.saved")}
                     </span>
                   )}
                 </td>

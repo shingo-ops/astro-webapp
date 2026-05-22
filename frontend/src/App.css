@@ -220,7 +220,7 @@
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   padding: 0 24px;
-  height: 56px;
+  height: var(--topbar-height);
   gap: var(--space-4);
   flex-shrink: 0;
   position: sticky;
@@ -364,7 +364,7 @@
   top: 0;
   right: 0;
   height: 100vh;
-  width: 300px;
+  width: var(--drawer-width);
   background: var(--bg-surface);
   border-left: 1px solid var(--border);
   z-index: var(--z-drawer);
@@ -473,7 +473,7 @@
   background: var(--nav-brand-bg);
   color: var(--nav-brand-text);
   padding: 0 24px;
-  height: 56px;
+  height: var(--topbar-height);
   gap: var(--space-6);
   border-bottom: 3px solid var(--nav-brand-accent);
   position: relative;
@@ -771,7 +771,7 @@
   background: var(--nav-brand-bg);
   color: var(--nav-brand-text);
   padding: 0 24px;
-  height: 56px;
+  height: var(--topbar-height);
   border-bottom: 3px solid var(--nav-brand-accent);
   box-shadow: var(--shadow-sm);
   gap: var(--space-8);
@@ -857,7 +857,7 @@
 }
 
 .sidebar {
-  width: 240px;
+  width: var(--sidebar-width-expanded);
   background: var(--nav-brand-bg);
   color: var(--nav-brand-text);
   display: flex;
@@ -1130,7 +1130,7 @@
 }
 
 .form-group textarea {
-  min-height: 80px;
+  min-height: var(--textarea-min-h);
   resize: vertical;
 }
 
@@ -1901,7 +1901,7 @@
 }
 
 .form-grid > .form-row textarea {
-  min-height: 80px;
+  min-height: var(--textarea-min-h);
   resize: vertical;
 }
 
@@ -1958,7 +1958,7 @@
 
 .modal-content .form-row textarea,
 .modal-content-wide .form-row textarea {
-  min-height: 80px;
+  min-height: var(--textarea-min-h);
   resize: vertical;
 }
 
