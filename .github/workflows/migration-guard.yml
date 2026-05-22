@@ -3,8 +3,6 @@ name: Migration Guard
 on:
   pull_request:
     branches: [main, develop]
-    paths:
-      - 'backend/app/models.py'
 
 jobs:
   check:
