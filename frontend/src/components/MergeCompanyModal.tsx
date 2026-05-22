@@ -215,7 +215,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                         }}
                         style={{
                           cursor: "pointer",
-                          background: c.id === selectedId ? "#fff3cd" : undefined,
+                          background: c.id === selectedId ? "var(--warning-bg)" : undefined,
                         }}
                       >
                         <td>

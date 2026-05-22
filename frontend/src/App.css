@@ -199,13 +199,18 @@
   letter-spacing: 4px;
 }
 
-/* --- App body (right of sidebar) --- */
+/* --- App body (right of sidebar) ---
+   グラデーション背景をここで定義し、全ページに適用する。
+   サイドバー（sidebar-panel）は自前の background: var(--sidebar-bg) を持つため影響なし。
+   app-content は transparent にして透過させる。 */
 .app-body {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
+  background-color: var(--bg-surface);
+  background-image: var(--inbox-bg-gradient);
 }
 
 /* --- Top bar --- */
@@ -297,19 +302,17 @@
   border-color: var(--border-strong);
 }
 
-/* --- App content (main scroll area) --- */
+/* --- App content (main scroll area) ---
+   background は transparent にして app-body のグラデーションを透過させる。 */
 .app-content {
   flex: 1;
   overflow-y: auto;
-  background: var(--bg-primary);
+  background: transparent;
 }
 
-/* Inbox ページ（/lead-chat）では内部パネルが自前で overflow を管理するため親の scroll を無効化 */
-/* Meta Business Suite 実測グラデーションを背景として適用 */
+/* Inbox ページ（/lead-chat）: 内部パネルが自前で overflow を管理するため親の scroll を無効化 */
 .app-content--inbox {
   overflow: hidden;
-  background-color: var(--bg-surface);
-  background-image: var(--inbox-bg-gradient);
 }
 
 /* --- Fixed avatar button (Chrome / Meta style) --- */
@@ -1207,7 +1210,7 @@
   background: var(--bg-surface);
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .kpi-card.accent {
@@ -1235,7 +1238,7 @@
   background: var(--bg-surface);
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 16px;
 }
 
