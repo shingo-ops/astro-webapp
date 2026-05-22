@@ -275,7 +275,9 @@
     "discord_userId": "User ID",
     "discord_invoiceWebhook": "Invoice Webhook URL",
     "discord_shipmentWebhook": "Shipment Webhook URL",
-    "discord_unchanged": "* Discord settings will be preserved if no changes are made."
+    "discord_unchanged": "* Discord settings will be preserved if no changes are made.",
+    "deleteConfirmSuffix": "will be deleted.",
+    "deleteConstraint": "Cannot delete if there are associated deals, orders, quotes, or invoices (please delete those first)."
   },
   "companies": {
     "title": "Client Profiles",

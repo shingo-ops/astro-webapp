@@ -275,7 +275,9 @@
     "discord_userId": "ユーザー ID",
     "discord_invoiceWebhook": "請求書 Webhook URL",
     "discord_shipmentWebhook": "発送通知 Webhook URL",
-    "discord_unchanged": "※ 何も変更しなければ Discord 情報は既存のまま保持されます"
+    "discord_unchanged": "※ 何も変更しなければ Discord 情報は既存のまま保持されます",
+    "deleteConfirmSuffix": "を削除します。",
+    "deleteConstraint": "関連する商談・注文・見積・請求書がある場合は削除できません（先にそれらを削除してください）。"
   },
   "companies": {
     "title": "顧客情報管理",
