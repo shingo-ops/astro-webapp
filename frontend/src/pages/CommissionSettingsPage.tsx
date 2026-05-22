@@ -231,8 +231,8 @@ export default function CommissionSettingsPage() {
                         </td>
                         <td>
                           {cfg.type === "rate"
-                            ? `売上 × ${(cfg.value * 100).toFixed(1)}%`
-                            : `${fmt(cfg.value)} 固定`}
+                            ? t("commissions.rateFormula", { rate: (cfg.value * 100).toFixed(1) })
+                            : `${fmt(cfg.value)} ${t("commissions.fixedSuffix")}`}
                         </td>
                       </tr>
                     );
@@ -261,7 +261,7 @@ export default function CommissionSettingsPage() {
             </div>
             {settings && (
               <p className="text-muted" style={{ fontSize: "var(--font-sm)" }}>
-                最終更新: {new Date(settings.updated_at).toLocaleString("ja-JP")}
+                {t("commissions.lastUpdated")}: {new Date(settings.updated_at).toLocaleString("ja-JP")}
               </p>
             )}
           </form>

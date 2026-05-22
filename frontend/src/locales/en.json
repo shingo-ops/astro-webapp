@@ -286,7 +286,11 @@
     "discord_shipmentWebhook": "Shipment Webhook URL",
     "discord_unchanged": "* Discord settings will be preserved if no changes are made.",
     "deleteConfirmSuffix": "will be deleted.",
-    "deleteConstraint": "Cannot delete if there are associated deals, orders, quotes, or invoices (please delete those first)."
+    "deleteConstraint": "Cannot delete if there are associated deals, orders, quotes, or invoices (please delete those first).",
+    "field_customerCodePlaceholder": "e.g., CT-00001",
+    "field_priorityFocusPlaceholder": "e.g., price-focused / trust-focused / quality-focused",
+    "field_phonePlaceholder": "e.g., +81-90-1234-5678 / 03-1234-5678",
+    "channel_purposePlaceholder": "e.g., for deals / for shipping notices"
   },
   "companies": {
     "title": "Client Profiles",
@@ -834,7 +838,10 @@
     "role_order": "Order",
     "role_ship": "Shipping",
     "role_purchase": "Purchase",
-    "role_trouble": "Trouble"
+    "role_trouble": "Trouble",
+    "rateFormula": "Revenue × {{rate}}%",
+    "fixedSuffix": "fixed",
+    "lastUpdated": "Last Updated"
   },
   "buddy": {
     "title": "Buddy",
@@ -935,7 +942,10 @@
     "confirm": "Confirm",
     "confirming": "Confirming...",
     "confirmTitle": "Switch status to \"Confirmed\"",
-    "confirmTitleDisabled": "Save purchase info first to confirm"
+    "confirmTitleDisabled": "Save purchase info first to confirm",
+    "fetchError": "Failed to load purchase details",
+    "confirmError": "Failed to confirm purchase",
+    "modalAriaLabel": "Purchase Details"
   },
   "shipping": {
     "sectionRecipient": "Recipient",

@@ -286,7 +286,11 @@
     "discord_shipmentWebhook": "発送通知 Webhook URL",
     "discord_unchanged": "※ 何も変更しなければ Discord 情報は既存のまま保持されます",
     "deleteConfirmSuffix": "を削除します。",
-    "deleteConstraint": "関連する商談・注文・見積・請求書がある場合は削除できません（先にそれらを削除してください）。"
+    "deleteConstraint": "関連する商談・注文・見積・請求書がある場合は削除できません（先にそれらを削除してください）。",
+    "field_customerCodePlaceholder": "例: CT-00001",
+    "field_priorityFocusPlaceholder": "例: 価格重視 / 信頼重視 / 品質重視",
+    "field_phonePlaceholder": "例: +81-90-1234-5678 / 03-1234-5678",
+    "channel_purposePlaceholder": "例: 商談用 / 発送通知用"
   },
   "companies": {
     "title": "顧客情報管理",
@@ -834,7 +838,10 @@
     "role_order": "受注",
     "role_ship": "発送",
     "role_purchase": "仕入",
-    "role_trouble": "トラブル"
+    "role_trouble": "トラブル",
+    "rateFormula": "売上 × {{rate}}%",
+    "fixedSuffix": "固定",
+    "lastUpdated": "最終更新"
   },
   "buddy": {
     "title": "バディ",
@@ -935,7 +942,10 @@
     "confirm": "確定",
     "confirming": "確定中...",
     "confirmTitle": "ステータスを「確定済み」に切り替え",
-    "confirmTitleDisabled": "仕入情報を保存後に確定できます"
+    "confirmTitleDisabled": "仕入情報を保存後に確定できます",
+    "fetchError": "仕入情報の取得に失敗しました",
+    "confirmError": "確定に失敗しました",
+    "modalAriaLabel": "仕入情報"
   },
   "shipping": {
     "sectionRecipient": "受取人",
