@@ -92,6 +92,26 @@ async def test_invariant_holds_across_multiple_approves(engine):
         if not exists_ver:
             pytest.skip("migration 067 未適用")
 
+        # Sprint 9 / F9 v1.2: AC6.6 不変条件 (SUM=stock) は Phase B 想定。
+        # Phase A だと stock_quantity 更新 skip で破綻するので明示的に B。
+        await conn.execute(
+            text(
+                "INSERT INTO public.tenants (id, tenant_code, company_name, is_active) "
+                "VALUES (6, 'sprint6_test_t6', 'sprint6_test', TRUE) "
+                "ON CONFLICT (id) DO NOTHING"
+            )
+        )
+        try:
+            await conn.execute(
+                text(
+                    "INSERT INTO public.tenant_settings (tenant_id, spreadsheet_phase) "
+                    "VALUES (6, 'B') "
+                    "ON CONFLICT (tenant_id) DO UPDATE SET spreadsheet_phase='B'"
+                )
+            )
+        except Exception:
+            pass
+
         sup_id = (
             await conn.execute(
                 text(

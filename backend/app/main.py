@@ -67,6 +67,8 @@ from app.routers import parse_review
 from app.routers import tenant_admin_inventory_visibility
 # spec.md v1.1 F7 (Sprint 7): 在庫検索 API (全 7 種横断 + AND/OR + visibility マスク)
 from app.routers import inventory_search
+# spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
+from app.routers import super_admin_phase_switch
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -364,6 +366,12 @@ app.include_router(
     inventory_search.router, prefix="/api/v1",
     tags=["inventory-search"],
     dependencies=[Depends(get_current_tenant)],
+)
+
+# spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin API
+# require_super_admin で保護 (router レベル + 各エンドポイントで重ねガード)
+app.include_router(
+    super_admin_phase_switch.router, prefix="/api/v1", tags=["super-admin"],
 )
 
 

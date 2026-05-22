@@ -165,6 +165,12 @@ export default function Layout() {
     ...(isSuperAdmin
       ? [{ to: "/super-admin/inbound", label: t("nav.superAdminInbound") }]
       : []),
+    // spec.md v1.2 F9 (Sprint 9): 中央 admin 専用「スプレッドシート Phase」リンク
+    // is_super_admin=true のユーザーにだけ表示。
+    // バックエンド側でも require_super_admin で二重ガード。
+    ...(isSuperAdmin
+      ? [{ to: "/super-admin/phase-switch", label: t("nav.superAdminPhaseSwitch") }]
+      : []),
   ];
 
   const moreItems: SubItem[] = [
@@ -282,7 +288,7 @@ export default function Layout() {
                   label={t("nav.admin")}
                   icon={<ShieldCheck size={20} />}
                   items={adminItems}
-                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/admin/tenant-profile", "/super-admin/masters", "/super-admin/inbound"]}
+                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/admin/tenant-profile", "/super-admin/masters", "/super-admin/inbound", "/super-admin/phase-switch"]}
                   isExpanded={sidebarExpanded}
                   isOpen={openAccordion === "admin"}
                   onToggle={() => toggleAccordion("admin")}

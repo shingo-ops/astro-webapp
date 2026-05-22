@@ -48,6 +48,8 @@ import TenantProfilePage from "./pages/admin/TenantProfilePage";
 // spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧（中央 admin）
 import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
+// spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
+import PhaseSwitchPage from "./pages/super-admin/PhaseSwitchPage";
 import "./App.css";
 
 function App() {
@@ -170,6 +172,11 @@ function App() {
                   <Route
                     path="/super-admin/inbound/:id/review"
                     element={<ParseReviewPage />}
+                  />
+                  {/* spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 (is_super_admin 限定、Page 内で 403 ガード) */}
+                  <Route
+                    path="/super-admin/phase-switch"
+                    element={<PhaseSwitchPage />}
                   />
                   {/* テナント admin（tenant.inventory_visibility.edit 権限が必要、Page 内で 403 ガード） */}
                   <Route

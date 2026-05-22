@@ -77,6 +77,9 @@ interface ApproveResponse {
     after_qty: number;
   }>;
   skipped_count: number;
+  // Sprint 9 / F9 v1.2: Phase A 並走時に products.stock_quantity 更新を skip したか
+  skipped_stock_update?: boolean;
+  phase?: "A" | "B" | "C";
 }
 
 interface RejectResponse {
@@ -112,6 +115,8 @@ export default function ParseReviewPage() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  // Sprint 9 / F9 v1.2: Phase A 並走時の warning toast
+  const [phaseWarning, setPhaseWarning] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -181,6 +186,16 @@ export default function ParseReviewPage() {
           skipped: resp.skipped_count,
         }),
       );
+      // Sprint 9 / F9 v1.2 (AC9.6): Phase A 並走中の在庫値スキップ警告
+      if (resp.skipped_stock_update) {
+        setPhaseWarning(
+          t("superAdmin.parseReview.phaseAWarning.afterApprove", {
+            count: resp.movements.length,
+          }),
+        );
+      } else {
+        setPhaseWarning("");
+      }
       // 反映後は最新を再取得 → 画面更新
       await load();
     } catch (e) {
@@ -268,6 +283,24 @@ export default function ParseReviewPage() {
         </button>
       </div>
 
+      {/* Sprint 9 / F9 v1.2 AC9.6: Phase A 並走中の常時表示 warning banner。
+          スプレッドシートが在庫数の真値であることをレビュアーに常時知らせる */}
+      <div
+        className="warning-banner"
+        role="status"
+        data-testid="phase-a-warning-banner"
+        style={{
+          backgroundColor: "var(--warning-bg)",
+          color: "var(--warning-text)",
+          border: "1px solid var(--border-strong)",
+          padding: "0.75rem 1rem",
+          borderRadius: "0.25rem",
+          marginBottom: "1rem",
+        }}
+      >
+        {t("superAdmin.parseReview.phaseAWarning.always")}
+      </div>
+
       {error && (
         <div className="error-message" role="alert" data-testid="review-error">
           {error}
@@ -276,6 +309,23 @@ export default function ParseReviewPage() {
       {info && (
         <div className="info-message" role="status" data-testid="review-info">
           {info}
+        </div>
+      )}
+      {phaseWarning && (
+        <div
+          className="warning-message"
+          role="status"
+          data-testid="phase-a-warning-toast"
+          style={{
+            backgroundColor: "var(--warning-bg)",
+            border: "1px solid var(--border-strong)",
+            padding: "0.5rem 1rem",
+            borderRadius: "0.25rem",
+            marginBottom: "1rem",
+            color: "var(--warning-text)",
+          }}
+        >
+          {phaseWarning}
         </div>
       )}
 

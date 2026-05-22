@@ -124,6 +124,8 @@ async def get_my_permissions(
     return {
         "permissions": sorted(keys),
         "is_super_admin": bool(getattr(current_user, "is_super_admin", False)),
+        # Sprint 9 / F9 v1.2: 中央 admin が自テナントの Phase 状態を取得するために必要
+        "tenant_id": tenant_id,
     }
 
 

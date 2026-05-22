@@ -93,7 +93,8 @@
     "superAdminMasters": "Central Masters",
     "superAdminInbound": "Discord Inbound",
     "inventoryVisibility": "Inventory Visibility",
-    "tenantProfile": "Issuer Profile"
+    "tenantProfile": "Issuer Profile",
+    "superAdminPhaseSwitch": "Spreadsheet Phase"
   },
   "login": {
     "email": "Email address",
@@ -1031,6 +1032,28 @@
           "notes": "Notes",
           "skip": "Skip"
         }
+      }
+    },
+    "phaseSwitch": {
+      "title": "Spreadsheet parallel-run Phase",
+      "subtitle": "Switch the inventory parallel-run Phase (A / B / C). spec v1.2 fixes Phase A.",
+      "currentLabel": "Current Phase",
+      "phaseADesc": "Spreadsheet parallel-run, stock truth on GS",
+      "phaseABanner": "Phase A parallel-run: products.stock_quantity is not updated. The source of truth for stock counts remains the spreadsheet (GS).",
+      "outOfScope": "Switching to Phase {{phase}} is out of scope (spec v1.2, planned for a separate ADR)",
+      "outOfScopeBadge": "separate ADR pending",
+      "outOfScopeTooltip": "Phase B / C switch is out of scope in spec v1.2. A separate ADR will decide timing once CRM operations stabilize.",
+      "currentTooltip": "This is the current Phase",
+      "switchTo": "Switch to Phase {{phase}}",
+      "switchSuccess": "Switched to Phase {{phase}}",
+      "tenantIdMissing": "Failed to resolve tenant ID. Please log in again.",
+      "helpPhaseA": "Phase A: CRM only receives/parses/records. Spreadsheet remains the source of truth for stock counts.",
+      "helpPhaseBC": "Phase B / C: A separate ADR will decide timing. To be drafted once CRM operations stabilize."
+    },
+    "parseReview": {
+      "phaseAWarning": {
+        "always": "Phase A: spreadsheet parallel-run — stock truth is on GS (CRM products.stock_quantity is display-only)",
+        "afterApprove": "Approved, but products.stock_quantity was not updated due to Phase A parallel-run ({{count}} movements recorded). Please reflect changes to the spreadsheet manually."
       }
     }
   },

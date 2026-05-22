@@ -79,6 +79,32 @@ async def seed_inbound_with_product(engine):
         if not version_col:
             pytest.skip("migration 067 未適用 (version 列なし)")
 
+        # Sprint 9 / F9 v1.2: 本テストは Phase B (CRM 書込) 想定 — Phase A だと
+        # stock_quantity 更新が skip され既存 assert (stock == expected_delta) が
+        # 落ちる。migration 070 適用環境で tenant_id=6 の Phase を明示的に 'B' に
+        # 設定する (UPSERT、冪等)。Phase A 並走テストは Sprint 9 専用
+        # test_phase_gate_with_apply_inbound_items.py 側で行う。
+        await conn.execute(
+            text(
+                "INSERT INTO public.tenants (id, tenant_code, company_name, is_active) "
+                "VALUES (6, 'sprint6_test_t6', 'sprint6_test', TRUE) "
+                "ON CONFLICT (id) DO NOTHING"
+            )
+        )
+        # tenant_settings が migration 070 未適用環境では存在しない可能性があるので
+        # try/except で best-effort 設定する。
+        try:
+            await conn.execute(
+                text(
+                    "INSERT INTO public.tenant_settings (tenant_id, spreadsheet_phase) "
+                    "VALUES (6, 'B') "
+                    "ON CONFLICT (tenant_id) DO UPDATE SET spreadsheet_phase='B'"
+                )
+            )
+        except Exception:
+            # migration 070 未適用環境: phase_gate が 'B' fallback してくれるので skip
+            pass
+
         sup_id = (
             await conn.execute(
                 text(

@@ -82,13 +82,22 @@ class InventoryMovementSummary(BaseModel):
 
 
 class ApproveResponse(BaseModel):
-    """approve 結果。movements に作成された行と新しい version。"""
+    """approve 結果。movements に作成された行と新しい version。
+
+    Sprint 9 / F9 v1.2 拡張:
+      - skipped_stock_update: Phase A 時に products.stock_quantity の更新を
+        スキップしたかどうか。フロントエンドが warning toast 表示判定に使用。
+      - phase: 当該承認操作実行時のテナント Phase ('A' / 'B' / 'C')。
+    """
 
     inbound_id: int
     parse_status: str
     version: int
     movements: list[InventoryMovementSummary]
     skipped_count: int
+    # Sprint 9 / F9 v1.2: Phase A 並走時の挙動を UI に伝える
+    skipped_stock_update: bool = False
+    phase: str = "B"
 
 
 class RejectResponse(BaseModel):
