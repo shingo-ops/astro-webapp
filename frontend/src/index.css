@@ -205,6 +205,10 @@
   --accent-bg: #818cf8;
   --bg-badge: #3b2d5c;
 
+  /* PlatformIcon ブランドカラー（固定値 — ダークモードでも変更なし） */
+  --platform-mail-bg: #ea4335;
+  --platform-unknown-bg: #999999;
+
   color-scheme: dark;
 }
 
