@@ -105,6 +105,7 @@ export default function Layout() {
   const navLoading = permsLoading || uiPrefsLoading;
 
   const location = useLocation();
+  const isInbox = location.pathname === "/inbox";
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
@@ -315,8 +316,8 @@ export default function Layout() {
 
       {/* ============ Main body ============ */}
       <div className="app-body">
-        {/* Top bar */}
-        <header className="app-topbar">
+        {/* Top bar — inbox ページでは非表示（Meta Business Suite 風の全幅レイアウト） */}
+        {!isInbox && <header className="app-topbar">
           <div className="topbar-user">
             <span className="topbar-email">{user?.email}</span>
             <button
@@ -341,7 +342,7 @@ export default function Layout() {
               <span>{t("nav.signOut")}</span>
             </button>
           </div>
-        </header>
+        </header>}
 
         {/* Content */}
         <main className="app-content">

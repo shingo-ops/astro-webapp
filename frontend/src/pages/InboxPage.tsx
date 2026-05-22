@@ -21,10 +21,14 @@
  */
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { LogOut, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
+import { useAuth } from "../contexts/AuthContext";
+import { useLocale } from "../contexts/LocaleContext";
+import { useTheme } from "../contexts/ThemeContext";
+import ConfirmModal from "../components/ConfirmModal";
 import {
   Conversation,
   MessagesResponse,
@@ -43,6 +47,16 @@ import {
 // ---------------------------------------------------------------------------
 
 const POLL_INTERVAL_MS = 10_000;
+
+// ---------------------------------------------------------------------------
+// プラットフォームタブ定数
+// ---------------------------------------------------------------------------
+
+const PLATFORM_TABS = [
+  { key: "all",       labelKey: "inbox.tabAll" },
+  { key: "messenger", labelKey: "inbox.tabMessenger" },
+  { key: "instagram", labelKey: "inbox.tabInstagram" },
+] as const;
 
 // ---------------------------------------------------------------------------
 // リードステータス分類定数
@@ -166,10 +180,22 @@ const INBOX_STYLES = `
 .inbox-wrapper {
   display: flex;
   flex-direction: row;
-  height: calc(100vh - 56px);
+  height: 100%;
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg-primary);
+  /* Meta実測値でCSS変数をスコープ上書き（ライトモード） */
+  --accent:         rgb(10, 120, 190);
+  --link-active-bg: rgb(225, 237, 247);
+  --text-primary:   rgb(28, 43, 51);
+  --border:         rgb(218, 221, 225);
+}
+/* ダークモード時は dark 値に戻す */
+html.force-dark .inbox-wrapper {
+  --accent:         #818cf8;
+  --link-active-bg: #1e3a8a;
+  --text-primary:   #f1f5f9;
+  --border:         #334155;
 }
 
 /* 左＋中央エリア（ヘッダー・タブ・カラム）— タブバーはここまで */
@@ -181,23 +207,20 @@ const INBOX_STYLES = `
   min-width: 0;
 }
 
-/* ページヘッダー（Meta 風: タイトル + サブタイトル — フラット/カードなし） */
-.inbox-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px 12px;
-  background: var(--bg-surface);
+/* 受信箱タイトルエリア（seamless統合 — Meta風） */
+.inbox-area-header {
+  padding: 16px 24px 8px;
   flex-shrink: 0;
+  background: var(--bg-surface);
 }
-.inbox-page-title {
+.inbox-area-title {
   font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 4px;
+  margin: 0 0 2px;
   line-height: 1.2;
 }
-.inbox-page-subtitle {
+.inbox-area-subtitle {
   font-size: 13px;
   color: var(--text-muted);
   margin: 0;
@@ -302,6 +325,30 @@ const INBOX_STYLES = `
 .inbox-search-input::placeholder {
   color: var(--text-secondary);
 }
+
+/* topbar移設ボタン群（テーマ・言語・ログアウト） */
+.inbox-util-btns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.inbox-util-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: background 0.1s;
+}
+.inbox-util-btn:hover { background: rgba(0,0,0,0.06); }
+.inbox-util-btn--signout { color: var(--text-muted); }
 
 /* 管理ボタン */
 .inbox-manage-wrap {
@@ -733,10 +780,11 @@ const INBOX_STYLES = `
   font-weight: 600;
 }
 .right-panel-section {
-  width: 100%;
-  margin-top: 0;
-  padding: 16px 12px;
-  border-top: 1px solid var(--inbox-separator);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 8px 12px;
+  padding: 12px;
   box-sizing: border-box;
 }
 .right-panel-row {
@@ -793,11 +841,7 @@ const INBOX_STYLES = `
   box-sizing: border-box;
 }
 
-/* セクション最初の要素は上線なし（ヘッダー直後の隣接セレクタ） */
-.right-panel-header + .right-panel-section {
-  border-top: none;
-  padding-top: 0;
-}
+/* カード化により隣接セレクタ不要（削除済み） */
 
 /* 英語名 */
 .right-panel-en-name {
@@ -880,6 +924,10 @@ const INBOX_STYLES = `
 
 export default function InboxPage() {
   const { t } = useTranslation();
+  const { user, signOut } = useAuth();
+  const { locale, changeLanguage } = useLocale();
+  const { theme, changeTheme } = useTheme();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialLeadIdRaw = searchParams.get("lead_id");
   const initialLeadId = initialLeadIdRaw && !isNaN(Number(initialLeadIdRaw))
@@ -893,7 +941,7 @@ export default function InboxPage() {
 
   // フィルタ
   const [leadStatusFilter] = useState<LeadStatusFilter>("all");
-  const [platformFilter] = useState<PlatformFilter>("all");
+  const [platformTab, setPlatformTab] = useState<string>("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [followUpOnly, setFollowUpOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -933,7 +981,7 @@ export default function InboxPage() {
     setConvError("");
     try {
       const data = await listConversations({
-        platform: platformFilter,
+        platform: platformTab === "all" ? undefined : platformTab as PlatformFilter,
         unread_only: unreadOnly,
         page_id: pageIdFilter || undefined,
       });
@@ -946,7 +994,7 @@ export default function InboxPage() {
     } finally {
       setConvLoading(false);
     }
-  }, [platformFilter, unreadOnly, pageIdFilter]);
+  }, [platformTab, unreadOnly, pageIdFilter]);
 
   // Page ID ドロップダウン用（フィルタなしで初回取得）
   useEffect(() => {
@@ -1203,12 +1251,25 @@ export default function InboxPage() {
       <div className="inbox-wrapper">
         {/* 左+中央エリア（ヘッダー+タブ+カラム） */}
         <div className="inbox-main-area">
-        {/* ページヘッダー（Meta 風: タイトル + サブタイトル） */}
-        <div className="inbox-page-header">
-          <div>
-            <h1 className="inbox-page-title">{t("inbox.title")}</h1>
-            <p className="inbox-page-subtitle">{t("inbox.subtitle")}</p>
-          </div>
+
+        {/* 受信箱タイトル（seamless統合 — Meta風） */}
+        <div className="inbox-area-header">
+          <h1 className="inbox-area-title">{t("inbox.title")}</h1>
+          <p className="inbox-area-subtitle">{t("inbox.subtitle")}</p>
+        </div>
+
+        {/* プラットフォームタブバー（全幅） */}
+        <div className="inbox-full-tab-bar">
+          {PLATFORM_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={`inbox-full-tab${platformTab === tab.key ? " active" : ""}`}
+              onClick={() => setPlatformTab(tab.key)}
+            >
+              {t(tab.labelKey)}
+            </button>
+          ))}
         </div>
 
         {/* 3カラムコンテンツ */}
@@ -1219,7 +1280,7 @@ export default function InboxPage() {
           {/* アクセシビリティ用タイトル（視覚的・意味論的に非表示：h1が全幅ヘッダーに移動済み） */}
           <h2 className="inbox-panel-title" aria-hidden="true">{t("inbox.title")}</h2>
 
-          {/* 検索 + 管理ボタン */}
+          {/* 検索 + 管理ボタン + ユーティリティ（topbar移設分） */}
           <div className="inbox-search-row">
             <input
               type="text"
@@ -1250,6 +1311,30 @@ export default function InboxPage() {
                   </button>
                 </div>
               )}
+            </div>
+            {/* topbar 移設ボタン群（ログアウト・テーマ・言語） */}
+            <div className="inbox-util-btns">
+              <button
+                className="inbox-util-btn"
+                onClick={() => changeTheme(theme === "light" ? "dark" : "light")}
+                title={theme === "light" ? "ダークモードに切り替え" : "ライトモードに切り替え"}
+              >
+                {theme === "light" ? "🌙" : "☀️"}
+              </button>
+              <button
+                className="inbox-util-btn"
+                onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
+                title={t("language.switchTo")}
+              >
+                🌐
+              </button>
+              <button
+                className="inbox-util-btn inbox-util-btn--signout"
+                onClick={() => setShowLogoutConfirm(true)}
+                title={t("nav.signOut")}
+              >
+                <LogOut size={14} />
+              </button>
             </div>
           </div>
 
@@ -1711,6 +1796,15 @@ export default function InboxPage() {
         </aside>
 
       </div>{/* /inbox-wrapper */}
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title={t("nav.signOutTitle")}
+        message={t("nav.signOutMessage")}
+        confirmLabel={t("nav.signOut")}
+        onConfirm={() => { setShowLogoutConfirm(false); signOut(); }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </>
   );
 }
