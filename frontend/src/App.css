@@ -305,8 +305,11 @@
 }
 
 /* Inbox ページ（/lead-chat）では内部パネルが自前で overflow を管理するため親の scroll を無効化 */
+/* Meta Business Suite 実測グラデーションを背景として適用 */
 .app-content--inbox {
   overflow: hidden;
+  background-color: var(--bg-surface);
+  background-image: var(--inbox-bg-gradient);
 }
 
 /* --- Legacy top-nav layout (保持・互換性) --- */
