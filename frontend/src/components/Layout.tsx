@@ -25,6 +25,7 @@ import { useUiPrefs } from "../contexts/UiPrefsContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { useSuperAdmin } from "../hooks/useSuperAdmin";
 import ConfirmModal from "./ConfirmModal";
+import { ICON } from "../constants/iconSizes";
 
 /* ------------------------------------------------------------------ */
 /* SidebarAccordion                                                     */
@@ -64,7 +65,7 @@ function SidebarAccordion({
         <span className="sidebar-label">{label}</span>
         {isExpanded && (
           <span className={`sidebar-caret${isOpen ? " open" : ""}`}>
-            <NAV_ICONS.chevronDown size={14} />
+            <NAV_ICONS.chevronDown size={ICON.sm} />
           </span>
         )}
       </button>
@@ -205,7 +206,7 @@ export default function Layout() {
                   end
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><NAV_ICONS.dashboard size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.dashboard size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.dashboard")}</span>
                 </NavLink>
               )}
@@ -216,7 +217,7 @@ export default function Layout() {
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
                   <span className="sidebar-icon">
-                    <LeadChatIcon size={20} />
+                    <LeadChatIcon size={ICON.base} />
                   </span>
                   <span className="sidebar-label">{t("nav.leadChat")}</span>
                 </NavLink>
@@ -233,7 +234,7 @@ export default function Layout() {
                     return `sidebar-item${onLeadsSection ? " active" : ""}`;
                   }}
                 >
-                  <span className="sidebar-icon"><NAV_ICONS.leads size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.leads size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.leads")}</span>
                 </NavLink>
               )}
@@ -243,7 +244,7 @@ export default function Layout() {
                   to="/inventory"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><NAV_ICONS.inventory size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.inventory size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.inventory")}</span>
                 </NavLink>
               )}
@@ -251,7 +252,7 @@ export default function Layout() {
               {prefs.show_sales_menu && (
                 <SidebarAccordion
                   label={t("nav.quotesInvoices")}
-                  icon={<NAV_ICONS.fileText size={20} />}
+                  icon={<NAV_ICONS.fileText size={ICON.base} />}
                   items={salesItems}
                   activePaths={["/quotes", "/invoices"]}
                   isExpanded={sidebarExpanded}
@@ -264,7 +265,7 @@ export default function Layout() {
                 to="/reports"
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
               >
-                <span className="sidebar-icon"><NAV_ICONS.report size={20} /></span>
+                <span className="sidebar-icon"><NAV_ICONS.report size={ICON.base} /></span>
                 <span className="sidebar-label">{t("nav.reports")}</span>
               </NavLink>
 
@@ -272,14 +273,14 @@ export default function Layout() {
                 to="/faq"
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
               >
-                <span className="sidebar-icon"><NAV_ICONS.help size={20} /></span>
+                <span className="sidebar-icon"><NAV_ICONS.help size={ICON.base} /></span>
                 <span className="sidebar-label">{t("nav.faq")}</span>
               </NavLink>
 
               {prefs.show_admin_menu && (
                 <SidebarAccordion
                   label={t("nav.admin")}
-                  icon={<NAV_ICONS.admin size={20} />}
+                  icon={<NAV_ICONS.admin size={ICON.base} />}
                   items={adminItems}
                   activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/admin/tenant-profile", "/super-admin/masters", "/super-admin/inbound", "/super-admin/phase-switch"]}
                   isExpanded={sidebarExpanded}
@@ -293,14 +294,14 @@ export default function Layout() {
                   to="/settings"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><NAV_ICONS.settings size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.settings size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.settings")}</span>
                 </NavLink>
               )}
 
               <SidebarAccordion
                 label={t("nav.more")}
-                icon={<NAV_ICONS.more size={20} />}
+                icon={<NAV_ICONS.more size={ICON.base} />}
                 items={moreItems}
                 activePaths={["/knowledge", "/prompts", "/templates"]}
                 isExpanded={sidebarExpanded}
@@ -353,7 +354,7 @@ export default function Layout() {
             onClick={() => setDrawerOpen(false)}
             aria-label="Close"
           >
-            <NAV_ICONS.close size={16} aria-hidden="true" />
+            <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
           </button>
         </div>
         <div className="user-drawer-body">
@@ -364,8 +365,8 @@ export default function Layout() {
             onClick={() => changeTheme(theme === "light" ? "dark" : "light")}
           >
             {theme === "light"
-              ? <THEME_ICONS.light size={16} aria-hidden="true" />
-              : <THEME_ICONS.dark size={16} aria-hidden="true" />}
+              ? <THEME_ICONS.light size={ICON.md} aria-hidden="true" />
+              : <THEME_ICONS.dark size={ICON.md} aria-hidden="true" />}
             <span>{theme === "light" ? t("nav.switchToDark") : t("nav.switchToLight")}</span>
           </button>
 
@@ -373,7 +374,7 @@ export default function Layout() {
             className="user-drawer-action"
             onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
           >
-            <GlobeIcon size={16} aria-hidden="true" />
+            <GlobeIcon size={ICON.md} aria-hidden="true" />
             <span>{locale === "ja" ? t("language.en") : t("language.ja")}</span>
           </button>
 
@@ -381,7 +382,7 @@ export default function Layout() {
             className="user-drawer-action user-drawer-action--danger"
             onClick={() => { setDrawerOpen(false); setShowLogoutConfirm(true); }}
           >
-            <NAV_ICONS.logout size={16} aria-hidden="true" />
+            <NAV_ICONS.logout size={ICON.md} aria-hidden="true" />
             <span>{t("nav.signOut")}</span>
           </button>
         </div>
