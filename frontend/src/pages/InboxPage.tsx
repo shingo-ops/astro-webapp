@@ -199,12 +199,12 @@ html.force-dark .inbox-wrapper {
 
 /* 受信箱タイトルエリア（seamless統合 — Meta風 / 背景透明でグラデーション透過） */
 .inbox-area-header {
-  padding: 16px 24px 8px;
+  padding: var(--space-4) var(--space-6) var(--space-2);
   flex-shrink: 0;
   background: transparent;
 }
 .inbox-area-title {
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 2px;
@@ -225,7 +225,7 @@ html.force-dark .inbox-wrapper {
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   height: 36px;
   box-sizing: border-box;
 }
@@ -233,7 +233,7 @@ html.force-dark .inbox-wrapper {
 /* Meta実測: padding=8px 12px, border-radius=4px, font-size=14px, fw=400 */
 .inbox-full-tab {
   height: 36px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border: none;
   border-bottom: none;
   background: transparent;
@@ -242,7 +242,7 @@ html.force-dark .inbox-wrapper {
   color: var(--text-primary);
   cursor: pointer;
   white-space: nowrap;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: background 0.1s, color 0.1s;
   font-family: inherit;
   display: flex;
@@ -296,14 +296,14 @@ html.force-dark .inbox-wrapper {
 .inbox-search-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px 4px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-10px) var(--space-1);
   flex-shrink: 0;
 }
 .inbox-search-input {
   flex: 1;
   min-width: 0;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border-radius: 20px;
   border: none;
   background: var(--bg-subtle);
@@ -326,7 +326,7 @@ html.force-dark .inbox-wrapper {
   align-items: center;
   gap: 5px;
   padding: 7px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-surface);
   font-size: 13px;
@@ -345,15 +345,15 @@ html.force-dark .inbox-wrapper {
   min-width: 180px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  z-index: 100;
+  z-index: var(--z-topbar);
   overflow: hidden;
 }
 .inbox-manage-item {
   display: block;
   width: 100%;
-  padding: 10px 14px;
+  padding: var(--space-10px) var(--space-14px);
   border: none;
   background: transparent;
   text-align: left;
@@ -369,14 +369,14 @@ html.force-dark .inbox-wrapper {
 .inbox-sub-filter-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 12px 8px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3) var(--space-2);
   flex-shrink: 0;
 }
 /* Meta実測: 非アクティブ bg=transparent, color=rgb(28,43,51), fs=14px, fw=400, padding=8px 12px, br=4px */
 .inbox-sub-filter-pill {
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   border: none;
   font-size: 14px;
   font-weight: 400;
@@ -408,8 +408,8 @@ html.force-dark .inbox-wrapper {
 .conv-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0 12px 12px;
+  gap: var(--space-3);
+  padding: var(--space-3) 0 var(--space-3) var(--space-3);
   width: 100%;
   min-height: 92px;
   border: none;
@@ -441,8 +441,8 @@ html.force-dark .inbox-wrapper {
   flex-shrink: 0;
 }
 .conv-avatar {
-  width: 48px;
-  height: 48px;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
   border-radius: 50%;
   background: var(--avatar-bg);
   color: var(--text-primary);
@@ -457,8 +457,8 @@ html.force-dark .inbox-wrapper {
   position: absolute;
   bottom: -2px;
   right: -2px;
-  width: 20px;
-  height: 20px;
+  width: var(--icon-base);
+  height: var(--icon-base);
   border-radius: 999px;
   border: 2px solid var(--bg-surface);
   display: inline-flex;
@@ -474,7 +474,7 @@ html.force-dark .inbox-wrapper {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 6px;
+  gap: var(--space-6px);
 }
 /* 名前 14px/fw400(既読)/fw700(未読) */
 .conv-name {
@@ -488,19 +488,19 @@ html.force-dark .inbox-wrapper {
 .conv-name.unread { font-weight: 700; }
 /* 時刻 12px */
 .conv-time {
-  font-size: 12px;
+  font-size: var(--font-xs);
   color: var(--text-muted);
   flex-shrink: 0;
 }
 .conv-preview {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 2px;
+  gap: var(--space-6px);
+  margin-top: var(--space-2px);
 }
 /* プレビュー 12px/fw400(既読) / fw700(未読) */
 .conv-preview-text {
-  font-size: 12px;
+  font-size: var(--font-xs);
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -539,17 +539,17 @@ html.force-dark .inbox-wrapper {
 }
 /* Meta実測: padding=12px 0, border-bottom=1px solid rgba(203,210,217,0.6), h=81px */
 .inbox-center-header {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid rgba(203, 210, 217, 0.6);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-shrink: 0;
   min-height: 81px;
   box-sizing: border-box;
 }
 .inbox-center-title {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
@@ -558,17 +558,17 @@ html.force-dark .inbox-wrapper {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   font-size: 11px;
   font-weight: 600;
 }
 .inbox-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .inbox-msg-row { display: flex; }
 .inbox-msg-row.outbound { justify-content: flex-end; }
@@ -576,8 +576,8 @@ html.force-dark .inbox-wrapper {
 /* Meta実測: バブル 16px / padding=8px 12px */
 .msg-bubble {
   max-width: 70%;
-  padding: 8px 12px;
-  font-size: 16px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-md);
   line-height: 1.45;
   word-break: break-word;
   white-space: pre-wrap;
@@ -598,12 +598,12 @@ html.force-dark .inbox-wrapper {
   background: var(--danger-bg);
   color: var(--danger-text);
   border: 2px solid var(--danger);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
 }
 .msg-time {
   font-size: 11px;
   opacity: 0.7;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   text-align: right;
 }
 .msg-time.inbound { text-align: left; }
@@ -618,7 +618,7 @@ html.force-dark .inbox-wrapper {
 .send-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -627,7 +627,7 @@ html.force-dark .inbox-wrapper {
 .send-top-row {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 10px 6px;
 }
 /* 入力ラップ（Meta実測: br=18px） */
@@ -636,7 +636,7 @@ html.force-dark .inbox-wrapper {
   min-width: 0;
   background: var(--bg-subtle);
   border-radius: 18px;
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-14px);
   box-sizing: border-box;
 }
 .inbox-textarea {
@@ -658,10 +658,10 @@ html.force-dark .inbox-wrapper {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 0 10px 10px;
+  padding: 0 var(--space-10px) var(--space-10px);
 }
 .inbox-send-btn {
-  padding: 8px 20px;
+  padding: var(--space-2) var(--space-5);
   border-radius: 20px;
   background: var(--accent);
   color: var(--on-accent);
@@ -688,13 +688,13 @@ html.force-dark .inbox-wrapper {
   justify-content: center;
   color: var(--text-secondary);
   font-size: 15px;
-  gap: 12px;
+  gap: var(--space-3);
 }
-.inbox-empty-icon svg { width: 48px; height: 48px; }
+.inbox-empty-icon svg { width: var(--icon-xl); height: var(--icon-xl); }
 
 /* ---- 右パネル ---- */
 .inbox-right-panel {
-  width: 300px;
+  width: var(--drawer-width);
   flex-shrink: 0;
   flex-grow: 0;
   background: var(--bg-surface);
@@ -723,9 +723,9 @@ html.force-dark .inbox-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   user-select: none;
 }
 .right-panel-name {
@@ -736,33 +736,33 @@ html.force-dark .inbox-wrapper {
   margin: 0;
 }
 .right-panel-code {
-  font-size: 12px;
+  font-size: var(--font-xs);
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: var(--space-1);
   text-align: center;
 }
 .right-panel-status {
-  margin-top: 10px;
-  padding: 4px 14px;
+  margin-top: var(--space-10px);
+  padding: var(--space-1) var(--space-14px);
   border-radius: 20px;
   background: var(--link-active-bg);
   color: var(--accent);
-  font-size: 12px;
+  font-size: var(--font-xs);
   font-weight: 600;
 }
 /* Meta実測: セクションはフラット — border-bottom 線区切りのみ、カードなし */
 .right-panel-section {
   background: transparent;
   border-bottom: 1px solid var(--border);
-  padding: 16px 12px;
+  padding: var(--space-4) var(--space-3);
   box-sizing: border-box;
   width: 100%;
 }
 .right-panel-row {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 10px 0;
+  gap: var(--space-2px);
+  padding: var(--space-10px) 0;
   border-bottom: 1px solid var(--bg-subtle);
 }
 .right-panel-label {
@@ -779,7 +779,7 @@ html.force-dark .inbox-wrapper {
 }
 /* プロフィールを見る */
 .right-panel-link {
-  margin: 12px 0 16px;
+  margin: var(--space-3) 0 var(--space-4);
   display: inline-block;
   padding: 0;
   border-radius: 0;
@@ -799,7 +799,7 @@ html.force-dark .inbox-wrapper {
   color: var(--text-secondary);
   font-size: 14px;
   text-align: center;
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 /* ヘッダーラッパー */
@@ -808,7 +808,7 @@ html.force-dark .inbox-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 12px;
+  padding: var(--space-4) var(--space-3);
   box-sizing: border-box;
 }
 
@@ -835,7 +835,7 @@ html.force-dark .inbox-wrapper {
 
 /* セクションタイトル */
 .right-panel-section-title {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 10px;
@@ -844,15 +844,15 @@ html.force-dark .inbox-wrapper {
 
 /* 長文メモ */
 .right-panel-memo {
-  font-size: 12px;
+  font-size: var(--font-xs);
   color: var(--text-primary);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
   background: var(--bg-subtle);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 8px 10px;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   margin-bottom: 6px;
 }
 
@@ -868,21 +868,21 @@ html.force-dark .inbox-wrapper {
 
 /* エラー・ローディング */
 .inbox-error-banner {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--danger-bg);
   color: var(--danger-text);
   border: 1px solid var(--danger);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   font-size: 13px;
   margin: 8px 12px;
 }
 .inbox-send-error {
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: var(--danger-bg);
   color: var(--danger-text);
   border: 1px solid var(--danger);
-  font-size: 12px;
+  font-size: var(--font-xs);
   margin-bottom: 6px;
 }
 `;
