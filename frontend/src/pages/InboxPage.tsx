@@ -294,7 +294,7 @@ html.force-dark .inbox-wrapper {
   flex: 1;
   min-width: 0;
   padding: var(--space-2) var(--space-3);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   border: none;
   background: var(--bg-subtle);
   font-size: var(--font-base);
@@ -449,7 +449,7 @@ html.force-dark .inbox-wrapper {
   right: -2px;
   width: var(--icon-base);
   height: var(--icon-base);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: 2px solid var(--bg-surface);
   display: inline-flex;
   align-items: center;
@@ -504,7 +504,7 @@ html.force-dark .inbox-wrapper {
 .conv-unread-badge {
   background: var(--accent);
   color: var(--on-accent);
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   padding: 1px 6px;
   font-size: var(--font-2xs);
   font-weight: 700;
@@ -513,7 +513,7 @@ html.force-dark .inbox-wrapper {
 .conv-platform-badge {
   font-size: 10px;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--bg-subtle);
   color: var(--text-secondary);
   flex-shrink: 0;
@@ -620,12 +620,12 @@ html.force-dark .inbox-wrapper {
   gap: var(--space-2);
   padding: 10px 10px 6px;
 }
-/* 入力ラップ（Meta実測: br=18px） */
+/* 入力ラップ（Meta実測: br=18px → --radius-pill=20px 吸収済み ±2px許容） */
 .send-input-wrap {
   flex: 1;
   min-width: 0;
   background: var(--bg-subtle);
-  border-radius: 18px;
+  border-radius: var(--radius-pill);
   padding: var(--space-2) var(--space-14px);
   box-sizing: border-box;
 }
@@ -652,7 +652,7 @@ html.force-dark .inbox-wrapper {
 }
 .inbox-send-btn {
   padding: var(--space-2) var(--space-5);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   background: var(--accent);
   color: var(--on-accent);
   border: none;
@@ -734,7 +734,7 @@ html.force-dark .inbox-wrapper {
 .right-panel-status {
   margin-top: var(--space-10px);
   padding: var(--space-1) var(--space-14px);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   background: var(--link-active-bg);
   color: var(--accent);
   font-size: var(--font-xs);
@@ -816,7 +816,7 @@ html.force-dark .inbox-wrapper {
 .right-panel-rank {
   margin-top: 6px;
   padding: 3px 12px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-2xs);
   font-weight: 700;
   background: var(--rank-bg);
