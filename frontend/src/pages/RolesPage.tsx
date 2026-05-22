@@ -367,7 +367,7 @@ export default function RolesPage() {
                     >
                       {selectedRole.name}
                     </span>
-                    <span style={{ fontWeight: 400, color: "var(--text-secondary)" }}>{t("roles.permissionSuffix")}</span>
+                    <span style={{ fontWeight: "var(--font-weight-normal)", color: "var(--text-secondary)" }}>{t("roles.permissionSuffix")}</span>
                   </h2>
                   {selectedRole.description && (
                     <p className="role-description">{selectedRole.description}</p>

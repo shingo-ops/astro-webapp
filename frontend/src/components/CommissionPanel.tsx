@@ -251,10 +251,10 @@ export default function CommissionPanel({
             <div
               className="form-actions"
               style={{
-                marginTop: "1rem",
+                marginTop: "var(--space-4)",
                 display: "flex",
                 justifyContent: "space-between",
-                gap: "0.5rem",
+                gap: "var(--space-2)",
               }}
             >
               <button

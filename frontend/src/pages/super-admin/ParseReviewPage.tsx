@@ -294,8 +294,8 @@ export default function ParseReviewPage() {
           color: "var(--warning-text)",
           border: "1px solid var(--border-strong)",
           padding: "0.75rem 1rem",
-          borderRadius: "0.25rem",
-          marginBottom: "1rem",
+          borderRadius: "var(--radius-sm)",
+          marginBottom: "var(--space-4)",
         }}
       >
         {t("superAdmin.parseReview.phaseAWarning.always")}
@@ -319,9 +319,9 @@ export default function ParseReviewPage() {
           style={{
             backgroundColor: "var(--warning-bg)",
             border: "1px solid var(--border-strong)",
-            padding: "0.5rem 1rem",
-            borderRadius: "0.25rem",
-            marginBottom: "1rem",
+            padding: "var(--space-2) var(--space-4)",
+            borderRadius: "var(--radius-sm)",
+            marginBottom: "var(--space-4)",
             color: "var(--warning-text)",
           }}
         >
@@ -338,7 +338,7 @@ export default function ParseReviewPage() {
           <section
             className="review-meta"
             data-testid="review-meta"
-            style={{ marginBottom: "1rem" }}
+            style={{ marginBottom: "var(--space-4)" }}
           >
             <dl>
               <dt>{t("superAdmin.inbound.columns.supplier")}</dt>
@@ -479,7 +479,7 @@ export default function ParseReviewPage() {
 
           <section
             className="review-comment"
-            style={{ marginTop: "1rem", maxWidth: "40rem" }}
+            style={{ marginTop: "var(--space-4)", maxWidth: "40rem" }}
           >
             <label htmlFor="operator-comment">
               {t("superAdmin.inbound.review.operatorComment")}
@@ -495,7 +495,7 @@ export default function ParseReviewPage() {
             />
           </section>
 
-          <div className="action-bar" style={{ marginTop: "1rem" }}>
+          <div className="action-bar" style={{ marginTop: "var(--space-4)" }}>
             <button
               onClick={() => void handleApprove()}
               disabled={isFinal || submitting}
@@ -509,7 +509,7 @@ export default function ParseReviewPage() {
               disabled={isFinal || submitting}
               data-testid="review-reject-btn"
               className="btn-danger"
-              style={{ marginLeft: "0.5rem" }}
+              style={{ marginLeft: "var(--space-2)" }}
             >
               {t("superAdmin.inbound.review.rejectBtn")}
             </button>
@@ -522,8 +522,8 @@ export default function ParseReviewPage() {
               aria-modal="true"
               data-testid="review-reject-dialog"
               style={{
-                marginTop: "1rem",
-                padding: "1rem",
+                marginTop: "var(--space-4)",
+                padding: "var(--space-4)",
                 border: "1px solid var(--border-color)",
               }}
             >
@@ -539,7 +539,7 @@ export default function ParseReviewPage() {
                 onChange={(e) => setRejectReason(e.target.value)}
                 style={{ width: "100%" }}
               />
-              <div style={{ marginTop: "0.5rem" }}>
+              <div style={{ marginTop: "var(--space-2)" }}>
                 <button
                   onClick={() => void handleReject()}
                   disabled={submitting}
@@ -554,7 +554,7 @@ export default function ParseReviewPage() {
                     setRejectReason("");
                   }}
                   className="btn-secondary"
-                  style={{ marginLeft: "0.5rem" }}
+                  style={{ marginLeft: "var(--space-2)" }}
                 >
                   {t("common.cancel")}
                 </button>

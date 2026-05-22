@@ -145,8 +145,8 @@ export default function PhaseSwitchPage() {
           color: "var(--warning-text)",
           border: "1px solid var(--border-strong)",
           padding: "0.75rem 1rem",
-          borderRadius: "0.25rem",
-          marginBottom: "1rem",
+          borderRadius: "var(--radius-sm)",
+          marginBottom: "var(--space-4)",
         }}
       >
         {t("superAdmin.phaseSwitch.phaseABanner")}
@@ -173,13 +173,13 @@ export default function PhaseSwitchPage() {
               Phase {data.phase}
             </span>
             {data.phase === "A" && (
-              <span style={{ marginLeft: "0.5rem", color: "var(--warning-text)" }}>
+              <span style={{ marginLeft: "var(--space-2)", color: "var(--warning-text)" }}>
                 ({t("superAdmin.phaseSwitch.phaseADesc")})
               </span>
             )}
           </div>
 
-          <div className="phase-buttons" style={{ display: "flex", gap: "0.5rem" }}>
+          <div className="phase-buttons" style={{ display: "flex", gap: "var(--space-2)" }}>
             {(["A", "B", "C"] as Phase[]).map((p) => {
               const scoped = isScoped(p);
               const current = data.phase === p;

@@ -138,7 +138,7 @@ export default function DiscordInboundPage() {
         className="filter-bar"
         style={{
           display: "flex",
-          gap: "0.5rem",
+          gap: "var(--space-2)",
           margin: "1rem 0",
           alignItems: "center",
         }}

@@ -112,7 +112,7 @@ export default function DashboardPage() {
       {data.pipeline_by_stage.length > 0 && (
         <>
           <h3 style={{ marginTop: "var(--space-6)", marginBottom: "var(--space-2)", color: "var(--text-secondary)" }}>{t("dashboard.pipeline")}</h3>
-          <div style={{ background: "var(--bg-surface)", borderRadius: 8, padding: "var(--space-4)", boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
+          <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", padding: "var(--space-4)", boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
             <table className="data-table">
               <thead>
                 <tr><th>{t("dashboard.stage")}</th><th>{t("dashboard.count")}</th><th>{t("dashboard.amount")}</th><th>{t("dashboard.weightedAmount")}</th></tr>

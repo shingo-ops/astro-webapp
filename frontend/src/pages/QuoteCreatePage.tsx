@@ -122,7 +122,7 @@ export default function QuoteCreatePage() {
 
       {error && <div className="error-message">{error}</div>}
 
-      <form onSubmit={handleSubmit} style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: 8, boxShadow: "var(--shadow-sm)" }}>
+      <form onSubmit={handleSubmit} style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
           <CompanyContactSelector
             value={{ companyId, contactId }}
@@ -212,7 +212,7 @@ export default function QuoteCreatePage() {
             <input type="number" min="0" step="1" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} />
           </div>
           <div className="form-group"><label>{t("quotes.total")}</label>
-            <div style={{ padding: "8px 12px", fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{total.toLocaleString()} {currency}</div>
+            <div style={{ padding: "var(--space-2) var(--space-3)", fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{total.toLocaleString()} {currency}</div>
           </div>
         </div>
 

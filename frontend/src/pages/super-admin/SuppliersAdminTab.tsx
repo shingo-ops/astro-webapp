@@ -193,7 +193,7 @@ export default function SuppliersAdminTab() {
 
       <form
         onSubmit={submit}
-        style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem", margin: "0.5rem 0" }}
+        style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-2)", margin: "0.5rem 0" }}
       >
         <input
           placeholder={t("superAdmin.suppliersAdmin.fields.name")}
@@ -274,14 +274,14 @@ export default function SuppliersAdminTab() {
           <div
             className="modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ background: "var(--bg-surface)", padding: "1rem", borderRadius: "8px", minWidth: "600px", maxWidth: "90%" }}
+            style={{ background: "var(--bg-surface)", padding: "var(--space-4)", borderRadius: "var(--radius-lg)", minWidth: "600px", maxWidth: "90%" }}
           >
             <h4>
               {t("superAdmin.suppliersAdmin.discordRouting")} — {routingFor.name}
             </h4>
             <form
               onSubmit={addRouting}
-              style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem", margin: "0.5rem 0" }}
+              style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-2)", margin: "0.5rem 0" }}
             >
               <input
                 placeholder={t("superAdmin.suppliersAdmin.guildId")}
@@ -333,7 +333,7 @@ export default function SuppliersAdminTab() {
                 ))}
               </tbody>
             </table>
-            <div style={{ marginTop: "0.5rem", textAlign: "right" }}>
+            <div style={{ marginTop: "var(--space-2)", textAlign: "right" }}>
               <button onClick={() => setRoutingFor(null)} className="btn-secondary">
                 {t("common.close")}
               </button>

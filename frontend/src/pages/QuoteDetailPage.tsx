@@ -110,7 +110,7 @@ export default function QuoteDetailPage() {
 
       {error && <div className="error-message">{error}</div>}
 
-      <div style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: 8, boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
+      <div style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--space-4)" }}>
           <div><strong>{t("common.status")}:</strong> <span className={`badge badge-${quote.status === "approved" ? "won" : quote.status === "rejected" ? "lost" : "pending"}`}>{t(`quotes.status_${quote.status}`)}</span></div>
           <div><strong>{t("common.currency")}:</strong> {quote.currency}</div>

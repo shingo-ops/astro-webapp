@@ -116,9 +116,9 @@ export default function InvoiceDetailPage() {
       {error && <div className="error-message">{error}</div>}
 
       {showVoidForm && (
-        <div style={{ background: "var(--danger-bg)", padding: "var(--space-4)", borderRadius: 8, marginBottom: "var(--space-4)" }}>
+        <div style={{ background: "var(--danger-bg)", padding: "var(--space-4)", borderRadius: "var(--radius-lg)", marginBottom: "var(--space-4)" }}>
           <label style={{ display: "block", marginBottom: "var(--space-2)", fontWeight: "var(--font-weight-semi)", color: "var(--danger-text)" }}>{t("invoices.voidReasonLabel")} *</label>
-          <input style={{ width: "100%", padding: "var(--space-2)", borderRadius: 4, border: "1px solid var(--border)" }}
+          <input style={{ width: "100%", padding: "var(--space-2)", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}
                  value={voidReason} onChange={(e) => setVoidReason(e.target.value)} placeholder={t("invoices.voidReasonPlaceholder")} />
           <div style={{ marginTop: "var(--space-2)", display: "flex", gap: "var(--space-2)" }}>
             <button className="btn-secondary" onClick={() => setShowVoidForm(false)}>{t("common.cancel")}</button>
@@ -127,7 +127,7 @@ export default function InvoiceDetailPage() {
         </div>
       )}
 
-      <div style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: 8, boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
+      <div style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--space-4)" }}>
           <div><strong>{t("common.status")}:</strong> <span className={`badge badge-${invoice.status === "paid" ? "won" : invoice.status === "voided" ? "lost" : "pending"}`}>{t(`invoices.status_${invoice.status}`)}</span></div>
           <div><strong>{t("common.currency")}:</strong> {invoice.currency}</div>

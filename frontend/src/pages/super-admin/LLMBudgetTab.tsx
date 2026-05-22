@@ -118,7 +118,7 @@ export default function LLMBudgetTab() {
         </div>
       )}
 
-      <table className="data-table" style={{ width: "100%", marginTop: "1rem" }}>
+      <table className="data-table" style={{ width: "100%", marginTop: "var(--space-4)" }}>
         <thead>
           <tr>
             <th>{t("superAdmin.llmBudget.fields.tenantId")}</th>
@@ -159,7 +159,7 @@ export default function LLMBudgetTab() {
           ))}
           {items.length === 0 && (
             <tr>
-              <td colSpan={9} style={{ textAlign: "center", padding: "1rem" }}>
+              <td colSpan={9} style={{ textAlign: "center", padding: "var(--space-4)" }}>
                 {t("superAdmin.llmBudget.noRows")}
               </td>
             </tr>
@@ -172,16 +172,16 @@ export default function LLMBudgetTab() {
           onSubmit={submit}
           style={{
             border: "1px solid var(--border-color)",
-            padding: "1rem",
-            marginTop: "1rem",
-            borderRadius: "4px",
+            padding: "var(--space-4)",
+            marginTop: "var(--space-4)",
+            borderRadius: "var(--radius-sm)",
           }}
           data-testid="llm-budget-edit-form"
         >
           <h4>
             {t("superAdmin.llmBudget.editTitle", { tenant_id: edit.tenant_id })}
           </h4>
-          <div style={{ marginBottom: "0.5rem" }}>
+          <div style={{ marginBottom: "var(--space-2)" }}>
             <label>
               {t("superAdmin.llmBudget.fields.monthlyBudget")}:{" "}
               <input
@@ -197,7 +197,7 @@ export default function LLMBudgetTab() {
               />
             </label>
           </div>
-          <div style={{ marginBottom: "0.5rem" }}>
+          <div style={{ marginBottom: "var(--space-2)" }}>
             <label>
               <input
                 type="checkbox"
@@ -210,7 +210,7 @@ export default function LLMBudgetTab() {
               {t("superAdmin.llmBudget.fields.hardStop")}
             </label>
           </div>
-          <div style={{ marginBottom: "0.5rem" }}>
+          <div style={{ marginBottom: "var(--space-2)" }}>
             <label>
               <input
                 type="checkbox"
@@ -235,7 +235,7 @@ export default function LLMBudgetTab() {
               type="button"
               className="btn-secondary"
               onClick={cancelEdit}
-              style={{ marginLeft: "0.5rem" }}
+              style={{ marginLeft: "var(--space-2)" }}
               data-testid="llm-budget-cancel"
             >
               {t("common.cancel")}

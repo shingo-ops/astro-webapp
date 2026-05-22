@@ -170,7 +170,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                   background: "var(--warning-bg)",
                   border: "1px solid var(--warning-text)",
                   padding: "var(--space-2)",
-                  borderRadius: 4,
+                  borderRadius: "var(--radius-sm)",
                   marginTop: "var(--space-2)",
                   fontSize: "0.85em",
                   color: "var(--warning-text)",
@@ -185,7 +185,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 maxHeight: 280,
                 overflowY: "auto",
                 border: "1px solid var(--border-light)",
-                borderRadius: 4,
+                borderRadius: "var(--radius-sm)",
                 marginTop: "var(--space-2)",
               }}
             >
@@ -277,7 +277,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 background: "var(--warning-bg)",
                 border: "1px solid var(--warning-text)",
                 padding: "var(--space-3)",
-                borderRadius: 4,
+                borderRadius: "var(--radius-sm)",
                 marginBottom: "var(--space-4)",
               }}
             >
@@ -307,7 +307,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                   background: "var(--bg-subtle)",
                   border: "1px solid var(--border)",
                   padding: "var(--space-2)",
-                  borderRadius: 4,
+                  borderRadius: "var(--radius-sm)",
                   marginBottom: "var(--space-4)",
                   fontSize: "0.9em",
                 }}
