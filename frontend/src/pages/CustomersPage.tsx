@@ -582,7 +582,7 @@ export default function CustomersPage() {
               )}
               {activeTab === "channels" && (
                 <>
-                  <div style={{ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "var(--space-3)" }}>
+                  <div style={{ fontSize: "var(--font-base)", color: "var(--text-muted)", marginBottom: "var(--space-3)" }}>
                     {t("customers.channels_desc")}
                   </div>
                   {form.contact_channels.map((ch, idx) => (
@@ -667,7 +667,7 @@ export default function CustomersPage() {
                     </>
                   )}
                   {editId && !discordTouched && (
-                    <div style={{ fontSize: "0.85em", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
+                    <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
                       {t("customers.discord_unchanged")}
                     </div>
                   )}

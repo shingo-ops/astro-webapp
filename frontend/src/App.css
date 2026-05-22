@@ -1984,3 +1984,16 @@
     padding: var(--space-4);
   }
 }
+
+/* スマートフォン縦 (~ 480px) グローバル調整 */
+@media (max-width: 480px) {
+  .page,
+  .page-container {
+    padding: var(--space-3) var(--space-3);
+  }
+
+  /* 検索バーは topbar-search クラスで管理 — 非表示にしてハンバーガーメニュー代替可能にする */
+  .topbar-search {
+    display: none;
+  }
+}

@@ -144,7 +144,7 @@ export default function LLMBudgetTab() {
               <td>{utilizationPercent(b).toFixed(1)}%</td>
               <td>{b.hard_stop ? "ON" : "OFF"}</td>
               <td>{b.notify_admin ? "ON" : "OFF"}</td>
-              <td style={{ fontSize: "0.85em" }}>{b.last_reset_at.split("T")[0]}</td>
+              <td style={{ fontSize: "var(--font-sm)" }}>{b.last_reset_at.split("T")[0]}</td>
               <td>
                 <button
                   type="button"
