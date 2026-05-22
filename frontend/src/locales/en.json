@@ -91,7 +91,10 @@
     "signOutTitle": "Sign Out",
     "signOutMessage": "Are you sure you want to sign out? Any unsaved data will be lost.",
     "superAdminMasters": "Central Masters",
-    "inventoryVisibility": "Inventory Visibility"
+    "superAdminInbound": "Discord Inbound",
+    "inventoryVisibility": "Inventory Visibility",
+    "tenantProfile": "Issuer Profile",
+    "superAdminPhaseSwitch": "Spreadsheet Phase"
   },
   "login": {
     "email": "Email address",
@@ -331,7 +334,9 @@
     "noLead": "Lead not found.",
     "lead": "Lead",
     "unread": "unread",
-    "tabAll": "All",
+    "tabAll": "All Messages",
+    "tabMessenger": "Messenger",
+    "tabInstagram": "Instagram",
     "tabLeads": "Leads",
     "tabConverted": "Converted",
     "tabCustomers": "Customers",
@@ -346,7 +351,6 @@
     "markAllRead": "Mark all as read",
     "filterUnread": "Unread",
     "filterFollowUp": "Follow-up",
-    "filterArchive": "Archive",
     "subtitle": "Manage and respond to messages."
   },
   "channels": {
@@ -400,6 +404,34 @@
     "stage_won": "Won",
     "stage_lost": "Lost",
     "stage_on_hold": "On hold"
+  },
+  "inventory": {
+    "search": {
+      "placeholder": "Search by product name, card number, JAN, expansion code, or supplier alias",
+      "opGroupLabel": "Multi-keyword join mode",
+      "opAnd": "AND (all match)",
+      "opOr": "OR (any match)",
+      "candidatesLabel": "Search candidates",
+      "noResults": "No matching products",
+      "stockLabel": "Stock",
+      "stockMaskedNote": "You do not have permission to view stock counts (shown as ***)",
+      "zeroStockWarning": "\"{{name}}\" has 0 stock. Verify supplier and stock before quoting.",
+      "matchedVia": {
+        "products_name_exact": "Name exact match",
+        "products_name_en_exact": "English name exact match",
+        "products_card_number_exact": "Card number exact match",
+        "products_jan_code_exact": "JAN exact match",
+        "products_name": "Name",
+        "products_name_en": "English name",
+        "products_card_number": "Card number",
+        "products_jan_code": "JAN code",
+        "products_expansion_code": "Expansion code",
+        "pokemon_dex": "Pokemon dex",
+        "trainer_dex": "Trainer dex",
+        "tcg_series": "TCG series",
+        "supplier_alias": "Supplier alias"
+      }
+    }
   },
   "quotes": {
     "title": "Quotes",
@@ -495,16 +527,39 @@
     "poNumber": "PO number",
     "noPos": "No purchase orders registered",
     "deletePO": "Delete Purchase Order",
+    "allStatuses": "All statuses",
     "status_draft": "Draft",
     "status_pending": "Pending",
     "status_ordered": "Ordered",
     "status_received": "Received",
     "status_cancelled": "Cancelled",
+    "status_error": "Send error",
     "orderedAt": "Order date",
     "receivedAt": "Receipt date",
     "actionOrder": "Order",
     "actionReceive": "Receive",
-    "actionCancel": "Cancel"
+    "actionCancel": "Cancel",
+    "actionDownloadPdf": "PDF",
+    "actionSendEmail": "Send email",
+    "actionResendEmail": "Resend",
+    "emailSent": "Email sent",
+    "emailResent": "Email resent",
+    "emailSendFailed": "Failed to send email"
+  },
+  "tenantProfile": {
+    "title": "Issuer Profile",
+    "subtitle": "Configure the issuer information displayed on PO PDF and email",
+    "companyName": "Company name (Japanese)",
+    "companyNameEn": "Company name (English)",
+    "address": "Address",
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "sealImageUrl": "Seal image URL",
+    "sealHint": "Optional. URL to a seal image embedded into the PDF.",
+    "defaultLanguage": "Default language",
+    "saved": "Issuer profile saved",
+    "permissionRequired": "Viewing this page requires the tenant.profile.view permission"
   },
   "staff": {
     "title": "Staff",
@@ -819,7 +874,8 @@
       "knowledge": "Rules / Aliases",
       "tcg": "TCG Series",
       "dex": "Pokemon / Trainer Dex",
-      "suppliers": "Suppliers"
+      "suppliers": "Suppliers",
+      "llmBudget": "LLM Budget"
     },
     "knowledge": {
       "title": "Normalization Rules (knowledge_rules) + Supplier Aliases",
@@ -903,6 +959,104 @@
       "addRouting": "Add Discord Routing",
       "guildId": "Guild ID",
       "channelId": "Channel ID"
+    },
+    "llmBudget": {
+      "title": "Monthly LLM Budget (Gemini 2.5 Flash)",
+      "subtitle": "Manage per-tenant LLM fallback usage and monthly cap.",
+      "noRows": "No budget rows have been registered yet.",
+      "savedNotice": "Saved.",
+      "editTitle": "Edit budget for tenant {{tenant_id}}",
+      "fields": {
+        "tenantId": "Tenant ID",
+        "tenantName": "Tenant Name",
+        "monthlyBudget": "Monthly Budget (USD)",
+        "currentMonth": "Used This Month",
+        "utilization": "Utilization",
+        "hardStop": "Hard stop on overrun",
+        "notifyAdmin": "Notify admin",
+        "lastResetAt": "Last reset"
+      }
+    },
+    "inbound": {
+      "title": "Discord Inbound Messages",
+      "subtitle": "Inbound message log from suppliers on Discord. Inspect parse results and approval status.",
+      "noRows": "No inbound messages yet.",
+      "filters": {
+        "status": "Parse status",
+        "statusAny": "All",
+        "search": "Search body",
+        "searchPlaceholder": "Substring of message body..."
+      },
+      "columns": {
+        "receivedAt": "Received at",
+        "supplier": "Supplier",
+        "parseStatus": "Parse status",
+        "preview": "Body preview",
+        "engine": "Engine",
+        "llmCost": "LLM cost",
+        "actions": "Actions",
+        "openReview": "Review"
+      },
+      "parseStatus": {
+        "pending": "Pending",
+        "parsing": "Parsing",
+        "parsed": "Parsed",
+        "parsed_rule_only": "Parsed (rule)",
+        "parsed_llm": "Parsed (LLM)",
+        "unparsed": "Parse failed",
+        "budget_exhausted": "Budget exhausted",
+        "ignored_routing": "Routing unmapped",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "review": {
+        "title": "Parse Result Review",
+        "subtitle": "Review parsed Discord inbound items row-by-row: accept / skip / edit / reject.",
+        "backToList": "Back to list",
+        "versionLabel": "Version",
+        "rawContent": "Raw content",
+        "noItems": "No parsed items.",
+        "missingProduct": "Product not linked (must skip)",
+        "operatorComment": "Reviewer comment",
+        "approveBtn": "Approve and apply to stock",
+        "rejectBtn": "Reject",
+        "rejectDialogTitle": "Enter rejection reason",
+        "rejectReasonLabel": "exclude_reason (required)",
+        "rejectConfirmBtn": "Confirm rejection",
+        "rejectReasonRequired": "Please enter a rejection reason",
+        "approveSuccess": "Approved {{count}} item(s), skipped {{skipped}}.",
+        "rejectSuccess": "Rejected.",
+        "versionConflict": "Another reviewer updated this item first. Reloaded — please review again.",
+        "col": {
+          "productId": "Product ID",
+          "deltaQty": "Delta Qty",
+          "alias": "Supplier alias",
+          "notes": "Notes",
+          "skip": "Skip"
+        }
+      }
+    },
+    "phaseSwitch": {
+      "title": "Spreadsheet parallel-run Phase",
+      "subtitle": "Switch the inventory parallel-run Phase (A / B / C). spec v1.2 fixes Phase A.",
+      "currentLabel": "Current Phase",
+      "phaseADesc": "Spreadsheet parallel-run, stock truth on GS",
+      "phaseABanner": "Phase A parallel-run: products.stock_quantity is not updated. The source of truth for stock counts remains the spreadsheet (GS).",
+      "outOfScope": "Switching to Phase {{phase}} is out of scope (spec v1.2, planned for a separate ADR)",
+      "outOfScopeBadge": "separate ADR pending",
+      "outOfScopeTooltip": "Phase B / C switch is out of scope in spec v1.2. A separate ADR will decide timing once CRM operations stabilize.",
+      "currentTooltip": "This is the current Phase",
+      "switchTo": "Switch to Phase {{phase}}",
+      "switchSuccess": "Switched to Phase {{phase}}",
+      "tenantIdMissing": "Failed to resolve tenant ID. Please log in again.",
+      "helpPhaseA": "Phase A: CRM only receives/parses/records. Spreadsheet remains the source of truth for stock counts.",
+      "helpPhaseBC": "Phase B / C: A separate ADR will decide timing. To be drafted once CRM operations stabilize."
+    },
+    "parseReview": {
+      "phaseAWarning": {
+        "always": "Phase A: spreadsheet parallel-run — stock truth is on GS (CRM products.stock_quantity is display-only)",
+        "afterApprove": "Approved, but products.stock_quantity was not updated due to Phase A parallel-run ({{count}} movements recorded). Please reflect changes to the spreadsheet manually."
+      }
     }
   },
   "inventoryVisibility": {

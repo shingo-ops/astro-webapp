@@ -91,7 +91,10 @@
     "signOutTitle": "サインアウト",
     "signOutMessage": "サインアウトしますか？未保存のデータは失われます。",
     "superAdminMasters": "マスタ管理（中央）",
-    "inventoryVisibility": "在庫表示権限"
+    "superAdminInbound": "Discord 受信一覧",
+    "inventoryVisibility": "在庫表示権限",
+    "tenantProfile": "発行者情報",
+    "superAdminPhaseSwitch": "スプレッドシート Phase"
   },
   "login": {
     "email": "メールアドレス",
@@ -331,7 +334,9 @@
     "noLead": "リードが見つかりません。",
     "lead": "リード",
     "unread": "未読",
-    "tabAll": "すべて",
+    "tabAll": "すべてのメッセージ",
+    "tabMessenger": "Messenger",
+    "tabInstagram": "Instagram",
     "tabLeads": "リード",
     "tabConverted": "コンバート済み",
     "tabCustomers": "顧客",
@@ -346,7 +351,6 @@
     "markAllRead": "全て既読にする",
     "filterUnread": "未読",
     "filterFollowUp": "フォローアップ",
-    "filterArchive": "アーカイブ",
     "subtitle": "メッセージの管理と返信ができます。"
   },
   "channels": {
@@ -400,6 +404,34 @@
     "stage_won": "成約",
     "stage_lost": "失注",
     "stage_on_hold": "保留"
+  },
+  "inventory": {
+    "search": {
+      "placeholder": "商品名・カード番号・JAN・型番・仕入元 alias で検索",
+      "opGroupLabel": "複数キーワードの結合方法",
+      "opAnd": "AND（全部一致）",
+      "opOr": "OR（いずれか一致）",
+      "candidatesLabel": "検索候補",
+      "noResults": "該当する商品がありません",
+      "stockLabel": "在庫",
+      "stockMaskedNote": "在庫数の閲覧権限がありません（***表示）",
+      "zeroStockWarning": "「{{name}}」は在庫が 0 です。仕入元と在庫を確認してください。",
+      "matchedVia": {
+        "products_name_exact": "商品名一致",
+        "products_name_en_exact": "英名一致",
+        "products_card_number_exact": "カード番号完全一致",
+        "products_jan_code_exact": "JAN 完全一致",
+        "products_name": "商品名",
+        "products_name_en": "英名",
+        "products_card_number": "カード番号",
+        "products_jan_code": "JAN コード",
+        "products_expansion_code": "拡張型番",
+        "pokemon_dex": "ポケモン図鑑",
+        "trainer_dex": "トレーナー図鑑",
+        "tcg_series": "TCG シリーズ",
+        "supplier_alias": "仕入元 alias"
+      }
+    }
   },
   "quotes": {
     "title": "見積管理",
@@ -495,16 +527,39 @@
     "poNumber": "発注番号",
     "noPos": "発注が登録されていません",
     "deletePO": "発注を削除",
+    "allStatuses": "全ステータス",
     "status_draft": "下書き",
     "status_pending": "未処理",
     "status_ordered": "発注済",
     "status_received": "受領済",
     "status_cancelled": "キャンセル",
+    "status_error": "送信エラー",
     "orderedAt": "発注日",
     "receivedAt": "入荷日",
     "actionOrder": "発注",
     "actionReceive": "入荷",
-    "actionCancel": "取消"
+    "actionCancel": "取消",
+    "actionDownloadPdf": "PDF",
+    "actionSendEmail": "メール送信",
+    "actionResendEmail": "再送",
+    "emailSent": "メール送信しました",
+    "emailResent": "メールを再送しました",
+    "emailSendFailed": "メール送信に失敗しました"
+  },
+  "tenantProfile": {
+    "title": "発行者情報",
+    "subtitle": "発注書 PDF / メールの差出人欄に表示される会社情報を設定します",
+    "companyName": "会社名 (日本語)",
+    "companyNameEn": "会社名 (英語)",
+    "address": "住所",
+    "phone": "電話番号",
+    "email": "メールアドレス",
+    "website": "ウェブサイト",
+    "sealImageUrl": "印鑑画像 URL",
+    "sealHint": "印鑑画像の URL を入力すると PDF に表示されます (オプション)",
+    "defaultLanguage": "既定言語",
+    "saved": "発行者情報を保存しました",
+    "permissionRequired": "この画面の閲覧には tenant.profile.view 権限が必要です"
   },
   "staff": {
     "title": "スタッフ管理",
@@ -819,7 +874,8 @@
       "knowledge": "正規化ルール / 別名",
       "tcg": "TCG シリーズ",
       "dex": "ポケモン / トレーナー図鑑",
-      "suppliers": "仕入元"
+      "suppliers": "仕入元",
+      "llmBudget": "LLM 予算"
     },
     "knowledge": {
       "title": "正規化辞書 (knowledge_rules) + 仕入元別名 (supplier_aliases)",
@@ -903,6 +959,104 @@
       "addRouting": "Discord 紐付け追加",
       "guildId": "Guild ID",
       "channelId": "Channel ID"
+    },
+    "llmBudget": {
+      "title": "LLM 月次予算（Gemini 2.5 Flash）",
+      "subtitle": "テナント別の LLM フォールバック使用量と上限を管理します。",
+      "noRows": "予算行がまだ登録されていません。",
+      "savedNotice": "保存しました。",
+      "editTitle": "テナント {{tenant_id}} の予算を編集",
+      "fields": {
+        "tenantId": "テナント ID",
+        "tenantName": "テナント名",
+        "monthlyBudget": "月次予算 (USD)",
+        "currentMonth": "今月の使用量",
+        "utilization": "消化率",
+        "hardStop": "上限到達時に停止",
+        "notifyAdmin": "Admin に通知",
+        "lastResetAt": "前回リセット"
+      }
+    },
+    "inbound": {
+      "title": "Discord 受信メッセージ",
+      "subtitle": "仕入元からの Discord メッセージ受信ログ。解析結果と承認状況を確認できます。",
+      "noRows": "まだ受信メッセージはありません。",
+      "filters": {
+        "status": "解析ステータス",
+        "statusAny": "全て",
+        "search": "本文検索",
+        "searchPlaceholder": "本文に含まれる文字..."
+      },
+      "columns": {
+        "receivedAt": "受信時刻",
+        "supplier": "仕入元",
+        "parseStatus": "解析ステータス",
+        "preview": "本文プレビュー",
+        "engine": "解析エンジン",
+        "llmCost": "LLM コスト",
+        "actions": "操作",
+        "openReview": "レビュー"
+      },
+      "parseStatus": {
+        "pending": "未解析",
+        "parsing": "解析中",
+        "parsed": "解析済",
+        "parsed_rule_only": "解析済（ルール）",
+        "parsed_llm": "解析済（LLM）",
+        "unparsed": "解析失敗",
+        "budget_exhausted": "予算超過",
+        "ignored_routing": "ルーティング未登録",
+        "approved": "承認済",
+        "rejected": "差し戻し"
+      },
+      "review": {
+        "title": "解析結果レビュー",
+        "subtitle": "Discord 受信メッセージの解析結果を行単位で確認し、採用 / スキップ / 編集 / 差戻しを行います。",
+        "backToList": "一覧へ戻る",
+        "versionLabel": "バージョン",
+        "rawContent": "受信本文",
+        "noItems": "解析行がありません。",
+        "missingProduct": "商品未紐付け（スキップ必須）",
+        "operatorComment": "レビュー担当者メモ",
+        "approveBtn": "承認して在庫反映",
+        "rejectBtn": "差し戻し",
+        "rejectDialogTitle": "差し戻し理由を入力",
+        "rejectReasonLabel": "exclude_reason（必須）",
+        "rejectConfirmBtn": "差し戻しを確定",
+        "rejectReasonRequired": "差し戻し理由を入力してください",
+        "approveSuccess": "{{count}} 件を承認し、{{skipped}} 件をスキップしました。",
+        "rejectSuccess": "差し戻しました。",
+        "versionConflict": "他のレビュアーが先に更新しました。最新版を再読み込みしたので再操作してください。",
+        "col": {
+          "productId": "商品 ID",
+          "deltaQty": "差分数量",
+          "alias": "仕入元呼称",
+          "notes": "メモ",
+          "skip": "スキップ"
+        }
+      }
+    },
+    "phaseSwitch": {
+      "title": "スプレッドシート並走 Phase",
+      "subtitle": "本機能の Phase（A / B / C）切替を行います。spec v1.2 では Phase A 固定運用です。",
+      "currentLabel": "現在の Phase",
+      "phaseADesc": "スプレッドシート併走中、在庫の真値は GS",
+      "phaseABanner": "Phase A 並走中: products.stock_quantity は更新されません。在庫の真値はスプレッドシート (GS) 側で管理されます。",
+      "outOfScope": "Phase {{phase}} への切替は Out-of-scope です（spec v1.2、別 ADR で検討中）",
+      "outOfScopeBadge": "別 ADR で検討中",
+      "outOfScopeTooltip": "Phase B / C への切替は spec v1.2 では Out-of-scope。CRM 運用が軌道に乗ってから別 ADR で時期判断します",
+      "currentTooltip": "現在の Phase です",
+      "switchTo": "Phase {{phase}} に切替",
+      "switchSuccess": "Phase {{phase}} に切り替えました",
+      "tenantIdMissing": "テナント ID を取得できませんでした。再ログインしてください",
+      "helpPhaseA": "Phase A: CRM 側は受信・解析・記録のみ。在庫数の真値はスプレッドシート側。",
+      "helpPhaseBC": "Phase B / C: 別 ADR で時期判断中。CRM が軌道に乗ったタイミングで起案予定。"
+    },
+    "parseReview": {
+      "phaseAWarning": {
+        "always": "Phase A: スプレッドシート併走中、在庫数の真値は GS（CRM の products.stock_quantity は表示用のみ）",
+        "afterApprove": "承認しましたが、Phase A 並走中のため products.stock_quantity は更新されませんでした（{{count}} 件は inventory_movements に記録済）。スプレッドシート反映が必要です。"
+      }
     }
   },
   "inventoryVisibility": {

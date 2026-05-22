@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,6 +32,11 @@ from app.schemas.purchase_order import (
     POUpdate,
 )
 from app.services.audit import record_audit_log
+from app.services.po_mailer import send_po_email_sync
+from app.services.po_renderer import (
+    build_email_subject_and_body,
+    render_po_pdf_for,
+)
 
 router = APIRouter()
 
@@ -214,3 +219,193 @@ async def cancel_po(po_id: int, db: AsyncSession = Depends(get_db),
                            new_data={"status": "cancelled"})
     await db.commit()
     return POResponse(**dict(row))
+
+
+# ──────────────────────────────────────────────────────────────────
+# Sprint 8 / F8: PDF ダウンロード + メール送信 + 再送
+# ──────────────────────────────────────────────────────────────────
+
+async def _get_tenant_schema(db: AsyncSession, tenant_id: int) -> str:
+    """tenant_id から schema 名 (tenant_NNN) を取得。"""
+    row = (await db.execute(
+        text("SELECT id FROM public.tenants WHERE id = :id"),
+        {"id": tenant_id},
+    )).first()
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="tenant not found",
+        )
+    return f"tenant_{tenant_id:03d}"
+
+
+@router.get(
+    "/purchase-orders/{po_id}/pdf",
+    dependencies=[Depends(require_permission("purchase_orders.view"))],
+)
+async def download_po_pdf(
+    po_id: int,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),  # noqa: ARG001
+):
+    """PO PDF を生成して Response として返す (AC8.1)。
+
+    alias 置換 + 敬称分岐 + テナント名義差出人を含む。
+    """
+    tenant_schema = await _get_tenant_schema(db, tenant_id)
+    try:
+        pdf_bytes, data = await render_po_pdf_for(db, po_id, tenant_schema)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    filename = f"{data.po_number}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-PO-Number": data.po_number,
+        },
+    )
+
+
+@router.post(
+    "/purchase-orders/{po_id}/send-email",
+    response_model=POResponse,
+    dependencies=[Depends(require_permission("purchase_orders.update"))],
+)
+async def send_po_email(
+    po_id: int,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """PO メールを送信 (AC8.2 / AC8.5)。
+
+    失敗時は PO.status='error' に更新し、再送ボタンの対象とする。
+    成功時はステータス変更しない (発注済 (ordered) のまま、複数回送信 OK)。
+    """
+    tenant_schema = await _get_tenant_schema(db, tenant_id)
+    try:
+        pdf_bytes, data = await render_po_pdf_for(db, po_id, tenant_schema)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    to_addr = data.supplier.email
+    if not to_addr:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="送信先メールアドレスが supplier に未登録です",
+        )
+
+    subject, body = build_email_subject_and_body(data)
+    # SMTP テスト時のため override を環境変数 PO_MAILER_TEST_PORT で渡せるようにする
+    overrides = None
+    if test_port := __import__("os").environ.get("PO_MAILER_TEST_PORT"):
+        overrides = {
+            "smtp_host": "localhost",
+            "smtp_port": test_port,
+            "mail_from": "noreply@test.salesanchor.jp",
+            "use_tls": False,
+        }
+    result = send_po_email_sync(
+        to_addr=to_addr,
+        subject=subject,
+        body_text=body,
+        pdf_bytes=pdf_bytes,
+        pdf_filename=f"{data.po_number}.pdf",
+        smtp_overrides=overrides,
+    )
+
+    if result.success:
+        # 成功時 status は変更しない (ordered のまま、再送 OK)
+        # ただし error 状態だった場合は ordered に戻す
+        await db.execute(
+            text(
+                "UPDATE purchase_orders "
+                "SET status = CASE WHEN status = 'error' THEN 'ordered' ELSE status END, "
+                "    updated_at = NOW() "
+                "WHERE id = :id"
+            ),
+            {"id": po_id},
+        )
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=current_user.id,
+            action="send_email", table_name="purchase_orders", record_id=po_id,
+            new_data={"to": to_addr, "subject": subject},
+        )
+    elif result.skipped:
+        # SMTP 未設定 → 開発環境 / idle、status 変更なし
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=current_user.id,
+            action="send_email_skipped", table_name="purchase_orders", record_id=po_id,
+            new_data={"reason": "SMTP not configured"},
+        )
+    else:
+        # 送信失敗 (AC8.5): status='error'
+        await db.execute(
+            text("UPDATE purchase_orders SET status = 'error', updated_at = NOW() WHERE id = :id"),
+            {"id": po_id},
+        )
+        await record_audit_log(
+            db=db, tenant_id=tenant_id, user_id=current_user.id,
+            action="send_email_failed", table_name="purchase_orders", record_id=po_id,
+            new_data={"to": to_addr, "error": result.error},
+        )
+
+    await db.commit()
+
+    fetched = await db.execute(
+        text(f"SELECT {_PO_COLS} FROM purchase_orders WHERE id = :id"),
+        {"id": po_id},
+    )
+    row = fetched.mappings().first()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PO not found")
+
+    if not result.success and not result.skipped:
+        # 失敗時は 502 を返すが、レスポンス body には更新後の PO を含めて
+        # フロントで「error」 status の取り扱いができるようにする
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "message": "メール送信に失敗しました。再送ボタンから再試行してください。",
+                "error": result.error,
+                "po": {**dict(row), "total_amount": str(row["total_amount"]) if row["total_amount"] else None},
+            },
+        )
+    return POResponse(**dict(row))
+
+
+@router.post(
+    "/purchase-orders/{po_id}/resend-email",
+    response_model=POResponse,
+    dependencies=[Depends(require_permission("purchase_orders.update"))],
+)
+async def resend_po_email(
+    po_id: int,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """error 状態の PO を再送 (AC8.5)。
+
+    error → 送信試行 → 成功なら ordered、失敗なら error 継続。
+    送信ロジックは send_po_email と共通だが、status='error' のみが対象。
+    """
+    pre = (await db.execute(
+        text("SELECT status FROM purchase_orders WHERE id = :id"),
+        {"id": po_id},
+    )).first()
+    if not pre:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PO not found")
+    if pre[0] != "error":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="error 状態の注文のみ再送できます",
+        )
+    # send_po_email と同じ処理を再利用
+    return await send_po_email(
+        po_id=po_id, db=db, tenant_id=tenant_id, current_user=current_user,
+    )

@@ -105,6 +105,7 @@ export default function Layout() {
   const navLoading = permsLoading || uiPrefsLoading;
 
   const location = useLocation();
+  const isInbox = location.pathname === "/inbox";
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
@@ -149,11 +150,27 @@ export default function Layout() {
     ...(hasPermission("tenant.inventory_visibility.edit")
       ? [{ to: "/admin/inventory-visibility", label: t("nav.inventoryVisibility") }]
       : []),
+    // spec.md v1.1 F8 (Sprint 8): テナント admin 用「発行者情報」 (PO PDF / メール差出人)
+    ...(hasPermission("tenant.profile.edit") || hasPermission("tenant.profile.view")
+      ? [{ to: "/admin/tenant-profile", label: t("nav.tenantProfile") }]
+      : []),
     // spec.md v1.1 F2 (Sprint 2): 中央 admin 専用「マスタ管理」リンク
     // is_super_admin=true のユーザーにだけ表示。
     // バックエンド側でも require_super_admin で二重ガード（AC2.1）。
     ...(isSuperAdmin
       ? [{ to: "/super-admin/masters", label: t("nav.superAdminMasters") }]
+      : []),
+    // spec.md v1.1 F5 (Sprint 5): 中央 admin 専用「Discord 受信一覧」リンク
+    // is_super_admin=true のユーザーにだけ表示。
+    // バックエンド側でも require_super_admin で二重ガード（AC5.5 / AC6.8 と同パターン）。
+    ...(isSuperAdmin
+      ? [{ to: "/super-admin/inbound", label: t("nav.superAdminInbound") }]
+      : []),
+    // spec.md v1.2 F9 (Sprint 9): 中央 admin 専用「スプレッドシート Phase」リンク
+    // is_super_admin=true のユーザーにだけ表示。
+    // バックエンド側でも require_super_admin で二重ガード。
+    ...(isSuperAdmin
+      ? [{ to: "/super-admin/phase-switch", label: t("nav.superAdminPhaseSwitch") }]
       : []),
   ];
 
@@ -272,7 +289,7 @@ export default function Layout() {
                   label={t("nav.admin")}
                   icon={<ShieldCheck size={20} />}
                   items={adminItems}
-                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/super-admin/masters"]}
+                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/admin/tenant-profile", "/super-admin/masters", "/super-admin/inbound", "/super-admin/phase-switch"]}
                   isExpanded={sidebarExpanded}
                   isOpen={openAccordion === "admin"}
                   onToggle={() => toggleAccordion("admin")}
@@ -305,8 +322,8 @@ export default function Layout() {
 
       {/* ============ Main body ============ */}
       <div className="app-body">
-        {/* Top bar */}
-        <header className="app-topbar">
+        {/* Top bar — inbox ページでは非表示（Meta Business Suite 風の全幅レイアウト） */}
+        {!isInbox && <header className="app-topbar">
           <div className="topbar-user">
             <span className="topbar-email">{user?.email}</span>
             <button
@@ -331,7 +348,7 @@ export default function Layout() {
               <span>{t("nav.signOut")}</span>
             </button>
           </div>
-        </header>
+        </header>}
 
         {/* Content */}
         <main className="app-content">

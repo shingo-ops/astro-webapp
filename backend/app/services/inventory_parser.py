@@ -818,27 +818,239 @@ async def parse_inventory_message(
     raw_content: str,
     supplier_id: int,
     language: str = "ja",
+    *,
+    tenant_id: int | None = None,
 ) -> ParseResult:
     """DB から aliases / rules を読み込み、pure 関数を呼ぶ薄ラッパ。
 
+    Sprint 4 (F4) で hybrid 化:
+        - rule_v1 で unparsed があり、かつ tenant_id != None かつ budget が under なら
+          Gemini 2.5 Flash で再解析し、結果を items[] にマージする。
+        - 結果の `parse_engine`:
+            - "rule_v1": tenant_id 未指定 / unparsed なし / Gemini key 不在 / Gemini 失敗
+              → 純 rule_v1 結果 (parse_status は呼び出し側で parsed_rule_only)
+            - "hybrid_rule_v1_llm_v1": Gemini が成功して item が増えた
+            - "rule_v1_fallback_blocked": budget 超過で API 呼ばなかった (status=budget_exhausted)
+        - 呼出側はこの parse_engine を見て `parse_status` を更新する。
+          - hybrid_rule_v1_llm_v1 → parse_status='parsed_llm' or 'parsed'
+          - rule_v1_fallback_blocked → parse_status='budget_exhausted'
+          - rule_v1 (LLM 不在で degrade した場合) → parse_status='parsed_rule_only'
+
     使用例:
         from app.services.inventory_parser import parse_inventory_message
-        result = await parse_inventory_message(db, raw_content, supplier_id=3)
-        await db.execute(
-            text("UPDATE public.discord_inbound_messages SET "
-                 "parse_status='parsed', parse_result_json=:j, parse_engine=:e "
-                 "WHERE id=:id"),
-            {"j": json.dumps(result.to_dict()), "e": result.parse_engine, "id": msg_id},
+        result = await parse_inventory_message(
+            db, raw_content, supplier_id=3, tenant_id=6
         )
+        # result.parse_engine で status を判定し discord_inbound_messages に保存。
+
+    Args:
+        db: AsyncSession
+        raw_content: 仕入元 Discord メッセージの生テキスト
+        supplier_id: 仕入元 ID
+        language: 'ja' / 'en' (default 'ja')
+        tenant_id: budget 集計対象テナント。None なら LLM フォールバックを呼ばない
+            (rule_v1 のみ。Sprint 3 までの動作と完全互換)。
+
+    Returns:
+        ParseResult: parse_engine は上記いずれか。items[] に LLM 由来も含まれる。
     """
     aliases = await _load_aliases_for_supplier(db, supplier_id, language)
     rules = await _load_active_rules(db)
-    return parse_raw_content(
+    base = parse_raw_content(
         raw_content=raw_content,
         supplier_id=supplier_id,
         aliases=aliases,
         rules=rules,
         language=language,
+    )
+
+    # Sprint 3 互換: tenant_id 未指定 or unparsed なし → rule_v1 のみで終了
+    if tenant_id is None or not base.unparsed:
+        return base
+
+    # LLM フォールバック経路
+    return await _maybe_apply_llm_fallback(
+        db=db,
+        base_result=base,
+        tenant_id=tenant_id,
+        rules=rules,
+        language=language,
+    )
+
+
+async def _maybe_apply_llm_fallback(
+    db: AsyncSession,
+    base_result: ParseResult,
+    tenant_id: int,
+    rules: list[RuleRow],
+    language: str,
+) -> ParseResult:
+    """rule_v1 結果に LLM 由来 items をマージする。
+
+    分岐:
+        1. budget 月初リセット (reset_monthly_if_needed)
+        2. budget チェック:
+            - HARD_STOP / NO_BUDGET_ROW → parse_engine='rule_v1_fallback_blocked',
+              admin に 1 回通知 (HARD_STOP のみ、NO_BUDGET_ROW は通知 skip)
+            - UNDER / OVER_SOFT → Gemini 呼ぶ
+        3. Gemini 呼び出し:
+            - 成功 → items にマージ、record_cost で usage を加算、
+              parse_engine='hybrid_rule_v1_llm_v1'
+            - LLMConfigError (key 欠落) → rule_v1 のまま、parse_engine='rule_v1' 維持
+              (呼出側で parsed_rule_only に降格)
+            - LLMParseError (API 失敗) → 同上、log のみ
+    """
+    # 局所 import (循環防止 + DB 初期化前に google.generativeai を import しない)
+    from app.services import discord_notifier, llm_budget
+    from app.services.inventory_parser_llm import (
+        LLMConfigError,
+        LLMParseError,
+        LLMParsedItem,
+        parse_with_gemini,
+    )
+
+    # Step 1: 月初リセット
+    try:
+        await llm_budget.reset_monthly_if_needed(db, tenant_id)
+    except Exception as exc:  # noqa: BLE001 - budget エラーで解析を止めない
+        logger.warning("[inventory_parser] budget reset failed: %s", exc)
+
+    # Step 2: budget チェック
+    status = await llm_budget.check_budget(db, tenant_id)
+    if status in (
+        llm_budget.BudgetStatus.HARD_STOP,
+        llm_budget.BudgetStatus.NO_BUDGET_ROW,
+    ):
+        # 呼出側が parse_status='budget_exhausted' で記録する
+        blocked = ParseResult(
+            items=base_result.items,
+            excludes=base_result.excludes,
+            unparsed=base_result.unparsed,
+            parse_engine="rule_v1_fallback_blocked",
+        )
+        if status == llm_budget.BudgetStatus.HARD_STOP:
+            snap = await llm_budget.get_budget_snapshot(db, tenant_id)
+            if snap is not None and snap.notify_admin:
+                try:
+                    await discord_notifier.notify_budget_exhausted(
+                        db,
+                        tenant_id,
+                        monthly_budget_usd=snap.monthly_budget_usd,
+                        current_month_usd=snap.current_month_usd,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning(
+                        "[inventory_parser] discord notify failed: %s", exc
+                    )
+        return blocked
+
+    # Step 3: Gemini 呼び出し
+    unparsed_lines = [
+        {"line_no": u.line_no, "raw_line": u.raw_line, "reason": u.reason}
+        for u in base_result.unparsed
+    ]
+    knowledge_snapshot = [
+        {
+            "pattern": r.pattern,
+            "normalized_to": r.normalized_to or "",
+            "category": r.category,
+        }
+        for r in rules
+    ]
+
+    try:
+        llm_result = await parse_with_gemini(
+            unparsed_lines=unparsed_lines,
+            knowledge_snapshot=knowledge_snapshot,
+            language=language,
+        )
+    except LLMConfigError as exc:
+        # API key 未設定: AC4.5 = graceful degrade (rule_v1 のみで終了)
+        logger.info(
+            "[inventory_parser] LLM disabled (config): %s, falling back to rule_v1",
+            exc,
+        )
+        return base_result
+    except LLMParseError as exc:
+        logger.warning(
+            "[inventory_parser] LLM call failed: %s, falling back to rule_v1", exc
+        )
+        return base_result
+
+    # Step 4: コスト記録 (Gemini が tokens を返したら必ず記録)
+    try:
+        await llm_budget.record_cost(
+            db,
+            tenant_id,
+            input_tokens=llm_result.input_tokens,
+            output_tokens=llm_result.output_tokens,
+            model=llm_result.model,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[inventory_parser] record_cost failed: %s", exc)
+
+    # Step 5: LLM 由来 items を rule_v1 items にマージ
+    merged_items = list(base_result.items)
+    llm_line_nos: set[int] = set()
+    for item in llm_result.items:
+        merged_items.append(_to_parsed_item_from_llm(item))
+        llm_line_nos.add(item.line_no)
+
+    # LLM が解けた line_no を unparsed から除外
+    remaining_unparsed = [u for u in base_result.unparsed if u.line_no not in llm_line_nos]
+
+    merged_items.sort(key=lambda x: x.line_no)
+    remaining_unparsed.sort(key=lambda x: x.line_no)
+
+    return ParseResult(
+        items=merged_items,
+        excludes=base_result.excludes,
+        unparsed=remaining_unparsed,
+        parse_engine="hybrid_rule_v1_llm_v1",
+    )
+
+
+def _to_parsed_item_from_llm(llm_item: Any) -> ParsedItem:
+    """LLMParsedItem を ParsedItem に変換。
+
+    rule_v1 と同じ列構造を維持。product_id は LLM 側では解決しないので None。
+    product_name に LLM 出力 name を入れる (alias_text 列は alias 由来時のみ使用)。
+    unit_price は ParsedItem 仕様に従い str (Decimal を JSON 安全に保持)。
+    confidence は notes に「llm_v1 confidence=0.X」として記録する (column 追加なし)。
+    """
+    # quantity は ParsedItem 仕様で int (rule_v1 ベースでは int で扱われている)
+    qty_value: int | None = None
+    if llm_item.quantity is not None:
+        try:
+            qty_value = int(llm_item.quantity)
+        except (TypeError, ValueError):
+            qty_value = None
+
+    # unit_price は str で保存 (ParsedItem.unit_price: str | None)
+    price_str: str | None = None
+    if llm_item.unit_price is not None:
+        try:
+            price_str = str(Decimal(str(llm_item.unit_price)))
+        except InvalidOperation:
+            price_str = None
+
+    notes_parts: list[str] = ["source=llm_v1"]
+    if llm_item.confidence is not None:
+        notes_parts.append(f"confidence={llm_item.confidence:.2f}")
+    notes_value = "; ".join(notes_parts)
+
+    return ParsedItem(
+        raw_line=llm_item.raw_line,
+        line_no=llm_item.line_no,
+        product_id=None,
+        alias_text=None,
+        product_name=llm_item.name or None,
+        quantity=qty_value,
+        unit=llm_item.unit,
+        unit_price=price_str,
+        condition=llm_item.condition,
+        raw_condition=None,
+        notes=notes_value,
     )
 
 

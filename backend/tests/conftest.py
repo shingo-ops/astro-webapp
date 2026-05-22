@@ -826,6 +826,22 @@ async def setup_test_db(test_engine):
                 sort_order INTEGER DEFAULT 0
             )
         """))
+        # Sprint 8 / F8: テナント発行者情報 (PO PDF / メール差出人)
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS tenant_profile (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_name VARCHAR(255),
+                company_name_en VARCHAR(255),
+                address TEXT,
+                phone VARCHAR(50),
+                email VARCHAR(255),
+                website VARCHAR(255),
+                seal_image_url TEXT,
+                default_language CHAR(2) NOT NULL DEFAULT 'ja',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
         # === Phase 4 テーブル ===
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS notification_channels (
@@ -934,6 +950,8 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM purchase_order_items"))
         await conn.execute(text("DELETE FROM purchase_orders"))
         await conn.execute(text("DELETE FROM suppliers"))
+        # Sprint 8: tenant_profile
+        await conn.execute(text("DELETE FROM tenant_profile"))
         await conn.execute(text("DELETE FROM order_commissions"))
         await conn.execute(text("DELETE FROM tenant_commission_settings"))
         await conn.execute(text("DELETE FROM order_shipping_details"))
@@ -1034,6 +1052,8 @@ ALL_TEST_PERMISSIONS = {
     # Phase 1 再設計: staff / bots
     "staff.view", "staff.create", "staff.update", "staff.delete",
     "bots.view", "bots.create", "bots.update", "bots.delete",
+    # Sprint 8 / F8: テナント発行者情報 (PO PDF / メール差出人)
+    "tenant.profile.view", "tenant.profile.edit",
 }
 
 
@@ -1107,6 +1127,8 @@ async def client(db_session):
         "app.routers.companies", "app.routers.contacts",
         # Phase 1-B-1 wiring (B-1): /staff/me 追加に伴うスタッフ系テスト
         "app.routers.staff",
+        # Sprint 8 / F8: テナント発行者情報
+        "app.routers.tenant_profile",
     ]
     with ExitStack() as stack:
         for target in _audit_targets:

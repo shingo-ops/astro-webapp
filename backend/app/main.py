@@ -39,6 +39,7 @@ from app.routers import quotes
 from app.routers import invoices
 from app.routers import suppliers
 from app.routers import purchase_orders
+from app.routers import tenant_profile  # Sprint 8 / F8: PO PDF / メール差出人情報
 from app.routers import duplicates
 from app.routers import analytics
 from app.routers import notifications
@@ -57,7 +58,17 @@ from app.routers import super_admin_aliases
 from app.routers import super_admin_tcg
 from app.routers import super_admin_dex
 from app.routers import super_admin_suppliers
+# spec.md v1.1 F4 (Sprint 4): LLM 予算管理 admin UI
+from app.routers import super_admin_llm_budget
+# spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧 admin UI
+from app.routers import super_admin_inbound
+# spec.md v1.1 F6 (Sprint 6): 解析結果レビュー UI + 在庫差分反映
+from app.routers import parse_review
 from app.routers import tenant_admin_inventory_visibility
+# spec.md v1.1 F7 (Sprint 7): 在庫検索 API (全 7 種横断 + AND/OR + visibility マスク)
+from app.routers import inventory_search
+# spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
+from app.routers import super_admin_phase_switch
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -250,6 +261,11 @@ app.include_router(
     purchase_orders.router, prefix="/api/v1", tags=["purchase_orders"],
     dependencies=[Depends(get_current_tenant)],
 )
+# Sprint 8 / F8: テナント発行者情報 (PO PDF / メール差出人) admin CRUD
+app.include_router(
+    tenant_profile.router, prefix="/api/v1", tags=["tenant_profile"],
+    dependencies=[Depends(get_current_tenant)],
+)
 app.include_router(
     duplicates.router, prefix="/api/v1", tags=["duplicates"],
     dependencies=[Depends(get_current_tenant)],
@@ -325,11 +341,37 @@ app.include_router(
 app.include_router(
     super_admin_suppliers.router, prefix="/api/v1", tags=["super-admin"],
 )
+# Sprint 4 (F4): LLM 予算管理 (public.tenant_llm_budgets) 中央 admin
+app.include_router(
+    super_admin_llm_budget.router, prefix="/api/v1", tags=["super-admin"],
+)
+# Sprint 5 (F5): Discord Inbound 受信メッセージ一覧 (public.discord_inbound_messages) 中央 admin
+app.include_router(
+    super_admin_inbound.router, prefix="/api/v1", tags=["super-admin"],
+)
+# Sprint 6 (F6): 解析結果レビュー UI + 在庫差分反映 (public.inventory_movements + products) 中央 admin
+app.include_router(
+    parse_review.router, prefix="/api/v1", tags=["super-admin"],
+)
 # テナント admin 用 inventory visibility は get_current_tenant 必須
 app.include_router(
     tenant_admin_inventory_visibility.router, prefix="/api/v1",
     tags=["tenant-admin-inventory-visibility"],
     dependencies=[Depends(get_current_tenant)],
+)
+
+# spec.md v1.1 F7 (Sprint 7): 在庫検索 API (営業向け、QuoteCreatePage 等から呼び出し)
+# tenant search_path 設定 + token 認証必須 (load_user_permissions で権限判定)
+app.include_router(
+    inventory_search.router, prefix="/api/v1",
+    tags=["inventory-search"],
+    dependencies=[Depends(get_current_tenant)],
+)
+
+# spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin API
+# require_super_admin で保護 (router レベル + 各エンドポイントで重ねガード)
+app.include_router(
+    super_admin_phase_switch.router, prefix="/api/v1", tags=["super-admin"],
 )
 
 

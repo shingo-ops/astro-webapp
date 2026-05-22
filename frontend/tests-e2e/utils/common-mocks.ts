@@ -34,6 +34,11 @@ export const ALL_PERMISSIONS = [
   "badges.view",
   "messages.send",
   "messages.read",
+  // Sprint 8 / F8: PO PDF / メール / テナント発行者情報
+  "purchase_orders.update",
+  "purchase_orders.receive",
+  "tenant.profile.view",
+  "tenant.profile.edit",
 ];
 
 export function commonMocks(): MockMap {
