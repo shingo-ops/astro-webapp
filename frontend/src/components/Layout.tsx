@@ -353,7 +353,7 @@ export default function Layout() {
             onClick={() => setDrawerOpen(false)}
             aria-label="Close"
           >
-            ✕
+            <NAV_ICONS.close size={16} aria-hidden="true" />
           </button>
         </div>
         <div className="user-drawer-body">
