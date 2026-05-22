@@ -78,7 +78,7 @@ export default function DexTab() {
     <div className="super-admin-dex-tab">
       <h3>{t("superAdmin.dex.title")}</h3>
       {error && <div className="error-message">{error}</div>}
-      <div style={{ display: "flex", gap: "0.5rem", margin: "0.5rem 0" }}>
+      <div style={{ display: "flex", gap: "var(--space-2)", margin: "0.5rem 0" }}>
         <label>
           <select value={kind} onChange={(e) => setKind(e.target.value as DexKind)}>
             <option value="pokemon">{t("superAdmin.dex.kinds.pokemon")}</option>
@@ -99,11 +99,11 @@ export default function DexTab() {
       </div>
 
       {editing && (
-        <form onSubmit={saveEdit} className="modal-inline" style={{ border: "1px solid var(--border-color)", padding: "0.5rem", margin: "0.5rem 0" }}>
+        <form onSubmit={saveEdit} className="modal-inline" style={{ border: "1px solid var(--border-color)", padding: "var(--space-2)", margin: "0.5rem 0" }}>
           <strong>
             #{editing.dex_number} {editing.name_ja}
           </strong>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem", marginTop: "0.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
             <input
               placeholder={t("superAdmin.dex.fields.nameJa")}
               value={editValues.name_ja || ""}
@@ -128,7 +128,7 @@ export default function DexTab() {
               />
             )}
           </div>
-          <div style={{ marginTop: "0.5rem" }}>
+          <div style={{ marginTop: "var(--space-2)" }}>
             <button type="submit" className="btn-primary">
               {t("common.save")}
             </button>{" "}

@@ -480,8 +480,8 @@ export default function OrdersPage() {
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: "0.5rem",
-          marginBottom: "1rem",
+          gap: "var(--space-2)",
+          marginBottom: "var(--space-4)",
         }}
       >
         <button
@@ -513,7 +513,7 @@ export default function OrdersPage() {
 
       <div
         className="filter-bar"
-        style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
+        style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}
       >
         <input
           type="search"

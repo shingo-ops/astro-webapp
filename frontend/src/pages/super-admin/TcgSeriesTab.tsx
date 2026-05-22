@@ -119,7 +119,7 @@ export default function TcgSeriesTab() {
 
       <form
         onSubmit={submit}
-        style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "0.5rem", margin: "0.5rem 0" }}
+        style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "var(--space-2)", margin: "0.5rem 0" }}
       >
         <select
           value={form.tcg_type}

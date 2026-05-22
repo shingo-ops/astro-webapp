@@ -61,7 +61,7 @@ export default function MastersPage() {
         className="super-admin-tabs"
         role="tablist"
         aria-label="super-admin master tabs"
-        style={{ display: "flex", gap: "0.5rem", margin: "1rem 0", borderBottom: "1px solid var(--border-light)" }}
+        style={{ display: "flex", gap: "var(--space-2)", margin: "1rem 0", borderBottom: "1px solid var(--border-light)" }}
       >
         {tabs.map((tt) => (
           <button
@@ -70,7 +70,7 @@ export default function MastersPage() {
             aria-selected={tab === tt.key}
             className={tab === tt.key ? "btn-primary" : "btn-secondary"}
             onClick={() => setTab(tt.key)}
-            style={{ padding: "0.5rem 1rem" }}
+            style={{ padding: "var(--space-2) var(--space-4)" }}
             data-testid={`super-admin-tab-${tt.key}`}
           >
             {tt.label}

@@ -15,7 +15,7 @@
 -- 設計:
 --   - public.discord_inbound_messages.version INTEGER NOT NULL DEFAULT 0
 --     既存行は DEFAULT 0 で埋まる。承認 / reject 時に UPDATE ... WHERE
---     version = :expected で楽観ロック (mismatch → 0 行更新 → 409)
+--     version = <expected> で楽観ロック (mismatch → 0 行更新 → 409)
 --   - 列名は `version` を選択（`updated_at` ベース楽観ロックは ms 解像度依存
 --     で flaky、`rev` / `etag` より直観的）
 --

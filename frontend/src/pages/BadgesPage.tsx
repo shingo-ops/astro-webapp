@@ -68,7 +68,7 @@ export default function BadgesPage() {
                 <tbody>
                   {leaderboard.map((e, i) => (
                     <tr key={e.user_id}>
-                      <td style={{ fontWeight: i < 3 ? 700 : 400 }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`}</td>
+                      <td style={{ fontWeight: i < 3 ? "var(--font-weight-bold)" : "var(--font-weight-normal)" }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`}</td>
                       <td>{e.username || `User #${e.user_id}`}</td>
                       <td>{e.badge_count}</td>
                       <td style={{ fontWeight: "var(--font-weight-semi)" }}>{e.total_points} pt</td>
@@ -81,7 +81,7 @@ export default function BadgesPage() {
           <h3 style={{ marginBottom: "var(--space-3)" }}>{t("badges.badgeList")}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "var(--space-4)" }}>
             {badges.map(b => (
-              <div key={b.id} style={{ background: "var(--bg-surface)", borderRadius: 8, padding: "var(--space-4)", boxShadow: "var(--shadow-sm)", textAlign: "center" }}>
+              <div key={b.id} style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", padding: "var(--space-4)", boxShadow: "var(--shadow-sm)", textAlign: "center" }}>
                 <div style={{ fontSize: "var(--font-3xl)" }}>{b.icon || "🏅"}</div>
                 <div style={{ fontWeight: "var(--font-weight-semi)", marginTop: "var(--space-2)" }}>{b.name}</div>
                 <div style={{ color: "var(--text-muted)", fontSize: "var(--font-sm)", marginTop: "var(--space-1)" }}>{b.description || "-"}</div>
