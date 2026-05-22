@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
+import { STATUS_ICONS } from "../constants/icons";
 
 interface Bot {
   id: number;
@@ -179,7 +180,7 @@ export default function BotsPage() {
 
       {newApiKey && (
         <div className="notice" style={{ padding: 16, background: "var(--warning-bg)", border: "1px solid var(--warning-text)", borderRadius: 4, margin: "16px 0" }}>
-          <strong>⚠️ APIキーが発行されました（この画面を閉じると再取得できません）:</strong>
+          <strong><STATUS_ICONS.warning size={14} aria-hidden="true" /> APIキーが発行されました（この画面を閉じると再取得できません）:</strong>
           <div className="mono" style={{ padding: 8, background: "var(--bg-surface)", marginTop: 8, wordBreak: "break-all" }}>{newApiKey}</div>
           <button className="btn-sm" onClick={() => setNewApiKey(null)} style={{ marginTop: 8 }}>確認した・非表示にする</button>
         </div>

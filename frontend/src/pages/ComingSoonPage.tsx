@@ -9,6 +9,7 @@
  */
 
 import { useTranslation } from "react-i18next";
+import { PAGE_ICONS } from "../constants/icons";
 
 interface Props {
   title: string;
@@ -20,7 +21,9 @@ export default function ComingSoonPage({ title, description }: Props) {
   return (
     <div className="page">
       <div className="coming-soon">
-        <div className="coming-soon-icon">🚧</div>
+        <div className="coming-soon-icon" aria-hidden="true">
+          <PAGE_ICONS.comingSoon size={64} />
+        </div>
         <h2>{title}</h2>
         <p className="coming-soon-label">{t("comingSoon.label")}</p>
         {description && <p className="coming-soon-desc">{description}</p>}

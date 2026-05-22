@@ -15,10 +15,6 @@ name: Migration SQL Test
 on:
   pull_request:
     branches: [main, develop]
-    paths:
-      - 'migrations/**'
-      - 'scripts/migrate_*.py'
-      - '.github/workflows/migration-test.yml'
 
 jobs:
   test-migrations:

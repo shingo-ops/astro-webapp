@@ -16,11 +16,7 @@
 
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard, Users, Package, FileText, BarChart2,
-  HelpCircle, Settings, MoreHorizontal, ChevronDown,
-  Search, LogOut, ShieldCheck,
-} from "lucide-react";
+import { NAV_ICONS, THEME_ICONS, GlobeIcon, LeadChatIcon } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useLocale } from "../contexts/LocaleContext";
@@ -68,7 +64,7 @@ function SidebarAccordion({
         <span className="sidebar-label">{label}</span>
         {isExpanded && (
           <span className={`sidebar-caret${isOpen ? " open" : ""}`}>
-            <ChevronDown size={14} />
+            <NAV_ICONS.chevronDown size={14} />
           </span>
         )}
       </button>
@@ -105,7 +101,7 @@ export default function Layout() {
   const navLoading = permsLoading || uiPrefsLoading;
 
   const location = useLocation();
-  const isInbox = location.pathname === "/inbox";
+  const isInbox = location.pathname === "/lead-chat";
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
@@ -208,7 +204,7 @@ export default function Layout() {
                   end
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><LayoutDashboard size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.dashboard size={20} /></span>
                   <span className="sidebar-label">{t("nav.dashboard")}</span>
                 </NavLink>
               )}
@@ -219,12 +215,7 @@ export default function Layout() {
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
                   <span className="sidebar-icon">
-                    {/* Tabler Icons: brand-wechat (MIT) */}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                      <path d="M16.5 10c3.038 0 5.5 2.015 5.5 4.5c0 1.397 -.72 2.644 -1.861 3.516l.356 1.984l-2.104 -1.028c-.405 .103 -.826 .028 -1.242 .028c-3.038 0 -5.5 -2.015 -5.5 -4.5s2.462 -4.5 5.5 -4.5z" />
-                      <path d="M11.5 6c-3.866 0 -7 2.686 -7 6c0 1.747 .87 3.316 2.253 4.4l-.403 2.6l2.761 -1.399c.684 .19 1.565 .399 2.389 .399c.329 0 .655 -.016 .976 -.047" />
-                    </svg>
+                    <LeadChatIcon size={20} />
                   </span>
                   <span className="sidebar-label">{t("nav.leadChat")}</span>
                 </NavLink>
@@ -241,7 +232,7 @@ export default function Layout() {
                     return `sidebar-item${onLeadsSection ? " active" : ""}`;
                   }}
                 >
-                  <span className="sidebar-icon"><Users size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.leads size={20} /></span>
                   <span className="sidebar-label">{t("nav.leads")}</span>
                 </NavLink>
               )}
@@ -251,7 +242,7 @@ export default function Layout() {
                   to="/inventory"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><Package size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.inventory size={20} /></span>
                   <span className="sidebar-label">{t("nav.inventory")}</span>
                 </NavLink>
               )}
@@ -259,7 +250,7 @@ export default function Layout() {
               {prefs.show_sales_menu && (
                 <SidebarAccordion
                   label={t("nav.quotesInvoices")}
-                  icon={<FileText size={20} />}
+                  icon={<NAV_ICONS.fileText size={20} />}
                   items={salesItems}
                   activePaths={["/quotes", "/invoices"]}
                   isExpanded={sidebarExpanded}
@@ -272,7 +263,7 @@ export default function Layout() {
                 to="/reports"
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
               >
-                <span className="sidebar-icon"><BarChart2 size={20} /></span>
+                <span className="sidebar-icon"><NAV_ICONS.report size={20} /></span>
                 <span className="sidebar-label">{t("nav.reports")}</span>
               </NavLink>
 
@@ -280,14 +271,14 @@ export default function Layout() {
                 to="/faq"
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
               >
-                <span className="sidebar-icon"><HelpCircle size={20} /></span>
+                <span className="sidebar-icon"><NAV_ICONS.help size={20} /></span>
                 <span className="sidebar-label">{t("nav.faq")}</span>
               </NavLink>
 
               {prefs.show_admin_menu && (
                 <SidebarAccordion
                   label={t("nav.admin")}
-                  icon={<ShieldCheck size={20} />}
+                  icon={<NAV_ICONS.admin size={20} />}
                   items={adminItems}
                   activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/admin/tenant-profile", "/super-admin/masters", "/super-admin/inbound", "/super-admin/phase-switch"]}
                   isExpanded={sidebarExpanded}
@@ -301,14 +292,14 @@ export default function Layout() {
                   to="/settings"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
                 >
-                  <span className="sidebar-icon"><Settings size={20} /></span>
+                  <span className="sidebar-icon"><NAV_ICONS.settings size={20} /></span>
                   <span className="sidebar-label">{t("nav.settings")}</span>
                 </NavLink>
               )}
 
               <SidebarAccordion
                 label={t("nav.more")}
-                icon={<MoreHorizontal size={20} />}
+                icon={<NAV_ICONS.more size={20} />}
                 items={moreItems}
                 activePaths={["/knowledge", "/prompts", "/templates"]}
                 isExpanded={sidebarExpanded}
@@ -331,27 +322,30 @@ export default function Layout() {
               title={theme === "light" ? "ダークモードに切り替え" : "ライトモードに切り替え"}
               style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1rem", color: "var(--text-secondary)" }}
             >
-              {theme === "light" ? "🌙" : "☀️"}
+              {theme === "light"
+                ? <THEME_ICONS.light size={16} aria-hidden="true" />
+                : <THEME_ICONS.dark size={16} aria-hidden="true" />}
             </button>
             <button
               onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
               title={t("language.switchTo")}
               style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-secondary)" }}
             >
-              🌐 {locale === "ja" ? t("language.en") : t("language.ja")}
+              <GlobeIcon size={14} aria-hidden="true" />
+              {" "}{locale === "ja" ? t("language.en") : t("language.ja")}
             </button>
             <button
               className="btn-signout"
               onClick={() => setShowLogoutConfirm(true)}
             >
-              <LogOut size={15} />
+              <NAV_ICONS.logout size={15} />
               <span>{t("nav.signOut")}</span>
             </button>
           </div>
         </header>}
 
         {/* Content */}
-        <main className="app-content">
+        <main className={`app-content${isInbox ? " app-content--inbox" : ""}`}>
           <Outlet />
         </main>
       </div>

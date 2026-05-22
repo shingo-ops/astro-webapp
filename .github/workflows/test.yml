@@ -5,18 +5,10 @@ on:
     branches:
       - main
       - develop
-    paths:
-      - 'backend/**'
-      - 'migrations/**'
-      - '.github/workflows/test.yml'
   push:
     branches:
       - develop
       - main
-    paths:
-      - 'backend/**'
-      - 'migrations/**'
-      - '.github/workflows/test.yml'
 
 jobs:
   pytest:

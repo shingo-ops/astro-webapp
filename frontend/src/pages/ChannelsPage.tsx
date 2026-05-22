@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
+import { STATUS_ICONS } from "../constants/icons";
 
 interface Channel {
   page_id: string;
@@ -235,8 +236,12 @@ export default function ChannelsPage() {
 
       {banner && (
         <div style={bannerStyle} role={banner.type === "error" ? "alert" : "status"}>
-          <span style={{ marginRight: 8 }}>
-            {banner.type === "success" ? "✓" : banner.type === "warning" ? "⚠" : "✕"}
+          <span style={{ marginRight: 8 }} aria-hidden="true">
+            {banner.type === "success"
+              ? <STATUS_ICONS.check size={14} />
+              : banner.type === "warning"
+              ? <STATUS_ICONS.warning size={14} />
+              : <STATUS_ICONS.error size={14} />}
           </span>
           {banner.text}
           <button
@@ -274,7 +279,7 @@ export default function ChannelsPage() {
           }}
         >
           <span style={{ flex: 1 }}>
-            <strong>⚠ </strong>
+            <strong><STATUS_ICONS.warning size={14} aria-hidden="true" />{" "}</strong>
             {t("channels.reauthRequired")}
           </span>
           {canManage && (
