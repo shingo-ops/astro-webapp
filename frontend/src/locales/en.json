@@ -94,7 +94,11 @@
     "superAdminInbound": "Discord Inbound",
     "inventoryVisibility": "Inventory Visibility",
     "tenantProfile": "Issuer Profile",
-    "superAdminPhaseSwitch": "Spreadsheet Phase"
+    "superAdminPhaseSwitch": "Spreadsheet Phase",
+    "account": "Account",
+    "openUserMenu": "Open user menu",
+    "switchToDark": "Dark mode",
+    "switchToLight": "Light mode"
   },
   "login": {
     "email": "Email address",

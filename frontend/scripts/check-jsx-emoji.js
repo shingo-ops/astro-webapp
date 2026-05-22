@@ -21,8 +21,16 @@ const SRC_DIR = join(__dirname, "../src");
 // スコープ外ファイル
 const EXCLUDE_FILES = new Set(["BadgesPage.tsx"]);
 
-// 絵文字 + 記号（✓ U+2713, ⚠ U+26A0, 等を含む主要範囲）
-const EMOJI_PATTERN = /[\u2300-\u27BF\u{1F000}-\u{1FFFF}]/u;
+// 絵文字・アイコン代替記号（テキスト文字は対象外）
+// U+2022: bullet •（ローディング dots 等に使われる）
+// U+2300-U+27BF: Misc Technical / Misc Symbols / Dingbats
+//   - U+2713 ✓, U+26A0 ⚠, U+25CF ●, U+25BE ▾ 等
+// U+1F000-U+1FFFF: 絵文字ブロック
+//
+// 対象外（正当なテキスト文字）:
+//   U+2014 — (em dash/N/A), U+2192 → (矢印テキスト),
+//   U+20AC € (通貨記号), U+203B ※ (日本語参照符号)
+const EMOJI_PATTERN = /[\u2022\u2300-\u27BF\u{1F000}-\u{1FFFF}]/u;
 
 function collectTsxFiles(dir) {
   const results = [];
@@ -47,10 +55,11 @@ for (const file of files) {
   const lines = readFileSync(file, "utf8").split("\n");
   lines.forEach((line, i) => {
     const trimmed = line.trim();
-    // コメント行・import 行はスキップ
+    // コメント行・import 行はスキップ（JSXコメント {/* ... */} も含む）
     if (
       trimmed.startsWith("//") ||
       trimmed.startsWith("/*") ||
+      trimmed.startsWith("{/*") ||
       trimmed.startsWith("*") ||
       trimmed.startsWith("import ")
     )

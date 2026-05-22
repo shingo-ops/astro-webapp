@@ -94,7 +94,11 @@
     "superAdminInbound": "Discord 受信一覧",
     "inventoryVisibility": "在庫表示権限",
     "tenantProfile": "発行者情報",
-    "superAdminPhaseSwitch": "スプレッドシート Phase"
+    "superAdminPhaseSwitch": "スプレッドシート Phase",
+    "account": "アカウント",
+    "openUserMenu": "ユーザーメニューを開く",
+    "switchToDark": "ダークモード",
+    "switchToLight": "ライトモード"
   },
   "login": {
     "email": "メールアドレス",
