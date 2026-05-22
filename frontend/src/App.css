@@ -193,7 +193,7 @@
 }
 
 .sidebar-loading-dot {
-  padding: var(--space-4) 2var(--space-1);
+  padding: var(--space-4) var(--space-2);
   color: var(--text-muted);
   font-size: var(--font-sm);
   letter-spacing: 4px;
@@ -219,7 +219,7 @@
   align-items: center;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
-  padding: 0 2var(--space-1);
+  padding: 0 var(--space-2);
   height: var(--topbar-height);
   gap: var(--space-4);
   flex-shrink: 0;
@@ -472,7 +472,7 @@
   align-items: center;
   background: var(--nav-brand-bg);
   color: var(--nav-brand-text);
-  padding: 0 2var(--space-1);
+  padding: 0 var(--space-2);
   height: var(--topbar-height);
   gap: var(--space-6);
   border-bottom: 3px solid var(--nav-brand-accent);
@@ -549,7 +549,7 @@
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-xs);
-  padding: 0 2var(--space-1);
+  padding: 0 var(--space-2);
   gap: var(--space-4);
   min-height: var(--space-12);
   position: relative;
@@ -722,7 +722,7 @@
   margin: 80px auto;
   text-align: center;
   background: var(--bg-surface);
-  padding: 4var(--space-2) var(--space-8);
+  padding: var(--space-8) var(--space-8);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
@@ -770,7 +770,7 @@
   align-items: center;
   background: var(--nav-brand-bg);
   color: var(--nav-brand-text);
-  padding: 0 2var(--space-1);
+  padding: 0 var(--space-2);
   height: var(--topbar-height);
   border-bottom: 3px solid var(--nav-brand-accent);
   box-shadow: var(--shadow-sm);
@@ -938,7 +938,7 @@
 
 /* --- Page --- */
 .page {
-  padding: 2var(--space-1) var(--space-8);
+  padding: var(--space-2) var(--space-8);
   max-width: var(--max-width-page);
 }
 
@@ -1058,7 +1058,7 @@
 .login-subtitle {
   text-align: center;
   color: var(--text-muted);
-  margin: 0 0 2var(--space-1);
+  margin: 0 0 var(--space-2);
 }
 
 /* Meta 風ログインフォーム — 入力欄（.login-card スコープ限定） */
@@ -1792,7 +1792,7 @@
    ============================================================ */
 
 .page-container {
-  padding: 2var(--space-1) var(--space-8);
+  padding: var(--space-2) var(--space-8);
   max-width: var(--max-width-page);
 }
 
@@ -1830,7 +1830,7 @@
   display: flex;
   gap: var(--space-1);
   border-bottom: 2px solid var(--border);
-  margin: var(--space-4) 0 2var(--space-1);
+  margin: var(--space-4) 0 var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -1867,7 +1867,7 @@
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-  gap: var(--space-4) 2var(--space-1);
+  gap: var(--space-4) var(--space-2);
   background: var(--bg-surface);
   padding: var(--space-6);
   border-radius: var(--radius-lg);
