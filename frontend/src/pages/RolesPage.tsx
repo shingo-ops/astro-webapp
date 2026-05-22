@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useMemo, useState, FormEvent } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";

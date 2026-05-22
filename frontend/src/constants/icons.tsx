@@ -12,6 +12,9 @@
 
 import "./platform-icon.css";
 import type { LucideIcon } from "lucide-react";
+
+// LucideIcon 型を再エクスポート（他ファイルが lucide-react を直接 import しなくて済む）
+export type { LucideIcon };
 import {
   Moon, Sun, Globe,
   Check, AlertTriangle, X,
