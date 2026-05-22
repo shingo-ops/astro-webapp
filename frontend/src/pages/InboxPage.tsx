@@ -59,18 +59,8 @@ const PLATFORM_TABS = [
 // リードステータス分類定数
 // ---------------------------------------------------------------------------
 
-// タブ別ステータス定義
-// leads    → 営業進行中リード
-// converted → 案件化（商談開始）
-// customers → 既存顧客（成約済み）
-const LEADS_STATUSES = ["新規", "コンタクト中", "AI対応中", "提案中", "保留", "失注"];
-const CONVERTED_STATUSES = ["案件化"];
-const CUSTOMERS_STATUSES = ["既存顧客"];
-
 // フォローアップフィルターから除外するステータス（返信しても意味がない相手）
 const FOLLOWUP_EXCLUDED = new Set(["失注", "対象外"]);
-
-type LeadStatusFilter = "all" | "leads" | "converted" | "customers";
 
 // ---------------------------------------------------------------------------
 // LeadDetail 型（GET /leads/{id} のレスポンス）
@@ -961,7 +951,6 @@ export default function InboxPage() {
   const [convError, setConvError] = useState("");
 
   // フィルタ
-  const [leadStatusFilter] = useState<LeadStatusFilter>("all");
   const [platformTab, setPlatformTab] = useState<string>("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [followUpOnly, setFollowUpOnly] = useState(false);
@@ -1157,19 +1146,7 @@ export default function InboxPage() {
     return conversations
       .filter((c) => {
         // 対象外を常に非表示（LeadsPage のアーカイブタブで確認）
-        if (c.lead_status === "対象外") return false;
-        // leadStatusFilter（内部分類）
-        if (leadStatusFilter === "all") return true;
-        if (leadStatusFilter === "leads") {
-          return c.lead_status != null && LEADS_STATUSES.includes(c.lead_status);
-        }
-        if (leadStatusFilter === "converted") {
-          return c.lead_status != null && CONVERTED_STATUSES.includes(c.lead_status);
-        }
-        if (leadStatusFilter === "customers") {
-          return c.lead_status != null && CUSTOMERS_STATUSES.includes(c.lead_status);
-        }
-        return true;
+        return c.lead_status !== "対象外";
       })
       .filter((c) => {
         if (!unreadOnly) return true;
@@ -1189,7 +1166,7 @@ export default function InboxPage() {
           (c.last_message_text ?? "").toLowerCase().includes(q)
         );
       });
-  }, [conversations, leadStatusFilter, unreadOnly, followUpOnly, searchQuery]);
+  }, [conversations, unreadOnly, followUpOnly, searchQuery]);
 
   // ---------------------------------------------------------------------------
   // 送信
