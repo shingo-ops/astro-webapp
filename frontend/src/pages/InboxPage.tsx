@@ -758,6 +758,7 @@ html.force-dark .inbox-wrapper {
   margin: 8px 12px;
   padding: 12px;
   box-sizing: border-box;
+  width: calc(100% - 24px); /* 左右 margin 12px × 2 分を引く */
 }
 .right-panel-row {
   display: flex;

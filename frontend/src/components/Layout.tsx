@@ -105,7 +105,7 @@ export default function Layout() {
   const navLoading = permsLoading || uiPrefsLoading;
 
   const location = useLocation();
-  const isInbox = location.pathname === "/inbox";
+  const isInbox = location.pathname === "/lead-chat";
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
@@ -351,7 +351,7 @@ export default function Layout() {
         </header>}
 
         {/* Content */}
-        <main className="app-content">
+        <main className={`app-content${isInbox ? " app-content--inbox" : ""}`}>
           <Outlet />
         </main>
       </div>

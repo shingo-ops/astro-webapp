@@ -304,6 +304,11 @@
   background: var(--bg-primary);
 }
 
+/* Inbox ページ（/lead-chat）では内部パネルが自前で overflow を管理するため親の scroll を無効化 */
+.app-content--inbox {
+  overflow: hidden;
+}
+
 /* --- Legacy top-nav layout (保持・互換性) --- */
 .layout-top {
   display: flex;
