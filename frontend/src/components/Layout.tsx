@@ -103,6 +103,7 @@ export default function Layout() {
   const location = useLocation();
   const isInbox = location.pathname === "/lead-chat";
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
@@ -313,41 +314,77 @@ export default function Layout() {
 
       {/* ============ Main body ============ */}
       <div className="app-body">
-        {/* Top bar — inbox ページでは非表示（Meta Business Suite 風の全幅レイアウト） */}
-        {!isInbox && <header className="app-topbar">
-          <div className="topbar-user">
-            <span className="topbar-email">{user?.email}</span>
-            <button
-              onClick={() => changeTheme(theme === "light" ? "dark" : "light")}
-              title={theme === "light" ? "ダークモードに切り替え" : "ライトモードに切り替え"}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1rem", color: "var(--text-secondary)" }}
-            >
-              {theme === "light"
-                ? <THEME_ICONS.light size={16} aria-hidden="true" />
-                : <THEME_ICONS.dark size={16} aria-hidden="true" />}
-            </button>
-            <button
-              onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
-              title={t("language.switchTo")}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "0.85rem", color: "var(--text-secondary)" }}
-            >
-              <GlobeIcon size={14} aria-hidden="true" />
-              {" "}{locale === "ja" ? t("language.en") : t("language.ja")}
-            </button>
-            <button
-              className="btn-signout"
-              onClick={() => setShowLogoutConfirm(true)}
-            >
-              <NAV_ICONS.logout size={15} />
-              <span>{t("nav.signOut")}</span>
-            </button>
-          </div>
-        </header>}
-
         {/* Content */}
         <main className={`app-content${isInbox ? " app-content--inbox" : ""}`}>
           <Outlet />
         </main>
+      </div>
+
+      {/* ============ Fixed avatar button (Chrome / Meta style) ============ */}
+      <button
+        className="avatar-btn"
+        onClick={() => setDrawerOpen(true)}
+        aria-label={t("nav.openUserMenu")}
+        title={user?.email ?? ""}
+      >
+        {user?.email ? user.email[0].toUpperCase() : <NAV_ICONS.logout size={18} />}
+      </button>
+
+      {/* ============ User drawer backdrop ============ */}
+      {drawerOpen && (
+        <div
+          className="user-drawer-backdrop"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ============ User drawer panel ============ */}
+      <div
+        className={`user-drawer${drawerOpen ? " user-drawer--open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("nav.account")}
+      >
+        <div className="user-drawer-header">
+          <span className="user-drawer-title">{t("nav.account")}</span>
+          <button
+            className="user-drawer-close"
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="user-drawer-body">
+          <div className="user-drawer-email">{user?.email}</div>
+
+          <button
+            className="user-drawer-action"
+            onClick={() => changeTheme(theme === "light" ? "dark" : "light")}
+          >
+            {theme === "light"
+              ? <THEME_ICONS.light size={16} aria-hidden="true" />
+              : <THEME_ICONS.dark size={16} aria-hidden="true" />}
+            <span>{theme === "light" ? t("nav.switchToDark") : t("nav.switchToLight")}</span>
+          </button>
+
+          <button
+            className="user-drawer-action"
+            onClick={() => changeLanguage(locale === "ja" ? "en" : "ja")}
+          >
+            <GlobeIcon size={16} aria-hidden="true" />
+            <span>{locale === "ja" ? t("language.en") : t("language.ja")}</span>
+          </button>
+
+          <button
+            className="user-drawer-action user-drawer-action--danger"
+            onClick={() => { setDrawerOpen(false); setShowLogoutConfirm(true); }}
+          >
+            <NAV_ICONS.logout size={16} aria-hidden="true" />
+            <span>{t("nav.signOut")}</span>
+          </button>
+        </div>
       </div>
 
       <ConfirmModal
