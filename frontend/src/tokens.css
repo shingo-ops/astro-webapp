@@ -1,0 +1,66 @@
+/* ============================================================
+   Design Tokens — Typography / Spacing / Radius / Z-index
+   index.css で @import して使用する。
+   色トークンは index.css に定義済み（ADR-067準拠）。
+
+   命名方針:
+   - スケールトークン: --font-xs / --space-4 / --radius-lg など
+   - 意味的例外トークン: --font-sidebar-brand など（中間値を役割名で定義）
+   ============================================================ */
+
+:root {
+  /* ---- Typography: font-size ---- */
+  --font-2xs:           0.7rem;     /* 11.2px — 極小ラベル */
+  --font-xs:            0.75rem;    /* 12px   — バッジ・フッタ */
+  --font-sm:            0.85rem;    /* 13.6px — サブテキスト（0.82〜0.88rem を吸収） */
+  --font-base:          0.9rem;     /* 14.4px — 本文・入力（0.9〜0.95rem を吸収） */
+  --font-md:            1rem;       /* 16px   — 標準テキスト */
+  --font-lg:            1.1rem;     /* 17.6px — セクション見出し（1.1〜1.2rem を吸収） */
+  --font-xl:            1.25rem;    /* 20px   — ページ見出し（1.25〜1.3rem を吸収） */
+  --font-2xl:           1.5rem;     /* 24px   — KPI値・大見出し */
+
+  /* 意味的例外（スケールに収まらない役割固有値） */
+  --font-sidebar-brand: 1.05rem;   /* サイドバーブランドロゴ文字 */
+  --font-heading-lg:    1.4rem;    /* セクション大見出し */
+  --font-display:       1.6rem;    /* ダッシュボード大数値 */
+
+  /* ---- Typography: font-weight ---- */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semi:   600;
+  --font-weight-bold:   700;
+
+  /* ---- Typography: line-height ---- */
+  --line-height-tight:  1.25;
+  --line-height-base:   1.5;
+  --line-height-loose:  1.75;
+
+  /* ---- Spacing ---- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ---- Border radius ---- */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-full: 9999px;
+
+  /* ---- Z-index ---- */
+  --z-base:           10;
+  --z-topbar:        100;
+  --z-sidebar:       200;
+  --z-sidebar-overlay: 210;
+  --z-backdrop:      298;
+  --z-drawer:        299;
+  --z-avatar:        300;
+  --z-modal:         400;
+  --z-toast:         500;
+}

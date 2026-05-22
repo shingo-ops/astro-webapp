@@ -99,7 +99,7 @@ export default function DexTab() {
       </div>
 
       {editing && (
-        <form onSubmit={saveEdit} className="modal-inline" style={{ border: "1px solid #ccc", padding: "0.5rem", margin: "0.5rem 0" }}>
+        <form onSubmit={saveEdit} className="modal-inline" style={{ border: "1px solid var(--border-color)", padding: "0.5rem", margin: "0.5rem 0" }}>
           <strong>
             #{editing.dex_number} {editing.name_ja}
           </strong>

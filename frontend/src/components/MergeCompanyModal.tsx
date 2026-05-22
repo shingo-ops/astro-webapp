@@ -184,7 +184,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
               style={{
                 maxHeight: 280,
                 overflowY: "auto",
-                border: "1px solid #ddd",
+                border: "1px solid var(--border-light)",
                 borderRadius: 4,
                 marginTop: 8,
               }}

@@ -433,11 +433,11 @@ export default function CustomersPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>{editId ? t("customers.editCustomer") : t("customers.newCustomer")}</h3>
             <div className="tab-nav">
-              <button type="button" className={activeTab === "basic" ? "tab-active" : ""} onClick={() => setActiveTab("basic")}>基本情報</button>
-              <button type="button" className={activeTab === "billing" ? "tab-active" : ""} onClick={() => setActiveTab("billing")}>請求先</button>
-              <button type="button" className={activeTab === "delivery" ? "tab-active" : ""} onClick={() => setActiveTab("delivery")}>配送先</button>
-              <button type="button" className={activeTab === "channels" ? "tab-active" : ""} onClick={() => setActiveTab("channels")}>連絡ツール</button>
-              <button type="button" className={activeTab === "discord" ? "tab-active" : ""} onClick={() => setActiveTab("discord")}>Discord</button>
+              <button type="button" className={activeTab === "basic" ? "tab-active" : ""} onClick={() => setActiveTab("basic")}>{t("customers.tab_basic")}</button>
+              <button type="button" className={activeTab === "billing" ? "tab-active" : ""} onClick={() => setActiveTab("billing")}>{t("customers.tab_billing")}</button>
+              <button type="button" className={activeTab === "delivery" ? "tab-active" : ""} onClick={() => setActiveTab("delivery")}>{t("customers.tab_delivery")}</button>
+              <button type="button" className={activeTab === "channels" ? "tab-active" : ""} onClick={() => setActiveTab("channels")}>{t("customers.tab_channels")}</button>
+              <button type="button" className={activeTab === "discord" ? "tab-active" : ""} onClick={() => setActiveTab("discord")}>{t("customers.tab_discord")}</button>
             </div>
             <form onSubmit={handleSubmit}>
               {activeTab === "basic" && (
@@ -587,7 +587,7 @@ export default function CustomersPage() {
                     「主」にチェックできるのは 1 つだけ（基本情報タブの「主連絡ツール」と同期）。
                   </div>
                   {form.contact_channels.map((ch, idx) => (
-                    <div key={idx} className="form-group" style={{ border: "1px solid #ddd", padding: 8, borderRadius: 4, marginBottom: 8 }}>
+                    <div key={idx} className="form-group" style={{ border: "1px solid var(--border-light)", padding: 8, borderRadius: 4, marginBottom: 8 }}>
                       <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
                         <div style={{ flex: 1 }}>
                           <label>チャネル</label>
