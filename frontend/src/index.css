@@ -100,6 +100,10 @@
   --accent-bg: #2d6cdf;
   --bg-badge: #eeeeff;
 
+  /* PlatformIcon ブランドカラー（固定値 — ダークモードでも変更なし） */
+  --platform-mail-bg: #ea4335;
+  --platform-unknown-bg: #999999;
+
   /* color-scheme: OS非依存（ADR-033: アプリ設定を優先） */
   color-scheme: light;
 }
