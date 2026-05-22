@@ -168,7 +168,7 @@ const INBOX_STYLES = `
   height: 100%;
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg-primary);
+  background: transparent;
   /* Meta実測値でCSS変数をスコープ上書き（ライトモード） */
   --accent:         rgb(10, 120, 190);
   --link-active-bg: rgb(225, 237, 247);
@@ -196,11 +196,11 @@ html.force-dark .inbox-wrapper {
   min-width: 0;
 }
 
-/* 受信箱タイトルエリア（seamless統合 — Meta風） */
+/* 受信箱タイトルエリア（seamless統合 — Meta風 / 背景透明でグラデーション透過） */
 .inbox-area-header {
   padding: 16px 24px 8px;
   flex-shrink: 0;
-  background: var(--bg-surface);
+  background: transparent;
 }
 .inbox-area-title {
   font-size: 20px;
@@ -215,11 +215,11 @@ html.force-dark .inbox-wrapper {
   margin: 0;
 }
 
-/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） — Meta実測: h=36, bg=transparent(parent=white) */
+/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） — Meta実測: h=36, bg=transparent */
 .inbox-full-tab-bar {
   display: flex;
   align-items: center;
-  background: var(--bg-surface);
+  background: transparent;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
@@ -749,14 +749,13 @@ html.force-dark .inbox-wrapper {
   font-size: 12px;
   font-weight: 600;
 }
+/* Meta実測: セクションはフラット — border-bottom 線区切りのみ、カードなし */
 .right-panel-section {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin: 8px 12px;
-  padding: 12px;
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  padding: 16px 12px;
   box-sizing: border-box;
-  width: calc(100% - 24px); /* 左右 margin 12px × 2 分を引く */
+  width: 100%;
 }
 .right-panel-row {
   display: flex;
