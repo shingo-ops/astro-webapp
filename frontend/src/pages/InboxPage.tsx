@@ -885,6 +885,62 @@ html.force-dark .inbox-wrapper {
   font-size: var(--font-xs);
   margin-bottom: 6px;
 }
+
+/* ============================================================
+   レスポンシブ対応
+   --breakpoint-lg: 1024px / --breakpoint-md: 768px / --breakpoint-sm: 480px
+   ============================================================ */
+
+/* タブレット横（1024px以下）: 3カラム → 比率指定に変更 */
+@media (max-width: 1024px) {
+  .inbox-left-panel  { width: 35%; min-width: 220px; }
+  .inbox-right-panel { width: 25%; min-width: 180px; }
+}
+
+/* タブレット縦・スマートフォン横（768px以下）: 縦積みレイアウト */
+@media (max-width: 768px) {
+  .inbox-wrapper {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  /* HIGH-1修正: 子要素のoverflow:hiddenが縦スクロールを塞ぐため解除 */
+  .inbox-main-area { overflow: visible; }
+  .inbox-columns   { flex-direction: column; overflow: visible; }
+
+  .inbox-left-panel {
+    width: 100%;
+    max-height: 40vh;
+    flex-shrink: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .inbox-center {
+    width: 100%;
+    flex: 1;
+    min-height: 300px;
+  }
+  .inbox-right-panel {
+    width: 100%;
+    max-height: 35vh;
+    flex-shrink: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .msg-bubble { max-width: 85%; }
+}
+
+/* スマートフォン縦（480px以下）: 右パネル非表示・余白縮小 */
+@media (max-width: 480px) {
+  .inbox-area-header { padding: var(--space-2) var(--space-3) var(--space-1); }
+  .inbox-search-row  { padding: var(--space-2) var(--space-2) var(--space-1); }
+  .inbox-left-panel  { max-height: 45vh; }
+  .inbox-right-panel { display: none; }
+  .msg-bubble { max-width: 90%; }
+  .inbox-send-btn { padding: var(--space-2) var(--space-4); }
+}
 `;
 
 // ---------------------------------------------------------------------------
