@@ -382,7 +382,7 @@ export default function InventorySearchBar({
                       )}
                     </div>
                     <div
-                      style={{ fontSize: "0.85em", color: "var(--text-secondary)", marginTop: "var(--space-2px)" }}
+                      style={{ fontSize: "var(--font-sm)", color: "var(--text-secondary)", marginTop: "var(--space-2px)" }}
                     >
                       <span
                         data-testid={`${testIdPrefix}-result-${i}-matched-via`}
@@ -417,7 +417,7 @@ export default function InventorySearchBar({
                     style={{ textAlign: "right", whiteSpace: "nowrap" }}
                     data-testid={`${testIdPrefix}-result-${i}-stock-block`}
                   >
-                    <div style={{ fontSize: "0.85em", color: "var(--text-muted)" }}>
+                    <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)" }}>
                       {t("inventory.search.stockLabel")}:{" "}
                       <span
                         data-testid={`${testIdPrefix}-result-${i}-stock`}
@@ -430,7 +430,7 @@ export default function InventorySearchBar({
                       </span>
                     </div>
                     {c.unit_price !== null && (
-                      <div style={{ fontSize: "0.85em" }}>
+                      <div style={{ fontSize: "var(--font-sm)" }}>
                         ¥{c.unit_price.toLocaleString()}
                       </div>
                     )}
