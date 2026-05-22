@@ -8,11 +8,14 @@ test_inventory_sprint8_migrations.py (TEST_PG_URL 環境) で行う。
   - GET /admin/tenant-profile: 既定の空行が返る
   - PUT /admin/tenant-profile: 部分更新が反映される
   - PUT validation: default_language の不正値で 422
+  - Issue #563 回帰: PostgreSQL dialect で schema prefix が組み立てられる
 """
 from __future__ import annotations
 
 import pytest
 from sqlalchemy import text
+
+from app.routers.tenant_profile import _tenant_profile_table
 
 
 @pytest.mark.asyncio
@@ -114,3 +117,37 @@ async def test_update_tenant_profile_404_when_not_seeded(client, db_session):
         json={"company_name": "X"},
     )
     assert resp.status_code == 404
+
+
+# ──────────────────────────────────────────────────────────────────
+# Issue #563 回帰: _tenant_profile_table の schema prefix 組み立て
+# ──────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_tenant_profile_table_sqlite_no_prefix(db_session):
+    """SQLite (テスト) では prefix なし `tenant_profile` を返す。"""
+    table = _tenant_profile_table(db_session, tenant_id=999)
+    assert table == "tenant_profile"
+
+
+def test_tenant_profile_table_postgresql_with_prefix():
+    """PostgreSQL dialect では `tenant_NNN.tenant_profile` を組み立てる (Issue #563)。
+
+    実際の AsyncSession を作らず、dialect.name="postgresql" を持つ stub を渡す。
+    """
+    class _StubDialect:
+        name = "postgresql"
+
+    class _StubBind:
+        dialect = _StubDialect()
+
+    class _StubSession:
+        def get_bind(self):
+            return _StubBind()
+
+    table = _tenant_profile_table(_StubSession(), tenant_id=6)
+    assert table == "tenant_006.tenant_profile"
+
+    table = _tenant_profile_table(_StubSession(), tenant_id=42)
+    assert table == "tenant_042.tenant_profile"
