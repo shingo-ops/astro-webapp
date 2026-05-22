@@ -173,7 +173,7 @@ export default function KnowledgeAliasesTab() {
         );
       } else {
         setRuleCsvMsg(
-          `${t("superAdmin.knowledge.csvCommit")} ✓ ${data.inserted ?? 0}`,
+          `${t("superAdmin.knowledge.csvCommit")} ${data.inserted ?? 0}`,
         );
         await loadRules(ruleSearch);
       }

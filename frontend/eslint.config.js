@@ -32,6 +32,30 @@ export default [
             "❌ インラインスタイルへのhex色ハードコード禁止（ADR-067）。CSS変数を使ってください: style={{ color: 'var(--text-primary)' }}",
         },
       ],
+
+      // アイコン一元管理（ADR-067 拡張）:
+      // lucide-react からの直接 import 禁止。constants/icons.tsx 経由でインポートすること。
+      // 型 import も含む（LucideIcon 型は constants/icons.tsx から export type で取得）。
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'lucide-react',
+              message:
+                "❌ lucide-react からの直接 import 禁止（ADR-067）。constants/icons.tsx 経由でインポートしてください。型が必要な場合: import type { LucideIcon } from '../constants/icons'",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // 例外: constants/icons.tsx は lucide-react を直接 import してよい（唯一の窓口）
+  {
+    files: ['src/constants/icons.tsx'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
 ];

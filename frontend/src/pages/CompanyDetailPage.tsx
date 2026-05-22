@@ -20,6 +20,7 @@ import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import MergeCompanyModal from "../components/MergeCompanyModal";
 import { usePermissions } from "../hooks/usePermissions";
+import { STATUS_ICONS } from "../constants/icons";
 
 const PHONE_RE = /^(\+?\d{10,15}|0\d{9,10})$/;
 
@@ -625,7 +626,7 @@ export default function CompanyDetailPage() {
                     <td>{a.email || "-"}</td>
                     <td>{a.telephone || "-"}</td>
                     <td>{addressDisplay(a)}</td>
-                    <td>{a.is_default ? "●" : ""}</td>
+                    <td>{a.is_default ? <STATUS_ICONS.check size={14} aria-hidden="true" /> : ""}</td>
                     <td>
                       {canEdit && <button className="btn-sm" onClick={() => openAddressEdit(a)}>{t("common.edit")}</button>}
                       {canEdit && <button className="btn-sm btn-danger" onClick={() => setAddrDeleteTarget(a)}>{t("common.delete")}</button>}
@@ -656,7 +657,7 @@ export default function CompanyDetailPage() {
                     <td>{a.email || "-"}</td>
                     <td>{a.telephone || "-"}</td>
                     <td>{addressDisplay(a)}</td>
-                    <td>{a.is_default ? "●" : ""}</td>
+                    <td>{a.is_default ? <STATUS_ICONS.check size={14} aria-hidden="true" /> : ""}</td>
                     <td>
                       {canEdit && <button className="btn-sm" onClick={() => openAddressEdit(a)}>{t("common.edit")}</button>}
                       {canEdit && <button className="btn-sm btn-danger" onClick={() => setAddrDeleteTarget(a)}>{t("common.delete")}</button>}
@@ -689,7 +690,7 @@ export default function CompanyDetailPage() {
                       <td>{c.contact_code}</td>
                       <td>{name}</td>
                       <td>{c.job_title || "-"}</td>
-                      <td>{c.is_primary_contact ? "●" : ""}</td>
+                      <td>{c.is_primary_contact ? <STATUS_ICONS.check size={14} aria-hidden="true" /> : ""}</td>
                       <td>{c.primary_email || "-"}</td>
                       <td>{c.primary_phone || "-"}</td>
                       <td><span className={`status-badge status-${c.status}`}>{c.status}</span></td>

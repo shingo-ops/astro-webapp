@@ -11,6 +11,7 @@
 
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { NAV_ICONS } from "../constants/icons";
 
 interface Props {
   label: string;
@@ -49,7 +50,7 @@ export default function NavDropdown({ label, activePaths, children }: Props) {
         aria-expanded={open}
       >
         {label}
-        <span className="nav-dropdown-caret">▾</span>
+        <NAV_ICONS.chevronDown size={12} aria-hidden="true" />
       </button>
       {open && <div className="nav-dropdown-menu">{children}</div>}
     </div>
