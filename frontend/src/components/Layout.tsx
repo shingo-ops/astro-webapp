@@ -195,7 +195,7 @@ export default function Layout() {
         {/* Nav */}
         <nav className="sidebar-nav-items">
           {navLoading ? (
-            <div className="sidebar-loading-dot">•••</div>
+            <div className="sidebar-loading-dot">...</div>
           ) : (
             <>
               {hasPermission("dashboard.view") && (
