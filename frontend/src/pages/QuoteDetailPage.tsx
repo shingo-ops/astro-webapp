@@ -91,7 +91,7 @@ export default function QuoteDetailPage() {
     <div className="page">
       <div className="page-header">
         <h2>{t("quotes.title")} — {quote.quote_code || `#${quote.id}`}</h2>
-        <div className="actions" style={{ display: "flex", gap: 8 }}>
+        <div className="actions" style={{ display: "flex", gap: "var(--space-2)" }}>
           {quote.status === "draft" && hasPermission("quotes.update") && (
             <button className="btn-primary" onClick={() => doAction("send")}>{t("quotes.send")}</button>
           )}
@@ -110,8 +110,8 @@ export default function QuoteDetailPage() {
 
       {error && <div className="error-message">{error}</div>}
 
-      <div style={{ background: "var(--bg-surface)", padding: 24, borderRadius: 8, boxShadow: "var(--shadow-sm)", marginBottom: 24 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+      <div style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: 8, boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--space-4)" }}>
           <div><strong>{t("common.status")}:</strong> <span className={`badge badge-${quote.status === "approved" ? "won" : quote.status === "rejected" ? "lost" : "pending"}`}>{t(`quotes.status_${quote.status}`)}</span></div>
           <div><strong>{t("common.currency")}:</strong> {quote.currency}</div>
           <div><strong>{t("quotes.validityDate")}:</strong> {quote.validity_date || "-"}</div>
@@ -120,8 +120,8 @@ export default function QuoteDetailPage() {
         </div>
       </div>
 
-      <h3 style={{ marginBottom: 12 }}>{t("quotes.items")}</h3>
-      <table className="data-table" style={{ marginBottom: 24 }}>
+      <h3 style={{ marginBottom: "var(--space-3)" }}>{t("quotes.items")}</h3>
+      <table className="data-table" style={{ marginBottom: "var(--space-6)" }}>
         <thead>
           <tr>
             <th>{t("quotes.product")}</th>
@@ -138,15 +138,15 @@ export default function QuoteDetailPage() {
               <td>{item.quantity}</td>
               <td>{fmt(item.unit_price)}</td>
               <td>{item.weight != null ? `${item.weight}kg` : "-"}</td>
-              <td style={{ fontWeight: 600 }}>{fmt(item.subtotal)}</td>
+              <td style={{ fontWeight: "var(--font-weight-semi)" }}>{fmt(item.subtotal)}</td>
             </tr>
           ))}
         </tbody>
         <tfoot>
-          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 600 }}>{t("quotes.subtotal")}</td><td style={{ fontWeight: 600 }}>{fmt(quote.subtotal)}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: "var(--font-weight-semi)" }}>{t("quotes.subtotal")}</td><td style={{ fontWeight: "var(--font-weight-semi)" }}>{fmt(quote.subtotal)}</td></tr>
           <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.shippingFee")}</td><td>{fmt(quote.shipping_fee)}</td></tr>
           <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.tax")}</td><td>{fmt(quote.tax_amount)}</td></tr>
-          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 700, fontSize: "1.1rem" }}>{t("quotes.total")}</td><td style={{ fontWeight: 700, fontSize: "1.1rem" }}>{fmt(quote.total_amount)} {quote.currency}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{t("quotes.total")}</td><td style={{ fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{fmt(quote.total_amount)} {quote.currency}</td></tr>
         </tfoot>
       </table>
     </div>

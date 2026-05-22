@@ -102,7 +102,7 @@ export default function QuotesPage() {
                 <td>{q.validity_date || "-"}</td>
                 <td>{new Date(q.created_at).toLocaleDateString()}</td>
                 <td className="actions">
-                  <button className="btn-sm" onClick={() => navigate(`/quotes/${q.id}`)}>詳細</button>
+                  <button className="btn-sm" onClick={() => navigate(`/quotes/${q.id}`)}>{t("common.detail")}</button>
                 </td>
               </tr>
             ))}

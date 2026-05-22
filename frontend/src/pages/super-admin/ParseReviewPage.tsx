@@ -407,7 +407,7 @@ export default function ParseReviewPage() {
                             {t("superAdmin.inbound.review.missingProduct")}
                           </em>
                           {!isFinal && (
-                            <div style={{ marginTop: 4 }}>
+                            <div style={{ marginTop: "var(--space-1)" }}>
                               <InventorySearchBar
                                 disabled={row.skipped}
                                 testIdPrefix={`review-row-${idx}-inv-search`}

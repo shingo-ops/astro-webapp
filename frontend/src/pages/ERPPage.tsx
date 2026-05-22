@@ -48,7 +48,7 @@ export default function ERPPage() {
         )}
       </div>
       {error && <div className="error-message">{error}</div>}
-      <h3 style={{ marginBottom: 12 }}>{t("erp.syncLogs")}</h3>
+      <h3 style={{ marginBottom: "var(--space-3)" }}>{t("erp.syncLogs")}</h3>
       {loading ? <div className="loading">{t("common.loading")}</div> : (
         <table className="data-table">
           <thead><tr><th>{t("erp.colType")}</th><th>{t("erp.colDirection")}</th><th>{t("erp.colCount")}</th><th>{t("common.status")}</th><th>{t("erp.colStartedAt")}</th><th>{t("erp.colCompletedAt")}</th><th>{t("common.error")}</th></tr></thead>

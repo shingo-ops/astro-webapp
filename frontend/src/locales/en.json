@@ -51,7 +51,10 @@
     "yes": "Yes",
     "no": "No",
     "notAuthenticated": "Not authenticated",
-    "pleaseSelect": "Please select"
+    "pleaseSelect": "Please select",
+    "detail": "Details",
+    "done": "Done",
+    "notDone": "Not Done"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -110,7 +113,8 @@
     "label": "Language",
     "ja": "日本語",
     "en": "English",
-    "switchTo": "Switch language"
+    "switchTo": "Switch language",
+    "zh": "Chinese"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -211,7 +215,10 @@
     "competitorCheck": "Competitor Check",
     "perOrderAmount": "Per Order Amount",
     "monthlyFrequency": "Monthly Frequency",
-    "englishName": "English Name"
+    "englishName": "English Name",
+    "rank": "Rank",
+    "competitorDone": "Done",
+    "competitorNotDone": "Not Done"
   },
   "customers": {
     "title": "Customers",
@@ -457,7 +464,9 @@
     "stage_proposal": "Proposal sent",
     "stage_won": "Won",
     "stage_lost": "Lost",
-    "stage_on_hold": "On hold"
+    "stage_on_hold": "On hold",
+    "deleteConfirmSuffix": "will be deleted.",
+    "deleteConstraint": "Cannot delete if there are associated orders (please delete those first)."
   },
   "inventory": {
     "search": {
@@ -529,7 +538,10 @@
     "status_sent": "Sent",
     "status_paid": "Paid",
     "status_overdue": "Overdue",
-    "status_cancelled": "Cancelled"
+    "status_cancelled": "Cancelled",
+    "jpyEquiv": "JPY Equiv.",
+    "issuedAt": "Issue Date",
+    "paidAt": "Payment Date"
   },
   "orders": {
     "title": "Orders",
@@ -918,7 +930,11 @@
     "confirmDesc3": "If the master client profile was pending_dedup_review, it will automatically be promoted to active.",
     "confirmDesc4": "This action will be recorded in audit_logs.",
     "merging": "Merging...",
-    "executeLabel": "Execute merge into \"{{masterName}}\""
+    "executeLabel": "Execute merge into \"{{masterName}}\"",
+    "col_code": "Customer Code",
+    "col_name": "Customer Name",
+    "col_status": "Status",
+    "reasonTitle": "Merge Reason"
   },
   "superAdmin": {
     "title": "Master Data (Central Admin Only)",

@@ -99,7 +99,7 @@ export default function InvoiceDetailPage() {
     <div className="page">
       <div className="page-header">
         <h2>{t("invoices.title")} — {invoice.invoice_number || `#${invoice.id}`}</h2>
-        <div className="actions" style={{ display: "flex", gap: 8 }}>
+        <div className="actions" style={{ display: "flex", gap: "var(--space-2)" }}>
           {invoice.status === "draft" && hasPermission("invoices.create") && (
             <button className="btn-primary" onClick={() => doAction("issue")}>発行する</button>
           )}
@@ -116,19 +116,19 @@ export default function InvoiceDetailPage() {
       {error && <div className="error-message">{error}</div>}
 
       {showVoidForm && (
-        <div style={{ background: "var(--danger-bg)", padding: 16, borderRadius: 8, marginBottom: 16 }}>
-          <label style={{ display: "block", marginBottom: 8, fontWeight: 600, color: "var(--danger-text)" }}>無効化理由 *</label>
-          <input style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid var(--border)" }}
+        <div style={{ background: "var(--danger-bg)", padding: "var(--space-4)", borderRadius: 8, marginBottom: "var(--space-4)" }}>
+          <label style={{ display: "block", marginBottom: "var(--space-2)", fontWeight: "var(--font-weight-semi)", color: "var(--danger-text)" }}>無効化理由 *</label>
+          <input style={{ width: "100%", padding: "var(--space-2)", borderRadius: 4, border: "1px solid var(--border)" }}
                  value={voidReason} onChange={(e) => setVoidReason(e.target.value)} placeholder="無効化の理由を入力..." />
-          <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+          <div style={{ marginTop: "var(--space-2)", display: "flex", gap: "var(--space-2)" }}>
             <button className="btn-secondary" onClick={() => setShowVoidForm(false)}>{t("common.cancel")}</button>
             <button className="btn-danger" onClick={handleVoid}>無効化実行</button>
           </div>
         </div>
       )}
 
-      <div style={{ background: "var(--bg-surface)", padding: 24, borderRadius: 8, boxShadow: "var(--shadow-sm)", marginBottom: 24 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+      <div style={{ background: "var(--bg-surface)", padding: "var(--space-6)", borderRadius: 8, boxShadow: "var(--shadow-sm)", marginBottom: "var(--space-6)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "var(--space-4)" }}>
           <div><strong>{t("common.status")}:</strong> <span className={`badge badge-${invoice.status === "paid" ? "won" : invoice.status === "voided" ? "lost" : "pending"}`}>{t(`invoices.status_${invoice.status}`)}</span></div>
           <div><strong>{t("common.currency")}:</strong> {invoice.currency}</div>
           <div><strong>支払方法:</strong> {invoice.payment_method || "-"}</div>
@@ -143,8 +143,8 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      <h3 style={{ marginBottom: 12 }}>{t("quotes.items")}</h3>
-      <table className="data-table" style={{ marginBottom: 24 }}>
+      <h3 style={{ marginBottom: "var(--space-3)" }}>{t("quotes.items")}</h3>
+      <table className="data-table" style={{ marginBottom: "var(--space-6)" }}>
         <thead>
           <tr><th>{t("quotes.product")}</th><th>{t("quotes.quantity")}</th><th>{t("quotes.unitPrice")}</th><th>{t("quotes.weight")}</th><th>{t("quotes.subtotal")}</th></tr>
         </thead>
@@ -155,15 +155,15 @@ export default function InvoiceDetailPage() {
               <td>{item.quantity}</td>
               <td>{fmt(item.unit_price)}</td>
               <td>{item.weight != null ? `${item.weight}kg` : "-"}</td>
-              <td style={{ fontWeight: 600 }}>{fmt(item.subtotal)}</td>
+              <td style={{ fontWeight: "var(--font-weight-semi)" }}>{fmt(item.subtotal)}</td>
             </tr>
           ))}
         </tbody>
         <tfoot>
-          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 600 }}>{t("quotes.subtotal")}</td><td style={{ fontWeight: 600 }}>{fmt(invoice.subtotal)}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: "var(--font-weight-semi)" }}>{t("quotes.subtotal")}</td><td style={{ fontWeight: "var(--font-weight-semi)" }}>{fmt(invoice.subtotal)}</td></tr>
           <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.shippingFee")}</td><td>{fmt(invoice.shipping_fee)}</td></tr>
           <tr><td colSpan={4} style={{ textAlign: "right" }}>{t("quotes.tax")}</td><td>{fmt(invoice.tax_amount)}</td></tr>
-          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: 700, fontSize: "1.1rem" }}>{t("quotes.total")}</td><td style={{ fontWeight: 700, fontSize: "1.1rem" }}>{fmt(invoice.total_amount)} {invoice.currency}</td></tr>
+          <tr><td colSpan={4} style={{ textAlign: "right", fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{t("quotes.total")}</td><td style={{ fontWeight: "var(--font-weight-bold)", fontSize: "var(--font-lg)" }}>{fmt(invoice.total_amount)} {invoice.currency}</td></tr>
           {invoice.amount_jpy != null && <tr><td colSpan={4} style={{ textAlign: "right", color: "var(--text-muted)" }}>JPY換算</td><td style={{ color: "var(--text-muted)" }}>¥{invoice.amount_jpy.toLocaleString()}</td></tr>}
           {invoice.amount_usd != null && <tr><td colSpan={4} style={{ textAlign: "right", color: "var(--text-muted)" }}>USD換算</td><td style={{ color: "var(--text-muted)" }}>${invoice.amount_usd.toLocaleString()}</td></tr>}
         </tfoot>

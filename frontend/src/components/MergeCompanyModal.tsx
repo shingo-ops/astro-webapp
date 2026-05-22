@@ -147,7 +147,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
         style={{ maxWidth: 640 }}
       >
         <h2>{t("mergeCompany.title")}</h2>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.9em", marginTop: 4 }}>
+        <p style={{ color: "var(--text-muted)", fontSize: "0.9em", marginTop: "var(--space-1)" }}>
           {t("mergeCompany.sourceDesc", { name: source.name, code: source.company_code })}
         </p>
 
@@ -169,9 +169,9 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 style={{
                   background: "var(--warning-bg)",
                   border: "1px solid var(--warning-text)",
-                  padding: 8,
+                  padding: "var(--space-2)",
                   borderRadius: 4,
-                  marginTop: 8,
+                  marginTop: "var(--space-2)",
                   fontSize: "0.85em",
                   color: "var(--warning-text)",
                 }}
@@ -186,13 +186,13 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 overflowY: "auto",
                 border: "1px solid var(--border-light)",
                 borderRadius: 4,
-                marginTop: 8,
+                marginTop: "var(--space-2)",
               }}
             >
               {loading ? (
-                <p style={{ padding: 16, textAlign: "center" }}>{t("common.loading")}</p>
+                <p style={{ padding: "var(--space-4)", textAlign: "center" }}>{t("common.loading")}</p>
               ) : filteredCandidates.length === 0 ? (
-                <p style={{ padding: 16, textAlign: "center", color: "var(--text-muted)" }}>
+                <p style={{ padding: "var(--space-4)", textAlign: "center", color: "var(--text-muted)" }}>
                   {t("mergeCompany.noResults")}
                 </p>
               ) : (
@@ -200,9 +200,9 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                   <thead>
                     <tr>
                       <th style={{ width: 40 }}></th>
-                      <th>会社コード</th>
-                      <th>会社名</th>
-                      <th>ステータス</th>
+                      <th>{t("mergeCompany.col_code")}</th>
+                      <th>{t("mergeCompany.col_name")}</th>
+                      <th>{t("mergeCompany.col_status")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -243,7 +243,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
               )}
             </div>
 
-            <div className="form-row" style={{ marginTop: 16 }}>
+            <div className="form-row" style={{ marginTop: "var(--space-4)" }}>
               <label>{t("mergeCompany.reasonLabel")}</label>
               <textarea
                 rows={2}
@@ -276,13 +276,13 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
               style={{
                 background: "var(--warning-bg)",
                 border: "1px solid var(--warning-text)",
-                padding: 12,
+                padding: "var(--space-3)",
                 borderRadius: 4,
-                marginBottom: 16,
+                marginBottom: "var(--space-4)",
               }}
             >
               <strong>{t("mergeCompany.confirmWarning")}</strong>
-              <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+              <ul style={{ marginTop: "var(--space-2)", marginBottom: 0, paddingLeft: "var(--space-5)" }}>
                 <li>
                   {t("mergeCompany.confirmDesc1", {
                     sourceName: source.name,
@@ -306,13 +306,13 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 style={{
                   background: "var(--bg-subtle)",
                   border: "1px solid var(--border)",
-                  padding: 8,
+                  padding: "var(--space-2)",
                   borderRadius: 4,
-                  marginBottom: 16,
+                  marginBottom: "var(--space-4)",
                   fontSize: "0.9em",
                 }}
               >
-                <strong>マージ理由:</strong> {reason.trim()}
+                <strong>{t("mergeCompany.reasonTitle")}:</strong> {reason.trim()}
               </div>
             )}
 

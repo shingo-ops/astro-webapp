@@ -167,9 +167,9 @@ export default function PhaseSwitchPage() {
 
       {data && (
         <>
-          <div className="phase-current" style={{ marginBottom: "1.5rem" }}>
+          <div className="phase-current" style={{ marginBottom: "var(--space-6)" }}>
             <strong>{t("superAdmin.phaseSwitch.currentLabel")}: </strong>
-            <span data-testid="current-phase" style={{ fontSize: "1.5rem" }}>
+            <span data-testid="current-phase" style={{ fontSize: "var(--font-2xl)" }}>
               Phase {data.phase}
             </span>
             {data.phase === "A" && (
@@ -202,7 +202,7 @@ export default function PhaseSwitchPage() {
                 >
                   Phase {p}
                   {!scoped && (
-                    <span style={{ marginLeft: "0.25rem", fontSize: "0.75rem" }}>
+                    <span style={{ marginLeft: "var(--space-1)", fontSize: "var(--font-xs)" }}>
                       ({t("superAdmin.phaseSwitch.outOfScopeBadge")})
                     </span>
                   )}
@@ -211,7 +211,7 @@ export default function PhaseSwitchPage() {
             })}
           </div>
 
-          <div className="phase-help" style={{ marginTop: "1.5rem", fontSize: "0.875rem" }}>
+          <div className="phase-help" style={{ marginTop: "var(--space-6)", fontSize: "var(--font-sm)" }}>
             <ul>
               <li>{t("superAdmin.phaseSwitch.helpPhaseA")}</li>
               <li>{t("superAdmin.phaseSwitch.helpPhaseBC")}</li>

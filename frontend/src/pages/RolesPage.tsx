@@ -367,7 +367,7 @@ export default function RolesPage() {
                   <h2>
                     <span
                       className="badge"
-                      style={{ background: selectedRole.color || "var(--bg-hover)", color: "var(--on-accent)", marginRight: 8 }}
+                      style={{ background: selectedRole.color || "var(--bg-hover)", color: "var(--on-accent)", marginRight: "var(--space-2)" }}
                     >
                       {selectedRole.name}
                     </span>
@@ -549,10 +549,10 @@ export default function RolesPage() {
             </div>
             <div className="form-group"><label>付与するロール</label>
               {roles.map((r) => (
-                <label key={r.id} style={{ display: "block", padding: 4 }}>
+                <label key={r.id} style={{ display: "block", padding: "var(--space-1)" }}>
                   <input type="checkbox" checked={selectedRoleIds.has(r.id)} onChange={() => toggleUserRole(r.id)} />{" "}
                   <span className="badge" style={{ background: r.color || "var(--bg-hover)", color: "var(--on-accent)" }}>{r.name}</span>
-                  <small style={{ marginLeft: 8, color: "var(--text-muted)" }}>priority: {r.priority}</small>
+                  <small style={{ marginLeft: "var(--space-2)", color: "var(--text-muted)" }}>priority: {r.priority}</small>
                 </label>
               ))}
             </div>

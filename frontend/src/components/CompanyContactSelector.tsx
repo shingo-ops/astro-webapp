@@ -203,7 +203,7 @@ export default function CompanyContactSelector({
         {companyIdMissing && (
           <div
             className="error-message"
-            style={{ marginTop: 4, fontSize: "0.875rem" }}
+            style={{ marginTop: "var(--space-1)", fontSize: "var(--font-sm)" }}
           >
             {t("companyContactSelector.companyNotInList")}
           </div>
@@ -231,7 +231,7 @@ export default function CompanyContactSelector({
           ))}
         </select>
         {error && (
-          <div className="error-message" style={{ marginTop: 4, fontSize: "0.875rem" }}>
+          <div className="error-message" style={{ marginTop: "var(--space-1)", fontSize: "var(--font-sm)" }}>
             {error}
           </div>
         )}

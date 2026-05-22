@@ -260,7 +260,7 @@ export default function CommissionSettingsPage() {
               </button>
             </div>
             {settings && (
-              <p className="text-muted" style={{ fontSize: "0.85rem" }}>
+              <p className="text-muted" style={{ fontSize: "var(--font-sm)" }}>
                 最終更新: {new Date(settings.updated_at).toLocaleString("ja-JP")}
               </p>
             )}
@@ -278,7 +278,7 @@ export default function CommissionSettingsPage() {
                   min={2000}
                   max={2999}
                   onChange={(e) => setYear(Number(e.target.value))}
-                  style={{ width: 90, marginLeft: 8 }}
+                  style={{ width: 90, marginLeft: "var(--space-2)" }}
                   data-testid="monthly-year"
                 />
               </label>
@@ -290,7 +290,7 @@ export default function CommissionSettingsPage() {
                   min={1}
                   max={12}
                   onChange={(e) => setMonth(Number(e.target.value))}
-                  style={{ width: 60, marginLeft: 8 }}
+                  style={{ width: 60, marginLeft: "var(--space-2)" }}
                   data-testid="monthly-month"
                 />
               </label>

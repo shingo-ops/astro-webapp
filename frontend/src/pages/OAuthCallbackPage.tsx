@@ -130,11 +130,11 @@ export default function OAuthCallbackPage() {
   }, [navigate]);
 
   return (
-    <div className="page" style={{ padding: 32 }}>
+    <div className="page" style={{ padding: "var(--space-8)" }}>
       <h2>{t("oauth.processing")}</h2>
       <p>{t("oauth.processingDesc")}</p>
       {error && (
-        <div className="error" style={{ marginTop: 16 }}>{error}</div>
+        <div className="error" style={{ marginTop: "var(--space-4)" }}>{error}</div>
       )}
     </div>
   );

@@ -181,7 +181,7 @@ export default function TeamsPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>メンバー管理 - {membersPanel.name}</h3>
             {hasPermission("teams.manage_members") && (
-              <form onSubmit={addMember} style={{ marginBottom: 16 }}>
+              <form onSubmit={addMember} style={{ marginBottom: "var(--space-4)" }}>
                 <div className="form-group"><label>{t("common.add")}するユーザーID</label>
                   <input type="number" min="1" required value={newMemberId} onChange={(e) => setNewMemberId(e.target.value)} />
                 </div>
