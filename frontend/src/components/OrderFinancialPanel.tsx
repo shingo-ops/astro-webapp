@@ -218,7 +218,7 @@ export default function OrderFinancialPanel({
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(2, 1fr)",
-                gap: "0.5rem 1rem",
+                gap: "var(--space-2) var(--space-4)",
               }}
             >
               {INPUT_FIELDS.map((f) => (
@@ -250,10 +250,10 @@ export default function OrderFinancialPanel({
             <div
               className="financial-summary"
               style={{
-                marginTop: "0.75rem",
-                padding: "0.75rem",
+                marginTop: "var(--space-3)",
+                padding: "var(--space-3)",
                 background: "var(--bg-subtle)",
-                borderRadius: 6,
+                borderRadius: "var(--radius-md)",
                 display: "grid",
                 gridTemplateColumns: "repeat(2, 1fr)",
                 rowGap: "0.25rem",
@@ -278,7 +278,7 @@ export default function OrderFinancialPanel({
                 {fmtJPY(preview.op)}
               </span>
             </div>
-            <div className="form-actions" style={{ marginTop: "1rem" }}>
+            <div className="form-actions" style={{ marginTop: "var(--space-4)" }}>
               <button
                 type="button"
                 className="btn-secondary"

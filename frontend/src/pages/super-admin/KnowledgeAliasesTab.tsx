@@ -186,10 +186,10 @@ export default function KnowledgeAliasesTab() {
   return (
     <div className="super-admin-knowledge-tab">
       {/* ============ Rules section ============ */}
-      <section style={{ marginBottom: "2rem" }}>
+      <section style={{ marginBottom: "var(--space-8)" }}>
         <h3>{t("superAdmin.knowledge.rulesSection")}</h3>
         {ruleError && <div className="error-message">{ruleError}</div>}
-        <div style={{ display: "flex", gap: "0.5rem", margin: "0.5rem 0" }}>
+        <div style={{ display: "flex", gap: "var(--space-2)", margin: "0.5rem 0" }}>
           <input
             placeholder={t("common.search")}
             value={ruleSearch}
@@ -222,7 +222,7 @@ export default function KnowledgeAliasesTab() {
         </div>
         {ruleCsvMsg && <div className="info-message">{ruleCsvMsg}</div>}
 
-        <form onSubmit={createRule} style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem", margin: "0.5rem 0" }}>
+        <form onSubmit={createRule} style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-2)", margin: "0.5rem 0" }}>
           <input
             placeholder={t("superAdmin.knowledge.fields.category")}
             value={ruleForm.category}
@@ -294,7 +294,7 @@ export default function KnowledgeAliasesTab() {
       <section>
         <h3>{t("superAdmin.knowledge.aliasesSection")}</h3>
         {aliasError && <div className="error-message">{aliasError}</div>}
-        <div style={{ display: "flex", gap: "0.5rem", margin: "0.5rem 0" }}>
+        <div style={{ display: "flex", gap: "var(--space-2)", margin: "0.5rem 0" }}>
           <input
             placeholder={t("common.search")}
             value={aliasSearch}
@@ -308,7 +308,7 @@ export default function KnowledgeAliasesTab() {
           </button>
         </div>
 
-        <form onSubmit={createAlias} style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem", margin: "0.5rem 0" }}>
+        <form onSubmit={createAlias} style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-2)", margin: "0.5rem 0" }}>
           <input
             type="number"
             placeholder={t("superAdmin.knowledge.fields.supplierId")}

@@ -244,10 +244,10 @@ export default function CommissionSettingsPage() {
             <div
               className="form-actions"
               style={{
-                marginTop: "1rem",
+                marginTop: "var(--space-4)",
                 display: "flex",
                 justifyContent: "flex-end",
-                gap: "0.5rem",
+                gap: "var(--space-2)",
               }}
             >
               <button
@@ -267,9 +267,9 @@ export default function CommissionSettingsPage() {
           </form>
 
           {/* 月次レポート（テキスト表示） */}
-          <fieldset style={{ marginTop: "2rem" }}>
+          <fieldset style={{ marginTop: "var(--space-8)" }}>
             <legend>{t("commissions.monthlyLegend")}</legend>
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
               <label>
                 {t("commissions.year")}:
                 <input
@@ -297,7 +297,7 @@ export default function CommissionSettingsPage() {
             </div>
 
             {monthly ? (
-              <div style={{ marginTop: "1rem" }}>
+              <div style={{ marginTop: "var(--space-4)" }}>
                 <p data-testid="monthly-total">
                   {t("commissions.total")}: <strong>{fmt(monthly.total)}</strong>
                 </p>
@@ -321,7 +321,7 @@ export default function CommissionSettingsPage() {
                 </ul>
               </div>
             ) : (
-              <p className="text-muted" style={{ marginTop: "1rem" }}>
+              <p className="text-muted" style={{ marginTop: "var(--space-4)" }}>
                 {t("commissions.monthlyError")}
               </p>
             )}

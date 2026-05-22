@@ -1430,7 +1430,7 @@ export default function InboxPage() {
                       || selectedConversation?.customer_name
                       || `Lead #${selectedLeadId}`}
                   </h2>
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: 2 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-2px)" }}>
                     {messagesData?.lead?.lead_code && (
                       <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
                         {messagesData.lead.lead_code}
@@ -1458,8 +1458,8 @@ export default function InboxPage() {
                     fontSize: "var(--font-xs)",
                     color: "var(--accent)",
                     textDecoration: "none",
-                    padding: "4px 10px",
-                    borderRadius: 12,
+                    padding: "var(--space-1) var(--space-10px)",
+                    borderRadius: "var(--radius-xl)",
                     background: "var(--link-active-bg)",
                     fontWeight: "var(--font-weight-semi)",
                     flexShrink: 0,

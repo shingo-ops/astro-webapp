@@ -586,7 +586,7 @@ export default function CustomersPage() {
                     {t("customers.channels_desc")}
                   </div>
                   {form.contact_channels.map((ch, idx) => (
-                    <div key={idx} className="form-group" style={{ border: "1px solid var(--border-light)", padding: "var(--space-2)", borderRadius: 4, marginBottom: "var(--space-2)" }}>
+                    <div key={idx} className="form-group" style={{ border: "1px solid var(--border-light)", padding: "var(--space-2)", borderRadius: "var(--radius-sm)", marginBottom: "var(--space-2)" }}>
                       <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "flex-end" }}>
                         <div style={{ flex: 1 }}>
                           <label>{t("customers.channel_label")}</label>

@@ -217,13 +217,13 @@ export default function InventorySearchBar({
           disabled={disabled}
           placeholder={placeholderText}
           data-testid={`${testIdPrefix}-input`}
-          style={{ flex: 1, minWidth: 120, padding: "6px 8px" }}
+          style={{ flex: 1, minWidth: 120, padding: "var(--space-6px) var(--space-2)" }}
           aria-label={t("inventory.search.placeholder")}
         />
         <div
           role="radiogroup"
           aria-label={t("inventory.search.opGroupLabel")}
-          style={{ display: "inline-flex", gap: 0, border: "1px solid var(--border-color)", borderRadius: 4 }}
+          style={{ display: "inline-flex", gap: 0, border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)" }}
           data-testid={`${testIdPrefix}-op-toggle`}
         >
           <button
@@ -233,7 +233,7 @@ export default function InventorySearchBar({
             aria-pressed={op === "and"}
             data-testid={`${testIdPrefix}-op-and`}
             style={{
-              padding: "4px 10px",
+              padding: "var(--space-1) var(--space-10px)",
               border: "none",
               background: op === "and" ? "var(--accent-bg)" : "transparent",
               color: op === "and" ? "var(--on-accent)" : "inherit",
@@ -249,7 +249,7 @@ export default function InventorySearchBar({
             aria-pressed={op === "or"}
             data-testid={`${testIdPrefix}-op-or`}
             style={{
-              padding: "4px 10px",
+              padding: "var(--space-1) var(--space-10px)",
               border: "none",
               background: op === "or" ? "var(--accent-bg)" : "transparent",
               color: op === "or" ? "var(--on-accent)" : "inherit",
@@ -303,7 +303,7 @@ export default function InventorySearchBar({
             listStyle: "none",
             background: "var(--bg-surface)",
             border: "1px solid var(--border-color)",
-            borderRadius: 4,
+            borderRadius: "var(--radius-sm)",
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
             zIndex: 50,
           }}
@@ -311,7 +311,7 @@ export default function InventorySearchBar({
           {loading && (
             <li
               data-testid={`${testIdPrefix}-loading`}
-              style={{ padding: "8px 10px", color: "var(--text-secondary)" }}
+              style={{ padding: "var(--space-2) var(--space-10px)", color: "var(--text-secondary)" }}
             >
               {t("common.loading")}
             </li>
@@ -319,7 +319,7 @@ export default function InventorySearchBar({
           {!loading && results.length === 0 && (
             <li
               data-testid={`${testIdPrefix}-empty`}
-              style={{ padding: "8px 10px", color: "var(--text-secondary)" }}
+              style={{ padding: "var(--space-2) var(--space-10px)", color: "var(--text-secondary)" }}
             >
               {t("inventory.search.noResults")}
             </li>
@@ -345,7 +345,7 @@ export default function InventorySearchBar({
                     handleSelect(c);
                   }}
                   style={{
-                    padding: "8px 10px",
+                    padding: "var(--space-2) var(--space-10px)",
                     cursor: "pointer",
                     background: isActive
                       ? "var(--bg-hover)"
@@ -371,9 +371,9 @@ export default function InventorySearchBar({
                       {c.name_en && (
                         <span
                           style={{
-                            marginLeft: 6,
+                            marginLeft: "var(--space-6px)",
                             color: "var(--text-muted)",
-                            fontWeight: 400,
+                            fontWeight: "var(--font-weight-normal)",
                           }}
                           data-testid={`${testIdPrefix}-result-${i}-name-en`}
                         >
@@ -382,13 +382,13 @@ export default function InventorySearchBar({
                       )}
                     </div>
                     <div
-                      style={{ fontSize: "0.85em", color: "var(--text-secondary)", marginTop: 2 }}
+                      style={{ fontSize: "0.85em", color: "var(--text-secondary)", marginTop: "var(--space-2px)" }}
                     >
                       <span
                         data-testid={`${testIdPrefix}-result-${i}-matched-via`}
                         style={{
-                          padding: "1px 6px",
-                          marginRight: 6,
+                          padding: "var(--space-2px) var(--space-6px)",
+                          marginRight: "var(--space-6px)",
                           border: "1px solid var(--border-color)",
                           borderRadius: 10,
                           background: "var(--bg-badge)",
@@ -397,17 +397,17 @@ export default function InventorySearchBar({
                         {t(matchedViaKey(c.matched_via), c.matched_via)}
                       </span>
                       {c.card_number && (
-                        <span style={{ marginRight: 6 }}>
+                        <span style={{ marginRight: "var(--space-6px)" }}>
                           <code>{c.card_number}</code>
                         </span>
                       )}
                       {c.expansion_code && (
-                        <span style={{ marginRight: 6 }}>
+                        <span style={{ marginRight: "var(--space-6px)" }}>
                           [{c.expansion_code}]
                         </span>
                       )}
                       {c.supplier_name && (
-                        <span style={{ marginRight: 6 }}>
+                        <span style={{ marginRight: "var(--space-6px)" }}>
                           {c.supplier_name}
                         </span>
                       )}
@@ -444,7 +444,7 @@ export default function InventorySearchBar({
       {masked && (
         <div
           data-testid={`${testIdPrefix}-masked-indicator`}
-          style={{ fontSize: "0.8em", color: "var(--text-muted)", marginTop: 2 }}
+          style={{ fontSize: "0.8em", color: "var(--text-muted)", marginTop: "var(--space-2px)" }}
         >
           {t("inventory.search.stockMaskedNote")}
         </div>

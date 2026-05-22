@@ -332,7 +332,7 @@ export default function ContactsPage() {
           </thead>
           <tbody>
             {contacts.length === 0 ? (
-              <tr><td colSpan={9} style={{ textAlign: "center", padding: "1rem" }}>{t("contacts.noContacts")}</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: "center", padding: "var(--space-4)" }}>{t("contacts.noContacts")}</td></tr>
             ) : (
               contacts.map((c) => (
                 <tr

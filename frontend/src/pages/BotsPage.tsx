@@ -177,7 +177,7 @@ export default function BotsPage() {
       {error && <div className="error-message">{error}</div>}
 
       {newApiKey && (
-        <div className="notice" style={{ padding: "var(--space-4)", background: "var(--warning-bg)", border: "1px solid var(--warning-text)", borderRadius: 4, margin: "16px 0" }}>
+        <div className="notice" style={{ padding: "var(--space-4)", background: "var(--warning-bg)", border: "1px solid var(--warning-text)", borderRadius: "var(--radius-sm)", margin: "16px 0" }}>
           <strong><STATUS_ICONS.warning size={ICON.sm} aria-hidden="true" /> {t("bots.apiKeyIssued")}</strong>
           <div className="mono" style={{ padding: "var(--space-2)", background: "var(--bg-surface)", marginTop: "var(--space-2)", wordBreak: "break-all" }}>{newApiKey}</div>
           <button className="btn-sm" onClick={() => setNewApiKey(null)} style={{ marginTop: "var(--space-2)" }}>{t("bots.apiKeyConfirm")}</button>

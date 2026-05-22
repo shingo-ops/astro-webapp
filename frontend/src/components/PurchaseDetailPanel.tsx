@@ -280,7 +280,7 @@ export default function PurchaseDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 {TEXT_FIELDS.staffTx.map((f) => (
@@ -313,7 +313,7 @@ export default function PurchaseDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 {TEXT_FIELDS.supplier.map((f) => (
@@ -337,7 +337,7 @@ export default function PurchaseDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 {NUMBER_FIELDS.amounts.map((f) => (
@@ -364,7 +364,7 @@ export default function PurchaseDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 {TEXT_FIELDS.shipping.map((f) => (
@@ -387,7 +387,7 @@ export default function PurchaseDetailPanel({
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr",
-                gap: "0.5rem",
+                gap: "var(--space-2)",
               }}
             >
               <label>{t("common.status")}</label>
@@ -417,10 +417,10 @@ export default function PurchaseDetailPanel({
             <div
               className="form-actions"
               style={{
-                marginTop: "1rem",
+                marginTop: "var(--space-4)",
                 display: "flex",
                 justifyContent: "space-between",
-                gap: "0.5rem",
+                gap: "var(--space-2)",
                 flexWrap: "wrap",
               }}
             >
@@ -438,7 +438,7 @@ export default function PurchaseDetailPanel({
               >
                 {confirming ? t("purchase.confirming") : t("purchase.confirm")}
               </button>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "var(--space-2)" }}>
                 <button
                   type="button"
                   className="btn-secondary"

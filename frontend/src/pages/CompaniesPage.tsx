@@ -405,7 +405,7 @@ export default function CompaniesPage() {
           </thead>
           <tbody>
             {companies.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: "1rem" }}>{t("companies.noCompanies")}</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "var(--space-4)" }}>{t("companies.noCompanies")}</td></tr>
             ) : (
               companies.map((c) => (
                 <tr

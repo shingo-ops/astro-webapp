@@ -195,7 +195,7 @@ export default function ChannelsPage() {
   const bannerStyle: React.CSSProperties = banner
     ? {
         padding: "12px 16px",
-        borderRadius: 4,
+        borderRadius: "var(--radius-sm)",
         marginBottom: "var(--space-4)",
         background:
           banner.type === "success"
@@ -269,7 +269,7 @@ export default function ChannelsPage() {
           data-testid="channels-reauth-banner"
           style={{
             padding: "12px 16px",
-            borderRadius: 4,
+            borderRadius: "var(--radius-sm)",
             marginBottom: "var(--space-4)",
             background: "var(--warning-bg)",
             color: "var(--warning-text)",
@@ -391,7 +391,7 @@ export default function ChannelsPage() {
                       <div>
                         <strong>{t("channels.instagramLinked")}:</strong> @{ch.instagram_username}
                         {ch.instagram_business_account_id && (
-                          <span className="mono" style={{ marginLeft: 6, opacity: 0.7 }}>
+                          <span className="mono" style={{ marginLeft: "var(--space-6px)", opacity: 0.7 }}>
                             ({ch.instagram_business_account_id})
                           </span>
                         )}
@@ -405,7 +405,7 @@ export default function ChannelsPage() {
                       <div style={tokenWarn ? { color: "var(--warning-text)", fontWeight: "var(--font-weight-semi)" } : undefined}>
                         <strong>{t("channels.tokenExpires")}:</strong> {formatDate(ch.page_token_expires_at)}
                         {expiresIn !== null && (
-                          <span style={{ marginLeft: 6 }}>
+                          <span style={{ marginLeft: "var(--space-6px)" }}>
                             ({expiresIn >= 0 ? t("channels.daysLeft", { count: expiresIn }) : t("channels.expired")})
                           </span>
                         )}

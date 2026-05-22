@@ -231,9 +231,9 @@ export default function ProductsPage() {
         )}
       </div>
 
-      <div className="search-bar" style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+      <div className="search-bar" style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
         <input type="text" placeholder={t("common.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
-        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", whiteSpace: "nowrap" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", whiteSpace: "nowrap" }}>
           <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
           {t("products.status_discontinued")}
         </label>
@@ -260,8 +260,8 @@ export default function ProductsPage() {
               </div>
 
               {/* Phase 1-C M-MVP: TCG 列 */}
-              <fieldset style={{ border: "1px solid var(--border)", padding: "0.75rem", marginBottom: "1rem" }}>
-                <legend style={{ padding: "0 0.5rem", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>TCG</legend>
+              <fieldset style={{ border: "1px solid var(--border)", padding: "var(--space-3)", marginBottom: "var(--space-4)" }}>
+                <legend style={{ padding: "0 var(--space-2)", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>TCG</legend>
                 <div className="form-group"><label>JAN/EAN</label>
                   <input maxLength={20} value={form.jan_code} onChange={(e) => setForm({ ...form, jan_code: e.target.value })} />
                 </div>
@@ -290,8 +290,8 @@ export default function ProductsPage() {
               </div>
 
               {/* 価格 */}
-              <fieldset style={{ border: "1px solid var(--border)", padding: "0.75rem", marginBottom: "1rem" }}>
-                <legend style={{ padding: "0 0.5rem", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.unitPrice")}</legend>
+              <fieldset style={{ border: "1px solid var(--border)", padding: "var(--space-3)", marginBottom: "var(--space-4)" }}>
+                <legend style={{ padding: "0 var(--space-2)", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.unitPrice")}</legend>
                 <div className="form-group"><label>{t("products.unitPrice")} (JPY)</label>
                   <input type="number" min="0" step="0.01" value={form.unit_price} onChange={(e) => setForm({ ...form, unit_price: e.target.value })} />
                 </div>
@@ -355,7 +355,7 @@ export default function ProductsPage() {
                 <td>
                   {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: 2 }} />}
                   {p.name_ja}
-                  {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: 6 }}>{t("products.status_discontinued")}</span>}
+                  {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: "var(--space-6px)" }}>{t("products.status_discontinued")}</span>}
                 </td>
                 <td className="mono">{p.card_number || "-"}</td>
                 <td>{p.rarity || "-"}</td>
@@ -372,7 +372,7 @@ export default function ProductsPage() {
                   )}
                 </td>
                 <td>
-                  <span style={{ color: p.quantity <= 0 ? "var(--danger)" : "inherit", fontWeight: p.quantity <= 0 ? 600 : 400 }}>
+                  <span style={{ color: p.quantity <= 0 ? "var(--danger)" : "inherit", fontWeight: p.quantity <= 0 ? "var(--font-weight-semi)" : "var(--font-weight-normal)" }}>
                     {p.quantity}
                   </span>
                 </td>

@@ -353,7 +353,7 @@ export default function ShippingDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 {TEXT_FIELDS.recipient.map((f) => (
@@ -377,7 +377,7 @@ export default function ShippingDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 {TEXT_FIELDS.address.map((f) => (
@@ -401,7 +401,7 @@ export default function ShippingDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 {NUMBER_FIELDS.dimensions.map((f) => (
@@ -428,7 +428,7 @@ export default function ShippingDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 {TEXT_FIELDS.packingItem.map((f) => (
@@ -466,7 +466,7 @@ export default function ShippingDetailPanel({
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "0.5rem 1rem",
+                  gap: "var(--space-2) var(--space-4)",
                 }}
               >
                 <div className="form-group">
@@ -519,10 +519,10 @@ export default function ShippingDetailPanel({
             <div
               className="form-actions"
               style={{
-                marginTop: "1rem",
+                marginTop: "var(--space-4)",
                 display: "flex",
                 justifyContent: "space-between",
-                gap: "0.5rem",
+                gap: "var(--space-2)",
                 flexWrap: "wrap",
               }}
             >
@@ -540,7 +540,7 @@ export default function ShippingDetailPanel({
               >
                 {downloading ? t("shipping.downloading") : t("shipping.downloadCsv")}
               </button>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "var(--space-2)" }}>
                 <button
                   type="button"
                   className="btn-secondary"

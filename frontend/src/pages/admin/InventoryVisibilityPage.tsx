@@ -174,7 +174,7 @@ export default function InventoryVisibilityPage() {
                       : t("inventoryVisibility.save")}
                   </button>
                   {savedFor === row.role_id && (
-                    <span style={{ marginLeft: "0.5rem", color: "green" }}>
+                    <span style={{ marginLeft: "var(--space-2)", color: "var(--success)" }}>
                       <STATUS_ICONS.check size={ICON.sm} aria-hidden="true" />{" "}{t("inventoryVisibility.saved")}
                     </span>
                   )}
