@@ -147,7 +147,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
         style={{ maxWidth: 640 }}
       >
         <h2>{t("mergeCompany.title")}</h2>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.9em", marginTop: "var(--space-1)" }}>
+        <p style={{ color: "var(--text-muted)", fontSize: "var(--font-base)", marginTop: "var(--space-1)" }}>
           {t("mergeCompany.sourceDesc", { name: source.name, code: source.company_code })}
         </p>
 
@@ -172,7 +172,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                   padding: "var(--space-2)",
                   borderRadius: "var(--radius-sm)",
                   marginTop: "var(--space-2)",
-                  fontSize: "0.85em",
+                  fontSize: "var(--font-sm)",
                   color: "var(--warning-text)",
                 }}
               >
@@ -309,7 +309,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                   padding: "var(--space-2)",
                   borderRadius: "var(--radius-sm)",
                   marginBottom: "var(--space-4)",
-                  fontSize: "0.9em",
+                  fontSize: "var(--font-base)",
                 }}
               >
                 <strong>{t("mergeCompany.reasonTitle")}:</strong> {reason.trim()}
