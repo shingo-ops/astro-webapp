@@ -186,6 +186,7 @@
     "dealAmount": "Amount (JPY)",
     "convert": "Convert",
     "status_new": "New",
+    "status_negotiating": "In Progress",
     "status_contact": "In Contact",
     "status_proposal": "Proposal",
     "status_won": "Won",
