@@ -457,6 +457,7 @@ export default function OrdersPage() {
   return (
     <div className="page">
       <div className="page-header">
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>{t("orders.title")}</h2>
         <button
           className="btn-primary"

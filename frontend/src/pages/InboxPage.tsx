@@ -25,6 +25,7 @@ import { useInboxSSE } from "../hooks/useInboxSSE";
 import { INBOX_ACTION_ICONS, NAV_ICONS, PAGE_ICONS, PlatformIcon, STATUS_ICONS } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
+import { PageLayout } from "../components/PageLayout";
 import { api, ApiError } from "../lib/api";
 import { ICON } from "../constants/iconSizes";
 import {
@@ -196,20 +197,6 @@ html.force-dark .inbox-wrapper {
   min-width: 0;
 }
 
-/* 受信箱タイトルエリア（seamless統合 — Meta風 / 背景透明でグラデーション透過） */
-.inbox-area-header {
-  padding: var(--space-4) var(--space-6) 0 0;  /* 左は wrapper の 24px に委譲、下余白は .page-subtitle に委譲 */
-  flex-shrink: 0;
-  background: transparent;
-}
-.inbox-area-title {
-  font-size: var(--font-xl);
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 2px;
-  line-height: 1.2;
-}
-
 /* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
 .inbox-full-tab-bar {
   display: flex;
@@ -293,19 +280,6 @@ html.force-dark .inbox-wrapper {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-/* パネルタイトル（スクリーンリーダー専用 — 視覚的に非表示） */
-.inbox-panel-title {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
 }
 
 /* 検索 + 管理ボタン行 */
@@ -991,7 +965,6 @@ html.force-dark .inbox-wrapper {
 /* スマートフォン縦（480px以下）: 右パネル非表示・余白縮小 */
 @media (max-width: 480px) {
   .inbox-wrapper    { padding-left: var(--space-3); }  /* モバイルは 12px に縮小 */
-  .inbox-area-header { padding: var(--space-2) var(--space-3) var(--space-1) 0; }
   .inbox-search-row  { padding: var(--space-2) var(--space-2) var(--space-1); }
   .inbox-left-panel  { max-height: 45vh; }
   .inbox-right-panel { display: none; }
@@ -1112,10 +1085,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 .right-panel-save-indicator .saved { color: var(--success-bg); }
 .right-panel-save-indicator .error  { color: var(--danger-bg); }
 
-/* ====== 受信箱タイトル行（ギアアイコン） ====== */
-.inbox-area-title-row {
-  display: flex; align-items: center; gap: var(--space-2);
-}
+/* ====== 受信箱設定ボタン ====== */
 .inbox-settings-btn {
   position: fixed;
   top: var(--space-3);
@@ -1693,31 +1663,27 @@ export default function InboxPage() {
   // 描画
   // ---------------------------------------------------------------------------
 
+  const settingsBtn = (
+    <button
+      type="button"
+      className="inbox-settings-btn"
+      onClick={() => setShowSettings(true)}
+      aria-label={t("inbox.settings.title")}
+      data-tooltip={t("inbox.settings.tooltip")}
+    >
+      <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
+    </button>
+  );
+
   return (
     <>
       {/* グローバルスタイル注入 */}
       <style>{INBOX_STYLES}</style>
 
+      <PageLayout navKey="nav.leadChat" subtitleKey="inbox.subtitle" noScroll headerAction={settingsBtn}>
       <div className="inbox-wrapper">
-        {/* 左+中央エリア（ヘッダー+タブ+カラム） */}
+        {/* 左+中央エリア（タブ+カラム） */}
         <div className="inbox-main-area">
-
-        {/* 受信箱タイトル（seamless統合 — Meta風） */}
-        <div className="inbox-area-header">
-          <div className="inbox-area-title-row">
-            <h1 className="inbox-area-title">{t("nav.leadChat")}</h1>
-            <button
-              type="button"
-              className="inbox-settings-btn"
-              onClick={() => setShowSettings(true)}
-              aria-label={t("inbox.settings.title")}
-              data-tooltip={t("inbox.settings.tooltip")}
-            >
-              <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
-            </button>
-          </div>
-          <p className="page-subtitle">{t("inbox.subtitle")}</p>
-        </div>
 
         {/* ステータスタブバー（商談進捗ベース） */}
         <div className="inbox-full-tab-bar">
@@ -1748,9 +1714,6 @@ export default function InboxPage() {
 
         {/* ============================== 左パネル ============================== */}
         <aside className="inbox-left-panel">
-          {/* アクセシビリティ用タイトル（視覚的・意味論的に非表示：h1が全幅ヘッダーに移動済み） */}
-          <h2 className="inbox-panel-title" aria-hidden="true">{t("nav.leadChat")}</h2>
-
           {/* 検索 + 管理ボタン + ユーティリティ（topbar移設分） */}
           <div className="inbox-search-row">
             <div className="inbox-search-wrap">
@@ -1928,11 +1891,11 @@ export default function InboxPage() {
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h2 className="inbox-center-title">
+                  <h3 className="inbox-center-title">
                     {messagesData?.lead?.customer_name
                       || selectedConversation?.customer_name
                       || `Lead #${selectedLeadId}`}
-                  </h2>
+                  </h3>
                   <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-2px)" }}>
                     {messagesData?.lead?.lead_code && (
                       <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
@@ -2135,20 +2098,15 @@ export default function InboxPage() {
                   <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
                 </button>
               </div>
-              {/* ヘッダー（Metaスタイル: アバター左 + 名前・リンク右） */}
+              {/* ヘッダー（アバター左 + 表示名・リンク右） */}
               <div className="right-panel-header">
                 <div className="right-panel-avatar">
-                  {getInitials(cardForm.customer_name ?? leadDetail.customer_name)}
+                  {getInitials(cardForm.nickname || cardForm.customer_name || leadDetail.nickname || leadDetail.customer_name)}
                 </div>
                 <div className="right-panel-header-info">
-                  <input
-                    className="right-panel-field right-panel-name-field"
-                    type="text"
-                    value={cardForm.customer_name ?? ""}
-                    onChange={(e) => handleCardFieldChange("customer_name", e.target.value)}
-                    onBlur={handleCardFieldBlur}
-                    placeholder={t("leads.customerName")}
-                  />
+                  <span className="right-panel-display-name">
+                    {cardForm.nickname || leadDetail.nickname || cardForm.customer_name || leadDetail.customer_name}
+                  </span>
                   <a href={`/leads?lead_id=${leadDetail.id}`} className="right-panel-link">
                     {t("inbox.viewLead")} →
                   </a>
@@ -2162,208 +2120,245 @@ export default function InboxPage() {
                 {cardSaveStatus === "error" && <span className="error">{cardSaveError}</span>}
               </div>
 
-              {/* セクション1: 連絡先 */}
-              <div className="right-panel-section">
-                <div className="right-panel-section-title">{t("inbox.sectionContact")}</div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.englishName")}</span>
-                  <input className="right-panel-field" type="text"
-                    value={cardForm.nickname ?? ""}
-                    onChange={(e) => handleCardFieldChange("nickname", e.target.value)}
-                    onBlur={handleCardFieldBlur}
-                    placeholder={t("leads.englishName")} />
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.companyName")}</span>
-                  <input className="right-panel-field" type="text"
-                    value={cardForm.company_name ?? ""}
-                    onChange={(e) => handleCardFieldChange("company_name", e.target.value)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.email")}</span>
-                  <input className="right-panel-field" type="email"
-                    value={cardForm.email ?? ""}
-                    onChange={(e) => handleCardFieldChange("email", e.target.value)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.phone")}</span>
-                  <input className="right-panel-field" type="tel"
-                    value={cardForm.phone ?? ""}
-                    onChange={(e) => handleCardFieldChange("phone", e.target.value)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
+              {/* タブバー */}
+              <div className="right-panel-tabs">
+                <button
+                  type="button"
+                  className={`right-panel-tab${karteTab === "contact" ? " active" : ""}`}
+                  onClick={() => setKarteTab("contact")}
+                >{t("inbox.karteContact")}</button>
+                <button
+                  type="button"
+                  className={`right-panel-tab${karteTab === "company" ? " active" : ""}`}
+                  onClick={() => setKarteTab("company")}
+                >{t("inbox.karteCompany")}</button>
+                <button
+                  type="button"
+                  className={`right-panel-tab${karteTab === "deal" ? " active" : ""}`}
+                  onClick={() => setKarteTab("deal")}
+                >{t("inbox.karteDeal")}</button>
               </div>
 
-              {/* セクション2: 商談情報 */}
-              <div className="right-panel-section">
-                <div className="right-panel-section-title">{t("inbox.sectionDeal")}</div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.status")}</span>
-                  <select className="right-panel-field"
-                    value={cardForm.status ?? ""}
-                    onChange={(e) => handleCardFieldChange("status", e.target.value)}
-                    onBlur={handleCardFieldBlur}>
-                    <option value="新規">{t("leads.status_new")}</option>
-                    <option value="コンタクト中">{t("leads.status_contact")}</option>
-                    <option value="提案中">{t("leads.status_proposal")}</option>
-                    <option value="案件化">{t("leads.status_won")}</option>
-                    <option value="失注">{t("leads.status_lost")}</option>
-                    <option value="保留">{t("leads.status_hold")}</option>
-                    <option value="AI対応中">{t("leads.status_ai_collecting")}</option>
-                    <option value="既存顧客">{t("leads.status_existing_customer")}</option>
-                    <option value="追客（短期）">{t("leads.status_follow_up_short")}</option>
-                    <option value="追客（長期）">{t("leads.status_follow_up_long")}</option>
-                    <option value="対象外">{t("leads.status_out_of_scope")}</option>
-                  </select>
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.temperature")}</span>
-                  <select className="right-panel-field"
-                    value={cardForm.temperature ?? ""}
-                    onChange={(e) => handleCardFieldChange("temperature", e.target.value || null)}
-                    onBlur={handleCardFieldBlur}>
-                    <option value="">—</option>
-                    <option value="Hot">Hot</option>
-                    <option value="Warm">Warm</option>
-                    <option value="Cold">Cold</option>
-                  </select>
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.estimatedScale")}</span>
-                  <select className="right-panel-field"
-                    value={cardForm.estimated_scale ?? ""}
-                    onChange={(e) => handleCardFieldChange("estimated_scale", e.target.value || null)}
-                    onBlur={handleCardFieldBlur}>
-                    <option value="">—</option>
-                    <option value="Small">Small</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Large">Large</option>
-                  </select>
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.customerType")}</span>
-                  <select className="right-panel-field"
-                    value={cardForm.customer_type ?? ""}
-                    onChange={(e) => handleCardFieldChange("customer_type", e.target.value || null)}
-                    onBlur={handleCardFieldBlur}>
-                    <option value="">—</option>
-                    <option value="信頼重視">{t("leads.customerType_trust")}</option>
-                    <option value="価格重視">{t("leads.customerType_price")}</option>
-                  </select>
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.responseSpeed")}</span>
-                  <select className="right-panel-field"
-                    value={cardForm.response_speed ?? ""}
-                    onChange={(e) => handleCardFieldChange("response_speed", e.target.value || null)}
-                    onBlur={handleCardFieldBlur}>
-                    <option value="">—</option>
-                    <option value="24h以内">{t("leads.responseSpeed_24h")}</option>
-                    <option value="3日以内">{t("leads.responseSpeed_3days")}</option>
-                    <option value="3日超">{t("leads.responseSpeed_over3days")}</option>
-                  </select>
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.monthlyForecast")}</span>
-                  <input className="right-panel-field" type="number" min="0"
-                    value={cardForm.monthly_forecast ?? ""}
-                    onChange={(e) => handleCardFieldChange("monthly_forecast", e.target.value || null)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.perOrderAmount")}</span>
-                  <input className="right-panel-field" type="number" min="0"
-                    value={cardForm.per_order_amount ?? ""}
-                    onChange={(e) => handleCardFieldChange("per_order_amount", e.target.value || null)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.monthlyFrequency")}</span>
-                  <input className="right-panel-field" type="number" min="0"
-                    value={cardForm.monthly_frequency ?? ""}
-                    onChange={(e) => handleCardFieldChange("monthly_frequency", e.target.value || null)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.salesForm")}</span>
-                  <input className="right-panel-field" type="text"
-                    value={cardForm.sales_form ?? ""}
-                    onChange={(e) => handleCardFieldChange("sales_form", e.target.value)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.meetingImpression")}</span>
-                  <input className="right-panel-field" type="text"
-                    value={cardForm.meeting_impression ?? ""}
-                    onChange={(e) => handleCardFieldChange("meeting_impression", e.target.value)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.competitorCheck")}</span>
-                  <label style={{ display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
-                    <input type="checkbox"
-                      checked={cardForm.competitor_check ?? false}
-                      onChange={(e) => {
-                        handleCardFieldChange("competitor_check", e.target.checked);
-                        setTimeout(handleCardFieldBlur, 0);
-                      }} />
-                    <span className="right-panel-value">
-                      {cardForm.competitor_check ? t("leads.competitorDone") : t("leads.competitorNotDone")}
-                    </span>
-                  </label>
-                </div>
-              </div>
+              {/* タブコンテンツ */}
+              <div className="right-panel-tab-content">
 
-              {/* セクション3: 次回アクション */}
-              <div className="right-panel-section">
-                <div className="right-panel-section-title">{t("inbox.sectionNextAction")}</div>
-                <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.nextActionDate")}</span>
-                  <input className="right-panel-field" type="date"
-                    value={cardForm.next_action_date ?? ""}
-                    onChange={(e) => handleCardFieldChange("next_action_date", e.target.value || null)}
-                    onBlur={handleCardFieldBlur} />
-                </div>
-                <textarea className="right-panel-field" rows={3}
-                  value={cardForm.next_action ?? ""}
-                  onChange={(e) => handleCardFieldChange("next_action", e.target.value)}
-                  onBlur={handleCardFieldBlur}
-                  placeholder={t("leads.nextAction")} />
-              </div>
+                {/* Tab 1: 連絡先 */}
+                {karteTab === "contact" && (
+                  <div className="right-panel-section">
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.nickname")}</span>
+                      <input className="right-panel-field" type="text"
+                        value={cardForm.nickname ?? ""}
+                        onChange={(e) => handleCardFieldChange("nickname", e.target.value)}
+                        onBlur={handleCardFieldBlur}
+                        placeholder={t("leads.nickname")} />
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.email")}</span>
+                      <input className="right-panel-field" type="email"
+                        value={cardForm.email ?? ""}
+                        onChange={(e) => handleCardFieldChange("email", e.target.value)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.phone")}</span>
+                      <input className="right-panel-field" type="tel"
+                        value={cardForm.phone ?? ""}
+                        onChange={(e) => handleCardFieldChange("phone", e.target.value)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+                  </div>
+                )}
 
-              {/* セクション4: 課題・ニーズ */}
-              <div className="right-panel-section">
-                <div className="right-panel-section-title">{t("inbox.sectionChallenge")}</div>
-                <textarea className="right-panel-field" rows={3}
-                  value={cardForm.challenge ?? ""}
-                  onChange={(e) => handleCardFieldChange("challenge", e.target.value)}
-                  onBlur={handleCardFieldBlur}
-                  placeholder={t("leads.challenge")} />
-              </div>
+                {/* Tab 2: 会社情報 */}
+                {karteTab === "company" && (
+                  <div className="right-panel-section">
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.companyName")}</span>
+                      <input className="right-panel-field" type="text"
+                        value={cardForm.company_name ?? ""}
+                        onChange={(e) => handleCardFieldChange("company_name", e.target.value)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+                  </div>
+                )}
 
-              {/* セクション5: メモ */}
-              <div className="right-panel-section">
-                <div className="right-panel-section-title">{t("inbox.sectionMemo")}</div>
-                <div className="right-panel-memo-label">{t("leads.notes")}</div>
-                <textarea className="right-panel-field" rows={3}
-                  value={cardForm.notes ?? ""}
-                  onChange={(e) => handleCardFieldChange("notes", e.target.value)}
-                  onBlur={handleCardFieldBlur}
-                  placeholder={t("leads.notes")} />
-                <div className="right-panel-memo-label">{t("leads.meetingMemo")}</div>
-                <textarea className="right-panel-field" rows={3}
-                  value={cardForm.meeting_memo ?? ""}
-                  onChange={(e) => handleCardFieldChange("meeting_memo", e.target.value)}
-                  onBlur={handleCardFieldBlur}
-                  placeholder={t("leads.meetingMemo")} />
-                <div className="right-panel-memo-label">{t("leads.csMemo")}</div>
-                <textarea className="right-panel-field" rows={3}
-                  value={cardForm.cs_memo ?? ""}
-                  onChange={(e) => handleCardFieldChange("cs_memo", e.target.value)}
-                  onBlur={handleCardFieldBlur}
-                  placeholder={t("leads.csMemo")} />
+                {/* Tab 3: 商談情報 */}
+                {karteTab === "deal" && (
+                  <div className="right-panel-section">
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("inbox.platformName")}</span>
+                      <span className="right-panel-value">{leadDetail.customer_name}</span>
+                    </div>
+
+                    <hr className="right-panel-divider" />
+
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.status")}</span>
+                      <select className="right-panel-field"
+                        value={cardForm.status ?? ""}
+                        onChange={(e) => handleCardFieldChange("status", e.target.value)}
+                        onBlur={handleCardFieldBlur}>
+                        <option value="新規">{t("leads.status_new")}</option>
+                        <option value="商談中">{t("leads.status_negotiating")}</option>
+                        <option value="既存顧客">{t("leads.status_existing_customer")}</option>
+                        <option value="追客（短期）">{t("leads.status_follow_up_short")}</option>
+                        <option value="追客（長期）">{t("leads.status_follow_up_long")}</option>
+                        <option value="失注">{t("leads.status_lost")}</option>
+                        <option value="対象外">{t("leads.status_out_of_scope")}</option>
+                      </select>
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.temperature")}</span>
+                      <select className="right-panel-field"
+                        value={cardForm.temperature ?? ""}
+                        onChange={(e) => handleCardFieldChange("temperature", e.target.value || null)}
+                        onBlur={handleCardFieldBlur}>
+                        <option value="">—</option>
+                        <option value="Hot">Hot</option>
+                        <option value="Warm">Warm</option>
+                        <option value="Cold">Cold</option>
+                      </select>
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.nextActionDate")}</span>
+                      <input className="right-panel-field" type="date"
+                        value={cardForm.next_action_date ?? ""}
+                        onChange={(e) => handleCardFieldChange("next_action_date", e.target.value || null)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+                    <textarea className="right-panel-field" rows={3}
+                      value={cardForm.next_action ?? ""}
+                      onChange={(e) => handleCardFieldChange("next_action", e.target.value)}
+                      onBlur={handleCardFieldBlur}
+                      placeholder={t("leads.nextAction")} />
+
+                    <hr className="right-panel-divider" />
+
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.estimatedScale")}</span>
+                      <select className="right-panel-field"
+                        value={cardForm.estimated_scale ?? ""}
+                        onChange={(e) => handleCardFieldChange("estimated_scale", e.target.value || null)}
+                        onBlur={handleCardFieldBlur}>
+                        <option value="">—</option>
+                        <option value="Small">Small</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Large">Large</option>
+                      </select>
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.monthlyForecast")}</span>
+                      <input className="right-panel-field" type="number" min="0"
+                        value={cardForm.monthly_forecast ?? ""}
+                        onChange={(e) => handleCardFieldChange("monthly_forecast", e.target.value || null)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.perOrderAmount")}</span>
+                      <input className="right-panel-field" type="number" min="0"
+                        value={cardForm.per_order_amount ?? ""}
+                        onChange={(e) => handleCardFieldChange("per_order_amount", e.target.value || null)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.monthlyFrequency")}</span>
+                      <input className="right-panel-field" type="number" min="0"
+                        value={cardForm.monthly_frequency ?? ""}
+                        onChange={(e) => handleCardFieldChange("monthly_frequency", e.target.value || null)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+
+                    <hr className="right-panel-divider" />
+
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.customerType")}</span>
+                      <select className="right-panel-field"
+                        value={cardForm.customer_type ?? ""}
+                        onChange={(e) => handleCardFieldChange("customer_type", e.target.value || null)}
+                        onBlur={handleCardFieldBlur}>
+                        <option value="">—</option>
+                        <option value="信頼重視">{t("leads.customerType_trust")}</option>
+                        <option value="価格重視">{t("leads.customerType_price")}</option>
+                      </select>
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.responseSpeed")}</span>
+                      <select className="right-panel-field"
+                        value={cardForm.response_speed ?? ""}
+                        onChange={(e) => handleCardFieldChange("response_speed", e.target.value || null)}
+                        onBlur={handleCardFieldBlur}>
+                        <option value="">—</option>
+                        <option value="24h以内">{t("leads.responseSpeed_24h")}</option>
+                        <option value="3日以内">{t("leads.responseSpeed_3days")}</option>
+                        <option value="3日超">{t("leads.responseSpeed_over3days")}</option>
+                      </select>
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.country")}</span>
+                      <input className="right-panel-field" type="text"
+                        value={cardForm.country ?? ""}
+                        onChange={(e) => handleCardFieldChange("country", e.target.value)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.targetTitles")}</span>
+                      <input className="right-panel-field" type="text"
+                        value={cardForm.target_titles ?? ""}
+                        onChange={(e) => handleCardFieldChange("target_titles", e.target.value)}
+                        onBlur={handleCardFieldBlur}
+                        placeholder="Pokemon, One Piece, ..." />
+                    </div>
+                    <textarea className="right-panel-field" rows={3}
+                      value={cardForm.challenge ?? ""}
+                      onChange={(e) => handleCardFieldChange("challenge", e.target.value)}
+                      onBlur={handleCardFieldBlur}
+                      placeholder={t("leads.challenge")} />
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.salesForm")}</span>
+                      <input className="right-panel-field" type="text"
+                        value={cardForm.sales_form ?? ""}
+                        onChange={(e) => handleCardFieldChange("sales_form", e.target.value)}
+                        onBlur={handleCardFieldBlur} />
+                    </div>
+                    <div className="right-panel-row">
+                      <span className="right-panel-label">{t("leads.competitorCheck")}</span>
+                      <label style={{ display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
+                        <input type="checkbox"
+                          checked={cardForm.competitor_check ?? false}
+                          onChange={(e) => {
+                            handleCardFieldChange("competitor_check", e.target.checked);
+                            setTimeout(handleCardFieldBlur, 0);
+                          }} />
+                        <span className="right-panel-value">
+                          {cardForm.competitor_check ? t("leads.competitorDone") : t("leads.competitorNotDone")}
+                        </span>
+                      </label>
+                    </div>
+
+                    <hr className="right-panel-divider" />
+
+                    <div className="right-panel-memo-label">{t("leads.notes")}</div>
+                    <textarea className="right-panel-field" rows={3}
+                      value={cardForm.notes ?? ""}
+                      onChange={(e) => handleCardFieldChange("notes", e.target.value)}
+                      onBlur={handleCardFieldBlur}
+                      placeholder={t("leads.notes")} />
+                    <div className="right-panel-memo-label">{t("leads.meetingMemo")}</div>
+                    <textarea className="right-panel-field" rows={3}
+                      value={cardForm.meeting_memo ?? ""}
+                      onChange={(e) => handleCardFieldChange("meeting_memo", e.target.value)}
+                      onBlur={handleCardFieldBlur}
+                      placeholder={t("leads.meetingMemo")} />
+                    <div className="right-panel-memo-label">{t("leads.csMemo")}</div>
+                    <textarea className="right-panel-field" rows={3}
+                      value={cardForm.cs_memo ?? ""}
+                      onChange={(e) => handleCardFieldChange("cs_memo", e.target.value)}
+                      onBlur={handleCardFieldBlur}
+                      placeholder={t("leads.csMemo")} />
+                  </div>
+                )}
+
               </div>
 
             </div>
@@ -2375,12 +2370,13 @@ export default function InboxPage() {
         </aside>
 
       </div>{/* /inbox-wrapper */}
+      </PageLayout>
 
       {/* ============================== 受信箱設定モーダル ============================== */}
       {showSettings && (
         <div className="inbox-settings-overlay" onClick={() => setShowSettings(false)}>
           <div className="inbox-settings-modal" onClick={(e) => e.stopPropagation()}>
-            <h2 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h2>
+            <h3 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h3>
 
             <div className="inbox-settings-section-title">{t("inbox.settings.display")}</div>
 
@@ -2456,3 +2452,4 @@ export default function InboxPage() {
     </>
   );
 }
+

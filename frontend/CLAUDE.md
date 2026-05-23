@@ -4,19 +4,21 @@
 
 ---
 
-## ページ見出し統一規約（サイドナビとの同期）
+## PageLayout ルール（全ページ必須）
 
-h1/h2 は必ず `t("nav.xxx")` キーを使う。`xxx.title` は作らない（サイドナビとズレが生じる）。
+ページタイトル・サブタイトルは必ず `<PageLayout navKey="nav.xxx">` 経由。raw `<h2>` は ESLint が自動ブロック。違反は CI で PR マージ不可。
 
 ```tsx
-// ❌ 禁止
-<h2>{t("inbox.title")}</h2>
-
-// ✅ 正しい（サイドナビと同一キー）
+// ❌ 禁止（ESLint エラー）
 <h2>{t("nav.leadChat")}</h2>
+
+// ✅ 正しい
+<PageLayout navKey="nav.leadChat" subtitleKey="inbox.subtitle">
+  {/* コンテンツ */}
+</PageLayout>
 ```
 
-新規ページ: ja.json + en.json の `"nav"` セクションに同キー追加 → Layout.tsx と h1/h2 の両方で使う。
+新規ページ: ja.json + en.json の `"nav"` セクションに同キー追加 → `navKey="nav.xxx"` で参照。
 
 ---
 

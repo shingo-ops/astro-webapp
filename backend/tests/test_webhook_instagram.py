@@ -71,7 +71,9 @@ _LEADS_DDL = """
         competitor_check BOOLEAN NOT NULL DEFAULT 0,
         per_order_amount NUMERIC(15, 2),
         monthly_frequency NUMERIC(10, 2),
-        english_name VARCHAR(255)
+        nickname VARCHAR(255),
+        country VARCHAR(100),
+        target_titles VARCHAR(500)
     )
 """
 

@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface Shift { id: number; user_id: number; shift_date: string; start_time: string; end_time: string; shift_type: string; notes: string | null; created_at: string; }
 
@@ -35,11 +36,12 @@ export default function ShiftsPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("nav.shifts")}</h2>
-        {hasPermission("shifts.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("shifts.newShift")}</button>}
-      </div>
+    <PageLayout
+      navKey="nav.shifts"
+      headerAction={hasPermission("shifts.manage") ? (
+        <button className="btn-primary" onClick={() => setShowForm(true)}>{t("shifts.newShift")}</button>
+      ) : undefined}
+    >
       {error && <div className="error-message">{error}</div>}
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
@@ -78,6 +80,6 @@ export default function ShiftsPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

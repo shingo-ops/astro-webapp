@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
+import { PageLayout } from "../components/PageLayout";
 
 interface Invoice {
   id: number;
@@ -56,11 +57,7 @@ export default function InvoicesPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("nav.quotesInvoices")}</h2>
-      </div>
-
+    <PageLayout navKey="nav.quotesInvoices">
       <nav className="tab-nav">
         <button onClick={() => navigate("/quotes")}>{t("nav.quoteHistory")}</button>
         <button className="tab-active">{t("nav.invoices")}</button>
@@ -114,6 +111,6 @@ export default function InvoicesPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

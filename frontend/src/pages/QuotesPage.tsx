@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface Quote {
   id: number;
@@ -58,14 +59,12 @@ export default function QuotesPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("nav.quotesInvoices")}</h2>
-        {hasPermission("quotes.create") && (
-          <button className="btn-primary" onClick={() => navigate("/quotes/new")}>{t("quotes.newQuote")}</button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.quotesInvoices"
+      headerAction={hasPermission("quotes.create") ? (
+        <button className="btn-primary" onClick={() => navigate("/quotes/new")}>{t("quotes.newQuote")}</button>
+      ) : undefined}
+    >
       <nav className="tab-nav">
         <button className="tab-active">{t("nav.quoteHistory")}</button>
         <button onClick={() => navigate("/invoices")}>{t("nav.invoices")}</button>
@@ -115,6 +114,6 @@ export default function QuotesPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

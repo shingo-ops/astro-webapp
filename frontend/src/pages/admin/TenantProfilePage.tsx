@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import { usePermissions } from "../../hooks/usePermissions";
-import { usePageTitle } from "../../hooks/usePageTitle";
+import { PageLayout } from "../../components/PageLayout";
 
 interface TenantProfile {
   id: number;
@@ -58,7 +58,6 @@ const emptyForm: FormState = {
 export default function TenantProfilePage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
-  const title = usePageTitle();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -123,18 +122,14 @@ export default function TenantProfilePage() {
 
   if (!canView) {
     return (
-      <div className="page">
+      <PageLayout navKey="nav.tenantProfile">
         <div className="error-message">{t("tenantProfile.permissionRequired")}</div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{title}</h2>
-        <p className="text-muted">{t("tenantProfile.subtitle")}</p>
-      </div>
+    <PageLayout navKey="nav.tenantProfile" subtitleKey="tenantProfile.subtitle">
       {loading ? (
         <div className="loading">{t("common.loading")}</div>
       ) : (
@@ -263,6 +258,6 @@ export default function TenantProfilePage() {
           )}
         </form>
       )}
-    </div>
+    </PageLayout>
   );
 }

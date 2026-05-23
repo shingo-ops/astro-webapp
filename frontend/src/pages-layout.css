@@ -41,6 +41,39 @@
 }
 
 /* ============================================================
+   PageLayout コンポーネント（全ページ共通構造）
+   DOM 構造でサブタイトル以下にコンテンツを制約する（tokens.css §レイアウト高さ制約ルール）
+   ============================================================ */
+.page-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.page-layout-header {
+  flex-shrink: 0;
+  padding: var(--page-padding-y) var(--page-padding-x) 0;
+}
+
+.page-layout-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--page-header-mb);
+}
+
+.page-layout-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--page-padding-x);
+}
+
+.page-layout-content--no-scroll {
+  overflow-y: hidden;
+}
+
+/* ============================================================
    Typography utility classes（Shopify Polaris / Meta 準拠の2層設計）
    primitive token → role token → utility class の3層構造。
    ページ内で直接 className に指定して使う。

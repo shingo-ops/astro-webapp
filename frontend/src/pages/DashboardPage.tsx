@@ -13,7 +13,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
-import { usePageTitle } from "../hooks/usePageTitle";
+import { PageLayout } from "../components/PageLayout";
 
 interface PipelineStage {
   stage: string;
@@ -57,7 +57,6 @@ interface Dashboard {
 
 export default function DashboardPage() {
   const { t } = useTranslation();
-  const title = usePageTitle();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
 
@@ -65,8 +64,8 @@ export default function DashboardPage() {
     api.get<Dashboard>("/dashboard").then(setData).catch((e) => setError(e.message));
   }, []);
 
-  if (error) return <div className="page"><div className="error-message">Error: {error}</div></div>;
-  if (!data) return <div className="page"><div className="loading">{t("common.loading")}</div></div>;
+  if (error) return <PageLayout navKey="nav.dashboard"><div className="error-message">Error: {error}</div></PageLayout>;
+  if (!data) return <PageLayout navKey="nav.dashboard"><div className="loading">{t("common.loading")}</div></PageLayout>;
 
   // 通貨フォーマット (円表示)
   // 背景: backend は Decimal 列を JSON 上は文字列で返すため (例: `amount * probability / 100.0`
@@ -95,9 +94,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="page">
-      <h2>{title}</h2>
-
+    <PageLayout navKey="nav.dashboard">
       {/* === 営業 KPI === */}
       <h3 style={{ marginTop: "var(--space-4)", marginBottom: "var(--space-2)", color: "var(--text-secondary)" }}>{t("dashboard.sales")}</h3>
       <div className="kpi-grid">
@@ -184,6 +181,6 @@ export default function DashboardPage() {
           </table>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }

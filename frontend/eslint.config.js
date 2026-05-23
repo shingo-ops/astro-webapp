@@ -80,4 +80,28 @@ export default [
       'no-restricted-imports': 'off',
     },
   },
+
+  // PageLayout 強制（ADR-067 拡張）:
+  // pages/ 配下で raw <h2> を書かせない。<PageLayout navKey="nav.xxx"> を使うこと。
+  {
+    files: ['src/pages/**/*.tsx', 'src/pages/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXOpeningElement[name.name='h2']",
+          message:
+            '❌ raw <h2> 禁止（ADR-067）。<PageLayout navKey="nav.xxx"> を使ってください（frontend/CLAUDE.md 参照）',
+        },
+      ],
+    },
+  },
+
+  // 例外: PageLayout.tsx 自体は h2 を直接使ってよい（唯一の実装箇所）
+  {
+    files: ['src/components/PageLayout.tsx'],
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
+  },
 ];

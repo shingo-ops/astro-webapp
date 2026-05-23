@@ -117,6 +117,7 @@ export default function QuoteCreatePage() {
   return (
     <div className="page">
       <div className="page-header">
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>{t("quotes.newQuote")}</h2>
       </div>
 

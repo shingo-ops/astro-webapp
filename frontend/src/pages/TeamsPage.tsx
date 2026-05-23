@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface Team {
   id: number;
@@ -143,14 +144,12 @@ export default function TeamsPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("nav.teams")}</h2>
-        {hasPermission("teams.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("teams.newTeam")}</button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.teams"
+      headerAction={hasPermission("teams.create") ? (
+        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("teams.newTeam")}</button>
+      ) : undefined}
+    >
       {error && <div className="error-message">{error}</div>}
 
       {showForm && (
@@ -248,6 +247,6 @@ export default function TeamsPage() {
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

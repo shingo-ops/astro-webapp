@@ -2,7 +2,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
-import { usePageTitle } from "../hooks/usePageTitle";
+import { PageLayout } from "../components/PageLayout";
 
 interface StaffReport {
   id: number; report_code: string | null; report_type: string; user_id: number; period: string;
@@ -12,7 +12,6 @@ interface StaffReport {
 export default function StaffReportsPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
-  const title = usePageTitle();
   const TYPE_LABELS: Record<string, string> = {
     daily: "Daily",
     weekly: "Weekly",
@@ -44,11 +43,12 @@ export default function StaffReportsPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{title}</h2>
-        {hasPermission("staff_reports.create") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("common.add")}</button>}
-      </div>
+    <PageLayout
+      navKey="nav.reports"
+      headerAction={hasPermission("staff_reports.create") ? (
+        <button className="btn-primary" onClick={() => setShowForm(true)}>{t("common.add")}</button>
+      ) : undefined}
+    >
       <div className="filter-bar">
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
           <option value="">{t("common.all")}</option>
@@ -95,6 +95,6 @@ export default function StaffReportsPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

@@ -24,6 +24,7 @@ export default function ComingSoonPage({ title, description }: Props) {
         <div className="coming-soon-icon" aria-hidden="true">
           <PAGE_ICONS.comingSoon size={64} />
         </div>
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>{title}</h2>
         <p className="coming-soon-label">{t("comingSoon.label")}</p>
         {description && <p className="coming-soon-desc">{description}</p>}

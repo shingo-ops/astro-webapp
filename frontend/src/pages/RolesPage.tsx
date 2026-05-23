@@ -360,6 +360,7 @@ export default function RolesPage() {
             <>
               <div className="roles-main-header">
                 <div>
+                  {/* eslint-disable-next-line no-restricted-syntax */}
                   <h2>
                     <span
                       className="badge"
