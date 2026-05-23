@@ -1,0 +1,249 @@
+/* ============================================================
+   Sales Anchor - Top Bar / Avatar / User Drawer Styles
+   App.css から分割
+   ============================================================ */
+
+/* --- Top bar --- */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 var(--space-2);
+  height: var(--topbar-height);
+  gap: var(--space-4);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-topbar);
+}
+
+.topbar-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 480px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0 var(--space-3);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.topbar-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring-shadow);
+}
+
+.topbar-search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.topbar-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: var(--space-10px) 0;
+  font-size: var(--font-base);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.topbar-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.topbar-email {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  max-width: var(--max-width-truncate);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-signout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6px);
+  padding: var(--space-6px) var(--space-14px);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-signout:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+/* --- App content (main scroll area) ---
+   background は transparent にして app-body のグラデーションを透過させる。 */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  background: transparent;
+}
+
+/* Inbox ページ（/lead-chat）: 内部パネルが自前で overflow を管理するため親の scroll を無効化 */
+.app-content--inbox {
+  overflow: hidden;
+}
+
+/* --- Fixed avatar button (Chrome / Meta style) --- */
+.avatar-btn {
+  position: fixed;
+  top: var(--space-3);
+  right: var(--space-4);
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-avatar);
+  transition: background var(--transition-fast), transform var(--transition-micro);
+  box-shadow: var(--shadow-md);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.avatar-btn:hover {
+  background: var(--accent-hover);
+  transform: scale(1.06);
+}
+
+/* --- User drawer backdrop --- */
+.user-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg);
+  z-index: var(--z-backdrop);
+  animation: fadeBackdrop 200ms ease;
+}
+
+@keyframes fadeBackdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* --- User drawer panel (slides in from right) --- */
+.user-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: var(--drawer-width);
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  z-index: var(--z-drawer);
+  transform: translateX(100%);
+  transition: transform var(--transition-slow);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-md);
+}
+
+.user-drawer--open {
+  transform: translateX(0);
+}
+
+.user-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.user-drawer-title {
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-primary);
+}
+
+.user-drawer-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: var(--font-lg);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.user-drawer-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.user-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.user-drawer-email {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  padding: var(--space-1) 0 var(--space-4);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-2);
+  word-break: break-all;
+}
+
+.user-drawer-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-10px);
+  width: 100%;
+  padding: var(--space-10px) var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-base);
+  color: var(--text-secondary);
+  transition: background var(--transition-fast);
+  text-align: left;
+}
+
+.user-drawer-action:hover {
+  background: var(--bg-hover);
+}
+
+.user-drawer-action--danger {
+  color: var(--danger);
+  margin-top: auto;
+}
+
+.user-drawer-action--danger:hover {
+  background: var(--danger-bg);
+}

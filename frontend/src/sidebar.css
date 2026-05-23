@@ -1,0 +1,215 @@
+/* ============================================================
+   Sales Anchor - Sidebar / App Shell Styles
+   App.css から分割 (ADR-022: App Shell)
+   ============================================================ */
+
+/* ============================================================
+   ADR-022: App Shell (Sidebar Layout)
+   ============================================================ */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* --- Sidebar panel --- */
+.sidebar-panel {
+  width: var(--sidebar-width-collapsed, 68px);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: width var(--transition-sidebar);
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: var(--z-sidebar);
+}
+
+.sidebar-panel.sidebar-expanded {
+  width: var(--sidebar-width-expanded, 240px);
+}
+
+/* Logo area */
+.sidebar-logo-area {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  height: 64px;
+  border-bottom: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-logo-icon {
+  width: var(--logo-size);
+  height: var(--logo-size);
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.sidebar-logo-text {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-sidebar-brand);
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  animation: fadeIn 200ms ease-in;
+}
+
+.sidebar-logo-text-img {
+  height: 28px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  animation: fadeIn 200ms ease-in;
+}
+
+/* ダークモード時サイドバーロゴを白反転（ADR-066） */
+:root.force-dark .sidebar-logo-icon,
+:root.force-dark .sidebar-logo-text-img {
+  filter: brightness(0) invert(1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Nav items container */
+.sidebar-nav-items {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-2) 0;
+}
+
+.sidebar-nav-items::-webkit-scrollbar {
+  width: var(--space-1);
+}
+.sidebar-nav-items::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav-items::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Sidebar nav item (NavLink / button) */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 11px 24px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--font-sm);
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  border: none;
+  border-left: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  line-height: 1.4;
+}
+
+.sidebar-item:hover {
+  background: var(--sidebar-item-hover-bg);
+  color: var(--sidebar-item-active-color);
+}
+
+.sidebar-item.active {
+  background: var(--sidebar-item-active-bg);
+  color: var(--sidebar-item-active-color);
+  font-weight: var(--font-weight-semi);
+  border-left-color: var(--sidebar-item-active-border);
+}
+
+.sidebar-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: var(--space-5);
+}
+
+.sidebar-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* 細幅時は透明にして見えなくする。widthはsidebarのoverflow:hiddenで制御 */
+  opacity: 0;
+  transition: opacity var(--transition-fast) 80ms;
+}
+
+.sidebar-expanded .sidebar-label {
+  opacity: 1;
+}
+
+/* Accordion */
+.sidebar-accordion-wrap {
+  /* stackable */
+}
+
+.sidebar-accordion-btn {
+  /* inherits .sidebar-item */
+}
+
+.sidebar-caret {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  transition: transform var(--transition-base);
+}
+
+.sidebar-caret.open {
+  transform: rotate(180deg);
+}
+
+.sidebar-accordion-menu {
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-sub-item {
+  display: block;
+  padding: 8px 16px 8px 56px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--font-sm);
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-sub-item:hover {
+  background: var(--sidebar-item-hover-bg);
+  color: var(--sidebar-item-active-color);
+}
+
+.sidebar-sub-item.active {
+  color: var(--sidebar-item-active-color);
+  font-weight: var(--font-weight-semi);
+  background: var(--link-active-bg);
+}
+
+.sidebar-loading-dot {
+  padding: var(--space-4) var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  letter-spacing: 4px;
+}
+
+/* --- App body (right of sidebar) ---
+   グラデーション背景をここで定義し、全ページに適用する。
+   サイドバー（sidebar-panel）は自前の background: var(--sidebar-bg) を持つため影響なし。
+   app-content は transparent にして透過させる。 */
+.app-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background-color: var(--bg-surface);
+  background-image: var(--inbox-bg-gradient);
+}
