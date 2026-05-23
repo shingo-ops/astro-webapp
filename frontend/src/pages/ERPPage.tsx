@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 interface SyncLog { id: number; sync_type: string; direction: string; record_count: number; status: string; error_message: string | null; started_at: string; completed_at: string | null; }
 
 export default function ERPPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
+  const title = usePageTitle();
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ export default function ERPPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("erp.title")}</h2>
+        <h2>{title}</h2>
         {hasPermission("erp.sync") && (
           <button className="btn-primary" onClick={exportInvoices} disabled={exporting}>
             {exporting ? t("erp.exporting") : t("erp.exportInvoices")}
