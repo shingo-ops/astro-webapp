@@ -487,7 +487,7 @@ jobs:
             #   関連: PR #572 / ADR セキュリティ強化計画
             docker exec -i astro-webapp-postgres-1 \
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
-              < /app/migrations/071_create_data_access_events.sql
+              < migrations/071_create_data_access_events.sql
 
             # Retention Policy (migration 072): 保持ポリシー削除ジョブ用インデックス
             #   - idx_data_access_events_created_at（単独インデックス）
@@ -496,7 +496,7 @@ jobs:
             #   関連: PR セキュリティ強化保持ポリシー実装
             docker exec -i astro-webapp-postgres-1 \
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
-              < /app/migrations/072_add_retention_indexes.sql
+              < migrations/072_add_retention_indexes.sql
 
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
