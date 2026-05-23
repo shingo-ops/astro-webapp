@@ -987,6 +987,8 @@ export default function InboxPage() {
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const skipNextPollRef = useRef(false);
   const pollErrorCountRef = useRef(0);
+  // 502/503/ネットワークエラーの連続発生カウント（1回目は抑制、2回目以降にバナー表示）
+  const transientErrorCountRef = useRef(0);
 
   // ---------------------------------------------------------------------------
   // データ取得
@@ -1001,9 +1003,28 @@ export default function InboxPage() {
         page_id: pageIdFilter || undefined,
       });
       setConversations(data.conversations || []);
+      transientErrorCountRef.current = 0; // 成功したら一時エラーカウントをリセット
     } catch (e) {
       // タイムアウトによるキャンセルはポーリング中の一時的な中断なのでバナーを出さない
       if (e instanceof Error && e.name === "AbortError") return;
+
+      // 502/503（デプロイ直後の起動中）やネットワークエラーは一時的なインフラ障害として扱う
+      // 1回目は黙って再試行（デプロイ29秒ウィンドウをユーザーに見せない）
+      // 2回目以降の連続エラーはバナー表示（本物の障害として通知）
+      const isTransient =
+        (e instanceof ApiError && (e.status === 502 || e.status === 503)) ||
+        (e instanceof TypeError) ||
+        (e instanceof Error && /^HTTP 50[23]/.test(e.message));
+
+      if (isTransient) {
+        transientErrorCountRef.current += 1;
+        console.warn(`[InboxPage] transient error #${transientErrorCountRef.current}:`, e instanceof Error ? e.message : e);
+        if (transientErrorCountRef.current < 2) return; // 1回目は抑制
+        // 2回目以降は本物の障害としてバナー表示
+      } else {
+        transientErrorCountRef.current = 0;
+      }
+
       const msg = e instanceof ApiError
         ? e.message
         : e instanceof Error ? e.message : "Failed to load conversations";
