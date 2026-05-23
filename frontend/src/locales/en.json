@@ -427,6 +427,7 @@
     "subtitle": "Manage and respond to messages.",
     "fetchError": "Failed to load data",
     "unreadBadge": "{{count}} unread",
+    "karteToggle": "Karte",
     "settings": {
       "title": "Inbox Settings",
       "display": "Display Customization",

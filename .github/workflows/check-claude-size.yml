@@ -1,0 +1,22 @@
+name: CLAUDE.md Size Guard
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'CLAUDE.md'
+      - 'frontend/CLAUDE.md'
+      - 'backend/CLAUDE.md'
+
+jobs:
+  check:
+    name: CLAUDE.md line count check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check CLAUDE.md sizes
+        working-directory: frontend
+        run: node scripts/check-claude-size.js

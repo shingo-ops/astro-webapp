@@ -24,7 +24,7 @@ import {
   Check, Warning, X,
   ChartBar, User, Target, Briefcase, Package,
   Users, Key, GearSix, Folder,
-  HardHat, Chat, ChatCircle,
+  HardHat, Chat, ChatCircle, ClipboardText,
   SquaresFour, FileText, Question, ShieldCheck,
   DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
 } from "@phosphor-icons/react";
@@ -52,8 +52,9 @@ export const CATEGORY_ICONS: Record<string, Icon> = {
 
 // ページ用（🚧 💬 の代替）
 export const PAGE_ICONS = {
-  comingSoon: HardHat,
-  inboxEmpty: Chat,
+  comingSoon:  HardHat,
+  inboxEmpty:  Chat,
+  kartePanel:  ClipboardText, // 受信箱モバイルドロワー「カルテ」ボタン用
 } satisfies Record<string, Icon>;
 
 // テーマ切り替え（Layout.tsx）
