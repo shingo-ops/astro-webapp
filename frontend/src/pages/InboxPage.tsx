@@ -307,14 +307,18 @@ html.force-dark .inbox-wrapper {
 }
 .inbox-search-input {
   width: 100%;
-  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 16px + var(--space-2));
+  padding: calc(var(--space-2) + 1.5px) var(--space-3) calc(var(--space-2) + 1.5px) calc(var(--space-3) + 16px + var(--space-2));
   border-radius: var(--radius-md);
-  border: none;
+  border: 1px solid var(--border-strong);
   background: var(--bg-subtle);
   font-size: var(--font-base);
   color: var(--text-primary);
   outline: none;
   box-sizing: border-box;
+  transition: border-color var(--transition-micro);
+}
+.inbox-search-input:focus {
+  border-color: var(--accent);
 }
 .inbox-search-input::placeholder {
   color: var(--text-secondary);
