@@ -210,11 +210,11 @@ html.force-dark .inbox-wrapper {
   margin: 0;
 }
 
-/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） — Meta実測: h=36, bg=bg-subtle */
+/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
 .inbox-full-tab-bar {
   display: flex;
   align-items: center;
-  background: var(--bg-subtle);
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
@@ -224,9 +224,9 @@ html.force-dark .inbox-wrapper {
   box-sizing: border-box;
 }
 .inbox-full-tab-bar::-webkit-scrollbar { display: none; }
-/* Meta実測: padding=8px 12px, border-radius=4px, font-size=14px, fw=400 */
+/* タブボタン: 54pxバー内で36px高さ（中央寄せ） */
 .inbox-full-tab {
-  height: var(--height-tab-bar);
+  height: var(--height-tab-item);
   padding: 0 var(--space-3);
   border: none;
   border-bottom: none;
