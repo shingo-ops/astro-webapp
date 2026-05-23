@@ -1748,7 +1748,7 @@ export default function InboxPage() {
         {/* ============================== 左パネル ============================== */}
         <aside className="inbox-left-panel">
           {/* アクセシビリティ用タイトル（視覚的・意味論的に非表示：h1が全幅ヘッダーに移動済み） */}
-          <h2 className="inbox-panel-title" aria-hidden="true">{t("nav.leadChat")}</h2>
+          <div className="inbox-panel-title" aria-hidden="true">{t("nav.leadChat")}</div>
 
           {/* 検索 + 管理ボタン + ユーティリティ（topbar移設分） */}
           <div className="inbox-search-row">
@@ -1927,11 +1927,11 @@ export default function InboxPage() {
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h2 className="inbox-center-title">
+                  <div className="inbox-center-title">
                     {messagesData?.lead?.customer_name
                       || selectedConversation?.customer_name
                       || `Lead #${selectedLeadId}`}
-                  </h2>
+                  </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-2px)" }}>
                     {messagesData?.lead?.lead_code && (
                       <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
@@ -2379,7 +2379,7 @@ export default function InboxPage() {
       {showSettings && (
         <div className="inbox-settings-overlay" onClick={() => setShowSettings(false)}>
           <div className="inbox-settings-modal" onClick={(e) => e.stopPropagation()}>
-            <h2 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h2>
+            <div className="inbox-settings-modal-title">{t("inbox.settings.title")}</div>
 
             <div className="inbox-settings-section-title">{t("inbox.settings.display")}</div>
 
