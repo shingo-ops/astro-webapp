@@ -1685,6 +1685,26 @@ export default function InboxPage() {
         {/* 左+中央エリア（タブ+カラム） */}
         <div className="inbox-main-area">
 
+<<<<<<< HEAD
+=======
+        {/* 受信箱タイトル（seamless統合 — Meta風） */}
+        <div className="inbox-area-header">
+          <div className="inbox-area-title-row">
+            <h1 className="inbox-area-title">{t("nav.leadChat")}</h1>
+            <button
+              type="button"
+              className="inbox-settings-btn"
+              onClick={() => setShowSettings(true)}
+              aria-label={t("inbox.settings.title")}
+              data-tooltip={t("inbox.settings.tooltip")}
+            >
+              <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
+            </button>
+          </div>
+          <p className="page-subtitle">{t("inbox.subtitle")}</p>
+        </div>
+
+>>>>>>> origin/develop
         {/* ステータスタブバー（商談進捗ベース） */}
         <div className="inbox-full-tab-bar">
           {STATUS_TABS.map((tab) => (
@@ -2120,6 +2140,7 @@ export default function InboxPage() {
                 {cardSaveStatus === "error" && <span className="error">{cardSaveError}</span>}
               </div>
 
+<<<<<<< HEAD
               {/* タブバー */}
               <div className="right-panel-tabs">
                 <button
@@ -2137,6 +2158,40 @@ export default function InboxPage() {
                   className={`right-panel-tab${karteTab === "deal" ? " active" : ""}`}
                   onClick={() => setKarteTab("deal")}
                 >{t("inbox.karteDeal")}</button>
+=======
+              {/* セクション1: 連絡先 */}
+              <div className="right-panel-section">
+                <div className="right-panel-section-title">{t("inbox.sectionContact")}</div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.englishName")}</span>
+                  <input className="right-panel-field" type="text"
+                    value={cardForm.nickname ?? ""}
+                    onChange={(e) => handleCardFieldChange("nickname", e.target.value)}
+                    onBlur={handleCardFieldBlur}
+                    placeholder={t("leads.englishName")} />
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.companyName")}</span>
+                  <input className="right-panel-field" type="text"
+                    value={cardForm.company_name ?? ""}
+                    onChange={(e) => handleCardFieldChange("company_name", e.target.value)}
+                    onBlur={handleCardFieldBlur} />
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.email")}</span>
+                  <input className="right-panel-field" type="email"
+                    value={cardForm.email ?? ""}
+                    onChange={(e) => handleCardFieldChange("email", e.target.value)}
+                    onBlur={handleCardFieldBlur} />
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.phone")}</span>
+                  <input className="right-panel-field" type="tel"
+                    value={cardForm.phone ?? ""}
+                    onChange={(e) => handleCardFieldChange("phone", e.target.value)}
+                    onBlur={handleCardFieldBlur} />
+                </div>
+>>>>>>> origin/develop
               </div>
 
               {/* タブコンテンツ */}
@@ -2452,3 +2507,4 @@ export default function InboxPage() {
     </>
   );
 }
+

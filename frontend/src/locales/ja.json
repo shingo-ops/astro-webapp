@@ -464,7 +464,8 @@
       "notifications": "通知・アラート",
       "browserNotifications": "ブラウザ通知",
       "browserNotificationsDenied": "ブラウザの設定で通知を許可してください",
-      "soundEnabled": "通知音"
+      "soundEnabled": "通知音",
+      "tooltip": "設定"
     }
   },
   "channels": {
