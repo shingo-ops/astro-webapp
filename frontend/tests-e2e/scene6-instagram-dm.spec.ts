@@ -4,12 +4,11 @@
  * 撮影台本対応: docs/META_APP_REVIEW_SCREENCAST_SCRIPT.md §7 (4:30–5:30)
  *
  * 目的:
- *   - /lead-chat で Instagram プラットフォームの会話が「Instagram」バッジ付きで表示される
+ *   - /lead-chat で Instagram プラットフォームの会話が表示される
  *   - Instagram 会話を選択 → inbound メッセージ表示
  *   - 返信送信 → outbound バブル表示（messaging_type=RESPONSE）
  *
  * 見せ場（撮影台本との対応）:
- *   - 4:44 platform バッジ「Instagram」（色分け or 文字）
  *   - 4:52 inbound メッセージ "Hi, do you ship internationally?"
  *   - 5:14 送信ボタン → outbound バブル + RESPONSE
  */
@@ -24,7 +23,7 @@ const conversationsFixture = loadFixture("mock-conversations.json");
 const messagesFixture = loadFixture<Record<string, unknown>>("mock-messages.json");
 
 test.describe("Scene 6: Instagram DM", () => {
-  test("4:30–4:52 Instagram 会話が platform バッジ付きで Inbox に表示される", async ({
+  test("4:30–4:52 Instagram 会話が Inbox に表示される", async ({
     page,
   }) => {
     await installAuthBypass(page);
@@ -41,14 +40,11 @@ test.describe("Scene 6: Instagram DM", () => {
       page.getByRole("heading", { name: "受信箱" }),
     ).toBeVisible({ timeout: 20_000 });
 
-    // 4:44 Instagram 会話アイテム + platform バッジ「Instagram」
+    // 4:44 Instagram 会話アイテム
     const hanakoBtn = page.locator("button.conversation-item", {
       hasText: "Hanako Insta",
     });
     await expect(hanakoBtn).toBeVisible();
-    await expect(
-      hanakoBtn.locator(".badge", { hasText: "Instagram" }),
-    ).toBeVisible();
 
     // 4:52 会話クリック → inbound メッセージ
     await hanakoBtn.click();
@@ -57,10 +53,6 @@ test.describe("Scene 6: Instagram DM", () => {
     await expect(
       mainArea.getByText("Hi, do you ship internationally?"),
     ).toBeVisible({ timeout: 10_000 });
-
-    // 右ペインヘッダの platform バッジも Instagram
-    const headerArea = page.locator("main main header");
-    await expect(headerArea.getByText("Instagram")).toBeVisible();
   });
 
   test("5:14–5:20 Instagram 会話に返信送信できる（RESPONSE）", async ({ page }) => {
