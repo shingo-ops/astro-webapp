@@ -690,6 +690,7 @@ html.force-dark .inbox-wrapper {
   flex-grow: 0;
   background: var(--bg-surface);
   border-left: 1px solid var(--inbox-separator);
+  margin-left: 14px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
