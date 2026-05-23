@@ -1,0 +1,81 @@
+/* ============================================================
+   Sales Anchor - Responsive Styles
+   App.css から分割: @media ブレークポイント（タブレット以下）
+   ============================================================ */
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .sidebar-nav {
+    display: flex;
+    padding: 0;
+  }
+  .sidebar-nav a {
+    padding: var(--space-2) var(--space-4);
+  }
+  .sidebar-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+  }
+  .dashboard-tables {
+    grid-template-columns: 1fr;
+  }
+  .page {
+    padding: var(--space-4);
+  }
+  .roles-layout {
+    grid-template-columns: 1fr;
+  }
+  .roles-sidebar {
+    position: static;
+  }
+  .roles-main-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .topnav {
+    flex-wrap: wrap;
+    height: auto;
+    padding: var(--space-2) var(--space-4);
+    gap: var(--space-2);
+  }
+  .topnav-links {
+    order: 3;
+    width: 100%;
+    padding-top: var(--space-1);
+  }
+  .topnav-user {
+    margin-left: auto;
+  }
+  .topnav-email {
+    max-width: 140px;
+  }
+  .brandbar {
+    flex-direction: column;
+    height: auto;
+    padding: var(--space-2) var(--space-4);
+    gap: var(--space-2);
+    align-items: stretch;
+  }
+  .brandbar-search {
+    max-width: 100%;
+  }
+  .mainnav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mainnav-user {
+    order: 2;
+    padding: var(--space-2) 0;
+    justify-content: flex-end;
+  }
+}

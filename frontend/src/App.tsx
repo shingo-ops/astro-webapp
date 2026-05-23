@@ -50,7 +50,12 @@ import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
 // spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
 import PhaseSwitchPage from "./pages/super-admin/PhaseSwitchPage";
-import "./App.css";
+import "./sidebar.css";
+import "./topbar.css";
+import "./components.css";
+import "./pages-layout.css";
+import "./company-forms.css";
+import "./responsive.css";
 
 function App() {
   const { t } = useTranslation();
