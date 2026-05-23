@@ -52,10 +52,10 @@
   padding-right: 0;
 }
 
-/* expanded 時はメニューテキストと x 軸を揃える
-   計算: padding-left(7) + logo-icon(36) + gap(12) = 55px = メニュー(3+20+20+12) */
+/* expanded 時: ロゴアイコン中心を --sidebar-nav-icon-center-x (33px) に揃える
+   padding-left = center(33) - logo-size/2(18) = 15px */
 .sidebar-expanded .sidebar-logo-area {
-  padding-left: 7px;
+  padding-left: calc(var(--sidebar-nav-icon-center-x) - var(--logo-size) / 2);
 }
 
 .sidebar-logo-icon {
@@ -112,7 +112,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 11px 15px;
+  padding: 11px 14px; /* collapsed: border(3)+padding(14)+icon-center(10)=27px=54px÷2 */
   color: var(--text-secondary);
   text-decoration: none;
   font-size: var(--font-sm);
