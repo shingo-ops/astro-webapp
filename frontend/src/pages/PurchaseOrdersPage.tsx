@@ -130,7 +130,7 @@ export default function PurchaseOrdersPage() {
 
   return (
     <div className="page">
-      <div className="page-header"><h2>{t("purchaseOrders.title")}</h2></div>
+      <div className="page-header"><h2>{t("nav.purchaseOrders")}</h2></div>
       <div className="filter-bar">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">{t("purchaseOrders.allStatuses")}</option>

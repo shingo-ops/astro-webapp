@@ -193,7 +193,7 @@ export default function DealsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("deals.title")}</h2>
+        <h2>{t("nav.deals")}</h2>
         {hasPermission("deals.create") && (
           <button
             className="btn-primary"

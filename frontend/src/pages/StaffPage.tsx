@@ -193,7 +193,7 @@ export default function StaffPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("staff.title")}</h2>
+        <h2>{t("nav.staff")}</h2>
         {hasPermission("staff.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
             {t("staff.newStaff")}

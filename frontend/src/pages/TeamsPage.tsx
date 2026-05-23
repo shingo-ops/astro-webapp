@@ -145,7 +145,7 @@ export default function TeamsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("teams.title")}</h2>
+        <h2>{t("nav.teams")}</h2>
         {hasPermission("teams.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("teams.newTeam")}</button>
         )}

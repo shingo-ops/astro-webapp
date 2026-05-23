@@ -353,7 +353,7 @@ export default function CompaniesPage() {
     <div className="page-container">
       <div className="page-header">
         <h1>
-          {t("companies.title")}
+          {t("nav.companies")}
           {pendingDedupCount > 0 && (
             <span className="dedup-summary">
               {t("companies.pendingDedupCount", { count: pendingDedupCount })}

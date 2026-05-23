@@ -26,7 +26,7 @@ export default function ArchivesPage() {
 
   return (
     <div className="page">
-      <div className="page-header"><h2>{t("archives.title")}</h2></div>
+      <div className="page-header"><h2>{t("nav.archive")}</h2></div>
       {error && <div className="error-message">{error}</div>}
       {loading ? <div className="loading">{t("common.loading")}</div> : (
         <table className="data-table">

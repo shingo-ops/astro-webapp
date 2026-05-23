@@ -60,7 +60,7 @@ export default function QuotesPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("quotes.title")}</h2>
+        <h2>{t("nav.quotesInvoices")}</h2>
         {hasPermission("quotes.create") && (
           <button className="btn-primary" onClick={() => navigate("/quotes/new")}>{t("quotes.newQuote")}</button>
         )}
