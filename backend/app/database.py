@@ -17,6 +17,7 @@ if DATABASE_URL.startswith("postgresql"):
         max_overflow=10,
         pool_recycle=3600,
         pool_pre_ping=True,
+        pool_timeout=30,  # コネクションプール枯渇時の無限待機を防止（30秒で諦めて503を返す）
         connect_args={"prepared_statement_cache_size": 0},  # ADR-065: コンテナ再起動後の InvalidCachedStatementError 防止
     )
 engine = create_async_engine(DATABASE_URL, **_engine_kwargs)

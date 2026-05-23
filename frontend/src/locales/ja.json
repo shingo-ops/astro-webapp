@@ -418,7 +418,8 @@
     "markAllRead": "全て既読にする",
     "filterUnread": "未読",
     "filterFollowUp": "フォローアップ",
-    "subtitle": "メッセージの管理と返信ができます。"
+    "subtitle": "メッセージの管理と返信ができます。",
+    "fetchError": "データの取得に失敗しました"
   },
   "channels": {
     "title": "チャンネル (Meta連携)",
