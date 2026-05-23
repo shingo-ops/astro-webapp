@@ -1294,7 +1294,7 @@ export default function InboxPage() {
 
         {/* 受信箱タイトル（seamless統合 — Meta風） */}
         <div className="inbox-area-header">
-          <h1 className="inbox-area-title">{t("inbox.title")}</h1>
+          <h1 className="inbox-area-title">{t("nav.leadChat")}</h1>
           <p className="inbox-area-subtitle">{t("inbox.subtitle")}</p>
         </div>
 
@@ -1318,7 +1318,7 @@ export default function InboxPage() {
         {/* ============================== 左パネル ============================== */}
         <aside className="inbox-left-panel">
           {/* アクセシビリティ用タイトル（視覚的・意味論的に非表示：h1が全幅ヘッダーに移動済み） */}
-          <h2 className="inbox-panel-title" aria-hidden="true">{t("inbox.title")}</h2>
+          <h2 className="inbox-panel-title" aria-hidden="true">{t("nav.leadChat")}</h2>
 
           {/* 検索 + 管理ボタン + ユーティリティ（topbar移設分） */}
           <div className="inbox-search-row">
