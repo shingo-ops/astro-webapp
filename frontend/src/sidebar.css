@@ -53,15 +53,10 @@
   padding-right: 0;
 }
 
-/* expanded 時はメニューテキストと x 軸を揃える */
+/* expanded 時はメニューテキストと x 軸を揃える
+   計算: padding-left(7) + logo-icon(36) + gap(12) = 55px = メニュー(3+20+20+12) */
 .sidebar-expanded .sidebar-logo-area {
-  padding-left: 20px;
-  border-left: 3px solid transparent;
-}
-
-.sidebar-expanded .sidebar-logo-icon {
-  width: var(--space-5);   /* 20px — sidebar-icon と同幅にしてテキスト位置を揃える */
-  height: var(--space-5);
+  padding-left: 7px;
 }
 
 .sidebar-logo-icon {
