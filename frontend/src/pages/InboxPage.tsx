@@ -708,19 +708,19 @@ html.force-dark .inbox-wrapper {
   flex-direction: column;
   align-items: center;
 }
-/* Meta実測: 右パネルアバター 52×52px */
+/* Meta実測: 右パネルアバター 40×40px（コンパクトヘッダー用） */
 .right-panel-avatar {
-  width: 52px;
-  height: 52px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--avatar-bg);
   color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-xl);
+  font-size: var(--font-base);
   font-weight: 700;
-  margin-bottom: var(--space-2);
+  flex-shrink: 0;
   user-select: none;
 }
 .right-panel-name {
@@ -1975,6 +1975,8 @@ export default function InboxPage() {
             </>
           )}
         </main>
+        </div>{/* /inbox-columns */}
+        </div>{/* /inbox-main-area */}
 
         {/* モバイルドロワーバックドロップ */}
         {showKartePanel && inboxSettings.showRightPanel && (
@@ -2246,8 +2248,6 @@ export default function InboxPage() {
             </div>
           )}
         </aside>
-        </div>{/* /inbox-columns */}
-        </div>{/* /inbox-main-area */}
 
       </div>{/* /inbox-wrapper */}
 
