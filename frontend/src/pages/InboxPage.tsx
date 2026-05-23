@@ -206,7 +206,7 @@ html.force-dark .inbox-wrapper {
 }
 .inbox-area-subtitle {
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--text-primary);
   margin: 0;
 }
 
