@@ -35,17 +35,9 @@ _BATCH_SIZE = int(os.getenv("RETENTION_BATCH_SIZE", "5000"))
 _BATCH_SLEEP_MS = int(os.getenv("RETENTION_BATCH_SLEEP_MS", "100"))
 
 
-# モジュールレベルでエンジンを1度だけ初期化（Celeryワーカーは長寿命プロセス）
-_engine = None
-_SessionFactory = None
-
-
-def _get_session_factory():
-    global _engine, _SessionFactory
-    if _SessionFactory is None:
-        _engine = create_engine(DATABASE_URL, echo=False)
-        _SessionFactory = sessionmaker(_engine)
-    return _SessionFactory
+def _get_sync_engine():
+    """同期SQLAlchemyエンジンを返す（テスト時のモック差し替えポイント）。"""
+    return create_engine(DATABASE_URL, echo=False)
 
 
 def _delete_in_batches(table: str, interval: str) -> int:
@@ -55,10 +47,16 @@ def _delete_in_batches(table: str, interval: str) -> int:
     - バッチ間に _BATCH_SLEEP_MS ms スリープ（autovacuum・他クエリへ処理を譲る）
     - `table` は必ず呼び出し元でハードコード定数から選択すること（SQLi防止）
 
+    根拠（外部事例）:
+    - 単発DELETE は100GB規模で最大5時間ロック・900%クエリ劣化（実事例）
+    - バッチ1000〜5000件 × スリープで影響を2〜3%に抑制
+    - Discord: 保持ポリシー未整備で€800,000 GDPR制裁
+
     Returns:
         削除した総件数
     """
-    Session = _get_session_factory()
+    engine = _get_sync_engine()
+    Session = sessionmaker(engine)
     total_deleted = 0
     batch_num = 0
 
@@ -106,7 +104,8 @@ def _delete_in_batches(table: str, interval: str) -> int:
 )
 def archive_audit_logs():
     """全テナントの90日以上前の監査ログを削除する（テナントスキーマ）。"""
-    Session = _get_session_factory()
+    engine = _get_sync_engine()
+    Session = sessionmaker(engine)
 
     with Session() as session:
         result = session.execute(
@@ -152,10 +151,9 @@ def archive_audit_logs():
 def purge_data_access_events():
     """public.data_access_events の 60日以上前のレコードをバッチ分割で削除する。
 
-    根拠:
-    - 60日保持: セキュリティインシデント調査は30日以上かかることがある（GDPR対応ベースライン）
-    - バッチ分割: 単発DELETE は初回実行時に数十万件一括 → 長時間ロック・WAL肥大リスク
-    - 毎日実行: 蓄積を防ぎ autovacuum の負荷を分散
+    保持期間60日の根拠:
+    - GDPR 最低30日 + セキュリティインシデント調査余裕（30日超は珍しくない）
+    - SOC2/ISO27001 推奨の最低保持期間を上回る
     """
     interval = f"{DATA_ACCESS_RETENTION_DAYS} days"
     deleted = _delete_in_batches("public.data_access_events", interval)
@@ -175,9 +173,9 @@ def purge_data_access_events():
 def purge_auth_events():
     """public.auth_events の 90日以上前のレコードをバッチ分割で削除する。
 
-    根拠:
-    - 90日保持: SOC2・ISO27001 推奨の認証ログ保持期間
-    - auth_events は data_access_events より発生頻度が低いが、保持ポリシーを明示する
+    保持期間90日の根拠:
+    - SOC2・ISO27001 推奨の認証ログ保持期間
+    - auth_events は data_access_events より発生頻度が低い
     """
     interval = f"{AUTH_EVENT_RETENTION_DAYS} days"
     deleted = _delete_in_batches("public.auth_events", interval)
