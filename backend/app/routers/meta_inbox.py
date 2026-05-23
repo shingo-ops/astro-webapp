@@ -1077,6 +1077,11 @@ async def stream_inbox_updates(
                     yield ": ping\n\n"  # ハートビート（コメント行）
                 except StopAsyncIteration:
                     break
+                except Exception:
+                    logger.warning(
+                        "SSE generator 予期しないエラー: tenant_id=%s", tenant_id, exc_info=True
+                    )
+                    break
         finally:
             await gen.aclose()
             await decrement_connection(tenant_id)

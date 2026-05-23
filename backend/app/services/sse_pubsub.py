@@ -37,10 +37,10 @@ async def increment_connection(tenant_id: int) -> bool:
 async def decrement_connection(tenant_id: int) -> None:
     async with _lock:
         n = _active.get(tenant_id, 0)
-        if n <= 1:
-            _active.pop(tenant_id, None)
-        else:
+        if n > 1:
             _active[tenant_id] = n - 1
+        else:
+            _active.pop(tenant_id, None)  # 0 or 1 → remove entry
 
 
 def channel(tenant_id: int) -> str:
@@ -51,8 +51,10 @@ async def publish_inbox_update(tenant_id: int) -> None:
     """Webhook 処理から呼ぶ。Redis 障害時はログのみで Webhook 継続（fail-open）。"""
     try:
         r = aioredis.from_url(SSE_REDIS_URL, decode_responses=True)
-        await r.publish(channel(tenant_id), "update")
-        await r.aclose()
+        try:
+            await r.publish(channel(tenant_id), "update")
+        finally:
+            await r.aclose()  # publish 失敗時でも接続を閉じる
     except Exception:
         logger.warning(
             "SSE publish失敗（Webhook継続）: tenant_id=%s", tenant_id, exc_info=True
