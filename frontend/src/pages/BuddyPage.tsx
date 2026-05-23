@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 interface Pair { id: number; coach_user_id: number; mentee_user_id: number; is_active: boolean; started_at: string; ended_at: string | null; notes: string | null; }
 interface Feedback { id: number; pair_id: number; feedback_type: string; reason: string | null; created_by: number; created_at: string; }
@@ -9,6 +10,7 @@ interface Feedback { id: number; pair_id: number; feedback_type: string; reason:
 export default function BuddyPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
+  const title = usePageTitle();
   const [pairs, setPairs] = useState<Pair[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -41,7 +43,7 @@ export default function BuddyPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("buddy.title")}</h2>
+        <h2>{title}</h2>
         {hasPermission("buddy.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("buddy.newPair")}</button>}
       </div>
       {error && <div className="error-message">{error}</div>}

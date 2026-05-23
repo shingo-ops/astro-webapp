@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import { usePermissions } from "../../hooks/usePermissions";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 interface TenantProfile {
   id: number;
@@ -57,6 +58,7 @@ const emptyForm: FormState = {
 export default function TenantProfilePage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
+  const title = usePageTitle();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -130,7 +132,7 @@ export default function TenantProfilePage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("tenantProfile.title")}</h2>
+        <h2>{title}</h2>
         <p className="text-muted">{t("tenantProfile.subtitle")}</p>
       </div>
       {loading ? (

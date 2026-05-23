@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 interface Badge { id: number; name: string; description: string | null; icon: string | null; criteria: string | null; points: number; is_active: boolean; created_at: string; }
 interface LeaderEntry { user_id: number; username: string | null; badge_count: number; total_points: number; }
@@ -9,6 +10,7 @@ interface LeaderEntry { user_id: number; username: string | null; badge_count: n
 export default function BadgesPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
+  const title = usePageTitle();
   const [badges, setBadges] = useState<Badge[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -36,7 +38,7 @@ export default function BadgesPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("badges.title")}</h2>
+        <h2>{title}</h2>
         {hasPermission("badges.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("badges.newBadge")}</button>}
       </div>
       {error && <div className="error-message">{error}</div>}

@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 interface PipelineStage {
   stage: string;
@@ -56,6 +57,7 @@ interface Dashboard {
 
 export default function DashboardPage() {
   const { t } = useTranslation();
+  const title = usePageTitle();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
 
@@ -94,7 +96,7 @@ export default function DashboardPage() {
 
   return (
     <div className="page">
-      <h2>{t("dashboard.title")}</h2>
+      <h2>{title}</h2>
 
       {/* === 営業 KPI === */}
       <h3 style={{ marginTop: "var(--space-4)", marginBottom: "var(--space-2)", color: "var(--text-secondary)" }}>{t("dashboard.sales")}</h3>
