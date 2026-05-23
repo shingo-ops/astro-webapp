@@ -2,7 +2,7 @@ import os
 
 import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,10 +11,12 @@ from app.cache import (
     cache_jwt_result,
     cache_tenant,
     cache_user_permissions,
+    check_auth_rate_limit,
     get_cached_jwt,
     get_cached_tenant,
     get_cached_user_permissions,
     is_token_blacklisted,
+    record_auth_failure,
 )
 from app.database import get_db
 from app.models import User, Tenant
@@ -47,7 +49,16 @@ def _init_firebase():
         _firebase_initialized = True
 
 
+def _get_client_ip(request: Request) -> str:
+    """クライアントIPをリバースプロキシ対応で取得する。"""
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 async def get_current_user(
+    request: Request,
     cred: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
 ) -> User:
@@ -57,18 +68,28 @@ async def get_current_user(
 
     フロー:
       ① ブラックリスト確認（ログアウト済みトークンを拒否）
-      ② Redisキャッシュからユーザー情報を取得（キャッシュヒット時はFirebase検証スキップ）
-      ③ キャッシュミス時: Firebase検証 → MFAチェック → DB検索 → 結果をキャッシュ
+      ② IPブルートフォース確認（過去の認証失敗が上限に達していれば429）
+      ③ Redisキャッシュからユーザー情報を取得（キャッシュヒット時はFirebase検証スキップ）
+      ④ キャッシュミス時: Firebase検証 → MFAチェック → DB検索 → 結果をキャッシュ
+         Firebase検証失敗時: IPに失敗記録を追加
     """
     _init_firebase()
 
     token = cred.credentials
+    client_ip = _get_client_ip(request)
 
     # ブラックリスト確認（ログアウト済みトークンを拒否）
     if await is_token_blacklisted(token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="このトークンは無効化されています",
+        )
+
+    # IPブルートフォース確認（認証失敗が上限に達していれば即429）
+    if await check_auth_rate_limit(client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="認証試行が上限に達しました。しばらく時間をおいてから再試行してください",
         )
 
     # Redisキャッシュからユーザー情報を取得
@@ -86,6 +107,7 @@ async def get_current_user(
     try:
         decoded = firebase_auth.verify_id_token(token)
     except Exception:
+        await record_auth_failure(client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="無効な認証トークンです",

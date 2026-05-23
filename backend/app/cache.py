@@ -212,6 +212,43 @@ async def invalidate_tenant_permissions(tenant_id: int) -> None:
         logger.warning("テナント権限キャッシュ一括削除失敗")
 
 
+# === ブルートフォース対策 ===
+# 認証失敗: IP単位、10回で15分ロック（Firebase token validation failure）
+AUTH_FAIL_MAX = 10
+AUTH_FAIL_LOCKOUT_TTL = 900  # 15分
+
+
+async def check_auth_rate_limit(ip: str) -> bool:
+    """IPアドレス単位の認証失敗レートリミットを確認する。True=ロック中。
+
+    Redis不通時はfail-open（サービス継続優先）。
+    """
+    r = get_redis()
+    if not r:
+        return False
+    try:
+        key = f"auth_fail_ip:{hashlib.sha256(ip.encode()).hexdigest()[:16]}"
+        count = await r.get(key)
+        return int(count or 0) >= AUTH_FAIL_MAX
+    except Exception:
+        logger.warning("auth_rate_limit確認失敗: fail-openとして通過")
+        return False
+
+
+async def record_auth_failure(ip: str) -> None:
+    """認証失敗をIPアドレスに記録する。"""
+    r = get_redis()
+    if not r:
+        return
+    try:
+        key = f"auth_fail_ip:{hashlib.sha256(ip.encode()).hexdigest()[:16]}"
+        count = await r.incr(key)
+        if count == 1:
+            await r.expire(key, AUTH_FAIL_LOCKOUT_TTL)
+    except Exception:
+        logger.warning("認証失敗記録に失敗")
+
+
 async def is_token_blacklisted(token: str) -> bool:
     """
     トークンがブラックリストに含まれているか確認する。
