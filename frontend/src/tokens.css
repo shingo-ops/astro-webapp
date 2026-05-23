@@ -168,6 +168,15 @@
   --page-padding-y:  var(--space-2);  /*  8px — 上下余白 */
   --page-header-mb:  var(--space-5);  /* 20px — 見出し下余白 */
 
+  /* ---- レイアウト高さ制約ルール（全ページ遵守必須） ----
+     .page-subtitle は margin-bottom: var(--space-3) = 12px（pages-layout.css）。
+     パネル・固定カラムをサブタイトル以下に収めるために CSS 変数ではなく
+     DOM 構造で制約する:
+       ✅ 正しい: ヘッダー要素と columns を flex-direction:column で積み、
+                 パネルは columns の子として配置（flex チェーンが自然に制限）
+       ❌ 誤り: パネルをヘッダーと同列の兄弟要素として配置（高さが画面最上部まで伸びる）
+     この設計を崩す変更は ADR を起案して PO 承認を得ること。 ---- */
+
   /* ---- Icon sizes ---- */
   /* Mirror: src/constants/iconSizes.ts — keep values in sync */
   --icon-sm:    14px;   /* ステータスアイコン・テーブル内 */
