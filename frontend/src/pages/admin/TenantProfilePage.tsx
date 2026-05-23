@@ -129,7 +129,7 @@ export default function TenantProfilePage() {
   }
 
   return (
-    <PageLayout navKey="nav.tenantProfile">
+    <PageLayout navKey="nav.tenantProfile" subtitleKey="tenantProfile.subtitle">
       {loading ? (
         <div className="loading">{t("common.loading")}</div>
       ) : (

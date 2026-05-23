@@ -69,6 +69,10 @@
   padding: 0 var(--page-padding-x);
 }
 
+.page-layout-content--no-scroll {
+  overflow-y: hidden;
+}
+
 /* ============================================================
    Typography utility classes（Shopify Polaris / Meta 準拠の2層設計）
    primitive token → role token → utility class の3層構造。

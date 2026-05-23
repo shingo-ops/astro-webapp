@@ -4,6 +4,7 @@ interface PageLayoutProps {
   navKey: `nav.${string}`;
   subtitleKey?: string;
   headerAction?: React.ReactNode;
+  noScroll?: boolean;
   children: React.ReactNode;
 }
 
@@ -11,6 +12,7 @@ export function PageLayout({
   navKey,
   subtitleKey,
   headerAction,
+  noScroll,
   children,
 }: PageLayoutProps) {
   const { t } = useTranslation();
@@ -25,7 +27,7 @@ export function PageLayout({
           <p className="page-subtitle">{t(subtitleKey)}</p>
         )}
       </header>
-      <div className="page-layout-content">{children}</div>
+      <div className={noScroll ? "page-layout-content page-layout-content--no-scroll" : "page-layout-content"}>{children}</div>
     </div>
   );
 }
