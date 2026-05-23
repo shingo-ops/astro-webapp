@@ -43,9 +43,9 @@ test.describe("Scene 5: Connect Instagram", () => {
     });
 
     await page.goto("/channels");
-    // ADR-044: i18n 化により t("channels.title") = "チャンネル (Meta連携)"
+    // ADR-044: i18n 化により t("channels.title") = "チャンネル (Meta)"
     await expect(
-      page.getByRole("heading", { name: "チャンネル (Meta連携)" }),
+      page.getByRole("heading", { name: "チャンネル (Meta)" }),
     ).toBeVisible({ timeout: 20_000 });
 
     // Page カード見出し

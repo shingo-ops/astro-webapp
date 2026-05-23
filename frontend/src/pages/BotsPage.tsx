@@ -166,7 +166,7 @@ export default function BotsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("bots.title")}</h2>
+        <h2>{t("nav.bots")}</h2>
         {hasPermission("bots.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
             {t("bots.newBot")}

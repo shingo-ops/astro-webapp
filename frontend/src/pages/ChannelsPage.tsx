@@ -223,7 +223,7 @@ export default function ChannelsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("channels.title")}</h2>
+        <h2>{t("nav.channels")}</h2>
         {canManage && (
           <button
             className="btn-primary"

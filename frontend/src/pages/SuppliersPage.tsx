@@ -57,7 +57,7 @@ export default function SuppliersPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("suppliers.title")}</h2>
+        <h2>{t("nav.suppliers")}</h2>
         {hasPermission("suppliers.create") && <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("suppliers.newSupplier")}</button>}
       </div>
       {error && <div className="error-message">{error}</div>}

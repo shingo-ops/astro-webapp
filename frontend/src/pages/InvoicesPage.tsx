@@ -58,7 +58,7 @@ export default function InvoicesPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("invoices.title")}</h2>
+        <h2>{t("nav.quotesInvoices")}</h2>
       </div>
 
       <nav className="tab-nav">

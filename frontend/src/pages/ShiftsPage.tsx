@@ -37,7 +37,7 @@ export default function ShiftsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("shifts.title")}</h2>
+        <h2>{t("nav.shifts")}</h2>
         {hasPermission("shifts.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("shifts.newShift")}</button>}
       </div>
       {error && <div className="error-message">{error}</div>}
