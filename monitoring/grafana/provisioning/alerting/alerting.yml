@@ -1,35 +1,7 @@
 # Grafana アラート通知設定
-# Slack Webhook URLは環境変数 GF_SLACK_WEBHOOK_URL で設定する
-#
-# 設定手順:
-# 1. Slack App を作成し Incoming Webhook を有効化
-# 2. docker-compose.yml の grafana サービスに環境変数を追加:
-#    - GF_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/XXXXX
-# 3. docker compose up -d grafana で反映
+# Slack通知は未設定のため無効化（GF_SLACK_WEBHOOK_URL が未設定）
+# 設定する場合は contactPoints + policies を再追加し、以下の環境変数を設定すること:
+#   docker-compose.yml の grafana サービスに:
+#     - GF_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/XXXXX
 
 apiVersion: 1
-
-contactPoints:
-  - orgId: 1
-    name: slack-alerts
-    receivers:
-      - uid: slack-jarvis
-        type: slack
-        settings:
-          url: ${GF_SLACK_WEBHOOK_URL}
-          recipient: '#jarvis-alerts'
-          title: |
-            {{ template "default.title" . }}
-          text: |
-            {{ template "default.message" . }}
-        disableResolveMessage: false
-
-policies:
-  - orgId: 1
-    receiver: slack-alerts
-    group_by:
-      - grafana_folder
-      - alertname
-    group_wait: 30s
-    group_interval: 5m
-    repeat_interval: 4h
