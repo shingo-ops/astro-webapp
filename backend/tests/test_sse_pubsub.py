@@ -1,5 +1,5 @@
 """
-SSE Pub/Sub モジュールのユニットテスト（Phase 2）。
+SSE Pub/Sub モジュールのユニットテスト（Phase 2-3）。
 """
 from __future__ import annotations
 
@@ -46,3 +46,28 @@ async def test_increment_connection_limit():
     assert ok is False
 
     _active.clear()
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: leads Pub/Sub テスト
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_publish_leads_update_fails_gracefully():
+    """Redis 障害時でも publish_leads_update は例外を飲み込む（リード操作継続）"""
+    with patch("app.services.sse_pubsub.aioredis.from_url") as mock:
+        mock.return_value.publish = AsyncMock(side_effect=ConnectionError("Redis down"))
+        mock.return_value.aclose = AsyncMock()
+        from app.services.sse_pubsub import publish_leads_update
+
+        await publish_leads_update(tenant_id=1)  # 例外なし
+
+
+@pytest.mark.asyncio
+async def test_leads_channel_naming():
+    """leads チャンネル名が正しい形式"""
+    from app.services.sse_pubsub import inbox_channel, leads_channel
+
+    assert leads_channel(123) == "leads:123"
+    assert inbox_channel(123) == "inbox:123"
