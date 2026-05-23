@@ -303,23 +303,10 @@ html.force-dark .inbox-wrapper {
   pointer-events: none;
   flex-shrink: 0;
 }
+/* inbox固有: width と icon用 padding-left のみ上書き */
 .inbox-search-input {
   width: 100%;
   padding: calc(var(--space-2) + 1.5px) var(--space-3) calc(var(--space-2) + 1.5px) calc(var(--space-3) + 16px + var(--space-2));
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-strong);
-  background: var(--bg-subtle);
-  font-size: var(--font-base);
-  color: var(--text-primary);
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color var(--transition-micro);
-}
-.inbox-search-input:focus {
-  border-color: var(--accent);
-}
-.inbox-search-input::placeholder {
-  color: var(--text-secondary);
 }
 
 /* 管理ボタン */
@@ -1660,7 +1647,7 @@ export default function InboxPage() {
               <NAV_ICONS.search size={14} className="inbox-search-icon" aria-hidden="true" />
               <input
                 type="text"
-                className="inbox-search-input"
+                className="search-input-field inbox-search-input"
                 placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

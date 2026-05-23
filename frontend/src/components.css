@@ -111,6 +111,29 @@
   color: var(--text-primary);
 }
 
+/* --- Search Input Field (Single Source of Truth) ---
+ * 検索欄のデザイントークン。すべてのページでこのクラスを使う。
+ * ページ固有のwidth/paddingのみ各ページのCSSで上書きすること。
+ * --search-focus-glow / --accent は index.css で定義。
+ */
+.search-input-field {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  font-size: var(--font-base);
+  color: var(--text-primary);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--transition-micro), box-shadow var(--transition-micro);
+}
+.search-input-field::placeholder {
+  color: var(--text-secondary);
+}
+.search-input-field:focus {
+  border-color: var(--accent);
+  box-shadow: var(--search-focus-glow);
+}
+
 /* --- Table --- */
 .data-table {
   width: 100%;
