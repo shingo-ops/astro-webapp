@@ -53,6 +53,17 @@
   padding-right: 0;
 }
 
+/* expanded 時はメニューテキストと x 軸を揃える */
+.sidebar-expanded .sidebar-logo-area {
+  padding-left: 20px;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-expanded .sidebar-logo-icon {
+  width: var(--space-5);   /* 20px — sidebar-icon と同幅にしてテキスト位置を揃える */
+  height: var(--space-5);
+}
+
 .sidebar-logo-icon {
   width: var(--logo-size);
   height: var(--logo-size);

@@ -21,7 +21,7 @@
   --font-3xl:           2rem;      /* 32px   — バッジアイコン等の特大表示 */
 
   /* 意味的例外（スケールに収まらない役割固有値） */
-  --font-sidebar-brand: 1.25rem;   /* サイドバーブランドロゴ文字 */
+  --font-sidebar-brand: 1.6rem;    /* サイドバーブランドロゴ文字 */
   --font-heading-lg:    1.4rem;    /* セクション大見出し */
   --font-display:       1.6rem;    /* ダッシュボード大数値 */
 
