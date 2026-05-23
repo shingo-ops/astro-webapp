@@ -36,7 +36,7 @@ import {
   inferPlatform,
   listConversations,
   markRead as apiMarkRead,
-  platformLabel as libPlatformLabel,
+
   sendMessage,
 } from "../lib/messages";
 
@@ -145,8 +145,6 @@ function getInitials(name: string | null | undefined): string {
     .toUpperCase();
 }
 
-// Phase 1-E F24-S5: lib/messages.ts の libPlatformLabel に集約。後方互換のため alias 維持。
-const platformLabel = libPlatformLabel;
 
 // ---------------------------------------------------------------------------
 // グローバルスタイル（<style> タグ経由で挿入）
@@ -305,23 +303,10 @@ html.force-dark .inbox-wrapper {
   pointer-events: none;
   flex-shrink: 0;
 }
+/* inbox固有: width と icon用 padding-left のみ上書き */
 .inbox-search-input {
   width: 100%;
   padding: calc(var(--space-2) + 1.5px) var(--space-3) calc(var(--space-2) + 1.5px) calc(var(--space-3) + 16px + var(--space-2));
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-strong);
-  background: var(--bg-subtle);
-  font-size: var(--font-base);
-  color: var(--text-primary);
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color var(--transition-micro);
-}
-.inbox-search-input:focus {
-  border-color: var(--accent);
-}
-.inbox-search-input::placeholder {
-  color: var(--text-secondary);
 }
 
 /* 管理ボタン */
@@ -528,14 +513,6 @@ html.force-dark .inbox-wrapper {
   font-weight: 700;
   flex-shrink: 0;
 }
-.conv-platform-badge {
-  font-size: var(--font-2xs);
-  padding: 1px 5px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
 
 /* ---- 中央パネル ---- */
 .inbox-center {
@@ -561,14 +538,6 @@ html.force-dark .inbox-wrapper {
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
-}
-.inbox-platform-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--space-2px) var(--space-2);
-  border-radius: var(--radius-xl);
-  font-size: var(--font-2xs);
-  font-weight: 600;
 }
 .inbox-messages {
   flex: 1;
@@ -1678,7 +1647,7 @@ export default function InboxPage() {
               <NAV_ICONS.search size={14} className="inbox-search-icon" aria-hidden="true" />
               <input
                 type="text"
-                className="inbox-search-input"
+                className="search-input-field inbox-search-input"
                 placeholder={t("common.search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1810,12 +1779,6 @@ export default function InboxPage() {
                         <span className="conv-time">{relativeTime(conv.last_message_at)}</span>
                       </div>
                       <div className="conv-preview">
-                        {/* platform バッジ（E2E 検証 + アクセシビリティ） */}
-                        {conv.platform && (
-                          <span className="badge conv-platform-badge">
-                            {platformLabel(conv.platform)}
-                          </span>
-                        )}
                         <span className={`conv-preview-text${conv.unread_count > 0 ? " unread" : ""}`}>
                           {conv.last_message_direction === "outbound" && (
                             <span style={{ opacity: "var(--opacity-muted)" }}>You: </span>
@@ -1864,20 +1827,6 @@ export default function InboxPage() {
                     {messagesData?.lead?.lead_code && (
                       <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
                         {messagesData.lead.lead_code}
-                      </span>
-                    )}
-                    {selectedPlatform && (
-                      <span
-                        className="inbox-platform-badge"
-                        style={
-                          selectedPlatform === "messenger"
-                            ? { background: "var(--link-active-bg)", color: "var(--accent)" }
-                            : selectedPlatform === "instagram"
-                              ? { background: "var(--instagram-bg)", color: "var(--instagram-text)" }
-                              : { background: "var(--bg-subtle)", color: "var(--text-secondary)" }
-                        }
-                      >
-                        {platformLabel(selectedPlatform)}
                       </span>
                     )}
                   </div>
