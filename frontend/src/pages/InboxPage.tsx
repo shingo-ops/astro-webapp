@@ -49,14 +49,19 @@ const POLL_MAX_INTERVAL_MS = 300_000;
 const POLL_BACKOFF_FACTOR = 2;
 
 // ---------------------------------------------------------------------------
-// プラットフォームタブ定数
+// ステータスタブ定数（商談進捗ベース）
 // ---------------------------------------------------------------------------
 
-const PLATFORM_TABS = [
-  { key: "all",       labelKey: "inbox.tabAll" },
-  { key: "messenger", labelKey: "inbox.tabMessenger" },
-  { key: "instagram", labelKey: "inbox.tabInstagram" },
+const STATUS_TABS = [
+  { key: "all",      labelKey: "inbox.tabAll",      statuses: null as null | string[] },
+  { key: "lead",     labelKey: "inbox.tabLead",     statuses: ["新規"] },
+  { key: "deal",     labelKey: "inbox.tabDeal",     statuses: ["商談中"] },
+  { key: "existing", labelKey: "inbox.tabExisting", statuses: ["既存顧客"] },
+  { key: "followup", labelKey: "inbox.tabFollowUp", statuses: ["追客（短期）", "追客（長期）"] },
+  { key: "archive",  labelKey: "inbox.tabArchive",  statuses: ["失注", "対象外"] },
 ] as const;
+
+type StatusTabKey = "all" | "lead" | "deal" | "existing" | "followup" | "archive";
 
 // ---------------------------------------------------------------------------
 // リードステータス分類定数
@@ -95,7 +100,9 @@ interface LeadDetail {
   competitor_check: boolean | null;
   per_order_amount: string | null;
   monthly_frequency: string | null;
-  english_name: string | null;
+  nickname: string | null;
+  country: string | null;
+  target_titles: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -247,6 +254,26 @@ html.force-dark .inbox-wrapper {
   color: var(--accent);
   font-weight: 700;
   border-radius: var(--radius-md);
+}
+
+/* プラットフォームフィルタードロップダウン（タブバー右端） */
+.inbox-platform-select {
+  margin-left: auto;
+  flex-shrink: 0;
+  height: var(--height-tab-item);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  font-family: inherit;
+  cursor: pointer;
+}
+.inbox-platform-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  color: var(--text-primary);
 }
 
 /* 3カラムコンテンツエリア */
@@ -1056,12 +1083,27 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 }
 .right-panel-name-field:hover,
 .right-panel-name-field:focus { background: var(--bg-primary); border-color: var(--border); }
-.right-panel-en-name-field {
-  font-size: var(--font-xs); color: var(--text-muted); text-align: center;
-  border: 1px solid transparent; background: transparent;
+/* ====== カルテタブ ====== */
+.right-panel-display-name {
+  font-size: var(--font-base); font-weight: 600; color: var(--text-primary);
+  width: 100%; word-break: break-word;
 }
-.right-panel-en-name-field:hover,
-.right-panel-en-name-field:focus { background: var(--bg-primary); border-color: var(--border); }
+.right-panel-tabs {
+  display: flex; width: 100%; flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.right-panel-tab {
+  flex: 1; padding: var(--space-2) var(--space-1);
+  background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi); color: var(--text-secondary);
+  transition: color var(--transition-micro), border-color var(--transition-micro);
+  margin-bottom: -1px;
+}
+.right-panel-tab:hover { color: var(--text-primary); }
+.right-panel-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.right-panel-tab-content { flex: 1; overflow-y: auto; width: 100%; }
+.right-panel-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
 .right-panel-save-indicator {
   font-size: var(--font-xs); color: var(--text-muted);
   min-height: 16px; text-align: right; padding: 0 var(--space-3);
@@ -1160,7 +1202,7 @@ const DRAFT_KEY = (leadId: number) => `cartedit_draft_${leadId}`;
 
 interface InboxSettings {
   showRightPanel: boolean;
-  defaultTab: "all" | "messenger" | "instagram";
+  defaultTab: StatusTabKey;
   defaultUnreadOnly: boolean;
   browserNotifications: boolean;
   soundEnabled: boolean;
@@ -1205,7 +1247,8 @@ export default function InboxPage() {
   const [showSettings, setShowSettings] = useState(false);
 
   // フィルタ（設定のデフォルト値を反映）
-  const [platformTab, setPlatformTab] = useState<string>(() => readInboxSettings().defaultTab);
+  const [statusTab, setStatusTab] = useState<StatusTabKey>(() => readInboxSettings().defaultTab);
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
   const [unreadOnly, setUnreadOnly] = useState(() => readInboxSettings().defaultUnreadOnly);
   const [followUpOnly, setFollowUpOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1226,6 +1269,8 @@ export default function InboxPage() {
   const [cardForm, setCardForm] = useState<Partial<LeadDetail>>({});
   const [cardSaveStatus, setCardSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [cardSaveError, setCardSaveError] = useState("");
+  // カルテ右パネルのタブ（連絡先 / 会社情報 / 商談情報）
+  const [karteTab, setKarteTab] = useState<"contact" | "company" | "deal">("contact");
   // モバイル時のドロワー開閉（デスクトップ>1024pxでは常時表示のため無視）
   const [showKartePanel, setShowKartePanel] = useState(false);
 
@@ -1253,7 +1298,7 @@ export default function InboxPage() {
     setConvError("");
     try {
       const data = await listConversations({
-        platform: platformTab === "all" ? undefined : platformTab as PlatformFilter,
+        platform: platformFilter === "all" ? undefined : platformFilter,
         unread_only: unreadOnly,
         page_id: pageIdFilter || undefined,
       });
@@ -1287,7 +1332,7 @@ export default function InboxPage() {
     } finally {
       setConvLoading(false);
     }
-  }, [platformTab, unreadOnly, pageIdFilter]);
+  }, [platformFilter, unreadOnly, pageIdFilter]);
 
   // Page ID ドロップダウン用（フィルタなしで初回取得）
   useEffect(() => {
@@ -1524,8 +1569,10 @@ export default function InboxPage() {
   const filteredConversations = useMemo(() => {
     return conversations
       .filter((c) => {
-        // 対象外を常に非表示（LeadsPage のアーカイブタブで確認）
-        return c.lead_status !== "対象外";
+        // ステータスタブによるフィルタ
+        const tab = STATUS_TABS.find((t) => t.key === statusTab);
+        if (!tab || !tab.statuses) return true; // "all" タブは全件表示
+        return (tab.statuses as readonly string[]).includes(c.lead_status ?? "");
       })
       .filter((c) => {
         if (!unreadOnly) return true;
@@ -1545,7 +1592,7 @@ export default function InboxPage() {
           (c.last_message_text ?? "").toLowerCase().includes(q)
         );
       });
-  }, [conversations, unreadOnly, followUpOnly, searchQuery]);
+  }, [conversations, statusTab, unreadOnly, followUpOnly, searchQuery]);
 
   // ---------------------------------------------------------------------------
   // 送信
@@ -1671,18 +1718,28 @@ export default function InboxPage() {
           <p className="page-subtitle">{t("inbox.subtitle")}</p>
         </div>
 
-        {/* プラットフォームタブバー（全幅） */}
+        {/* ステータスタブバー（商談進捗ベース） */}
         <div className="inbox-full-tab-bar">
-          {PLATFORM_TABS.map((tab) => (
+          {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
               type="button"
-              className={`inbox-full-tab${platformTab === tab.key ? " active" : ""}`}
-              onClick={() => setPlatformTab(tab.key)}
+              className={`inbox-full-tab${statusTab === tab.key ? " active" : ""}`}
+              onClick={() => setStatusTab(tab.key)}
             >
               {t(tab.labelKey)}
             </button>
           ))}
+          <select
+            className="inbox-platform-select"
+            value={platformFilter}
+            onChange={(e) => setPlatformFilter(e.target.value as PlatformFilter)}
+            aria-label={t("inbox.platformFilter")}
+          >
+            <option value="all">{t("inbox.platformAll")}</option>
+            <option value="messenger">{t("inbox.platformMessenger")}</option>
+            <option value="instagram">{t("inbox.platformInstagram")}</option>
+          </select>
         </div>
 
         {/* 3カラムコンテンツ */}
@@ -2339,10 +2396,13 @@ export default function InboxPage() {
               <span className="inbox-settings-label">{t("inbox.settings.defaultTab")}</span>
               <select className="inbox-settings-select"
                 value={inboxSettings.defaultTab}
-                onChange={(e) => updateInboxSetting("defaultTab", e.target.value as InboxSettings["defaultTab"])}>
+                onChange={(e) => updateInboxSetting("defaultTab", e.target.value as StatusTabKey)}>
                 <option value="all">{t("inbox.settings.defaultTabAll")}</option>
-                <option value="messenger">{t("inbox.settings.defaultTabMessenger")}</option>
-                <option value="instagram">{t("inbox.settings.defaultTabInstagram")}</option>
+                <option value="lead">{t("inbox.settings.defaultTabLead")}</option>
+                <option value="deal">{t("inbox.settings.defaultTabDeal")}</option>
+                <option value="existing">{t("inbox.settings.defaultTabExisting")}</option>
+                <option value="followup">{t("inbox.settings.defaultTabFollowUp")}</option>
+                <option value="archive">{t("inbox.settings.defaultTabArchive")}</option>
               </select>
             </div>
 
