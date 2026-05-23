@@ -69,6 +69,14 @@
   padding: 0 var(--page-padding-x);
 }
 
+/* noScroll バリアント: 受信箱など3カラム独立スクロールページ用。
+   コンテンツ側で overflow・padding を自前管理する（PageLayout.tsx §noScroll を参照）。
+   例外ページ: InboxPage のみ（2026-05-24 時点）。追加時は CLAUDE.md に記載すること。 */
+.page-layout-content.no-scroll {
+  overflow: hidden;
+  padding: 0;
+}
+
 /* ============================================================
    Typography utility classes（Shopify Polaris / Meta 準拠の2層設計）
    primitive token → role token → utility class の3層構造。

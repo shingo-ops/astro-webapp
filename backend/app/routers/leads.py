@@ -42,7 +42,7 @@ _LEAD_COLUMNS = """
     converted_deal_id, notes, created_at, updated_at,
     next_action, next_action_date, challenge, meeting_memo, meeting_impression,
     cs_memo, sales_form, competitor_check, per_order_amount, monthly_frequency,
-    nickname, country, target_titles
+    english_name
 """
 
 _UPDATABLE_COLUMNS = {
@@ -53,7 +53,7 @@ _UPDATABLE_COLUMNS = {
     # ADR-015 商談カルテフィールド
     "next_action", "next_action_date", "challenge", "meeting_memo",
     "meeting_impression", "cs_memo", "sales_form", "competitor_check",
-    "per_order_amount", "monthly_frequency", "nickname", "country", "target_titles",
+    "per_order_amount", "monthly_frequency", "english_name",
 }
 
 

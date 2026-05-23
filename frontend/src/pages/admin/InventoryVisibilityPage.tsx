@@ -14,7 +14,7 @@ import { api } from "../../lib/api";
 import { usePermissions } from "../../hooks/usePermissions";
 import { STATUS_ICONS } from "../../constants/icons";
 import { ICON } from "../../constants/iconSizes";
-import { PageLayout } from "../../components/PageLayout";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 interface MatrixRow {
   role_id: number;
@@ -38,6 +38,7 @@ interface RoleVisibility {
 export default function InventoryVisibilityPage() {
   const { t } = useTranslation();
   const { hasPermission, loading: permsLoading } = usePermissions();
+  const title = usePageTitle();
   const [matrix, setMatrix] = useState<RoleVisibility[]>([]);
   const [keys, setKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,16 +114,23 @@ export default function InventoryVisibilityPage() {
 
   if (!hasPermission("tenant.inventory_visibility.edit")) {
     return (
-      <PageLayout navKey="nav.inventoryVisibility">
+      <div className="page">
+        <div className="page-header">
+          <h2>{title}</h2>
+        </div>
         <div className="error-message" role="alert">
           {t("inventoryVisibility.permissionRequired")}
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
   return (
-    <PageLayout navKey="nav.inventoryVisibility" subtitleKey="inventoryVisibility.subtitle">
+    <div className="page inventory-visibility-page">
+      <div className="page-header">
+        <h2>{title}</h2>
+        <p className="page-subtitle">{t("inventoryVisibility.subtitle")}</p>
+      </div>
       {error && <div className="error-message">{error}</div>}
       {loading ? (
         <div>{t("inventoryVisibility.loadingMatrix")}</div>
@@ -178,6 +186,6 @@ export default function InventoryVisibilityPage() {
           </tbody>
         </table>
       )}
-    </PageLayout>
+    </div>
   );
 }

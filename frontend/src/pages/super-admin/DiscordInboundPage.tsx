@@ -17,7 +17,6 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
-import { PageLayout } from "../../components/PageLayout";
 
 interface InboundListItem {
   id: number;
@@ -111,16 +110,23 @@ export default function DiscordInboundPage() {
 
   if (!isSuperAdmin) {
     return (
-      <PageLayout navKey="nav.superAdminInbound">
+      <div className="page">
+        <div className="page-header">
+          <h2>{t("superAdmin.inbound.title")}</h2>
+        </div>
         <div className="error-message" role="alert">
           {t("superAdmin.accessDenied")}
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
   return (
-    <PageLayout navKey="nav.superAdminInbound" subtitleKey="superAdmin.inbound.subtitle">
+    <div className="page super-admin-inbound-page">
+      <div className="page-header">
+        <h2>{t("superAdmin.inbound.title")}</h2>
+        <p className="page-subtitle">{t("superAdmin.inbound.subtitle")}</p>
+      </div>
 
       {error && (
         <div className="error-message" role="alert">
@@ -243,6 +249,6 @@ export default function DiscordInboundPage() {
           </tbody>
         </table>
       )}
-    </PageLayout>
+    </div>
   );
 }

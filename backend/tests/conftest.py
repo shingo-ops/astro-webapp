@@ -391,7 +391,9 @@ async def setup_test_db(test_engine):
                 competitor_check BOOLEAN NOT NULL DEFAULT 0,
                 per_order_amount NUMERIC(15, 2),
                 monthly_frequency NUMERIC(10, 2),
-                nickname VARCHAR(255)
+                nickname VARCHAR(255),
+                country VARCHAR(100),
+                target_titles TEXT
             )
         """))
         # 案件テーブル（Step 5d: 旧 customer_id 列削除済）

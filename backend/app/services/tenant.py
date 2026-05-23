@@ -416,7 +416,7 @@ CREATE TABLE IF NOT EXISTS {schema}.leads (
     monthly_forecast_source VARCHAR(50),
     -- ADR-015 §4: 営業担当が記入する列
     challenge TEXT,
-    nickname VARCHAR(255),
+    english_name VARCHAR(255),
     meeting_impression VARCHAR(50),
     meeting_memo TEXT,
     -- ADR-015 §5: ダッシュボードの次回アクション

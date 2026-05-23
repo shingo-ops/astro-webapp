@@ -18,7 +18,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../../lib/api";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
-import { PageLayout } from "../../components/PageLayout";
 
 type Phase = "A" | "B" | "C";
 
@@ -118,16 +117,23 @@ export default function PhaseSwitchPage() {
 
   if (!isSuperAdmin) {
     return (
-      <PageLayout navKey="nav.superAdminPhaseSwitch">
+      <div className="page">
+        <div className="page-header">
+          <h2>{t("superAdmin.phaseSwitch.title")}</h2>
+        </div>
         <div className="error-message" role="alert">
           {t("superAdmin.accessDenied")}
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
   return (
-    <PageLayout navKey="nav.superAdminPhaseSwitch" subtitleKey="superAdmin.phaseSwitch.subtitle">
+    <div className="page" data-testid="phase-switch-page">
+      <div className="page-header">
+        <h2>{t("superAdmin.phaseSwitch.title")}</h2>
+        <p className="page-subtitle">{t("superAdmin.phaseSwitch.subtitle")}</p>
+      </div>
 
       {/* 常時表示の Phase A 警告バナー（spec v1.2 の運用注意喚起） */}
       <div
@@ -213,6 +219,6 @@ export default function PhaseSwitchPage() {
           </div>
         </>
       )}
-    </PageLayout>
+    </div>
   );
 }

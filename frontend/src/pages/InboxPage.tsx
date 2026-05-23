@@ -25,6 +25,7 @@ import { useInboxSSE } from "../hooks/useInboxSSE";
 import { INBOX_ACTION_ICONS, NAV_ICONS, PAGE_ICONS, PlatformIcon, STATUS_ICONS } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
+import { PageLayout } from "../components/PageLayout";
 import { api, ApiError } from "../lib/api";
 import { ICON } from "../constants/iconSizes";
 import {
@@ -196,20 +197,6 @@ html.force-dark .inbox-wrapper {
   min-width: 0;
 }
 
-/* 受信箱タイトルエリア（seamless統合 — Meta風 / 背景透明でグラデーション透過） */
-.inbox-area-header {
-  padding: var(--space-4) var(--space-6) 0 0;  /* 左は wrapper の 24px に委譲、下余白は .page-subtitle に委譲 */
-  flex-shrink: 0;
-  background: transparent;
-}
-.inbox-area-title {
-  font-size: var(--font-xl);
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 2px;
-  line-height: 1.2;
-}
-
 /* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
 .inbox-full-tab-bar {
   display: flex;
@@ -293,19 +280,6 @@ html.force-dark .inbox-wrapper {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-/* パネルタイトル（スクリーンリーダー専用 — 視覚的に非表示） */
-.inbox-panel-title {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
 }
 
 /* 検索 + 管理ボタン行 */
@@ -991,7 +965,6 @@ html.force-dark .inbox-wrapper {
 /* スマートフォン縦（480px以下）: 右パネル非表示・余白縮小 */
 @media (max-width: 480px) {
   .inbox-wrapper    { padding-left: var(--space-3); }  /* モバイルは 12px に縮小 */
-  .inbox-area-header { padding: var(--space-2) var(--space-3) var(--space-1) 0; }
   .inbox-search-row  { padding: var(--space-2) var(--space-2) var(--space-1); }
   .inbox-left-panel  { max-height: 45vh; }
   .inbox-right-panel { display: none; }
@@ -1112,10 +1085,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 .right-panel-save-indicator .saved { color: var(--success-bg); }
 .right-panel-save-indicator .error  { color: var(--danger-bg); }
 
-/* ====== 受信箱タイトル行（ギアアイコン） ====== */
-.inbox-area-title-row {
-  display: flex; align-items: center; gap: var(--space-2);
-}
+/* ====== 受信箱設定ボタン ====== */
 .inbox-settings-btn {
   position: fixed;
   top: var(--space-3);
@@ -1693,31 +1663,27 @@ export default function InboxPage() {
   // 描画
   // ---------------------------------------------------------------------------
 
+  const settingsBtn = (
+    <button
+      type="button"
+      className="inbox-settings-btn"
+      onClick={() => setShowSettings(true)}
+      aria-label={t("inbox.settings.title")}
+      data-tooltip={t("inbox.settings.tooltip")}
+    >
+      <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
+    </button>
+  );
+
   return (
     <>
       {/* グローバルスタイル注入 */}
       <style>{INBOX_STYLES}</style>
 
+      <PageLayout navKey="nav.leadChat" subtitleKey="inbox.subtitle" noScroll headerAction={settingsBtn}>
       <div className="inbox-wrapper">
-        {/* 左+中央エリア（ヘッダー+タブ+カラム） */}
+        {/* 左+中央エリア（タブ+カラム） */}
         <div className="inbox-main-area">
-
-        {/* 受信箱タイトル（seamless統合 — Meta風） */}
-        <div className="inbox-area-header">
-          <div className="inbox-area-title-row">
-            <h1 className="inbox-area-title">{t("nav.leadChat")}</h1>
-            <button
-              type="button"
-              className="inbox-settings-btn"
-              onClick={() => setShowSettings(true)}
-              aria-label={t("inbox.settings.title")}
-              data-tooltip={t("inbox.settings.tooltip")}
-            >
-              <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
-            </button>
-          </div>
-          <p className="page-subtitle">{t("inbox.subtitle")}</p>
-        </div>
 
         {/* ステータスタブバー（商談進捗ベース） */}
         <div className="inbox-full-tab-bar">
@@ -1748,9 +1714,6 @@ export default function InboxPage() {
 
         {/* ============================== 左パネル ============================== */}
         <aside className="inbox-left-panel">
-          {/* アクセシビリティ用タイトル（視覚的・意味論的に非表示：h1が全幅ヘッダーに移動済み） */}
-          <div className="inbox-panel-title" aria-hidden="true">{t("nav.leadChat")}</div>
-
           {/* 検索 + 管理ボタン + ユーティリティ（topbar移設分） */}
           <div className="inbox-search-row">
             <div className="inbox-search-wrap">
@@ -1928,11 +1891,11 @@ export default function InboxPage() {
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="inbox-center-title">
+                  <h2 className="inbox-center-title">
                     {messagesData?.lead?.customer_name
                       || selectedConversation?.customer_name
                       || `Lead #${selectedLeadId}`}
-                  </div>
+                  </h2>
                   <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-2px)" }}>
                     {messagesData?.lead?.lead_code && (
                       <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
@@ -2168,8 +2131,8 @@ export default function InboxPage() {
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.englishName")}</span>
                   <input className="right-panel-field" type="text"
-                    value={cardForm.nickname ?? ""}
-                    onChange={(e) => handleCardFieldChange("nickname", e.target.value)}
+                    value={cardForm.english_name ?? ""}
+                    onChange={(e) => handleCardFieldChange("english_name", e.target.value)}
                     onBlur={handleCardFieldBlur}
                     placeholder={t("leads.englishName")} />
                 </div>
@@ -2375,12 +2338,13 @@ export default function InboxPage() {
         </aside>
 
       </div>{/* /inbox-wrapper */}
+      </PageLayout>
 
       {/* ============================== 受信箱設定モーダル ============================== */}
       {showSettings && (
         <div className="inbox-settings-overlay" onClick={() => setShowSettings(false)}>
           <div className="inbox-settings-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="inbox-settings-modal-title">{t("inbox.settings.title")}</div>
+            <h2 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h2>
 
             <div className="inbox-settings-section-title">{t("inbox.settings.display")}</div>
 
