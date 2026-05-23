@@ -66,4 +66,18 @@ celery_app.conf.beat_schedule = {
         "task": "app.tasks.verify_meta_subscriptions.verify_all_meta_subscriptions",
         "schedule": crontab(hour=4, minute=30),
     },
+    # data_access_events の保持ポリシー（60日超を毎日 AM5:00 に削除）
+    # バッチ分割削除でロック競合・WAL肥大を防止
+    # 根拠: GDPR 30日+ セキュリティインシデント調査余裕 = 60日
+    "purge-data-access-events": {
+        "task": "app.tasks.maintenance.purge_data_access_events",
+        "schedule": crontab(hour=5, minute=0),
+    },
+    # auth_events の保持ポリシー（90日超を毎日 AM5:30 に削除）
+    # 30分ずらすことで data_access_events タスクとの重複実行を防止
+    # 根拠: SOC2・ISO27001 推奨の認証ログ保持期間
+    "purge-auth-events": {
+        "task": "app.tasks.maintenance.purge_auth_events",
+        "schedule": crontab(hour=5, minute=30),
+    },
 }

@@ -101,6 +101,7 @@
 
   /* ---- Z-index ---- */
   --z-base:           10;
+  --z-dropdown:       50;   /* ドロップダウン・オートコンプリートサジェスト */
   --z-topbar:        100;
   --z-sidebar:       200;
   --z-sidebar-overlay: 210;
@@ -152,7 +153,13 @@
 
   /* ---- Opacity ---- */
   --opacity-muted:     0.7;   /* タイムスタンプ・補足テキストの減光 */
+  --opacity-dim:       0.8;   /* ラベル減光・メタ情報（KPIラベル・ロールメタ） */
+  --opacity-soft:      0.9;   /* アクセントラベルの軽減光 */
   --opacity-secondary: 0.85;  /* セカンダリラベル */
+  --opacity-hover:     0.75;  /* ホバー時の軽減光 */
+  --opacity-disabled:  0.6;   /* disabled 状態の入力・ボタン */
+  --opacity-skipped:   0.55;  /* スキップ行・除外コンテンツ */
+  --opacity-archived:  0.5;   /* アーカイブ行・非アクティブコンテンツ */
 
   /* ---- Inbox component sizes (Meta実測値) ---- */
   --height-tab-bar:       36px;   /* 受信箱タブバー高さ */
