@@ -935,7 +935,6 @@ html.force-dark .inbox-wrapper {
 /* タブレット縦・スマートフォン横（768px以下）: 縦積みレイアウト */
 @media (max-width: 768px) {
   .inbox-wrapper {
-    flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
   }
