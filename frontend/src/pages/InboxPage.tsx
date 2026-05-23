@@ -1055,7 +1055,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
   width: var(--space-10);
   height: var(--space-10);
   display: flex; align-items: center; justify-content: center;
-  background: var(--bg-surface);
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -1064,7 +1064,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
   box-shadow: var(--shadow-md);
   transition: background var(--transition-micro);
 }
-.inbox-settings-btn:hover { background: var(--bg-subtle); }
+.inbox-settings-btn:hover { background: var(--color-hover-overlay); }
 
 /* ====== 受信箱設定モーダル ====== */
 .inbox-settings-overlay {
