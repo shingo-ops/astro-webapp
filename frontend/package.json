@@ -17,7 +17,8 @@
     "check:jsx-emoji": "node scripts/check-jsx-emoji.js",
     "check:css-var-fallbacks": "node scripts/check-css-var-fallbacks.js",
     "check:css-values": "node scripts/check-css-hardcoded-values.js",
-    "check:all": "npm run lint && npm run check:css-colors && npm run check:dark-parity && npm run check:jsx-emoji && npm run check:css-var-fallbacks && npm run check:css-values",
+    "check:nav-sync": "node scripts/check-nav-title-sync.js",
+    "check:all": "npm run lint && npm run check:css-colors && npm run check:dark-parity && npm run check:jsx-emoji && npm run check:css-var-fallbacks && npm run check:css-values && npm run check:nav-sync",
     "prepare": "cd .. && husky frontend/.husky"
   },
   "lint-staged": {
