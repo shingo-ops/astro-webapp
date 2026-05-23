@@ -463,7 +463,8 @@
       "notifications": "Notifications & Alerts",
       "browserNotifications": "Browser Notifications",
       "browserNotificationsDenied": "Please allow notifications in your browser settings",
-      "soundEnabled": "Notification Sound"
+      "soundEnabled": "Notification Sound",
+      "tooltip": "Settings"
     }
   },
   "channels": {
