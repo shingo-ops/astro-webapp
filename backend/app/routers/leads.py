@@ -255,6 +255,11 @@ async def create_lead(
     )
     await db.commit()
     await invalidate_dashboard_cache(tenant_id)
+    try:
+        from app.services.sse_pubsub import publish_leads_update
+        await publish_leads_update(tenant_id)
+    except Exception:
+        logging.warning("[Leads] SSE publish 失敗（リード作成継続）: tenant_id=%s", tenant_id)
 
     return LeadResponse(**row)
 
@@ -325,6 +330,11 @@ async def update_lead(
     )
     await db.commit()
     await invalidate_dashboard_cache(tenant_id)
+    try:
+        from app.services.sse_pubsub import publish_leads_update
+        await publish_leads_update(tenant_id)
+    except Exception:
+        logging.warning("[Leads] SSE publish 失敗（リード更新継続）: tenant_id=%s", tenant_id)
 
     return LeadResponse(**row)
 
@@ -357,6 +367,11 @@ async def delete_lead(
     )
     await db.commit()
     await invalidate_dashboard_cache(tenant_id)
+    try:
+        from app.services.sse_pubsub import publish_leads_update
+        await publish_leads_update(tenant_id)
+    except Exception:
+        logging.warning("[Leads] SSE publish 失敗（リード削除継続）: tenant_id=%s", tenant_id)
 
 
 @router.post(
@@ -1188,3 +1203,72 @@ async def _record_send_audit_safely(
         )
     except Exception:
         logger.warning("audit_log 記録に失敗（無視して継続）", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# GET /leads/stream — SSE リアルタイム通知（Phase 3）
+# ---------------------------------------------------------------------------
+import asyncio
+
+from starlette.requests import Request
+from starlette.responses import StreamingResponse
+
+_SSE_HEARTBEAT_SEC = 30
+
+
+@router.get(
+    "/leads/stream",
+    dependencies=[Depends(require_permission("leads.view"))],
+)
+async def stream_leads_updates(
+    request: Request,
+    tenant_id: int = Depends(get_current_tenant),
+) -> StreamingResponse:
+    """
+    SSE でリード一覧の更新を通知する。
+    リード作成・更新・削除時に "event: update" を送信。
+    30 秒ごとにハートビート ping。
+    """
+    from app.services.sse_pubsub import (
+        decrement_connection,
+        increment_connection,
+        subscribe_leads,
+    )
+
+    if not await increment_connection(tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="SSE接続数が上限に達しています",
+        )
+
+    async def event_generator():
+        gen = subscribe_leads(tenant_id)
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    await asyncio.wait_for(gen.__anext__(), timeout=_SSE_HEARTBEAT_SEC)
+                    yield "event: update\ndata: {}\n\n"
+                except asyncio.TimeoutError:
+                    yield ": ping\n\n"
+                except StopAsyncIteration:
+                    break
+                except Exception:
+                    logger.warning(
+                        "SSE leads generator 予期しないエラー: tenant_id=%s", tenant_id, exc_info=True
+                    )
+                    break
+        finally:
+            await gen.aclose()
+            await decrement_connection(tenant_id)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )

@@ -1,6 +1,6 @@
 """
-SSE 用 Redis Pub/Sub 管理（Phase 2）。
-DB3 専用。チャンネル: inbox:{tenant_id}
+SSE 用 Redis Pub/Sub 管理（Phase 2-3）。
+DB3 専用。チャンネル: inbox:{tenant_id} / leads:{tenant_id}
 """
 from __future__ import annotations
 
@@ -43,36 +43,59 @@ async def decrement_connection(tenant_id: int) -> None:
             _active.pop(tenant_id, None)  # 0 or 1 → remove entry
 
 
-def channel(tenant_id: int) -> str:
+def inbox_channel(tenant_id: int) -> str:
     return f"inbox:{tenant_id}"
 
 
-async def publish_inbox_update(tenant_id: int) -> None:
-    """Webhook 処理から呼ぶ。Redis 障害時はログのみで Webhook 継続（fail-open）。"""
+def leads_channel(tenant_id: int) -> str:
+    return f"leads:{tenant_id}"
+
+
+async def _publish(ch: str, tenant_id: int, label: str) -> None:
+    """汎用 publish ヘルパー。fail-open: Redis 障害時はログのみ。"""
     try:
         r = aioredis.from_url(SSE_REDIS_URL, decode_responses=True)
         try:
-            await r.publish(channel(tenant_id), "update")
+            await r.publish(ch, "update")
         finally:
-            await r.aclose()  # publish 失敗時でも接続を閉じる
+            await r.aclose()
     except Exception:
         logger.warning(
-            "SSE publish失敗（Webhook継続）: tenant_id=%s", tenant_id, exc_info=True
+            "SSE publish失敗（%s継続）: tenant_id=%s", label, tenant_id, exc_info=True
         )
 
 
-async def subscribe_inbox(tenant_id: int) -> AsyncIterator[None]:
-    """
-    SSE エンドポイントから呼ぶ非同期ジェネレータ。
-    呼び出し元で gen.aclose() を finally 節で必ず実行すること。
-    """
+async def _subscribe(ch: str) -> AsyncIterator[None]:
+    """汎用 subscribe ジェネレータ。呼び出し元で gen.aclose() を必ず実行すること。"""
     r = aioredis.from_url(SSE_REDIS_URL, decode_responses=True)
     pubsub = r.pubsub()
     try:
-        await pubsub.subscribe(channel(tenant_id))
+        await pubsub.subscribe(ch)
         async for msg in pubsub.listen():
             if msg["type"] == "message":
                 yield None
     finally:
         await pubsub.aclose()
         await r.aclose()
+
+
+async def publish_inbox_update(tenant_id: int) -> None:
+    """Webhook 処理から呼ぶ。Redis 障害時はログのみで Webhook 継続（fail-open）。"""
+    await _publish(inbox_channel(tenant_id), tenant_id, "Webhook")
+
+
+async def subscribe_inbox(tenant_id: int) -> AsyncIterator[None]:
+    """SSE エンドポイントから呼ぶ非同期ジェネレータ。"""
+    async for _ in _subscribe(inbox_channel(tenant_id)):
+        yield None
+
+
+async def publish_leads_update(tenant_id: int) -> None:
+    """leads.py の create/update/delete から呼ぶ。fail-open。"""
+    await _publish(leads_channel(tenant_id), tenant_id, "リード更新")
+
+
+async def subscribe_leads(tenant_id: int) -> AsyncIterator[None]:
+    """SSE エンドポイントから呼ぶ非同期ジェネレータ。"""
+    async for _ in _subscribe(leads_channel(tenant_id)):
+        yield None

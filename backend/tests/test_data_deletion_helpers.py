@@ -357,8 +357,8 @@ class TestArchiveAuditLogsTask:
 class TestDeleteInBatches:
     """maintenance._delete_in_batches のバッチ分割削除ロジックのテスト。"""
 
-    def _make_session_factory(self, rowcount: int):
-        """指定 rowcount を返すモックセッションファクトリを返す。"""
+    def _make_session_cm(self, rowcount: int):
+        """指定 rowcount を返すモックセッションコンテキストマネージャを生成する。"""
         mock_result = MagicMock()
         mock_result.rowcount = rowcount
         mock_session = MagicMock()
@@ -366,15 +366,16 @@ class TestDeleteInBatches:
         mock_session_cm = MagicMock()
         mock_session_cm.__enter__.return_value = mock_session
         mock_session_cm.__exit__.return_value = None
-        # sessionmaker(engine) が返す Session クラスの代替: 引数なしで呼ばれる
-        return lambda: mock_session_cm
+        return mock_session_cm
 
     def test_returns_zero_when_nothing_to_delete(self):
         """削除対象がない場合は 0 を返す。"""
         from app.tasks.maintenance import _delete_in_batches
 
+        session_cm = self._make_session_cm(rowcount=0)
+
         with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
-             patch("app.tasks.maintenance.sessionmaker", return_value=self._make_session_factory(rowcount=0)):
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: session_cm):
             result = _delete_in_batches("public.data_access_events", "60 days")
 
         assert result == 0
@@ -383,20 +384,22 @@ class TestDeleteInBatches:
         """1バッチ未満の削除件数を正しく返す。"""
         from app.tasks.maintenance import _delete_in_batches
 
+        session_cm = self._make_session_cm(rowcount=42)
+
         with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
-             patch("app.tasks.maintenance.sessionmaker", return_value=self._make_session_factory(rowcount=42)):
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: session_cm):
             result = _delete_in_batches("public.data_access_events", "60 days")
 
         assert result == 42
 
     def test_loops_when_full_batch_then_stops(self):
-        """バッチサイズ丁度なら続行し、次が0件で終了する。"""
+        """バッチサイズと同数なら続行し、次が0件で終了する。"""
         from app.tasks.maintenance import _delete_in_batches, _BATCH_SIZE
 
         # 1回目: バッチサイズ丁度（継続）、2回目: 0件（終了）
         rowcounts = iter([_BATCH_SIZE, 0])
 
-        def make_session_cm():
+        def make_cm():
             mock_result = MagicMock()
             mock_result.rowcount = next(rowcounts)
             mock_session = MagicMock()
@@ -407,10 +410,11 @@ class TestDeleteInBatches:
             return mock_session_cm
 
         with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
-             patch("app.tasks.maintenance.sessionmaker", return_value=make_session_cm), \
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: make_cm()), \
              patch("app.tasks.maintenance.time") as mock_time:
             result = _delete_in_batches("public.data_access_events", "60 days")
 
+        # 合計 = _BATCH_SIZE + 0
         assert result == _BATCH_SIZE
         # バッチ間スリープが1回呼ばれる
         mock_time.sleep.assert_called_once()
@@ -427,6 +431,7 @@ class TestPurgeDataAccessEvents:
             result = purge_data_access_events()
 
         assert result == {"deleted": 123}
+        # public.data_access_events が対象テーブルであることを確認
         args = mock_batch.call_args[0]
         assert args[0] == "public.data_access_events"
 
@@ -453,5 +458,6 @@ class TestPurgeAuthEvents:
             result = purge_auth_events()
 
         assert result == {"deleted": 77}
+        # public.auth_events が対象テーブルであることを確認
         args = mock_batch.call_args[0]
         assert args[0] == "public.auth_events"

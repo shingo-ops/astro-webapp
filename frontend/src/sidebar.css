@@ -213,3 +213,20 @@
   background-color: var(--bg-surface);
   background-image: var(--inbox-bg-gradient);
 }
+
+/* Phase 3: ナビ未読バッジ */
+.nav-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-badge);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--font-2xs);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  flex-shrink: 0;
+}
