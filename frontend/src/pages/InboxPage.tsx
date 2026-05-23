@@ -204,11 +204,6 @@ html.force-dark .inbox-wrapper {
   margin: 0 0 2px;
   line-height: 1.2;
 }
-.inbox-area-subtitle {
-  font-size: var(--font-sm);
-  color: var(--text-primary);
-  margin: 0;
-}
 
 /* 全幅タブバー（3カラムの上・コンテンツエリア全幅） */
 .inbox-full-tab-bar {
@@ -1298,7 +1293,7 @@ export default function InboxPage() {
         {/* 受信箱タイトル（seamless統合 — Meta風） */}
         <div className="inbox-area-header">
           <h1 className="inbox-area-title">{t("nav.leadChat")}</h1>
-          <p className="inbox-area-subtitle">{t("inbox.subtitle")}</p>
+          <p className="page-subtitle">{t("inbox.subtitle")}</p>
         </div>
 
         {/* プラットフォームタブバー（全幅） */}
