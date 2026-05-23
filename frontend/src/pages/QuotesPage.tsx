@@ -66,6 +66,11 @@ export default function QuotesPage() {
         )}
       </div>
 
+      <nav className="tab-nav">
+        <button className="tab-active">{t("nav.quoteHistory")}</button>
+        <button onClick={() => navigate("/invoices")}>{t("nav.invoices")}</button>
+      </nav>
+
       <div className="filter-bar">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">{t("quotes.allStatuses")}</option>

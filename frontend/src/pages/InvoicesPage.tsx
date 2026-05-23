@@ -61,6 +61,11 @@ export default function InvoicesPage() {
         <h2>{t("invoices.title")}</h2>
       </div>
 
+      <nav className="tab-nav">
+        <button onClick={() => navigate("/quotes")}>{t("nav.quoteHistory")}</button>
+        <button className="tab-active">{t("nav.invoices")}</button>
+      </nav>
+
       <div className="filter-bar">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">{t("invoices.allStatuses")}</option>

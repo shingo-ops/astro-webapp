@@ -140,11 +140,10 @@ export default function Layout() {
 
   const showLeadsLink = hasPermission("leads.view") || hasPermission("customers.view");
 
-  const salesItems: SubItem[] = [
-    ...(hasPermission("quotes.create") ? [{ to: "/quotes/new", label: t("nav.newQuote") }] : []),
-    ...(hasPermission("quotes.view") ? [{ to: "/quotes", label: t("nav.quoteHistory") }] : []),
-    ...(hasPermission("invoices.view") ? [{ to: "/invoices", label: t("nav.invoices") }] : []),
-  ];
+  const showSalesLink =
+    prefs.show_sales_menu &&
+    (hasPermission("quotes.view") || hasPermission("invoices.view"));
+  const salesLinkTo = hasPermission("quotes.view") ? "/quotes" : "/invoices";
 
   const adminItems: SubItem[] = [
     ...(hasPermission("customers.view") ? [
@@ -274,16 +273,19 @@ export default function Layout() {
                 </NavLink>
               )}
 
-              {prefs.show_sales_menu && (
-                <SidebarAccordion
-                  label={t("nav.quotesInvoices")}
-                  icon={<NAV_ICONS.fileText size={ICON.base} />}
-                  items={salesItems}
-                  activePaths={["/quotes", "/invoices"]}
-                  isExpanded={sidebarExpanded}
-                  isOpen={openAccordion === "sales"}
-                  onToggle={() => toggleAccordion("sales")}
-                />
+              {showSalesLink && (
+                <NavLink
+                  to={salesLinkTo}
+                  className={() => {
+                    const on =
+                      location.pathname.startsWith("/quotes") ||
+                      location.pathname.startsWith("/invoices");
+                    return `sidebar-item${on ? " active" : ""}`;
+                  }}
+                >
+                  <span className="sidebar-icon"><NAV_ICONS.fileText size={ICON.base} /></span>
+                  <span className="sidebar-label">{t("nav.quotesInvoices")}</span>
+                </NavLink>
               )}
 
               <NavLink
