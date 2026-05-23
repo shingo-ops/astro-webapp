@@ -1080,13 +1080,22 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
   display: flex; align-items: center; gap: var(--space-2);
 }
 .inbox-settings-btn {
+  position: fixed;
+  top: var(--space-3);
+  right: calc(var(--space-4) + var(--space-10) + var(--space-2));
+  width: var(--space-10);
+  height: var(--space-10);
   display: flex; align-items: center; justify-content: center;
-  background: none; border: none; cursor: pointer;
-  color: var(--text-muted); border-radius: var(--radius-sm);
-  padding: var(--space-1);
-  transition: color var(--transition-micro), background var(--transition-micro);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-primary);
+  z-index: calc(var(--z-avatar) - 1);
+  box-shadow: var(--shadow-md);
+  transition: background var(--transition-micro);
 }
-.inbox-settings-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.inbox-settings-btn:hover { background: var(--bg-subtle); }
 
 /* ====== 受信箱設定モーダル ====== */
 .inbox-settings-overlay {
@@ -1635,7 +1644,7 @@ export default function InboxPage() {
               onClick={() => setShowSettings(true)}
               aria-label={t("inbox.settings.title")}
             >
-              <NAV_ICONS.settings size={ICON.md} aria-hidden="true" />
+              <NAV_ICONS.settings size={ICON.base} strokeWidth={2.5} aria-hidden="true" />
             </button>
           </div>
           <p className="page-subtitle">{t("inbox.subtitle")}</p>
