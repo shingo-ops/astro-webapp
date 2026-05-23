@@ -511,7 +511,7 @@ html.force-dark .inbox-wrapper {
   flex-shrink: 0;
 }
 .conv-platform-badge {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
   background: var(--bg-subtle);
@@ -848,7 +848,7 @@ html.force-dark .inbox-wrapper {
 
 /* メモ内サブラベル */
 .right-panel-memo-label {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
