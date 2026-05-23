@@ -89,7 +89,7 @@ async def engine():
                 competitor_check BOOLEAN NOT NULL DEFAULT 0,
                 per_order_amount NUMERIC(15, 2),
                 monthly_frequency NUMERIC(10, 2),
-                english_name VARCHAR(255)
+                nickname VARCHAR(255)
             )
         """))
         # meta_messages（migration 012 + 041 + 045 (F14-S5 page_id) を SQLite 用に縮小）
