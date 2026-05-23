@@ -23,7 +23,8 @@
   flex-shrink: 0;
   transition: width var(--transition-sidebar);
   overflow: hidden;
-  position: sticky;
+  position: fixed;
+  left: 0;
   top: 0;
   height: 100vh;
   z-index: var(--z-sidebar);
@@ -212,6 +213,7 @@
   overflow: hidden;
   background-color: var(--bg-surface);
   background-image: var(--inbox-bg-gradient);
+  margin-left: var(--sidebar-width-collapsed, 68px);
 }
 
 /* Phase 3: ナビ未読バッジ */
