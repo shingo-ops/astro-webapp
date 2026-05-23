@@ -28,7 +28,7 @@ export default function ConfirmModal({
   if (!open) return null;
   return (
     <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "var(--max-width-modal-sm)" }}>
         <h3>{title}</h3>
         <div style={{ marginBottom: "var(--space-4)", lineHeight: 1.6 }}>{message}</div>
         <div className="form-actions">

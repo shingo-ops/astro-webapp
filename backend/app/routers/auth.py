@@ -5,7 +5,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.cache import blacklist_token, invalidate_user_permissions
+from app.cache import (
+    blacklist_token,
+    invalidate_user_permissions,
+)
 from app.database import get_db
 from app.models import User, Tenant
 from app.auth.utils import hash_password, set_tenant_claim

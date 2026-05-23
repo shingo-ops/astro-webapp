@@ -194,7 +194,7 @@ export default function ChannelsPage() {
   // ----- バナー UI -----
   const bannerStyle: React.CSSProperties = banner
     ? {
-        padding: "12px 16px",
+        padding: "var(--space-3) var(--space-4)",
         borderRadius: "var(--radius-sm)",
         marginBottom: "var(--space-4)",
         background:
@@ -321,7 +321,7 @@ export default function ChannelsPage() {
           className="card"
           style={{
             textAlign: "center",
-            padding: "48px 24px",
+            padding: "var(--space-12) var(--space-6)",
           }}
         >
           <h3 style={{ marginTop: 0 }}>{t("channels.noChannels")}</h3>
@@ -333,7 +333,7 @@ export default function ChannelsPage() {
               className="btn-primary"
               onClick={handleConnect}
               disabled={connecting}
-              style={{ fontSize: "var(--font-md)", padding: "12px 24px" }}
+              style={{ fontSize: "var(--font-md)", padding: "var(--space-3) var(--space-6)" }}
             >
               {connecting ? t("channels.connecting") : t("channels.connect")}
             </button>

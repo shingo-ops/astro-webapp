@@ -12,6 +12,8 @@ _logger = logging.getLogger(__name__)
 from app.auth.dependencies import get_current_tenant, get_current_admin
 from app.cache import init_redis, close_redis
 from app.middleware.audit import AuditMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.session_guard import SessionGuardMiddleware
 from app.routers import health
 from app.routers import auth
 from app.routers import admin
@@ -144,8 +146,12 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-# 認証イベント自動記録ミドルウェア
+# 認証イベント・データアクセス自動記録ミドルウェア
 app.add_middleware(AuditMiddleware)
+# APIレート制限（認証済み100回/分、未認証60回/分）
+app.add_middleware(RateLimitMiddleware)
+# セッションハイジャック検知（物理的に不可能な移動のみ強制再認証）
+app.add_middleware(SessionGuardMiddleware)
 
 # --- 認証不要なルーター（明示的に除外） ---
 # /api/health はバージョンなし（監視ツールが固定URLを使うため）
