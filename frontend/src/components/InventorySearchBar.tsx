@@ -390,7 +390,7 @@ export default function InventorySearchBar({
                           padding: "var(--space-2px) var(--space-6px)",
                           marginRight: "var(--space-6px)",
                           border: "1px solid var(--border-color)",
-                          borderRadius: 10,
+                          borderRadius: "var(--radius-xl)",
                           background: "var(--bg-badge)",
                         }}
                       >

@@ -84,6 +84,7 @@
   --space-14px: 14px;  /* ボタン横余白 */
 
   /* ---- Border radius ---- */
+  --radius-xs:   2px;   /* アバター・小アイコン・サムネイルの極小角丸 */
   --radius-sm:   4px;
   --radius-md:   6px;
   --radius-lg:   8px;
