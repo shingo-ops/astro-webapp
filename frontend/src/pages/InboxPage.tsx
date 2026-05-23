@@ -193,7 +193,7 @@ html.force-dark .inbox-wrapper {
 
 /* 受信箱タイトルエリア（seamless統合 — Meta風 / 背景透明でグラデーション透過） */
 .inbox-area-header {
-  padding: var(--space-4) var(--space-6) var(--space-2) 0;  /* 左は wrapper の 24px に委譲 */
+  padding: var(--space-4) var(--space-6) var(--space-3) 0;  /* 左は wrapper の 24px に委譲 */
   flex-shrink: 0;
   background: transparent;
 }
