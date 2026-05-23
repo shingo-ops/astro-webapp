@@ -1711,6 +1711,7 @@ export default function InboxPage() {
               className="inbox-settings-btn"
               onClick={() => setShowSettings(true)}
               aria-label={t("inbox.settings.title")}
+              data-tooltip={t("inbox.settings.tooltip")}
             >
               <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
             </button>
