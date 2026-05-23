@@ -233,7 +233,7 @@ html.force-dark .inbox-wrapper {
   cursor: pointer;
   white-space: nowrap;
   border-radius: var(--radius-sm);
-  transition: background 0.1s, color 0.1s;
+  transition: background var(--transition-micro), color var(--transition-micro);
   font-family: inherit;
   display: flex;
   align-items: center;
@@ -324,7 +324,7 @@ html.force-dark .inbox-wrapper {
   color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.1s;
+  transition: background var(--transition-micro);
   white-space: nowrap;
 }
 .inbox-manage-btn:hover { background: var(--bg-subtle); }
@@ -351,7 +351,7 @@ html.force-dark .inbox-wrapper {
   color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.1s;
+  transition: background var(--transition-micro);
 }
 .inbox-manage-item:hover { background: var(--bg-subtle); }
 
@@ -373,7 +373,7 @@ html.force-dark .inbox-wrapper {
   background: transparent;
   color: var(--text-primary);
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition: background var(--transition-micro), color var(--transition-micro);
   font-family: inherit;
   white-space: nowrap;
   line-height: 1.5;
@@ -406,7 +406,7 @@ html.force-dark .inbox-wrapper {
   background: transparent;
   cursor: pointer;
   text-align: left;
-  transition: background 0.1s;
+  transition: background var(--transition-micro);
   font-family: inherit;
   box-sizing: border-box;
   position: relative;
@@ -660,7 +660,7 @@ html.force-dark .inbox-wrapper {
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.1s;
+  transition: background var(--transition-micro);
 }
 .inbox-send-btn:hover:not(:disabled) { background: var(--accent-hover); }
 .inbox-send-btn:disabled {
@@ -778,7 +778,7 @@ html.force-dark .inbox-wrapper {
   font-size: var(--font-base);
   font-weight: 400;
   text-decoration: none;
-  transition: opacity 0.1s;
+  transition: opacity var(--transition-micro);
 }
 .right-panel-link:hover { opacity: 0.75; }
 .right-panel-empty {
