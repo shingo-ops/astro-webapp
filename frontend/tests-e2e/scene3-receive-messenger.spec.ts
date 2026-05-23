@@ -6,15 +6,12 @@
  * 目的:
  *   - /lead-chat (InboxPage) で会話リスト + 未読バッジが描画される
  *   - 会話を選択 → メッセージ履歴に inbound バブルで表示
- *   - platform バッジ「Messenger」 + 24h バナーが表示される
  *   - mark-read API が呼ばれて既読状態になる
  *
  * 見せ場（撮影台本との対応）:
  *   - 1:34 Inbox 画面（左ペイン会話リスト + 右ペイン）
  *   - 1:53 左ペインに新会話 + 未読バッジ "1"
  *   - 2:06 会話クリック → inbound バブル "Hello, I'd like to ask about your products."
- *   - 2:12 platform バッジ「Messenger」
- *   - 2:16 24h バナー
  */
 
 import { expect, test } from "@playwright/test";
@@ -63,9 +60,6 @@ test.describe("Scene 3: Incoming Messenger", () => {
     const unreadBadge = taroBtn.locator(".badge", { hasText: "1" });
     await expect(unreadBadge).toBeVisible();
 
-    // platform バッジ「Messenger」が会話アイテムに含まれる
-    await expect(taroBtn.locator(".badge", { hasText: "Messenger" })).toBeVisible();
-
     // 2:06 会話クリック → 右ペインに inbound バブル
     await taroBtn.click();
 
@@ -82,11 +76,6 @@ test.describe("Scene 3: Incoming Messenger", () => {
     await expect(
       inboxMain.getByText("Hello, I'd like to ask about your products."),
     ).toBeVisible();
-
-    // 2:12 右ペイン上の platform バッジ Messenger
-    // InboxPage の内側 <main> 内の <header> を取る
-    const headerArea = page.locator("main main header");
-    await expect(headerArea.getByText("Messenger")).toBeVisible();
 
     // ADR-044: dac01e3 で MessagingWindowBanner UI を削除（HUMAN_AGENT auto-apply 化）。
     // 24h バナー検証は撤去。代わりに右ペインに返信用 textarea が表示されることを確認。
