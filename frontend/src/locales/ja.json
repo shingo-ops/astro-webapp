@@ -427,6 +427,7 @@
     "subtitle": "メッセージの管理と返信ができます。",
     "fetchError": "データの取得に失敗しました",
     "unreadBadge": "未読 {{count}} 件",
+    "karteToggle": "カルテ",
     "settings": {
       "title": "受信箱の設定",
       "display": "表示カスタマイズ",

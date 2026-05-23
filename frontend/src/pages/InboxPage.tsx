@@ -938,6 +938,72 @@ html.force-dark .inbox-wrapper {
   .inbox-send-btn { padding: var(--space-2) var(--space-4); }
 }
 
+/* ====== モバイル: カルテ ドロワー ====== */
+/* デフォルト（デスクトップ）では非表示 */
+.karte-toggle-btn { display: none; }
+.karte-close-row  { display: none; }
+.karte-overlay    { display: none; }
+
+/* タブレット・スマートフォン（≤1024px）: ドロワー方式に切り替え */
+@media (max-width: 1024px) {
+  /* 「カルテ」トグルボタン: 会話ヘッダーに表示 */
+  .karte-toggle-btn {
+    display: flex; align-items: center; gap: var(--space-1);
+    background: var(--link-active-bg); border: none;
+    border-radius: var(--radius-xl);
+    padding: var(--space-1) var(--space-10px);
+    font-size: var(--font-xs); color: var(--accent);
+    font-weight: var(--font-weight-semi); cursor: pointer; flex-shrink: 0;
+    transition: opacity var(--transition-micro);
+  }
+  .karte-toggle-btn:hover { opacity: var(--opacity-dim); }
+
+  /* 右パネルをフルハイト固定オーバーレイに変換 */
+  .inbox-right-panel {
+    position: fixed !important;
+    top: 0; right: 0; bottom: 0;
+    width: 360px !important; max-width: 92vw !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-left: 1px solid var(--border) !important;
+    border-top: none !important; border-radius: 0 !important;
+    z-index: var(--z-drawer);
+    transform: translateX(100%);
+    transition: transform var(--transition-slow);
+    box-shadow: var(--shadow-xl);
+  }
+  .inbox-right-panel.karte-open {
+    transform: translateX(0);
+  }
+
+  /* バックドロップ: パネル背後の半透明オーバーレイ */
+  .karte-overlay {
+    display: block;
+    position: fixed; inset: 0;
+    z-index: var(--z-backdrop);
+    background: rgba(0, 0, 0, 0.4);
+    animation: fadeIn var(--duration-base) ease;
+  }
+
+  /* パネル上部の閉じるボタン行 */
+  .karte-close-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--space-3) var(--space-3) var(--space-2);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .karte-close-title {
+    font-size: var(--font-sm); font-weight: 600; color: var(--text-primary);
+  }
+  .karte-close-btn {
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); border-radius: var(--radius-sm);
+    padding: var(--space-1);
+    transition: color var(--transition-micro), background var(--transition-micro);
+  }
+  .karte-close-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+}
+
 /* ====== カルテ常時編集フィールド ====== */
 .right-panel-field {
   width: 100%; box-sizing: border-box;
@@ -1116,6 +1182,8 @@ export default function InboxPage() {
   const [cardForm, setCardForm] = useState<Partial<LeadDetail>>({});
   const [cardSaveStatus, setCardSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [cardSaveError, setCardSaveError] = useState("");
+  // モバイル時のドロワー開閉（デスクトップ>1024pxでは常時表示のため無視）
+  const [showKartePanel, setShowKartePanel] = useState(false);
 
   // 入力欄
   const [draft, setDraft] = useState("");
@@ -1365,6 +1433,7 @@ export default function InboxPage() {
 
   const selectLead = useCallback((leadId: number) => {
     setSelectedLeadId(leadId);
+    setShowKartePanel(false); // モバイルドロワーはリード切替時に閉じる
     setDraft("");
     setSendError("");
     const params = new URLSearchParams(searchParams);
@@ -1776,6 +1845,18 @@ export default function InboxPage() {
                 >
                   {t("inbox.lead")}
                 </a>
+                {/* モバイル専用カルテトグルボタン（デスクトップでは CSS で非表示） */}
+                {inboxSettings.showRightPanel && (
+                  <button
+                    type="button"
+                    className="karte-toggle-btn"
+                    onClick={() => setShowKartePanel((v) => !v)}
+                    aria-label={t("inbox.karteToggle")}
+                  >
+                    <PAGE_ICONS.kartePanel size={ICON.sm} aria-hidden="true" />
+                    {t("inbox.karteToggle")}
+                  </button>
+                )}
               </header>
 
               {/* メッセージリスト */}
@@ -1883,14 +1964,34 @@ export default function InboxPage() {
           )}
         </main>
 
+        {/* モバイルドロワーバックドロップ */}
+        {showKartePanel && inboxSettings.showRightPanel && (
+          <div className="karte-overlay" onClick={() => setShowKartePanel(false)} aria-hidden="true" />
+        )}
+
         {/* ============================== 右パネル (商談カルテ) ============================== */}
-        <aside className="inbox-right-panel" style={{ display: inboxSettings.showRightPanel ? undefined : "none" }}>
+        <aside
+          className={`inbox-right-panel${showKartePanel ? " karte-open" : ""}`}
+          style={{ display: inboxSettings.showRightPanel ? undefined : "none" }}
+        >
           {selectedLeadId === null ? (
             <div className="right-panel-empty">
               <p>{t("inbox.selectConversation")}</p>
             </div>
           ) : leadDetail ? (
             <div className="right-panel-card">
+              {/* モバイルドロワー専用: 閉じるボタン行（デスクトップでは CSS で非表示） */}
+              <div className="karte-close-row">
+                <span className="karte-close-title">{t("inbox.karteToggle")}</span>
+                <button
+                  type="button"
+                  className="karte-close-btn"
+                  onClick={() => setShowKartePanel(false)}
+                  aria-label={t("common.close")}
+                >
+                  <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
+                </button>
+              </div>
               {/* ヘッダー */}
               <div className="right-panel-header">
                 <div className="right-panel-avatar">
