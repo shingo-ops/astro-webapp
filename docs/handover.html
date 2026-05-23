@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Anchor — パートナー引き継ぎドキュメント 2026.05</title>
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-base:      #0b0d14;
+  --bg-card:      #111420;
+  --bg-card-alt:  #161924;
+  --bg-code:      #090b11;
+  --border:       #1d2236;
+  --border-light: #252a3d;
+  --text-primary: #dde1f0;
+  --text-secondary: #7c82a0;
+  --text-muted:   #4a5070;
+  --accent-amber: #f0a500;
+  --accent-teal:  #00c9a7;
+  --accent-blue:  #4e9eff;
+  --accent-purple:#a78bfa;
+  --accent-red:   #f87171;
+  --accent-green: #34d399;
+  --sidebar-w:    260px;
+  --header-h:     64px;
+  --radius:       10px;
+  --radius-sm:    6px;
+  --font-sans: 'Helvetica Neue', 'Hiragino Kaku Gothic ProN', 'Yu Gothic Medium', 'Meiryo', sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.7;
+  display: flex;
+}
+
+/* Subtle grid texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(78,158,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(78,158,255,.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.sidebar-brand {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-brand .logo-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.sidebar-brand .logo-icon {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--accent-amber), #e07b00);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 0 16px rgba(240,165,0,.3);
+  flex-shrink: 0;
+}
+.sidebar-brand .logo-text { line-height: 1.2; }
+.sidebar-brand .logo-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: var(--text-primary);
+}
+.sidebar-brand .logo-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: .3px;
+}
+.sidebar-badge {
+  margin: 10px 20px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0,201,167,.12);
+  border: 1px solid rgba(0,201,167,.25);
+  color: var(--accent-teal);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: .5px;
+}
+.sidebar-badge::before { content: '●'; font-size: 7px; }
+
+.nav-section-label {
+  padding: 16px 20px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  transition: all .15s;
+  border-left: 2px solid transparent;
+  position: relative;
+}
+.nav-item:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,.04);
+}
+.nav-item.active {
+  color: var(--accent-amber);
+  background: rgba(240,165,0,.08);
+  border-left-color: var(--accent-amber);
+}
+.nav-item .nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto;
+  background: rgba(240,165,0,.15);
+  color: var(--accent-amber);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* Top banner */
+.top-banner {
+  background: linear-gradient(90deg, rgba(240,165,0,.12), rgba(78,158,255,.08), rgba(0,201,167,.08));
+  border-bottom: 1px solid var(--border);
+  padding: 10px 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.banner-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border-light);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+.banner-chip.success { border-color: rgba(52,211,153,.3); color: var(--accent-green); background: rgba(52,211,153,.08); }
+.banner-chip.warn    { border-color: rgba(240,165,0,.3);  color: var(--accent-amber); background: rgba(240,165,0,.08); }
+
+.content {
+  padding: 48px;
+  max-width: 900px;
+}
+
+/* ============================================================
+   SECTION HEADERS
+   ============================================================ */
+.section {
+  margin-bottom: 72px;
+  scroll-margin-top: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  width: 32px; height: 32px;
+  background: rgba(240,165,0,.12);
+  border: 1px solid rgba(240,165,0,.3);
+  color: var(--accent-amber);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -.3px;
+}
+.section-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.card-alt {
+  background: var(--bg-card-alt);
+}
+
+.card-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* ============================================================
+   TECH STACK GRID
+   ============================================================ */
+.stack-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.stack-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: border-color .2s, transform .2s;
+  position: relative;
+  overflow: hidden;
+}
+.stack-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.stack-card.python::before  { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.stack-card.react::before   { background: linear-gradient(90deg, #06b6d4, #67e8f9); }
+.stack-card.db::before      { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.stack-card.infra::before   { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.stack-card.redis::before   { background: linear-gradient(90deg, #ef4444, #f87171); }
+.stack-card.celery::before  { background: linear-gradient(90deg, #10b981, #34d399); }
+.stack-card.astro::before   { background: linear-gradient(90deg, #f97316, #fb923c); }
+
+.stack-card:hover {
+  border-color: var(--border-light);
+  transform: translateY(-2px);
+}
+.stack-emoji { font-size: 28px; margin-bottom: 10px; display: block; }
+.stack-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stack-tech {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--accent-blue);
+  margin-bottom: 10px;
+}
+.stack-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.stack-analogy {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(78,158,255,.06);
+  border-left: 2px solid rgba(78,158,255,.3);
+  border-radius: 0 4px 4px 0;
+  font-size: 11.5px;
+  color: var(--accent-blue);
+  line-height: 1.5;
+}
+.stack-analogy::before { content: '💡 '; }
+
+/* ============================================================
+   PEOPLE CARDS
+   ============================================================ */
+.people-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.person-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.person-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  opacity: .06;
+}
+.person-card.po::after    { background: var(--accent-amber); }
+.person-card.dev::after   { background: var(--accent-teal); }
+
+.person-avatar {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.person-card.po  .person-avatar { background: rgba(240,165,0,.12); border: 1px solid rgba(240,165,0,.3); }
+.person-card.dev .person-avatar { background: rgba(0,201,167,.12); border: 1px solid rgba(0,201,167,.3); }
+
+.person-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.person-handle {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.person-role-badge {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.person-card.po  .person-role-badge { background: rgba(240,165,0,.12); color: var(--accent-amber); border: 1px solid rgba(240,165,0,.3); }
+.person-card.dev .person-role-badge { background: rgba(0,201,167,.12); color: var(--accent-teal);  border: 1px solid rgba(0,201,167,.3); }
+
+.person-responsibilities { list-style: none; }
+.person-responsibilities li {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.person-responsibilities li:last-child { border-bottom: none; }
+.person-responsibilities li::before { content: '→'; color: var(--text-muted); flex-shrink: 0; font-size: 12px; margin-top: 1px; }
+
+.role-separator {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.role-separator::before,
+.role-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ============================================================
+   CODE BLOCKS
+   ============================================================ */
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 16px 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.code-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid var(--border);
+}
+.code-dots { display: flex; gap: 6px; }
+.code-dots span {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+.code-dots span:nth-child(1) { background: #ff5f57; }
+.code-dots span:nth-child(2) { background: #febc2e; }
+.code-dots span:nth-child(3) { background: #28c840; }
+.code-filename {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+.code-body { padding: 16px; overflow-x: auto; white-space: pre; }
+.c-comment { color: #4a5568; }
+.c-key     { color: #7dd3fc; }
+.c-val     { color: #86efac; }
+.c-str     { color: #fca5a5; }
+.c-var     { color: #c4b5fd; }
+.c-op      { color: #94a3b8; }
+.c-num     { color: #fcd34d; }
+.c-tag     { color: #67e8f9; }
+.c-bad     { color: var(--accent-red); text-decoration: line-through; opacity: .7; }
+.c-good    { color: var(--accent-green); }
+
+/* ============================================================
+   DESIGN SYSTEM SECTION
+   ============================================================ */
+.token-hierarchy {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 20px 0;
+}
+.token-layer {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  position: relative;
+}
+.token-layer::before {
+  content: '';
+  position: absolute;
+  left: 119px;
+  top: 100%;
+  width: 1px;
+  height: 16px;
+  background: var(--border-light);
+  z-index: 1;
+}
+.token-layer:last-child::before { display: none; }
+
+.token-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  flex: 1;
+  margin-bottom: 16px;
+  position: relative;
+}
+.token-box-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.token-box-file {
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.token-box-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.token-box.layer1 { border-left: 3px solid var(--accent-amber); }
+.token-box.layer2 { border-left: 3px solid var(--accent-blue); }
+.token-box.layer3 { border-left: 3px solid var(--accent-teal); }
+
+.token-sample-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 16px 0;
+}
+.token-swatch {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 10px;
+  text-align: center;
+}
+.token-swatch-color {
+  height: 28px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.token-swatch-name {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  line-height: 1.3;
+  word-break: break-all;
+}
+.token-swatch-val {
+  font-size: 10px;
+  color: var(--accent-amber);
+}
+
+.enforcement-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+.enforcement-item {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.enforcement-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  background: rgba(240,165,0,.1);
+}
+.enforcement-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.enforcement-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   CHANGES TIMELINE
+   ============================================================ */
+.timeline {
+  position: relative;
+  padding-left: 32px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--accent-amber), var(--accent-teal), transparent);
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+}
+.timeline-dot {
+  position: absolute;
+  left: -28px;
+  top: 6px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-base);
+  background: var(--accent-amber);
+  box-shadow: 0 0 8px rgba(240,165,0,.4);
+}
+.timeline-dot.teal   { background: var(--accent-teal);  box-shadow: 0 0 8px rgba(0,201,167,.4); }
+.timeline-dot.blue   { background: var(--accent-blue);  box-shadow: 0 0 8px rgba(78,158,255,.4); }
+.timeline-dot.purple { background: var(--accent-purple);box-shadow: 0 0 8px rgba(167,139,250,.4); }
+.timeline-dot.red    { background: var(--accent-red);   box-shadow: 0 0 8px rgba(248,113,113,.4); }
+.timeline-dot.green  { background: var(--accent-green); box-shadow: 0 0 8px rgba(52,211,153,.4); }
+
+.timeline-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+}
+.timeline-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tag {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.tag.amber  { background: rgba(240,165,0,.12);  color: var(--accent-amber);  border: 1px solid rgba(240,165,0,.25); }
+.tag.teal   { background: rgba(0,201,167,.12);  color: var(--accent-teal);   border: 1px solid rgba(0,201,167,.25); }
+.tag.blue   { background: rgba(78,158,255,.12); color: var(--accent-blue);   border: 1px solid rgba(78,158,255,.25); }
+.tag.purple { background: rgba(167,139,250,.12);color: var(--accent-purple); border: 1px solid rgba(167,139,250,.25); }
+.tag.red    { background: rgba(248,113,113,.12);color: var(--accent-red);    border: 1px solid rgba(248,113,113,.25); }
+.tag.green  { background: rgba(52,211,153,.12); color: var(--accent-green);  border: 1px solid rgba(52,211,153,.25); }
+
+.timeline-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+.change-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.change-pill {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   WORKFLOW DIAGRAM
+   ============================================================ */
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 20px 0;
+  overflow-x: auto;
+  padding: 4px 0 12px;
+}
+.flow-node {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  text-align: center;
+  min-width: 110px;
+  flex-shrink: 0;
+  position: relative;
+}
+.flow-node.highlight {
+  border-color: rgba(240,165,0,.4);
+  background: rgba(240,165,0,.06);
+}
+.flow-node.success {
+  border-color: rgba(52,211,153,.4);
+  background: rgba(52,211,153,.06);
+}
+.flow-node-icon { font-size: 20px; margin-bottom: 6px; }
+.flow-node-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+.flow-node-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  font-family: var(--font-mono);
+}
+.flow-arrow {
+  font-size: 18px;
+  color: var(--text-muted);
+  padding: 0 8px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.flow-arrow-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  letter-spacing: .3px;
+}
+
+/* ============================================================
+   RULES SECTION
+   ============================================================ */
+.rule-list { display: flex; flex-direction: column; gap: 10px; }
+.rule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  transition: border-color .2s;
+}
+.rule-item:hover { border-color: var(--border-light); }
+.rule-item.critical { border-left: 3px solid var(--accent-red); }
+.rule-item.warn     { border-left: 3px solid var(--accent-amber); }
+.rule-item.info     { border-left: 3px solid var(--accent-blue); }
+.rule-item.ok       { border-left: 3px solid var(--accent-green); }
+
+.rule-badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.rule-badge.critical { background: rgba(248,113,113,.12); color: var(--accent-red);   border: 1px solid rgba(248,113,113,.3); }
+.rule-badge.warn     { background: rgba(240,165,0,.12);   color: var(--accent-amber); border: 1px solid rgba(240,165,0,.3); }
+.rule-badge.info     { background: rgba(78,158,255,.12);  color: var(--accent-blue);  border: 1px solid rgba(78,158,255,.3); }
+.rule-badge.ok       { background: rgba(52,211,153,.12);  color: var(--accent-green); border: 1px solid rgba(52,211,153,.3); }
+
+.rule-content {}
+.rule-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.rule-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.rule-example {
+  margin-top: 8px;
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  padding: 6px 10px;
+  background: var(--bg-code);
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   PRODUCTION ENV
+   ============================================================ */
+.env-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.env-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+}
+.env-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.env-value {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--accent-teal);
+  word-break: break-all;
+  line-height: 1.5;
+}
+.env-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.deploy-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+.deploy-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.deploy-status-dot.ok   { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+.deploy-status-dot.fail { background: var(--accent-red);   box-shadow: 0 0 6px var(--accent-red); }
+.deploy-status-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  flex: 1;
+}
+.deploy-status-time {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   MISC UTILS
+   ============================================================ */
+p { color: var(--text-secondary); font-size: 14px; line-height: 1.7; margin-bottom: 14px; }
+.lead { font-size: 15px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 24px; }
+
+.alert {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.alert.warn { background: rgba(240,165,0,.08); border: 1px solid rgba(240,165,0,.25); color: #d4a017; }
+.alert.info { background: rgba(78,158,255,.08); border: 1px solid rgba(78,158,255,.25); color: #7ab8ff; }
+.alert.success { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.25); color: #5ddbb0; }
+.alert-icon { font-size: 16px; flex-shrink: 0; }
+
+.kv-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+.kv-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.kv-table td {
+  font-size: 12.5px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+.kv-table tr:last-child td { border-bottom: none; }
+.kv-table td:first-child {
+  font-family: var(--font-mono);
+  color: var(--accent-blue);
+  white-space: nowrap;
+  width: 40%;
+}
+
+h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 24px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+h3::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--accent-amber); border-radius: 2px; }
+
+strong { color: var(--text-primary); font-weight: 600; }
+
+.inline-code {
+  background: rgba(255,255,255,.07);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: .9em;
+  color: var(--accent-blue);
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 32px 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2d3450; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <a class="logo-mark" href="#overview">
+      <div class="logo-icon">⚓</div>
+      <div class="logo-text">
+        <div class="logo-name">Sales Anchor</div>
+        <div class="logo-sub">Jarvis CRM / salesanchor</div>
+      </div>
+    </a>
+    <div class="sidebar-badge">本番 稼働中</div>
+  </div>
+
+  <div class="nav-section-label">はじめに</div>
+  <a class="nav-item active" href="#overview">
+    <span class="nav-icon">🏠</span> プロジェクト概要
+  </a>
+  <a class="nav-item" href="#people">
+    <span class="nav-icon">👥</span> 登場人物
+  </a>
+
+  <div class="nav-section-label">技術</div>
+  <a class="nav-item" href="#stack">
+    <span class="nav-icon">⚙️</span> 技術スタック
+  </a>
+  <a class="nav-item" href="#design-system">
+    <span class="nav-icon">🎨</span> デザインシステム
+    <span class="nav-badge">重要</span>
+  </a>
+
+  <div class="nav-section-label">変更・運用</div>
+  <a class="nav-item" href="#changes">
+    <span class="nav-icon">📋</span> 最近の変更内容
+  </a>
+  <a class="nav-item" href="#workflow">
+    <span class="nav-icon">🔄</span> 開発ワークフロー
+  </a>
+  <a class="nav-item" href="#rules">
+    <span class="nav-icon">📏</span> 重要ルール
+    <span class="nav-badge">必読</span>
+  </a>
+  <a class="nav-item" href="#production">
+    <span class="nav-icon">🚀</span> 本番環境
+  </a>
+
+  <div class="sidebar-footer">
+    作成日: 2026年5月23日<br>
+    対象ブランチ: <span style="color:var(--accent-amber)">main</span> (PR #592)<br>
+    <span style="color:var(--accent-green)">●</span> 全変更 本番反映済み
+  </div>
+</aside>
+
+<!-- ============================================================
+     MAIN
+     ============================================================ -->
+<main class="main">
+
+  <div class="top-banner">
+    <span>📅 2026-05-23 時点のドキュメント</span>
+    <span class="banner-chip success">● 最新デプロイ PR #592 成功</span>
+    <span class="banner-chip warn">引き継ぎ用・社外秘</span>
+  </div>
+
+  <div class="content">
+
+    <!-- ========================================================
+         1. プロジェクト概要
+         ======================================================== -->
+    <section class="section" id="overview">
+      <div class="section-header">
+        <div class="section-num">01</div>
+        <div>
+          <div class="section-title">プロジェクト概要</div>
+          <div class="section-sub">Sales Anchor (Jarvis CRM) とは何か</div>
+        </div>
+      </div>
+
+      <p class="lead">
+        <strong>Sales Anchor</strong>（旧称: Jarvis CRM）は、日本の越境 EC 事業者向けに作られた
+        B2B SaaS の CRM/ERP システムです。顧客管理・受信箱・見積・請求・在庫など、
+        営業・運営に必要な機能をひとつのプラットフォームで提供しています。
+      </p>
+
+      <div class="env-grid" style="margin-bottom:20px;">
+        <div class="env-card">
+          <div class="env-label">アプリ（本番）</div>
+          <div class="env-value">https://app.salesanchor.jp/</div>
+          <div class="env-note">ユーザーが日々使う画面</div>
+        </div>
+        <div class="env-card">
+          <div class="env-label">API（本番）</div>
+          <div class="env-value">https://api.salesanchor.jp/</div>
+          <div class="env-note">バックエンドのデータ窓口</div>
+        </div>
+        <div class="env-card">
+          <div class="env-label">ランディングページ</div>
+          <div class="env-value">https://salesanchor.jp/</div>
+          <div class="env-note">新規顧客向けの紹介サイト</div>
+        </div>
+        <div class="env-card">
+          <div class="env-label">旧ドメイン（並行稼働中）</div>
+          <div class="env-value">https://jarvis-claude.uk/</div>
+          <div class="env-note">⚠️ PO確認なしに削除禁止</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">主要クライアント</div>
+        <table class="kv-table">
+          <tr>
+            <td>HIGH LIFE JPN</td>
+            <td>メインクライアント。越境 EC（ブランドアパレル・高級品）を運営。<br>本番テナント: <span class="inline-code">highlife-jpn</span> / schema: <span class="inline-code">tenant_004</span></td>
+          </tr>
+          <tr>
+            <td>Treasure Island JP</td>
+            <td>同じ PO（しんごさん）が管理する関連事業体</td>
+          </tr>
+          <tr>
+            <td>tenant_review</td>
+            <td>Meta App Review 用テナント（撮影・審査用のデモデータのみ）<br>schema: <span class="inline-code">tenant_006</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="alert warn">
+        <span class="alert-icon">⚠️</span>
+        <span><strong>マルチテナント設計に注意。</strong>
+        移行・バッチ実行時は必ず <span class="inline-code">TENANT_CODE=highlife-jpn</span> を明示すること。
+        デフォルト値 <span class="inline-code">test-corp</span> は空テナントなので本番データに届かない。</span>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         2. 登場人物
+         ======================================================== -->
+    <section class="section" id="people">
+      <div class="section-header">
+        <div class="section-num">02</div>
+        <div>
+          <div class="section-title">登場人物</div>
+          <div class="section-sub">誰が何を担当するか</div>
+        </div>
+      </div>
+
+      <div class="role-separator">役割分担（ADR-012: What/How 分離モデル）</div>
+
+      <div class="people-grid">
+        <div class="person-card po">
+          <div class="person-avatar">👤</div>
+          <div class="person-name">しんごさん</div>
+          <div class="person-handle">@shingo-ops</div>
+          <div class="person-role-badge">プロダクトオーナー (PO)</div>
+          <ul class="person-responsibilities">
+            <li>「何を作るか」を決める（What）</li>
+            <li>事業判断・優先順位の決定</li>
+            <li>本番サーバーへのアクセス権限保持</li>
+            <li>ADR（設計決定書）の起案</li>
+            <li>PR のマージ最終承認</li>
+            <li>不可逆操作の承認権限者</li>
+          </ul>
+        </div>
+
+        <div class="person-card dev">
+          <div class="person-avatar">🤖</div>
+          <div class="person-name">Hikky-dev</div>
+          <div class="person-handle">Claude Code (AI 開発担当)</div>
+          <div class="person-role-badge">開発パートナー</div>
+          <ul class="person-responsibilities">
+            <li>「どう作るか」を決めて実装する（How）</li>
+            <li>技術選択・設計・コーディング</li>
+            <li>セキュリティ・テスト・CI/CD</li>
+            <li>PR の作成とレビュー対応</li>
+            <li>既存コードとの整合性確認</li>
+            <li>ドキュメント・ADR の実装反映</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="alert info" style="margin-top:16px;">
+        <span class="alert-icon">💡</span>
+        <span>
+          <strong>Web Claude（claude.ai）</strong> がしんごさんのアイデアを整理して ADR に翻訳する「壁打ち相手」。
+          ADR が develop に push されると <strong>GitHub Actions</strong> が Claude Code を自動起動し、実装 + PR 作成まで行う。
+        </span>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         3. 技術スタック
+         ======================================================== -->
+    <section class="section" id="stack">
+      <div class="section-header">
+        <div class="section-num">03</div>
+        <div>
+          <div class="section-title">技術スタック</div>
+          <div class="section-sub">システムを構成する技術と、それぞれの役割</div>
+        </div>
+      </div>
+
+      <p class="lead">
+        このシステムは「フロント（画面）」「バック（処理）」「DB（データ保管）」「インフラ（サーバー）」が
+        それぞれ分業して動いています。料理店に例えると分かりやすいです。
+      </p>
+
+      <div class="stack-grid">
+        <div class="stack-card python">
+          <span class="stack-emoji">🍳</span>
+          <div class="stack-name">バックエンド</div>
+          <div class="stack-tech">Python 3.12 / FastAPI / SQLAlchemy 2.0 + asyncpg</div>
+          <div class="stack-desc">
+            ユーザーのリクエストを受け取り、データベースからデータを取得・加工して返す「頭脳」。
+          </div>
+          <div class="stack-analogy">レストランの厨房。注文を受け、料理を作り、皿に盛って渡す役割。</div>
+        </div>
+
+        <div class="stack-card react">
+          <span class="stack-emoji">🖥️</span>
+          <div class="stack-name">フロントエンド</div>
+          <div class="stack-tech">React 18 + TypeScript + Vite</div>
+          <div class="stack-desc">
+            ブラウザに表示される画面そのもの。ユーザーが操作するボタン・フォーム・一覧表などすべて。
+          </div>
+          <div class="stack-analogy">レストランのホール。お客さんが見て触れる空間。</div>
+        </div>
+
+        <div class="stack-card db">
+          <span class="stack-emoji">🗄️</span>
+          <div class="stack-name">データベース</div>
+          <div class="stack-tech">PostgreSQL 16（マルチテナント・スキーマ分離）</div>
+          <div class="stack-desc">
+            顧客データ・メッセージ・見積・請求などを永続的に保存する。会社（テナント）ごとに棚が完全分離。
+          </div>
+          <div class="stack-analogy">倉庫。Aさんのものと Bさんのものは別々の鍵付き棚に厳重管理。</div>
+        </div>
+
+        <div class="stack-card infra">
+          <span class="stack-emoji">🚢</span>
+          <div class="stack-name">インフラ</div>
+          <div class="stack-tech">Docker Compose / さくらVPS / GitHub Actions</div>
+          <div class="stack-desc">
+            アプリが動く「土台」。Dockerで環境をパック、VPSが本番サーバー、GitHub Actionsが自動デプロイ担当。
+          </div>
+          <div class="stack-analogy">お弁当箱（Docker）に詰めて、トラック（VPS）で配達、配送ロボ（Actions）が自動出荷。</div>
+        </div>
+
+        <div class="stack-card redis">
+          <span class="stack-emoji">⚡</span>
+          <div class="stack-name">Redis</div>
+          <div class="stack-tech">キャッシュ / SSE Pub/Sub / レート制限</div>
+          <div class="stack-desc">
+            高速なメモリ上のデータ置き場。DB より 100 倍速い。リアルタイム通知（SSE）やブルートフォース対策にも使う。
+          </div>
+          <div class="stack-analogy">厨房の手元メモ帳。毎回倉庫に走らなくても、よく使う情報はここに貼っておく。</div>
+        </div>
+
+        <div class="stack-card celery">
+          <span class="stack-emoji">🌙</span>
+          <div class="stack-name">Celery</div>
+          <div class="stack-tech">非同期タスクキュー / バッチ定期実行</div>
+          <div class="stack-desc">
+            ユーザーが関係ない「裏方作業」を担当。毎朝5時に古いログを自動削除したり、重い処理を後回しで実行。
+          </div>
+          <div class="stack-analogy">夜間清掃スタッフ。お客さんがいない時間帯に黙々と作業してくれる。</div>
+        </div>
+
+        <div class="stack-card astro" style="grid-column: span 2;">
+          <span class="stack-emoji">🌐</span>
+          <div class="stack-name">ランディングページ (LP)</div>
+          <div class="stack-tech">Astro — salesanchor.jp</div>
+          <div class="stack-desc">
+            新規顧客向けの紹介ページ。React ではなく Astro という軽量フレームワークを使い、表示速度を最優先にしている。アプリ本体（app.salesanchor.jp）とは別管理。
+          </div>
+          <div class="stack-analogy">お店の看板・ショーウィンドウ。中に入る前に外から見える部分。</div>
+        </div>
+      </div>
+
+      <h3>システム全体の構成図</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">architecture overview</span>
+        </div>
+        <div class="code-body"><span class="c-comment">┌─────────────────────────────────────────────────────────────┐
+│                        ブラウザ / ユーザー                          │
+└────────────────────────────┬────────────────────────────────┘
+                             │ HTTPS
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+   ┌────▼─────┐        ┌─────▼──────┐      ┌─────▼──────┐
+   │ LP (Astro)│        │ App (React) │      │API (FastAPI)│
+   │salesanchor│        │app.salesanc │      │api.salesanc │
+   │   .jp    │        │   hor.jp   │      │   hor.jp   │
+   └───────────┘        └────────────┘      └──────┬─────┘
+                                                   │
+                              ┌────────────────────┼────────────────┐
+                              │                    │                │
+                        ┌─────▼─────┐        ┌────▼────┐    ┌──────▼─────┐
+                        │PostgreSQL │        │  Redis  │    │   Celery   │
+                        │(メインDB)  │        │(高速DB) │    │(バッチ処理) │
+                        └───────────┘        └─────────┘    └────────────┘
+
+※ すべてさくらVPS上の Dockerコンテナで動いている</span></div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         4. デザインシステム
+         ======================================================== -->
+    <section class="section" id="design-system">
+      <div class="section-header">
+        <div class="section-num">04</div>
+        <div>
+          <div class="section-title">デザインシステム</div>
+          <div class="section-sub">色・文字・余白を「一元管理」する仕組み（ADR-067）</div>
+        </div>
+      </div>
+
+      <div class="alert info">
+        <span class="alert-icon">🎯</span>
+        <span>
+          <strong>このプロジェクトで最も重要な設計ルールです。</strong>
+          デザインの値は必ず CSS 変数（トークン）経由で参照します。
+          数値の直書きは自動チェックで弾かれます。
+        </span>
+      </div>
+
+      <h3>Single Source of Truth（単一の正への基準）とは？</h3>
+      <p>
+        例えば「ボタンの色を青から緑に変えたい」とき、コード 300 箇所に <span class="inline-code">#3B82F6</span> と直書きしていたら
+        全部探して書き換えなければなりません。しかし <strong>変数（トークン）</strong> を使えば、
+        <span class="inline-code">--accent: #3B82F6</span> の 1 箇所だけを <span class="inline-code">--accent: #10b981</span> に変えれば、
+        サイト全体が一瞬で変わります。これが「単一の正への基準」です。
+      </p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">ハードコードNG vs トークンOK</span>
+        </div>
+        <div class="code-body"><span class="c-comment">/* ❌ NG: ハードコード — 後で変更するとき300箇所を修正する羽目に */</span>
+<span class="c-bad">.button { background: #3B82F6; border-radius: 8px; padding: 12px 16px; }
+.card   { border-radius: 8px; opacity: 0.8; }</span>
+
+<span class="c-comment">/* ✅ OK: デザイントークン — 1変数を変えるだけで全画面に反映 */</span>
+<span class="c-good">.button { background: var(--accent); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
+.card   { border-radius: var(--radius-md); opacity: var(--opacity-dim); }</span></div>
+      </div>
+
+      <h3>トークンファイルの構成</h3>
+
+      <div class="token-hierarchy">
+        <div class="token-layer">
+          <div class="token-box layer1">
+            <div class="token-box-title" style="color:var(--accent-amber)">① 基礎トークン（プリミティブ）</div>
+            <div class="token-box-file">frontend/src/tokens.css</div>
+            <div class="token-box-desc">
+              フォントサイズ・余白・角丸・z-index・アニメーション速度などの<strong>数値・単位</strong>を管理。
+              色はここには書かない（色は index.css が担当）。
+            </div>
+          </div>
+        </div>
+        <div class="token-layer">
+          <div class="token-box layer2">
+            <div class="token-box-title" style="color:var(--accent-blue)">② カラートークン（ライト/ダーク対応）</div>
+            <div class="token-box-file">frontend/src/index.css</div>
+            <div class="token-box-desc">
+              <span class="inline-code">:root</span>（ライトモード）と <span class="inline-code">:root.force-dark</span>（ダークモード）
+              の両方に同じ変数名で色を定義。ダーク側の追加を忘れると CI が自動でエラーにする。
+            </div>
+          </div>
+        </div>
+        <div class="token-layer">
+          <div class="token-box layer3">
+            <div class="token-box-title" style="color:var(--accent-teal)">③ アイコン管理（単一ソース）</div>
+            <div class="token-box-file">frontend/src/constants/icons.tsx</div>
+            <div class="token-box-desc">
+              全アイコンをここに集約。<span class="inline-code">lucide-react</span> などからの直接 import は禁止。
+              新しいアイコンを使う場合はここに追加してから参照する。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>トークンの体系（tokens.css の主要変数）</h3>
+
+      <div class="token-sample-grid">
+        <div class="token-swatch">
+          <div class="token-swatch-color" style="background:linear-gradient(to right,#f87171,#fca5a5)"></div>
+          <div class="token-swatch-name">--font-2xs<br>--font-xs<br>--font-sm<br>--font-base<br>--font-xl</div>
+          <div class="token-swatch-val">フォント</div>
+        </div>
+        <div class="token-swatch">
+          <div class="token-swatch-color" style="background:linear-gradient(to right,#4e9eff,#7dd3fc)"></div>
+          <div class="token-swatch-name">--space-1 (4px)<br>--space-2 (8px)<br>--space-4 (16px)<br>--space-6 (24px)<br>--space-8 (32px)</div>
+          <div class="token-swatch-val">余白</div>
+        </div>
+        <div class="token-swatch">
+          <div class="token-swatch-color" style="background:linear-gradient(to right,#a78bfa,#c4b5fd)"></div>
+          <div class="token-swatch-name">--radius-sm (4px)<br>--radius-md (8px)<br>--radius-lg (12px)<br>--radius-pill (20px)<br>--radius-full (9999px)</div>
+          <div class="token-swatch-val">角丸</div>
+        </div>
+        <div class="token-swatch">
+          <div class="token-swatch-color" style="background:linear-gradient(to right,#34d399,#6ee7b7)"></div>
+          <div class="token-swatch-name">--z-base (1)<br>--z-dropdown (50)<br>--z-topbar (100)<br>--z-modal (400)<br>--z-toast (500)</div>
+          <div class="token-swatch-val">z-index</div>
+        </div>
+      </div>
+
+      <h3>自動強制システム（ADR-067 フェーズ4）— 違反はコミット不可</h3>
+      <p>「ルールを人が守る」ではなく「機械が強制する」仕組みを実装しています。</p>
+
+      <div class="enforcement-grid">
+        <div class="enforcement-item">
+          <div class="enforcement-icon">🔍</div>
+          <div>
+            <div class="enforcement-name">ESLint チェック</div>
+            <div class="enforcement-desc">
+              TypeScript コード（TSX）内でのインラインスタイルへの数値直書き（<span class="inline-code">opacity</span>・<span class="inline-code">zIndex</span>）を
+              開発中リアルタイムにエラー表示。
+            </div>
+          </div>
+        </div>
+        <div class="enforcement-item">
+          <div class="enforcement-icon">📄</div>
+          <div>
+            <div class="enforcement-name">CSS スキャンスクリプト</div>
+            <div class="enforcement-desc">
+              <span class="inline-code">check-css-hardcoded-values.js</span> が CSS ファイルを全スキャン。
+              border-radius・opacity・z-index の数値直書きを検出。
+            </div>
+          </div>
+        </div>
+        <div class="enforcement-item">
+          <div class="enforcement-icon">🚫</div>
+          <div>
+            <div class="enforcement-name">Pre-commit フック</div>
+            <div class="enforcement-desc">
+              <span class="inline-code">git commit</span> を実行した瞬間に自動でチェック実行。
+              違反があればコミット自体がブロックされる。
+            </div>
+          </div>
+        </div>
+        <div class="enforcement-item">
+          <div class="enforcement-icon">⚙️</div>
+          <div>
+            <div class="enforcement-name">GitHub Actions CI</div>
+            <div class="enforcement-desc">
+              PR を出した時にも全チェックが走る。CI が赤のままではマージ不可（Branch Protection）。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-block" style="margin-top:16px;">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">ローカルで確認するコマンド</span>
+        </div>
+        <div class="code-body"><span class="c-key">cd</span> frontend
+
+<span class="c-comment"># TSX の hex 色・inline 数値チェック</span>
+<span class="c-val">npm run lint</span>
+
+<span class="c-comment"># CSS の hex 色ハードコードチェック</span>
+<span class="c-val">npm run check:css-colors</span>
+
+<span class="c-comment"># CSS の数値ハードコードチェック（opacity/border-radius/z-index等）</span>
+<span class="c-val">npm run check:css-values</span>
+
+<span class="c-comment"># index.css のダーク/ライト変数パリティチェック</span>
+<span class="c-val">npm run check:dark-parity</span>
+
+<span class="c-comment"># 全チェック一括</span>
+<span class="c-val">npm run check:all</span></div>
+      </div>
+
+      <h3>i18n（多言語対応）ルール</h3>
+      <p>Sales Anchor は日本語・英語の切り替えに対応（<span class="inline-code">react-i18next</span>）。
+      UI に表示する文字列は<strong>すべて</strong> <span class="inline-code">t("key")</span> 経由にする。JSX への日本語直書きは禁止。</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">i18n 対応例</span>
+        </div>
+        <div class="code-body"><span class="c-comment">// ❌ NG: JSXに日本語直書き</span>
+<span class="c-bad">&lt;button&gt;保存する&lt;/button&gt;</span>
+
+<span class="c-comment">// ✅ OK: t() 経由で参照</span>
+<span class="c-good">&lt;button&gt;{t("common.save")}&lt;/button&gt;</span>
+
+<span class="c-comment">// 確認コマンド（ヒット0行であること）</span>
+<span class="c-val">git diff --name-only develop...HEAD -- 'frontend/src/**/*.tsx' \
+  | xargs -I{} grep -nE '[ぁ-んァ-ヶ一-龯]' {} 2>/dev/null</span></div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         5. 最近の変更内容（5/22〜5/23）
+         ======================================================== -->
+    <section class="section" id="changes">
+      <div class="section-header">
+        <div class="section-num">05</div>
+        <div>
+          <div class="section-title">最近の主要変更（2026年5月22〜23日）</div>
+          <div class="section-sub">この2日間で実施した大規模改修の全容</div>
+        </div>
+      </div>
+
+      <div class="alert success">
+        <span class="alert-icon">✅</span>
+        <span>
+          以下の全変更は <strong>PR #592（本日 14:19 JST）</strong> の成功デプロイにより、
+          本番環境（VPS）に反映済みです。
+        </span>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-title">
+              A. デザイントークン化 完全達成
+              <span class="tag amber">Design</span>
+              <span class="tag amber">50+ 変数追加</span>
+            </div>
+            <div class="timeline-desc">
+              フロントエンド全体にわたって 300 箇所以上のハードコード値（色・余白・フォントサイズ・角丸・z-index・opacity・アニメーション速度）を CSS 変数に置換。
+              合計 50 個以上のトークンを新規追加。これにより「デザインシステムの Single Source of Truth」が完成した。
+            </div>
+            <div class="change-pills">
+              <span class="change-pill">--space-2px/6px/10px/14px 追加</span>
+              <span class="change-pill">--opacity-dim/soft/archived等 10個</span>
+              <span class="change-pill">--radius-xs/pill/badge 追加</span>
+              <span class="change-pill">--z-dropdown追加</span>
+              <span class="change-pill">--breakpoint-sm/md/lg 追加</span>
+              <span class="change-pill">TSX 31ファイル・131箇所置換</span>
+              <span class="change-pill">InboxPage 65箇所置換</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot amber"></div>
+          <div class="timeline-card">
+            <div class="timeline-title">
+              B. App.css 分割（1,999行 → 6ファイル）
+              <span class="tag blue">Refactor</span>
+            </div>
+            <div class="timeline-desc">
+              1,999 行の巨大 CSS ファイルを機能別に 6 ファイルに分割し、保守性を大幅に向上。
+              デッドコード約 360 行を削除。モーダルがトップバーに隠れる z-index バグ（z-topbar→z-modal）も同時修正。
+            </div>
+            <div class="change-pills">
+              <span class="change-pill">sidebar.css</span>
+              <span class="change-pill">topbar.css</span>
+              <span class="change-pill">components.css</span>
+              <span class="change-pill">pages-layout.css</span>
+              <span class="change-pill">company-forms.css</span>
+              <span class="change-pill">responsive.css</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot teal"></div>
+          <div class="timeline-card">
+            <div class="timeline-title">
+              C. サイドバー → ページ内タブナビに移行（見積・請求）
+              <span class="tag teal">UX改善</span>
+            </div>
+            <div class="timeline-desc">
+              見積・請求メニューがサイドバーのアコーディオン展開式だったのを廃止。
+              サイドバーからは1クリックで直遷移、ページ上部のタブで「見積履歴」「請求書」を切り替える方式に変更。
+              余分なクリック操作が不要になり UX が改善した。
+            </div>
+            <div class="change-pills">
+              <span class="change-pill">SidebarAccordion 削除</span>
+              <span class="change-pill">NavLink に置換</span>
+              <span class="change-pill">QuotesPage / InvoicesPage にタブ追加</span>
+              <span class="change-pill">権限に応じてリンク先を自動選択</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot teal"></div>
+          <div class="timeline-card">
+            <div class="timeline-title">
+              D. Phosphor Icons に全面移行（weight=light）
+              <span class="tag teal">デザイン</span>
+            </div>
+            <div class="timeline-desc">
+              アイコンライブラリを <span class="inline-code">lucide-react</span> から <span class="inline-code">@phosphor-icons/react</span> に全面移行。
+              <span class="inline-code">weight="light"</span> を全体適用することで、よりシャープで洗練された印象になった。
+              型エイリアス（<span class="inline-code">LucideIcon = Icon</span>）で既存コードへの影響をゼロにした。
+            </div>
+            <div class="change-pills">
+              <span class="change-pill">AlertTriangle→Warning</span>
+              <span class="change-pill">Settings→GearSix</span>
+              <span class="change-pill">LayoutDashboard→SquaresFour</span>
+              <span class="change-pill">Search→MagnifyingGlass</span>
+              <span class="change-pill">全 20+アイコン移行</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot red"></div>
+          <div class="timeline-card">
+            <div class="timeline-title">
+              E. セキュリティ強化（P0-1〜P4 多層防御）
+              <span class="tag red">Security</span>
+              <span class="tag red">35テスト追加</span>
+            </div>
+            <div class="timeline-desc">
+              B2B SaaS が直面する主要脅威を 4 フェーズで対策。ブルートフォース・API 乱用・監査証跡・不正セッション検知をすべて実装。
+            </div>
+            <div class="change-pills">
+              <span class="change-pill">P0-1: IP単位 10失敗→15分ロック</span>
+              <span class="change-pill">P2-1: 全CRUD監査ログ自動記録</span>
+              <span class="change-pill">P2-2: 認証済100回/分・未認証60回/分</span>
+              <span class="change-pill">P2-3: 大量エクスポート検知</span>
+              <span class="change-pill">P4: 物理不可能な移動で強制ログアウト</span>
+              <span class="change-pill">利用規約v1.4: スクレイピング禁止追加</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot blue"></div>
+          <div class="timeline-card">
+            <div class="timeline-title">
+              F. SSE リアルタイム更新（Phase 1〜3）
+              <span class="tag blue">Realtime</span>
+            </div>
+            <div class="timeline-desc">
+              Inbox の「30秒ポーリング」を「即時プッシュ更新」に移行。Phase 1 で SQL を最適化、Phase 2 で Redis Pub/Sub + SSE を実装、Phase 3 で汎用化してリード一覧・通知バッジにも拡張。
+            </div>
+            <div class="change-pills">
+              <span class="change-pill">Phase1: N+1→CTE最適化・タイムアウト25秒</span>
+              <span class="change-pill">Phase2: Redis Pub/Sub + SSE エンドポイント</span>
+              <span class="change-pill">Phase3: useSSE汎用フック</span>
+              <span class="change-pill">サイドバー未読バッジ リアルタイム化</span>
+              <span class="change-pill">リード一覧 スタッフ間リアルタイム同期</span>
+              <span class="change-pill">nginx SSEブロック追加</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot green"></div>
+          <div class="timeline-card">
+            <div class="timeline-title">
+              G. データ保持ポリシー（GDPR/SOC2 対応）
+              <span class="tag green">Compliance</span>
+            </div>
+            <div class="timeline-desc">
+              監査ログが永久に蓄積しないよう、60日/90日の自動削除バッチを実装。Celery Beat で毎朝5時・5時30分に実行。5,000件ずつバッチ削除してDBロックを防止。
+            </div>
+            <div class="change-pills">
+              <span class="change-pill">data_access_events: 60日後削除</span>
+              <span class="change-pill">auth_events: 90日後削除</span>
+              <span class="change-pill">5,000件バッチ+100msスリープ</span>
+              <span class="change-pill">migration 071/072 追加</span>
+              <span class="change-pill">GDPR/SOC2準拠</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         6. 開発ワークフロー
+         ======================================================== -->
+    <section class="section" id="workflow">
+      <div class="section-header">
+        <div class="section-num">06</div>
+        <div>
+          <div class="section-title">開発ワークフロー</div>
+          <div class="section-sub">機能追加から本番反映までの流れ</div>
+        </div>
+      </div>
+
+      <h3>ブランチ戦略</h3>
+
+      <div class="flow-diagram">
+        <div class="flow-node">
+          <div class="flow-node-icon">💡</div>
+          <div class="flow-node-label">アイデア</div>
+          <div class="flow-node-sub">しんごさん</div>
+        </div>
+        <div class="flow-arrow">→<div class="flow-arrow-label">ADR化</div></div>
+        <div class="flow-node">
+          <div class="flow-node-icon">📝</div>
+          <div class="flow-node-label">feature/</div>
+          <div class="flow-node-sub">morimoto/xxx</div>
+        </div>
+        <div class="flow-arrow">→<div class="flow-arrow-label">PR作成</div></div>
+        <div class="flow-node highlight">
+          <div class="flow-node-icon">🔀</div>
+          <div class="flow-node-label">develop</div>
+          <div class="flow-node-sub">統合ブランチ</div>
+        </div>
+        <div class="flow-arrow">→<div class="flow-arrow-label">PR→マージ</div></div>
+        <div class="flow-node success">
+          <div class="flow-node-icon">🚀</div>
+          <div class="flow-node-label">main</div>
+          <div class="flow-node-sub">本番ブランチ</div>
+        </div>
+        <div class="flow-arrow">→<div class="flow-arrow-label">自動デプロイ</div></div>
+        <div class="flow-node success">
+          <div class="flow-node-icon">🌐</div>
+          <div class="flow-node-label">VPS本番</div>
+          <div class="flow-node-sub">さくら</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">基本的な作業手順</span>
+        </div>
+        <div class="code-body"><span class="c-comment"># 1. 必ず develop から作業ブランチを切る</span>
+<span class="c-val">git checkout develop</span>
+<span class="c-val">git pull origin develop</span>
+<span class="c-val">git checkout -b feature/morimoto/機能名を英語で</span>
+
+<span class="c-comment"># 2. 実装してコミット（30分に1回以上）</span>
+<span class="c-val">git add -A && git commit -m "feat: 〇〇を実装"</span>
+
+<span class="c-comment"># 3. PR を作成（develop へ）</span>
+<span class="c-val">gh pr create --base develop --head feature/morimoto/xxx</span>
+
+<span class="c-comment"># 4. レビュー後 develop にマージ</span>
+<span class="c-comment"># 5. develop → main は PR 経由（直 push 禁止）</span>
+<span class="c-val">gh pr create --base main --head develop</span></div>
+      </div>
+
+      <h3>コミットメッセージの書き方</h3>
+      <div class="card">
+        <table class="kv-table">
+          <thead><tr><th>種類</th><th>使うとき</th><th>例</th></tr></thead>
+          <tr><td>feat:</td><td>新機能を追加</td><td>feat: 見積作成ページを追加</td></tr>
+          <tr><td>fix:</td><td>バグを修正</td><td>fix: モーダルが閉じられない問題を修正</td></tr>
+          <tr><td>refactor:</td><td>機能変更なしのコード改善</td><td>refactor: 重複ロジックを関数化</td></tr>
+          <tr><td>docs:</td><td>ドキュメントの変更</td><td>docs: API仕様書を更新</td></tr>
+          <tr><td>test:</td><td>テストの追加・修正</td><td>test: 見積計算のユニットテスト追加</td></tr>
+          <tr><td>ci:</td><td>GitHub Actions の変更</td><td>ci: migration 071 を deploy.yml に追記</td></tr>
+          <tr><td>chore:</td><td>依存関係・設定の変更</td><td>chore: パッケージを更新</td></tr>
+        </table>
+      </div>
+
+      <h3>デプロイの仕組み（deploy.yml）</h3>
+      <p>
+        <span class="inline-code">main</span> ブランチへのマージをトリガーに GitHub Actions が自動実行。
+        VPS に SSH 接続し、コード更新 → Docker 再起動 → DB マイグレーションの 3 ステップを順番に行う。
+      </p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">デプロイ 3ステップ（deploy.yml の構造）</span>
+        </div>
+        <div class="code-body"><span class="c-tag">Step 1:</span> <span class="c-val">Deploy to VPS (code + env + docker compose)</span>
+  <span class="c-comment">→ git pull + docker compose up でコードと環境変数を更新</span>
+
+<span class="c-tag">Step 2:</span> <span class="c-val">Run database migrations (part 1)</span>
+  <span class="c-comment">→ migration 001〜060番台を順番に実行（IF NOT EXISTS で冪等）</span>
+
+<span class="c-tag">Step 3:</span> <span class="c-val">Run database migrations (part 2) + finalize</span>
+  <span class="c-comment">→ migration 061〜072番台 + ヘルスチェック</span>
+
+<span class="c-comment">※ Step1 が失敗すると Step2/3 は自動スキップ
+※ 全 migration は IF NOT EXISTS で設計 → 再実行しても安全</span></div>
+      </div>
+
+      <div class="alert warn">
+        <span class="alert-icon">⚠️</span>
+        <span>
+          <strong>新しい migration を追加したときは deploy.yml への記載も必須。</strong>
+          記載漏れは <span class="inline-code">migration-guard</span> CI が自動検知してブロックする。
+        </span>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         7. 重要ルール
+         ======================================================== -->
+    <section class="section" id="rules">
+      <div class="section-header">
+        <div class="section-num">07</div>
+        <div>
+          <div class="section-title">重要ルール（必読）</div>
+          <div class="section-sub">CLAUDE.md より — 必ず守ること</div>
+        </div>
+      </div>
+
+      <div class="rule-list">
+        <div class="rule-item critical">
+          <span class="rule-badge critical">BLOCK</span>
+          <div class="rule-content">
+            <div class="rule-title">不可逆操作は必ず PO（しんごさん）に確認</div>
+            <div class="rule-desc">
+              以下の操作は事前に書面（GitHub Issue / PR / ADR）で確認を取ること。
+              無断実行は絶対禁止。
+            </div>
+            <div class="rule-example">DROP TABLE / 大量DELETE / rm -rf / git push --force（mainへ）
+本番Docker volume削除 / secrets変更 / 旧ドメイン(jarvis-claude.uk)の削除</div>
+          </div>
+        </div>
+
+        <div class="rule-item critical">
+          <span class="rule-badge critical">BLOCK</span>
+          <div class="rule-title">デザイントークン必須・ハードコード禁止</div>
+          <div class="rule-desc">
+            色・余白・フォントサイズ・角丸・z-index・opacity などの値は必ず CSS 変数（<span class="inline-code">var(--xxx)</span>）を使う。
+            数値の直書きは ESLint・スクリプト・CI で自動ブロックされる。
+          </div>
+        </div>
+
+        <div class="rule-item critical">
+          <span class="rule-badge critical">BLOCK</span>
+          <div class="rule-title">i18n 必須 — JSX への日本語直書き禁止</div>
+          <div class="rule-desc">
+            画面に表示するすべての文字列は <span class="inline-code">t("key")</span> 経由。
+            <span class="inline-code">ja.json</span> と <span class="inline-code">en.json</span> には同一キーを必ず両方追加。
+          </div>
+        </div>
+
+        <div class="rule-item warn">
+          <span class="rule-badge warn">WARN</span>
+          <div class="rule-title">アイコンは constants/icons.tsx から import する</div>
+          <div class="rule-desc">
+            <span class="inline-code">@phosphor-icons/react</span> や <span class="inline-code">lucide-react</span> からの直接 import は禁止。
+            必ず <span class="inline-code">frontend/src/constants/icons.tsx</span> に追加してからそこを参照する。
+          </div>
+        </div>
+
+        <div class="rule-item warn">
+          <span class="rule-badge warn">WARN</span>
+          <div class="rule-title">テナントは必ず highlife-jpn を明示する</div>
+          <div class="rule-desc">
+            migration・バッチ実行時のデフォルト値 <span class="inline-code">test-corp</span> は空テナント。本番データには届かない。
+            必ず <span class="inline-code">TENANT_CODE=highlife-jpn</span> を明示すること。
+          </div>
+          <div class="rule-example">✅ gh workflow run run-migration.yml -f tenant_code=highlife-jpn
+❌ gh workflow run run-migration.yml  ← test-corp になってしまう</div>
+        </div>
+
+        <div class="rule-item warn">
+          <span class="rule-badge warn">WARN</span>
+          <div class="rule-title">新機能（外部連携）には「3点セット」が必要</div>
+          <div class="rule-desc">
+            OAuth / Webhook / 外部 API と連携する新機能は、①機能本体 ②状態検証スクリプト ③監査ログ（audit_logs への記録）の3点を必ずセットで実装する。
+            「機能だけ動けば完了」は禁止（ADR-025）。
+          </div>
+        </div>
+
+        <div class="rule-item info">
+          <span class="rule-badge info">INFO</span>
+          <div class="rule-title">VPS コンテナの注意事項</div>
+          <div class="rule-desc">
+            VPS の <span class="inline-code">/app</span> 配下は書き込み不可（appuser 権限）。スクリプト出力先は <span class="inline-code">/tmp</span> を使う。
+            <span class="inline-code">/tmp</span> は tmpfs なので <span class="inline-code">docker compose cp</span> は使えない。
+            ファイル取り出しは <span class="inline-code">docker compose exec -T backend cat /tmp/xxx &gt; host_file</span> のみ。
+          </div>
+        </div>
+
+        <div class="rule-item info">
+          <span class="rule-badge info">INFO</span>
+          <div class="rule-title">develop → main も PR 経由（直 push 禁止）</div>
+          <div class="rule-desc">
+            main は Branch Protection で直 push が物理的に禁止されている。
+            Hikky-dev（Claude Code）が PR を作成し、しんごさんがマージする流れ。
+            緊急時は admin（しんごさん）のみ bypass 可。
+          </div>
+        </div>
+
+        <div class="rule-item ok">
+          <span class="rule-badge ok">OK</span>
+          <div class="rule-title">DB直接操作（開発フェーズ中）</div>
+          <div class="rule-desc">
+            現在は開発フェーズのため、<span class="inline-code">psql</span> や <span class="inline-code">docker exec psql</span> による直接 INSERT/UPDATE は OK。
+            ただし <strong>暗号化済みシークレット（*_token_encrypted）の手動投入</strong> と
+            <strong>destructive 操作（DROP TABLE / TRUNCATE）</strong> は常に PO 確認必須。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         8. 本番環境
+         ======================================================== -->
+    <section class="section" id="production">
+      <div class="section-header">
+        <div class="section-num">08</div>
+        <div>
+          <div class="section-title">本番環境</div>
+          <div class="section-sub">サーバー・テナント・デプロイ状態</div>
+        </div>
+      </div>
+
+      <div class="env-grid" style="margin-bottom:20px;">
+        <div class="env-card">
+          <div class="env-label">VPS ホスト</div>
+          <div class="env-value">さくらVPS<br>49.212.137.46</div>
+          <div class="env-note">Ubuntu 24.04 / Docker Compose</div>
+        </div>
+        <div class="env-card">
+          <div class="env-label">本番テナント</div>
+          <div class="env-value">highlife-jpn<br>schema: tenant_004</div>
+          <div class="env-note">唯一の本番データが入っているテナント</div>
+        </div>
+        <div class="env-card">
+          <div class="env-label">Reviewテナント</div>
+          <div class="env-value">tenant_review<br>schema: tenant_006</div>
+          <div class="env-note">Meta App Review / 撮影用（デモのみ）</div>
+        </div>
+        <div class="env-card">
+          <div class="env-label">Redis DB 割り当て</div>
+          <div class="env-value">DB0: 汎用キャッシュ<br>DB3: SSE Pub/Sub</div>
+          <div class="env-note">SSE は専用 DB3 を使用</div>
+        </div>
+      </div>
+
+      <h3>最新デプロイ履歴（本日 2026-05-23）</h3>
+
+      <div class="deploy-status-row">
+        <div class="deploy-status-dot ok"></div>
+        <div class="deploy-status-text">PR #592 — Phosphor Icons + タブナビ + 全変更</div>
+        <div class="deploy-status-time">14:19 JST ✅ 成功</div>
+      </div>
+      <div class="deploy-status-row">
+        <div class="deploy-status-dot ok"></div>
+        <div class="deploy-status-text">PR #589 — migration パス修正（/app/ → 相対パス）</div>
+        <div class="deploy-status-time">13:56 JST ✅ 成功（migration 071/072 初回適用）</div>
+      </div>
+      <div class="deploy-status-row">
+        <div class="deploy-status-dot fail"></div>
+        <div class="deploy-status-text">PR #587 — migration パスバグにより失敗</div>
+        <div class="deploy-status-time">13:49 JST ❌</div>
+      </div>
+      <div class="deploy-status-row">
+        <div class="deploy-status-dot fail"></div>
+        <div class="deploy-status-text">PR #586 / #584 — 同上</div>
+        <div class="deploy-status-time">13:23〜12:52 JST ❌</div>
+      </div>
+
+      <div class="alert success" style="margin-top:16px;">
+        <span class="alert-icon">✅</span>
+        <span>
+          失敗デプロイがありましたが、migration 071/072 は両方とも <strong>IF NOT EXISTS</strong> で設計されているため冪等（何度実行しても安全）。
+          PR #589 の成功デプロイで初回適用され、PR #592 でも安全に再実行済み。
+          <strong>データの不整合は発生していません。</strong>
+        </span>
+      </div>
+
+      <h3>本番環境チェックコマンド</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span></span><span></span><span></span></div>
+          <span class="code-filename">よく使う運用コマンド</span>
+        </div>
+        <div class="code-body"><span class="c-comment"># コンテナ状態確認（VPSにSSH後）</span>
+<span class="c-val">docker compose ps</span>
+
+<span class="c-comment"># バックエンドログ確認</span>
+<span class="c-val">docker compose logs backend --tail=50</span>
+
+<span class="c-comment"># 本番DBに接続（highlife-jpn = tenant_004）</span>
+<span class="c-val">docker compose exec postgres psql -U jarvis -d jarvis_db</span>
+<span class="c-val">&gt; SET search_path TO tenant_004;</span>
+
+<span class="c-comment"># migration を特定テナントに手動実行</span>
+<span class="c-val">gh workflow run run-migration.yml -f tenant_code=highlife-jpn</span>
+
+<span class="c-comment"># ファイルをVPSから取り出す（/tmp の制約あり）</span>
+<span class="c-val">docker compose exec -T backend cat /tmp/output.csv > ./local_output.csv</span>
+
+<span class="c-comment"># GitHub Actionsのデプロイ状況確認</span>
+<span class="c-val">gh run list --workflow deploy.yml --limit 5</span></div>
+      </div>
+
+      <h3>アーキテクチャ上の重要な制約</h3>
+      <div class="rule-list">
+        <div class="rule-item warn">
+          <span class="rule-badge warn">注意</span>
+          <div class="rule-content">
+            <div class="rule-title">/app 配下は書き込み不可</div>
+            <div class="rule-desc">VPS の Docker コンテナ内 <span class="inline-code">/app</span> は appuser 権限で書き込み不可。スクリプトの出力先は必ず <span class="inline-code">/tmp</span> を指定する。</div>
+          </div>
+        </div>
+        <div class="rule-item warn">
+          <span class="rule-badge warn">注意</span>
+          <div class="rule-content">
+            <div class="rule-title">/tmp は tmpfs — コンテナ再起動で消える</div>
+            <div class="rule-desc"><span class="inline-code">docker compose cp backend:/tmp/xxx</span> は使えない（Could not find the file エラー）。ホストへの取り出しは <span class="inline-code">docker compose exec -T backend cat /tmp/xxx &gt; host_file</span> 一択。</div>
+          </div>
+        </div>
+        <div class="rule-item info">
+          <span class="rule-badge info">INFO</span>
+          <div class="rule-content">
+            <div class="rule-title">SQLite では動作確認不可</div>
+            <div class="rule-desc">マルチテナント RLS・Webhook・外部 API 経路の検証は必ず PostgreSQL 実機で行う。SQLite + AsgiTransport は「動作確認」として認められない（ADR-038）。</div>
+          </div>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="card" style="text-align:center; padding:32px;">
+        <div style="font-size:32px;margin-bottom:12px;">⚓</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Sales Anchor 引き継ぎドキュメント</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.8;">
+          作成日: 2026年5月23日 / 対象: main branch PR #592<br>
+          質問・不明点は <strong style="color:var(--accent-amber)">しんごさん（@shingo-ops）</strong> に確認してください<br>
+          詳細な設計判断は <span class="inline-code">docs/adr/</span> の ADR ドキュメントを参照
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+</main>
+
+<script>
+// Scroll spy — sidebar active link を更新
+(function() {
+  const sections = document.querySelectorAll('.section');
+  const navItems = document.querySelectorAll('.nav-item');
+
+  function updateActive() {
+    let current = '';
+    sections.forEach(section => {
+      const top = section.getBoundingClientRect().top;
+      if (top <= 80) current = section.id;
+    });
+    navItems.forEach(item => {
+      item.classList.remove('active');
+      const href = item.getAttribute('href');
+      if (href === '#' + current) item.classList.add('active');
+    });
+  }
+
+  const mainEl = document.querySelector('.main');
+  mainEl.addEventListener('scroll', updateActive);
+  document.addEventListener('scroll', updateActive);
+  updateActive();
+})();
+</script>
+</body>
+</html>
