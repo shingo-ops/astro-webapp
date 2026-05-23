@@ -21,6 +21,7 @@
  */
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useInboxSSE } from "../hooks/useInboxSSE";
 import { NAV_ICONS, PAGE_ICONS, PlatformIcon, STATUS_ICONS } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -1079,6 +1080,19 @@ export default function InboxPage() {
     setConvLoading(true);
     loadConversations();
   }, [loadConversations]);
+
+  // ---------------------------------------------------------------------------
+  // Phase 2 SSE: 新着通知受信 → 即時 loadConversations()
+  // ポーリング useEffect は継続（SSE 失敗時のフォールバック）
+  // ---------------------------------------------------------------------------
+
+  useInboxSSE({
+    onUpdate: useCallback(() => {
+      skipNextPollRef.current = true; // SSE 受信直後のポーリングによる二重ロードを防止
+      loadConversations();
+      if (selectedLeadId !== null) loadMessages(selectedLeadId);
+    }, [loadConversations, loadMessages, selectedLeadId]),
+  });
 
   // ---------------------------------------------------------------------------
   // ポーリング（指数バックオフ付き）

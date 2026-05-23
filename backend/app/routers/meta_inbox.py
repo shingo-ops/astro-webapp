@@ -1025,3 +1025,68 @@ async def list_conversations(
         })
 
     return {"conversations": conversations, "next_cursor": None}
+
+
+# ---------------------------------------------------------------------------
+# GET /conversations/stream — SSE リアルタイム通知（Phase 2）
+# ---------------------------------------------------------------------------
+import asyncio
+
+from starlette.requests import Request
+from starlette.responses import StreamingResponse
+
+_SSE_HEARTBEAT_SEC = 30  # nginx proxy_read_timeout(3600s) より十分短く
+
+
+@router.get(
+    "/conversations/stream",
+    dependencies=[Depends(require_permission("messages.read"))],
+)
+async def stream_inbox_updates(
+    request: Request,
+    tenant_id: int = Depends(get_current_tenant),
+) -> StreamingResponse:
+    """
+    SSE で Inbox 更新を通知する。
+    - delta は送らず「変更あり」通知のみ（フロントが loadConversations() で再取得）
+    - 30 秒ごとにハートビート ping
+    - テナントあたり SSE_MAX_CONN_PER_TENANT 接続まで（超過時 503）
+    """
+    from app.services.sse_pubsub import (
+        decrement_connection,
+        increment_connection,
+        subscribe_inbox,
+    )
+
+    if not await increment_connection(tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="SSE接続数が上限に達しています",
+        )
+
+    async def event_generator():
+        gen = subscribe_inbox(tenant_id)
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    await asyncio.wait_for(gen.__anext__(), timeout=_SSE_HEARTBEAT_SEC)
+                    yield "event: update\ndata: {}\n\n"
+                except asyncio.TimeoutError:
+                    yield ": ping\n\n"  # ハートビート（コメント行）
+                except StopAsyncIteration:
+                    break
+        finally:
+            await gen.aclose()
+            await decrement_connection(tenant_id)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # nginx バッファリング無効化（二重防御）
+            "Connection": "keep-alive",
+        },
+    )
