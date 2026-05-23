@@ -171,7 +171,7 @@ export default function CommissionSettingsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("commissions.title")}</h2>
+        <h2>{t("nav.commissionSettings")}</h2>
       </div>
 
       {loading ? (
