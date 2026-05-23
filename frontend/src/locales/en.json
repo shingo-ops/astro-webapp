@@ -428,6 +428,10 @@
     "fetchError": "Failed to load data",
     "unreadBadge": "{{count}} unread",
     "karteToggle": "Karte",
+    "markUnread": "Mark as unread",
+    "exclude": "Mark as excluded",
+    "deleteLead": "Delete",
+    "confirmDelete": "Delete this lead? This action cannot be undone.",
     "settings": {
       "title": "Inbox Settings",
       "display": "Display Customization",

@@ -27,6 +27,7 @@ import {
   HardHat, Chat, ChatCircle, ClipboardText,
   SquaresFour, FileText, Question, ShieldCheck,
   DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
+  Trash, Archive, EnvelopeOpen,
 } from "@phosphor-icons/react";
 
 // ステータス（✓ ⚠ ✕ の代替）
@@ -150,6 +151,13 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
     </span>
   );
 }
+
+// 受信箱ヘッダーアクションアイコン（未読にする / 対象外 / 削除）
+export const INBOX_ACTION_ICONS = {
+  markUnread: EnvelopeOpen,
+  exclude:    Archive,
+  delete:     Trash,
+} satisfies Record<string, Icon>;
 
 // Layout.tsx の /lead-chat ナビアイテム用
 export function LeadChatIcon({ size = 20, className }: { size?: number; className?: string }) {
