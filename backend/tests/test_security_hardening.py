@@ -156,64 +156,6 @@ class TestAuthRateLimit:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P0-1: メール登録制限 — cache.py 関数単体テスト
-# ─────────────────────────────────────────────────────────────────────────────
-
-class TestRegisterRateLimit:
-    """check_register_rate_limit / record_register_failure の単体テスト"""
-
-    async def test_check_register_rate_limit_below_threshold_returns_false(self):
-        """失敗回数が閾値未満の場合は False を返す。"""
-        from app.cache import check_register_rate_limit, REGISTER_FAIL_MAX
-
-        mock_redis = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=str(REGISTER_FAIL_MAX - 1))
-
-        with patch("app.cache._redis", mock_redis):
-            result = await check_register_rate_limit("test@example.com")
-
-        assert result is False
-
-    async def test_check_register_rate_limit_at_threshold_returns_true(self):
-        """失敗回数が閾値に達した場合は True を返す。"""
-        from app.cache import check_register_rate_limit, REGISTER_FAIL_MAX
-
-        mock_redis = AsyncMock()
-        mock_redis.get = AsyncMock(return_value=str(REGISTER_FAIL_MAX))
-
-        with patch("app.cache._redis", mock_redis):
-            result = await check_register_rate_limit("test@example.com")
-
-        assert result is True
-
-    async def test_check_register_rate_limit_case_insensitive(self):
-        """メールは大文字小文字を区別せず同一キーとして扱う。"""
-        from app.cache import check_register_rate_limit
-
-        call_keys: list[str] = []
-
-        async def mock_get(key):
-            call_keys.append(key)
-            return "0"
-
-        mock_redis = AsyncMock()
-        mock_redis.get = mock_get
-
-        with patch("app.cache._redis", mock_redis):
-            await check_register_rate_limit("TEST@EXAMPLE.COM")
-            await check_register_rate_limit("test@example.com")
-
-        assert call_keys[0] == call_keys[1]
-
-    async def test_record_register_failure_redis_down_no_exception(self):
-        """Redis未接続時にrecord_register_failureが例外を出さない。"""
-        from app.cache import record_register_failure
-
-        with patch("app.cache._redis", None):
-            await record_register_failure("test@example.com")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 # P0-1: get_current_user の429返却テスト
 # ─────────────────────────────────────────────────────────────────────────────
 

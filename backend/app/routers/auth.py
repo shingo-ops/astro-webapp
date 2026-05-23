@@ -7,9 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cache import (
     blacklist_token,
-    check_register_rate_limit,
     invalidate_user_permissions,
-    record_register_failure,
 )
 from app.database import get_db
 from app.models import User, Tenant
@@ -43,13 +41,6 @@ async def register_user(
         アカウントを作成する必要がある（フロントエンド側で実施）
       - パスワードはDB側のバックアップ認証用（Firebase障害時のフォールバック）
     """
-    # メール列挙攻撃対策: 同一メールへの登録試行が上限に達していれば429
-    if await check_register_rate_limit(data.email):
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="この操作は一時的に制限されています。しばらく時間をおいてから再試行してください",
-        )
-
     # 管理者権限チェック
     if current_user.role != "admin":
         raise HTTPException(
@@ -76,7 +67,6 @@ async def register_user(
         select(User).where(User.email == data.email)
     )
     if result.scalar_one_or_none():
-        await record_register_failure(data.email)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="このメールアドレスは既に登録されています",

@@ -216,9 +216,6 @@ async def invalidate_tenant_permissions(tenant_id: int) -> None:
 # 認証失敗: IP単位、10回で15分ロック（Firebase token validation failure）
 AUTH_FAIL_MAX = 10
 AUTH_FAIL_LOCKOUT_TTL = 900  # 15分
-# 登録失敗: Email単位、5回で30分ロック（メールアドレス列挙攻撃対策）
-REGISTER_FAIL_MAX = 5
-REGISTER_FAIL_LOCKOUT_TTL = 1800  # 30分
 
 
 async def check_auth_rate_limit(ip: str) -> bool:
@@ -250,38 +247,6 @@ async def record_auth_failure(ip: str) -> None:
             await r.expire(key, AUTH_FAIL_LOCKOUT_TTL)
     except Exception:
         logger.warning("認証失敗記録に失敗")
-
-
-async def check_register_rate_limit(email: str) -> bool:
-    """メールアドレス単位の登録失敗レートリミットを確認する。True=ロック中。
-
-    メール列挙攻撃（同じメールで重複登録を繰り返し409を確認する手法）を防ぐ。
-    Redis不通時はfail-open。
-    """
-    r = get_redis()
-    if not r:
-        return False
-    try:
-        key = f"reg_fail_email:{hashlib.sha256(email.lower().encode()).hexdigest()[:16]}"
-        count = await r.get(key)
-        return int(count or 0) >= REGISTER_FAIL_MAX
-    except Exception:
-        logger.warning("register_rate_limit確認失敗: fail-openとして通過")
-        return False
-
-
-async def record_register_failure(email: str) -> None:
-    """メールアドレス単位の登録失敗（重複）を記録する。"""
-    r = get_redis()
-    if not r:
-        return
-    try:
-        key = f"reg_fail_email:{hashlib.sha256(email.lower().encode()).hexdigest()[:16]}"
-        count = await r.incr(key)
-        if count == 1:
-            await r.expire(key, REGISTER_FAIL_LOCKOUT_TTL)
-    except Exception:
-        logger.warning("登録失敗記録に失敗")
 
 
 async def is_token_blacklisted(token: str) -> bool:
