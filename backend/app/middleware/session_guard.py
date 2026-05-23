@@ -8,13 +8,14 @@
   - ASN（ISP）の変化も記録するが、強制再認証は発動しない
 
 実装手段:
-  - JWT の token ハッシュをセッション識別子として使用
+  - JWT の jti（JWT ID）または token ハッシュをセッション識別子として使用
   - 前回のIPをRedisに保存（TTL: 1時間）
-  - 前回IPと現在IPの /8 プレフィックスを比較（簡易的な地域推定）
-  - プレフィックス急変 + 短時間（5分以内）= 強制再認証
+  - 前回IPと現在IPのCountryCode を比較（IPアドレスプレフィックスで簡易判定）
+  - 国レベルの急変 + 短時間（5分以内）= 強制再認証
 
 注意:
   - Redis 不通時は fail-open（全ユーザーを通す）
+  - 地理判定は IP プレフィックス（/8）の簡易比較のみ（GeoIP DBは不要）
   - 誤検知リスクを最小化するため、判定は保守的に設定
 """
 
@@ -31,14 +32,27 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
-# セッション追跡の有効期間: 1時間
+# セッション追跡の有効期間: 1時間（Firebase JWTの最大有効期限と合わせる）
 SESSION_IP_TTL = 3600
 
-# 「物理的に不可能な移動」判定: この秒数以内にIPプレフィックスが変わったら強制再認証
+# 「物理的に不可能な移動」判定: この秒数以内に国が変わったら強制再認証
 IMPOSSIBLE_TRAVEL_WINDOW_SEC = 300  # 5分
 
 # セッションハイジャック検知を適用しないパス
 _SKIP_PATHS = ("/health", "/metrics", "/docs", "/openapi", "/static", "/api/health")
+
+
+def _decode_jwt_payload(auth_header: str | None) -> dict | None:
+    """Bearer トークンのペイロードを無検証でデコードする（ログ・セッション追跡用）。"""
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    try:
+        token = auth_header[7:]
+        payload_b64 = token.split(".")[1]
+        padded = payload_b64 + "=" * (4 - len(payload_b64) % 4)
+        return json.loads(base64.urlsafe_b64decode(padded))
+    except Exception:
+        return None
 
 
 def _get_client_ip(request: Request) -> str:
@@ -56,9 +70,11 @@ def _ip_prefix_8(ip: str) -> str:
     """
     try:
         if ":" in ip:
+            # IPv6: 先頭2グループで比較
             parts = ip.split(":")
             return ":".join(parts[:2])
         else:
+            # IPv4: 先頭1オクテットで比較
             return ip.split(".")[0]
     except Exception:
         return ip
@@ -89,6 +105,7 @@ async def _check_session_ip(token_hash: str, current_ip: str) -> bool:
             prev_ip = data.get("ip", "")
 
             if prev_prefix and prev_prefix != current_prefix:
+                # IP プレフィックスが変化
                 elapsed = current_ts - prev_ts
                 logger.info(
                     "セッションIP変化を検知: token=%s prev=%s current=%s elapsed=%ds",
@@ -99,6 +116,7 @@ async def _check_session_ip(token_hash: str, current_ip: str) -> bool:
                 )
 
                 if elapsed < IMPOSSIBLE_TRAVEL_WINDOW_SEC:
+                    # 5分以内で大きなIPプレフィックス変化 → 強制再認証
                     logger.warning(
                         "物理的に不可能な移動を検知（強制再認証）: token=%s prev=%s(%s) "
                         "current=%s(%s) elapsed=%ds",

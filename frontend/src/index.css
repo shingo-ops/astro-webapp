@@ -58,10 +58,15 @@
   --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg:    0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.05);
   --shadow-xl:    0 20px 25px rgba(0, 0, 0, 0.08), 0 8px 10px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.2);  /* モーダル専用（意図的に重め） */
+  --shadow-modal:    0 8px 32px rgba(0, 0, 0, 0.2);  /* モーダル専用（意図的に重め） */
+  --shadow-dropdown: 0 2px 12px rgba(0, 0, 0, 0.15); /* ドロップダウン・ポップオーバー */
 
   /* オーバーレイ背景（モーダル・ドロワー用） */
   --overlay-bg: rgba(0, 0, 0, 0.4);
+
+  /* ホバー・選択状態の薄い背景オーバーレイ */
+  --color-hover-overlay:    rgba(0, 0, 0, 0.05);   /* リスト行 hover/selected */
+  --color-separator-subtle: rgba(203, 210, 217, 0.6); /* 薄いボーダー区切り線 */
 
   /* フォーカスリング（--accent 色依存のため index.css に定義 / ダークも上書き要） */
   --focus-ring-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15); /* light: --accent #1877F2 */
@@ -174,9 +179,13 @@
   --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg:    0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-xl:    0 20px 25px rgba(0, 0, 0, 0.5), 0 8px 10px rgba(0, 0, 0, 0.4);
-  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-modal:    0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-dropdown: 0 2px 12px rgba(0, 0, 0, 0.35);
 
   --overlay-bg: rgba(0, 0, 0, 0.6);
+
+  --color-hover-overlay:    rgba(255, 255, 255, 0.06);
+  --color-separator-subtle: rgba(148, 163, 184, 0.4);
 
   /* フォーカスリング（dark: --accent #818cf8 インディゴ系） */
   --focus-ring-shadow: 0 0 0 3px rgba(129, 140, 248, 0.3);
