@@ -391,7 +391,7 @@ export default function ParseReviewPage() {
                     style={
                       row.skipped
                         ? {
-                            opacity: 0.55,
+                            opacity: "var(--opacity-skipped)",
                             background: "var(--bg-disabled)",
                           }
                         : undefined

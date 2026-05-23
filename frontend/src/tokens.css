@@ -84,11 +84,13 @@
   --space-14px: 14px;  /* ボタン横余白 */
 
   /* ---- Border radius ---- */
+  --radius-2xs:  3px;   /* btn-sm・コードラベルの極小角丸 */
   --radius-xs:   2px;   /* アバター・小アイコン・サムネイルの極小角丸 */
   --radius-sm:   4px;
   --radius-md:   6px;
   --radius-lg:   8px;
   --radius-xl:   12px;
+  --radius-badge: 10px;  /* バッジ・status-badge・dedup-summary */
   --radius-pill: 20px;   /* ピル型ボタン・バッジ・入力欄の角丸（意味的例外トークン） */
   --radius-full: 9999px;
 
@@ -101,6 +103,7 @@
 
   /* ---- Z-index ---- */
   --z-base:           10;
+  --z-dropdown:       50;   /* ドロップダウン・オートコンプリートサジェスト */
   --z-topbar:        100;
   --z-sidebar:       200;
   --z-sidebar-overlay: 210;
@@ -112,6 +115,7 @@
 
   /* ---- Motion / Transitions ---- */
   /* duration tokens — 値は ms 統一（Material Design 3 / Tailwind 準拠） */
+  --duration-base:      200ms;                               /* animation で easing を別指定する場合の duration 単体 */
   --transition-micro:   100ms ease;                          /* ボタン押下・スウォッチ */
   --transition-fast:    150ms ease;                          /* hover・カラー変化 */
   --transition-base:    200ms ease;                          /* フェードイン・スケール */
@@ -152,7 +156,13 @@
 
   /* ---- Opacity ---- */
   --opacity-muted:     0.7;   /* タイムスタンプ・補足テキストの減光 */
+  --opacity-dim:       0.8;   /* ラベル減光・メタ情報（KPIラベル・ロールメタ） */
+  --opacity-soft:      0.9;   /* アクセントラベルの軽減光 */
   --opacity-secondary: 0.85;  /* セカンダリラベル */
+  --opacity-hover:     0.75;  /* ホバー時の軽減光 */
+  --opacity-disabled:  0.6;   /* disabled 状態の入力・ボタン */
+  --opacity-skipped:   0.55;  /* スキップ行・除外コンテンツ */
+  --opacity-archived:  0.5;   /* アーカイブ行・非アクティブコンテンツ */
 
   /* ---- Inbox component sizes (Meta実測値) ---- */
   --height-tab-bar:       36px;   /* 受信箱タブバー高さ */

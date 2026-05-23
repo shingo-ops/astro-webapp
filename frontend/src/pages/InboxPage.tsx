@@ -645,7 +645,7 @@ html.force-dark .inbox-wrapper {
   box-sizing: border-box;
   line-height: 1.4;
 }
-.inbox-textarea:disabled { cursor: not-allowed; opacity: 0.6; }
+.inbox-textarea:disabled { cursor: not-allowed; opacity: var(--opacity-disabled); }
 /* 下段: 送信ボタン */
 .send-bottom-row {
   display: flex;
@@ -783,7 +783,7 @@ html.force-dark .inbox-wrapper {
   text-decoration: none;
   transition: opacity var(--transition-micro);
 }
-.right-panel-link:hover { opacity: 0.75; }
+.right-panel-link:hover { opacity: var(--opacity-hover); }
 .right-panel-empty {
   display: flex;
   align-items: center;
@@ -1463,7 +1463,7 @@ export default function InboxPage() {
                         )}
                         <span className={`conv-preview-text${conv.unread_count > 0 ? " unread" : ""}`}>
                           {conv.last_message_direction === "outbound" && (
-                            <span style={{ opacity: 0.7 }}>You: </span>
+                            <span style={{ opacity: "var(--opacity-muted)" }}>You: </span>
                           )}
                           {conv.last_message_text ?? ""}
                         </span>
@@ -1577,7 +1577,7 @@ export default function InboxPage() {
                         }
                       >
                         {msg.message_tag && !failed && (
-                          <div style={{ fontSize: "var(--font-2xs)", opacity: 0.85, marginBottom: "var(--space-1)", fontWeight: "var(--font-weight-semi)" }}>
+                          <div style={{ fontSize: "var(--font-2xs)", opacity: "var(--opacity-secondary)", marginBottom: "var(--space-1)", fontWeight: "var(--font-weight-semi)" }}>
                             {msg.message_tag === "HUMAN_AGENT" ? "Human Agent" : msg.message_tag}
                           </div>
                         )}
