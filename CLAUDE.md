@@ -563,3 +563,59 @@ const CheckIcon = STATUS_ICONS.check;
 - `BadgesPage.tsx` の `icon: string | null`（API から来るユーザー定義絵文字）
 - `KnowledgeAliasesTab.tsx` のテンプレートリテラル内 `✓`（文字列に JSX 不可）
 - `lp/src/` 以下（Astro スタック・lucide-react 未使用）
+
+---
+
+## デザイントークン使用ルール（ADR-067）
+
+CSS値は **必ず** `frontend/src/tokens.css`・`frontend/src/index.css` で定義された CSS Custom Properties（変数）を参照すること。
+
+### 参照先ファイル
+
+| ファイル | 内容 |
+|---------|------|
+| `frontend/src/tokens.css` | プリミティブトークン（opacity, radius, z-index, duration, spacing 等） |
+| `frontend/src/index.css` | カラー・シャドウトークン（light/dark 両対応） |
+
+### 絶対禁止パターン
+
+```css
+/* ❌ 禁止: 数値直書き */
+opacity: 0.8;
+border-radius: 10px;
+z-index: 50;
+animation: fadeIn 200ms ease-in;
+
+/* ✅ 正しい: CSS変数参照 */
+opacity: var(--opacity-dim);
+border-radius: var(--radius-badge);
+z-index: var(--z-dropdown);
+animation: fadeIn var(--duration-base) ease-in;
+```
+
+```tsx
+// ❌ 禁止: TSXインラインスタイルへの数値直書き
+<div style={{ opacity: 0.5 }} />
+<div style={{ zIndex: 100 }} />
+
+// ✅ 正しい: CSS変数文字列参照
+<div style={{ opacity: "var(--opacity-muted)" }} />
+<div style={{ zIndex: "var(--z-topbar)" }} />
+```
+
+### 許可される例外
+
+- `opacity: 0` / `opacity: 1`（完全非表示・完全表示の機能値）
+- `@keyframes` 内の `from { opacity: 0; }` / `to { opacity: 1; }`
+- `@media (max-width: 768px)` 等のブレークポイント（CSS変数は@media条件で使用不可）
+
+### 自動検出ツール（pre-commit + CI）
+
+```bash
+npm run check:all        # 全チェック一括実行
+npm run check:css-values # CSS数値ハードコード検出（新規）
+npm run check:css-colors # hex色ハードコード検出
+npm run lint             # TSX opacity/zIndex数値検出
+```
+
+新しいデザイン値が必要な場合は、コードに直書きせず `tokens.css` または `index.css` に追加してから参照すること。
