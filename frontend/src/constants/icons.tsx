@@ -1,57 +1,60 @@
 /**
  * アイコン一元管理モジュール
  *
- * lucide-react アイコンと絵文字の代替 SVG を集約する。
+ * @phosphor-icons/react アイコンと絵文字の代替 SVG を集約する。
  * 全コンポーネントはここからインポートすること。
  *
  * - パスエイリアス未設定のため相対パスで import すること
- * - lucide-react v1.14.0 使用
+ * - weight のデフォルトは App.tsx の IconContext.Provider で "light" に統一
  * - lp/（Astro）はスコープ外
  * - BadgesPage の icon フィールドはユーザー入力値のためスコープ外
  */
 
 import "./platform-icon.css";
-import type { LucideIcon } from "lucide-react";
+import type { Icon } from "@phosphor-icons/react";
+import { Envelope } from "@phosphor-icons/react";
 
-// LucideIcon 型を再エクスポート（他ファイルが lucide-react を直接 import しなくて済む）
-export type { LucideIcon };
+// Icon 型を再エクスポート（他ファイルが @phosphor-icons/react を直接 import しなくて済む）
+export type { Icon };
+// 後方互換エイリアス（RolesPage.tsx 等が LucideIcon 型を参照しているため）
+export type LucideIcon = Icon;
+
 import {
   Moon, Sun, Globe,
-  Check, AlertTriangle, X,
-  BarChart2, User, Target, Briefcase, Package,
-  Users, Key, Settings, Folder,
-  Construction, MessageSquare,
-  LayoutDashboard, FileText, HelpCircle, ShieldCheck,
-  MoreHorizontal, ChevronDown, LogOut, SlidersHorizontal, Search,
-  Mail,
-} from "lucide-react";
+  Check, Warning, X,
+  ChartBar, User, Target, Briefcase, Package,
+  Users, Key, GearSix, Folder,
+  HardHat, Chat,
+  SquaresFour, FileText, Question, ShieldCheck,
+  DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
+} from "@phosphor-icons/react";
 
 // ステータス（✓ ⚠ ✕ の代替）
 export const STATUS_ICONS = {
   check:   Check,
-  warning: AlertTriangle,
+  warning: Warning,
   error:   X,
-} satisfies Record<string, LucideIcon>;
+} satisfies Record<string, Icon>;
 
 // カテゴリ（RolesPage の CATEGORY_META 用）
 // "_default" はフォールバック用
-export const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  "レポート": BarChart2,
+export const CATEGORY_ICONS: Record<string, Icon> = {
+  "レポート": ChartBar,
   "顧客":     User,
   "リード":   Target,
   "案件":     Briefcase,
   "注文":     Package,
   "チーム":   Users,
   "ロール":   Key,
-  "システム": Settings,
+  "システム": GearSix,
   "_default": Folder,
 };
 
 // ページ用（🚧 💬 の代替）
 export const PAGE_ICONS = {
-  comingSoon: Construction,
-  inboxEmpty: MessageSquare,
-} satisfies Record<string, LucideIcon>;
+  comingSoon: HardHat,
+  inboxEmpty: Chat,
+} satisfies Record<string, Icon>;
 
 // テーマ切り替え（Layout.tsx）
 // light: ライトモード時 → ダークへ切り替えるボタンに表示
@@ -59,28 +62,28 @@ export const PAGE_ICONS = {
 export const THEME_ICONS = {
   light: Moon,
   dark:  Sun,
-} satisfies Record<string, LucideIcon>;
+} satisfies Record<string, Icon>;
 
 // 言語切り替え（Layout.tsx 🌐 の代替）
-export const GlobeIcon: LucideIcon = Globe;
+export const GlobeIcon: Icon = Globe;
 
 // ナビゲーション（Layout.tsx サイドバー・トップバー）
 export const NAV_ICONS = {
-  dashboard:   LayoutDashboard,
+  dashboard:   SquaresFour,
   leads:       Users,
   inventory:   Package,
   fileText:    FileText,
-  report:      BarChart2,
-  help:        HelpCircle,
+  report:      ChartBar,
+  help:        Question,
   admin:       ShieldCheck,
-  settings:    Settings,
-  more:        MoreHorizontal,
-  chevronDown: ChevronDown,
-  logout:      LogOut,
+  settings:    GearSix,
+  more:        DotsThree,
+  chevronDown: CaretDown,
+  logout:      SignOut,
   filter:      SlidersHorizontal,
-  search:      Search,
+  search:      MagnifyingGlass,
   close:       X,
-} satisfies Record<string, LucideIcon>;
+} satisfies Record<string, Icon>;
 
 // ============================================================
 // プラットフォームアイコン（InboxPage 会話バッジ用）
@@ -123,7 +126,7 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
   if (platform === "mail" || platform === "email") {
     return (
       <span className="platform-icon-wrap platform-icon-wrap--mail" style={{ width: size, height: size }}>
-        <Mail size={Math.round(size * 0.7)} color="white" aria-hidden="true" />
+        <Envelope size={Math.round(size * 0.7)} color="white" aria-hidden="true" />
       </span>
     );
   }
