@@ -46,6 +46,13 @@
   overflow: hidden;
 }
 
+/* collapsed 時はアイコンを中央揃え */
+.sidebar-panel:not(.sidebar-expanded) .sidebar-logo-area {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .sidebar-logo-icon {
   width: var(--logo-size);
   height: var(--logo-size);
