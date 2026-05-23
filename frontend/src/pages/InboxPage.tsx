@@ -216,13 +216,13 @@ html.force-dark .inbox-wrapper {
   overflow-x: auto;
   scrollbar-width: none;
   padding: 0 var(--space-2);
-  height: 36px;
+  height: var(--height-tab-bar);
   box-sizing: border-box;
 }
 .inbox-full-tab-bar::-webkit-scrollbar { display: none; }
 /* Meta実測: padding=8px 12px, border-radius=4px, font-size=14px, fw=400 */
 .inbox-full-tab {
-  height: 36px;
+  height: var(--height-tab-bar);
   padding: 0 var(--space-3);
   border: none;
   border-bottom: none;
@@ -233,14 +233,14 @@ html.force-dark .inbox-wrapper {
   cursor: pointer;
   white-space: nowrap;
   border-radius: var(--radius-sm);
-  transition: background 0.1s, color 0.1s;
+  transition: background var(--transition-micro), color var(--transition-micro);
   font-family: inherit;
   display: flex;
   align-items: center;
   line-height: 1;
 }
 .inbox-full-tab:hover:not(.active) {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--color-hover-overlay);
   color: var(--accent);
 }
 /* Meta実測: active bg=link-active-bg, color=accent, fw=700 */
@@ -259,7 +259,7 @@ html.force-dark .inbox-wrapper {
 
 /* ---- 左パネル ---- */
 .inbox-left-panel {
-  width: 443px;
+  width: var(--width-inbox-panel);
   flex-shrink: 0;
   flex-grow: 0;
   background: var(--bg-surface);
@@ -324,7 +324,7 @@ html.force-dark .inbox-wrapper {
   color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.1s;
+  transition: background var(--transition-micro);
   white-space: nowrap;
 }
 .inbox-manage-btn:hover { background: var(--bg-subtle); }
@@ -332,11 +332,11 @@ html.force-dark .inbox-wrapper {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  min-width: 180px;
+  min-width: var(--min-width-dropdown);
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-dropdown);
   z-index: var(--z-topbar);
   overflow: hidden;
 }
@@ -351,7 +351,7 @@ html.force-dark .inbox-wrapper {
   color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.1s;
+  transition: background var(--transition-micro);
 }
 .inbox-manage-item:hover { background: var(--bg-subtle); }
 
@@ -373,7 +373,7 @@ html.force-dark .inbox-wrapper {
   background: transparent;
   color: var(--text-primary);
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition: background var(--transition-micro), color var(--transition-micro);
   font-family: inherit;
   white-space: nowrap;
   line-height: 1.5;
@@ -385,7 +385,7 @@ html.force-dark .inbox-wrapper {
   font-weight: 700;
 }
 .inbox-sub-filter-pill:hover:not(.active) {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--color-hover-overlay);
 }
 
 /* 会話リスト */
@@ -401,19 +401,19 @@ html.force-dark .inbox-wrapper {
   gap: var(--space-3);
   padding: var(--space-3) 0 var(--space-3) var(--space-3);
   width: 100%;
-  min-height: 92px;
+  min-height: var(--min-height-conv-item);
   border: none;
   background: transparent;
   cursor: pointer;
   text-align: left;
-  transition: background 0.1s;
+  transition: background var(--transition-micro);
   font-family: inherit;
   box-sizing: border-box;
   position: relative;
 }
 /* Meta実測: hover/selected = rgba(0,0,0,0.05) オーバーレイ */
-.conv-item:hover { background: rgba(0, 0, 0, 0.05); }
-.conv-item.selected { background: rgba(0, 0, 0, 0.05); }
+.conv-item:hover { background: var(--color-hover-overlay); }
+.conv-item.selected { background: var(--color-hover-overlay); }
 /* 選択中インジケータ = 2px右端ストリップ */
 .conv-item.selected::after {
   content: '';
@@ -511,7 +511,7 @@ html.force-dark .inbox-wrapper {
   flex-shrink: 0;
 }
 .conv-platform-badge {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
   background: var(--bg-subtle);
@@ -530,7 +530,7 @@ html.force-dark .inbox-wrapper {
 /* Meta実測: padding=12px 0, border-bottom=1px solid rgba(203,210,217,0.6), h=81px */
 .inbox-center-header {
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid rgba(203, 210, 217, 0.6);
+  border-bottom: 1px solid var(--color-separator-subtle);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -547,7 +547,7 @@ html.force-dark .inbox-wrapper {
 .inbox-platform-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: var(--space-2px) var(--space-2);
   border-radius: var(--radius-xl);
   font-size: var(--font-2xs);
   font-weight: 600;
@@ -592,7 +592,7 @@ html.force-dark .inbox-wrapper {
 }
 .msg-time {
   font-size: var(--font-2xs);
-  opacity: 0.7;
+  opacity: var(--opacity-muted);
   margin-top: var(--space-1);
   text-align: right;
 }
@@ -600,7 +600,7 @@ html.force-dark .inbox-wrapper {
 
 /* 送信エリア — Meta実測: 白角丸カード(br=8px) + 左側に送信者アバター */
 .inbox-send-area {
-  padding: 4px 12px 12px;
+  padding: var(--space-1) var(--space-3) var(--space-3);
   flex-shrink: 0;
   background: var(--bg-surface);
 }
@@ -660,7 +660,7 @@ html.force-dark .inbox-wrapper {
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.1s;
+  transition: background var(--transition-micro);
 }
 .inbox-send-btn:hover:not(:disabled) { background: var(--accent-hover); }
 .inbox-send-btn:disabled {
@@ -778,7 +778,7 @@ html.force-dark .inbox-wrapper {
   font-size: var(--font-base);
   font-weight: 400;
   text-decoration: none;
-  transition: opacity 0.1s;
+  transition: opacity var(--transition-micro);
 }
 .right-panel-link:hover { opacity: 0.75; }
 .right-panel-empty {
@@ -848,7 +848,7 @@ html.force-dark .inbox-wrapper {
 
 /* メモ内サブラベル */
 .right-panel-memo-label {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
@@ -1341,7 +1341,7 @@ export default function InboxPage() {
                   width: "100%",
                   padding: "4px 8px",
                   fontSize: "var(--font-xs)",
-                  borderRadius: 16,
+                  borderRadius: "var(--radius-xl)",
                   border: "1px solid var(--border)",
                   background: "var(--bg-surface)",
                   color: "var(--text-primary)",

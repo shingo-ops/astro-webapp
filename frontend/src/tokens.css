@@ -84,6 +84,7 @@
   --space-14px: 14px;  /* ボタン横余白 */
 
   /* ---- Border radius ---- */
+  --radius-xs:   2px;   /* アバター・小アイコン・サムネイルの極小角丸 */
   --radius-sm:   4px;
   --radius-md:   6px;
   --radius-lg:   8px;
@@ -148,4 +149,20 @@
   --icon-lg:    24px;   /* 大アイコン */
   --icon-xl:    48px;   /* 空状態アイコン（empty state） */
   /* 注: ComingSoonPage の 64px アイコンは意図的に除外（一箇所のみの特殊値） */
+
+  /* ---- Opacity ---- */
+  --opacity-muted:     0.7;   /* タイムスタンプ・補足テキストの減光 */
+  --opacity-secondary: 0.85;  /* セカンダリラベル */
+
+  /* ---- Inbox component sizes (Meta実測値) ---- */
+  --height-tab-bar:       36px;   /* 受信箱タブバー高さ */
+  --width-inbox-panel:   443px;   /* 受信箱左パネル幅 */
+  --min-height-conv-item:  92px;  /* 会話アイテム最小高 */
+  --min-width-dropdown:   180px;  /* 管理ドロップダウン最小幅 */
+
+  /* ---- Modal sizes ---- */
+  --max-width-modal-sm:   420px;  /* 確認モーダル・小型ダイアログ最大幅 */
+
+  /* ---- Field sizes ---- */
+  --min-width-input-sm:   120px;  /* 小型入力フィールド最小幅 */
 }
