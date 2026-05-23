@@ -350,7 +350,7 @@ export default function ProductsPage() {
           </thead>
           <tbody>
             {products.map((p) => (
-              <tr key={p.id} style={p.is_archived ? { opacity: 0.5 } : undefined}>
+              <tr key={p.id} style={p.is_archived ? { opacity: "var(--opacity-archived)" } : undefined}>
                 <td className="mono">{p.product_code || "-"}</td>
                 <td>
                   {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: "var(--radius-xs)" }} />}

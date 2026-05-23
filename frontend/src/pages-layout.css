@@ -370,7 +370,7 @@
 .role-item-meta {
   display: block;
   font-size: var(--font-xs);
-  opacity: 0.8;
+  opacity: var(--opacity-dim);
   margin-top: var(--space-2px);
 }
 .btn-block {

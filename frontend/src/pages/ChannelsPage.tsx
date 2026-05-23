@@ -391,7 +391,7 @@ export default function ChannelsPage() {
                       <div>
                         <strong>{t("channels.instagramLinked")}:</strong> @{ch.instagram_username}
                         {ch.instagram_business_account_id && (
-                          <span className="mono" style={{ marginLeft: "var(--space-6px)", opacity: 0.7 }}>
+                          <span className="mono" style={{ marginLeft: "var(--space-6px)", opacity: "var(--opacity-muted)" }}>
                             ({ch.instagram_business_account_id})
                           </span>
                         )}

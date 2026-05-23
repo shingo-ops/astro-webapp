@@ -305,7 +305,7 @@ export default function InventorySearchBar({
             border: "1px solid var(--border-color)",
             borderRadius: "var(--radius-sm)",
             boxShadow: "var(--shadow-md)",
-            zIndex: 50,
+            zIndex: "var(--z-dropdown)",
           }}
         >
           {loading && (
