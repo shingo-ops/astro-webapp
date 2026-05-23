@@ -43,7 +43,9 @@ import {
 // 設定
 // ---------------------------------------------------------------------------
 
-const POLL_INTERVAL_MS = 10_000;
+const POLL_INTERVAL_MS = 30_000;
+const POLL_MAX_INTERVAL_MS = 300_000;
+const POLL_BACKOFF_FACTOR = 2;
 
 // ---------------------------------------------------------------------------
 // プラットフォームタブ定数
@@ -982,6 +984,7 @@ export default function InboxPage() {
   // スクロール用 ref
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const skipNextPollRef = useRef(false);
+  const pollErrorCountRef = useRef(0);
 
   // ---------------------------------------------------------------------------
   // データ取得
@@ -997,6 +1000,8 @@ export default function InboxPage() {
       });
       setConversations(data.conversations || []);
     } catch (e) {
+      // タイムアウトによるキャンセルはポーリング中の一時的な中断なのでバナーを出さない
+      if (e instanceof Error && e.name === "AbortError") return;
       const msg = e instanceof ApiError
         ? e.message
         : e instanceof Error ? e.message : "Failed to load conversations";
@@ -1076,21 +1081,44 @@ export default function InboxPage() {
   }, [loadConversations]);
 
   // ---------------------------------------------------------------------------
-  // 10s polling
+  // ポーリング（指数バックオフ付き）
   // ---------------------------------------------------------------------------
 
   useEffect(() => {
-    const id = setInterval(() => {
-      if (skipNextPollRef.current) {
-        skipNextPollRef.current = false;
-        return;
-      }
-      loadConversations();
-      if (selectedLeadId !== null) {
-        loadMessages(selectedLeadId);
-      }
-    }, POLL_INTERVAL_MS);
-    return () => clearInterval(id);
+    let cancelled = false;
+
+    const schedule = (delay: number): ReturnType<typeof setTimeout> => {
+      return setTimeout(async () => {
+        if (cancelled) return;
+        if (skipNextPollRef.current) {
+          skipNextPollRef.current = false;
+        } else {
+          try {
+            await loadConversations();
+            if (selectedLeadId !== null) await loadMessages(selectedLeadId);
+            pollErrorCountRef.current = 0;
+          } catch (err) {
+            // AbortError 以外のエラーをカウント（バックオフ計算に使用）
+            if (!(err instanceof Error && err.name === "AbortError")) {
+              pollErrorCountRef.current += 1;
+            }
+          }
+        }
+        if (!cancelled) {
+          const nextDelay = Math.min(
+            POLL_INTERVAL_MS * Math.pow(POLL_BACKOFF_FACTOR, pollErrorCountRef.current),
+            POLL_MAX_INTERVAL_MS,
+          );
+          schedule(nextDelay);
+        }
+      }, delay);
+    };
+
+    const timerId = schedule(POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timerId);
+    };
   }, [loadConversations, loadMessages, selectedLeadId]);
 
   // ---------------------------------------------------------------------------
@@ -1360,7 +1388,7 @@ export default function InboxPage() {
           <div className="inbox-conversation-list">
             {convError && (
               <div className="inbox-error-banner">
-                {convError}
+                {t("inbox.fetchError")}
                 <button
                   type="button"
                   style={{ marginLeft: "var(--space-2)", fontSize: "var(--font-xs)", cursor: "pointer" }}

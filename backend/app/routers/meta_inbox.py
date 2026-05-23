@@ -921,65 +921,76 @@ async def list_conversations(
           （Messenger 限定。IG メッセージは page_id NULL のため除外される）
 
     実装メモ:
-        - meta_messages の DISTINCT lead_id 集約 → 各 lead の最新メッセージ + 未読数
-          を 1 クエリで返すため、相関サブクエリを使う。SQLite / PostgreSQL 双方で
-          動く ANSI 互換の書き方に留める（CTE / window function は使わない）。
-        - leads は LEFT JOIN（meta_messages.lead_id が NULL の行は出さないため
-          INNER で十分だが、leads が削除済の場合 customer_name=NULL で出すため
-          LEFT JOIN しておく）。
+        - CTE + ROW_NUMBER() OVER (PARTITION BY lead_id) で lead ごとの最新メッセージを
+          1 パスで取得する（SQLite 3.25+ / PostgreSQL 両対応）。
+        - 旧実装の 3 重相関サブクエリ（N×2+1 回実行）から 3 回の GROUP BY/集計に削減。
+        - latest CTE: platform/page_id フィルタを適用（表示する会話を絞る）
+        - agg CTE: フィルタなし（全プラットフォームの未読数・最終受信日を集計、旧実装と同じ挙動）
+        - leads は LEFT JOIN（leads が削除済みの場合 customer_name=NULL で出すため）。
     """
-    where_clauses = ["mm.tenant_id = :tenant_id"]
     params: dict = {"tenant_id": tenant_id, "limit": limit, "offset": offset}
 
+    # latest CTE に適用する追加フィルタ（platform / page_id）
+    latest_extra = ""
     if platform != "all":
-        where_clauses.append("mm.platform = :platform")
+        latest_extra += " AND mm.platform = :platform"
         params["platform"] = platform
-
-    # Phase 1-E F14-S5: 複数 Page 接続時の Page 別フィルタ
     if page_id:
-        where_clauses.append("mm.page_id = :page_id")
+        latest_extra += " AND mm.page_id = :page_id"
         params["page_id"] = page_id
 
-    where_sql = " AND ".join(where_clauses)
-
-    # 各 lead_id ごとに最新 meta_messages 行を SELECT する。
-    # 相関サブクエリで「同 lead_id の最新 created_at」を引いてくるが、
-    # 単純化のため lead_id ごとに max(created_at) でフィルタする。
-    # NULL lead_id（leads に紐付いていない孤立メッセージ）は除外。
+    # CTE + ROW_NUMBER() で lead ごとの最新メッセージを 1 パスで取得。
+    # SQLite 3.25+（プロジェクト使用 3.51.0）および PostgreSQL 12+ で動作。
     sql = f"""
+        WITH latest AS (
+            SELECT
+                mm.lead_id,
+                mm.platform,
+                mm.page_id,
+                mm.message_text,
+                mm.direction,
+                mm.created_at,
+                ROW_NUMBER() OVER (
+                    PARTITION BY mm.lead_id
+                    ORDER BY mm.created_at DESC, mm.id DESC
+                ) AS rn
+            FROM meta_messages mm
+            WHERE mm.tenant_id = :tenant_id
+              AND mm.lead_id IS NOT NULL
+              {latest_extra}
+        ),
+        agg AS (
+            SELECT
+                mm.lead_id,
+                COUNT(CASE WHEN mm.direction = 'inbound' AND mm.seen_at IS NULL THEN 1 END)
+                    AS unread_count,
+                MAX(CASE WHEN mm.direction = 'inbound' THEN mm.created_at END)
+                    AS last_inbound_at
+            FROM meta_messages mm
+            WHERE mm.tenant_id = :tenant_id
+              AND mm.lead_id IS NOT NULL
+            GROUP BY mm.lead_id
+        )
         SELECT
-            l.id                AS lead_id,
-            l.lead_code         AS lead_code,
-            l.customer_name     AS customer_name,
-            l.status            AS lead_status,
-            mm.platform         AS platform,
-            mm.page_id          AS page_id,
-            mm.message_text     AS last_message_text,
-            mm.direction        AS last_message_direction,
-            mm.created_at       AS last_message_at,
-            (SELECT COUNT(1) FROM meta_messages mm2
-             WHERE mm2.lead_id = mm.lead_id
-               AND mm2.tenant_id = :tenant_id
-               AND mm2.direction = 'inbound'
-               AND mm2.seen_at IS NULL
-            ) AS unread_count,
-            (SELECT MAX(mm3.created_at) FROM meta_messages mm3
-             WHERE mm3.lead_id = mm.lead_id
-               AND mm3.tenant_id = :tenant_id
-               AND mm3.direction = 'inbound'
-            ) AS last_inbound_at
-        FROM meta_messages mm
+            l.id                    AS lead_id,
+            l.lead_code             AS lead_code,
+            l.customer_name         AS customer_name,
+            l.status                AS lead_status,
+            lat.platform            AS platform,
+            lat.page_id             AS page_id,
+            lat.message_text        AS last_message_text,
+            lat.direction           AS last_message_direction,
+            lat.created_at          AS last_message_at,
+            COALESCE(agg.unread_count, 0) AS unread_count,
+            agg.last_inbound_at     AS last_inbound_at
+        FROM latest lat
         LEFT JOIN leads l
-            ON l.id = mm.lead_id
-           AND l.tenant_id = mm.tenant_id  -- 防御的多重化: 将来 schema 共有化された際の保険
-        WHERE {where_sql}
-          AND mm.lead_id IS NOT NULL
-          AND mm.created_at = (
-              SELECT MAX(mm_inner.created_at) FROM meta_messages mm_inner
-              WHERE mm_inner.lead_id = mm.lead_id
-                AND mm_inner.tenant_id = :tenant_id
-          )
-        ORDER BY mm.created_at DESC, l.id DESC
+            ON l.id = lat.lead_id
+           AND l.tenant_id = :tenant_id
+        LEFT JOIN agg
+            ON agg.lead_id = lat.lead_id
+        WHERE lat.rn = 1
+        ORDER BY lat.created_at DESC, lat.lead_id DESC
         LIMIT :limit OFFSET :offset
     """
 

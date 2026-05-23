@@ -480,6 +480,15 @@ jobs:
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_inventory_sprint9.py
 
+            # Security Hardening (migration 071): データアクセス監査ログテーブル（P2-1/P2-3）
+            #   - data_access_events テーブル新設（public スキーマ）
+            #   - event_type / user_email / client_ip / created_at インデックス
+            #   - CREATE TABLE IF NOT EXISTS で冪等。再実行しても安全。
+            #   関連: PR #572 / ADR セキュリティ強化計画
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < /app/migrations/071_create_data_access_events.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
