@@ -39,6 +39,20 @@ export default [
           message:
             "❌ インラインスタイルへのhex色ハードコード禁止（ADR-067）。CSS変数を使ってください: style={{ border: '1px solid var(--border-color)' }}",
         },
+        // opacity 数値直書き禁止: style={{ opacity: 0.5 }} ※文字列 var() は除外
+        {
+          selector:
+            "JSXAttribute[name.name='style'] Property[key.name='opacity'][value.type='Literal'][value.value!=/^var\\(/]",
+          message:
+            "❌ インラインスタイルへの opacity 数値直書き禁止（ADR-067）。CSS変数を使ってください: style={{ opacity: 'var(--opacity-dim)' }}",
+        },
+        // zIndex 数値直書き禁止: style={{ zIndex: 50 }} ※文字列 var() は除外
+        {
+          selector:
+            "JSXAttribute[name.name='style'] Property[key.name='zIndex'][value.type='Literal'][value.value!=/^var\\(/]",
+          message:
+            "❌ インラインスタイルへの zIndex 数値直書き禁止（ADR-067）。CSS変数を使ってください: style={{ zIndex: 'var(--z-topbar)' }}",
+        },
       ],
 
       // アイコン一元管理（ADR-067 拡張）:
