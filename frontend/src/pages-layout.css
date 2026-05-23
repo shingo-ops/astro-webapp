@@ -31,6 +31,15 @@
   margin: 0;
 }
 
+/* ページサブタイトル — 全ページ共通スタイル
+   文言は各ページの i18n キーで個別定義、色・表示は統一 */
+.page-subtitle {
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  margin: var(--space-1) 0 0;
+  line-height: 1.4;
+}
+
 /* ============================================================
    Typography utility classes（Shopify Polaris / Meta 準拠の2層設計）
    primitive token → role token → utility class の3層構造。
