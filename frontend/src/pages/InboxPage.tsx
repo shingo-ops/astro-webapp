@@ -691,10 +691,12 @@ html.force-dark .inbox-wrapper {
   background: var(--bg-surface);
   border-left: 1px solid var(--inbox-separator);
   margin-left: 14px;
-  margin-right: 24px;
+  margin-right: var(--space-6);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  border-top-left-radius: var(--radius-sm);
+  border-top-right-radius: var(--radius-sm);
 }
 
 /* カルテカード（右パネル内 — Metaに合わせフラット構成） */
@@ -1881,9 +1883,6 @@ export default function InboxPage() {
           )}
         </main>
 
-        </div>{/* /inbox-columns */}
-        </div>{/* /inbox-main-area */}
-
         {/* ============================== 右パネル (商談カルテ) ============================== */}
         <aside className="inbox-right-panel" style={{ display: inboxSettings.showRightPanel ? undefined : "none" }}>
           {selectedLeadId === null ? (
@@ -2134,6 +2133,8 @@ export default function InboxPage() {
             </div>
           )}
         </aside>
+        </div>{/* /inbox-columns */}
+        </div>{/* /inbox-main-area */}
 
       </div>{/* /inbox-wrapper */}
 
