@@ -133,6 +133,10 @@
       rgb(250, 241, 241) 0%, rgb(250, 241, 241) 15.29%,
       rgb(243, 237, 245) 21.39%, rgb(229, 240, 250) 40.79%);
 
+  /* Tooltip */
+  --tooltip-bg:   rgba(26, 32, 44, 0.92);
+  --tooltip-text: #ffffff;
+
   /* color-scheme: OS非依存（ADR-033: アプリ設定を優先） */
   color-scheme: light;
 }
@@ -262,6 +266,10 @@
     radial-gradient(297.85% 151.83% at -21.39% 8.81%,
       rgb(30, 20, 20) 0%, rgb(30, 20, 20) 15.29%,
       rgb(25, 20, 35) 21.39%, rgb(15, 30, 45) 40.79%);
+
+  /* Tooltip */
+  --tooltip-bg:   rgba(241, 245, 249, 0.94);
+  --tooltip-text: #0f172a;
 
   color-scheme: dark;
 }
