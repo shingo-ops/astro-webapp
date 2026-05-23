@@ -94,12 +94,23 @@
   --radius-pill: 20px;   /* ピル型ボタン・バッジ・入力欄の角丸（意味的例外トークン） */
   --radius-full: 9999px;
 
-  /* ---- Breakpoints（参照専用 — メディアクエリ条件式では CSS変数は使用不可。
-     ここで定義するのはチーム内の正規ブレークポイント合意のドキュメントとしての役割。
-     実際の @media 条件は値を直接記述する。） ---- */
-  --breakpoint-sm:  480px;   /* スマートフォン縦 */
-  --breakpoint-md:  768px;   /* タブレット縦 */
-  --breakpoint-lg: 1024px;   /* タブレット横・小型ノートPC */
+  /* ---- Breakpoints（参照専用 — CSS変数は @media 条件式では使用不可。
+     ここはチームの「公式ブレークポイント合意書」。
+     @media に書く値はここと一致させること。JS側は constants/breakpoints.ts を参照。
+
+     [3段階レスポンシブ設計]
+     モバイル     : <=767px    スマートフォン（未実装、定義のみ）
+     タブレット   : 768-1023px タブレット縦/横
+     デスクトップ : >=1024px   ノートPC以上（受信箱カルテ常時表示）
+
+     根拠: Tailwind / Intercom / Zendesk が採用する
+           lg=1024px / md=768px ラインと一致。
+           iPad mini 横向き(1024px)をデスクトップ扱いにするため 1024px を境界とした。
+     ---------------------------------------------------------------- */
+  --breakpoint-mobile-max:   767px; /* モバイル上限     スマートフォン    */
+  --breakpoint-tablet-min:   768px; /* タブレット下限   iPad縦向き以上    */
+  --breakpoint-tablet-max:  1023px; /* タブレット上限   デスクトップ境界-1 */
+  --breakpoint-desktop-min: 1024px; /* デスクトップ下限 iPad横向き以上    */
 
   /* ---- Z-index ---- */
   --z-base:           10;
