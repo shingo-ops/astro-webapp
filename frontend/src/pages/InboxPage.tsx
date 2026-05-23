@@ -210,11 +210,11 @@ html.force-dark .inbox-wrapper {
   margin: 0;
 }
 
-/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） — Meta実測: h=36, bg=transparent */
+/* 全幅タブバー（3カラムの上・コンテンツエリア全幅） — Meta実測: h=36, bg=bg-subtle */
 .inbox-full-tab-bar {
   display: flex;
   align-items: center;
-  background: transparent;
+  background: var(--bg-subtle);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
@@ -252,6 +252,7 @@ html.force-dark .inbox-wrapper {
   background: var(--link-active-bg);
   color: var(--accent);
   font-weight: 700;
+  border-radius: var(--radius-md);
 }
 
 /* 3カラムコンテンツエリア */
