@@ -1040,7 +1040,7 @@ _SSE_HEARTBEAT_SEC = 30  # nginx proxy_read_timeout(3600s) より十分短く
 
 @router.get(
     "/conversations/stream",
-    dependencies=[Depends(require_permission("messages.read"))],
+    dependencies=[Depends(require_permission("messaging.view"))],
 )
 async def stream_inbox_updates(
     request: Request,
