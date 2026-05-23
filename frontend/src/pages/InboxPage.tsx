@@ -201,7 +201,7 @@ html.force-dark .inbox-wrapper {
   line-height: 1.2;
 }
 .inbox-area-subtitle {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-muted);
   margin: 0;
 }
@@ -227,7 +227,7 @@ html.force-dark .inbox-wrapper {
   border: none;
   border-bottom: none;
   background: transparent;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 400;
   color: var(--text-primary);
   cursor: pointer;
@@ -294,10 +294,10 @@ html.force-dark .inbox-wrapper {
   flex: 1;
   min-width: 0;
   padding: var(--space-2) var(--space-3);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   border: none;
   background: var(--bg-subtle);
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--text-primary);
   outline: none;
   box-sizing: border-box;
@@ -319,7 +319,7 @@ html.force-dark .inbox-wrapper {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-surface);
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--text-primary);
   cursor: pointer;
@@ -347,7 +347,7 @@ html.force-dark .inbox-wrapper {
   border: none;
   background: transparent;
   text-align: left;
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
@@ -368,7 +368,7 @@ html.force-dark .inbox-wrapper {
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   border: none;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 400;
   background: transparent;
   color: var(--text-primary);
@@ -439,7 +439,7 @@ html.force-dark .inbox-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 700;
   user-select: none;
 }
@@ -449,7 +449,7 @@ html.force-dark .inbox-wrapper {
   right: -2px;
   width: var(--icon-base);
   height: var(--icon-base);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: 2px solid var(--bg-surface);
   display: inline-flex;
   align-items: center;
@@ -468,7 +468,7 @@ html.force-dark .inbox-wrapper {
 }
 /* 名前 14px/fw400(既読)/fw700(未読) */
 .conv-name {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 400;
   color: var(--text-primary);
   overflow: hidden;
@@ -504,16 +504,16 @@ html.force-dark .inbox-wrapper {
 .conv-unread-badge {
   background: var(--accent);
   color: var(--on-accent);
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   padding: 1px 6px;
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   flex-shrink: 0;
 }
 .conv-platform-badge {
   font-size: 10px;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: var(--bg-subtle);
   color: var(--text-secondary);
   flex-shrink: 0;
@@ -549,7 +549,7 @@ html.force-dark .inbox-wrapper {
   align-items: center;
   padding: 2px 8px;
   border-radius: var(--radius-xl);
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: 600;
 }
 .inbox-messages {
@@ -591,7 +591,7 @@ html.force-dark .inbox-wrapper {
   border-radius: var(--radius-xl);
 }
 .msg-time {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   opacity: 0.7;
   margin-top: var(--space-1);
   text-align: right;
@@ -620,12 +620,12 @@ html.force-dark .inbox-wrapper {
   gap: var(--space-2);
   padding: 10px 10px 6px;
 }
-/* 入力ラップ（Meta実測: br=18px） */
+/* 入力ラップ（Meta実測: br=18px → --radius-pill=20px 吸収済み ±2px許容） */
 .send-input-wrap {
   flex: 1;
   min-width: 0;
   background: var(--bg-subtle);
-  border-radius: 18px;
+  border-radius: var(--radius-pill);
   padding: var(--space-2) var(--space-14px);
   box-sizing: border-box;
 }
@@ -633,7 +633,7 @@ html.force-dark .inbox-wrapper {
   width: 100%;
   border: none;
   padding: 0;
-  font-size: 14px;
+  font-size: var(--font-base);
   resize: none;
   font-family: inherit;
   outline: none;
@@ -652,11 +652,11 @@ html.force-dark .inbox-wrapper {
 }
 .inbox-send-btn {
   padding: var(--space-2) var(--space-5);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   background: var(--accent);
   color: var(--on-accent);
   border: none;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -677,7 +677,7 @@ html.force-dark .inbox-wrapper {
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
-  font-size: 15px;
+  font-size: var(--font-base);
   gap: var(--space-3);
 }
 .inbox-empty-icon svg { width: var(--icon-xl); height: var(--icon-xl); }
@@ -719,7 +719,7 @@ html.force-dark .inbox-wrapper {
   user-select: none;
 }
 .right-panel-name {
-  font-size: 17px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--text-primary);
   text-align: center;
@@ -734,7 +734,7 @@ html.force-dark .inbox-wrapper {
 .right-panel-status {
   margin-top: var(--space-10px);
   padding: var(--space-1) var(--space-14px);
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   background: var(--link-active-bg);
   color: var(--accent);
   font-size: var(--font-xs);
@@ -756,13 +756,13 @@ html.force-dark .inbox-wrapper {
   border-bottom: 1px solid var(--bg-subtle);
 }
 .right-panel-label {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 .right-panel-value {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--text-primary);
   font-weight: 500;
   word-break: break-word;
@@ -775,7 +775,7 @@ html.force-dark .inbox-wrapper {
   border-radius: 0;
   background: transparent;
   color: var(--link);
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 400;
   text-decoration: none;
   transition: opacity 0.1s;
@@ -787,7 +787,7 @@ html.force-dark .inbox-wrapper {
   justify-content: center;
   height: 100%;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: var(--font-base);
   text-align: center;
   padding: var(--space-4);
 }
@@ -806,7 +806,7 @@ html.force-dark .inbox-wrapper {
 
 /* 英語名 */
 .right-panel-en-name {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   color: var(--text-secondary);
   margin: 2px 0 0;
   text-align: center;
@@ -816,8 +816,8 @@ html.force-dark .inbox-wrapper {
 .right-panel-rank {
   margin-top: 6px;
   padding: 3px 12px;
-  border-radius: 20px;
-  font-size: 11px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-2xs);
   font-weight: 700;
   background: var(--rank-bg);
   color: var(--rank-text);
@@ -863,7 +863,7 @@ html.force-dark .inbox-wrapper {
   color: var(--danger-text);
   border: 1px solid var(--danger);
   border-radius: var(--radius-lg);
-  font-size: 13px;
+  font-size: var(--font-sm);
   margin: 8px 12px;
 }
 .inbox-send-error {
@@ -1371,11 +1371,11 @@ export default function InboxPage() {
               </div>
             )}
             {convLoading ? (
-              <div style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-secondary)", fontSize: 14 }}>
+              <div style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-secondary)", fontSize: "var(--font-base)" }}>
                 {t("common.loading")}
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-secondary)", fontSize: 14 }}>
+              <div style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-secondary)", fontSize: "var(--font-base)" }}>
                 {unreadOnly ? t("inbox.noUnread") : t("inbox.noMessages")}
                 {!unreadOnly && (
                   <div style={{ marginTop: "var(--space-2)", fontSize: "var(--font-xs)" }}>

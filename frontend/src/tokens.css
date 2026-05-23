@@ -88,6 +88,7 @@
   --radius-md:   6px;
   --radius-lg:   8px;
   --radius-xl:   12px;
+  --radius-pill: 20px;   /* ピル型ボタン・バッジ・入力欄の角丸（意味的例外トークン） */
   --radius-full: 9999px;
 
   /* ---- Breakpoints（参照専用 — メディアクエリ条件式では CSS変数は使用不可。
