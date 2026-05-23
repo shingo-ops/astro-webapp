@@ -56,7 +56,8 @@
     "done": "済",
     "notDone": "未",
     "submitting": "送信中...",
-    "deleteConfirmSuffix": "を削除します。"
+    "deleteConfirmSuffix": "を削除します。",
+    "saved": "保存しました"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -220,7 +221,12 @@
     "englishName": "英語名",
     "rank": "ランク",
     "competitorDone": "済",
-    "competitorNotDone": "未"
+    "competitorNotDone": "未",
+    "status_ai_collecting": "AI対応中",
+    "status_existing_customer": "既存顧客",
+    "status_follow_up_short": "追客（短期）",
+    "status_follow_up_long": "追客（長期）",
+    "status_out_of_scope": "対象外"
   },
   "customers": {
     "title": "顧客管理",
@@ -420,7 +426,21 @@
     "filterFollowUp": "フォローアップ",
     "subtitle": "メッセージの管理と返信ができます。",
     "fetchError": "データの取得に失敗しました",
-    "unreadBadge": "未読 {{count}} 件"
+    "unreadBadge": "未読 {{count}} 件",
+    "settings": {
+      "title": "受信箱の設定",
+      "display": "表示カスタマイズ",
+      "showRightPanel": "カルテ（右パネル）を表示",
+      "defaultTab": "デフォルトタブ",
+      "defaultTabAll": "すべて",
+      "defaultTabMessenger": "Messenger",
+      "defaultTabInstagram": "Instagram",
+      "defaultUnreadOnly": "デフォルトで未読のみ表示",
+      "notifications": "通知・アラート",
+      "browserNotifications": "ブラウザ通知",
+      "browserNotificationsDenied": "ブラウザの設定で通知を許可してください",
+      "soundEnabled": "通知音"
+    }
   },
   "channels": {
     "title": "チャンネル (Meta連携)",

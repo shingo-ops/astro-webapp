@@ -935,7 +935,141 @@ html.force-dark .inbox-wrapper {
   .msg-bubble { max-width: 90%; }
   .inbox-send-btn { padding: var(--space-2) var(--space-4); }
 }
+
+/* ====== カルテ常時編集フィールド ====== */
+.right-panel-field {
+  width: 100%; box-sizing: border-box;
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2);
+  font-size: var(--font-sm); color: var(--text-primary);
+  font-family: inherit;
+  transition: border-color var(--transition-micro);
+}
+.right-panel-field:focus { outline: none; border-color: var(--accent); }
+textarea.right-panel-field { resize: vertical; min-height: 60px; }
+.right-panel-name-field {
+  font-weight: 600; font-size: var(--font-base); text-align: center;
+  border: 1px solid transparent; background: transparent;
+}
+.right-panel-name-field:hover,
+.right-panel-name-field:focus { background: var(--bg-primary); border-color: var(--border); }
+.right-panel-en-name-field {
+  font-size: var(--font-xs); color: var(--text-muted); text-align: center;
+  border: 1px solid transparent; background: transparent;
+}
+.right-panel-en-name-field:hover,
+.right-panel-en-name-field:focus { background: var(--bg-primary); border-color: var(--border); }
+.right-panel-save-indicator {
+  font-size: var(--font-xs); color: var(--text-muted);
+  min-height: 16px; text-align: right; padding: 0 var(--space-3);
+  margin-bottom: var(--space-1);
+}
+.right-panel-save-indicator .saved { color: var(--success-bg); }
+.right-panel-save-indicator .error  { color: var(--danger-bg); }
+
+/* ====== 受信箱タイトル行（ギアアイコン） ====== */
+.inbox-area-title-row {
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.inbox-settings-btn {
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); border-radius: var(--radius-sm);
+  padding: var(--space-1);
+  transition: color var(--transition-micro), background var(--transition-micro);
+}
+.inbox-settings-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+/* ====== 受信箱設定モーダル ====== */
+.inbox-settings-overlay {
+  position: fixed; inset: 0; z-index: var(--z-modal);
+  background: rgba(0,0,0,var(--opacity-overlay));
+  display: flex; align-items: center; justify-content: center;
+}
+.inbox-settings-modal {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: var(--space-6);
+  min-width: 320px; max-width: 480px; width: 90%;
+  box-shadow: var(--shadow-lg);
+}
+.inbox-settings-modal-title {
+  font-size: var(--font-lg); font-weight: 600; color: var(--text-primary);
+  margin: 0 0 var(--space-4);
+}
+.inbox-settings-section-title {
+  font-size: var(--font-xs); font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: var(--space-2);
+}
+.inbox-settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-2) 0; border-bottom: 1px solid var(--border);
+}
+.inbox-settings-label { font-size: var(--font-sm); color: var(--text-primary); }
+.inbox-settings-select {
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2);
+  font-size: var(--font-sm); color: var(--text-primary);
+  cursor: pointer;
+}
+.inbox-settings-close-btn {
+  margin-top: var(--space-5); width: 100%;
+  background: var(--accent); color: var(--on-accent);
+  border: none; border-radius: var(--radius-sm); padding: var(--space-2) var(--space-4);
+  font-size: var(--font-sm); font-weight: 500; cursor: pointer;
+  transition: opacity var(--transition-micro);
+}
+.inbox-settings-close-btn:hover { opacity: var(--opacity-dim); }
+
+/* ====== トグルスイッチ ====== */
+.inbox-toggle { position: relative; display: inline-flex; width: 40px; height: 22px; cursor: pointer; }
+.inbox-toggle input { opacity: 0; width: 0; height: 0; }
+.inbox-toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--border); border-radius: 11px;
+  transition: background var(--transition-micro);
+}
+.inbox-toggle-slider::before {
+  content: ""; position: absolute;
+  height: 16px; width: 16px; left: 3px; top: 3px;
+  background: var(--bg-surface); border-radius: 50%;
+  transition: transform var(--transition-micro);
+}
+.inbox-toggle input:checked + .inbox-toggle-slider { background: var(--accent); }
+.inbox-toggle input:checked + .inbox-toggle-slider::before { transform: translateX(18px); }
 `;
+
+// ---------------------------------------------------------------------------
+// 受信箱設定 (localStorage)
+// ---------------------------------------------------------------------------
+
+const INBOX_SETTINGS_KEY = "inbox_settings";
+const DRAFT_KEY = (leadId: number) => `cartedit_draft_${leadId}`;
+
+interface InboxSettings {
+  showRightPanel: boolean;
+  defaultTab: "all" | "messenger" | "instagram";
+  defaultUnreadOnly: boolean;
+  browserNotifications: boolean;
+  soundEnabled: boolean;
+}
+
+const DEFAULT_INBOX_SETTINGS: InboxSettings = {
+  showRightPanel: true,
+  defaultTab: "all",
+  defaultUnreadOnly: false,
+  browserNotifications: false,
+  soundEnabled: false,
+};
+
+function readInboxSettings(): InboxSettings {
+  try {
+    const raw = localStorage.getItem(INBOX_SETTINGS_KEY);
+    return raw ? { ...DEFAULT_INBOX_SETTINGS, ...JSON.parse(raw) } : DEFAULT_INBOX_SETTINGS;
+  } catch {
+    return DEFAULT_INBOX_SETTINGS;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // メイン
@@ -954,9 +1088,13 @@ export default function InboxPage() {
   const [convLoading, setConvLoading] = useState(true);
   const [convError, setConvError] = useState("");
 
-  // フィルタ
-  const [platformTab, setPlatformTab] = useState<string>("all");
-  const [unreadOnly, setUnreadOnly] = useState(false);
+  // 受信箱設定
+  const [inboxSettings, setInboxSettings] = useState<InboxSettings>(readInboxSettings);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // フィルタ（設定のデフォルト値を反映）
+  const [platformTab, setPlatformTab] = useState<string>(() => readInboxSettings().defaultTab);
+  const [unreadOnly, setUnreadOnly] = useState(() => readInboxSettings().defaultUnreadOnly);
   const [followUpOnly, setFollowUpOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -973,6 +1111,9 @@ export default function InboxPage() {
 
   // 右パネル (顧客カルテ)
   const [leadDetail, setLeadDetail] = useState<LeadDetail | null>(null);
+  const [cardForm, setCardForm] = useState<Partial<LeadDetail>>({});
+  const [cardSaveStatus, setCardSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [cardSaveError, setCardSaveError] = useState("");
 
   // 入力欄
   const [draft, setDraft] = useState("");
@@ -1076,8 +1217,21 @@ export default function InboxPage() {
     try {
       const data = await api.get<LeadDetail>(`/leads/${leadId}`);
       setLeadDetail(data);
+      // localStorage に下書きがあれば黙って復元（Notion方式）
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY(leadId));
+        if (raw) {
+          const draft = JSON.parse(raw) as Partial<LeadDetail>;
+          setCardForm({ ...data, ...draft });
+        } else {
+          setCardForm({ ...data });
+        }
+      } catch {
+        setCardForm({ ...data });
+      }
     } catch {
       setLeadDetail(null);
+      setCardForm({});
     }
   }, []);
 
@@ -1092,6 +1246,52 @@ export default function InboxPage() {
     } catch {
       // 既読化失敗は致命的ではないので無視
     }
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // カルテ編集ハンドラー（常時編集 + blur保存 + Notionキャッシュ）
+  // ---------------------------------------------------------------------------
+
+  const handleCardFieldChange = useCallback((field: keyof LeadDetail, value: unknown) => {
+    setCardForm((prev) => {
+      const next = { ...prev, [field]: value };
+      if (leadDetail) {
+        try {
+          localStorage.setItem(DRAFT_KEY(leadDetail.id), JSON.stringify(next));
+        } catch { /* quota超過時は無視 */ }
+      }
+      return next;
+    });
+  }, [leadDetail]);
+
+  const handleCardFieldBlur = useCallback(async () => {
+    if (!leadDetail) return;
+    setCardSaveStatus("saving");
+    setCardSaveError("");
+    try {
+      const payload = Object.fromEntries(
+        Object.entries(cardForm)
+          .filter(([k]) => k !== "id" && k !== "lead_code" && k !== "prospect_rank")
+          .map(([k, v]) => [k, v === "" ? null : v])
+      );
+      const updated = await api.patch<LeadDetail>(`/leads/${leadDetail.id}`, payload);
+      setLeadDetail(updated);
+      setCardForm({ ...updated });
+      localStorage.removeItem(DRAFT_KEY(leadDetail.id));
+      setCardSaveStatus("saved");
+      setTimeout(() => setCardSaveStatus((s) => s === "saved" ? "idle" : s), 2000);
+    } catch (e) {
+      setCardSaveStatus("error");
+      setCardSaveError(e instanceof Error ? e.message : "保存に失敗しました");
+    }
+  }, [leadDetail, cardForm]);
+
+  const updateInboxSetting = useCallback(<K extends keyof InboxSettings>(key: K, value: InboxSettings[K]) => {
+    setInboxSettings((prev) => {
+      const next = { ...prev, [key]: value };
+      localStorage.setItem(INBOX_SETTINGS_KEY, JSON.stringify(next));
+      return next;
+    });
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -1316,7 +1516,17 @@ export default function InboxPage() {
 
         {/* 受信箱タイトル（seamless統合 — Meta風） */}
         <div className="inbox-area-header">
-          <h1 className="inbox-area-title">{t("nav.leadChat")}</h1>
+          <div className="inbox-area-title-row">
+            <h1 className="inbox-area-title">{t("nav.leadChat")}</h1>
+            <button
+              type="button"
+              className="inbox-settings-btn"
+              onClick={() => setShowSettings(true)}
+              aria-label={t("inbox.settings.title")}
+            >
+              <NAV_ICONS.settings size={ICON.md} aria-hidden="true" />
+            </button>
+          </div>
           <p className="page-subtitle">{t("inbox.subtitle")}</p>
         </div>
 
@@ -1675,7 +1885,7 @@ export default function InboxPage() {
         </div>{/* /inbox-main-area */}
 
         {/* ============================== 右パネル (商談カルテ) ============================== */}
-        <aside className="inbox-right-panel">
+        <aside className="inbox-right-panel" style={{ display: inboxSettings.showRightPanel ? undefined : "none" }}>
           {selectedLeadId === null ? (
             <div className="right-panel-empty">
               <p>{t("inbox.selectConversation")}</p>
@@ -1685,14 +1895,25 @@ export default function InboxPage() {
               {/* ヘッダー */}
               <div className="right-panel-header">
                 <div className="right-panel-avatar">
-                  {getInitials(leadDetail.customer_name)}
+                  {getInitials(cardForm.customer_name ?? leadDetail.customer_name)}
                 </div>
-                <h3 className="right-panel-name">{leadDetail.customer_name}</h3>
-                {leadDetail.english_name && (
-                  <p className="right-panel-en-name">{leadDetail.english_name}</p>
-                )}
+                <input
+                  className="right-panel-field right-panel-name-field"
+                  type="text"
+                  value={cardForm.customer_name ?? ""}
+                  onChange={(e) => handleCardFieldChange("customer_name", e.target.value)}
+                  onBlur={handleCardFieldBlur}
+                  placeholder={t("leads.customerName")}
+                />
+                <input
+                  className="right-panel-field right-panel-en-name-field"
+                  type="text"
+                  value={cardForm.english_name ?? ""}
+                  onChange={(e) => handleCardFieldChange("english_name", e.target.value)}
+                  onBlur={handleCardFieldBlur}
+                  placeholder={t("leads.englishName")}
+                />
                 <p className="right-panel-code">{leadDetail.lead_code}</p>
-                <div className="right-panel-status">{leadDetail.status || "—"}</div>
                 {leadDetail.prospect_rank && (
                   <div className={`right-panel-rank rank-${leadDetail.prospect_rank.replace("+", "plus")}`}>
                     {t("leads.rank")} {leadDetail.prospect_rank}
@@ -1700,20 +1921,36 @@ export default function InboxPage() {
                 )}
               </div>
 
+              {/* 保存ステータスインジケーター */}
+              <div className="right-panel-save-indicator">
+                {cardSaveStatus === "saving" && <span>{t("common.saving")}</span>}
+                {cardSaveStatus === "saved" && <span className="saved">{t("common.saved")}</span>}
+                {cardSaveStatus === "error" && <span className="error">{cardSaveError}</span>}
+              </div>
+
               {/* セクション1: 連絡先 */}
               <div className="right-panel-section">
                 <div className="right-panel-section-title">{t("inbox.sectionContact")}</div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.companyName")}</span>
-                  <span className="right-panel-value">{leadDetail.company_name || "—"}</span>
+                  <input className="right-panel-field" type="text"
+                    value={cardForm.company_name ?? ""}
+                    onChange={(e) => handleCardFieldChange("company_name", e.target.value)}
+                    onBlur={handleCardFieldBlur} />
                 </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.email")}</span>
-                  <span className="right-panel-value">{leadDetail.email || "—"}</span>
+                  <input className="right-panel-field" type="email"
+                    value={cardForm.email ?? ""}
+                    onChange={(e) => handleCardFieldChange("email", e.target.value)}
+                    onBlur={handleCardFieldBlur} />
                 </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.phone")}</span>
-                  <span className="right-panel-value">{leadDetail.phone || "—"}</span>
+                  <input className="right-panel-field" type="tel"
+                    value={cardForm.phone ?? ""}
+                    onChange={(e) => handleCardFieldChange("phone", e.target.value)}
+                    onBlur={handleCardFieldBlur} />
                 </div>
               </div>
 
@@ -1721,109 +1958,171 @@ export default function InboxPage() {
               <div className="right-panel-section">
                 <div className="right-panel-section-title">{t("inbox.sectionDeal")}</div>
                 <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.status")}</span>
+                  <select className="right-panel-field"
+                    value={cardForm.status ?? ""}
+                    onChange={(e) => handleCardFieldChange("status", e.target.value)}
+                    onBlur={handleCardFieldBlur}>
+                    <option value="新規">{t("leads.status_new")}</option>
+                    <option value="コンタクト中">{t("leads.status_contact")}</option>
+                    <option value="提案中">{t("leads.status_proposal")}</option>
+                    <option value="案件化">{t("leads.status_won")}</option>
+                    <option value="失注">{t("leads.status_lost")}</option>
+                    <option value="保留">{t("leads.status_hold")}</option>
+                    <option value="AI対応中">{t("leads.status_ai_collecting")}</option>
+                    <option value="既存顧客">{t("leads.status_existing_customer")}</option>
+                    <option value="追客（短期）">{t("leads.status_follow_up_short")}</option>
+                    <option value="追客（長期）">{t("leads.status_follow_up_long")}</option>
+                    <option value="対象外">{t("leads.status_out_of_scope")}</option>
+                  </select>
+                </div>
+                <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.temperature")}</span>
-                  <span className="right-panel-value">{leadDetail.temperature || "—"}</span>
+                  <select className="right-panel-field"
+                    value={cardForm.temperature ?? ""}
+                    onChange={(e) => handleCardFieldChange("temperature", e.target.value || null)}
+                    onBlur={handleCardFieldBlur}>
+                    <option value="">—</option>
+                    <option value="Hot">Hot</option>
+                    <option value="Warm">Warm</option>
+                    <option value="Cold">Cold</option>
+                  </select>
                 </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.estimatedScale")}</span>
-                  <span className="right-panel-value">{leadDetail.estimated_scale || "—"}</span>
+                  <select className="right-panel-field"
+                    value={cardForm.estimated_scale ?? ""}
+                    onChange={(e) => handleCardFieldChange("estimated_scale", e.target.value || null)}
+                    onBlur={handleCardFieldBlur}>
+                    <option value="">—</option>
+                    <option value="Small">Small</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Large">Large</option>
+                  </select>
                 </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.customerType")}</span>
-                  <span className="right-panel-value">{leadDetail.customer_type || "—"}</span>
+                  <select className="right-panel-field"
+                    value={cardForm.customer_type ?? ""}
+                    onChange={(e) => handleCardFieldChange("customer_type", e.target.value || null)}
+                    onBlur={handleCardFieldBlur}>
+                    <option value="">—</option>
+                    <option value="信頼重視">{t("leads.customerType_trust")}</option>
+                    <option value="価格重視">{t("leads.customerType_price")}</option>
+                  </select>
                 </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.responseSpeed")}</span>
-                  <span className="right-panel-value">{leadDetail.response_speed || "—"}</span>
+                  <select className="right-panel-field"
+                    value={cardForm.response_speed ?? ""}
+                    onChange={(e) => handleCardFieldChange("response_speed", e.target.value || null)}
+                    onBlur={handleCardFieldBlur}>
+                    <option value="">—</option>
+                    <option value="24h以内">{t("leads.responseSpeed_24h")}</option>
+                    <option value="3日以内">{t("leads.responseSpeed_3days")}</option>
+                    <option value="3日超">{t("leads.responseSpeed_over3days")}</option>
+                  </select>
                 </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.monthlyForecast")}</span>
-                  <span className="right-panel-value">
-                    {leadDetail.monthly_forecast
-                      ? `¥${Number(leadDetail.monthly_forecast).toLocaleString()}`
-                      : "—"}
-                  </span>
+                  <input className="right-panel-field" type="number" min="0"
+                    value={cardForm.monthly_forecast ?? ""}
+                    onChange={(e) => handleCardFieldChange("monthly_forecast", e.target.value || null)}
+                    onBlur={handleCardFieldBlur} />
                 </div>
-                {leadDetail.per_order_amount && (
-                  <div className="right-panel-row">
-                    <span className="right-panel-label">{t("leads.perOrderAmount")}</span>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.perOrderAmount")}</span>
+                  <input className="right-panel-field" type="number" min="0"
+                    value={cardForm.per_order_amount ?? ""}
+                    onChange={(e) => handleCardFieldChange("per_order_amount", e.target.value || null)}
+                    onBlur={handleCardFieldBlur} />
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.monthlyFrequency")}</span>
+                  <input className="right-panel-field" type="number" min="0"
+                    value={cardForm.monthly_frequency ?? ""}
+                    onChange={(e) => handleCardFieldChange("monthly_frequency", e.target.value || null)}
+                    onBlur={handleCardFieldBlur} />
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.salesForm")}</span>
+                  <input className="right-panel-field" type="text"
+                    value={cardForm.sales_form ?? ""}
+                    onChange={(e) => handleCardFieldChange("sales_form", e.target.value)}
+                    onBlur={handleCardFieldBlur} />
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.meetingImpression")}</span>
+                  <input className="right-panel-field" type="text"
+                    value={cardForm.meeting_impression ?? ""}
+                    onChange={(e) => handleCardFieldChange("meeting_impression", e.target.value)}
+                    onBlur={handleCardFieldBlur} />
+                </div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.competitorCheck")}</span>
+                  <label style={{ display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
+                    <input type="checkbox"
+                      checked={cardForm.competitor_check ?? false}
+                      onChange={(e) => {
+                        handleCardFieldChange("competitor_check", e.target.checked);
+                        setTimeout(handleCardFieldBlur, 0);
+                      }} />
                     <span className="right-panel-value">
-                      ¥{Number(leadDetail.per_order_amount).toLocaleString()}
+                      {cardForm.competitor_check ? t("leads.competitorDone") : t("leads.competitorNotDone")}
                     </span>
-                  </div>
-                )}
-                {leadDetail.sales_form && (
-                  <div className="right-panel-row">
-                    <span className="right-panel-label">{t("leads.salesForm")}</span>
-                    <span className="right-panel-value">{leadDetail.sales_form}</span>
-                  </div>
-                )}
-                {leadDetail.competitor_check !== null && (
-                  <div className="right-panel-row">
-                    <span className="right-panel-label">{t("leads.competitorCheck")}</span>
-                    <span className="right-panel-value">
-                      {leadDetail.competitor_check
-                        ? <><STATUS_ICONS.check size={ICON.sm} aria-hidden="true" />{" "}{t("leads.competitorDone")}</>
-                        : t("leads.competitorNotDone")}
-                    </span>
-                  </div>
-                )}
+                  </label>
+                </div>
               </div>
 
               {/* セクション3: 次回アクション */}
-              {(leadDetail.next_action || leadDetail.next_action_date) && (
-                <div className="right-panel-section">
-                  <div className="right-panel-section-title">{t("inbox.sectionNextAction")}</div>
-                  {leadDetail.next_action_date && (
-                    <div className="right-panel-row">
-                      <span className="right-panel-label">{t("leads.nextActionDate")}</span>
-                      <span className="right-panel-value">{leadDetail.next_action_date}</span>
-                    </div>
-                  )}
-                  {leadDetail.next_action && (
-                    <div className="right-panel-memo">{leadDetail.next_action}</div>
-                  )}
+              <div className="right-panel-section">
+                <div className="right-panel-section-title">{t("inbox.sectionNextAction")}</div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.nextActionDate")}</span>
+                  <input className="right-panel-field" type="date"
+                    value={cardForm.next_action_date ?? ""}
+                    onChange={(e) => handleCardFieldChange("next_action_date", e.target.value || null)}
+                    onBlur={handleCardFieldBlur} />
                 </div>
-              )}
+                <textarea className="right-panel-field" rows={3}
+                  value={cardForm.next_action ?? ""}
+                  onChange={(e) => handleCardFieldChange("next_action", e.target.value)}
+                  onBlur={handleCardFieldBlur}
+                  placeholder={t("leads.nextAction")} />
+              </div>
 
               {/* セクション4: 課題・ニーズ */}
-              {leadDetail.challenge && (
-                <div className="right-panel-section">
-                  <div className="right-panel-section-title">{t("inbox.sectionChallenge")}</div>
-                  <div className="right-panel-memo">{leadDetail.challenge}</div>
-                </div>
-              )}
+              <div className="right-panel-section">
+                <div className="right-panel-section-title">{t("inbox.sectionChallenge")}</div>
+                <textarea className="right-panel-field" rows={3}
+                  value={cardForm.challenge ?? ""}
+                  onChange={(e) => handleCardFieldChange("challenge", e.target.value)}
+                  onBlur={handleCardFieldBlur}
+                  placeholder={t("leads.challenge")} />
+              </div>
 
               {/* セクション5: メモ */}
-              {(leadDetail.notes || leadDetail.meeting_memo || leadDetail.cs_memo) && (
-                <div className="right-panel-section">
-                  <div className="right-panel-section-title">{t("inbox.sectionMemo")}</div>
-                  {leadDetail.notes && (
-                    <>
-                      <div className="right-panel-memo-label">{t("leads.notes")}</div>
-                      <div className="right-panel-memo">{leadDetail.notes}</div>
-                    </>
-                  )}
-                  {leadDetail.meeting_memo && (
-                    <>
-                      <div className="right-panel-memo-label">{t("leads.meetingMemo")}</div>
-                      <div className="right-panel-memo">{leadDetail.meeting_memo}</div>
-                    </>
-                  )}
-                  {leadDetail.meeting_impression && (
-                    <div className="right-panel-row">
-                      <span className="right-panel-label">{t("leads.meetingImpression")}</span>
-                      <span className="right-panel-value">{leadDetail.meeting_impression}</span>
-                    </div>
-                  )}
-                  {leadDetail.cs_memo && (
-                    <>
-                      <div className="right-panel-memo-label">{t("leads.csMemo")}</div>
-                      <div className="right-panel-memo">{leadDetail.cs_memo}</div>
-                    </>
-                  )}
-                </div>
-              )}
+              <div className="right-panel-section">
+                <div className="right-panel-section-title">{t("inbox.sectionMemo")}</div>
+                <div className="right-panel-memo-label">{t("leads.notes")}</div>
+                <textarea className="right-panel-field" rows={3}
+                  value={cardForm.notes ?? ""}
+                  onChange={(e) => handleCardFieldChange("notes", e.target.value)}
+                  onBlur={handleCardFieldBlur}
+                  placeholder={t("leads.notes")} />
+                <div className="right-panel-memo-label">{t("leads.meetingMemo")}</div>
+                <textarea className="right-panel-field" rows={3}
+                  value={cardForm.meeting_memo ?? ""}
+                  onChange={(e) => handleCardFieldChange("meeting_memo", e.target.value)}
+                  onBlur={handleCardFieldBlur}
+                  placeholder={t("leads.meetingMemo")} />
+                <div className="right-panel-memo-label">{t("leads.csMemo")}</div>
+                <textarea className="right-panel-field" rows={3}
+                  value={cardForm.cs_memo ?? ""}
+                  onChange={(e) => handleCardFieldChange("cs_memo", e.target.value)}
+                  onBlur={handleCardFieldBlur}
+                  placeholder={t("leads.csMemo")} />
+              </div>
 
               <a href={`/leads?lead_id=${leadDetail.id}`} className="right-panel-link">
                 {t("inbox.viewLead")} →
@@ -1837,6 +2136,81 @@ export default function InboxPage() {
         </aside>
 
       </div>{/* /inbox-wrapper */}
+
+      {/* ============================== 受信箱設定モーダル ============================== */}
+      {showSettings && (
+        <div className="inbox-settings-overlay" onClick={() => setShowSettings(false)}>
+          <div className="inbox-settings-modal" onClick={(e) => e.stopPropagation()}>
+            <h2 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h2>
+
+            <div className="inbox-settings-section-title">{t("inbox.settings.display")}</div>
+
+            <div className="inbox-settings-row">
+              <span className="inbox-settings-label">{t("inbox.settings.showRightPanel")}</span>
+              <label className="inbox-toggle">
+                <input type="checkbox" checked={inboxSettings.showRightPanel}
+                  onChange={(e) => updateInboxSetting("showRightPanel", e.target.checked)} />
+                <span className="inbox-toggle-slider" />
+              </label>
+            </div>
+
+            <div className="inbox-settings-row">
+              <span className="inbox-settings-label">{t("inbox.settings.defaultTab")}</span>
+              <select className="inbox-settings-select"
+                value={inboxSettings.defaultTab}
+                onChange={(e) => updateInboxSetting("defaultTab", e.target.value as InboxSettings["defaultTab"])}>
+                <option value="all">{t("inbox.settings.defaultTabAll")}</option>
+                <option value="messenger">{t("inbox.settings.defaultTabMessenger")}</option>
+                <option value="instagram">{t("inbox.settings.defaultTabInstagram")}</option>
+              </select>
+            </div>
+
+            <div className="inbox-settings-row">
+              <span className="inbox-settings-label">{t("inbox.settings.defaultUnreadOnly")}</span>
+              <label className="inbox-toggle">
+                <input type="checkbox" checked={inboxSettings.defaultUnreadOnly}
+                  onChange={(e) => updateInboxSetting("defaultUnreadOnly", e.target.checked)} />
+                <span className="inbox-toggle-slider" />
+              </label>
+            </div>
+
+            <div className="inbox-settings-section-title" style={{ marginTop: "var(--space-4)" }}>
+              {t("inbox.settings.notifications")}
+            </div>
+
+            <div className="inbox-settings-row">
+              <span className="inbox-settings-label">{t("inbox.settings.browserNotifications")}</span>
+              <label className="inbox-toggle">
+                <input type="checkbox" checked={inboxSettings.browserNotifications}
+                  onChange={async (e) => {
+                    if (e.target.checked) {
+                      const perm = await Notification.requestPermission();
+                      if (perm === "denied") {
+                        alert(t("inbox.settings.browserNotificationsDenied"));
+                        return;
+                      }
+                    }
+                    updateInboxSetting("browserNotifications", e.target.checked);
+                  }} />
+                <span className="inbox-toggle-slider" />
+              </label>
+            </div>
+
+            <div className="inbox-settings-row">
+              <span className="inbox-settings-label">{t("inbox.settings.soundEnabled")}</span>
+              <label className="inbox-toggle">
+                <input type="checkbox" checked={inboxSettings.soundEnabled}
+                  onChange={(e) => updateInboxSetting("soundEnabled", e.target.checked)} />
+                <span className="inbox-toggle-slider" />
+              </label>
+            </div>
+
+            <button type="button" className="inbox-settings-close-btn" onClick={() => setShowSettings(false)}>
+              {t("common.close")}
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

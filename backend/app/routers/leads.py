@@ -50,6 +50,10 @@ _UPDATABLE_COLUMNS = {
     "source", "type", "status", "temperature", "estimated_scale",
     "customer_type", "response_speed", "monthly_forecast",
     "prospect_rank", "assigned_to", "notes",
+    # ADR-015 商談カルテフィールド
+    "next_action", "next_action_date", "challenge", "meeting_memo",
+    "meeting_impression", "cs_memo", "sales_form", "competitor_check",
+    "per_order_amount", "monthly_frequency", "english_name",
 }
 
 
