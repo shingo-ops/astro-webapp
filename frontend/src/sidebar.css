@@ -15,7 +15,7 @@
 
 /* --- Sidebar panel --- */
 .sidebar-panel {
-  width: var(--sidebar-width-collapsed, 68px);
+  width: var(--sidebar-width-collapsed, 54px);
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   display: flex;
@@ -213,7 +213,7 @@
   overflow: hidden;
   background-color: var(--bg-surface);
   background-image: var(--inbox-bg-gradient);
-  margin-left: var(--sidebar-width-collapsed, 68px);
+  margin-left: var(--sidebar-width-collapsed, 54px);
 }
 
 /* Phase 3: ナビ未読バッジ */
