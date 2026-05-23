@@ -1015,7 +1015,7 @@ hr {
   <div class="top-banner">
     <span>📅 2026-05-23 時点のドキュメント</span>
     <span class="banner-chip success">● 最新デプロイ PR #592 成功</span>
-    <span class="banner-chip warn">引き継ぎ用・社外秘</span>
+    <span class="banner-chip warn">引き継ぎ用ドキュメント</span>
   </div>
 
   <div class="content">
@@ -1066,7 +1066,7 @@ hr {
         <table class="kv-table">
           <tr>
             <td>HIGH LIFE JPN</td>
-            <td>メインクライアント。越境 EC（ブランドアパレル・高級品）を運営。<br>本番テナント: <span class="inline-code">highlife-jpn</span> / schema: <span class="inline-code">tenant_004</span></td>
+            <td>メインクライアント。越境 EC（ブランドアパレル・高級品）を運営。<br>本番テナント: <span class="inline-code">※ しんごさんに確認</span></td>
           </tr>
           <tr>
             <td>Treasure Island JP</td>
@@ -1074,7 +1074,7 @@ hr {
           </tr>
           <tr>
             <td>tenant_review</td>
-            <td>Meta App Review 用テナント（撮影・審査用のデモデータのみ）<br>schema: <span class="inline-code">tenant_006</span></td>
+            <td>Meta App Review 用テナント（撮影・審査用のデモデータのみ）</td>
           </tr>
         </table>
       </div>
@@ -1082,7 +1082,7 @@ hr {
       <div class="alert warn">
         <span class="alert-icon">⚠️</span>
         <span><strong>マルチテナント設計に注意。</strong>
-        移行・バッチ実行時は必ず <span class="inline-code">TENANT_CODE=highlife-jpn</span> を明示すること。
+        移行・バッチ実行時は必ず <span class="inline-code">TENANT_CODE=本番テナントコード</span> を明示すること（テナントコードはしんごさんに確認）。
         デフォルト値 <span class="inline-code">test-corp</span> は空テナントなので本番データに届かない。</span>
       </div>
     </section>
@@ -1796,12 +1796,12 @@ hr {
 
         <div class="rule-item warn">
           <span class="rule-badge warn">WARN</span>
-          <div class="rule-title">テナントは必ず highlife-jpn を明示する</div>
+          <div class="rule-title">テナントは必ず本番テナントコードを明示する</div>
           <div class="rule-desc">
             migration・バッチ実行時のデフォルト値 <span class="inline-code">test-corp</span> は空テナント。本番データには届かない。
-            必ず <span class="inline-code">TENANT_CODE=highlife-jpn</span> を明示すること。
+            必ず <span class="inline-code">TENANT_CODE=本番テナントコード</span> を明示すること（テナントコードはしんごさんに確認）。
           </div>
-          <div class="rule-example">✅ gh workflow run run-migration.yml -f tenant_code=highlife-jpn
+          <div class="rule-example">✅ gh workflow run run-migration.yml -f tenant_code=【本番テナントコード】
 ❌ gh workflow run run-migration.yml  ← test-corp になってしまう</div>
         </div>
 
@@ -1861,17 +1861,17 @@ hr {
       <div class="env-grid" style="margin-bottom:20px;">
         <div class="env-card">
           <div class="env-label">VPS ホスト</div>
-          <div class="env-value">さくらVPS<br>49.212.137.46</div>
-          <div class="env-note">Ubuntu 24.04 / Docker Compose</div>
+          <div class="env-value">さくらVPS</div>
+          <div class="env-note">Ubuntu 24.04 / Docker Compose（接続情報はしんごさんに確認）</div>
         </div>
         <div class="env-card">
           <div class="env-label">本番テナント</div>
-          <div class="env-value">highlife-jpn<br>schema: tenant_004</div>
+          <div class="env-value">※ しんごさんに確認</div>
           <div class="env-note">唯一の本番データが入っているテナント</div>
         </div>
         <div class="env-card">
           <div class="env-label">Reviewテナント</div>
-          <div class="env-value">tenant_review<br>schema: tenant_006</div>
+          <div class="env-value">tenant_review</div>
           <div class="env-note">Meta App Review / 撮影用（デモのみ）</div>
         </div>
         <div class="env-card">
@@ -1925,12 +1925,12 @@ hr {
 <span class="c-comment"># バックエンドログ確認</span>
 <span class="c-val">docker compose logs backend --tail=50</span>
 
-<span class="c-comment"># 本番DBに接続（highlife-jpn = tenant_004）</span>
+<span class="c-comment"># 本番DBに接続（テナントコードはしんごさんに確認）</span>
 <span class="c-val">docker compose exec postgres psql -U jarvis -d jarvis_db</span>
-<span class="c-val">&gt; SET search_path TO tenant_004;</span>
+<span class="c-val">&gt; SET search_path TO 【本番スキーマ名】;</span>
 
 <span class="c-comment"># migration を特定テナントに手動実行</span>
-<span class="c-val">gh workflow run run-migration.yml -f tenant_code=highlife-jpn</span>
+<span class="c-val">gh workflow run run-migration.yml -f tenant_code=【本番テナントコード】</span>
 
 <span class="c-comment"># ファイルをVPSから取り出す（/tmp の制約あり）</span>
 <span class="c-val">docker compose exec -T backend cat /tmp/output.csv > ./local_output.csv</span>

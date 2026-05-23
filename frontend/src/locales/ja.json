@@ -61,7 +61,7 @@
   "nav": {
     "dashboard": "ダッシュボード",
     "leads": "顧客管理",
-    "leadChat": "インボックス",
+    "leadChat": "受信箱",
     "newLeads": "新規リード",
     "routeCustomers": "ルート顧客",
     "companies": "顧客情報",
