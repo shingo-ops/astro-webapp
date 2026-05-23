@@ -206,7 +206,7 @@ html.force-dark .inbox-wrapper {
 }
 .inbox-area-subtitle {
   font-size: var(--font-sm);
-  color: var(--text-muted);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -236,7 +236,7 @@ html.force-dark .inbox-wrapper {
   color: var(--text-primary);
   cursor: pointer;
   white-space: nowrap;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   transition: background var(--transition-micro), color var(--transition-micro);
   font-family: inherit;
   display: flex;
@@ -247,12 +247,12 @@ html.force-dark .inbox-wrapper {
   background: var(--color-hover-overlay);
   color: var(--accent);
 }
-/* Meta実測: active bg=link-active-bg, color=accent, fw=700 */
+/* active bg=link-active-bg, color=accent, fw=700 */
 .inbox-full-tab.active {
   background: var(--link-active-bg);
   color: var(--accent);
   font-weight: 700;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
 }
 
 /* 3カラムコンテンツエリア */
