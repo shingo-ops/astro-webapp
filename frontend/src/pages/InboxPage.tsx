@@ -1613,7 +1613,7 @@ export default function InboxPage() {
               onClick={() => setShowSettings(true)}
               aria-label={t("inbox.settings.title")}
             >
-              <NAV_ICONS.settings size={ICON.base} strokeWidth={2.5} aria-hidden="true" />
+              <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
             </button>
           </div>
           <p className="page-subtitle">{t("inbox.subtitle")}</p>
