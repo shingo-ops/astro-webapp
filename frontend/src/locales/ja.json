@@ -186,6 +186,7 @@
     "dealAmount": "金額（円）",
     "convert": "案件化する",
     "status_new": "新規",
+    "status_negotiating": "商談中",
     "status_contact": "コンタクト中",
     "status_proposal": "提案中",
     "status_won": "案件化",
