@@ -56,7 +56,8 @@
     "done": "Done",
     "notDone": "Not Done",
     "submitting": "Submitting...",
-    "deleteConfirmSuffix": " will be deleted."
+    "deleteConfirmSuffix": " will be deleted.",
+    "saved": "Saved"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -220,7 +221,12 @@
     "englishName": "English Name",
     "rank": "Rank",
     "competitorDone": "Done",
-    "competitorNotDone": "Not Done"
+    "competitorNotDone": "Not Done",
+    "status_ai_collecting": "AI Collecting",
+    "status_existing_customer": "Existing Customer",
+    "status_follow_up_short": "Follow-up (Short)",
+    "status_follow_up_long": "Follow-up (Long)",
+    "status_out_of_scope": "Out of Scope"
   },
   "customers": {
     "title": "Customers",
@@ -420,7 +426,21 @@
     "filterFollowUp": "Follow-up",
     "subtitle": "Manage and respond to messages.",
     "fetchError": "Failed to load data",
-    "unreadBadge": "{{count}} unread"
+    "unreadBadge": "{{count}} unread",
+    "settings": {
+      "title": "Inbox Settings",
+      "display": "Display Customization",
+      "showRightPanel": "Show Karte (Right Panel)",
+      "defaultTab": "Default Tab",
+      "defaultTabAll": "All",
+      "defaultTabMessenger": "Messenger",
+      "defaultTabInstagram": "Instagram",
+      "defaultUnreadOnly": "Show Unread Only by Default",
+      "notifications": "Notifications & Alerts",
+      "browserNotifications": "Browser Notifications",
+      "browserNotificationsDenied": "Please allow notifications in your browser settings",
+      "soundEnabled": "Notification Sound"
+    }
   },
   "channels": {
     "title": "Channels (Meta integration)",

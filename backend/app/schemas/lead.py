@@ -109,6 +109,18 @@ class LeadUpdate(BaseModel):
     monthly_forecast: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     assigned_to: int | None = Field(default=None, ge=1)
     notes: str | None = Field(default=None, max_length=5000)
+    # ADR-015 商談カルテフィールド
+    next_action: str | None = Field(default=None, max_length=1000)
+    next_action_date: date | None = None
+    challenge: str | None = Field(default=None, max_length=2000)
+    meeting_memo: str | None = Field(default=None, max_length=2000)
+    meeting_impression: str | None = Field(default=None, max_length=255)
+    cs_memo: str | None = Field(default=None, max_length=2000)
+    sales_form: str | None = Field(default=None, max_length=100)
+    competitor_check: bool | None = None
+    per_order_amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
+    monthly_frequency: Decimal | None = Field(default=None, ge=0, max_digits=10, decimal_places=2)
+    english_name: str | None = Field(default=None, max_length=255)
 
     @field_validator("email")
     @classmethod
