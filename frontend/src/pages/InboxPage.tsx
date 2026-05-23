@@ -1341,7 +1341,7 @@ export default function InboxPage() {
                   width: "100%",
                   padding: "4px 8px",
                   fontSize: "var(--font-xs)",
-                  borderRadius: 16,
+                  borderRadius: "var(--radius-xl)",
                   border: "1px solid var(--border)",
                   background: "var(--bg-surface)",
                   color: "var(--text-primary)",

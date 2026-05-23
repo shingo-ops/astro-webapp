@@ -353,7 +353,7 @@ export default function ProductsPage() {
               <tr key={p.id} style={p.is_archived ? { opacity: 0.5 } : undefined}>
                 <td className="mono">{p.product_code || "-"}</td>
                 <td>
-                  {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: 2 }} />}
+                  {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: "var(--radius-xs)" }} />}
                   {p.name_ja}
                   {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: "var(--space-6px)" }}>{t("products.status_discontinued")}</span>}
                 </td>
