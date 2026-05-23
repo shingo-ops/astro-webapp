@@ -22,7 +22,7 @@
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useInboxSSE } from "../hooks/useInboxSSE";
-import { NAV_ICONS, PAGE_ICONS, PlatformIcon, STATUS_ICONS } from "../constants/icons";
+import { INBOX_ACTION_ICONS, NAV_ICONS, PAGE_ICONS, PlatformIcon, STATUS_ICONS } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
@@ -538,6 +538,32 @@ html.force-dark .inbox-wrapper {
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+}
+.inbox-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+.inbox-header-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-micro), color var(--transition-micro);
+}
+.inbox-header-action-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+.inbox-header-action-btn.danger:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 .inbox-messages {
   flex: 1;
@@ -1590,6 +1616,32 @@ export default function InboxPage() {
     await Promise.all(unreadConvs.map((c) => markRead(c.lead_id)));
   }, [filteredConversations, markRead]);
 
+  const handleMarkUnread = useCallback(() => {
+    if (!selectedLeadId) return;
+    setConversations((prev) =>
+      prev.map((c) => c.lead_id === selectedLeadId ? { ...c, unread_count: 1 } : c)
+    );
+  }, [selectedLeadId]);
+
+  const handleExclude = useCallback(async () => {
+    if (!selectedLeadId) return;
+    try {
+      await api.patch<void>(`/leads/${selectedLeadId}`, { status: "対象外" });
+      setConversations((prev) => prev.filter((c) => c.lead_id !== selectedLeadId));
+      setSelectedLeadId(null);
+    } catch { /* noop */ }
+  }, [selectedLeadId]);
+
+  const handleDeleteLead = useCallback(async () => {
+    if (!selectedLeadId) return;
+    if (!window.confirm(t("inbox.confirmDelete"))) return;
+    try {
+      await api.delete(`/leads/${selectedLeadId}`);
+      setConversations((prev) => prev.filter((c) => c.lead_id !== selectedLeadId));
+      setSelectedLeadId(null);
+    } catch { /* noop */ }
+  }, [selectedLeadId, t]);
+
   // ---------------------------------------------------------------------------
   // 描画
   // ---------------------------------------------------------------------------
@@ -1846,6 +1898,36 @@ export default function InboxPage() {
                 >
                   {t("inbox.lead")}
                 </a>
+                {/* Metaスタイル: ヘッダーアクションアイコン群（未読・対象外・削除） */}
+                <div className="inbox-header-actions">
+                  <button
+                    type="button"
+                    className="inbox-header-action-btn"
+                    onClick={handleMarkUnread}
+                    title={t("inbox.markUnread")}
+                    aria-label={t("inbox.markUnread")}
+                  >
+                    <INBOX_ACTION_ICONS.markUnread size={ICON.sm} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="inbox-header-action-btn"
+                    onClick={handleExclude}
+                    title={t("inbox.exclude")}
+                    aria-label={t("inbox.exclude")}
+                  >
+                    <INBOX_ACTION_ICONS.exclude size={ICON.sm} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="inbox-header-action-btn danger"
+                    onClick={handleDeleteLead}
+                    title={t("inbox.deleteLead")}
+                    aria-label={t("inbox.deleteLead")}
+                  >
+                    <INBOX_ACTION_ICONS.delete size={ICON.sm} aria-hidden="true" />
+                  </button>
+                </div>
                 {/* モバイル専用カルテトグルボタン（デスクトップでは CSS で非表示） */}
                 {inboxSettings.showRightPanel && (
                   <button
