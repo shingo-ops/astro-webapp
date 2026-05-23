@@ -72,6 +72,8 @@
 
   /* フォーカスリング（--accent 色依存のため index.css に定義 / ダークも上書き要） */
   --focus-ring-shadow: 0 0 0 3px rgba(24, 119, 242, 0.15); /* light: --accent #1877F2 */
+  /* 検索欄フォーカス時ネオングロー（枠線＋外側ぼかし光） */
+  --search-focus-glow: 0 0 0 3px rgba(24, 119, 242, 0.15), 0 0 10px 1px rgba(24, 119, 242, 0.18);
 
   /* テーブルの交互背景 */
   --row-hover: #edf2f7;
@@ -193,6 +195,8 @@
 
   /* フォーカスリング（dark: --accent #818cf8 インディゴ系） */
   --focus-ring-shadow: 0 0 0 3px rgba(129, 140, 248, 0.3);
+  /* 検索欄フォーカス時ネオングロー（ダーク） */
+  --search-focus-glow: 0 0 0 3px rgba(129, 140, 248, 0.25), 0 0 12px 2px rgba(129, 140, 248, 0.3);
 
   --row-hover: #2d3b52;
 
