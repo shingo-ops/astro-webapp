@@ -211,6 +211,7 @@ html.force-dark .inbox-wrapper {
   align-items: center;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -231,7 +232,7 @@ html.force-dark .inbox-wrapper {
   color: var(--text-primary);
   cursor: pointer;
   white-space: nowrap;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   transition: background var(--transition-micro), color var(--transition-micro);
   font-family: inherit;
   display: flex;
@@ -247,7 +248,7 @@ html.force-dark .inbox-wrapper {
   background: var(--link-active-bg);
   color: var(--accent);
   font-weight: 700;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
 }
 
 /* 3カラムコンテンツエリア */
@@ -689,6 +690,7 @@ html.force-dark .inbox-wrapper {
   flex-grow: 0;
   background: var(--bg-surface);
   border-left: 1px solid var(--inbox-separator);
+  margin-left: 14px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
