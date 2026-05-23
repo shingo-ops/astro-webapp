@@ -5,7 +5,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--bg-surface);
 }
 
@@ -17,6 +17,6 @@
 /* 未知プラットフォーム: グレー */
 .platform-icon-wrap--unknown {
   display: inline-block;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--platform-unknown-bg);
 }

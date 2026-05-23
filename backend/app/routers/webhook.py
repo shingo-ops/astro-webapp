@@ -654,6 +654,16 @@ async def process_messenger_event(body: dict) -> None:
                         )
                         continue
 
+                    # Phase 2 SSE: DB 保存成功時のみ publish（重複スキップ時は送らない）
+                    try:
+                        from app.services.sse_pubsub import publish_inbox_update
+                        await publish_inbox_update(tenant_id)
+                    except Exception:
+                        logging.warning(
+                            "[Meta] SSE publish 失敗（Webhook 処理は継続）: tenant_id=%s",
+                            tenant_id,
+                        )
+
                     # Discord 通知（個人情報を載せない: 送信者 ID は先頭 8 文字 + ***）
                     sender_id = m["sender_id"]
                     title = (

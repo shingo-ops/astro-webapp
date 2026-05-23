@@ -63,7 +63,7 @@
   color: var(--text-secondary);
   transition: color var(--transition-fast) ease, background-color var(--transition-fast) ease, border-color var(--transition-fast) ease;
   margin-bottom: -2px;
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 }
 
 .tabs .tab:hover {
