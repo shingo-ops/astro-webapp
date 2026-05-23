@@ -505,6 +505,13 @@ jobs:
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_073_lead_status.py
 
+            # Migration 074: english_name → nickname カラムリネーム
+            #   - leads.english_name を nickname に改名（ADR-015 呼び名定義に統一）
+            #   - english_name が存在する場合のみ実行（冪等）
+            #   関連: PR #678 / 受信箱カルテ3タブ化・english_name削除
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_074_rename_english_name_to_nickname.py
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
