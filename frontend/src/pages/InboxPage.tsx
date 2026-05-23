@@ -291,11 +291,24 @@ html.force-dark .inbox-wrapper {
   padding: var(--space-2) var(--space-10px) var(--space-1);
   flex-shrink: 0;
 }
-.inbox-search-input {
+.inbox-search-wrap {
   flex: 1;
   min-width: 0;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-pill);
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.inbox-search-icon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--text-secondary);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.inbox-search-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 16px + var(--space-2));
+  border-radius: var(--radius-md);
   border: none;
   background: var(--bg-subtle);
   font-size: var(--font-base);
@@ -772,15 +785,15 @@ html.force-dark .inbox-wrapper {
   font-weight: 500;
   word-break: break-word;
 }
-/* プロフィールを見る */
+/* プロフィールを見る（ヘッダー内小リンク） */
 .right-panel-link {
-  margin: var(--space-3) 0 var(--space-4);
+  margin: 0;
   display: inline-block;
   padding: 0;
   border-radius: 0;
   background: transparent;
   color: var(--link);
-  font-size: var(--font-base);
+  font-size: var(--font-sm);
   font-weight: 400;
   text-decoration: none;
   transition: opacity var(--transition-micro);
@@ -797,14 +810,25 @@ html.force-dark .inbox-wrapper {
   padding: var(--space-4);
 }
 
-/* ヘッダーラッパー */
+/* ヘッダーラッパー（Metaスタイル: 横並びコンパクト） */
 .right-panel-header {
   width: 100%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  padding: var(--space-4) var(--space-3);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--border);
   box-sizing: border-box;
+}
+/* ヘッダー右側: 名前 + リンクの縦並び */
+.right-panel-header-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
 /* カード化により隣接セレクタ不要（削除済み） */
@@ -1028,8 +1052,9 @@ html.force-dark .inbox-wrapper {
 .right-panel-field:focus { outline: none; border-color: var(--accent); }
 textarea.right-panel-field { resize: vertical; min-height: 60px; }
 .right-panel-name-field {
-  font-weight: 600; font-size: var(--font-base); text-align: center;
+  font-weight: 600; font-size: var(--font-base); text-align: left;
   border: 1px solid transparent; background: transparent;
+  width: 100%;
 }
 .right-panel-name-field:hover,
 .right-panel-name-field:focus { background: var(--bg-primary); border-color: var(--border); }
@@ -1637,13 +1662,16 @@ export default function InboxPage() {
 
           {/* 検索 + 管理ボタン + ユーティリティ（topbar移設分） */}
           <div className="inbox-search-row">
-            <input
-              type="text"
-              className="inbox-search-input"
-              placeholder={t("common.search")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="inbox-search-wrap">
+              <NAV_ICONS.search size={14} className="inbox-search-icon" aria-hidden="true" />
+              <input
+                type="text"
+                className="inbox-search-input"
+                placeholder={t("common.search")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             <div className="inbox-manage-wrap" ref={manageRef}>
               <button
                 type="button"
@@ -2004,33 +2032,24 @@ export default function InboxPage() {
                   <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
                 </button>
               </div>
-              {/* ヘッダー */}
+              {/* ヘッダー（Metaスタイル: アバター左 + 名前・リンク右） */}
               <div className="right-panel-header">
                 <div className="right-panel-avatar">
                   {getInitials(cardForm.customer_name ?? leadDetail.customer_name)}
                 </div>
-                <input
-                  className="right-panel-field right-panel-name-field"
-                  type="text"
-                  value={cardForm.customer_name ?? ""}
-                  onChange={(e) => handleCardFieldChange("customer_name", e.target.value)}
-                  onBlur={handleCardFieldBlur}
-                  placeholder={t("leads.customerName")}
-                />
-                <input
-                  className="right-panel-field right-panel-en-name-field"
-                  type="text"
-                  value={cardForm.english_name ?? ""}
-                  onChange={(e) => handleCardFieldChange("english_name", e.target.value)}
-                  onBlur={handleCardFieldBlur}
-                  placeholder={t("leads.englishName")}
-                />
-                <p className="right-panel-code">{leadDetail.lead_code}</p>
-                {leadDetail.prospect_rank && (
-                  <div className={`right-panel-rank rank-${leadDetail.prospect_rank.replace("+", "plus")}`}>
-                    {t("leads.rank")} {leadDetail.prospect_rank}
-                  </div>
-                )}
+                <div className="right-panel-header-info">
+                  <input
+                    className="right-panel-field right-panel-name-field"
+                    type="text"
+                    value={cardForm.customer_name ?? ""}
+                    onChange={(e) => handleCardFieldChange("customer_name", e.target.value)}
+                    onBlur={handleCardFieldBlur}
+                    placeholder={t("leads.customerName")}
+                  />
+                  <a href={`/leads?lead_id=${leadDetail.id}`} className="right-panel-link">
+                    {t("inbox.viewLead")} →
+                  </a>
+                </div>
               </div>
 
               {/* 保存ステータスインジケーター */}
@@ -2043,6 +2062,14 @@ export default function InboxPage() {
               {/* セクション1: 連絡先 */}
               <div className="right-panel-section">
                 <div className="right-panel-section-title">{t("inbox.sectionContact")}</div>
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.englishName")}</span>
+                  <input className="right-panel-field" type="text"
+                    value={cardForm.english_name ?? ""}
+                    onChange={(e) => handleCardFieldChange("english_name", e.target.value)}
+                    onBlur={handleCardFieldBlur}
+                    placeholder={t("leads.englishName")} />
+                </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.companyName")}</span>
                   <input className="right-panel-field" type="text"
@@ -2236,9 +2263,6 @@ export default function InboxPage() {
                   placeholder={t("leads.csMemo")} />
               </div>
 
-              <a href={`/leads?lead_id=${leadDetail.id}`} className="right-panel-link">
-                {t("inbox.viewLead")} →
-              </a>
             </div>
           ) : (
             <div className="right-panel-empty">
