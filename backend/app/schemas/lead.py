@@ -22,19 +22,14 @@ from app.schemas.base import validate_phone, validate_email_loose
 
 
 class LeadStatus(str, Enum):
-    # 既存値（migration 003 から運用中。後方互換のため維持）
-    new = "新規"
-    contacting = "コンタクト中"
-    proposing = "提案中"
-    converted = "案件化"
-    lost = "失注"
-    on_hold = "保留"
-    # ADR-015 §6 で追加（既存値を置き換えず拡張）
-    ai_collecting = "AI対応中"            # 新規リードで AI が Q1/Q2 を収集中
-    existing_customer = "既存顧客"          # 成約済み顧客（ルート営業対象）
-    follow_up_short = "追客（短期）"         # アーカイブ理由: 3 ヶ月以内に再アプローチ
-    follow_up_long = "追客（長期）"          # アーカイブ理由: 3 ヶ月以上先
-    out_of_scope = "対象外"                # アーカイブ理由: スパム / 無関係
+    # migration 073 で整理済み（11値 → 7値）
+    new = "新規"                           # アサイン前の新規リード
+    negotiating = "商談中"                  # アサイン済み・商談進行中（旧: 案件化）
+    existing_customer = "既存顧客"          # 成約済み・会社情報登録済み
+    follow_up_short = "追客（短期）"         # 3 ヶ月以内に再アプローチ予定
+    follow_up_long = "追客（長期）"          # 3 ヶ月以上先に再アプローチ予定
+    lost = "失注"                          # 失注
+    out_of_scope = "対象外"                # スパム / 無関係
 
 
 class LeadType(str, Enum):
@@ -120,7 +115,9 @@ class LeadUpdate(BaseModel):
     competitor_check: bool | None = None
     per_order_amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     monthly_frequency: Decimal | None = Field(default=None, ge=0, max_digits=10, decimal_places=2)
-    english_name: str | None = Field(default=None, max_length=255)
+    nickname: str | None = Field(default=None, max_length=255)
+    country: str | None = Field(default=None, max_length=100)
+    target_titles: str | None = Field(default=None, max_length=500)
 
     @field_validator("email")
     @classmethod
@@ -166,7 +163,9 @@ class LeadResponse(BaseModel):
     competitor_check: bool | None = None
     per_order_amount: Decimal | None = None
     monthly_frequency: Decimal | None = None
-    english_name: str | None = None
+    nickname: str | None = None
+    country: str | None = None
+    target_titles: str | None = None
 
     model_config = {"from_attributes": True}
 

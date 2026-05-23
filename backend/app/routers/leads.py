@@ -42,7 +42,7 @@ _LEAD_COLUMNS = """
     converted_deal_id, notes, created_at, updated_at,
     next_action, next_action_date, challenge, meeting_memo, meeting_impression,
     cs_memo, sales_form, competitor_check, per_order_amount, monthly_frequency,
-    english_name
+    nickname, country, target_titles
 """
 
 _UPDATABLE_COLUMNS = {
@@ -53,7 +53,7 @@ _UPDATABLE_COLUMNS = {
     # ADR-015 商談カルテフィールド
     "next_action", "next_action_date", "challenge", "meeting_memo",
     "meeting_impression", "cs_memo", "sales_form", "competitor_check",
-    "per_order_amount", "monthly_frequency", "english_name",
+    "per_order_amount", "monthly_frequency", "nickname", "country", "target_titles",
 }
 
 
@@ -391,7 +391,7 @@ async def convert_lead(
     current_user: User = Depends(get_current_user),
 ):
     """
-    リードを案件化する。新しいdealを作成し、leadを'案件化'ステータスに更新＋リンクする。
+    リードを商談化する。新しいdealを作成し、leadを'商談中'ステータスに更新＋リンクする。
 
     同時実行対策:
       - deal作成後、`UPDATE leads ... WHERE converted_deal_id IS NULL` で
@@ -407,7 +407,7 @@ async def convert_lead(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="リードが見つかりません")
     if lead_row["converted_deal_id"] is not None:
         # 早期409（UXのため）。完全な保証は下のUPDATEで行う。
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="このリードは既に案件化されています")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="このリードは既に商談中です")
 
     # Step 5d: contact / company の存在 + 所属一致確認のみ
     contact_check = await db.execute(
@@ -455,11 +455,11 @@ async def convert_lead(
     )
 
     # アトミッククレーム: converted_deal_id IS NULL の場合のみ更新する
-    # 並行リクエストで既に案件化されていた場合は0行返却 → 例外で全ロールバック
+    # 並行リクエストで既に商談中になっていた場合は0行返却 → 例外で全ロールバック
     updated = await db.execute(
         text(f"""
             UPDATE leads
-            SET status = '案件化', converted_deal_id = :deal_id, updated_at = NOW()
+            SET status = '商談中', converted_deal_id = :deal_id, updated_at = NOW()
             WHERE id = :id AND converted_deal_id IS NULL
             RETURNING {_LEAD_COLUMNS}
         """),
@@ -471,14 +471,14 @@ async def convert_lead(
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="このリードは既に案件化されています（並行リクエスト）",
+            detail="このリードは既に商談中です（並行リクエスト）",
         )
 
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,
         action="convert", table_name="leads", record_id=lead_id,
         old_data=dict(lead_row),
-        new_data={"converted_deal_id": new_deal_id, "status": "案件化"},
+        new_data={"converted_deal_id": new_deal_id, "status": "商談中"},
     )
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,
