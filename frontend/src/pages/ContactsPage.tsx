@@ -275,7 +275,7 @@ export default function ContactsPage() {
     <div className="page-container">
       <div className="page-header">
         <h1>
-          {t("contacts.title")}
+          {t("nav.contacts")}
           {pendingDedupCount > 0 && (
             <span className="dedup-summary">
               {t("contacts.pendingDedupCount", { count: pendingDedupCount })}

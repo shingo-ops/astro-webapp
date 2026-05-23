@@ -225,7 +225,7 @@ export default function ProductsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("products.title")}</h2>
+        <h2>{t("nav.inventory")}</h2>
         {hasPermission("products.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("products.newProduct")}</button>
         )}

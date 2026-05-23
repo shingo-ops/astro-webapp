@@ -246,7 +246,7 @@ export default function LeadsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h2>{t("leads.title")}</h2>
+        <h2>{t("nav.leads")}</h2>
         {hasPermission("leads.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("leads.newLead")}</button>
         )}
