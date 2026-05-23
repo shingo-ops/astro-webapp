@@ -53,6 +53,12 @@
   padding-right: 0;
 }
 
+/* expanded 時はメニューテキストと x 軸を揃える
+   計算: padding-left(7) + logo-icon(36) + gap(12) = 55px = メニュー(3+20+20+12) */
+.sidebar-expanded .sidebar-logo-area {
+  padding-left: 7px;
+}
+
 .sidebar-logo-icon {
   width: var(--logo-size);
   height: var(--logo-size);
