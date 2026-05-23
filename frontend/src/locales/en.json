@@ -419,7 +419,8 @@
     "filterUnread": "Unread",
     "filterFollowUp": "Follow-up",
     "subtitle": "Manage and respond to messages.",
-    "fetchError": "Failed to load data"
+    "fetchError": "Failed to load data",
+    "unreadBadge": "{{count}} unread"
   },
   "channels": {
     "title": "Channels (Meta integration)",

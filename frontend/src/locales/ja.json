@@ -419,7 +419,8 @@
     "filterUnread": "未読",
     "filterFollowUp": "フォローアップ",
     "subtitle": "メッセージの管理と返信ができます。",
-    "fetchError": "データの取得に失敗しました"
+    "fetchError": "データの取得に失敗しました",
+    "unreadBadge": "未読 {{count}} 件"
   },
   "channels": {
     "title": "チャンネル (Meta連携)",

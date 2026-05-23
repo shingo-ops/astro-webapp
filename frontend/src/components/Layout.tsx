@@ -14,7 +14,7 @@
  *   2026-05-14: ADR-033 — テーマ切り替えボタン追加（useTheme）
  */
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { NAV_ICONS, THEME_ICONS, GlobeIcon, LeadChatIcon } from "../constants/icons";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useUiPrefs } from "../contexts/UiPrefsContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { useSuperAdmin } from "../hooks/useSuperAdmin";
+import { useSSE } from "../hooks/useSSE";
+import { listConversations } from "../lib/messages";
 import ConfirmModal from "./ConfirmModal";
 import { ICON } from "../constants/iconSizes";
 
@@ -107,6 +109,21 @@ export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
+
+  // ---------------------------------------------------------------------------
+  // Phase 3: 未読バッジ（ナビ全体に表示）
+  // ---------------------------------------------------------------------------
+  const [unreadCount, setUnreadCount] = useState(0);
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const data = await listConversations({ unread_only: true });
+      setUnreadCount((data.conversations || []).length);
+    } catch {
+      // パーミッションなし・未認証等はバッジ非表示のまま維持
+    }
+  }, []);
+  useEffect(() => { loadUnreadCount(); }, [loadUnreadCount]);
+  useSSE({ endpoint: "/api/v1/conversations/stream", onUpdate: loadUnreadCount });
 
   const toggleAccordion = (key: string) => {
     const next = openAccordion === key ? null : key;
@@ -220,6 +237,14 @@ export default function Layout() {
                     <LeadChatIcon size={ICON.base} />
                   </span>
                   <span className="sidebar-label">{t("nav.leadChat")}</span>
+                  {unreadCount > 0 && (
+                    <span
+                      className="nav-unread-badge"
+                      aria-label={t("inbox.unreadBadge", { count: unreadCount })}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </NavLink>
               )}
 
