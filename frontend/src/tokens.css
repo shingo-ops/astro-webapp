@@ -170,7 +170,7 @@
   --opacity-archived:  0.5;   /* アーカイブ行・非アクティブコンテンツ */
 
   /* ---- Inbox component sizes (Meta実測値) ---- */
-  --height-tab-bar:       36px;   /* 受信箱タブバー高さ */
+  --height-tab-bar:       54px;   /* 受信箱タブバー高さ（36px × 1.5） */
   --width-inbox-panel:   443px;   /* 受信箱左パネル幅 */
   --min-height-conv-item:  92px;  /* 会話アイテム最小高 */
   --min-width-dropdown:   180px;  /* 管理ドロップダウン最小幅 */
