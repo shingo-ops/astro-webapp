@@ -1,0 +1,27 @@
+{
+  "simple_icons": "16.20.0",
+  "last_checked": "2026-05-23",
+  "assets": {
+    "messenger": {
+      "source": "meta.com/brand/resources/facebook/messenger-icon/",
+      "updated": "2026-05-23"
+    },
+    "instagram": {
+      "source": "meta.com/brand/resources/instagram/instagram-brand/",
+      "updated": "2026-05-23"
+    },
+    "whatsapp": {
+      "source": "meta.com/brand/resources/whatsapp/whatsapp-brand/",
+      "updated": "2026-05-23"
+    },
+    "discord": {
+      "source": "discord.com/branding",
+      "updated": "2026-05-23"
+    },
+    "telegram": {
+      "source": "telegram.org/img/t_logo.svg",
+      "sha256": "85059d5e5bf7bda91ebab30664993c49867a26be6b947834aca16c846581766a",
+      "updated": "2026-05-23"
+    }
+  }
+}
