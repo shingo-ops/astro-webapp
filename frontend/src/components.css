@@ -381,3 +381,49 @@
   margin-bottom: var(--space-4);
   font-size: var(--font-base);
 }
+
+/* --- Tooltip (data-tooltip attribute pattern) ---
+ * Usage: <button data-tooltip="ラベル">
+ * 要素は position: relative/fixed/absolute/sticky が必要。
+ * position: fixed の要素（.inbox-settings-btn 等）はそのまま使える。
+ * インラインフローの要素は各コンポーネントのCSSに position: relative を追加すること。
+ */
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--tooltip-text);
+  background: var(--tooltip-bg);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
+  z-index: var(--z-dropdown);
+}
+[data-tooltip]::before {
+  content: "";
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-bottom-color: var(--tooltip-bg);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast), visibility var(--transition-fast);
+  z-index: var(--z-dropdown);
+}
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+  opacity: 1;
+  visibility: visible;
+}

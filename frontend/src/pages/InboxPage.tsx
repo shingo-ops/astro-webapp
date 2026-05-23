@@ -1711,6 +1711,7 @@ export default function InboxPage() {
               className="inbox-settings-btn"
               onClick={() => setShowSettings(true)}
               aria-label={t("inbox.settings.title")}
+              data-tooltip={t("inbox.settings.tooltip")}
             >
               <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
             </button>
@@ -2167,8 +2168,8 @@ export default function InboxPage() {
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.englishName")}</span>
                   <input className="right-panel-field" type="text"
-                    value={cardForm.english_name ?? ""}
-                    onChange={(e) => handleCardFieldChange("english_name", e.target.value)}
+                    value={cardForm.nickname ?? ""}
+                    onChange={(e) => handleCardFieldChange("nickname", e.target.value)}
                     onBlur={handleCardFieldBlur}
                     placeholder={t("leads.englishName")} />
                 </div>
