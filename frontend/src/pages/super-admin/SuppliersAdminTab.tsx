@@ -269,7 +269,7 @@ export default function SuppliersAdminTab() {
         <div
           className="modal-overlay"
           onClick={() => setRoutingFor(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: "var(--z-topbar)" }}
         >
           <div
             className="modal"

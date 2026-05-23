@@ -470,7 +470,7 @@ export default function ContactsPage() {
                     <button
                       type="button"
                       disabled
-                      style={{ opacity: 0.6, cursor: "not-allowed" }}
+                      style={{ opacity: "var(--opacity-disabled)", cursor: "not-allowed" }}
                     >
                       {t("contacts.mergeAsDuplicate")}
                     </button>
