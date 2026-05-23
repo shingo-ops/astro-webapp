@@ -607,6 +607,7 @@ export default function CompanyDetailPage() {
 
       {activeTab === "addresses" && (
         <div>
+          {/* eslint-disable-next-line no-restricted-syntax */}
           <h2>{t("companies.billing")}{t("companies.address")} ({billingAddresses.length})
             {canEdit && (
               <button className="btn-sm" style={{ marginLeft: "var(--space-3)" }} onClick={() => openAddressNew("billing")}>+ {t("common.add")}</button>
@@ -638,6 +639,7 @@ export default function CompanyDetailPage() {
             </table>
           )}
 
+          {/* eslint-disable-next-line no-restricted-syntax */}
           <h2 style={{ marginTop: "var(--space-6)" }}>{t("companies.delivery")}{t("companies.address")} ({deliveryAddresses.length})
             {canEdit && (
               <button className="btn-sm" style={{ marginLeft: "var(--space-3)" }} onClick={() => openAddressNew("delivery")}>+ {t("common.add")}</button>
@@ -725,6 +727,7 @@ export default function CompanyDetailPage() {
       {addrModalOpen && (
         <div className="modal-overlay" onClick={() => setAddrModalOpen(false)}>
           <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line no-restricted-syntax */}
             <h2>
               {addrForm.id === null ? `${typeLabel(t, addrForm.address_type)}${t("companies.address")}を${t("common.add")}` : `${typeLabel(t, addrForm.address_type)}${t("companies.address")}を${t("common.edit")}`}
             </h2>

@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface Product {
   id: number;
@@ -223,14 +224,12 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("nav.inventory")}</h2>
-        {hasPermission("products.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("products.newProduct")}</button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.inventory"
+      headerAction={hasPermission("products.create") ? (
+        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("products.newProduct")}</button>
+      ) : undefined}
+    >
       <div className="search-bar" style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
         <input type="text" placeholder={t("common.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
         <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", whiteSpace: "nowrap" }}>
@@ -420,6 +419,6 @@ export default function ProductsPage() {
         onConfirm={handleArchiveFromBlocked}
         onCancel={() => setArchiveBlocked(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

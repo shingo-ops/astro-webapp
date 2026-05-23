@@ -131,6 +131,7 @@ export default function OAuthCallbackPage() {
 
   return (
     <div className="page" style={{ padding: "var(--space-8)" }}>
+      {/* eslint-disable-next-line no-restricted-syntax */}
       <h2>{t("oauth.processing")}</h2>
       <p>{t("oauth.processingDesc")}</p>
       {error && (

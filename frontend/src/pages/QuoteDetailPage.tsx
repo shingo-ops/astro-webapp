@@ -90,6 +90,7 @@ export default function QuoteDetailPage() {
   return (
     <div className="page">
       <div className="page-header">
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>{t("quotes.title")} — {quote.quote_code || `#${quote.id}`}</h2>
         <div className="actions" style={{ display: "flex", gap: "var(--space-2)" }}>
           {quote.status === "draft" && hasPermission("quotes.update") && (

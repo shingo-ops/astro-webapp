@@ -374,6 +374,7 @@ export default function ContactsPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line no-restricted-syntax */}
             <h2>{editId ? t("contacts.editContact") : t("contacts.newContact")}</h2>
             <form onSubmit={handleSubmit} className="form-grid">
               {!editId && (

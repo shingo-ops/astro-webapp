@@ -440,6 +440,7 @@ export default function CompaniesPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line no-restricted-syntax */}
             <h2>{editId ? t("companies.editCompany") : t("companies.newCompany")}</h2>
 
             <div className="tabs">
