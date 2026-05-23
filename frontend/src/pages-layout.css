@@ -5,7 +5,7 @@
 
 /* --- Page --- */
 .page {
-  padding: var(--space-2) var(--space-6);
+  padding: var(--page-padding-y) var(--page-padding-x);
   max-width: var(--max-width-page);
 }
 
@@ -13,14 +13,14 @@
   font-size: var(--role-page-title-size);
   font-weight: var(--role-page-title-weight);
   color: var(--role-page-title-color);
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--page-header-mb);
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--page-header-mb);
 }
 
 .page-header h2 {

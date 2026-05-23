@@ -145,6 +145,11 @@
   --max-width-page:     1200px; /* ページコンテンツ最大幅（.page / .page-container） */
   --max-width-truncate:  200px; /* テキスト切り捨て最大幅（ドロップダウン説明・ユーザー名等） */
 
+  /* ---- Page layout spacing（全ページ共通余白） ---- */
+  --page-padding-x:  var(--space-6);  /* 24px — 左右余白 */
+  --page-padding-y:  var(--space-2);  /*  8px — 上下余白 */
+  --page-header-mb:  var(--space-5);  /* 20px — 見出し下余白 */
+
   /* ---- Icon sizes ---- */
   /* Mirror: src/constants/iconSizes.ts — keep values in sync */
   --icon-sm:    14px;   /* ステータスアイコン・テーブル内 */
