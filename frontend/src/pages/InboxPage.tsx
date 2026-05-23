@@ -307,14 +307,18 @@ html.force-dark .inbox-wrapper {
 }
 .inbox-search-input {
   width: 100%;
-  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 16px + var(--space-2));
+  padding: calc(var(--space-2) + 1.5px) var(--space-3) calc(var(--space-2) + 1.5px) calc(var(--space-3) + 16px + var(--space-2));
   border-radius: var(--radius-md);
-  border: none;
+  border: 1px solid var(--border-strong);
   background: var(--bg-subtle);
   font-size: var(--font-base);
   color: var(--text-primary);
   outline: none;
   box-sizing: border-box;
+  transition: border-color var(--transition-micro);
+}
+.inbox-search-input:focus {
+  border-color: var(--accent);
 }
 .inbox-search-input::placeholder {
   color: var(--text-secondary);
@@ -931,7 +935,6 @@ html.force-dark .inbox-wrapper {
 /* タブレット縦・スマートフォン横（768px以下）: 縦積みレイアウト */
 @media (max-width: 768px) {
   .inbox-wrapper {
-    flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -1077,13 +1080,22 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
   display: flex; align-items: center; gap: var(--space-2);
 }
 .inbox-settings-btn {
+  position: fixed;
+  top: var(--space-3);
+  right: calc(var(--space-4) + var(--space-10) + var(--space-2));
+  width: var(--space-10);
+  height: var(--space-10);
   display: flex; align-items: center; justify-content: center;
-  background: none; border: none; cursor: pointer;
-  color: var(--text-muted); border-radius: var(--radius-sm);
-  padding: var(--space-1);
-  transition: color var(--transition-micro), background var(--transition-micro);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-primary);
+  z-index: calc(var(--z-avatar) - 1);
+  box-shadow: var(--shadow-md);
+  transition: background var(--transition-micro);
 }
-.inbox-settings-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.inbox-settings-btn:hover { background: var(--bg-subtle); }
 
 /* ====== 受信箱設定モーダル ====== */
 .inbox-settings-overlay {
@@ -1632,7 +1644,7 @@ export default function InboxPage() {
               onClick={() => setShowSettings(true)}
               aria-label={t("inbox.settings.title")}
             >
-              <NAV_ICONS.settings size={ICON.md} aria-hidden="true" />
+              <NAV_ICONS.settings size={ICON.base} strokeWidth={2.5} aria-hidden="true" />
             </button>
           </div>
           <p className="page-subtitle">{t("inbox.subtitle")}</p>
