@@ -1891,11 +1891,11 @@ export default function InboxPage() {
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <h2 className="inbox-center-title">
+                  <h3 className="inbox-center-title">
                     {messagesData?.lead?.customer_name
                       || selectedConversation?.customer_name
                       || `Lead #${selectedLeadId}`}
-                  </h2>
+                  </h3>
                   <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-2px)" }}>
                     {messagesData?.lead?.lead_code && (
                       <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
@@ -2129,12 +2129,12 @@ export default function InboxPage() {
               <div className="right-panel-section">
                 <div className="right-panel-section-title">{t("inbox.sectionContact")}</div>
                 <div className="right-panel-row">
-                  <span className="right-panel-label">{t("leads.englishName")}</span>
+                  <span className="right-panel-label">{t("leads.nickname")}</span>
                   <input className="right-panel-field" type="text"
-                    value={cardForm.english_name ?? ""}
-                    onChange={(e) => handleCardFieldChange("english_name", e.target.value)}
+                    value={cardForm.nickname ?? ""}
+                    onChange={(e) => handleCardFieldChange("nickname", e.target.value)}
                     onBlur={handleCardFieldBlur}
-                    placeholder={t("leads.englishName")} />
+                    placeholder={t("leads.nickname")} />
                 </div>
                 <div className="right-panel-row">
                   <span className="right-panel-label">{t("leads.companyName")}</span>
@@ -2344,7 +2344,7 @@ export default function InboxPage() {
       {showSettings && (
         <div className="inbox-settings-overlay" onClick={() => setShowSettings(false)}>
           <div className="inbox-settings-modal" onClick={(e) => e.stopPropagation()}>
-            <h2 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h2>
+            <h3 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h3>
 
             <div className="inbox-settings-section-title">{t("inbox.settings.display")}</div>
 
