@@ -37,6 +37,7 @@ export default function NotificationsPage() {
   return (
     <div className="page">
       <div className="page-header">
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>{t("settings.notifications")}</h2>
         {hasPermission("notifications.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("settings.addChannel")}</button>}
       </div>

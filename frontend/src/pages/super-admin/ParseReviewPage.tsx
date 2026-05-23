@@ -255,6 +255,7 @@ export default function ParseReviewPage() {
     return (
       <div className="page">
         <div className="page-header">
+          {/* eslint-disable-next-line no-restricted-syntax -- 詳細ページ（route param あり）は PageLayout の navKey 制約対象外 */}
           <h2>{t("superAdmin.inbound.review.title")}</h2>
         </div>
         <div className="error-message" role="alert">
@@ -270,6 +271,7 @@ export default function ParseReviewPage() {
   return (
     <div className="page super-admin-parse-review-page">
       <div className="page-header">
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>{t("superAdmin.inbound.review.title")}</h2>
         <p className="page-subtitle">
           {t("superAdmin.inbound.review.subtitle")}

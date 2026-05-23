@@ -409,6 +409,7 @@ export default function CustomersPage() {
   return (
     <div className="page">
       <div className="page-header">
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>{t("customers.title")}</h2>
         {hasPermission("customers.create") && (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); setDiscordTouched(false); }}>

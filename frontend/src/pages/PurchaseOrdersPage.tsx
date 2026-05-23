@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { auth } from "../lib/firebase";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface PO {
   id: number;
@@ -129,8 +130,7 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header"><h2>{t("nav.purchaseOrders")}</h2></div>
+    <PageLayout navKey="nav.purchaseOrders">
       <div className="filter-bar">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">{t("purchaseOrders.allStatuses")}</option>
@@ -208,6 +208,6 @@ export default function PurchaseOrdersPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

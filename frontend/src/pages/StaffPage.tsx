@@ -11,6 +11,7 @@ import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
 import { useUiPrefs } from "../contexts/UiPrefsContext";
+import { PageLayout } from "../components/PageLayout";
 
 interface StaffUIPreferences {
   dark_mode: boolean;
@@ -191,16 +192,14 @@ export default function StaffPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("nav.staff")}</h2>
-        {hasPermission("staff.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
-            {t("staff.newStaff")}
-          </button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.staff"
+      headerAction={hasPermission("staff.create") ? (
+        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
+          {t("staff.newStaff")}
+        </button>
+      ) : undefined}
+    >
       {error && <div className="error-message">{error}</div>}
 
       {showForm && (
@@ -329,6 +328,6 @@ export default function StaffPage() {
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

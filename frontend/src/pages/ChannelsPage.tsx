@@ -25,6 +25,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
 import { STATUS_ICONS } from "../constants/icons";
 import { ICON } from "../constants/iconSizes";
+import { PageLayout } from "../components/PageLayout";
 
 interface Channel {
   page_id: string;
@@ -221,20 +222,18 @@ export default function ChannelsPage() {
 
   // ----- 描画 -----
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("nav.channels")}</h2>
-        {canManage && (
-          <button
-            className="btn-primary"
-            onClick={handleConnect}
-            disabled={connecting}
-          >
-            {connecting ? t("channels.connecting") : t("channels.connect")}
-          </button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.channels"
+      headerAction={canManage ? (
+        <button
+          className="btn-primary"
+          onClick={handleConnect}
+          disabled={connecting}
+        >
+          {connecting ? t("channels.connecting") : t("channels.connect")}
+        </button>
+      ) : undefined}
+    >
       {banner && (
         <div style={bannerStyle} role={banner.type === "error" ? "alert" : "status"}>
           <span style={{ marginRight: "var(--space-2)" }} aria-hidden="true">
@@ -445,6 +444,6 @@ export default function ChannelsPage() {
         onConfirm={performDisconnect}
         onCancel={() => setDisconnectTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }
