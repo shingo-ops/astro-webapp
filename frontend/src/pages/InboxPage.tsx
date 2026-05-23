@@ -163,6 +163,7 @@ const INBOX_STYLES = `
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: transparent;
+  padding-left: var(--space-6);  /* 他ページと同じ 24px 左余白 */
   /* Meta実測値でCSS変数をスコープ上書き（ライトモード） */
   --accent:         rgb(10, 120, 190);
   --link-active-bg: rgb(225, 237, 247);
@@ -192,7 +193,7 @@ html.force-dark .inbox-wrapper {
 
 /* 受信箱タイトルエリア（seamless統合 — Meta風 / 背景透明でグラデーション透過） */
 .inbox-area-header {
-  padding: var(--space-4) var(--space-6) var(--space-2);
+  padding: var(--space-4) var(--space-6) var(--space-2) 0;  /* 左は wrapper の 24px に委譲 */
   flex-shrink: 0;
   background: transparent;
 }
@@ -607,11 +608,11 @@ html.force-dark .inbox-wrapper {
   flex-shrink: 0;
   background: var(--bg-surface);
 }
-/* 白い角丸ボックス（Meta実測: bg=white, br=8px, border=1px solid border-color） */
+/* 白い角丸ボックス（Meta実測: bg=white, br=8px → 12px に拡大） */
 .send-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -927,7 +928,8 @@ html.force-dark .inbox-wrapper {
 
 /* スマートフォン縦（480px以下）: 右パネル非表示・余白縮小 */
 @media (max-width: 480px) {
-  .inbox-area-header { padding: var(--space-2) var(--space-3) var(--space-1); }
+  .inbox-wrapper    { padding-left: var(--space-3); }  /* モバイルは 12px に縮小 */
+  .inbox-area-header { padding: var(--space-2) var(--space-3) var(--space-1) 0; }
   .inbox-search-row  { padding: var(--space-2) var(--space-2) var(--space-1); }
   .inbox-left-panel  { max-height: 45vh; }
   .inbox-right-panel { display: none; }
