@@ -84,11 +84,13 @@
   --space-14px: 14px;  /* ボタン横余白 */
 
   /* ---- Border radius ---- */
+  --radius-2xs:  3px;   /* btn-sm・コードラベルの極小角丸 */
   --radius-xs:   2px;   /* アバター・小アイコン・サムネイルの極小角丸 */
   --radius-sm:   4px;
   --radius-md:   6px;
   --radius-lg:   8px;
   --radius-xl:   12px;
+  --radius-badge: 10px;  /* バッジ・status-badge・dedup-summary */
   --radius-pill: 20px;   /* ピル型ボタン・バッジ・入力欄の角丸（意味的例外トークン） */
   --radius-full: 9999px;
 
@@ -113,6 +115,7 @@
 
   /* ---- Motion / Transitions ---- */
   /* duration tokens — 値は ms 統一（Material Design 3 / Tailwind 準拠） */
+  --duration-base:      200ms;                               /* animation で easing を別指定する場合の duration 単体 */
   --transition-micro:   100ms ease;                          /* ボタン押下・スウォッチ */
   --transition-fast:    150ms ease;                          /* hover・カラー変化 */
   --transition-base:    200ms ease;                          /* フェードイン・スケール */

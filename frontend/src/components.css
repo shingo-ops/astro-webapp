@@ -81,7 +81,7 @@
   font-size: var(--font-xs);
   background: var(--bg-hover);
   border: none;
-  border-radius: 3px;
+  border-radius: var(--radius-2xs);
   cursor: pointer;
   color: var(--text-secondary);
 }
@@ -236,7 +236,7 @@
 .badge {
   display: inline-block;
   padding: var(--space-2px) var(--space-2);
-  border-radius: 10px;
+  border-radius: var(--radius-badge);
   font-size: var(--font-xs);
   font-weight: var(--font-weight-medium);
 }
@@ -253,7 +253,7 @@
 .status-badge {
   display: inline-block;
   padding: var(--space-2px) var(--space-2);
-  border-radius: 10px;
+  border-radius: var(--radius-badge);
   font-size: var(--font-xs);
   font-weight: var(--font-weight-medium);
   background: var(--bg-hover);
@@ -298,7 +298,7 @@
   display: inline-block;
   margin-left: var(--space-3);
   padding: var(--space-2px) var(--space-10px);
-  border-radius: 10px;
+  border-radius: var(--radius-badge);
   font-size: var(--font-xs);
   background: var(--warning-bg);
   color: var(--warning-text);
