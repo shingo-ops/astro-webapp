@@ -498,6 +498,13 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/072_add_retention_indexes.sql
 
+            # Migration 073: LeadStatus 整理 — 受信箱タブを商談進捗ベースに変更
+            #   - 案件化 → 商談中 / AI対応中・コンタクト中・提案中 → 新規 / 保留 → 追客（短期）
+            #   - 全テナントの leads.status を更新（WHERE 条件付きで idempotent）
+            #   関連: PR #668 / 受信箱タブ商談進捗ベース変更
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_073_lead_status.py
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
