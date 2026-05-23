@@ -467,6 +467,21 @@ nav.leadChat = "受信箱"
 
 `ja.json` / `en.json` の `nav.*` 値を変えるだけ。他のファイルは変更不要。
 
+### ページサブタイトル（任意）
+
+各ページに説明文を表示したい場合は共通クラス `.page-subtitle` を使う。
+色・フォントサイズ・余白は `pages-layout.css` で統一定義済み。
+
+```tsx
+// ✅ 正しい: 共通クラスを使う（文言のみ各ページで個別定義）
+<p className="page-subtitle">{t("xxx.subtitle")}</p>
+
+// ❌ 禁止: ページ専用クラスを作ってスタイルを個別定義する
+<p className="my-page-subtitle" style={{ color: "gray" }}>...</p>
+```
+
+サブタイトルの文言は `ja.json` / `en.json` の `xxx.subtitle` キーで定義する。
+
 ---
 
 ## CSS カラー変数規約（ADR-067）— 機械的強制済み
