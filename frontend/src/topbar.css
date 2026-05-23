@@ -140,7 +140,7 @@
   inset: 0;
   background: var(--overlay-bg);
   z-index: var(--z-backdrop);
-  animation: fadeBackdrop 200ms ease;
+  animation: fadeBackdrop var(--transition-base);
 }
 
 @keyframes fadeBackdrop {
