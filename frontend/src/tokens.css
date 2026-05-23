@@ -139,7 +139,14 @@
   --textarea-min-h:     80px;   /* テキストエリア最小高 */
   --topbar-height:      56px;   /* トップバー・ブランドバー高さ */
   --drawer-width:      300px;   /* ユーザードロワー幅 */
-  --logo-size:          36px;   /* サイドバー・ブランドバーのロゴアイコン正方形サイズ */
+  --logo-size:          36px;   /* サイドバー・ブランドバーのロゴアイコン正方形サイズ（折りたたみ・展開共通） */
+
+  /* ---- Sidebar icon alignment ---- */
+  /* 展開時の全ナビアイコン中心x座標（Single Source of Truth）
+     menu: border(3) + padding(20) + icon-center(10) = 33px
+     logo: padding-left = 33 - logo-size/2 = 33 - 18 = 15px（calc で参照）
+     collapsed は justify-content:center / sidebar-item padding(14px) で 27px(=54/2) に自動揃え */
+  --sidebar-nav-icon-center-x: 33px;
 
   /* ---- Layout constraints ---- */
   --max-width-page:     1200px; /* ページコンテンツ最大幅（.page / .page-container） */
