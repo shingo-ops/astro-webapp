@@ -24,7 +24,7 @@ import {
   Check, Warning, X,
   ChartBar, User, Target, Briefcase, Package,
   Users, Key, GearSix, Folder,
-  HardHat, Chat,
+  HardHat, Chat, ChatCircle,
   SquaresFour, FileText, Question, ShieldCheck,
   DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
 } from "@phosphor-icons/react";
@@ -148,26 +148,7 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
   );
 }
 
-// カスタム SVG: Tabler Icons brand-wechat（MIT ライセンス）
-// Layout.tsx の /lead-chat ナビアイテム用（🌐 ではなくチャットアイコン）
+// Layout.tsx の /lead-chat ナビアイテム用
 export function LeadChatIcon({ size = 20, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-      <path d="M16.5 10c3.038 0 5.5 2.015 5.5 4.5c0 1.397 -.72 2.644 -1.861 3.516l.356 1.984l-2.104 -1.028c-.405 .103 -.826 .028 -1.242 .028c-3.038 0 -5.5 -2.015 -5.5 -4.5s2.462 -4.5 5.5 -4.5z" />
-      <path d="M11.5 6c-3.866 0 -7 2.686 -7 6c0 1.747 .87 3.316 2.253 4.4l-.403 2.6l2.761 -1.399c.684 .19 1.565 .399 2.389 .399c.329 0 .655 -.016 .976 -.047" />
-    </svg>
-  );
+  return <ChatCircle size={size} className={className} aria-hidden="true" />;
 }
