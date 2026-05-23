@@ -375,7 +375,7 @@ class TestDeleteInBatches:
         session_cm = self._make_session_cm(rowcount=0)
 
         with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
-             patch("app.tasks.maintenance.sessionmaker", return_value=lambda _: session_cm):
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: session_cm):
             result = _delete_in_batches("public.data_access_events", "60 days")
 
         assert result == 0
@@ -387,7 +387,7 @@ class TestDeleteInBatches:
         session_cm = self._make_session_cm(rowcount=42)
 
         with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
-             patch("app.tasks.maintenance.sessionmaker", return_value=lambda _: session_cm):
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: session_cm):
             result = _delete_in_batches("public.data_access_events", "60 days")
 
         assert result == 42
@@ -410,7 +410,7 @@ class TestDeleteInBatches:
             return mock_session_cm
 
         with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
-             patch("app.tasks.maintenance.sessionmaker", return_value=lambda _: make_cm()), \
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: make_cm()), \
              patch("app.tasks.maintenance.time") as mock_time:
             result = _delete_in_batches("public.data_access_events", "60 days")
 
