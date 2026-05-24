@@ -1101,6 +1101,37 @@ CREATE TABLE IF NOT EXISTS {schema}.tenant_profile (
 -- 既定行を 1 行投入 (admin が UI で後から埋める)
 INSERT INTO {schema}.tenant_profile (default_language)
 SELECT 'ja' WHERE NOT EXISTS (SELECT 1 FROM {schema}.tenant_profile);
+
+-- migration 075: 目標管理テーブル (ダッシュボード強化)
+CREATE TABLE IF NOT EXISTS {schema}.goals (
+    id           SERIAL PRIMARY KEY,
+    user_id      INTEGER REFERENCES public.users(id) ON DELETE CASCADE,
+    team_id      INTEGER,
+    period_type  VARCHAR(10)    NOT NULL
+                     CHECK (period_type IN ('monthly', 'weekly')),
+    period_year  SMALLINT       NOT NULL CHECK (period_year >= 2020),
+    period_num   SMALLINT       NOT NULL CHECK (period_num BETWEEN 1 AND 53),
+    kpi_type     VARCHAR(30)    NOT NULL
+                     CHECK (kpi_type IN (
+                         'revenue', 'deal_count', 'close_rate',
+                         'lead_count', 'conversion_rate'
+                     )),
+    target_value NUMERIC(15, 2) NOT NULL CHECK (target_value >= 0),
+    created_by   INTEGER REFERENCES public.users(id) ON DELETE SET NULL,
+    created_at   TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    CONSTRAINT goals_owner_check
+        CHECK (
+            (user_id IS NOT NULL AND team_id IS NULL) OR
+            (user_id IS NULL AND team_id IS NOT NULL)
+        ),
+    CONSTRAINT goals_unique_target
+        UNIQUE (user_id, team_id, period_type, period_year, period_num, kpi_type)
+);
+CREATE INDEX IF NOT EXISTS idx_goals_user_period
+    ON {schema}.goals (user_id, period_year, period_num);
+CREATE INDEX IF NOT EXISTS idx_goals_team_period
+    ON {schema}.goals (team_id, period_year, period_num);
 """
 
 # RLS有効化のALTER TABLE群（;で安全に分割可能）

@@ -28,6 +28,7 @@ import {
   SquaresFour, FileText, Question, ShieldCheck,
   DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
   Trash, Archive, EnvelopeOpen,
+  TrendUp, Bell, CalendarCheck, ArrowRight, Flag,
 } from "@phosphor-icons/react";
 
 // ステータス（✓ ⚠ ✕ の代替）
@@ -85,6 +86,15 @@ export const NAV_ICONS = {
   filter:      SlidersHorizontal,
   search:      MagnifyingGlass,
   close:       X,
+} satisfies Record<string, Icon>;
+
+// ダッシュボード強化用
+export const DashboardIcons = {
+  forecast:  TrendUp,
+  reminder:  Bell,
+  goalDone:  CalendarCheck,
+  arrowRight: ArrowRight,
+  goalFlag:  Flag,
 } satisfies Record<string, Icon>;
 
 // ============================================================
