@@ -5,22 +5,66 @@
  *
  * 目的:
  *   - LoginPage の DOM 要素（Email / Password / ログインボタン）が描画される
- *   - 認証 bypass 後、Dashboard ('/') が KPI を伴って表示される
+ *   - 認証 bypass 後、Dashboard ('/') が新構造（タブ・期間・固定/期間連動エリア）で表示される
  *   - 上段ブランドバー + 主要メニュー（リード / 在庫 / 管理 / その他）が描画される
  *
- * 見せ場（撮影台本との対応）:
- *   - 0:02–0:10  Email/Password 入力フォームが映る → LoginPage DOM
- *   - 0:12       Dashboard 表示 → "ダッシュボード" 見出し + KPI カード
- *   - 0:18–0:25  メインナビ上の Inbox / Channels / Leads / Customers ハイライト
+ * 変更履歴:
+ *   2026-05-25: ダッシュボード強化（タブ・期間フィルター・目標・着地予測）に合わせて更新
  */
 
 import { expect, test } from "@playwright/test";
 import { installAuthBypass } from "./utils/auth";
 import { mockApi } from "./utils/api-mock";
 import { commonMocks } from "./utils/common-mocks";
-import { loadFixture } from "./utils/fixtures";
 
-const dashboardFixture = loadFixture<{ customer_count: number }>("mock-dashboard.json");
+/** 新ダッシュボード用 API モック群 */
+function dashboardMocks() {
+  return {
+    // 目標サマリー（個人・チーム）— GoalSummary 型に合わせた形式
+    "GET /goals/summary": { monthly: [], weekly: [] },
+    // フォローアップリマインド
+    "GET /analytics/followups": {
+      overdue: [],
+      due_today: [],
+      upcoming: [],
+      stalled: [],
+    },
+    // 着地予測
+    "GET /analytics/forecast": {
+      forecast_amount: 3200000,
+      won_amount: 1800000,
+      open_deal_count: 4,
+      period_start: "2026-05-01",
+      period_end: "2026-05-31",
+    },
+    // 滞留商談アラート
+    "GET /analytics/stalled-deals": {
+      stalled_count: 0,
+      stalled_deals: [],
+    },
+    // 期間連動 KPI サマリー
+    "GET /analytics/summary": {
+      leads: {
+        total: 18,
+        converted: 7,
+        excluded: 2,
+        cv_rate: 38.9,
+      },
+      deals: {
+        total: 12,
+        active: 5,
+        won: 4,
+        win_rate: 44.4,
+      },
+      orders: {
+        total_revenue: 5400000,
+        count: 9,
+        active: 2,
+        achievement_rate: 72.0,
+      },
+    },
+  };
+}
 
 test.describe("Scene 1: Dashboard Overview", () => {
   test("LoginPage は Email / Password / ログインボタンが見える", async ({ page }) => {
@@ -32,11 +76,13 @@ test.describe("Scene 1: Dashboard Overview", () => {
     await expect(page.getByRole("button", { name: "ログイン" })).toBeVisible();
   });
 
-  test("認証済 user は Dashboard を見られ、KPI が描画される", async ({ page }) => {
+  test("認証済 user は Dashboard を見られ、新構造（タブ・期間・KPIセクション）が描画される", async ({
+    page,
+  }) => {
     await installAuthBypass(page);
     await mockApi(page, {
       ...commonMocks(),
-      "GET /dashboard": dashboardFixture,
+      ...dashboardMocks(),
     });
 
     // 0:12 の Dashboard 描画
@@ -47,20 +93,23 @@ test.describe("Scene 1: Dashboard Overview", () => {
       timeout: 20_000,
     });
 
-    // 顧客 KPI（営業セクション）
-    // ADR-044: i18n 化以降は t("dashboard.customers") = "顧客"
-    await expect(page.getByText("顧客", { exact: true })).toBeVisible();
-    // KPI 値が fixture と一致
-    const customerCount = await page
-      .locator(".kpi-card", { hasText: "顧客" })
-      .locator(".kpi-value")
-      .first()
-      .innerText();
-    expect(customerCount.trim()).toBe(String(dashboardFixture.customer_count));
+    // チーム / 個人 タブが描画される
+    await expect(page.getByRole("button", { name: "チーム" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "個人" })).toBeVisible();
 
-    // コンバージョン率 / 成約金額 KPI も存在
-    await expect(page.getByText("コンバージョン率")).toBeVisible();
-    await expect(page.getByText("成約金額")).toBeVisible();
+    // 期間プルダウンが描画される
+    const periodSelect = page.locator(".db-period-select");
+    await expect(periodSelect).toBeVisible();
+
+    // 期間連動エリア: リード / 商談 / 受注 セクション見出しが描画される
+    await expect(page.getByText("リード", { exact: true })).toBeVisible();
+    await expect(page.getByText("商談", { exact: true })).toBeVisible();
+    await expect(page.getByText("受注・売上", { exact: true })).toBeVisible();
+
+    // 固定エリア: 目標 / 着地予測 / フォローアップ の見出しが描画される
+    await expect(page.getByText("目標", { exact: true })).toBeVisible();
+    await expect(page.getByText("今月の着地予測", { exact: true })).toBeVisible();
+    await expect(page.getByText("フォローアップ", { exact: true })).toBeVisible();
   });
 
   test("0:18–0:25: メインナビにダッシュボード / 顧客管理 / 管理メニューが出ている", async ({
@@ -69,7 +118,7 @@ test.describe("Scene 1: Dashboard Overview", () => {
     await installAuthBypass(page);
     await mockApi(page, {
       ...commonMocks(),
-      "GET /dashboard": dashboardFixture,
+      ...dashboardMocks(),
     });
 
     await page.goto("/");

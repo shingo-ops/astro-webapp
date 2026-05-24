@@ -44,6 +44,7 @@ from app.routers import purchase_orders
 from app.routers import tenant_profile  # Sprint 8 / F8: PO PDF / メール差出人情報
 from app.routers import duplicates
 from app.routers import analytics
+from app.routers import goals  # ダッシュボード強化: 目標管理
 from app.routers import notifications
 from app.routers import staff_reports
 from app.routers import archives
@@ -278,6 +279,11 @@ app.include_router(
 )
 app.include_router(
     analytics.router, prefix="/api/v1", tags=["analytics"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# ダッシュボード強化: 目標管理 (migration 075)
+app.include_router(
+    goals.router, prefix="/api/v1", tags=["goals"],
     dependencies=[Depends(get_current_tenant)],
 )
 # Phase 4: コミュニケーション・運用

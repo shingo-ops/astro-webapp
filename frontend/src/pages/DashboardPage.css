@@ -1,0 +1,377 @@
+/* ============================================================
+   DashboardPage — 強化版スタイル
+   Design tokens: var(--*) from tokens.css / index.css
+   Dark mode: :root.force-dark で同名トークンが上書き済み
+   ============================================================ */
+
+/* ── コントロールバー ── */
+.db-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* ── タブ ── */
+.db-tabs {
+  display: flex;
+  background: var(--bg-surface);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1);
+  box-shadow: var(--shadow-xs);
+}
+
+.db-tab {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.db-tab.active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.db-tab:hover:not(.active) {
+  background: var(--bg-hover);
+}
+
+/* ── 期間プルダウン ── */
+.db-period-select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  min-width: 120px;
+}
+
+/* ── 固定エリア ── */
+.db-fixed-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+@media (max-width: 960px) {
+  .db-fixed-area {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── セクションカード（共通） ── */
+.db-section-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.db-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.db-section-header h3 {
+  margin: 0;
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-primary);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.db-section-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── 目標カード ── */
+.db-set-goals-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.db-set-goals-btn:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.db-goals-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.db-goals-period-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.db-goals-period-label {
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.db-goal-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-rows: auto 4px;
+  align-items: center;
+  gap: var(--space-2) var(--space-2);
+  font-size: var(--font-sm);
+}
+
+.db-goal-label {
+  color: var(--text-primary);
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.db-goal-values {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.db-goal-sep {
+  margin: 0 var(--space-1);
+  color: var(--text-muted);
+}
+
+.db-goal-actual {
+  font-weight: var(--font-weight-semi);
+  color: var(--text-primary);
+}
+
+.db-goal-target {
+  color: var(--text-secondary);
+}
+
+.db-goal-rate {
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi);
+  white-space: nowrap;
+  min-width: 38px;
+  text-align: right;
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.db-progress-wrap {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 4px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.db-progress-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+  max-width: 100%;
+}
+
+.db-no-goals {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── 着地予測カード ── */
+.db-forecast-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.db-forecast-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.db-forecast-label {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+.db-forecast-value {
+  font-size: var(--font-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--accent);
+}
+
+.db-forecast-sub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+/* ── フォローアップカード ── */
+.db-followup-card.db-has-urgent {
+  border-left: 3px solid var(--danger);
+}
+
+.db-badge-urgent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--space-1);
+  background: var(--danger);
+  color: var(--on-accent);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.db-followup-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.db-followup-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+}
+
+.db-followup-item.db-overdue {
+  background: rgba(229, 62, 62, 0.06);
+}
+
+.db-followup-item.db-due-today {
+  background: rgba(24, 119, 242, 0.06);
+}
+
+.db-followup-item.db-stalled {
+  background: rgba(183, 121, 31, 0.06);
+}
+
+.db-followup-badge {
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-badge);
+  background: var(--danger);
+  color: var(--on-accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.db-badge-today {
+  background: var(--accent);
+}
+
+.db-badge-stalled {
+  background: var(--warning-text);
+}
+
+.db-followup-name {
+  font-weight: var(--font-weight-medium);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-followup-action {
+  color: var(--text-secondary);
+  font-size: var(--font-xs);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-followup-date {
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.db-followup-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── 期間連動エリア ── */
+.db-period-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.db-metric-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.db-metric-title {
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── ローディング / 空 ── */
+.db-loading {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  padding: var(--space-3) 0;
+}
+
+.db-empty {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin: 0;
+  text-align: center;
+  padding: var(--space-3) 0;
+}

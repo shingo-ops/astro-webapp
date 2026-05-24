@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import GoalSettingPage from "./pages/GoalSettingPage";
 import CustomersPage from "./pages/CustomersPage";
 import CompaniesPage from "./pages/CompaniesPage";
 import CompanyDetailPage from "./pages/CompanyDetailPage";
@@ -80,6 +81,7 @@ function App() {
                   }
                 >
                   <Route path="/" element={<DashboardPage />} />
+                  <Route path="/goals/settings" element={<GoalSettingPage />} />
 
                   {/* リード系 */}
                   <Route path="/leads" element={<LeadsPage />} />
