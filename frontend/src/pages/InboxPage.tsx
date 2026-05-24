@@ -169,7 +169,6 @@ const INBOX_STYLES = `
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: transparent;
-  padding-left: var(--space-6);  /* 他ページと同じ 24px 左余白 */
   /* Meta実測値でCSS変数をスコープ上書き（ライトモード） */
   --accent:         rgb(10, 120, 190);
   --link-active-bg: rgb(225, 237, 247);
@@ -447,6 +446,8 @@ html.force-dark .inbox-wrapper {
   font-weight: 700;
   user-select: none;
 }
+/* 1カラム目リストのアバターは白背景と区別できるグレーを使用 */
+.conv-item .conv-avatar { background: var(--bg-hover); }
 .conv-platform-dot {
   position: absolute;
   bottom: -2px;
@@ -478,8 +479,20 @@ html.force-dark .inbox-wrapper {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 .conv-name.unread { font-weight: 700; }
+/* ステータスバッジ（1カラム目 conv-header 内） */
+.conv-status-badge {
+  font-size: var(--font-2xs);
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-badge);
+  padding: var(--space-2px) var(--space-6px);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 /* 時刻 12px */
 .conv-time {
   font-size: var(--font-xs);
@@ -705,7 +718,6 @@ html.force-dark .inbox-wrapper {
   background: var(--bg-surface);
   border-left: 1px solid var(--inbox-separator);
   margin-left: var(--space-14px);
-  margin-right: var(--space-6);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -989,7 +1001,6 @@ html.force-dark .inbox-wrapper {
   .inbox-wrapper {
     overflow-x: hidden;
     overflow-y: auto;
-    padding-left: var(--space-3);
   }
   .inbox-main-area { overflow: visible; }
   .inbox-columns   { flex-direction: column; overflow: visible; }
@@ -1882,6 +1893,9 @@ export default function InboxPage() {
                         <span className={`conv-name${(conv.unread_count ?? 0) > 0 ? " unread" : ""}`}>
                           {conv.customer_name ?? conv.lead_code ?? `Lead #${conv.lead_id}`}
                         </span>
+                        {conv.lead_status && (
+                          <span className="conv-status-badge">{conv.lead_status}</span>
+                        )}
                         <span className="conv-time">{relativeTime(conv.last_message_at)}</span>
                       </div>
                       <div className="conv-preview">
@@ -1916,51 +1930,11 @@ export default function InboxPage() {
             <>
               {/* ヘッダ */}
               <header className="inbox-center-header">
-                {/* Meta実測: ヘッダーアバター 48×48px 円形 */}
-                <div className="conv-avatar" style={{ flexShrink: 0 }}>
-                  {selectedConversation?.profile_picture_url && !avatarErrors.has(selectedConversation.lead_id) ? (
-                    <img
-                      src={selectedConversation.profile_picture_url}
-                      alt={t("inbox.avatarAlt")}
-                      style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
-                      onError={() => handleAvatarError(selectedConversation.lead_id)}
-                    />
-                  ) : (
-                    getInitials(
-                      messagesData?.lead?.customer_name
-                      || selectedConversation?.customer_name
-                    )
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 className="inbox-center-title">
-                    {messagesData?.lead?.customer_name
-                      || selectedConversation?.customer_name
-                      || `Lead #${selectedLeadId}`}
-                  </h3>
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-2px)" }}>
-                    {messagesData?.lead?.lead_code && (
-                      <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
-                        {messagesData.lead.lead_code}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <a
-                  href={`/leads?lead_id=${selectedLeadId}`}
-                  style={{
-                    fontSize: "var(--font-xs)",
-                    color: "var(--accent)",
-                    textDecoration: "none",
-                    padding: "var(--space-1) var(--space-10px)",
-                    borderRadius: "var(--radius-xl)",
-                    background: "var(--link-active-bg)",
-                    fontWeight: "var(--font-weight-semi)",
-                    flexShrink: 0,
-                  }}
-                >
-                  {t("inbox.lead")}
-                </a>
+                <h3 className="inbox-center-title" style={{ flex: 1, minWidth: 0 }}>
+                  {messagesData?.lead?.customer_name
+                    || selectedConversation?.customer_name
+                    || `Lead #${selectedLeadId}`}
+                </h3>
                 {/* Metaスタイル: ヘッダーアクションアイコン群（未読・対象外・削除） */}
                 <div className="inbox-header-actions">
                   <button
@@ -1999,7 +1973,7 @@ export default function InboxPage() {
                     onClick={() => showKartePanel ? closeKartePanel() : openKartePanel()}
                     aria-label={t("inbox.karteToggle")}
                   >
-                    <PAGE_ICONS.kartePanel size={ICON.sm} aria-hidden="true" />
+                    <PAGE_ICONS.kartePanel size={ICON.base} aria-hidden="true" />
                     {t("inbox.karteToggle")}
                   </button>
                 )}

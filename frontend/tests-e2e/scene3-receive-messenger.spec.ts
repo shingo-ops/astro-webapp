@@ -63,11 +63,10 @@ test.describe("Scene 3: Incoming Messenger", () => {
     // 2:06 会話クリック → 右ペインに inbound バブル
     await taroBtn.click();
 
-    // 右ペイン: lead リンク（ADR-044: i18n 化により t("inbox.lead") = "リード"）
-    // サイドバーにも "リード" NavLink が存在するため main main に絞る（ADR-059）
-    await expect(page.locator("main main").getByRole("link", { name: "リード", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
+    // センターヘッダーに顧客名見出しが表示される（「リード」リンクは削除済み）
+    await expect(
+      page.locator("main main").getByRole("heading", { name: "Taro Sender" }),
+    ).toBeVisible({ timeout: 10_000 });
 
     // inbound メッセージ本文（左ペインの会話アイテムと右ペインの両方に同じ文字列が
     // 出るので、InboxPage の内側 `<main>`（Layout の外側 main の子）に絞る）
