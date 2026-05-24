@@ -803,6 +803,8 @@ html.force-dark .inbox-wrapper {
   margin: 0;
   display: inline-block;
   padding: 0;
+  border: none;
+  cursor: pointer;
   border-radius: 0;
   background: transparent;
   color: var(--link);
@@ -1163,6 +1165,34 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 }
 .inbox-toggle input:checked + .inbox-toggle-slider { background: var(--accent); }
 .inbox-toggle input:checked + .inbox-toggle-slider::before { transform: translateX(18px); }
+
+/* ====== プロフィールモーダル ====== */
+.inbox-profile-overlay {
+  position: fixed; inset: 0; z-index: var(--z-modal);
+  background: rgba(0,0,0,var(--opacity-overlay));
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+}
+.inbox-profile-modal {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: var(--space-6);
+  min-width: 480px; max-width: 640px; width: 90%; max-height: 85vh;
+  overflow-y: auto; box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column; gap: var(--space-4);
+}
+.inbox-profile-modal-header {
+  display: flex; align-items: center; gap: var(--space-3);
+}
+.inbox-profile-modal-close {
+  margin-left: auto; background: transparent; border: none;
+  cursor: pointer; color: var(--text-muted); border-radius: var(--radius-sm);
+  padding: var(--space-1); transition: opacity var(--transition-micro);
+  display: flex; align-items: center; justify-content: center;
+}
+.inbox-profile-modal-close:hover { opacity: var(--opacity-hover); }
+@media (max-width: 560px) {
+  .inbox-profile-modal { min-width: unset; }
+}
 `;
 
 // ---------------------------------------------------------------------------
@@ -1250,6 +1280,10 @@ export default function InboxPage() {
   const [karteTab, setKarteTab] = useState<"contact" | "company" | "deal">("contact");
   // モバイル/タブレット時のカルテドロワー開閉（デスクトップ≥1280pxでは常時表示のため無視）
   const [showKartePanel, setShowKartePanel] = useState(false);
+  // プロフィールモーダル
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileModalTab, setProfileModalTab] = useState<"contact" | "company" | "deal">("contact");
+  const profileModalRef = useRef<HTMLDivElement>(null);
 
   // 入力欄
   const [draft, setDraft] = useState("");
@@ -1660,6 +1694,20 @@ export default function InboxPage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [manageOpen]);
+
+  // プロフィールモーダル: ESCキー + 初期フォーカス
+  useEffect(() => {
+    if (!showProfileModal) return;
+    const first = profileModalRef.current?.querySelector<HTMLElement>(
+      "button, input, select, textarea"
+    );
+    first?.focus();
+    const onEsc = (e: Event) => {
+      if ((e as { key?: string }).key === "Escape") setShowProfileModal(false);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [showProfileModal]);
 
   // 全て既読にする（現在フィルタ済みの未読会話を一括既読化）
   const handleMarkAllRead = useCallback(async () => {
@@ -2149,9 +2197,9 @@ export default function InboxPage() {
                   <span className="right-panel-display-name">
                     {cardForm.nickname || leadDetail.nickname || cardForm.customer_name || leadDetail.customer_name}
                   </span>
-                  <a href={`/leads?lead_id=${leadDetail.id}`} className="right-panel-link">
-                    {t("inbox.viewLead")} →
-                  </a>
+                  <button type="button" className="right-panel-link" onClick={() => setShowProfileModal(true)}>
+                    {t("inbox.viewProfile")} →
+                  </button>
                 </div>
               </div>
 
@@ -2488,6 +2536,274 @@ export default function InboxPage() {
             <button type="button" className="inbox-settings-close-btn" onClick={() => setShowSettings(false)}>
               {t("common.close")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================== プロフィールモーダル ============================== */}
+      {showProfileModal && leadDetail && (
+        <div
+          className="inbox-profile-overlay"
+          onClick={() => setShowProfileModal(false)}
+          role="presentation"
+        >
+          <div
+            ref={profileModalRef}
+            className="inbox-profile-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-modal-name"
+          >
+            <div className="inbox-profile-modal-header">
+              <div className="right-panel-avatar">
+                {selectedConversation?.profile_picture_url && !avatarErrors.has(selectedConversation.lead_id) ? (
+                  <img
+                    src={selectedConversation.profile_picture_url}
+                    alt={t("inbox.avatarAlt")}
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                    onError={() => handleAvatarError(selectedConversation.lead_id)}
+                  />
+                ) : (
+                  getInitials(cardForm.nickname || cardForm.customer_name || leadDetail.nickname || leadDetail.customer_name)
+                )}
+              </div>
+              <span id="profile-modal-name" className="right-panel-display-name">
+                {cardForm.nickname || leadDetail.nickname || cardForm.customer_name || leadDetail.customer_name}
+              </span>
+              <button
+                type="button"
+                className="inbox-profile-modal-close"
+                onClick={() => setShowProfileModal(false)}
+                aria-label={t("common.close")}
+              >
+                <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="right-panel-save-indicator">
+              {cardSaveStatus === "saving" && <span>{t("common.saving")}</span>}
+              {cardSaveStatus === "saved" && <span className="saved">{t("common.saved")}</span>}
+              {cardSaveStatus === "error" && <span className="error">{cardSaveError}</span>}
+            </div>
+            <div className="right-panel-tabs">
+              <button type="button"
+                className={`right-panel-tab${profileModalTab === "contact" ? " active" : ""}`}
+                onClick={() => setProfileModalTab("contact")}
+              >{t("inbox.karteContact")}</button>
+              <button type="button"
+                className={`right-panel-tab${profileModalTab === "company" ? " active" : ""}`}
+                onClick={() => setProfileModalTab("company")}
+              >{t("inbox.karteCompany")}</button>
+              <button type="button"
+                className={`right-panel-tab${profileModalTab === "deal" ? " active" : ""}`}
+                onClick={() => setProfileModalTab("deal")}
+              >{t("inbox.karteDeal")}</button>
+            </div>
+            <div className="right-panel-tab-content">
+              {profileModalTab === "contact" && (
+                <div className="right-panel-section">
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.nickname")}</span>
+                    <input className="right-panel-field" type="text"
+                      value={cardForm.nickname ?? ""}
+                      onChange={(e) => handleCardFieldChange("nickname", e.target.value)}
+                      onBlur={handleCardFieldBlur}
+                      placeholder={t("leads.nickname")} />
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.email")}</span>
+                    <input className="right-panel-field" type="email"
+                      value={cardForm.email ?? ""}
+                      onChange={(e) => handleCardFieldChange("email", e.target.value)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.phone")}</span>
+                    <input className="right-panel-field" type="tel"
+                      value={cardForm.phone ?? ""}
+                      onChange={(e) => handleCardFieldChange("phone", e.target.value)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                </div>
+              )}
+              {profileModalTab === "company" && (
+                <div className="right-panel-section">
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.companyName")}</span>
+                    <input className="right-panel-field" type="text"
+                      value={cardForm.company_name ?? ""}
+                      onChange={(e) => handleCardFieldChange("company_name", e.target.value)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                </div>
+              )}
+              {profileModalTab === "deal" && (
+                <div className="right-panel-section">
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("inbox.platformName")}</span>
+                    <span className="right-panel-value">{leadDetail.customer_name}</span>
+                  </div>
+                  <hr className="right-panel-divider" />
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.status")}</span>
+                    <select className="right-panel-field"
+                      value={cardForm.status ?? ""}
+                      onChange={(e) => handleCardFieldChange("status", e.target.value)}
+                      onBlur={handleCardFieldBlur}>
+                      <option value="新規">{t("leads.status_new")}</option>
+                      <option value="商談中">{t("leads.status_negotiating")}</option>
+                      <option value="既存顧客">{t("leads.status_existing_customer")}</option>
+                      <option value="追客（短期）">{t("leads.status_follow_up_short")}</option>
+                      <option value="追客（長期）">{t("leads.status_follow_up_long")}</option>
+                      <option value="失注">{t("leads.status_lost")}</option>
+                      <option value="対象外">{t("leads.status_out_of_scope")}</option>
+                    </select>
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.temperature")}</span>
+                    <select className="right-panel-field"
+                      value={cardForm.temperature ?? ""}
+                      onChange={(e) => handleCardFieldChange("temperature", e.target.value || null)}
+                      onBlur={handleCardFieldBlur}>
+                      <option value="">—</option>
+                      <option value="Hot">Hot</option>
+                      <option value="Warm">Warm</option>
+                      <option value="Cold">Cold</option>
+                    </select>
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.nextActionDate")}</span>
+                    <input className="right-panel-field" type="date"
+                      value={cardForm.next_action_date ?? ""}
+                      onChange={(e) => handleCardFieldChange("next_action_date", e.target.value || null)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                  <textarea className="right-panel-field" rows={3}
+                    value={cardForm.next_action ?? ""}
+                    onChange={(e) => handleCardFieldChange("next_action", e.target.value)}
+                    onBlur={handleCardFieldBlur}
+                    placeholder={t("leads.nextAction")} />
+                  <hr className="right-panel-divider" />
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.estimatedScale")}</span>
+                    <select className="right-panel-field"
+                      value={cardForm.estimated_scale ?? ""}
+                      onChange={(e) => handleCardFieldChange("estimated_scale", e.target.value || null)}
+                      onBlur={handleCardFieldBlur}>
+                      <option value="">—</option>
+                      <option value="Small">Small</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Large">Large</option>
+                    </select>
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.monthlyForecast")}</span>
+                    <input className="right-panel-field" type="number" min="0"
+                      value={cardForm.monthly_forecast ?? ""}
+                      onChange={(e) => handleCardFieldChange("monthly_forecast", e.target.value || null)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.perOrderAmount")}</span>
+                    <input className="right-panel-field" type="number" min="0"
+                      value={cardForm.per_order_amount ?? ""}
+                      onChange={(e) => handleCardFieldChange("per_order_amount", e.target.value || null)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.monthlyFrequency")}</span>
+                    <input className="right-panel-field" type="number" min="0"
+                      value={cardForm.monthly_frequency ?? ""}
+                      onChange={(e) => handleCardFieldChange("monthly_frequency", e.target.value || null)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                  <hr className="right-panel-divider" />
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.customerType")}</span>
+                    <select className="right-panel-field"
+                      value={cardForm.customer_type ?? ""}
+                      onChange={(e) => handleCardFieldChange("customer_type", e.target.value || null)}
+                      onBlur={handleCardFieldBlur}>
+                      <option value="">—</option>
+                      <option value="信頼重視">{t("leads.customerType_trust")}</option>
+                      <option value="価格重視">{t("leads.customerType_price")}</option>
+                    </select>
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.responseSpeed")}</span>
+                    <select className="right-panel-field"
+                      value={cardForm.response_speed ?? ""}
+                      onChange={(e) => handleCardFieldChange("response_speed", e.target.value || null)}
+                      onBlur={handleCardFieldBlur}>
+                      <option value="">—</option>
+                      <option value="24h以内">{t("leads.responseSpeed_24h")}</option>
+                      <option value="3日以内">{t("leads.responseSpeed_3days")}</option>
+                      <option value="3日超">{t("leads.responseSpeed_over3days")}</option>
+                    </select>
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.country")}</span>
+                    <input className="right-panel-field" type="text"
+                      value={cardForm.country ?? ""}
+                      onChange={(e) => handleCardFieldChange("country", e.target.value)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.targetTitles")}</span>
+                    <input className="right-panel-field" type="text"
+                      value={cardForm.target_titles ?? ""}
+                      onChange={(e) => handleCardFieldChange("target_titles", e.target.value)}
+                      onBlur={handleCardFieldBlur}
+                      placeholder="Pokemon, One Piece, ..." />
+                  </div>
+                  <textarea className="right-panel-field" rows={3}
+                    value={cardForm.challenge ?? ""}
+                    onChange={(e) => handleCardFieldChange("challenge", e.target.value)}
+                    onBlur={handleCardFieldBlur}
+                    placeholder={t("leads.challenge")} />
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.salesForm")}</span>
+                    <input className="right-panel-field" type="text"
+                      value={cardForm.sales_form ?? ""}
+                      onChange={(e) => handleCardFieldChange("sales_form", e.target.value)}
+                      onBlur={handleCardFieldBlur} />
+                  </div>
+                  <div className="right-panel-row">
+                    <span className="right-panel-label">{t("leads.competitorCheck")}</span>
+                    <label style={{ display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
+                      <input type="checkbox"
+                        checked={cardForm.competitor_check ?? false}
+                        onChange={(e) => {
+                          handleCardFieldChange("competitor_check", e.target.checked);
+                          setTimeout(handleCardFieldBlur, 0);
+                        }} />
+                      <span className="right-panel-value">
+                        {cardForm.competitor_check ? t("leads.competitorDone") : t("leads.competitorNotDone")}
+                      </span>
+                    </label>
+                  </div>
+                  <hr className="right-panel-divider" />
+                  <div className="right-panel-memo-label">{t("leads.notes")}</div>
+                  <textarea className="right-panel-field" rows={3}
+                    value={cardForm.notes ?? ""}
+                    onChange={(e) => handleCardFieldChange("notes", e.target.value)}
+                    onBlur={handleCardFieldBlur}
+                    placeholder={t("leads.notes")} />
+                  <div className="right-panel-memo-label">{t("leads.meetingMemo")}</div>
+                  <textarea className="right-panel-field" rows={3}
+                    value={cardForm.meeting_memo ?? ""}
+                    onChange={(e) => handleCardFieldChange("meeting_memo", e.target.value)}
+                    onBlur={handleCardFieldBlur}
+                    placeholder={t("leads.meetingMemo")} />
+                  <div className="right-panel-memo-label">{t("leads.csMemo")}</div>
+                  <textarea className="right-panel-field" rows={3}
+                    value={cardForm.cs_memo ?? ""}
+                    onChange={(e) => handleCardFieldChange("cs_memo", e.target.value)}
+                    onBlur={handleCardFieldBlur}
+                    placeholder={t("leads.csMemo")} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
