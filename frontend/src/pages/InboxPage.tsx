@@ -911,76 +911,21 @@ html.force-dark .inbox-wrapper {
    ブレークポイント定義: constants/breakpoints.ts / tokens.css を参照
 
    [3段階]
-   モバイル     : max-width: 767px   スマートフォン  (未実装・スタブのみ)
-   タブレット   : 768px-1023px       タブレット縦/横 (カルテをドロワーに)
-   デスクトップ : min-width: 1024px  ノートPC以上   (カルテ常時表示)
+   デスクトップ : min-width: 1280px  MBP 13in以上（カルテ常時表示）
+   中間〜タブレット: 768px-1279px    ノートPC小〜タブレット（カルテをドロワーに）
+   モバイル     : max-width: 767px   スマートフォン（カルテをボトムシートに）
    ============================================================ */
 
-/* デスクトップ直下（<=1023px）: 3カラム → 比率指定に変更 */
-/* タブレット + モバイル共通。カルテドロワーは下の @media ブロックで定義 */
-@media (max-width: 1023px) {
-  .inbox-left-panel  { width: 35%; min-width: 220px; }
-  .inbox-right-panel { width: 25%; min-width: 180px; }
-}
-
-/* モバイル専用（<=767px）: スマートフォンレイアウト */
-/* TODO: スマホ専用レイアウト実装予定（現在はタブレットと同じドロワー挙動）*/
-@media (max-width: 767px) {
-  /* 実装時にここに追加する */
-}
-
-/* タブレット縦・スマートフォン横（768px以下）: 縦積みレイアウト */
-@media (max-width: 768px) {
-  .inbox-wrapper {
-    overflow-x: hidden;
-    overflow-y: auto;
-  }
-  /* HIGH-1修正: 子要素のoverflow:hiddenが縦スクロールを塞ぐため解除 */
-  .inbox-main-area { overflow: visible; }
-  .inbox-columns   { flex-direction: column; overflow: visible; }
-
-  .inbox-left-panel {
-    width: 100%;
-    max-height: 40vh;
-    flex-shrink: 0;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    overflow-y: auto;
-  }
-  .inbox-center {
-    width: 100%;
-    flex: 1;
-    min-height: 300px;
-  }
-  .inbox-right-panel {
-    width: 100%;
-    max-height: 35vh;
-    flex-shrink: 0;
-    border-left: none;
-    border-top: 1px solid var(--border);
-    overflow-y: auto;
-  }
-  .msg-bubble { max-width: 85%; }
-}
-
-/* スマートフォン縦（480px以下）: 右パネル非表示・余白縮小 */
-@media (max-width: 480px) {
-  .inbox-wrapper    { padding-left: var(--space-3); }  /* モバイルは 12px に縮小 */
-  .inbox-search-row  { padding: var(--space-2) var(--space-2) var(--space-1); }
-  .inbox-left-panel  { max-height: 45vh; }
-  .inbox-right-panel { display: none; }
-  .msg-bubble { max-width: 90%; }
-  .inbox-send-btn { padding: var(--space-2) var(--space-4); }
-}
-
-/* ====== モバイル: カルテ ドロワー ====== */
-/* デフォルト（デスクトップ）では非表示 */
+/* ====== カルテ ドロワー / ボトムシート — デフォルト（≥1280px）では非表示 ====== */
 .karte-toggle-btn { display: none; }
 .karte-close-row  { display: none; }
 .karte-overlay    { display: none; }
 
-/* タブレット・スマートフォン（≤1024px）: ドロワー方式に切り替え */
-@media (max-width: 1024px) {
+/* ====== 中間〜タブレット（≤1279px）: 右ドロワー方式に切り替え ====== */
+@media (max-width: 1279px) {
+  /* 左パネルは比率縮小（メッセージ欄の圧迫解消） */
+  .inbox-left-panel { width: 35%; min-width: 220px; }
+
   /* 「カルテ」トグルボタン: 会話ヘッダーに表示 */
   .karte-toggle-btn {
     display: flex; align-items: center; gap: var(--space-1);
@@ -1016,7 +961,7 @@ html.force-dark .inbox-wrapper {
     display: block;
     position: fixed; inset: 0;
     z-index: var(--z-backdrop);
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--overlay-bg);
     animation: fadeIn var(--duration-base) ease;
   }
 
@@ -1038,6 +983,52 @@ html.force-dark .inbox-wrapper {
     transition: color var(--transition-micro), background var(--transition-micro);
   }
   .karte-close-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+}
+
+/* ====== モバイル（≤767px）: 縦積み + ボトムシート ====== */
+@media (max-width: 767px) {
+  .inbox-wrapper {
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-left: var(--space-3);
+  }
+  .inbox-main-area { overflow: visible; }
+  .inbox-columns   { flex-direction: column; overflow: visible; }
+
+  .inbox-left-panel {
+    width: 100%;
+    max-height: 45vh;
+    flex-shrink: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .inbox-center  { width: 100%; flex: 1; min-height: 300px; }
+  .msg-bubble    { max-width: 85%; }
+  .inbox-send-btn { padding: var(--space-2) var(--space-4); }
+  .inbox-search-row { padding: var(--space-2) var(--space-2) var(--space-1); }
+
+  /* カルテをボトムシートに変換（下から 80vh でスライドアップ） */
+  .inbox-right-panel {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 80vh;
+    max-height: 80vh !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border) !important;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+    transform: translateY(100%) !important;
+    transition: transform var(--transition-slow) !important;
+    overflow-y: auto !important;
+    box-shadow: var(--shadow-xl) !important;
+  }
+  .inbox-right-panel.karte-open {
+    transform: translateY(0) !important;
+  }
 }
 
 /* ====== カルテ常時編集フィールド ====== */
@@ -1243,7 +1234,7 @@ export default function InboxPage() {
   const [cardSaveError, setCardSaveError] = useState("");
   // カルテ右パネルのタブ（連絡先 / 会社情報 / 商談情報）
   const [karteTab, setKarteTab] = useState<"contact" | "company" | "deal">("contact");
-  // モバイル時のドロワー開閉（デスクトップ>1024pxでは常時表示のため無視）
+  // モバイル/タブレット時のカルテドロワー開閉（デスクトップ≥1280pxでは常時表示のため無視）
   const [showKartePanel, setShowKartePanel] = useState(false);
 
   // 入力欄
@@ -1263,6 +1254,18 @@ export default function InboxPage() {
   const transientErrorCountRef = useRef(0);
   // loadMessages専用の一時エラーカウンター（loadConversationsと独立管理）
   const msgTransientErrorCountRef = useRef(0);
+
+  // ---------------------------------------------------------------------------
+  // カルテパネル開閉（iOSスクロール貫通対策: 開閉時に body.overflow を制御）
+  // ---------------------------------------------------------------------------
+  const openKartePanel = useCallback(() => {
+    setShowKartePanel(true);
+    document.body.style.overflow = "hidden";
+  }, []);
+  const closeKartePanel = useCallback(() => {
+    setShowKartePanel(false);
+    document.body.style.overflow = "";
+  }, []);
 
   // ---------------------------------------------------------------------------
   // データ取得
@@ -1509,13 +1512,13 @@ export default function InboxPage() {
   const selectLead = useCallback((leadId: number) => {
     setSelectedLeadId(leadId);
     msgTransientErrorCountRef.current = 0; // lead切替時にリセット（前リードのエラーカウントを引き継がない）
-    setShowKartePanel(false); // モバイルドロワーはリード切替時に閉じる
+    closeKartePanel(); // モバイルドロワーはリード切替時に閉じる（body.overflow も解除）
     setDraft("");
     setSendError("");
     const params = new URLSearchParams(searchParams);
     params.set("lead_id", String(leadId));
     setSearchParams(params, { replace: true });
-  }, [searchParams, setSearchParams]);
+  }, [closeKartePanel, searchParams, setSearchParams]);
 
   const onPageFilterChange = useCallback((value: string) => {
     setPageIdFilter(value);
@@ -1971,7 +1974,7 @@ export default function InboxPage() {
                   <button
                     type="button"
                     className="karte-toggle-btn"
-                    onClick={() => setShowKartePanel((v) => !v)}
+                    onClick={() => showKartePanel ? closeKartePanel() : openKartePanel()}
                     aria-label={t("inbox.karteToggle")}
                   >
                     <PAGE_ICONS.kartePanel size={ICON.sm} aria-hidden="true" />
@@ -2089,7 +2092,7 @@ export default function InboxPage() {
 
         {/* モバイルドロワーバックドロップ */}
         {showKartePanel && inboxSettings.showRightPanel && (
-          <div className="karte-overlay" onClick={() => setShowKartePanel(false)} aria-hidden="true" />
+          <div className="karte-overlay" onClick={closeKartePanel} aria-hidden="true" />
         )}
 
         {/* ============================== 右パネル (商談カルテ) ============================== */}
@@ -2109,7 +2112,7 @@ export default function InboxPage() {
                 <button
                   type="button"
                   className="karte-close-btn"
-                  onClick={() => setShowKartePanel(false)}
+                  onClick={closeKartePanel}
                   aria-label={t("common.close")}
                   data-tooltip={t("common.close")}
                 >
