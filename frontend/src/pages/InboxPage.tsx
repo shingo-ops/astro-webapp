@@ -1930,6 +1930,22 @@ export default function InboxPage() {
             <>
               {/* ヘッダ */}
               <header className="inbox-center-header">
+                {/* ヘッダーアバター 48×48px 円形 */}
+                <div className="conv-avatar" style={{ flexShrink: 0 }}>
+                  {selectedConversation?.profile_picture_url && !avatarErrors.has(selectedConversation.lead_id) ? (
+                    <img
+                      src={selectedConversation.profile_picture_url}
+                      alt={t("inbox.avatarAlt")}
+                      style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                      onError={() => handleAvatarError(selectedConversation.lead_id)}
+                    />
+                  ) : (
+                    getInitials(
+                      messagesData?.lead?.customer_name
+                      || selectedConversation?.customer_name
+                    )
+                  )}
+                </div>
                 <h3 className="inbox-center-title" style={{ flex: 1, minWidth: 0 }}>
                   {messagesData?.lead?.customer_name
                     || selectedConversation?.customer_name
