@@ -35,6 +35,11 @@ function dashboardMocks() {
       won_amount_this_month: 1800000,
       open_deal_count: 4,
     },
+    // 滞留商談アラート
+    "GET /analytics/stalled-deals": {
+      stalled_count: 0,
+      deals: [],
+    },
     // 期間連動 KPI サマリー
     "GET /analytics/summary": {
       leads: {
