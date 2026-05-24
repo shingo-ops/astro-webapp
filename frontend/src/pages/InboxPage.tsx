@@ -1030,6 +1030,7 @@ html.force-dark .inbox-wrapper {
     font-size: var(--font-sm); font-weight: 600; color: var(--text-primary);
   }
   .karte-close-btn {
+    position: relative;
     display: flex; align-items: center; justify-content: center;
     background: none; border: none; cursor: pointer;
     color: var(--text-muted); border-radius: var(--radius-sm);
@@ -2095,6 +2096,7 @@ export default function InboxPage() {
                   className="karte-close-btn"
                   onClick={() => setShowKartePanel(false)}
                   aria-label={t("common.close")}
+                  data-tooltip={t("common.close")}
                 >
                   <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
                 </button>
