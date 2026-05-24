@@ -20,8 +20,8 @@ import { commonMocks } from "./utils/common-mocks";
 /** 新ダッシュボード用 API モック群 */
 function dashboardMocks() {
   return {
-    // 目標サマリー（個人・チーム）
-    "GET /goals/summary": [],
+    // 目標サマリー（個人・チーム）— GoalSummary 型に合わせた形式
+    "GET /goals/summary": { monthly: [], weekly: [] },
     // フォローアップリマインド
     "GET /analytics/followups": {
       overdue: [],
@@ -32,8 +32,10 @@ function dashboardMocks() {
     // 着地予測
     "GET /analytics/forecast": {
       forecast_amount: 3200000,
-      won_amount_this_month: 1800000,
+      won_amount: 1800000,
       open_deal_count: 4,
+      period_start: "2026-05-01",
+      period_end: "2026-05-31",
     },
     // 滞留商談アラート
     "GET /analytics/stalled-deals": {
