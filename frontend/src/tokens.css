@@ -196,6 +196,7 @@
   --opacity-disabled:  0.6;   /* disabled 状態の入力・ボタン */
   --opacity-skipped:   0.55;  /* スキップ行・除外コンテンツ */
   --opacity-archived:  0.5;   /* アーカイブ行・非アクティブコンテンツ */
+  --opacity-overlay:   0.5;   /* モーダル・ドロワー背景の半透明オーバーレイ */
 
   /* ---- Inbox component sizes (Meta実測値) ---- */
   --height-tab-bar:       54px;   /* 受信箱タブバー高さ（36px × 1.5） */
