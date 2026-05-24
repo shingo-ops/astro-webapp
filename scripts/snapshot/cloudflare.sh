@@ -16,7 +16,7 @@
 #   CLOUDFLARE_API_TOKEN   Cloudflare API Token (read-only)
 #
 # 任意環境変数:
-#   CF_ZONE_NAME   対象ゾーン (default: salesanchor.jp)
+#   CF_ZONE_NAME   対象ゾーン (default: jarvis-claude.uk) ※Cloudflare は jarvis-claude.uk 専用
 #   SNAPSHOT_DIR   出力ルートディレクトリ (default: external-state-snapshots)
 #   SPRINT_TAG     スナップショットのディレクトリ名サフィックス (default: manual)
 #
@@ -39,7 +39,7 @@ SPRINT_TAG="${SPRINT_TAG:-manual}"
 DATE_TAG="$(date +%Y-%m-%d)"
 OUT="${SNAPSHOT_ROOT}/${DATE_TAG}-${SPRINT_TAG}"
 CF_API="https://api.cloudflare.com/client/v4"
-ZONE_NAME="${CF_ZONE_NAME:-salesanchor.jp}"
+ZONE_NAME="${CF_ZONE_NAME:-jarvis-claude.uk}"
 
 log() {
     echo "[snapshot/cloudflare] $(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >&2
