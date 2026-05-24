@@ -452,8 +452,8 @@ export default function SchedulePage() {
     const isShift = event.source === "shift";
     return {
       style: {
-        backgroundColor: isShift ? "var(--color-success, #22c55e)" : "var(--color-primary, #3b82f6)",
-        borderColor: isShift ? "var(--color-success, #16a34a)" : "var(--color-primary, #2563eb)",
+        backgroundColor: isShift ? "var(--success)" : "var(--accent)",
+        borderColor: isShift ? "var(--success)" : "var(--accent)",
         color: "#fff",
         borderRadius: "4px",
         border: "none",
@@ -499,8 +499,8 @@ export default function SchedulePage() {
           {!status?.connected && (
             <div
               style={{
-                background: "var(--color-surface-secondary, #f3f4f6)",
-                border: "1px solid var(--color-border, #e5e7eb)",
+                background: "var(--bg-subtle)",
+                border: "1px solid var(--border)",
                 borderRadius: "8px",
                 padding: "24px",
                 textAlign: "center",
@@ -508,7 +508,7 @@ export default function SchedulePage() {
               }}
             >
               <p style={{ fontWeight: 600, marginBottom: "8px" }}>{t("schedule.notConnected")}</p>
-              <p style={{ color: "var(--color-text-secondary, #6b7280)", marginBottom: "16px" }}>
+              <p style={{ color: "var(--text-secondary)", marginBottom: "16px" }}>
                 {t("schedule.notConnectedDesc")}
               </p>
               {canManage && (
