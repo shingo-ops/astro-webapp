@@ -30,6 +30,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import StaffReportsPage from "./pages/StaffReportsPage";
 import ArchivesPage from "./pages/ArchivesPage";
 import ShiftsPage from "./pages/ShiftsPage";
+import SchedulePage from "./pages/SchedulePage";
 import BuddyPage from "./pages/BuddyPage";
 import BadgesPage from "./pages/BadgesPage";
 import ERPPage from "./pages/ERPPage";
@@ -139,6 +140,7 @@ function App() {
                     element={<PurchaseOrdersPage />}
                   />
                   <Route path="/shifts" element={<ShiftsPage />} />
+                  <Route path="/schedule" element={<SchedulePage />} />
 
                   {/* Phase 1-D Sprint 3: Meta Inbox 接続管理 */}
                   <Route path="/channels" element={<ChannelsPage />} />

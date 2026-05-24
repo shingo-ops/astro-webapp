@@ -71,6 +71,7 @@ from app.routers import tenant_admin_inventory_visibility
 from app.routers import inventory_search
 # spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
 from app.routers import super_admin_phase_switch
+from app.routers import google_calendar  # Google Calendar OAuth 連携
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -378,6 +379,15 @@ app.include_router(
 # require_super_admin で保護 (router レベル + 各エンドポイントで重ねガード)
 app.include_router(
     super_admin_phase_switch.router, prefix="/api/v1", tags=["super-admin"],
+)
+
+# Google Calendar 連携
+# public_router: callback は Google からの redirect のため Bearer トークンなし（認証不要）
+app.include_router(google_calendar.public_router, prefix="/api/v1", tags=["google-calendar"])
+# router: それ以外は通常の tenant 認証必須
+app.include_router(
+    google_calendar.router, prefix="/api/v1", tags=["google-calendar"],
+    dependencies=[Depends(get_current_tenant)],
 )
 
 
