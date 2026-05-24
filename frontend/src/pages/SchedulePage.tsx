@@ -238,8 +238,8 @@ function EventModal({ event, isNew, initialSlot, canEdit, onClose, onSave, onDel
         ) : (
           <div style={{ padding: "8px 0" }}>
             {event?.raw?.description && <p>{event.raw.description}</p>}
-            {event?.raw?.location && <p>📍 {event.raw.location}</p>}
-            {isShift && <p>🗓 {t("schedule.shiftLabel")}</p>}
+            {event?.raw?.location && <p>{event.raw.location}</p>}
+            {isShift && <p>({t("schedule.shiftLabel")})</p>}
           </div>
         )}
 
