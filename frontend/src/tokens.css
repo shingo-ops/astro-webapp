@@ -99,18 +99,19 @@
      @media に書く値はここと一致させること。JS側は constants/breakpoints.ts を参照。
 
      [3段階レスポンシブ設計]
-     モバイル     : <=767px    スマートフォン（未実装、定義のみ）
-     タブレット   : 768-1023px タブレット縦/横
-     デスクトップ : >=1024px   ノートPC以上（受信箱カルテ常時表示）
+     モバイル         : <=767px    スマートフォン
+     中間〜タブレット : 768-1279px タブレット〜小型ノートPC（受信箱カルテをドロワーに）
+     デスクトップ     : >=1280px   MBP 13in以上（受信箱カルテ常時表示）
 
-     根拠: Tailwind / Intercom / Zendesk が採用する
-           lg=1024px / md=768px ラインと一致。
-           iPad mini 横向き(1024px)をデスクトップ扱いにするため 1024px を境界とした。
+     根拠: 左443px+右300px+サイドバー60px=803px。中央445px確保のため
+           1248px以上必要。MacBook Air 13in(1280px)を境界とした。
+           Salesforce SLDS / GitHub Primer の実質3段階設計と一致。
      ---------------------------------------------------------------- */
-  --breakpoint-mobile-max:   767px; /* モバイル上限     スマートフォン    */
-  --breakpoint-tablet-min:   768px; /* タブレット下限   iPad縦向き以上    */
-  --breakpoint-tablet-max:  1023px; /* タブレット上限   デスクトップ境界-1 */
-  --breakpoint-desktop-min: 1024px; /* デスクトップ下限 iPad横向き以上    */
+  --breakpoint-mobile-max:   767px;  /* モバイル上限     スマートフォン    */
+  --breakpoint-tablet-min:   768px;  /* タブレット下限   iPad縦向き以上    */
+  --breakpoint-tablet-max:  1279px;  /* タブレット上限   デスクトップ境界-1 */
+  --breakpoint-desktop-min: 1280px;  /* デスクトップ下限 MBP 13in以上      */
+  --breakpoint-xl-min:      1440px;  /* ワイド下限       FHD大画面（将来用）*/
 
   /* ---- Z-index ---- */
   --z-base:           10;
