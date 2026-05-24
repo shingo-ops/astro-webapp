@@ -90,6 +90,8 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+    stop_signal: SIGTERM
+    stop_grace_period: 40s
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
       interval: 30s

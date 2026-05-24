@@ -1259,8 +1259,10 @@ export default function InboxPage() {
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const skipNextPollRef = useRef(false);
   const pollErrorCountRef = useRef(0);
-  // 502/503/ネットワークエラーの連続発生カウント（1回目は抑制、2回目以降にバナー表示）
+  // 502/503/ネットワークエラーの連続発生カウント（loadConversations用）
   const transientErrorCountRef = useRef(0);
+  // loadMessages専用の一時エラーカウンター（loadConversationsと独立管理）
+  const msgTransientErrorCountRef = useRef(0);
 
   // ---------------------------------------------------------------------------
   // データ取得
@@ -1291,15 +1293,15 @@ export default function InboxPage() {
       if (isTransient) {
         transientErrorCountRef.current += 1;
         console.warn(`[InboxPage] transient error #${transientErrorCountRef.current}:`, e instanceof Error ? e.message : e);
-        if (transientErrorCountRef.current < 2) return; // 1回目は抑制
-        // 2回目以降は本物の障害としてバナー表示
+        if (transientErrorCountRef.current < 3) return; // 2回まで抑制（デプロイ60秒窓をカバー）
+        // 3回目以降は本物の障害としてバナー表示
       } else {
         transientErrorCountRef.current = 0;
       }
 
       const msg = e instanceof ApiError
         ? e.message
-        : e instanceof Error ? e.message : "Failed to load conversations";
+        : t("inbox.fetchError");
       setConvError(msg);
     } finally {
       setConvLoading(false);
@@ -1329,13 +1331,25 @@ export default function InboxPage() {
     try {
       const data = await getMessages(leadId);
       setMessagesData(data);
+      msgTransientErrorCountRef.current = 0; // 成功時リセット
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) {
         setMsgError("Lead not found.");
+        msgTransientErrorCountRef.current = 0;
       } else {
+        const isTransient =
+          (e instanceof TypeError) ||
+          (e instanceof ApiError && (e.status === 502 || e.status === 503));
+        if (isTransient) {
+          msgTransientErrorCountRef.current += 1;
+          console.warn(`[InboxPage] loadMessages transient error #${msgTransientErrorCountRef.current}:`, e instanceof Error ? e.message : e);
+          if (msgTransientErrorCountRef.current < 3) return; // 2回まで抑制（デプロイ60秒窓をカバー）
+        } else {
+          msgTransientErrorCountRef.current = 0;
+        }
         const msg = e instanceof ApiError
           ? e.message
-          : e instanceof Error ? e.message : "Failed to load messages";
+          : t("inbox.fetchError");
         setMsgError(msg);
       }
       setMessagesData(null);
@@ -1413,7 +1427,7 @@ export default function InboxPage() {
       setTimeout(() => setCardSaveStatus((s) => s === "saved" ? "idle" : s), 2000);
     } catch (e) {
       setCardSaveStatus("error");
-      setCardSaveError(e instanceof Error ? e.message : "保存に失敗しました");
+      setCardSaveError(e instanceof Error ? e.message : t("common.saveError"));
     }
   }, [leadDetail, cardForm]);
 
@@ -1494,6 +1508,7 @@ export default function InboxPage() {
 
   const selectLead = useCallback((leadId: number) => {
     setSelectedLeadId(leadId);
+    msgTransientErrorCountRef.current = 0; // lead切替時にリセット（前リードのエラーカウントを引き継がない）
     setShowKartePanel(false); // モバイルドロワーはリード切替時に閉じる
     setDraft("");
     setSendError("");
