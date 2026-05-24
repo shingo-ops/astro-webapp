@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer, Views, type View } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -298,7 +298,7 @@ export default function SchedulePage() {
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
-  const [currentView, setCurrentView] = useState<string>(Views.MONTH);
+  const [currentView, setCurrentView] = useState<View>(Views.MONTH);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [modalEvent, setModalEvent] = useState<CalEvent | null>(null);
@@ -329,7 +329,7 @@ export default function SchedulePage() {
   }, []);
 
   // イベント取得
-  const loadEvents = useCallback(async (view: string, date: Date) => {
+  const loadEvents = useCallback(async (view: View, date: Date) => {
     if (!status?.connected || loadingRef.current) return;
     loadingRef.current = true;
     setLoadingEvents(true);
@@ -394,7 +394,7 @@ export default function SchedulePage() {
     loadEvents(currentView, date);
   };
 
-  const handleViewChange = (view: string) => {
+  const handleViewChange = (view: View) => {
     setCurrentView(view);
     loadEvents(view, currentDate);
   };
@@ -554,7 +554,7 @@ export default function SchedulePage() {
                 endAccessor="end"
                 culture="ja"
                 messages={messages}
-                view={currentView as Parameters<typeof Calendar>[0]["view"]}
+                view={currentView}
                 onView={handleViewChange}
                 date={currentDate}
                 onNavigate={handleNavigate}
