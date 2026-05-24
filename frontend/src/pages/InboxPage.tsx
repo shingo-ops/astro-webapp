@@ -949,7 +949,6 @@ html.force-dark .inbox-wrapper {
     border-top: none !important; border-radius: 0 !important;
     z-index: var(--z-drawer);
     transform: translateX(100%);
-    transition: transform var(--transition-slow);
     box-shadow: var(--shadow-xl);
   }
   .inbox-right-panel.karte-open {
@@ -1022,7 +1021,6 @@ html.force-dark .inbox-wrapper {
     border-top: 1px solid var(--border) !important;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
     transform: translateY(100%) !important;
-    transition: transform var(--transition-slow) !important;
     overflow-y: auto !important;
     box-shadow: var(--shadow-xl) !important;
   }
