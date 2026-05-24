@@ -1,0 +1,164 @@
+/* ============================================================
+   GoalSettingPage スタイル
+   Design tokens: var(--*) from tokens.css / index.css
+   Dark mode: :root.force-dark で同名トークンが上書き済み
+   ============================================================ */
+
+.gs-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  transition: background 0.15s;
+}
+
+.gs-back-btn:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+}
+
+.gs-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+@media (max-width: 720px) {
+  .gs-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── セクション ── */
+.gs-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.gs-section-title {
+  margin: 0;
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-primary);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* ── ブロック ── */
+.gs-block {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.gs-block-title {
+  margin: 0;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── 入力行 ── */
+.gs-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.gs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.gs-label {
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.gs-input-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.gs-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.gs-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.gs-input.gs-input-saved {
+  border-color: var(--success);
+  background: rgba(72, 187, 120, 0.05);
+}
+
+.gs-saved-mark {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--success);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-bold);
+  pointer-events: none;
+}
+
+/* ── 保存ボタン ── */
+.gs-save-btn {
+  align-self: flex-end;
+}
+
+/* ── チーム選択 ── */
+.gs-team-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.gs-select {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+
+/* ── 権限なしメッセージ ── */
+.gs-no-permission {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--border);
+}

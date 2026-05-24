@@ -520,6 +520,16 @@ jobs:
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_074_rename_english_name_to_nickname.py
 
+            # Migration 075: goals テーブル作成（ダッシュボード目標管理）
+            #   - 全テナント schema に goals テーブルを新設
+            #   - public.permissions に goals.view / goals.edit を追加
+            #   - 全ロールに goals.view、リーダー以上に goals.edit を割当
+            #   - CREATE TABLE IF NOT EXISTS / ON CONFLICT DO NOTHING で idempotent
+            #   関連: PR #699 / ダッシュボード強化（目標管理・着地予測）
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/075_create_goals.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
