@@ -18,7 +18,7 @@
 </PageLayout>
 ```
 
-新規ページ: ja.json + en.json の `"nav"` セクションに同キー追加 → `navKey="nav.xxx"` で参照。
+新規ページ: ja.json + en.json の `"nav"` セクションに同キー追加 → `navKey="nav.xxx"` で参照。サブタイトルは `subtitleKey="xxx.subtitle"` で渡す（`.page-subtitle` クラスを直接 JSX に書かないこと・インラインスタイル禁止）。
 
 ---
 
