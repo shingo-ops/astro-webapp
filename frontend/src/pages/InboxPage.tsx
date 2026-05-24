@@ -215,7 +215,7 @@ html.force-dark .inbox-wrapper {
 /* タブボタン: 54pxバー内で36px高さ（中央寄せ） */
 .inbox-full-tab {
   height: var(--height-tab-item);
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-4);
   border: none;
   border-bottom: none;
   background: transparent;
