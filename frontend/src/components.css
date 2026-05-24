@@ -427,3 +427,15 @@
   opacity: 1;
   visibility: visible;
 }
+
+/* Top direction override: data-tooltip-pos="top" でボタンの上に表示 */
+[data-tooltip][data-tooltip-pos="top"]::after {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+[data-tooltip][data-tooltip-pos="top"]::before {
+  top: auto;
+  bottom: calc(100% + 4px);
+  border-bottom-color: transparent;
+  border-top-color: var(--tooltip-bg);
+}

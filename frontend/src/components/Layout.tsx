@@ -353,7 +353,7 @@ export default function Layout() {
         className="avatar-btn"
         onClick={() => setDrawerOpen(true)}
         aria-label={t("nav.openUserMenu")}
-        title={user?.email ?? ""}
+        data-tooltip={t("nav.openUserMenu")}
       >
         {user?.email ? user.email[0].toUpperCase() : <NAV_ICONS.logout size={18} />}
       </button>
@@ -379,7 +379,8 @@ export default function Layout() {
           <button
             className="user-drawer-close"
             onClick={() => setDrawerOpen(false)}
-            aria-label="Close"
+            aria-label={t("common.close")}
+            data-tooltip={t("common.close")}
           >
             <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
           </button>
