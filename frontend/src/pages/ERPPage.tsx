@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface SyncLog { id: number; sync_type: string; direction: string; record_count: number; status: string; error_message: string | null; started_at: string; completed_at: string | null; }
 
@@ -38,15 +39,14 @@ export default function ERPPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("erp.title")}</h2>
-        {hasPermission("erp.sync") && (
-          <button className="btn-primary" onClick={exportInvoices} disabled={exporting}>
-            {exporting ? t("erp.exporting") : t("erp.exportInvoices")}
-          </button>
-        )}
-      </div>
+    <PageLayout
+      navKey="nav.dataManagement"
+      headerAction={hasPermission("erp.sync") ? (
+        <button className="btn-primary" onClick={exportInvoices} disabled={exporting}>
+          {exporting ? t("erp.exporting") : t("erp.exportInvoices")}
+        </button>
+      ) : undefined}
+    >
       {error && <div className="error-message">{error}</div>}
       <h3 style={{ marginBottom: "var(--space-3)" }}>{t("erp.syncLogs")}</h3>
       {loading ? <div className="loading">{t("common.loading")}</div> : (
@@ -68,6 +68,6 @@ export default function ERPPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

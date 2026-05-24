@@ -14,6 +14,8 @@ import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import CompanyContactSelector from "../components/CompanyContactSelector";
 import { usePermissions } from "../hooks/usePermissions";
+import { useSSE } from "../hooks/useSSE";
+import { PageLayout } from "../components/PageLayout";
 
 /* ------------------------------------------------------------------ */
 /* Lead types                                                           */
@@ -127,6 +129,12 @@ export default function LeadsPage() {
     loadLeads();
   }, [loadLeads]);
 
+  // Phase 3 SSE: 他スタッフのリード作成・更新・削除を即時反映
+  useSSE({
+    endpoint: "/api/v1/leads/stream",
+    onUpdate: useCallback(() => { loadLeads(); }, [loadLeads]),
+  });
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
@@ -237,14 +245,12 @@ export default function LeadsPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("leads.title")}</h2>
-        {hasPermission("leads.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("leads.newLead")}</button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.leads"
+      headerAction={hasPermission("leads.create") ? (
+        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("leads.newLead")}</button>
+      ) : undefined}
+    >
       <div className="filter-bar">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">{t("leads.allStatuses")}</option>
@@ -409,6 +415,6 @@ export default function LeadsPage() {
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

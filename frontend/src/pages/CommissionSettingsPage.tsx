@@ -12,6 +12,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
+import { PageLayout } from "../components/PageLayout";
 
 type RoleKey = "sales" | "order" | "ship" | "purchase" | "trouble";
 type RateType = "rate" | "fixed";
@@ -169,11 +170,7 @@ export default function CommissionSettingsPage() {
     n.toLocaleString("ja-JP", { style: "currency", currency: "JPY" });
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("commissions.title")}</h2>
-      </div>
-
+    <PageLayout navKey="nav.commissionSettings">
       {loading ? (
         <div className="loading">{t("common.loading")}</div>
       ) : (
@@ -328,6 +325,6 @@ export default function CommissionSettingsPage() {
           </fieldset>
         </>
       )}
-    </div>
+    </PageLayout>
   );
 }

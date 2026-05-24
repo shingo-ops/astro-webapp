@@ -352,3 +352,112 @@ class TestArchiveAuditLogsTask:
 
         # 失敗しても 2 テナントを試みる
         assert result["tenants_processed"] == 2
+
+
+class TestDeleteInBatches:
+    """maintenance._delete_in_batches のバッチ分割削除ロジックのテスト。"""
+
+    def _make_session_cm(self, rowcount: int):
+        """指定 rowcount を返すモックセッションコンテキストマネージャを生成する。"""
+        mock_result = MagicMock()
+        mock_result.rowcount = rowcount
+        mock_session = MagicMock()
+        mock_session.execute.return_value = mock_result
+        mock_session_cm = MagicMock()
+        mock_session_cm.__enter__.return_value = mock_session
+        mock_session_cm.__exit__.return_value = None
+        return mock_session_cm
+
+    def test_returns_zero_when_nothing_to_delete(self):
+        """削除対象がない場合は 0 を返す。"""
+        from app.tasks.maintenance import _delete_in_batches
+
+        session_cm = self._make_session_cm(rowcount=0)
+
+        with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: session_cm):
+            result = _delete_in_batches("public.data_access_events", "60 days")
+
+        assert result == 0
+
+    def test_returns_count_when_less_than_batch_size(self):
+        """1バッチ未満の削除件数を正しく返す。"""
+        from app.tasks.maintenance import _delete_in_batches
+
+        session_cm = self._make_session_cm(rowcount=42)
+
+        with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: session_cm):
+            result = _delete_in_batches("public.data_access_events", "60 days")
+
+        assert result == 42
+
+    def test_loops_when_full_batch_then_stops(self):
+        """バッチサイズと同数なら続行し、次が0件で終了する。"""
+        from app.tasks.maintenance import _delete_in_batches, _BATCH_SIZE
+
+        # 1回目: バッチサイズ丁度（継続）、2回目: 0件（終了）
+        rowcounts = iter([_BATCH_SIZE, 0])
+
+        def make_cm():
+            mock_result = MagicMock()
+            mock_result.rowcount = next(rowcounts)
+            mock_session = MagicMock()
+            mock_session.execute.return_value = mock_result
+            mock_session_cm = MagicMock()
+            mock_session_cm.__enter__.return_value = mock_session
+            mock_session_cm.__exit__.return_value = None
+            return mock_session_cm
+
+        with patch("app.tasks.maintenance._get_sync_engine", return_value=MagicMock()), \
+             patch("app.tasks.maintenance.sessionmaker", return_value=lambda: make_cm()), \
+             patch("app.tasks.maintenance.time") as mock_time:
+            result = _delete_in_batches("public.data_access_events", "60 days")
+
+        # 合計 = _BATCH_SIZE + 0
+        assert result == _BATCH_SIZE
+        # バッチ間スリープが1回呼ばれる
+        mock_time.sleep.assert_called_once()
+
+
+class TestPurgeDataAccessEvents:
+    """maintenance.purge_data_access_events のテスト。"""
+
+    def test_returns_deleted_count(self):
+        """削除件数を {"deleted": N} 形式で返す。"""
+        from app.tasks.maintenance import purge_data_access_events
+
+        with patch("app.tasks.maintenance._delete_in_batches", return_value=123) as mock_batch:
+            result = purge_data_access_events()
+
+        assert result == {"deleted": 123}
+        # public.data_access_events が対象テーブルであることを確認
+        args = mock_batch.call_args[0]
+        assert args[0] == "public.data_access_events"
+
+    def test_uses_retention_env_var(self):
+        """DATA_ACCESS_RETENTION_DAYS 環境変数が interval に反映される。"""
+        from app.tasks.maintenance import purge_data_access_events
+
+        with patch("app.tasks.maintenance._delete_in_batches", return_value=0) as mock_batch, \
+             patch("app.tasks.maintenance.DATA_ACCESS_RETENTION_DAYS", 45):
+            purge_data_access_events()
+
+        args = mock_batch.call_args[0]
+        assert "45" in args[1]
+
+
+class TestPurgeAuthEvents:
+    """maintenance.purge_auth_events のテスト。"""
+
+    def test_returns_deleted_count(self):
+        """削除件数を {"deleted": N} 形式で返す。"""
+        from app.tasks.maintenance import purge_auth_events
+
+        with patch("app.tasks.maintenance._delete_in_batches", return_value=77) as mock_batch:
+            result = purge_auth_events()
+
+        assert result == {"deleted": 77}
+        # public.auth_events が対象テーブルであることを確認
+        args = mock_batch.call_args[0]
+        assert args[0] == "public.auth_events"

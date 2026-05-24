@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface Badge { id: number; name: string; description: string | null; icon: string | null; criteria: string | null; points: number; is_active: boolean; created_at: string; }
 interface LeaderEntry { user_id: number; username: string | null; badge_count: number; total_points: number; }
@@ -34,11 +35,12 @@ export default function BadgesPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("badges.title")}</h2>
-        {hasPermission("badges.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("badges.newBadge")}</button>}
-      </div>
+    <PageLayout
+      navKey="nav.badges"
+      headerAction={hasPermission("badges.manage") ? (
+        <button className="btn-primary" onClick={() => setShowForm(true)}>{t("badges.newBadge")}</button>
+      ) : undefined}
+    >
       {error && <div className="error-message">{error}</div>}
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
@@ -92,6 +94,6 @@ export default function BadgesPage() {
           </div>
         </>
       )}
-    </div>
+    </PageLayout>
   );
 }

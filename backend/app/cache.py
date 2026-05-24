@@ -212,6 +212,103 @@ async def invalidate_tenant_permissions(tenant_id: int) -> None:
         logger.warning("テナント権限キャッシュ一括削除失敗")
 
 
+# === アバター画像URLキャッシュ ===
+# Meta Platform Terms: プロフィール画像URLは24時間以上の保存禁止 → 23h TTL で準拠
+AVATAR_TTL_META = 82800     # 23時間 (Messenger / Instagram)
+# キー形式: avatar:{platform}:{sender_id}
+
+
+async def get_avatar_url(platform: str, sender_id: str) -> Optional[str]:
+    """プラットフォームAPIから取得したアバター画像URLをキャッシュから返す。
+
+    キャッシュミス・Redis不通時はNone（fail-open）。
+    """
+    r = get_redis()
+    if not r:
+        return None
+    try:
+        return await r.get(f"avatar:{platform}:{sender_id}")
+    except Exception:
+        logger.warning("アバターキャッシュ読み取り失敗: platform=%s", platform)
+        return None
+
+
+async def set_avatar_url(platform: str, sender_id: str, url: str, ttl: int) -> None:
+    """アバター画像URLをキャッシュに保存する。
+
+    Redis不通・書き込み失敗時はサイレントに無視（avatar は非クリティカル）。
+    """
+    r = get_redis()
+    if not r:
+        return
+    try:
+        await r.setex(f"avatar:{platform}:{sender_id}", ttl, url)
+    except Exception:
+        logger.warning("アバターキャッシュ書き込み失敗: platform=%s", platform)
+
+
+async def get_avatar_urls_batch(
+    keys: list[tuple[str, str]],
+) -> dict[tuple[str, str], Optional[str]]:
+    """複数のアバター画像URLをmgetで一括取得する（N+1回避）。
+
+    Args:
+        keys: [(platform, sender_id), ...] のリスト
+
+    Returns:
+        {(platform, sender_id): url_or_none} の辞書
+    """
+    if not keys:
+        return {}
+    r = get_redis()
+    if not r:
+        return {k: None for k in keys}
+    try:
+        redis_keys = [f"avatar:{platform}:{sender_id}" for platform, sender_id in keys]
+        values = await r.mget(*redis_keys)
+        return {k: v for k, v in zip(keys, values)}
+    except Exception:
+        logger.warning("アバターキャッシュ一括読み取り失敗")
+        return {k: None for k in keys}
+
+
+# === ブルートフォース対策 ===
+# 認証失敗: IP単位、10回で15分ロック（Firebase token validation failure）
+AUTH_FAIL_MAX = 10
+AUTH_FAIL_LOCKOUT_TTL = 900  # 15分
+
+
+async def check_auth_rate_limit(ip: str) -> bool:
+    """IPアドレス単位の認証失敗レートリミットを確認する。True=ロック中。
+
+    Redis不通時はfail-open（サービス継続優先）。
+    """
+    r = get_redis()
+    if not r:
+        return False
+    try:
+        key = f"auth_fail_ip:{hashlib.sha256(ip.encode()).hexdigest()[:16]}"
+        count = await r.get(key)
+        return int(count or 0) >= AUTH_FAIL_MAX
+    except Exception:
+        logger.warning("auth_rate_limit確認失敗: fail-openとして通過")
+        return False
+
+
+async def record_auth_failure(ip: str) -> None:
+    """認証失敗をIPアドレスに記録する。"""
+    r = get_redis()
+    if not r:
+        return
+    try:
+        key = f"auth_fail_ip:{hashlib.sha256(ip.encode()).hexdigest()[:16]}"
+        count = await r.incr(key)
+        if count == 1:
+            await r.expire(key, AUTH_FAIL_LOCKOUT_TTL)
+    except Exception:
+        logger.warning("認証失敗記録に失敗")
+
+
 async def is_token_blacklisted(token: str) -> bool:
     """
     トークンがブラックリストに含まれているか確認する。

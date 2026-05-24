@@ -33,6 +33,10 @@ const RETRYABLE_STATUS = new Set([502, 503, 504]);
 const MAX_RETRIES = 3;
 // 初回リトライまでの待機時間（ミリ秒）。指数バックオフで 500ms → 1000ms → 2000ms
 const BASE_DELAY_MS = 500;
+// fetchタイムアウト（ミリ秒）。重いSQLが最適化されたら 10_000 に短縮予定
+const FETCH_TIMEOUT_MS = 25_000;
+// Blob取得（CSVエクスポート等）のタイムアウト（ミリ秒）
+const BLOB_FETCH_TIMEOUT_MS = 120_000;
 
 async function getAuthHeaders(): Promise<HeadersInit> {
   const user = auth.currentUser;
@@ -61,10 +65,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       await sleep(BASE_DELAY_MS * Math.pow(2, attempt - 1));
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
     try {
       const res = await fetch(`${API_BASE}${path}`, {
         ...options,
         headers: { ...headers, ...options.headers },
+        signal: controller.signal,
       });
 
       // 5xx 系の一時エラーはリトライ
@@ -86,6 +94,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       if (res.status === 204) return undefined as T;
       return res.json();
     } catch (err) {
+      // タイムアウト（AbortError）はリトライせず即座に伝播
+      if (err instanceof Error && err.name === "AbortError") throw err;
       // ネットワークエラー（fetch 自体の失敗）はリトライ
       // fetch は TypeError を投げる（例: net::ERR_CONNECTION_REFUSED）
       if (err instanceof TypeError && attempt < maxRetries) {
@@ -93,6 +103,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         continue;
       }
       throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -112,8 +124,11 @@ async function requestBlob(path: string): Promise<Blob> {
     if (attempt > 0) {
       await sleep(BASE_DELAY_MS * Math.pow(2, attempt - 1));
     }
+    const blobController = new AbortController();
+    const blobTimeoutId = setTimeout(() => blobController.abort(), BLOB_FETCH_TIMEOUT_MS);
+
     try {
-      const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers: authOnly });
+      const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers: authOnly, signal: blobController.signal });
       if (RETRYABLE_STATUS.has(res.status) && attempt < MAX_RETRIES) {
         lastError = new Error(`HTTP ${res.status}`);
         continue;
@@ -124,11 +139,14 @@ async function requestBlob(path: string): Promise<Blob> {
       }
       return await res.blob();
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") throw err;
       if (err instanceof TypeError && attempt < MAX_RETRIES) {
         lastError = err;
         continue;
       }
       throw err;
+    } finally {
+      clearTimeout(blobTimeoutId);
     }
   }
   throw lastError || new Error("Blob 取得に失敗しました");

@@ -1,12 +1,13 @@
 /* PlatformIcon コンポーネント用スタイル（ADR-067 準拠: インラインhex禁止） */
 
-/* ベース: ブランドロゴ用（白背景） */
+/* ベース: ブランドロゴ用（白背景・円形クリッピング） */
 .platform-icon-wrap {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--bg-surface);
+  overflow: hidden;
 }
 
 /* Mail: Google レッド */
@@ -17,6 +18,6 @@
 /* 未知プラットフォーム: グレー */
 .platform-icon-wrap--unknown {
   display: inline-block;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--platform-unknown-bg);
 }

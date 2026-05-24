@@ -23,6 +23,7 @@ celery_app = Celery(
         "app.tasks.data_deletion",
         "app.tasks.email_tasks",
         "app.tasks.maintenance",
+        "app.tasks.avatar",
         "app.tasks.refresh_meta_tokens",
         "app.tasks.reports",
         "app.tasks.verify_meta_subscriptions",
@@ -46,6 +47,12 @@ celery_app.conf.update(
 
 # 定期タスクのスケジュール
 celery_app.conf.beat_schedule = {
+    # 顧客アバター画像URLを毎日AM2:00 JSTに全テナント分一括更新
+    # Meta Platform Terms: 24h超のキャッシュ禁止 → Redis TTL=23h と組み合わせて準拠
+    "refresh-all-avatars": {
+        "task": "app.tasks.avatar.refresh_all_avatars",
+        "schedule": crontab(hour=2, minute=0),
+    },
     # ダッシュボードKPIを10分ごとに全テナント分計算
     "refresh-dashboard-kpis": {
         "task": "app.tasks.dashboard.refresh_all_tenant_kpis",
@@ -65,5 +72,19 @@ celery_app.conf.beat_schedule = {
     "verify-meta-subscriptions": {
         "task": "app.tasks.verify_meta_subscriptions.verify_all_meta_subscriptions",
         "schedule": crontab(hour=4, minute=30),
+    },
+    # data_access_events の保持ポリシー（60日超を毎日 AM5:00 に削除）
+    # バッチ分割削除でロック競合・WAL肥大を防止
+    # 根拠: GDPR 30日+ セキュリティインシデント調査余裕 = 60日
+    "purge-data-access-events": {
+        "task": "app.tasks.maintenance.purge_data_access_events",
+        "schedule": crontab(hour=5, minute=0),
+    },
+    # auth_events の保持ポリシー（90日超を毎日 AM5:30 に削除）
+    # 30分ずらすことで data_access_events タスクとの重複実行を防止
+    # 根拠: SOC2・ISO27001 推奨の認証ログ保持期間
+    "purge-auth-events": {
+        "task": "app.tasks.maintenance.purge_auth_events",
+        "schedule": crontab(hour=5, minute=30),
     },
 }

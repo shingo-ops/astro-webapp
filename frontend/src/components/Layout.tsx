@@ -14,7 +14,7 @@
  *   2026-05-14: ADR-033 — テーマ切り替えボタン追加（useTheme）
  */
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { NAV_ICONS, THEME_ICONS, GlobeIcon, LeadChatIcon } from "../constants/icons";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import { useUiPrefs } from "../contexts/UiPrefsContext";
 import { usePermissions } from "../hooks/usePermissions";
 import { useSuperAdmin } from "../hooks/useSuperAdmin";
+import { useSSE } from "../hooks/useSSE";
+import { listConversations } from "../lib/messages";
 import ConfirmModal from "./ConfirmModal";
 import { ICON } from "../constants/iconSizes";
 
@@ -108,6 +110,21 @@ export default function Layout() {
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
+  // ---------------------------------------------------------------------------
+  // Phase 3: 未読バッジ（ナビ全体に表示）
+  // ---------------------------------------------------------------------------
+  const [unreadCount, setUnreadCount] = useState(0);
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const data = await listConversations({ unread_only: true });
+      setUnreadCount((data.conversations || []).length);
+    } catch {
+      // パーミッションなし・未認証等はバッジ非表示のまま維持
+    }
+  }, []);
+  useEffect(() => { loadUnreadCount(); }, [loadUnreadCount]);
+  useSSE({ endpoint: "/api/v1/conversations/stream", onUpdate: loadUnreadCount });
+
   const toggleAccordion = (key: string) => {
     const next = openAccordion === key ? null : key;
     setOpenAccordion(next);
@@ -123,11 +140,10 @@ export default function Layout() {
 
   const showLeadsLink = hasPermission("leads.view") || hasPermission("customers.view");
 
-  const salesItems: SubItem[] = [
-    ...(hasPermission("quotes.create") ? [{ to: "/quotes/new", label: t("nav.newQuote") }] : []),
-    ...(hasPermission("quotes.view") ? [{ to: "/quotes", label: t("nav.quoteHistory") }] : []),
-    ...(hasPermission("invoices.view") ? [{ to: "/invoices", label: t("nav.invoices") }] : []),
-  ];
+  const showSalesLink =
+    prefs.show_sales_menu &&
+    (hasPermission("quotes.view") || hasPermission("invoices.view"));
+  const salesLinkTo = hasPermission("quotes.view") ? "/quotes" : "/invoices";
 
   const adminItems: SubItem[] = [
     ...(hasPermission("customers.view") ? [
@@ -220,6 +236,14 @@ export default function Layout() {
                     <LeadChatIcon size={ICON.base} />
                   </span>
                   <span className="sidebar-label">{t("nav.leadChat")}</span>
+                  {unreadCount > 0 && (
+                    <span
+                      className="nav-unread-badge"
+                      aria-label={t("inbox.unreadBadge", { count: unreadCount })}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </NavLink>
               )}
 
@@ -249,16 +273,19 @@ export default function Layout() {
                 </NavLink>
               )}
 
-              {prefs.show_sales_menu && (
-                <SidebarAccordion
-                  label={t("nav.quotesInvoices")}
-                  icon={<NAV_ICONS.fileText size={ICON.base} />}
-                  items={salesItems}
-                  activePaths={["/quotes", "/invoices"]}
-                  isExpanded={sidebarExpanded}
-                  isOpen={openAccordion === "sales"}
-                  onToggle={() => toggleAccordion("sales")}
-                />
+              {showSalesLink && (
+                <NavLink
+                  to={salesLinkTo}
+                  className={() => {
+                    const on =
+                      location.pathname.startsWith("/quotes") ||
+                      location.pathname.startsWith("/invoices");
+                    return `sidebar-item${on ? " active" : ""}`;
+                  }}
+                >
+                  <span className="sidebar-icon"><NAV_ICONS.fileText size={ICON.base} /></span>
+                  <span className="sidebar-label">{t("nav.quotesInvoices")}</span>
+                </NavLink>
               )}
 
               <NavLink
@@ -267,6 +294,14 @@ export default function Layout() {
               >
                 <span className="sidebar-icon"><NAV_ICONS.report size={ICON.base} /></span>
                 <span className="sidebar-label">{t("nav.reports")}</span>
+              </NavLink>
+
+              <NavLink
+                to="/schedule"
+                className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+              >
+                <span className="sidebar-icon"><NAV_ICONS.schedule size={ICON.base} /></span>
+                <span className="sidebar-label">{t("nav.schedule")}</span>
               </NavLink>
 
               <NavLink
@@ -326,7 +361,7 @@ export default function Layout() {
         className="avatar-btn"
         onClick={() => setDrawerOpen(true)}
         aria-label={t("nav.openUserMenu")}
-        title={user?.email ?? ""}
+        data-tooltip={t("nav.openUserMenu")}
       >
         {user?.email ? user.email[0].toUpperCase() : <NAV_ICONS.logout size={18} />}
       </button>
@@ -352,7 +387,8 @@ export default function Layout() {
           <button
             className="user-drawer-close"
             onClick={() => setDrawerOpen(false)}
-            aria-label="Close"
+            aria-label={t("common.close")}
+            data-tooltip={t("common.close")}
           >
             <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
           </button>

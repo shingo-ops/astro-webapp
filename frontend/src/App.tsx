@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { IconContext } from "@phosphor-icons/react";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UiPrefsProvider } from "./contexts/UiPrefsContext";
 import { LocaleProvider } from "./contexts/LocaleContext";
@@ -8,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import GoalSettingPage from "./pages/GoalSettingPage";
 import CustomersPage from "./pages/CustomersPage";
 import CompaniesPage from "./pages/CompaniesPage";
 import CompanyDetailPage from "./pages/CompanyDetailPage";
@@ -29,6 +31,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import StaffReportsPage from "./pages/StaffReportsPage";
 import ArchivesPage from "./pages/ArchivesPage";
 import ShiftsPage from "./pages/ShiftsPage";
+import SchedulePage from "./pages/SchedulePage";
 import BuddyPage from "./pages/BuddyPage";
 import BadgesPage from "./pages/BadgesPage";
 import ERPPage from "./pages/ERPPage";
@@ -50,7 +53,12 @@ import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
 // spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
 import PhaseSwitchPage from "./pages/super-admin/PhaseSwitchPage";
-import "./App.css";
+import "./sidebar.css";
+import "./topbar.css";
+import "./components.css";
+import "./pages-layout.css";
+import "./company-forms.css";
+import "./responsive.css";
 
 function App() {
   const { t } = useTranslation();
@@ -58,6 +66,7 @@ function App() {
   //   - useNavigate などの react-router フックを将来 prefs フックから使えるようにする
   //   - インデント階層が PR diff として読みやすくなる
   return (
+    <IconContext.Provider value={{ weight: "light" }}>
     <AuthProvider>
       <BrowserRouter>
         <UiPrefsProvider>
@@ -73,6 +82,7 @@ function App() {
                   }
                 >
                   <Route path="/" element={<DashboardPage />} />
+                  <Route path="/goals/settings" element={<GoalSettingPage />} />
 
                   {/* リード系 */}
                   <Route path="/leads" element={<LeadsPage />} />
@@ -132,6 +142,7 @@ function App() {
                     element={<PurchaseOrdersPage />}
                   />
                   <Route path="/shifts" element={<ShiftsPage />} />
+                  <Route path="/schedule" element={<SchedulePage />} />
 
                   {/* Phase 1-D Sprint 3: Meta Inbox 接続管理 */}
                   <Route path="/channels" element={<ChannelsPage />} />
@@ -195,6 +206,7 @@ function App() {
         </UiPrefsProvider>
       </BrowserRouter>
     </AuthProvider>
+    </IconContext.Provider>
   );
 }
 

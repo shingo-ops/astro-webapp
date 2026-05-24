@@ -1,0 +1,275 @@
+name: Brand Asset Monitor (Quarterly)
+# ADR-068: プラットフォームブランドアセット四半期監視
+# 変更を検知した場合、自動でアセットをダウンロードし PR を作成する（自動マージしない）。
+# Meta CI ブロック時はフォールバック Issue を起票して手動対応を促す。
+
+on:
+  schedule:
+    - cron: '0 9 1 */3 *'   # 1月・4月・7月・10月の1日 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'PR/Issue を作成しない（バージョン確認のみ）'
+        required: false
+        default: 'false'
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────────
+  # Job 1: 変更検知
+  # ───────────────────────────────────────────────────────────────────────
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      needs_update:           ${{ steps.decide.outputs.needs_update }}
+      simple_icons_latest:    ${{ steps.latest.outputs.version }}
+      simple_icons_baseline:  ${{ steps.baseline.outputs.version }}
+      telegram_current:       ${{ steps.telegram.outputs.current }}
+      telegram_stored:        ${{ steps.telegram.outputs.stored }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # simple-icons 最新リリースタグ取得
+      # API 失敗時は exit 1 で誤検知防止（"null" 文字列流入を防ぐ）
+      - name: Get latest simple-icons release
+        id: latest
+        run: |
+          RESPONSE=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/simple-icons/simple-icons/releases/latest)
+          LATEST=$(echo "$RESPONSE" | jq -r '.tag_name // empty')
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            echo "::error::simple-icons API 取得失敗: $(echo "$RESPONSE" | jq -r '.message // "unknown error"')"
+            exit 1
+          fi
+          echo "version=$LATEST" >> "$GITHUB_OUTPUT"
+
+      # ベースライン読み込み（ファイル/キー欠損時 exit 1）
+      - name: Read baseline version
+        id: baseline
+        run: |
+          if [ ! -f ".github/brand-icon-versions.json" ]; then
+            echo "::error::brand-icon-versions.json not found"
+            exit 1
+          fi
+          BASELINE=$(jq -r '.simple_icons // empty' .github/brand-icon-versions.json)
+          if [ -z "$BASELINE" ]; then
+            echo "::error::simple_icons key missing in brand-icon-versions.json"
+            exit 1
+          fi
+          echo "version=$BASELINE" >> "$GITHUB_OUTPUT"
+
+      # Telegram SVG checksum（simple-icons と独立して変わりうる）
+      - name: Check Telegram SVG checksum
+        id: telegram
+        run: |
+          CURRENT=$(curl -s --max-time 15 https://telegram.org/img/t_logo.svg | sha256sum | cut -d' ' -f1)
+          STORED=$(jq -r '.assets.telegram.sha256 // empty' .github/brand-icon-versions.json)
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "stored=$STORED"   >> "$GITHUB_OUTPUT"
+
+      - name: Decide if update needed
+        id: decide
+        run: |
+          CHANGED=false
+          if [ "${{ steps.latest.outputs.version }}" != "${{ steps.baseline.outputs.version }}" ]; then
+            echo "simple-icons: ${{ steps.baseline.outputs.version }} → ${{ steps.latest.outputs.version }}"
+            CHANGED=true
+          fi
+          if [ -n "${{ steps.telegram.outputs.stored }}" ] && \
+             [ "${{ steps.telegram.outputs.current }}" != "${{ steps.telegram.outputs.stored }}" ]; then
+            echo "Telegram SHA256 changed"
+            CHANGED=true
+          fi
+          echo "needs_update=$CHANGED" >> "$GITHUB_OUTPUT"
+
+      # dry_run: Summary のみ出力（PR/Issue は作成しない）
+      - name: Dry run summary
+        if: github.event.inputs.dry_run == 'true'
+        run: |
+          {
+            echo "### Brand Asset Monitor — Dry Run"
+            echo ""
+            echo "| | stored | latest | changed |"
+            echo "|---|---|---|---|"
+            SI_CHANGED="${{ steps.baseline.outputs.version != steps.latest.outputs.version && 'YES' || '-' }}"
+            TEL_CHANGED="${{ steps.telegram.outputs.stored != steps.telegram.outputs.current && 'YES' || '-' }}"
+            echo "| simple-icons | \`${{ steps.baseline.outputs.version }}\` | \`${{ steps.latest.outputs.version }}\` | $SI_CHANGED |"
+            echo "| Telegram sha256 | \`${{ steps.telegram.outputs.stored }}\` | \`${{ steps.telegram.outputs.current }}\` | $TEL_CHANGED |"
+            echo ""
+            echo "**needs_update: ${{ steps.decide.outputs.needs_update }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ───────────────────────────────────────────────────────────────────────
+  # Job 2: アセット自動ダウンロード + PR 作成
+  # ───────────────────────────────────────────────────────────────────────
+  update-pr:
+    needs: detect
+    if: |
+      needs.detect.outputs.needs_update == 'true' &&
+      github.event.inputs.dry_run != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      meta_blocked: ${{ steps.dl.outputs.meta_blocked }}
+      branch:       ${{ steps.push.outputs.branch }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Playwright ブラウザのキャッシュ
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('frontend/package.json') }}
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      # Telegram: 直 URL から curl でダウンロード（常に成功）
+      - name: Download Telegram SVG
+        run: |
+          curl -sL --max-time 30 https://telegram.org/img/t_logo.svg \
+            -o frontend/public/brand-icons/telegram.svg
+          echo "✓ telegram.svg downloaded"
+
+      # Meta / Discord: Playwright スクリプト実行
+      # exit code 2 = Meta が CI IP をブロック → fallback job へ
+      - name: Download Meta & Discord assets
+        id: dl
+        run: |
+          node scripts/download-brand-assets.js
+          STATUS=$?
+          if [ "$STATUS" -eq 2 ]; then
+            echo "meta_blocked=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Meta assets blocked by CI IP. Fallback issue will be created."
+          elif [ "$STATUS" -ne 0 ]; then
+            exit "$STATUS"
+          fi
+
+      # Instagram 高解像度ファイル → 96px PNG（ImageMagick は ubuntu-latest に標準搭載）
+      - name: Convert Instagram to 96px PNG
+        if: steps.dl.outputs.meta_blocked != 'true'
+        run: |
+          if [ -f /tmp/brand-assets-dl/instagram_hires.svg ]; then
+            convert -background none -resize 96x96 \
+              /tmp/brand-assets-dl/instagram_hires.svg \
+              frontend/public/brand-icons/instagram.png
+            echo "✓ instagram.png converted from SVG"
+          elif [ -f /tmp/brand-assets-dl/instagram_hires.png ]; then
+            convert -resize 96x96 \
+              /tmp/brand-assets-dl/instagram_hires.png \
+              frontend/public/brand-icons/instagram.png
+            echo "✓ instagram.png resized from PNG"
+          fi
+
+      # brand-icon-versions.json 更新
+      - name: Update brand-icon-versions.json
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          TEL_SHA=$(sha256sum frontend/public/brand-icons/telegram.svg | cut -d' ' -f1)
+          jq \
+            --arg si  "${{ needs.detect.outputs.simple_icons_latest }}" \
+            --arg dt  "$TODAY" \
+            --arg sha "$TEL_SHA" \
+            '.simple_icons = $si | .last_checked = $dt
+             | .assets.telegram.sha256 = $sha
+             | .assets.telegram.updated = $dt' \
+            .github/brand-icon-versions.json > /tmp/biv.json
+          mv /tmp/biv.json .github/brand-icon-versions.json
+
+      # ブランチ作成・コミット・プッシュ
+      - name: Commit and push
+        id: push
+        run: |
+          BRANCH="chore/brand-asset-update-$(date +%Y%m%d)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add frontend/public/brand-icons/ .github/brand-icon-versions.json
+          if git diff --cached --quiet; then
+            echo "No file changes detected. Skipping PR creation."
+            exit 0
+          fi
+          git commit -m "chore: ブランドアセット更新 (simple-icons ${{ needs.detect.outputs.simple_icons_latest }})"
+          git push origin "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      # PR 作成
+      - name: Create PR
+        if: steps.push.outputs.branch != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          META_NOTE=""
+          if [ "${{ steps.dl.outputs.meta_blocked }}" = "true" ]; then
+            META_NOTE="
+          > ⚠️ **Meta アセット（Messenger / Instagram / WhatsApp）は CI runner IP にブロックされたため自動取得できませんでした。**
+          > 別途起票される Issue の手順に従い手動で更新し、このブランチに push してください。"
+          fi
+
+          gh pr create \
+            --base main \
+            --head "${{ steps.push.outputs.branch }}" \
+            --title "🎨 [Brand Asset] 公式アセット自動更新 (simple-icons ${{ needs.detect.outputs.simple_icons_latest }})" \
+            --body "## 概要
+
+          四半期ブランドアセット監視ワークフローが変更を検知し、アセットを自動更新しました。
+
+          | | before | after |
+          |---|---|---|
+          | simple-icons | \`${{ needs.detect.outputs.simple_icons_baseline }}\` | \`${{ needs.detect.outputs.simple_icons_latest }}\` |
+          $META_NOTE
+
+          ## マージ前チェックリスト
+          - [ ] **Files changed** で各アイコンの外観が正常であることを視覚確認
+          - [ ] Meta アセット（Messenger / Instagram / WhatsApp）が最新版に更新されていること
+          - [ ] CI 全チェック通過を確認
+
+          ## 参照
+          - [simple-icons ${{ needs.detect.outputs.simple_icons_latest }} リリースノート](https://github.com/simple-icons/simple-icons/releases/tag/${{ needs.detect.outputs.simple_icons_latest }})
+          - [ADR-068](../docs/adr/ADR-068-platform-brand-asset-policy.md)" \
+            --label "auto-generated"
+
+  # ───────────────────────────────────────────────────────────────────────
+  # Job 3: Meta CI ブロック時のフォールバック Issue 起票
+  # ───────────────────────────────────────────────────────────────────────
+  fallback-issue:
+    needs: update-pr
+    if: needs.update-pr.outputs.meta_blocked == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create fallback issue for Meta assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "🎨 [Brand Asset] Meta アセット手動更新が必要（CI ブロック検知）" \
+            --body "自動 PR でMeta のアセットが更新できませんでした（CI runner の IP アドレスが Meta ページにブロックされました）。
+
+          ## 手動更新手順
+
+          1. ローカルで以下を実行してアセットを取得:
+             \`\`\`bash
+             node scripts/download-brand-assets.js messenger instagram whatsapp
+             # Instagram PNG 変換（macOS）:
+             sips -Z 96 /tmp/brand-assets-dl/instagram_hires.png --out frontend/public/brand-icons/instagram.png
+             \`\`\`
+          2. または各ページから手動ダウンロード:
+             - [ ] [Meta Messenger](https://www.meta.com/brand/resources/facebook/messenger-icon/) — SVG 取得
+             - [ ] [Meta Instagram](https://www.meta.com/brand/resources/instagram/instagram-brand/) — PNG 取得（96px にリサイズ）
+             - [ ] [Meta WhatsApp](https://www.meta.com/brand/resources/whatsapp/whatsapp-brand/) — SVG 取得
+          3. 自動 PR ブランチ（\`${{ needs.update-pr.outputs.branch }}\`）に push
+          4. PR をマージ" \
+            --label "auto-generated"

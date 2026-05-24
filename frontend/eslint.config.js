@@ -39,6 +39,20 @@ export default [
           message:
             "❌ インラインスタイルへのhex色ハードコード禁止（ADR-067）。CSS変数を使ってください: style={{ border: '1px solid var(--border-color)' }}",
         },
+        // opacity 数値直書き禁止: style={{ opacity: 0.5 }} ※文字列 var() は除外
+        {
+          selector:
+            "JSXAttribute[name.name='style'] Property[key.name='opacity'][value.type='Literal'][value.value!=/^var\\(/]",
+          message:
+            "❌ インラインスタイルへの opacity 数値直書き禁止（ADR-067）。CSS変数を使ってください: style={{ opacity: 'var(--opacity-dim)' }}",
+        },
+        // zIndex 数値直書き禁止: style={{ zIndex: 50 }} ※文字列 var() は除外
+        {
+          selector:
+            "JSXAttribute[name.name='style'] Property[key.name='zIndex'][value.type='Literal'][value.value!=/^var\\(/]",
+          message:
+            "❌ インラインスタイルへの zIndex 数値直書き禁止（ADR-067）。CSS変数を使ってください: style={{ zIndex: 'var(--z-topbar)' }}",
+        },
       ],
 
       // アイコン一元管理（ADR-067 拡張）:
@@ -64,6 +78,30 @@ export default [
     files: ['src/constants/icons.tsx'],
     rules: {
       'no-restricted-imports': 'off',
+    },
+  },
+
+  // PageLayout 強制（ADR-067 拡張）:
+  // pages/ 配下で raw <h2> を書かせない。<PageLayout navKey="nav.xxx"> を使うこと。
+  {
+    files: ['src/pages/**/*.tsx', 'src/pages/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXOpeningElement[name.name='h2']",
+          message:
+            '❌ raw <h2> 禁止（ADR-067）。<PageLayout navKey="nav.xxx"> を使ってください（frontend/CLAUDE.md 参照）',
+        },
+      ],
+    },
+  },
+
+  // 例外: PageLayout.tsx 自体は h2 を直接使ってよい（唯一の実装箇所）
+  {
+    files: ['src/components/PageLayout.tsx'],
+    rules: {
+      'no-restricted-syntax': 'off',
     },
   },
 ];

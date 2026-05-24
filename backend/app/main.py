@@ -12,6 +12,8 @@ _logger = logging.getLogger(__name__)
 from app.auth.dependencies import get_current_tenant, get_current_admin
 from app.cache import init_redis, close_redis
 from app.middleware.audit import AuditMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.session_guard import SessionGuardMiddleware
 from app.routers import health
 from app.routers import auth
 from app.routers import admin
@@ -42,6 +44,7 @@ from app.routers import purchase_orders
 from app.routers import tenant_profile  # Sprint 8 / F8: PO PDF / メール差出人情報
 from app.routers import duplicates
 from app.routers import analytics
+from app.routers import goals  # ダッシュボード強化: 目標管理
 from app.routers import notifications
 from app.routers import staff_reports
 from app.routers import archives
@@ -69,6 +72,7 @@ from app.routers import tenant_admin_inventory_visibility
 from app.routers import inventory_search
 # spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
 from app.routers import super_admin_phase_switch
+from app.routers import google_calendar  # Google Calendar OAuth 連携
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -144,8 +148,12 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-# 認証イベント自動記録ミドルウェア
+# 認証イベント・データアクセス自動記録ミドルウェア
 app.add_middleware(AuditMiddleware)
+# APIレート制限（認証済み100回/分、未認証60回/分）
+app.add_middleware(RateLimitMiddleware)
+# セッションハイジャック検知（物理的に不可能な移動のみ強制再認証）
+app.add_middleware(SessionGuardMiddleware)
 
 # --- 認証不要なルーター（明示的に除外） ---
 # /api/health はバージョンなし（監視ツールが固定URLを使うため）
@@ -274,6 +282,11 @@ app.include_router(
     analytics.router, prefix="/api/v1", tags=["analytics"],
     dependencies=[Depends(get_current_tenant)],
 )
+# ダッシュボード強化: 目標管理 (migration 075)
+app.include_router(
+    goals.router, prefix="/api/v1", tags=["goals"],
+    dependencies=[Depends(get_current_tenant)],
+)
 # Phase 4: コミュニケーション・運用
 app.include_router(
     notifications.router, prefix="/api/v1", tags=["notifications"],
@@ -372,6 +385,15 @@ app.include_router(
 # require_super_admin で保護 (router レベル + 各エンドポイントで重ねガード)
 app.include_router(
     super_admin_phase_switch.router, prefix="/api/v1", tags=["super-admin"],
+)
+
+# Google Calendar 連携
+# public_router: callback は Google からの redirect のため Bearer トークンなし（認証不要）
+app.include_router(google_calendar.public_router, prefix="/api/v1", tags=["google-calendar"])
+# router: それ以外は通常の tenant 認証必須
+app.include_router(
+    google_calendar.router, prefix="/api/v1", tags=["google-calendar"],
+    dependencies=[Depends(get_current_tenant)],
 )
 
 

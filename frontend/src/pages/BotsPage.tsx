@@ -11,6 +11,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
 import { STATUS_ICONS } from "../constants/icons";
 import { ICON } from "../constants/iconSizes";
+import { PageLayout } from "../components/PageLayout";
 
 interface Bot {
   id: number;
@@ -164,16 +165,14 @@ export default function BotsPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("bots.title")}</h2>
-        {hasPermission("bots.create") && (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
-            {t("bots.newBot")}
-          </button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.bots"
+      headerAction={hasPermission("bots.create") ? (
+        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
+          {t("bots.newBot")}
+        </button>
+      ) : undefined}
+    >
       {error && <div className="error-message">{error}</div>}
 
       {newApiKey && (
@@ -298,6 +297,6 @@ export default function BotsPage() {
         onConfirm={performRotate}
         onCancel={() => setRotateTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

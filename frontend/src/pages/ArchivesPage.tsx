@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface Archive { id: number; source_table: string; source_id: number; archived_by: number | null; archived_at: string; restored_at: string | null; }
 
@@ -25,8 +26,7 @@ export default function ArchivesPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header"><h2>{t("archives.title")}</h2></div>
+    <PageLayout navKey="nav.archive">
       {error && <div className="error-message">{error}</div>}
       {loading ? <div className="loading">{t("common.loading")}</div> : (
         <table className="data-table">
@@ -47,6 +47,6 @@ export default function ArchivesPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

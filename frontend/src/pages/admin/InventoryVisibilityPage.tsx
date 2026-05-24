@@ -14,6 +14,7 @@ import { api } from "../../lib/api";
 import { usePermissions } from "../../hooks/usePermissions";
 import { STATUS_ICONS } from "../../constants/icons";
 import { ICON } from "../../constants/iconSizes";
+import { PageLayout } from "../../components/PageLayout";
 
 interface MatrixRow {
   role_id: number;
@@ -112,23 +113,16 @@ export default function InventoryVisibilityPage() {
 
   if (!hasPermission("tenant.inventory_visibility.edit")) {
     return (
-      <div className="page">
-        <div className="page-header">
-          <h2>{t("inventoryVisibility.title")}</h2>
-        </div>
+      <PageLayout navKey="nav.inventoryVisibility">
         <div className="error-message" role="alert">
           {t("inventoryVisibility.permissionRequired")}
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="page inventory-visibility-page">
-      <div className="page-header">
-        <h2>{t("inventoryVisibility.title")}</h2>
-        <p className="page-subtitle">{t("inventoryVisibility.subtitle")}</p>
-      </div>
+    <PageLayout navKey="nav.inventoryVisibility" subtitleKey="inventoryVisibility.subtitle">
       {error && <div className="error-message">{error}</div>}
       {loading ? (
         <div>{t("inventoryVisibility.loadingMatrix")}</div>
@@ -184,6 +178,6 @@ export default function InventoryVisibilityPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

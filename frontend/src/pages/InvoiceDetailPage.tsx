@@ -98,6 +98,7 @@ export default function InvoiceDetailPage() {
   return (
     <div className="page">
       <div className="page-header">
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>{t("invoices.title")} — {invoice.invoice_number || `#${invoice.id}`}</h2>
         <div className="actions" style={{ display: "flex", gap: "var(--space-2)" }}>
           {invoice.status === "draft" && hasPermission("invoices.create") && (

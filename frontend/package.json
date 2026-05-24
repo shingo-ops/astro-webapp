@@ -16,7 +16,11 @@
     "check:dark-parity": "node scripts/check-dark-parity.js",
     "check:jsx-emoji": "node scripts/check-jsx-emoji.js",
     "check:css-var-fallbacks": "node scripts/check-css-var-fallbacks.js",
-    "check:all": "npm run lint && npm run check:css-colors && npm run check:dark-parity && npm run check:jsx-emoji && npm run check:css-var-fallbacks",
+    "check:css-values": "node scripts/check-css-hardcoded-values.js",
+    "check:nav-sync": "node scripts/check-nav-title-sync.js",
+    "check:claude-size": "node scripts/check-claude-size.js",
+    "check:page-layout": "node scripts/check-page-layout.js",
+    "check:all": "npm run check:claude-size && npm run lint && npm run check:css-colors && npm run check:dark-parity && npm run check:jsx-emoji && npm run check:css-var-fallbacks && npm run check:css-values && npm run check:nav-sync && npm run check:page-layout",
     "prepare": "cd .. && husky frontend/.husky"
   },
   "lint-staged": {
@@ -27,17 +31,22 @@
     ],
     "src/**/*.css": [
       "node scripts/check-css-hardcoded-colors.js",
-      "node scripts/check-css-var-fallbacks.js"
+      "node scripts/check-css-var-fallbacks.js",
+      "node scripts/check-css-hardcoded-values.js"
     ],
     "src/index.css": [
       "node scripts/check-dark-parity.js"
     ]
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "@types/react-big-calendar": "^1.16.3",
+    "date-fns": "^4.3.0",
     "firebase": "^11.0.0",
     "i18next": "^26.1.0",
     "lucide-react": "^1.14.0",
     "react": "^18.3.1",
+    "react-big-calendar": "^1.19.4",
     "react-dom": "^18.3.1",
     "react-i18next": "^17.0.7",
     "react-router-dom": "^7.0.0"

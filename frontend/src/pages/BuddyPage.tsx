@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface Pair { id: number; coach_user_id: number; mentee_user_id: number; is_active: boolean; started_at: string; ended_at: string | null; notes: string | null; }
 interface Feedback { id: number; pair_id: number; feedback_type: string; reason: string | null; created_by: number; created_at: string; }
@@ -39,11 +40,12 @@ export default function BuddyPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("buddy.title")}</h2>
-        {hasPermission("buddy.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("buddy.newPair")}</button>}
-      </div>
+    <PageLayout
+      navKey="nav.buddy"
+      headerAction={hasPermission("buddy.manage") ? (
+        <button className="btn-primary" onClick={() => setShowForm(true)}>{t("buddy.newPair")}</button>
+      ) : undefined}
+    >
       {error && <div className="error-message">{error}</div>}
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
@@ -94,6 +96,6 @@ export default function BuddyPage() {
           </table>
         </>
       )}
-    </div>
+    </PageLayout>
   );
 }

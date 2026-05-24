@@ -71,7 +71,9 @@ _LEADS_DDL = """
         competitor_check BOOLEAN NOT NULL DEFAULT 0,
         per_order_amount NUMERIC(15, 2),
         monthly_frequency NUMERIC(10, 2),
-        english_name VARCHAR(255)
+        nickname VARCHAR(255),
+        country VARCHAR(100),
+        target_titles VARCHAR(500)
     )
 """
 
@@ -686,7 +688,7 @@ def test_iter_inbound_messages_returns_empty_for_no_payload():
 async def test_persist_meta_message_creates_lead_for_messenger(db_session, webhook_env):
     from app.routers import webhook as wh
 
-    msg_id = await wh._persist_meta_message(
+    msg_id, _lead_id = await wh._persist_meta_message(
         db_session,
         tenant_id=999,
         platform="messenger",
@@ -725,7 +727,7 @@ async def test_persist_meta_message_creates_lead_for_messenger(db_session, webho
 async def test_persist_meta_message_creates_lead_for_instagram(db_session, webhook_env):
     from app.routers import webhook as wh
 
-    msg_id = await wh._persist_meta_message(
+    msg_id, _lead_id = await wh._persist_meta_message(
         db_session,
         tenant_id=999,
         platform="instagram",
@@ -757,7 +759,7 @@ async def test_persist_meta_message_skips_duplicate_message_id(
     """同じ message_id が来たら 2 回目は INSERT されず None が返る。"""
     from app.routers import webhook as wh
 
-    first = await wh._persist_meta_message(
+    first_id, _lead_id = await wh._persist_meta_message(
         db_session,
         tenant_id=999,
         platform="messenger",
@@ -767,7 +769,7 @@ async def test_persist_meta_message_skips_duplicate_message_id(
         timestamp=1,
         has_attachments=False,
     )
-    second = await wh._persist_meta_message(
+    second_id, _lead_id2 = await wh._persist_meta_message(
         db_session,
         tenant_id=999,
         platform="messenger",
@@ -777,8 +779,8 @@ async def test_persist_meta_message_skips_duplicate_message_id(
         timestamp=1,
         has_attachments=False,
     )
-    assert first is not None
-    assert second is None
+    assert first_id is not None
+    assert second_id is None
     res = await db_session.execute(text(
         "SELECT COUNT(*) FROM meta_messages WHERE message_id = 'mid-dup'"
     ))

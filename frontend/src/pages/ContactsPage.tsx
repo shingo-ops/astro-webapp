@@ -275,7 +275,7 @@ export default function ContactsPage() {
     <div className="page-container">
       <div className="page-header">
         <h1>
-          {t("contacts.title")}
+          {t("nav.contacts")}
           {pendingDedupCount > 0 && (
             <span className="dedup-summary">
               {t("contacts.pendingDedupCount", { count: pendingDedupCount })}
@@ -374,6 +374,7 @@ export default function ContactsPage() {
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line no-restricted-syntax */}
             <h2>{editId ? t("contacts.editContact") : t("contacts.newContact")}</h2>
             <form onSubmit={handleSubmit} className="form-grid">
               {!editId && (
@@ -470,7 +471,7 @@ export default function ContactsPage() {
                     <button
                       type="button"
                       disabled
-                      style={{ opacity: 0.6, cursor: "not-allowed" }}
+                      style={{ opacity: "var(--opacity-disabled)", cursor: "not-allowed" }}
                     >
                       {t("contacts.mergeAsDuplicate")}
                     </button>

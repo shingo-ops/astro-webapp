@@ -127,11 +127,19 @@ jobs:
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
-            docker compose down --remove-orphans || true
             docker compose up -d --build --remove-orphans
 
-            echo "Step 4: Waiting for services to become healthy..."
-            sleep 20
+            echo "Step 4: Waiting for backend to become healthy (max 120s)..."
+            timeout 120 bash -c '
+              until docker inspect --format="{{.State.Health.Status}}" astro-webapp-backend-1 2>/dev/null | grep -q "healthy"; do
+                sleep 5
+                echo "  ...waiting for backend healthcheck..."
+              done
+            ' || echo "Backend health wait timed out after 120s, proceeding with migrations..."
+
+            echo "Step 4b: Reloading nginx to refresh DNS resolution (zero-downtime)..."
+            docker exec astro-webapp-nginx-1 nginx -s reload
+            echo "nginx reload done."
 
             echo "============================================"
             echo "Code + env + docker compose phase done."
@@ -479,6 +487,48 @@ jobs:
             #   関連: PR #518 / .claude-pipeline/spec.md F9
             docker exec -w /app astro-webapp-backend-1 \
               python scripts/migrate_inventory_sprint9.py
+
+            # Security Hardening (migration 071): データアクセス監査ログテーブル（P2-1/P2-3）
+            #   - data_access_events テーブル新設（public スキーマ）
+            #   - event_type / user_email / client_ip / created_at インデックス
+            #   - CREATE TABLE IF NOT EXISTS で冪等。再実行しても安全。
+            #   関連: PR #572 / ADR セキュリティ強化計画
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/071_create_data_access_events.sql
+
+            # Retention Policy (migration 072): 保持ポリシー削除ジョブ用インデックス
+            #   - idx_data_access_events_created_at（単独インデックス）
+            #   - idx_auth_events_created_at（単独インデックス）
+            #   - CREATE INDEX CONCURRENTLY IF NOT EXISTS で冪等・ロックなし
+            #   関連: PR セキュリティ強化保持ポリシー実装
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/072_add_retention_indexes.sql
+
+            # Migration 073: LeadStatus 整理 — 受信箱タブを商談進捗ベースに変更
+            #   - 案件化 → 商談中 / AI対応中・コンタクト中・提案中 → 新規 / 保留 → 追客（短期）
+            #   - 全テナントの leads.status を更新（WHERE 条件付きで idempotent）
+            #   関連: PR #668 / 受信箱タブ商談進捗ベース変更
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_073_lead_status.py
+
+            # Migration 074: english_name → nickname カラムリネーム
+            #   - leads.english_name を nickname に改名（ADR-015 呼び名定義に統一）
+            #   - english_name が存在する場合のみ実行（冪等）
+            #   関連: PR #678 / 受信箱カルテ3タブ化・english_name削除
+            docker exec -w /app astro-webapp-backend-1 \
+              python scripts/migrate_074_rename_english_name_to_nickname.py
+
+            # Migration 075: goals テーブル作成（ダッシュボード目標管理）
+            #   - 全テナント schema に goals テーブルを新設
+            #   - public.permissions に goals.view / goals.edit を追加
+            #   - 全ロールに goals.view、リーダー以上に goals.edit を割当
+            #   - CREATE TABLE IF NOT EXISTS / ON CONFLICT DO NOTHING で idempotent
+            #   関連: PR #699 / ダッシュボード強化（目標管理・着地予測）
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/075_create_goals.sql
 
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため

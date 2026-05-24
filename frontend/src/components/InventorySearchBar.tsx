@@ -217,7 +217,7 @@ export default function InventorySearchBar({
           disabled={disabled}
           placeholder={placeholderText}
           data-testid={`${testIdPrefix}-input`}
-          style={{ flex: 1, minWidth: 120, padding: "var(--space-6px) var(--space-2)" }}
+          style={{ flex: 1, minWidth: "var(--min-width-input-sm)", padding: "var(--space-6px) var(--space-2)" }}
           aria-label={t("inventory.search.placeholder")}
         />
         <div
@@ -279,7 +279,7 @@ export default function InventorySearchBar({
           style={{
             marginTop: "var(--space-1)",
             color: "var(--color-warning)",
-            fontSize: "0.9em",
+            fontSize: "var(--font-base)",
           }}
         >
           {zeroStockWarning}
@@ -304,8 +304,8 @@ export default function InventorySearchBar({
             background: "var(--bg-surface)",
             border: "1px solid var(--border-color)",
             borderRadius: "var(--radius-sm)",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-            zIndex: 50,
+            boxShadow: "var(--shadow-md)",
+            zIndex: "var(--z-dropdown)",
           }}
         >
           {loading && (
@@ -390,7 +390,7 @@ export default function InventorySearchBar({
                           padding: "var(--space-2px) var(--space-6px)",
                           marginRight: "var(--space-6px)",
                           border: "1px solid var(--border-color)",
-                          borderRadius: 10,
+                          borderRadius: "var(--radius-xl)",
                           background: "var(--bg-badge)",
                         }}
                       >
@@ -444,7 +444,7 @@ export default function InventorySearchBar({
       {masked && (
         <div
           data-testid={`${testIdPrefix}-masked-indicator`}
-          style={{ fontSize: "0.8em", color: "var(--text-muted)", marginTop: "var(--space-2px)" }}
+          style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", marginTop: "var(--space-2px)" }}
         >
           {t("inventory.search.stockMaskedNote")}
         </div>

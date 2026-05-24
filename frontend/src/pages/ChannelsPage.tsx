@@ -25,6 +25,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { usePermissions } from "../hooks/usePermissions";
 import { STATUS_ICONS } from "../constants/icons";
 import { ICON } from "../constants/iconSizes";
+import { PageLayout } from "../components/PageLayout";
 
 interface Channel {
   page_id: string;
@@ -194,7 +195,7 @@ export default function ChannelsPage() {
   // ----- バナー UI -----
   const bannerStyle: React.CSSProperties = banner
     ? {
-        padding: "12px 16px",
+        padding: "var(--space-3) var(--space-4)",
         borderRadius: "var(--radius-sm)",
         marginBottom: "var(--space-4)",
         background:
@@ -221,20 +222,18 @@ export default function ChannelsPage() {
 
   // ----- 描画 -----
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("channels.title")}</h2>
-        {canManage && (
-          <button
-            className="btn-primary"
-            onClick={handleConnect}
-            disabled={connecting}
-          >
-            {connecting ? t("channels.connecting") : t("channels.connect")}
-          </button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.channels"
+      headerAction={canManage ? (
+        <button
+          className="btn-primary"
+          onClick={handleConnect}
+          disabled={connecting}
+        >
+          {connecting ? t("channels.connecting") : t("channels.connect")}
+        </button>
+      ) : undefined}
+    >
       {banner && (
         <div style={bannerStyle} role={banner.type === "error" ? "alert" : "status"}>
           <span style={{ marginRight: "var(--space-2)" }} aria-hidden="true">
@@ -321,7 +320,7 @@ export default function ChannelsPage() {
           className="card"
           style={{
             textAlign: "center",
-            padding: "48px 24px",
+            padding: "var(--space-12) var(--space-6)",
           }}
         >
           <h3 style={{ marginTop: 0 }}>{t("channels.noChannels")}</h3>
@@ -333,7 +332,7 @@ export default function ChannelsPage() {
               className="btn-primary"
               onClick={handleConnect}
               disabled={connecting}
-              style={{ fontSize: "var(--font-md)", padding: "12px 24px" }}
+              style={{ fontSize: "var(--font-md)", padding: "var(--space-3) var(--space-6)" }}
             >
               {connecting ? t("channels.connecting") : t("channels.connect")}
             </button>
@@ -391,7 +390,7 @@ export default function ChannelsPage() {
                       <div>
                         <strong>{t("channels.instagramLinked")}:</strong> @{ch.instagram_username}
                         {ch.instagram_business_account_id && (
-                          <span className="mono" style={{ marginLeft: "var(--space-6px)", opacity: 0.7 }}>
+                          <span className="mono" style={{ marginLeft: "var(--space-6px)", opacity: "var(--opacity-muted)" }}>
                             ({ch.instagram_business_account_id})
                           </span>
                         )}
@@ -445,6 +444,6 @@ export default function ChannelsPage() {
         onConfirm={performDisconnect}
         onCancel={() => setDisconnectTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

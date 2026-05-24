@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
+import { PageLayout } from "../../components/PageLayout";
 import KnowledgeAliasesTab from "./KnowledgeAliasesTab";
 import TcgSeriesTab from "./TcgSeriesTab";
 import DexTab from "./DexTab";
@@ -32,14 +33,11 @@ export default function MastersPage() {
 
   if (!isSuperAdmin) {
     return (
-      <div className="page">
-        <div className="page-header">
-          <h2>{t("superAdmin.title")}</h2>
-        </div>
+      <PageLayout navKey="nav.superAdminMasters">
         <div className="error-message" role="alert">
           {t("superAdmin.accessDenied")}
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -52,11 +50,7 @@ export default function MastersPage() {
   ];
 
   return (
-    <div className="page super-admin-masters-page">
-      <div className="page-header">
-        <h2>{t("superAdmin.title")}</h2>
-        <p className="page-subtitle">{t("superAdmin.subtitle")}</p>
-      </div>
+    <PageLayout navKey="nav.superAdminMasters" subtitleKey="superAdmin.subtitle">
       <div
         className="super-admin-tabs"
         role="tablist"
@@ -84,6 +78,6 @@ export default function MastersPage() {
         {tab === "suppliers" && <SuppliersAdminTab />}
         {tab === "llmBudget" && <LLMBudgetTab />}
       </div>
-    </div>
+    </PageLayout>
   );
 }

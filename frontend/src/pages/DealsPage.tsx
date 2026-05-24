@@ -22,6 +22,7 @@ import { api } from "../lib/api";
 import ConfirmModal from "../components/ConfirmModal";
 import CompanyContactSelector from "../components/CompanyContactSelector";
 import { usePermissions } from "../hooks/usePermissions";
+import { PageLayout } from "../components/PageLayout";
 
 interface Deal {
   id: number;
@@ -191,24 +192,22 @@ export default function DealsPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>{t("deals.title")}</h2>
-        {hasPermission("deals.create") && (
-          <button
-            className="btn-primary"
-            onClick={() => {
-              setShowForm(true);
-              setEditId(null);
-              setForm(emptyForm);
-              resetSelector();
-            }}
-          >
-            {t("deals.newDeal")}
-          </button>
-        )}
-      </div>
-
+    <PageLayout
+      navKey="nav.deals"
+      headerAction={hasPermission("deals.create") ? (
+        <button
+          className="btn-primary"
+          onClick={() => {
+            setShowForm(true);
+            setEditId(null);
+            setForm(emptyForm);
+            resetSelector();
+          }}
+        >
+          {t("deals.newDeal")}
+        </button>
+      ) : undefined}
+    >
       <div className="filter-bar">
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="">{t("deals.allStatuses")}</option>
@@ -336,6 +335,6 @@ export default function DealsPage() {
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

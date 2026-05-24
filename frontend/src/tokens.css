@@ -21,7 +21,7 @@
   --font-3xl:           2rem;      /* 32px   — バッジアイコン等の特大表示 */
 
   /* 意味的例外（スケールに収まらない役割固有値） */
-  --font-sidebar-brand: 1.05rem;   /* サイドバーブランドロゴ文字 */
+  --font-sidebar-brand: 1.6rem;    /* サイドバーブランドロゴ文字 */
   --font-heading-lg:    1.4rem;    /* セクション大見出し */
   --font-display:       1.6rem;    /* ダッシュボード大数値 */
 
@@ -84,21 +84,38 @@
   --space-14px: 14px;  /* ボタン横余白 */
 
   /* ---- Border radius ---- */
+  --radius-2xs:  3px;   /* btn-sm・コードラベルの極小角丸 */
+  --radius-xs:   2px;   /* アバター・小アイコン・サムネイルの極小角丸 */
   --radius-sm:   4px;
   --radius-md:   6px;
   --radius-lg:   8px;
   --radius-xl:   12px;
+  --radius-badge: 10px;  /* バッジ・status-badge・dedup-summary */
+  --radius-pill: 20px;   /* ピル型ボタン・バッジ・入力欄の角丸（意味的例外トークン） */
   --radius-full: 9999px;
 
-  /* ---- Breakpoints（参照専用 — メディアクエリ条件式では CSS変数は使用不可。
-     ここで定義するのはチーム内の正規ブレークポイント合意のドキュメントとしての役割。
-     実際の @media 条件は値を直接記述する。） ---- */
-  --breakpoint-sm:  480px;   /* スマートフォン縦 */
-  --breakpoint-md:  768px;   /* タブレット縦 */
-  --breakpoint-lg: 1024px;   /* タブレット横・小型ノートPC */
+  /* ---- Breakpoints（参照専用 — CSS変数は @media 条件式では使用不可。
+     ここはチームの「公式ブレークポイント合意書」。
+     @media に書く値はここと一致させること。JS側は constants/breakpoints.ts を参照。
+
+     [3段階レスポンシブ設計]
+     モバイル         : <=767px    スマートフォン
+     中間〜タブレット : 768-1279px タブレット〜小型ノートPC（受信箱カルテをドロワーに）
+     デスクトップ     : >=1280px   MBP 13in以上（受信箱カルテ常時表示）
+
+     根拠: 左443px+右300px+サイドバー60px=803px。中央445px確保のため
+           1248px以上必要。MacBook Air 13in(1280px)を境界とした。
+           Salesforce SLDS / GitHub Primer の実質3段階設計と一致。
+     ---------------------------------------------------------------- */
+  --breakpoint-mobile-max:   767px;  /* モバイル上限     スマートフォン    */
+  --breakpoint-tablet-min:   768px;  /* タブレット下限   iPad縦向き以上    */
+  --breakpoint-tablet-max:  1279px;  /* タブレット上限   デスクトップ境界-1 */
+  --breakpoint-desktop-min: 1280px;  /* デスクトップ下限 MBP 13in以上      */
+  --breakpoint-xl-min:      1440px;  /* ワイド下限       FHD大画面（将来用）*/
 
   /* ---- Z-index ---- */
   --z-base:           10;
+  --z-dropdown:       50;   /* ドロップダウン・オートコンプリートサジェスト */
   --z-topbar:        100;
   --z-sidebar:       200;
   --z-sidebar-overlay: 210;
@@ -110,6 +127,7 @@
 
   /* ---- Motion / Transitions ---- */
   /* duration tokens — 値は ms 統一（Material Design 3 / Tailwind 準拠） */
+  --duration-base:      200ms;                               /* animation で easing を別指定する場合の duration 単体 */
   --transition-micro:   100ms ease;                          /* ボタン押下・スウォッチ */
   --transition-fast:    150ms ease;                          /* hover・カラー変化 */
   --transition-base:    200ms ease;                          /* フェードイン・スケール */
@@ -133,11 +151,32 @@
   --textarea-min-h:     80px;   /* テキストエリア最小高 */
   --topbar-height:      56px;   /* トップバー・ブランドバー高さ */
   --drawer-width:      300px;   /* ユーザードロワー幅 */
-  --logo-size:          36px;   /* サイドバー・ブランドバーのロゴアイコン正方形サイズ */
+  --logo-size:          36px;   /* サイドバー・ブランドバーのロゴアイコン正方形サイズ（折りたたみ・展開共通） */
+
+  /* ---- Sidebar icon alignment ---- */
+  /* 展開時の全ナビアイコン中心x座標（Single Source of Truth）
+     menu: border(3) + padding(20) + icon-center(10) = 33px
+     logo: padding-left = 33 - logo-size/2 = 33 - 18 = 15px（calc で参照）
+     collapsed は justify-content:center / sidebar-item padding(14px) で 27px(=54/2) に自動揃え */
+  --sidebar-nav-icon-center-x: 33px;
 
   /* ---- Layout constraints ---- */
   --max-width-page:     1200px; /* ページコンテンツ最大幅（.page / .page-container） */
   --max-width-truncate:  200px; /* テキスト切り捨て最大幅（ドロップダウン説明・ユーザー名等） */
+
+  /* ---- Page layout spacing（全ページ共通余白） ---- */
+  --page-padding-x:  var(--space-6);  /* 24px — 左右余白 */
+  --page-padding-y:  var(--space-2);  /*  8px — 上下余白 */
+  --page-header-mb:  var(--space-5);  /* 20px — 見出し下余白 */
+
+  /* ---- レイアウト高さ制約ルール（全ページ遵守必須） ----
+     .page-subtitle は margin-bottom: var(--space-3) = 12px（pages-layout.css）。
+     パネル・固定カラムをサブタイトル以下に収めるために CSS 変数ではなく
+     DOM 構造で制約する:
+       ✅ 正しい: ヘッダー要素と columns を flex-direction:column で積み、
+                 パネルは columns の子として配置（flex チェーンが自然に制限）
+       ❌ 誤り: パネルをヘッダーと同列の兄弟要素として配置（高さが画面最上部まで伸びる）
+     この設計を崩す変更は ADR を起案して PO 承認を得ること。 ---- */
 
   /* ---- Icon sizes ---- */
   /* Mirror: src/constants/iconSizes.ts — keep values in sync */
@@ -147,4 +186,28 @@
   --icon-lg:    24px;   /* 大アイコン */
   --icon-xl:    48px;   /* 空状態アイコン（empty state） */
   /* 注: ComingSoonPage の 64px アイコンは意図的に除外（一箇所のみの特殊値） */
+
+  /* ---- Opacity ---- */
+  --opacity-muted:     0.7;   /* タイムスタンプ・補足テキストの減光 */
+  --opacity-dim:       0.8;   /* ラベル減光・メタ情報（KPIラベル・ロールメタ） */
+  --opacity-soft:      0.9;   /* アクセントラベルの軽減光 */
+  --opacity-secondary: 0.85;  /* セカンダリラベル */
+  --opacity-hover:     0.75;  /* ホバー時の軽減光 */
+  --opacity-disabled:  0.6;   /* disabled 状態の入力・ボタン */
+  --opacity-skipped:   0.55;  /* スキップ行・除外コンテンツ */
+  --opacity-archived:  0.5;   /* アーカイブ行・非アクティブコンテンツ */
+  --opacity-overlay:   0.5;   /* モーダル・ドロワー背景の半透明オーバーレイ */
+
+  /* ---- Inbox component sizes (Meta実測値) ---- */
+  --height-tab-bar:       54px;   /* 受信箱タブバー高さ（36px × 1.5） */
+  --height-tab-item:      36px;   /* 受信箱タブボタン高さ（バー内で中央寄せ） */
+  --width-inbox-panel:   443px;   /* 受信箱左パネル幅 */
+  --min-height-conv-item:  92px;  /* 会話アイテム最小高 */
+  --min-width-dropdown:   180px;  /* 管理ドロップダウン最小幅 */
+
+  /* ---- Modal sizes ---- */
+  --max-width-modal-sm:   420px;  /* 確認モーダル・小型ダイアログ最大幅 */
+
+  /* ---- Field sizes ---- */
+  --min-width-input-sm:   120px;  /* 小型入力フィールド最小幅 */
 }
