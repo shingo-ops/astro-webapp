@@ -127,11 +127,15 @@ jobs:
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
-            docker compose down --remove-orphans || true
             docker compose up -d --build --remove-orphans
 
-            echo "Step 4: Waiting for services to become healthy..."
-            sleep 20
+            echo "Step 4: Waiting for backend to become healthy (max 120s)..."
+            timeout 120 bash -c '
+              until docker inspect --format="{{.State.Health.Status}}" astro-webapp-backend-1 2>/dev/null | grep -q "healthy"; do
+                sleep 5
+                echo "  ...waiting for backend healthcheck..."
+              done
+            ' || echo "Backend health wait timed out after 120s, proceeding with migrations..."
 
             echo "============================================"
             echo "Code + env + docker compose phase done."
