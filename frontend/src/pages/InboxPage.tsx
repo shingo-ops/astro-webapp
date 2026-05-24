@@ -547,6 +547,7 @@ html.force-dark .inbox-wrapper {
   flex-shrink: 0;
 }
 .inbox-header-action-btn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1925,8 +1926,8 @@ export default function InboxPage() {
                     type="button"
                     className="inbox-header-action-btn"
                     onClick={handleMarkUnread}
-                    title={t("inbox.markUnread")}
                     aria-label={t("inbox.markUnread")}
+                    data-tooltip={t("inbox.markUnread")}
                   >
                     <INBOX_ACTION_ICONS.markUnread size={ICON.sm} aria-hidden="true" />
                   </button>
@@ -1934,8 +1935,8 @@ export default function InboxPage() {
                     type="button"
                     className="inbox-header-action-btn"
                     onClick={handleExclude}
-                    title={t("inbox.exclude")}
                     aria-label={t("inbox.exclude")}
+                    data-tooltip={t("inbox.exclude")}
                   >
                     <INBOX_ACTION_ICONS.exclude size={ICON.sm} aria-hidden="true" />
                   </button>
@@ -1943,8 +1944,8 @@ export default function InboxPage() {
                     type="button"
                     className="inbox-header-action-btn danger"
                     onClick={handleDeleteLead}
-                    title={t("inbox.deleteLead")}
                     aria-label={t("inbox.deleteLead")}
+                    data-tooltip={t("inbox.deleteLead")}
                   >
                     <INBOX_ACTION_ICONS.delete size={ICON.sm} aria-hidden="true" />
                   </button>
