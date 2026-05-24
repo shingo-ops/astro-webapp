@@ -40,7 +40,7 @@ function dashboardMocks() {
     // 滞留商談アラート
     "GET /analytics/stalled-deals": {
       stalled_count: 0,
-      deals: [],
+      stalled_deals: [],
     },
     // 期間連動 KPI サマリー
     "GET /analytics/summary": {
