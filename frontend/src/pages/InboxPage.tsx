@@ -1176,12 +1176,12 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 .inbox-profile-modal {
   background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: var(--space-6);
-  min-width: 480px; max-width: 640px; width: 90%; max-height: 85vh;
+  min-width: 480px; max-width: 640px; width: 90%; height: 85vh;
   overflow-y: auto; box-shadow: var(--shadow-lg);
   display: flex; flex-direction: column; gap: var(--space-4);
 }
 .inbox-profile-modal-header {
-  display: flex; align-items: center; gap: var(--space-3);
+  display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0;
 }
 .inbox-profile-modal-close {
   margin-left: auto; background: transparent; border: none;
