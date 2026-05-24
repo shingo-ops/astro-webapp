@@ -445,7 +445,7 @@
     "subtitle": "Manage and respond to messages.",
     "fetchError": "Failed to load data",
     "unreadBadge": "{{count}} unread",
-    "karteToggle": "Karte",
+    "karteToggle": "Customer Info",
     "markUnread": "Mark as unread",
     "exclude": "Mark as excluded",
     "deleteLead": "Delete",
