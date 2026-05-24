@@ -677,6 +677,36 @@ async def get_user_name(
     return name
 
 
+async def get_user_profile_pic(
+    psid: str,
+    page_access_token: str,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
+) -> Optional[str]:
+    """Page Scoped User ID（PSID / IGSID）からプロフィール画像URLを取得する。
+
+    Meta Platform Terms 準拠: 取得したURLは24時間以内に廃棄すること。
+    呼び出し元（Celeryタスク）は Redis TTL=82800s(23h) でキャッシュする。
+
+    Returns:
+        プロフィール画像URL文字列（取得不能なら None）
+    """
+    if not psid:
+        raise ValueError("psid is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    body = await _request(
+        "GET",
+        f"{graph_base_url()}/{psid}",
+        params={"fields": "profile_pic", "access_token": page_access_token},
+        client=client,
+    )
+    url = body.get("profile_pic")
+    if not url or not isinstance(url, str):
+        return None
+    return url
+
+
 async def subscribe_page_to_app(
     page_id: str,
     page_access_token: str,

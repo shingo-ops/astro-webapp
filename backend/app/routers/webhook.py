@@ -445,14 +445,14 @@ async def _persist_meta_message(
     timestamp: Any,
     has_attachments: bool,
     page_id: Optional[str] = None,
-) -> Optional[int]:
+) -> tuple[Optional[int], int]:
     """leads upsert + meta_messages INSERT を共通化する Sprint 6 ヘルパー。
 
     既存 Messenger ロジックの構造をそのまま踏襲（ON CONFLICT DO NOTHING で並列防止 +
     Meta 再送による重複 message_id を弾く）。Instagram も同じパターンで動く。
 
     Returns:
-        新規 INSERT された meta_messages.id、重複（既存 message_id）なら None
+        (新規 INSERT された meta_messages.id または重複時 None, lead_id)
     """
     if platform not in ("messenger", "instagram"):
         raise ValueError(f"unsupported platform: {platform}")
@@ -572,7 +572,7 @@ async def _persist_meta_message(
     msg_inserted_id = ins.scalar_one_or_none()
     await db.commit()
     await reset_tenant_context(db, tenant_id)
-    return msg_inserted_id
+    return (msg_inserted_id, lead_id)
 
 
 async def process_messenger_event(body: dict) -> None:
@@ -636,7 +636,7 @@ async def process_messenger_event(body: dict) -> None:
                 await db.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
 
                 for m in messages:
-                    msg_id = await _persist_meta_message(
+                    msg_id, lead_id = await _persist_meta_message(
                         db,
                         tenant_id=tenant_id,
                         platform=platform,
@@ -653,6 +653,22 @@ async def process_messenger_event(body: dict) -> None:
                             m["message_id"],
                         )
                         continue
+
+                    # アバター画像URLをバックグラウンドで取得・キャッシュ
+                    # 例外は握り潰してWebhook処理本体に影響させない
+                    try:
+                        from app.tasks.avatar import fetch_avatar_for_lead
+                        fetch_avatar_for_lead.delay(
+                            lead_id=lead_id,
+                            platform=platform,
+                            sender_id=m["sender_id"],
+                            page_id=page_id_for_message or "",
+                            tenant_id=tenant_id,
+                        )
+                    except Exception:
+                        logging.warning(
+                            "[Meta] avatar fetch タスク投入失敗（Webhook処理は継続）"
+                        )
 
                     # Phase 2 SSE: DB 保存成功時のみ publish（重複スキップ時は送らない）
                     try:

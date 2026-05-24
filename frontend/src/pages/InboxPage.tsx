@@ -1224,6 +1224,11 @@ export default function InboxPage() {
   // 選択中会話
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(initialLeadId);
   const [messagesData, setMessagesData] = useState<MessagesResponse | null>(null);
+  // アバター画像ロード失敗済みのlead_idセット（onError時にイニシャルフォールバック）
+  const [avatarErrors, setAvatarErrors] = useState<Set<number>>(new Set());
+  const handleAvatarError = useCallback((leadId: number) => {
+    setAvatarErrors(prev => { const s = new Set(prev); s.add(leadId); return s; });
+  }, []);
   const [msgLoading, setMsgLoading] = useState(false);
   const [msgError, setMsgError] = useState("");
 
@@ -1280,6 +1285,7 @@ export default function InboxPage() {
         page_id: pageIdFilter || undefined,
       });
       setConversations(data.conversations || []);
+      setAvatarErrors(new Set()); // 新しい会話一覧取得時にアバターエラー状態をリセット
       transientErrorCountRef.current = 0; // 成功したら一時エラーカウントをリセット
     } catch (e) {
       // タイムアウトによるキャンセルはポーリング中の一時的な中断なのでバナーを出さない
@@ -1856,7 +1862,16 @@ export default function InboxPage() {
                     {/* アバター */}
                     <div className="conv-avatar-wrap">
                       <div className="conv-avatar">
-                        {getInitials(conv.customer_name)}
+                        {conv.profile_picture_url && !avatarErrors.has(conv.lead_id) ? (
+                          <img
+                            src={conv.profile_picture_url}
+                            alt={t("inbox.avatarAlt")}
+                            style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                            onError={() => handleAvatarError(conv.lead_id)}
+                          />
+                        ) : (
+                          getInitials(conv.customer_name)
+                        )}
                       </div>
                       <span className="conv-platform-dot">
                         <PlatformIcon platform={conv.platform} size={18} />
@@ -1905,9 +1920,18 @@ export default function InboxPage() {
               <header className="inbox-center-header">
                 {/* Meta実測: ヘッダーアバター 48×48px 円形 */}
                 <div className="conv-avatar" style={{ flexShrink: 0 }}>
-                  {getInitials(
-                    messagesData?.lead?.customer_name
-                    || selectedConversation?.customer_name
+                  {selectedConversation?.profile_picture_url && !avatarErrors.has(selectedConversation.lead_id) ? (
+                    <img
+                      src={selectedConversation.profile_picture_url}
+                      alt={t("inbox.avatarAlt")}
+                      style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                      onError={() => handleAvatarError(selectedConversation.lead_id)}
+                    />
+                  ) : (
+                    getInitials(
+                      messagesData?.lead?.customer_name
+                      || selectedConversation?.customer_name
+                    )
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -2122,7 +2146,16 @@ export default function InboxPage() {
               {/* ヘッダー（アバター左 + 表示名・リンク右） */}
               <div className="right-panel-header">
                 <div className="right-panel-avatar">
-                  {getInitials(cardForm.nickname || cardForm.customer_name || leadDetail.nickname || leadDetail.customer_name)}
+                  {selectedConversation?.profile_picture_url && !avatarErrors.has(selectedConversation.lead_id) ? (
+                    <img
+                      src={selectedConversation.profile_picture_url}
+                      alt={t("inbox.avatarAlt")}
+                      style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+                      onError={() => handleAvatarError(selectedConversation.lead_id)}
+                    />
+                  ) : (
+                    getInitials(cardForm.nickname || cardForm.customer_name || leadDetail.nickname || leadDetail.customer_name)
+                  )}
                 </div>
                 <div className="right-panel-header-info">
                   <span className="right-panel-display-name">
