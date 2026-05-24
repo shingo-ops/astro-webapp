@@ -55,8 +55,8 @@ async def main() -> None:
             schema = f"tenant_{tid:03d}"
             try:
                 async with engine.connect() as conn:
-                    # english_name カラムが存在するか確認（冪等チェック）
-                    result = await conn.execute(
+                    # english_name / nickname カラムの存在を確認（冪等チェック）
+                    r1 = await conn.execute(
                         text(
                             "SELECT COUNT(*) FROM information_schema.columns "
                             "WHERE table_schema = :schema AND table_name = 'leads' "
@@ -64,10 +64,22 @@ async def main() -> None:
                         ),
                         {"schema": schema},
                     )
-                    has_english_name = result.scalar() > 0
+                    has_english_name = r1.scalar() > 0
+                    r2 = await conn.execute(
+                        text(
+                            "SELECT COUNT(*) FROM information_schema.columns "
+                            "WHERE table_schema = :schema AND table_name = 'leads' "
+                            "AND column_name = 'nickname'"
+                        ),
+                        {"schema": schema},
+                    )
+                    has_nickname = r2.scalar() > 0
 
                 if not has_english_name:
                     logger.info("✓ %s (tenant_code=%s): english_name カラムなし → スキップ", schema, tc)
+                    continue
+                if has_nickname:
+                    logger.info("✓ %s (tenant_code=%s): nickname カラム既存 → スキップ", schema, tc)
                     continue
 
                 async with engine.begin() as conn:
