@@ -23,6 +23,7 @@ celery_app = Celery(
         "app.tasks.data_deletion",
         "app.tasks.email_tasks",
         "app.tasks.maintenance",
+        "app.tasks.avatar",
         "app.tasks.refresh_meta_tokens",
         "app.tasks.reports",
         "app.tasks.verify_meta_subscriptions",
@@ -46,6 +47,12 @@ celery_app.conf.update(
 
 # 定期タスクのスケジュール
 celery_app.conf.beat_schedule = {
+    # 顧客アバター画像URLを毎日AM2:00 JSTに全テナント分一括更新
+    # Meta Platform Terms: 24h超のキャッシュ禁止 → Redis TTL=23h と組み合わせて準拠
+    "refresh-all-avatars": {
+        "task": "app.tasks.avatar.refresh_all_avatars",
+        "schedule": crontab(hour=2, minute=0),
+    },
     # ダッシュボードKPIを10分ごとに全テナント分計算
     "refresh-dashboard-kpis": {
         "task": "app.tasks.dashboard.refresh_all_tenant_kpis",

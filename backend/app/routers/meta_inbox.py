@@ -947,6 +947,7 @@ async def list_conversations(
                 mm.lead_id,
                 mm.platform,
                 mm.page_id,
+                mm.sender_id,
                 mm.message_text,
                 mm.direction,
                 mm.created_at,
@@ -978,6 +979,7 @@ async def list_conversations(
             l.status                AS lead_status,
             lat.platform            AS platform,
             lat.page_id             AS page_id,
+            lat.sender_id           AS sender_id,
             lat.message_text        AS last_message_text,
             lat.direction           AS last_message_direction,
             lat.created_at          AS last_message_at,
@@ -1004,12 +1006,27 @@ async def list_conversations(
             detail="会話一覧の取得に失敗しました",
         )
 
+    # アバター画像URLをRedisからバッチ取得（N+1回避）
+    from app.cache import get_avatar_urls_batch
+    avatar_keys = [
+        (row["platform"], row["sender_id"])
+        for row in rows
+        if row.get("sender_id") and row.get("platform")
+    ]
+    avatar_map = await get_avatar_urls_batch(avatar_keys)
+
     conversations: list[dict] = []
     for row in rows:
         unread_count = int(row.get("unread_count") or 0)
         if unread_only and unread_count <= 0:
             continue
         last_inbound_at = _parse_iso_to_aware(row.get("last_inbound_at"))
+        sender_id = row.get("sender_id")
+        profile_picture_url = (
+            avatar_map.get((row["platform"], sender_id))
+            if sender_id
+            else None
+        )
         conversations.append({
             "lead_id": row["lead_id"],
             "lead_code": row["lead_code"],
@@ -1022,6 +1039,7 @@ async def list_conversations(
             "last_message_direction": row["last_message_direction"],
             "unread_count": unread_count,
             "messaging_window_expires_at": _compute_window_expires(last_inbound_at),
+            "profile_picture_url": profile_picture_url,
         })
 
     return {"conversations": conversations, "next_cursor": None}

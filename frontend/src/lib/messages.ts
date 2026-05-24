@@ -32,6 +32,8 @@ export interface Conversation {
   last_message_direction: "inbound" | "outbound" | string;
   unread_count: number;
   messaging_window_expires_at: string | null;
+  /** プラットフォームAPIから取得したアバター画像URL。取得不可・キャッシュ未生成の場合null */
+  profile_picture_url?: string | null;
 }
 
 export interface ConversationsResponse {
