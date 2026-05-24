@@ -137,6 +137,10 @@ jobs:
               done
             ' || echo "Backend health wait timed out after 120s, proceeding with migrations..."
 
+            echo "Step 4b: Reloading nginx to refresh DNS resolution (zero-downtime)..."
+            docker exec astro-webapp-nginx-1 nginx -s reload
+            echo "nginx reload done."
+
             echo "============================================"
             echo "Code + env + docker compose phase done."
             echo "============================================"
