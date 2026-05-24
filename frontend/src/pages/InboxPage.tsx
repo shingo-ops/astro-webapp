@@ -169,7 +169,6 @@ const INBOX_STYLES = `
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: transparent;
-  padding-left: var(--space-6);  /* 他ページと同じ 24px 左余白 */
   /* Meta実測値でCSS変数をスコープ上書き（ライトモード） */
   --accent:         rgb(10, 120, 190);
   --link-active-bg: rgb(225, 237, 247);
@@ -719,7 +718,6 @@ html.force-dark .inbox-wrapper {
   background: var(--bg-surface);
   border-left: 1px solid var(--inbox-separator);
   margin-left: var(--space-14px);
-  margin-right: var(--space-6);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -1003,7 +1001,6 @@ html.force-dark .inbox-wrapper {
   .inbox-wrapper {
     overflow-x: hidden;
     overflow-y: auto;
-    padding-left: var(--space-3);
   }
   .inbox-main-area { overflow: visible; }
   .inbox-columns   { flex-direction: column; overflow: visible; }
