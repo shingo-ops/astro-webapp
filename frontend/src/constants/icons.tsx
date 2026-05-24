@@ -28,6 +28,7 @@ import {
   SquaresFour, FileText, Question, ShieldCheck,
   DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
   Trash, Archive, EnvelopeOpen,
+  CalendarBlank,
   TrendUp, Bell, CalendarCheck, ArrowRight, Flag,
 } from "@phosphor-icons/react";
 
@@ -77,6 +78,7 @@ export const NAV_ICONS = {
   inventory:   Package,
   fileText:    FileText,
   report:      ChartBar,
+  schedule:    CalendarBlank,
   help:        Question,
   admin:       ShieldCheck,
   settings:    GearSix,
