@@ -169,7 +169,7 @@
 
   /* ---- Page layout spacing（全ページ共通余白） ---- */
   --page-padding-x:  var(--space-6);  /* 24px — 左右余白 */
-  --page-padding-y:  var(--space-2);  /*  8px — 上下余白 */
+  --page-padding-y:  var(--space-4);  /* 16px — 上下余白 */
   --page-header-mb:  var(--space-5);  /* 20px — 見出し下余白 */
   /* ---- Avatar Zone（固定アバターの占有座標 — Single Source of Truth）
      .avatar-btn の position:fixed 座標をここで一元定義する。
