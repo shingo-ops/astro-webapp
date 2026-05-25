@@ -63,15 +63,15 @@ export default function InboxPage() {
   const navigate = useNavigate();
 
   const headerActions = (
-    <>
+    <div className="inbox-header-btns">
       <button
         type="button"
-        className="inbox-settings-btn icon-frame"
+        className="inbox-faq-btn icon-frame"
         onClick={() => navigate("/faq")}
         aria-label={t("faq.title")}
         data-tooltip={t("faq.title")}
       >
-        <NAV_ICONS.help size={ICON.base} aria-hidden="true" />
+        FAQ
       </button>
       <button
         type="button"
@@ -82,7 +82,7 @@ export default function InboxPage() {
       >
         <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
       </button>
-    </>
+    </div>
   );
 
   return (
