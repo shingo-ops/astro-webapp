@@ -172,10 +172,10 @@ export function useInboxState(): UseInboxStateReturn {
   const [cardForm, setCardForm] = useState<Partial<LeadDetail>>({});
   const [cardSaveStatus, setCardSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [cardSaveError, setCardSaveError] = useState("");
-  const [karteTab, setKarteTab] = useState<"contact" | "company" | "deal">("contact");
+  const [karteTab, setKarteTab] = useState<"contact" | "company" | "deal">("deal");
   const [showKartePanel, setShowKartePanel] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [profileModalTab, setProfileModalTab] = useState<"contact" | "company" | "deal">("contact");
+  const [profileModalTab, setProfileModalTab] = useState<"contact" | "company" | "deal">("deal");
   const profileModalRef = useRef<HTMLDivElement>(null);
 
   // 入力欄

@@ -70,25 +70,75 @@
 }
 
 /* ============================================================
-   ヘッダー（曜日行）
+   ヘッダー（曜日行 — Google Calendar 準拠 2行レイアウト）
    ============================================================ */
 
 .fc .fc-col-header-cell {
+  border-bottom: 1px solid var(--calendar-grid-border);
+  background: var(--bg-surface);
+  padding: 0;
+}
+
+.fc .fc-col-header-cell-cushion {
+  padding: 0;
+  text-decoration: none !important;
+  display: block;
+}
+
+/* 週/日ビュー: 曜日 + 日付数字の 2 行 */
+.gcal-day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-2) 0 var(--space-1);
+  gap: 2px;
+  text-decoration: none;
+}
+
+.gcal-day-header__name {
+  font-size: 11px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  line-height: 1;
+}
+
+.gcal-day-header__num {
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  line-height: 1;
+  transition: background var(--transition-fast);
+}
+
+.gcal-day-header__num:hover {
+  background: var(--bg-hover);
+}
+
+/* 今日: Google Blue 丸バッジ */
+.gcal-day-header__num.today {
+  background: var(--calendar-today-bg);
+  color: var(--calendar-today-text);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 月ビュー: 曜日のみ（1 行） */
+.gcal-month-col-name {
+  display: block;
   font-size: var(--font-xs);
   font-weight: var(--font-weight-medium);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--calendar-grid-border);
-  background: var(--bg-surface);
-}
-
-/* 今日の列ヘッダー（Google Blue 円バッジ） */
-.fc .fc-col-header-cell.fc-day-today a,
-.fc .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
-  color: var(--calendar-google-blue);
-  font-weight: var(--font-weight-bold);
+  text-align: center;
 }
 
 /* ============================================================

@@ -65,6 +65,36 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _is_postgresql(db: AsyncSession) -> bool:
+    """db の dialect が PostgreSQL 系か判定する (Issue #766)。
+
+    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
+    "no such table: tenant_NNN.order_commissions" で失敗する。本判定で
+    SQLite 系を検出して prefix なしに倒す。
+    """
+    bind = db.get_bind() if hasattr(db, "get_bind") else None
+    if bind is None:
+        bind = getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    return name.startswith("postgresql")
+
+
+def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
+    """tenant スキーマ修飾テーブル参照を返す (Issue #766)。
+
+    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
+    - SQLite (pytest): `{name}` (schema 概念なし)
+
+    AsyncSession の commit 後は新コネクションが払い出されて session-level
+    の search_path が失われる可能性があるため、raw text() を使う箇所では
+    schema prefix を明示するのが安全 (Issue #563 / #565 / #766)。
+    """
+    if _is_postgresql(db):
+        safe_id = int(tenant_id)
+        return f"tenant_{safe_id:03d}.{name}"
+    return name
+
+
 _COMMISSION_COLS = """
     oc.id, oc.order_id, oc.tenant_id, oc.role, oc.staff_id,
     oc.calculated_amount, oc.calculated_at, oc.notes,
@@ -89,10 +119,11 @@ def _row_to_response(row: dict) -> OrderCommissionResponse:
     )
 
 
-async def _ensure_order_exists(db: AsyncSession, order_id: int) -> dict:
-    """受注を取得して dict 化（id / status を含む）。なければ 404。"""
+async def _ensure_order_exists(db: AsyncSession, order_id: int, tenant_id: int) -> dict:
+    """受注を取得して dict 化（id / status を含む）。なければ 404 (Issue #766)。"""
+    orders_t = _t(db, tenant_id, "orders")
     res = await db.execute(
-        text("SELECT id, status FROM orders WHERE id = :id"),
+        text(f"SELECT id, status FROM {orders_t} WHERE id = :id"),
         {"id": order_id},
     )
     row = res.mappings().first()
@@ -104,10 +135,11 @@ async def _ensure_order_exists(db: AsyncSession, order_id: int) -> dict:
     return dict(row)
 
 
-async def _fetch_financial(db: AsyncSession, order_id: int) -> FinancialSnapshot | None:
+async def _fetch_financial(db: AsyncSession, order_id: int, tenant_id: int) -> FinancialSnapshot | None:
+    order_financials_t = _t(db, tenant_id, "order_financials")
     res = await db.execute(
         text(
-            "SELECT commission_base_amount FROM order_financials "
+            f"SELECT commission_base_amount FROM {order_financials_t} "
             "WHERE order_id = :order_id"
         ),
         {"order_id": order_id},
@@ -118,9 +150,10 @@ async def _fetch_financial(db: AsyncSession, order_id: int) -> FinancialSnapshot
 
 async def _fetch_rates(db: AsyncSession, tenant_id: int) -> CommissionRatesConfig:
     """テナント設定が無ければデフォルトを使う（recalc / 取得時の安全網）。"""
+    tenant_commission_settings_t = _t(db, tenant_id, "tenant_commission_settings")
     res = await db.execute(
         text(
-            "SELECT commission_rates FROM tenant_commission_settings "
+            f"SELECT commission_rates FROM {tenant_commission_settings_t} "
             "WHERE tenant_id = :tenant_id"
         ),
         {"tenant_id": tenant_id},
@@ -143,15 +176,17 @@ async def _fetch_rates(db: AsyncSession, tenant_id: int) -> CommissionRatesConfi
 
 
 async def _fetch_staff_for_role(
-    db: AsyncSession, order_id: int, role: str
+    db: AsyncSession, order_id: int, role: str, tenant_id: int
 ) -> StaffSnapshot | None:
-    """order_commissions 行に紐づく staff の最小情報を返す。"""
+    """order_commissions 行に紐づく staff の最小情報を返す (Issue #766)。"""
+    order_commissions_t = _t(db, tenant_id, "order_commissions")
+    staff_t = _t(db, tenant_id, "staff")
     res = await db.execute(
         text(
-            """
+            f"""
             SELECT s.id, s.is_employee
-            FROM order_commissions oc
-            JOIN staff s ON s.id = oc.staff_id
+            FROM {order_commissions_t} oc
+            JOIN {staff_t} s ON s.id = oc.staff_id
             WHERE oc.order_id = :order_id AND oc.role = :role
             """
         ),
@@ -162,15 +197,17 @@ async def _fetch_staff_for_role(
 
 
 async def _fetch_all_staff_for_order(
-    db: AsyncSession, order_id: int
+    db: AsyncSession, order_id: int, tenant_id: int
 ) -> dict[str, StaffSnapshot | None]:
-    """5 ロール分の staff を一括取得。未割当ロールは None。"""
+    """5 ロール分の staff を一括取得。未割当ロールは None (Issue #766)。"""
+    order_commissions_t = _t(db, tenant_id, "order_commissions")
+    staff_t = _t(db, tenant_id, "staff")
     res = await db.execute(
         text(
-            """
+            f"""
             SELECT oc.role, s.id, s.is_employee
-            FROM order_commissions oc
-            LEFT JOIN staff s ON s.id = oc.staff_id
+            FROM {order_commissions_t} oc
+            LEFT JOIN {staff_t} s ON s.id = oc.staff_id
             WHERE oc.order_id = :order_id
             """
         ),
@@ -190,14 +227,16 @@ async def _fetch_all_staff_for_order(
 
 
 async def _get_one_commission_row(
-    db: AsyncSession, order_id: int, role: str
+    db: AsyncSession, order_id: int, role: str, tenant_id: int
 ) -> dict | None:
+    order_commissions_t = _t(db, tenant_id, "order_commissions")
+    staff_t = _t(db, tenant_id, "staff")
     res = await db.execute(
         text(
             f"""
             SELECT {_COMMISSION_COLS}
-            FROM order_commissions oc
-            LEFT JOIN staff s ON s.id = oc.staff_id
+            FROM {order_commissions_t} oc
+            LEFT JOIN {staff_t} s ON s.id = oc.staff_id
             WHERE oc.order_id = :order_id AND oc.role = :role
             """
         ),
@@ -207,13 +246,15 @@ async def _get_one_commission_row(
     return dict(row) if row else None
 
 
-async def _list_commissions(db: AsyncSession, order_id: int) -> list[dict]:
+async def _list_commissions(db: AsyncSession, order_id: int, tenant_id: int) -> list[dict]:
+    order_commissions_t = _t(db, tenant_id, "order_commissions")
+    staff_t = _t(db, tenant_id, "staff")
     res = await db.execute(
         text(
             f"""
             SELECT {_COMMISSION_COLS}
-            FROM order_commissions oc
-            LEFT JOIN staff s ON s.id = oc.staff_id
+            FROM {order_commissions_t} oc
+            LEFT JOIN {staff_t} s ON s.id = oc.staff_id
             WHERE oc.order_id = :order_id
             ORDER BY oc.role
             """
@@ -223,10 +264,11 @@ async def _list_commissions(db: AsyncSession, order_id: int) -> list[dict]:
     return [dict(r) for r in res.mappings().all()]
 
 
-async def _validate_staff(db: AsyncSession, staff_id: int) -> None:
-    """staff の存在を確認（テナント境界は search_path で担保）。"""
+async def _validate_staff(db: AsyncSession, staff_id: int, tenant_id: int) -> None:
+    """staff の存在を確認 (Issue #766: schema prefix 明示)。"""
+    staff_t = _t(db, tenant_id, "staff")
     res = await db.execute(
-        text("SELECT id FROM staff WHERE id = :id"),
+        text(f"SELECT id FROM {staff_t} WHERE id = :id"),
         {"id": staff_id},
     )
     if not res.first():
@@ -254,18 +296,19 @@ async def assign_commission(
     本エンドポイントは「割当」のみで calculated_amount は触らない。
     再計算は POST /orders/{id}/commissions/recalc で行う。
     """
-    await _ensure_order_exists(db, order_id)
+    await _ensure_order_exists(db, order_id, tenant_id)
     if data.staff_id is not None:
-        await _validate_staff(db, data.staff_id)
+        await _validate_staff(db, data.staff_id, tenant_id)
 
-    existing = await _get_one_commission_row(db, order_id, data.role)
+    existing = await _get_one_commission_row(db, order_id, data.role, tenant_id)
     old_data = dict(existing) if existing else None
 
+    order_commissions_t = _t(db, tenant_id, "order_commissions")
     if existing:
         await db.execute(
             text(
-                """
-                UPDATE order_commissions
+                f"""
+                UPDATE {order_commissions_t}
                 SET staff_id = :staff_id, updated_at = NOW()
                 WHERE order_id = :order_id AND role = :role
                 """
@@ -279,8 +322,8 @@ async def assign_commission(
     else:
         await db.execute(
             text(
-                """
-                INSERT INTO order_commissions
+                f"""
+                INSERT INTO {order_commissions_t}
                     (order_id, tenant_id, role, staff_id, calculated_amount)
                 VALUES
                     (:order_id, :tenant_id, :role, :staff_id, 0)
@@ -306,7 +349,7 @@ async def assign_commission(
     )
     await db.commit()
 
-    saved = await _get_one_commission_row(db, order_id, data.role)
+    saved = await _get_one_commission_row(db, order_id, data.role, tenant_id)
     if not saved:
         # 通常は到達しない（直前に UPSERT したため）
         raise HTTPException(
@@ -338,17 +381,18 @@ async def unassign_commission(
             detail=f"role は {sorted(ALL_ROLES)} のいずれかを指定してください",
         )
 
-    existing = await _get_one_commission_row(db, order_id, role)
+    existing = await _get_one_commission_row(db, order_id, role, tenant_id)
     if not existing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="該当ロールの報酬レコードが見つかりません",
         )
 
+    order_commissions_t = _t(db, tenant_id, "order_commissions")
     await db.execute(
         text(
-            """
-            UPDATE order_commissions
+            f"""
+            UPDATE {order_commissions_t}
             SET staff_id = NULL, calculated_amount = 0, calculated_at = NULL, updated_at = NOW()
             WHERE order_id = :order_id AND role = :role
             """
@@ -368,7 +412,7 @@ async def unassign_commission(
     )
     await db.commit()
 
-    saved = await _get_one_commission_row(db, order_id, role)
+    saved = await _get_one_commission_row(db, order_id, role, tenant_id)
     return _row_to_response(saved)  # type: ignore[arg-type]
 
 
@@ -384,8 +428,8 @@ async def list_order_commissions(
     current_user: User = Depends(get_current_user),
 ):
     """5 ロール分（未登録ロールは null）を返す。"""
-    await _ensure_order_exists(db, order_id)
-    rows = await _list_commissions(db, order_id)
+    await _ensure_order_exists(db, order_id, tenant_id)
+    rows = await _list_commissions(db, order_id, tenant_id)
     by_role: dict[str, OrderCommissionResponse | None] = {r: None for r in ALL_ROLES}
     for row in rows:
         by_role[row["role"]] = _row_to_response(row)
@@ -408,11 +452,11 @@ async def recalculate_order_commissions(
     再計算前後で行数は変わらない（既存行のみ更新）。
     未登録ロール（行なし）は計算結果が 0 でも DB には反映しない（割当時に作成）。
     """
-    order_row = await _ensure_order_exists(db, order_id)
+    order_row = await _ensure_order_exists(db, order_id, tenant_id)
     order_status = order_row.get("status")
     rates = await _fetch_rates(db, tenant_id)
-    financial = await _fetch_financial(db, order_id)
-    staff_by_role = await _fetch_all_staff_for_order(db, order_id)
+    financial = await _fetch_financial(db, order_id, tenant_id)
+    staff_by_role = await _fetch_all_staff_for_order(db, order_id, tenant_id)
     amounts = calculate_all(
         order_status=order_status,
         financial=financial,
@@ -421,12 +465,13 @@ async def recalculate_order_commissions(
     )
 
     now = datetime.now(timezone.utc)
+    order_commissions_t = _t(db, tenant_id, "order_commissions")
     for role, amount in amounts.items():
         # 既存の行があるロールのみ更新（行が無ければ「未割当でもなく未登録」なので skip）
         await db.execute(
             text(
-                """
-                UPDATE order_commissions
+                f"""
+                UPDATE {order_commissions_t}
                 SET calculated_amount = :amount,
                     calculated_at = :calc_at,
                     updated_at = NOW()
@@ -454,7 +499,7 @@ async def recalculate_order_commissions(
     )
     await db.commit()
 
-    rows = await _list_commissions(db, order_id)
+    rows = await _list_commissions(db, order_id, tenant_id)
     by_role: dict[str, OrderCommissionResponse | None] = {r: None for r in ALL_ROLES}
     for row in rows:
         by_role[row["role"]] = _row_to_response(row)
@@ -483,10 +528,12 @@ async def get_monthly_commissions(
       UTC 換算で SQL バインドし、TIMESTAMPTZ 比較で評価する。
     """
     start, end = _jst_month_range_utc(year, month)
+    order_commissions_t = _t(db, tenant_id, "order_commissions")
+    staff_t = _t(db, tenant_id, "staff")
 
     # by_staff（NULL は「未割当」としてまとめる）
     by_staff_sql = text(
-        """
+        f"""
         SELECT
             oc.staff_id,
             CASE
@@ -494,8 +541,8 @@ async def get_monthly_commissions(
                 ELSE (s.surname_jp || ' ' || s.given_name_jp)
             END AS staff_name,
             COALESCE(SUM(oc.calculated_amount), 0) AS total
-        FROM order_commissions oc
-        LEFT JOIN staff s ON s.id = oc.staff_id
+        FROM {order_commissions_t} oc
+        LEFT JOIN {staff_t} s ON s.id = oc.staff_id
         WHERE oc.calculated_at IS NOT NULL
           AND oc.calculated_at >= :start
           AND oc.calculated_at < :end
@@ -515,11 +562,11 @@ async def get_monthly_commissions(
 
     # by_role
     by_role_sql = text(
-        """
+        f"""
         SELECT
             role,
             COALESCE(SUM(calculated_amount), 0) AS total
-        FROM order_commissions
+        FROM {order_commissions_t}
         WHERE calculated_at IS NOT NULL
           AND calculated_at >= :start
           AND calculated_at < :end
