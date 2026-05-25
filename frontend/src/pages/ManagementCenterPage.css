@@ -28,7 +28,7 @@
   display: block;
   padding: var(--space-1) var(--space-4);
   font-size: var(--font-xs);
-  font-weight: var(--font-weight-semi);
+  font-weight: var(--font-weight-bold);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -55,6 +55,13 @@
   background: var(--sidebar-item-active-bg);
   color: var(--accent);
   font-weight: var(--font-weight-semi);
+}
+
+/* ── セクション間区切り線（2番目以降のみ） ── */
+.mc-subnav-section + .mc-subnav-section {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+  margin-top: var(--space-2);
 }
 
 /* ── 右コンテンツ ── */
