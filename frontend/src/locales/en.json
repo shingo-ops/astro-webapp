@@ -60,7 +60,8 @@
     "saved": "Saved",
     "requestFailed": "Request failed",
     "blobFetchFailed": "Failed to fetch file",
-    "downloadFailed": "Download failed"
+    "downloadFailed": "Download failed",
+    "devOnly": "DEV only"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -112,7 +113,8 @@
     "openUserMenu": "Open user menu",
     "switchToDark": "Dark mode",
     "switchToLight": "Light mode",
-    "managementCenter": "Management Center"
+    "managementCenter": "Management Center",
+    "designSystem": "Design System"
   },
   "managementCenter": {
     "sectionTeam":      "Team & HR",

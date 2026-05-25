@@ -1,6 +1,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
+import { PageLayout } from "../../components/PageLayout";
 import { usePermissions } from "../../hooks/usePermissions";
 
 interface Channel { id: number; channel_name: string; webhook_url: string; event_types: string; is_active: boolean; created_at: string; }
@@ -35,12 +36,14 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        {/* eslint-disable-next-line no-restricted-syntax */}
-        <h2>{t("settings.notifications")}</h2>
-        {hasPermission("notifications.manage") && <button className="btn-primary" onClick={() => setShowForm(true)}>{t("settings.addChannel")}</button>}
-      </div>
+    <PageLayout
+      navKey="nav.notifications"
+      headerAction={
+        hasPermission("notifications.manage") ? (
+          <button className="btn-primary" onClick={() => setShowForm(true)}>{t("settings.addChannel")}</button>
+        ) : undefined
+      }
+    >
       {error && <div className="error-message">{error}</div>}
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
@@ -75,6 +78,6 @@ export default function NotificationsPage() {
           </tbody>
         </table>
       )}
-    </div>
+    </PageLayout>
   );
 }

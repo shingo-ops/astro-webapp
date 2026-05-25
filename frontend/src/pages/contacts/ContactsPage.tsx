@@ -12,6 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
+import { PageLayout } from "../../components/PageLayout";
 import { usePermissions } from "../../hooks/usePermissions";
 import { STATUS_ICONS } from "../../constants/icons";
 import { ICON } from "../../constants/iconSizes";
@@ -272,30 +273,15 @@ export default function ContactsPage() {
   })();
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1>
-          {t("nav.contacts")}
+    <PageLayout
+      navKey="nav.contacts"
+      headerAction={
+        <div className="page-header-actions">
           {pendingDedupCount > 0 && (
             <span className="dedup-summary">
               {t("contacts.pendingDedupCount", { count: pendingDedupCount })}
             </span>
           )}
-        </h1>
-        <div className="page-header-actions">
-          <select value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)} className="search-input">
-            <option value="">{t("contacts.allCompanies")}</option>
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}（{c.company_code}）</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder={t("contacts.searchPlaceholder")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="search-input"
-          />
           {hasPermission("customers.create") && (
             <button
               className="btn-primary"
@@ -309,6 +295,22 @@ export default function ContactsPage() {
             </button>
           )}
         </div>
+      }
+    >
+      <div className="filter-bar">
+        <select value={companyFilter} onChange={(e) => setCompanyFilter(e.target.value)} className="search-input">
+          <option value="">{t("contacts.allCompanies")}</option>
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}（{c.company_code}）</option>
+          ))}
+        </select>
+        <input
+          type="text"
+          placeholder={t("contacts.searchPlaceholder")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search-input"
+        />
       </div>
 
       {error && <div className="error-banner">{error}</div>}
@@ -520,6 +522,6 @@ export default function ContactsPage() {
         onConfirm={handleResolveAsDistinct}
         onCancel={() => setDedupConfirmTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

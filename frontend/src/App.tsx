@@ -53,6 +53,8 @@ import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
 import PhaseSwitchPage from "./pages/super-admin/PhaseSwitchPage";
 import ManagementCenterPage from "./pages/management-center/ManagementCenterPage";
 import CustomerHubPage from "./pages/crm/CustomerHubPage";
+// ADR-069: デザインシステム パーツ保管庫（開発環境専用）
+import DesignSystemPage from "./pages/design-system/DesignSystemPage";
 import "./sidebar.css";
 import "./topbar.css";
 import "./components.css";
@@ -211,6 +213,11 @@ function App() {
                     path="/admin/tenant-profile"
                     element={<TenantProfilePage />}
                   />
+
+                  {/* ADR-069: デザインシステム パーツ保管庫（開発環境専用） */}
+                  {import.meta.env.DEV && (
+                    <Route path="/design-system" element={<DesignSystemPage />} />
+                  )}
 
                   {/* 管理センター: 左サブナビ + 右コンテンツのシェル。権限に基づいて項目を制御 */}
                   <Route path="/management-center" element={<ManagementCenterPage />}>

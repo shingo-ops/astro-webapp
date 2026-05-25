@@ -1,0 +1,135 @@
+/* ============================================================
+   ADR-069: デザインシステム パーツ保管庫ページ
+   開発環境専用。全値は CSS 変数経由（ハードコード禁止）。
+   ============================================================ */
+
+.ds-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-6);
+  max-width: var(--max-width-page);
+}
+
+/* ---- Section ---- */
+.ds-section {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.ds-section-title {
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---- Color Grid ---- */
+.ds-color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.ds-color-swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.ds-color-preview {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ds-color-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* ---- Typography Table ---- */
+.ds-type-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ds-type-table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--border);
+}
+
+.ds-type-table td {
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+/* ---- Token labels ---- */
+.ds-token-name {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--font-xs);
+  color: var(--accent);
+}
+
+.ds-token-label {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+/* ---- Component Grid ---- */
+.ds-component-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+.ds-component-block {
+  padding: var(--space-4);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ds-component-block--wide {
+  grid-column: 1 / -1;
+}
+
+.ds-component-label {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ---- DEV badge ---- */
+.ds-dev-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
