@@ -22,7 +22,7 @@ export function PageLayout({
   return (
     <div className="page-layout">
       <header className="page-layout-header">
-        <div className="page-layout-title-row">
+        <div className={`page-layout-title-row${subtitleKey ? " page-layout-title-row--has-subtitle" : ""}`}>
           <h2 className="text-page-title">{t(navKey)}</h2>
           {headerLeft}
           {headerAction && (
