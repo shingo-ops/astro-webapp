@@ -148,8 +148,8 @@ export default function Layout() {
     hasAny(
       "staff.view", "teams.view", "roles.view", "bots.view",
       "shifts.view", "channels.view", "erp.view", "orders.view",
-      "deals.view", "suppliers.view", "purchase_orders.view",
-      "tenant.profile.view", "tenant.inventory_visibility.edit",
+      "customers.view", "deals.view", "suppliers.view", "purchase_orders.view",
+      "tenant.profile.view",
     );
 
   const moreItems: NavItem[] = [
