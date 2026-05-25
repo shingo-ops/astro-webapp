@@ -74,6 +74,7 @@
    ============================================================ */
 
 .fc .fc-col-header-cell {
+  border-top: none;
   border-bottom: 1px solid var(--calendar-grid-border);
   border-left: none;
   border-right: 1px solid var(--calendar-grid-border);
@@ -196,8 +197,9 @@
 }
 
 /* 半時間の区切り線を非表示（Googleカレンダー準拠: 1時間線のみ） */
+/* FullCalendar は slot に border-top を使う（border-bottom: 0 がデフォルト）*/
 .fc .fc-timegrid-slot-minor {
-  border-bottom: none !important;
+  border-top: none !important;
 }
 
 /* 時間ラベルをグリッド線に揃える（Google Calendar 準拠: ラベル中心 = 線の位置） */
@@ -273,10 +275,10 @@
   border: none;
 }
 
-/* Excel風二重線防止: 上と左を除去し、右と下（列区切り・時間線）はFCデフォルトで表示 */
+/* Excel風二重線防止: 左を除去し、色をデザイントークンに統一 */
+/* border-top は除去しない（FC は border-top で水平線を描画するため） */
 .fc .fc-scrollgrid td,
 .fc .fc-scrollgrid th {
-  border-top: none;
   border-left: none;
   border-color: var(--calendar-grid-border);
 }
@@ -310,8 +312,15 @@
 }
 
 .fc .fc-timegrid-allday .fc-daygrid-day-events {
-  min-height: 24px;
-  padding: var(--space-1) 0;
+  min-height: 0;
+  padding: 0;
+}
+
+/* 終日エリアの二重線防止（ヘッダー下線との重複を除去） */
+.fc .fc-timegrid-allday td,
+.fc .fc-timegrid-allday th {
+  border-top: none;
+  border-bottom: none;
 }
 
 /* ============================================================
