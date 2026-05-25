@@ -26,6 +26,37 @@ from app.services.audit import record_audit_log
 
 router = APIRouter()
 
+
+def _is_postgresql(db: AsyncSession) -> bool:
+    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
+
+    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
+    "no such table: tenant_NNN.deals" で失敗する。本判定で SQLite 系を
+    検出して prefix なしに倒す。
+    """
+    bind = db.get_bind() if hasattr(db, "get_bind") else None
+    if bind is None:
+        bind = getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    return name.startswith("postgresql")
+
+
+def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
+    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
+
+    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
+    - SQLite (pytest): `{name}` (schema 概念なし)
+
+    AsyncSession の commit 後は新コネクションが払い出されて session-level
+    の search_path が失われる可能性があるため、raw text() を使う箇所では
+    schema prefix を明示するのが安全 (Issue #563 / #565)。
+    """
+    if _is_postgresql(db):
+        safe_id = int(tenant_id)
+        return f"tenant_{safe_id:03d}.{name}"
+    return name
+
+
 _DEAL_COLUMNS = """
     id, deal_code, company_id, contact_id, lead_id,
     title, amount, currency,
@@ -81,10 +112,11 @@ async def list_deals(
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
+    deals_t = _t(db, tenant_id, "deals")
     result = await db.execute(
         text(f"""
             SELECT {_DEAL_COLUMNS}
-            FROM deals
+            FROM {deals_t}
             {where_clause}
             ORDER BY updated_at DESC
             LIMIT :limit OFFSET :offset
@@ -107,8 +139,9 @@ async def get_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談詳細を取得する"""
+    deals_t = _t(db, tenant_id, "deals")
     result = await db.execute(
-        text(f"SELECT {_DEAL_COLUMNS} FROM deals WHERE id = :id"),
+        text(f"SELECT {_DEAL_COLUMNS} FROM {deals_t} WHERE id = :id"),
         {"id": deal_id},
     )
     row = result.mappings().first()
@@ -130,9 +163,12 @@ async def create_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談を登録する（deal_codeは自動採番）"""
+    deals_t = _t(db, tenant_id, "deals")
+    contacts_t = _t(db, tenant_id, "contacts")
+    leads_t = _t(db, tenant_id, "leads")
     # Step 5d: contact / company の存在 + 所属一致確認のみ
     contact_check = await db.execute(
-        text("SELECT company_id FROM contacts WHERE id = :id"),
+        text(f"SELECT company_id FROM {contacts_t} WHERE id = :id"),
         {"id": data.contact_id},
     )
     contact_row = contact_check.first()
@@ -146,13 +182,13 @@ async def create_deal(
 
     # リード存在確認（指定時のみ）
     if data.lead_id is not None:
-        lead_check = await db.execute(text("SELECT id FROM leads WHERE id = :id"), {"id": data.lead_id})
+        lead_check = await db.execute(text(f"SELECT id FROM {leads_t} WHERE id = :id"), {"id": data.lead_id})
         if not lead_check.first():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定されたリードが見つかりません")
 
     result = await db.execute(
-        text("""
-            INSERT INTO deals (
+        text(f"""
+            INSERT INTO {deals_t} (
                 tenant_id, company_id, contact_id, lead_id,
                 title, amount, currency,
                 status, stage, probability, lost_reason, assigned_to,
@@ -187,12 +223,12 @@ async def create_deal(
 
     # deal_code = DL-00001 形式で自動採番（Python側で生成してDB非依存）
     await db.execute(
-        text("UPDATE deals SET deal_code = :code WHERE id = :id"),
+        text(f"UPDATE {deals_t} SET deal_code = :code WHERE id = :id"),
         {"code": f"DL-{new_id:05d}", "id": new_id},
     )
 
     fetched = await db.execute(
-        text(f"SELECT {_DEAL_COLUMNS} FROM deals WHERE id = :id"),
+        text(f"SELECT {_DEAL_COLUMNS} FROM {deals_t} WHERE id = :id"),
         {"id": new_id},
     )
     row = fetched.mappings().first()
@@ -221,8 +257,12 @@ async def update_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談情報を更新する（部分更新）"""
+    deals_t = _t(db, tenant_id, "deals")
+    contacts_t = _t(db, tenant_id, "contacts")
+    companies_t = _t(db, tenant_id, "companies")
+    leads_t = _t(db, tenant_id, "leads")
     old_result = await db.execute(
-        text(f"SELECT {_DEAL_COLUMNS} FROM deals WHERE id = :id"),
+        text(f"SELECT {_DEAL_COLUMNS} FROM {deals_t} WHERE id = :id"),
         {"id": deal_id},
     )
     old_row = old_result.mappings().first()
@@ -244,7 +284,7 @@ async def update_deal(
 
         if target_contact_id is not None:
             contact_check = await db.execute(
-                text("SELECT company_id FROM contacts WHERE id = :id"),
+                text(f"SELECT company_id FROM {contacts_t} WHERE id = :id"),
                 {"id": target_contact_id},
             )
             contact_row = contact_check.first()
@@ -264,7 +304,7 @@ async def update_deal(
 
         elif target_company_id is not None and has_company_update:
             company_check = await db.execute(
-                text("SELECT id FROM companies WHERE id = :id"),
+                text(f"SELECT id FROM {companies_t} WHERE id = :id"),
                 {"id": target_company_id},
             )
             if not company_check.first():
@@ -276,7 +316,7 @@ async def update_deal(
     # lead_id を更新する場合は存在確認（指定された場合のみ、NULL クリアは許容）
     if "lead_id" in raw_update and raw_update["lead_id"] is not None:
         lead_check = await db.execute(
-            text("SELECT id FROM leads WHERE id = :id"),
+            text(f"SELECT id FROM {leads_t} WHERE id = :id"),
             {"id": raw_update["lead_id"]},
         )
         if not lead_check.first():
@@ -295,7 +335,7 @@ async def update_deal(
 
     result = await db.execute(
         text(f"""
-            UPDATE deals SET {set_clauses}, updated_at = NOW()
+            UPDATE {deals_t} SET {set_clauses}, updated_at = NOW()
             WHERE id = :id
             RETURNING {_DEAL_COLUMNS}
         """),
@@ -326,8 +366,9 @@ async def delete_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談を削除する"""
+    deals_t = _t(db, tenant_id, "deals")
     old_result = await db.execute(
-        text(f"SELECT {_DEAL_COLUMNS} FROM deals WHERE id = :id"),
+        text(f"SELECT {_DEAL_COLUMNS} FROM {deals_t} WHERE id = :id"),
         {"id": deal_id},
     )
     old_row = old_result.mappings().first()
@@ -335,7 +376,7 @@ async def delete_deal(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="商談が見つかりません")
 
     try:
-        await db.execute(text("DELETE FROM deals WHERE id = :id"), {"id": deal_id})
+        await db.execute(text(f"DELETE FROM {deals_t} WHERE id = :id"), {"id": deal_id})
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="delete", table_name="deals", record_id=deal_id,
