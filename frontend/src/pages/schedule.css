@@ -193,10 +193,6 @@
 
 .fc .fc-timegrid-slot {
   height: 80px;   /* 1時間 = 160px（30分スロット×2）— 旧: 40px */
-  border-bottom: 1px solid var(--calendar-grid-border);
-  border-top: none;
-  border-left: none;
-  border-right: none;
 }
 
 /* 半時間の区切り線を非表示（Googleカレンダー準拠: 1時間線のみ） */
@@ -277,15 +273,12 @@
   border: none;
 }
 
-/* 全ボーダーをリセット（Excelグリッド防止）→ 必要な線のみ個別に復元 */
+/* Excel風二重線防止: 上と左を除去し、右と下（列区切り・時間線）はFCデフォルトで表示 */
 .fc .fc-scrollgrid td,
 .fc .fc-scrollgrid th {
-  border: none;
-}
-
-/* 列区切り縦線: 各日付列の右側に */
-.fc .fc-timegrid-col {
-  border-right: 1px solid var(--calendar-grid-border);
+  border-top: none;
+  border-left: none;
+  border-color: var(--calendar-grid-border);
 }
 
 /* 時間ラベル列とグリッドの境界線を非表示（左端の余分な縦線を除去） */
