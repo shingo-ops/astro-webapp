@@ -190,12 +190,13 @@
    ============================================================ */
 
 .fc .fc-timegrid-slot {
-  height: 24px;
+  height: 40px;
   border-color: var(--calendar-grid-border);
 }
 
+/* 半時間の区切り線を非表示（Googleカレンダー準拠: 1時間線のみ） */
 .fc .fc-timegrid-slot-minor {
-  border-top-style: dotted;
+  border-top: none;
 }
 
 .fc .fc-timegrid-slot-label {

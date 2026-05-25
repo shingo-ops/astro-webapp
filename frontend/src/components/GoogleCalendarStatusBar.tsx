@@ -99,29 +99,8 @@ export function GoogleCalendarStatusBar({
 
   if (syncStatus === "loading") return null;
 
-  // 未連携：警告バーを出さず、管理者にだけ連携ボタンをコンパクトに表示
-  if (syncStatus === "not_linked") {
-    if (!canManage) return null;
-    return (
-      <div style={{ marginBottom: "var(--space-3)", display: "flex", justifyContent: "flex-end" }}>
-        <button
-          onClick={onConnect}
-          style={{
-            padding: "var(--space-1) var(--space-3)",
-            background: "var(--calendar-google-blue)",
-            color: "var(--on-accent)",
-            border: "none",
-            borderRadius: "var(--radius-sm)",
-            cursor: "pointer",
-            fontSize: "var(--font-sm)",
-            fontWeight: "var(--font-weight-medium)",
-          }}
-        >
-          {t("schedule.statusConnectPrompt")}
-        </button>
-      </div>
-    );
-  }
+  // 未連携：ページヘッダーの「Googleカレンダー連携」ボタンで対応するためここでは何も表示しない
+  if (syncStatus === "not_linked") return null;
 
   const configs = {
     connected: {
