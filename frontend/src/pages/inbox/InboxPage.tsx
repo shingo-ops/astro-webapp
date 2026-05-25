@@ -169,22 +169,6 @@ const INBOX_STYLES = `
   overflow: hidden;
   font-family: 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: transparent;
-  /* Meta実測値でCSS変数をスコープ上書き（ライトモード） */
-  --accent:         rgb(10, 120, 190);
-  --link-active-bg: rgb(225, 237, 247);
-  --text-primary:   rgb(28, 43, 51);
-  --border:         rgb(218, 221, 225);
-  --avatar-bg:      rgb(241, 244, 247);
-  --indicator:      rgb(24, 118, 242);
-}
-/* ダークモード時は dark 値に戻す */
-html.force-dark .inbox-wrapper {
-  --accent:         #818cf8;
-  --link-active-bg: #1e3a8a;
-  --text-primary:   #f1f5f9;
-  --border:         #334155;
-  --avatar-bg:      #334155;
-  --indicator:      #818cf8;
 }
 
 /* 左＋中央エリア（ヘッダー・タブ・カラム）— タブバーはここまで */

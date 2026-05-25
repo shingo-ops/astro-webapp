@@ -26,6 +26,8 @@
   --accent-hover: #166FE5;
   --link: #1877F2;               /* ナビゲーションリンク */
   --link-active-bg: #E7F3FF;
+  --avatar-bg: #f1f4f7;          /* アバター背景（会話リスト等） */
+  --indicator: #1877F2;          /* 選択中インジケーター（会話リスト等） */
 
   /* ナビゲーション（サイドバー時は使用しないが互換維持） */
   --nav-brand-bg: #1a365d;
@@ -168,6 +170,8 @@
   --accent-hover: #6366f1;
   --link: #93c5fd;
   --link-active-bg: #1e3a8a;
+  --avatar-bg: #334155;          /* アバター背景（ダーク） */
+  --indicator: #818cf8;          /* 選択中インジケーター（ダーク） */
 
   --nav-brand-bg: #0b1c33;
   --nav-brand-text: #f1f5f9;
