@@ -94,6 +94,8 @@
   --radius-badge: 10px;  /* バッジ・status-badge・dedup-summary */
   --radius-pill: 20px;   /* ピル型ボタン・バッジ・入力欄の角丸（意味的例外トークン） */
   --radius-full: 9999px;
+  --radius-bubble-out: 20.8px;                      /* Messenger outbound バブル（Meta実測値） */
+  --radius-bubble-in:  20.8px 20.8px 20.8px 4.8px; /* Messenger inbound バブル（テール付き） */
 
   /* ---- Breakpoints（参照専用 — CSS変数は @media 条件式では使用不可。
      ここはチームの「公式ブレークポイント合意書」。
