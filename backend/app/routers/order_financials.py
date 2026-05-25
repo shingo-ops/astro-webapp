@@ -50,6 +50,36 @@ from app.services.time import _jst_month_range_utc
 router = APIRouter()
 
 
+def _is_postgresql(db: AsyncSession) -> bool:
+    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
+
+    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
+    "no such table: tenant_NNN.order_financials" で失敗する。本判定で
+    SQLite 系を検出して prefix なしに倒す。
+    """
+    bind = db.get_bind() if hasattr(db, "get_bind") else None
+    if bind is None:
+        bind = getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    return name.startswith("postgresql")
+
+
+def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
+    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
+
+    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
+    - SQLite (pytest): `{name}` (schema 概念なし)
+
+    AsyncSession の commit 後は新コネクションが払い出されて session-level
+    の search_path が失われる可能性があるため、raw text() を使う箇所では
+    schema prefix を明示するのが安全 (Issue #563 / #565)。
+    """
+    if _is_postgresql(db):
+        safe_id = int(tenant_id)
+        return f"tenant_{safe_id:03d}.{name}"
+    return name
+
+
 # DB 列のうち入出力対象のホワイトリスト。動的 UPDATE の組み立ては必ずこの集合
 # 越しに通すこと（外部キー以外の任意フィールド書き換えを防ぐ）。
 _NUMERIC_INPUT_COLUMNS: tuple[str, ...] = (
@@ -80,10 +110,11 @@ _SELECT_COLS = """
 """
 
 
-async def _ensure_order_exists(db: AsyncSession, order_id: int) -> None:
-    """受注の存在を確認する（テナント境界は既存 search_path で担保）。"""
+async def _ensure_order_exists(db: AsyncSession, order_id: int, tenant_id: int) -> None:
+    """受注の存在を確認する (Issue #565: schema prefix 明示)。"""
+    orders_t = _t(db, tenant_id, "orders")
     res = await db.execute(
-        text("SELECT id FROM orders WHERE id = :id"),
+        text(f"SELECT id FROM {orders_t} WHERE id = :id"),
         {"id": order_id},
     )
     if not res.first():
@@ -93,9 +124,10 @@ async def _ensure_order_exists(db: AsyncSession, order_id: int) -> None:
         )
 
 
-async def _fetch_financial_row(db: AsyncSession, order_id: int) -> dict | None:
+async def _fetch_financial_row(db: AsyncSession, order_id: int, tenant_id: int) -> dict | None:
+    order_financials_t = _t(db, tenant_id, "order_financials")
     res = await db.execute(
-        text(f"SELECT {_SELECT_COLS} FROM order_financials WHERE order_id = :order_id"),
+        text(f"SELECT {_SELECT_COLS} FROM {order_financials_t} WHERE order_id = :order_id"),
         {"order_id": order_id},
     )
     row = res.mappings().first()
@@ -123,9 +155,9 @@ async def create_order_financial(
     current_user: User = Depends(get_current_user),
 ):
     """受注に売上情報を新規登録する。既存があれば 409。"""
-    await _ensure_order_exists(db, order_id)
+    await _ensure_order_exists(db, order_id, tenant_id)
 
-    existing = await _fetch_financial_row(db, order_id)
+    existing = await _fetch_financial_row(db, order_id, tenant_id)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -140,8 +172,9 @@ async def create_order_financial(
         "notes": payload.get("notes"),
     }
 
+    order_financials_t = _t(db, tenant_id, "order_financials")
     insert_sql = text(f"""
-        INSERT INTO order_financials (
+        INSERT INTO {order_financials_t} (
             tenant_id, order_id,
             revenue_amount, purchase_cost, purchase_shipping,
             paypal_fee, wise_fee, exchange_fee,
@@ -189,7 +222,7 @@ async def get_order_financial(
     current_user: User = Depends(get_current_user),
 ):
     """受注の売上情報を取得する。"""
-    row = await _fetch_financial_row(db, order_id)
+    row = await _fetch_financial_row(db, order_id, tenant_id)
     if not row:
         # 受注の有無は問わず 404（情報量を最小化）。
         raise HTTPException(
@@ -212,7 +245,7 @@ async def update_order_financial(
     current_user: User = Depends(get_current_user),
 ):
     """受注の売上情報を部分更新する（自動 updated_at）。"""
-    old_row = await _fetch_financial_row(db, order_id)
+    old_row = await _fetch_financial_row(db, order_id, tenant_id)
     if not old_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -232,8 +265,9 @@ async def update_order_financial(
     params = dict(update_data)
     params["order_id"] = order_id
 
+    order_financials_t = _t(db, tenant_id, "order_financials")
     update_sql = text(f"""
-        UPDATE order_financials
+        UPDATE {order_financials_t}
         SET {set_clauses}, updated_at = NOW()
         WHERE order_id = :order_id
         RETURNING {_SELECT_COLS}
@@ -268,15 +302,16 @@ async def delete_order_financial(
     current_user: User = Depends(get_current_user),
 ):
     """受注の売上情報を削除する（受注本体は残る）。"""
-    old_row = await _fetch_financial_row(db, order_id)
+    old_row = await _fetch_financial_row(db, order_id, tenant_id)
     if not old_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="売上情報が見つかりません",
         )
 
+    order_financials_t = _t(db, tenant_id, "order_financials")
     await db.execute(
-        text("DELETE FROM order_financials WHERE order_id = :order_id"),
+        text(f"DELETE FROM {order_financials_t} WHERE order_id = :order_id"),
         {"order_id": order_id},
     )
 
@@ -323,7 +358,8 @@ async def get_monthly_summary(
     # 集計クエリ。COALESCE で空期間時の NULL を 0 に丸める。
     # SUM の戻りは数値型 / NULL のいずれか（PostgreSQL）/ 文字列 (SQLite テスト) もあり得るが、
     # _to_decimal で吸収する。
-    sql = text("""
+    order_financials_t = _t(db, tenant_id, "order_financials")
+    sql = text(f"""
         SELECT
             COUNT(*) AS cnt,
             COALESCE(SUM(revenue_amount), 0) AS revenue_total,
@@ -333,7 +369,7 @@ async def get_monthly_summary(
                 outsource_fee + packing_fee + ad_cost +
                 return_fee + refund_amount
             ), 0) AS cost_total
-        FROM order_financials
+        FROM {order_financials_t}
         WHERE created_at >= :start AND created_at < :end
     """)
     res = await db.execute(sql, {"start": start, "end": end})

@@ -42,6 +42,37 @@ from app.services.audit import record_audit_log
 
 router = APIRouter()
 
+
+def _is_postgresql(db: AsyncSession) -> bool:
+    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
+
+    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
+    "no such table: tenant_NNN.orders" で失敗する。本判定で SQLite 系を
+    検出して prefix なしに倒す。
+    """
+    bind = db.get_bind() if hasattr(db, "get_bind") else None
+    if bind is None:
+        bind = getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    return name.startswith("postgresql")
+
+
+def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
+    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
+
+    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
+    - SQLite (pytest): `{name}` (schema 概念なし)
+
+    AsyncSession の commit 後は新コネクションが払い出されて session-level
+    の search_path が失われる可能性があるため、raw text() を使う箇所では
+    schema prefix を明示するのが安全 (Issue #563 / #565)。
+    """
+    if _is_postgresql(db):
+        safe_id = int(tenant_id)
+        return f"tenant_{safe_id:03d}.{name}"
+    return name
+
+
 # ADR-021 Sprint 1: ソート許可カラムのホワイトリスト。
 # 値はそのまま ORDER BY 句に埋め込まれるため、拡張時は SQL injection 対策
 # として必ずこの enum 越しに通すこと（クエリパラメータの直挿入禁止）。
@@ -208,6 +239,9 @@ async def list_orders(
     # ORDER BY のカラム名はホワイトリスト経由のみ。f-string で埋めても安全。
     # NULL の安定ソートのため total_amount のみ NULLS LAST 相当の挙動を
     # 既存挙動（PostgreSQL のデフォルト）に委ねる。
+    orders_t = _t(db, tenant_id, "orders")
+    companies_t = _t(db, tenant_id, "companies")
+    contacts_t = _t(db, tenant_id, "contacts")
     result = await db.execute(
         text(f"""
             SELECT
@@ -218,9 +252,9 @@ async def list_orders(
                 o.notes, o.created_at, o.updated_at,
                 c.name AS company_name,
                 ct.display_name AS contact_display_name
-            FROM orders o
-            LEFT JOIN companies c ON c.id = o.company_id
-            LEFT JOIN contacts ct ON ct.id = o.contact_id
+            FROM {orders_t} o
+            LEFT JOIN {companies_t} c ON c.id = o.company_id
+            LEFT JOIN {contacts_t} ct ON ct.id = o.contact_id
             {where_clause}
             ORDER BY o.{sort_by} {sort_dir}, o.id DESC
             LIMIT :limit OFFSET :offset
@@ -266,12 +300,15 @@ async def get_orders_group_counts(
 
     # JOIN は search のときだけ必要だが、status_filter 単独でも JOIN しておく方が
     # 一覧と同じプランで集計できるので常に LEFT JOIN（テナント内の小規模テーブル想定）。
+    orders_t = _t(db, tenant_id, "orders")
+    companies_t = _t(db, tenant_id, "companies")
+    contacts_t = _t(db, tenant_id, "contacts")
     result = await db.execute(
         text(f"""
             SELECT o.status AS status, COUNT(*) AS cnt
-            FROM orders o
-            LEFT JOIN companies c ON c.id = o.company_id
-            LEFT JOIN contacts ct ON ct.id = o.contact_id
+            FROM {orders_t} o
+            LEFT JOIN {companies_t} c ON c.id = o.company_id
+            LEFT JOIN {contacts_t} ct ON ct.id = o.contact_id
             {where_clause}
             GROUP BY o.status
         """),
@@ -302,8 +339,9 @@ async def get_order(
     current_user: User = Depends(get_current_user),
 ):
     """注文詳細を取得する"""
+    orders_t = _t(db, tenant_id, "orders")
     result = await db.execute(
-        text(f"SELECT {_SELECT_COLS} FROM orders WHERE id = :id"),
+        text(f"SELECT {_SELECT_COLS} FROM {orders_t} WHERE id = :id"),
         {"id": order_id},
     )
     row = result.mappings().first()
@@ -321,9 +359,12 @@ async def create_order(
     current_user: User = Depends(get_current_user),
 ):
     """注文を登録する"""
+    orders_t = _t(db, tenant_id, "orders")
+    contacts_t = _t(db, tenant_id, "contacts")
+    deals_t = _t(db, tenant_id, "deals")
     # Step 5d: contact / company の存在 + 所属一致確認のみ
     contact_check = await db.execute(
-        text("SELECT company_id FROM contacts WHERE id = :id"),
+        text(f"SELECT company_id FROM {contacts_t} WHERE id = :id"),
         {"id": data.contact_id},
     )
     contact_row = contact_check.first()
@@ -337,13 +378,13 @@ async def create_order(
 
     # 商談の存在確認（指定された場合）
     if data.deal_id:
-        deal = await db.execute(text("SELECT id FROM deals WHERE id = :id"), {"id": data.deal_id})
+        deal = await db.execute(text(f"SELECT id FROM {deals_t} WHERE id = :id"), {"id": data.deal_id})
         if not deal.first():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="指定された商談が存在しません")
 
     # 注文番号の重複チェック
     dup = await db.execute(
-        text("SELECT id FROM orders WHERE order_number = :order_number"),
+        text(f"SELECT id FROM {orders_t} WHERE order_number = :order_number"),
         {"order_number": data.order_number},
     )
     if dup.first():
@@ -351,7 +392,7 @@ async def create_order(
 
     result = await db.execute(
         text(f"""
-            INSERT INTO orders (
+            INSERT INTO {orders_t} (
                 tenant_id, company_id, contact_id, deal_id, invoice_id, order_number,
                 total_amount, currency, status,
                 shipping_carrier, shipping_fee, shipping_country, notes
@@ -402,8 +443,9 @@ async def update_order(
     current_user: User = Depends(get_current_user),
 ):
     """注文情報を更新する（部分更新）"""
+    orders_t = _t(db, tenant_id, "orders")
     old_result = await db.execute(
-        text(f"SELECT {_SELECT_COLS} FROM orders WHERE id = :id"),
+        text(f"SELECT {_SELECT_COLS} FROM {orders_t} WHERE id = :id"),
         {"id": order_id},
     )
     old_row = old_result.mappings().first()
@@ -423,7 +465,7 @@ async def update_order(
 
     result = await db.execute(
         text(f"""
-            UPDATE orders SET {set_clauses}, updated_at = NOW()
+            UPDATE {orders_t} SET {set_clauses}, updated_at = NOW()
             WHERE id = :id
             RETURNING {_SELECT_COLS}
         """),
@@ -451,15 +493,16 @@ async def delete_order(
     current_user: User = Depends(get_current_user),
 ):
     """注文を削除する"""
+    orders_t = _t(db, tenant_id, "orders")
     old_result = await db.execute(
-        text(f"SELECT {_SELECT_COLS} FROM orders WHERE id = :id"),
+        text(f"SELECT {_SELECT_COLS} FROM {orders_t} WHERE id = :id"),
         {"id": order_id},
     )
     old_row = old_result.mappings().first()
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="注文が見つかりません")
 
-    await db.execute(text("DELETE FROM orders WHERE id = :id"), {"id": order_id})
+    await db.execute(text(f"DELETE FROM {orders_t} WHERE id = :id"), {"id": order_id})
 
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,
