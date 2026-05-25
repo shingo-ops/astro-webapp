@@ -1380,7 +1380,8 @@
     "statusNotLinked": "Google カレンダーが未連携です",
     "statusConnectPrompt": "連携する",
     "prevPeriod": "前へ",
-    "nextPeriod": "次へ"
+    "nextPeriod": "次へ",
+    "allDay": "終日"
   },
   "inventoryVisibility": {
     "title": "在庫表示権限の設定",
