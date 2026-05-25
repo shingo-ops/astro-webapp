@@ -215,7 +215,7 @@ export default function BotsPage() {
               <div className="form-group"><label>{t("bots.ownerStaff")} *</label>
                 <select required value={form.owner_staff_id} onChange={(e) => setForm({ ...form, owner_staff_id: e.target.value })}>
                   <option value="">{t("common.pleaseSelect")}</option>
-                  {staff.map((s) => <option key={s.id} value={s.id}>{s.staff_code} {s.surname_jp} {s.given_name_jp}</option>)}
+                  {staff.map((s) => <option key={s.id} value={s.id}>{s.surname_jp} {s.given_name_jp}</option>)}
                 </select>
               </div>
               <div className="form-group"><label>Discord Bot ID</label>
@@ -241,7 +241,6 @@ export default function BotsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t("common.code")}</th>
               <th>{t("common.name")}</th>
               <th>{t("bots.purposeLabel")}</th>
               <th>{t("common.status")}</th>
@@ -254,7 +253,6 @@ export default function BotsPage() {
           <tbody>
             {bots.map((b) => (
               <tr key={b.id}>
-                <td className="mono">{b.bot_code}</td>
                 <td>{b.display_name}</td>
                 <td>{purposeLabel(b.purpose)}</td>
                 <td><span className={`badge badge-${b.status === "active" ? "won" : "lost"}`}>{statusLabel(b.status)}</span></td>

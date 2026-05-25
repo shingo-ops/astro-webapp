@@ -287,7 +287,6 @@ export default function DealsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t("deals.dealCode")}</th>
               <th>{t("deals.dealTitle")}</th>
               <th>{t("common.company")}</th>
               <th>{t("deals.amount")}</th>
@@ -300,7 +299,6 @@ export default function DealsPage() {
           <tbody>
             {deals.map((d) => (
               <tr key={d.id}>
-                <td className="mono">{d.deal_code || "-"}</td>
                 <td>{d.title}</td>
                 <td>{companyName(d.company_id)}</td>
                 <td>{d.amount ? fmt(d.amount, d.currency) : "-"}</td>

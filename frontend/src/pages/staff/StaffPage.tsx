@@ -289,7 +289,6 @@ export default function StaffPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t("common.code")}</th>
               <th>{t("staff.fullName")}</th>
               <th>{t("common.email")}</th>
               <th>{t("staff.role")}</th>
@@ -300,7 +299,6 @@ export default function StaffPage() {
           <tbody>
             {staff.map((s) => (
               <tr key={s.id}>
-                <td className="mono">{s.staff_code}</td>
                 <td>{s.surname_jp} {s.given_name_jp}</td>
                 <td>
                   {s.primary_email}

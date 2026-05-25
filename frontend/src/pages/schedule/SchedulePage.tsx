@@ -368,7 +368,7 @@ export default function SchedulePage() {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const [currentView, setCurrentView] = useState<View>(Views.MONTH);
+  const [currentView, setCurrentView] = useState<View>(Views.WEEK);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [modalEvent, setModalEvent] = useState<CalEvent | null>(null);

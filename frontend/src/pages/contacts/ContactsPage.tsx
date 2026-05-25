@@ -319,7 +319,6 @@ export default function ContactsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t("common.code")}</th>
               <th>{t("common.name")}</th>
               <th>{t("common.company")}</th>
               <th>{t("contacts.position")}</th>
@@ -332,14 +331,13 @@ export default function ContactsPage() {
           </thead>
           <tbody>
             {contacts.length === 0 ? (
-              <tr><td colSpan={9} style={{ textAlign: "center", padding: "var(--space-4)" }}>{t("contacts.noContacts")}</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: "var(--space-4)" }}>{t("contacts.noContacts")}</td></tr>
             ) : (
               contacts.map((c) => (
                 <tr
                   key={c.id}
                   className={c.status === "pending_dedup_review" ? "row-pending-dedup" : ""}
                 >
-                  <td>{c.contact_code}</td>
                   <td>{contactDisplayName(c)}</td>
                   <td>{companyName(c.company_id)}</td>
                   <td>{c.job_title || "-"}</td>
