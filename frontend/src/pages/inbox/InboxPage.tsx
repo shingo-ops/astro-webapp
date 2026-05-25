@@ -515,6 +515,11 @@ export default function InboxPage() {
               <div className="right-panel-tabs">
                 <button
                   type="button"
+                  className={`right-panel-tab${karteTab === "deal" ? " active" : ""}`}
+                  onClick={() => setKarteTab("deal")}
+                >{t("inbox.karteDeal")}</button>
+                <button
+                  type="button"
                   className={`right-panel-tab${karteTab === "contact" ? " active" : ""}`}
                   onClick={() => setKarteTab("contact")}
                 >{t("inbox.karteContact")}</button>
@@ -523,11 +528,6 @@ export default function InboxPage() {
                   className={`right-panel-tab${karteTab === "company" ? " active" : ""}`}
                   onClick={() => setKarteTab("company")}
                 >{t("inbox.karteCompany")}</button>
-                <button
-                  type="button"
-                  className={`right-panel-tab${karteTab === "deal" ? " active" : ""}`}
-                  onClick={() => setKarteTab("deal")}
-                >{t("inbox.karteDeal")}</button>
               </div>
 
               {/* タブコンテンツ */}
@@ -888,6 +888,10 @@ export default function InboxPage() {
             </div>
             <div className="right-panel-tabs">
               <button type="button"
+                className={`right-panel-tab${profileModalTab === "deal" ? " active" : ""}`}
+                onClick={() => setProfileModalTab("deal")}
+              >{t("inbox.karteDeal")}</button>
+              <button type="button"
                 className={`right-panel-tab${profileModalTab === "contact" ? " active" : ""}`}
                 onClick={() => setProfileModalTab("contact")}
               >{t("inbox.karteContact")}</button>
@@ -895,10 +899,6 @@ export default function InboxPage() {
                 className={`right-panel-tab${profileModalTab === "company" ? " active" : ""}`}
                 onClick={() => setProfileModalTab("company")}
               >{t("inbox.karteCompany")}</button>
-              <button type="button"
-                className={`right-panel-tab${profileModalTab === "deal" ? " active" : ""}`}
-                onClick={() => setProfileModalTab("deal")}
-              >{t("inbox.karteDeal")}</button>
             </div>
             <div className="right-panel-tab-content">
               {profileModalTab === "contact" && (
