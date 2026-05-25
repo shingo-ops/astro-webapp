@@ -5,12 +5,12 @@
 # 前提条件:
 #   1. Uptime Kumaが起動済みで、初回セットアップ（admin作成）が完了していること
 #   2. 以下の環境変数を設定:
-#      - UPTIME_KUMA_URL: Uptime KumaのURL（例: http://localhost:3001）
+#      - UPTIME_KUMA_URL: Uptime KumaのURL（例: https://monitor.salesanchor.jp）
 #      - UPTIME_KUMA_USER: 管理者ユーザー名
 #      - UPTIME_KUMA_PASS: 管理者パスワード
 #
 # 使い方:
-#   UPTIME_KUMA_URL=http://localhost:3001 \
+#   UPTIME_KUMA_URL=https://monitor.salesanchor.jp \
 #   UPTIME_KUMA_USER=admin \
 #   UPTIME_KUMA_PASS=yourpassword \
 #   bash scripts/setup_uptime_kuma.sh
@@ -83,47 +83,63 @@ add_monitor() {
 echo ""
 echo "--- モニターを登録中 ---"
 
-# 1. APIヘルスチェック（最重要）
+# 1. App（本番フロントエンド）
+add_monitor \
+  "App（本番）" \
+  "http" \
+  "https://app.salesanchor.jp/" \
+  30 \
+  '"method": "GET", "expectedStatusCodes": [200]'
+
+# 2. API ヘルスチェック（最重要）
 add_monitor \
   "API Health Check" \
   "http" \
-  "https://jarvis-claude.uk/api/health" \
+  "https://api.salesanchor.jp/api/health" \
+  30 \
+  '"method": "GET", "expectedStatusCodes": [200]'
+
+# 3. LP（ランディングページ）
+add_monitor \
+  "LP（salesanchor.jp）" \
+  "http" \
+  "https://salesanchor.jp/" \
   60 \
   '"method": "GET", "expectedStatusCodes": [200]'
 
-# 2. フロントエンド応答確認
+# 4. PostgreSQL（TCP死活）
 add_monitor \
-  "Frontend" \
-  "http" \
-  "https://jarvis-claude.uk/" \
+  "PostgreSQL" \
+  "port" \
+  "localhost" \
   60 \
+  '"port": 5432'
+
+# 5. Redis（TCP死活）
+add_monitor \
+  "Redis" \
+  "port" \
+  "localhost" \
+  60 \
+  '"port": 6379'
+
+# 6. Meta（Facebook）API
+add_monitor \
+  "Meta API" \
+  "http" \
+  "https://graph.facebook.com/" \
+  300 \
+  '"method": "GET", "expectedStatusCodes": [200, 400]'
+
+# 7. Firebase
+add_monitor \
+  "Firebase" \
+  "http" \
+  "https://firebaseio.com/" \
+  300 \
   '"method": "GET", "expectedStatusCodes": [200]'
-
-# 3. HTTPS証明書監視（有効期限30日前に警告）
-add_monitor \
-  "SSL Certificate" \
-  "http" \
-  "https://jarvis-claude.uk/" \
-  3600 \
-  '"method": "GET", "expectedStatusCodes": [200], "expiryNotification": true, "maxTlsCertDaysRemaining": 30'
-
-# 4. Grafana死活確認
-add_monitor \
-  "Grafana" \
-  "http" \
-  "https://jarvis-claude.uk/grafana/api/health" \
-  120 \
-  '"method": "GET", "expectedStatusCodes": [200]'
-
-# 5. ログインAPI応答確認（429でもOK = レート制限が効いている証拠）
-add_monitor \
-  "Auth API" \
-  "http" \
-  "https://jarvis-claude.uk/api/v1/auth/me" \
-  120 \
-  '"method": "GET", "expectedStatusCodes": [401, 403]'
 
 echo ""
 echo "=== 設定完了 ==="
 echo "Uptime Kuma UI で確認: ${KUMA_URL}"
-echo "※ Slackなどの通知設定はUI上で追加してください"
+echo "※ Discord などの通知設定はUI上で追加してください"
