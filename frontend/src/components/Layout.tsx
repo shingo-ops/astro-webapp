@@ -267,14 +267,6 @@ export default function Layout() {
                 </NavLink>
               )}
 
-              <NavLink
-                to="/faq"
-                className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
-              >
-                <span className="sidebar-icon"><NAV_ICONS.help size={ICON.base} /></span>
-                <span className="sidebar-label">{t("nav.faq")}</span>
-              </NavLink>
-
               {showManagementCenter && (
                 <NavLink
                   to="/management-center"
