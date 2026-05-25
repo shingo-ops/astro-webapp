@@ -1,122 +1,101 @@
 /**
- * Google Calendar デザイン準拠のスタイルオーバーライド
- * react-big-calendar のデフォルト CSS を上書きする
+ * Google Calendar クローン スタイル（FullCalendar オーバーライド）
+ *
+ * 設計原則:
+ *   - FullCalendar の --fc-* CSS カスタムプロパティをデザイントークンにブリッジ
+ *   - イベント色は classNames 方式（ADR-067: CSS 変数参照のみ）
+ *   - ダークモード: :root.force-dark で --calendar-* が上書きされるため自動対応
  *
  * ADR-067: 全カラーは CSS 変数参照（ハードコード禁止）
- * 参照: https://github.com/jquense/react-big-calendar
  */
 
 /* ============================================================
-   ベース / カレンダーコンテナ
+   FullCalendar → デザイントークン ブリッジ
    ============================================================ */
 
-.rbc-calendar {
+.fc {
+  --fc-border-color:               var(--calendar-grid-border);
+  --fc-today-bg-color:             var(--calendar-today-cell-bg);
+  --fc-now-indicator-color:        var(--danger);
+  --fc-highlight-color:            var(--calendar-google-blue-light);
+  --fc-page-bg-color:              var(--bg-surface);
+  --fc-neutral-bg-color:           var(--bg-subtle);
+  --fc-list-event-hover-bg-color:  var(--bg-hover);
+  --fc-small-font-size:            var(--font-xs);
+  --fc-event-bg-color:             var(--calendar-google-blue);
+  --fc-event-border-color:         var(--calendar-google-blue);
+  --fc-event-text-color:           var(--on-accent);
+  --fc-daygrid-event-dot-width:    8px;
+
   font-family: -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif;
   color: var(--text-primary);
   background: var(--bg-surface);
-  border-radius: var(--radius-md);
-  overflow: hidden;
 }
 
 /* ============================================================
-   ツールバー（Google Calendar 準拠）
+   イベントソース別カラー（ADR-067 準拠: CSS 変数参照のみ）
    ============================================================ */
 
-.rbc-toolbar {
-  display: flex;
-  align-items: center;
-  padding: var(--space-3) var(--space-4);
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--calendar-grid-border);
-  gap: var(--space-3);
-  flex-wrap: wrap;
+.fc .fc-event.fc-event--app {
+  --fc-event-bg-color:     var(--calendar-google-blue);
+  --fc-event-border-color: var(--calendar-google-blue);
+  --fc-event-text-color:   var(--on-accent);
 }
 
-.rbc-toolbar-label {
-  flex: 1;
-  text-align: left;
-  font-size: var(--font-xl);
+.fc .fc-event.fc-event--shift {
+  --fc-event-bg-color:     var(--success);
+  --fc-event-border-color: var(--success);
+  --fc-event-text-color:   var(--on-accent);
+}
+
+/* ============================================================
+   イベントチップ（Google Calendar 準拠）
+   ============================================================ */
+
+.fc .fc-event {
+  border-radius: var(--radius-xs);
+  font-size: var(--font-xs);
   font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
-  padding: 0 var(--space-3);
-}
-
-.rbc-btn-group {
-  display: flex;
-  gap: 2px;
-}
-
-.rbc-btn-group button {
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--border);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
   cursor: pointer;
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-sm);
-  transition: background var(--transition-fast);
-  min-height: 32px;
+  transition: filter var(--transition-micro);
 }
 
-.rbc-btn-group button:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-strong);
-  color: var(--text-primary);
+.fc .fc-event:hover {
+  filter: brightness(0.92);
 }
 
-.rbc-btn-group button.rbc-active {
-  background: var(--calendar-google-blue-light);
-  border-color: var(--calendar-google-blue);
-  color: var(--calendar-google-blue);
-  font-weight: var(--font-weight-semi);
-}
-
-.rbc-btn-group button.rbc-active:hover {
-  background: var(--calendar-google-blue-light);
+.fc .fc-event:focus {
+  outline: 2px solid var(--calendar-google-blue);
+  outline-offset: 1px;
 }
 
 /* ============================================================
-   月ビュー
+   ヘッダー（曜日行）
    ============================================================ */
 
-.rbc-month-view {
-  border: 1px solid var(--calendar-grid-border);
-  border-radius: var(--radius-sm);
-}
-
-.rbc-month-view .rbc-header {
-  padding: var(--space-2) 0;
+.fc .fc-col-header-cell {
   font-size: var(--font-xs);
   font-weight: var(--font-weight-medium);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--calendar-grid-border);
   background: var(--bg-surface);
-  text-align: center;
 }
 
-.rbc-month-view .rbc-month-row + .rbc-month-row {
-  border-top: 1px solid var(--calendar-grid-border);
+/* 今日の列ヘッダー（Google Blue 円バッジ） */
+.fc .fc-col-header-cell.fc-day-today a,
+.fc .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+  color: var(--calendar-google-blue);
+  font-weight: var(--font-weight-bold);
 }
 
-.rbc-month-view .rbc-day-bg + .rbc-day-bg {
-  border-left: 1px solid var(--calendar-grid-border);
-}
+/* ============================================================
+   月ビュー（dayGrid）
+   ============================================================ */
 
-.rbc-month-view .rbc-header + .rbc-header {
-  border-left: 1px solid var(--calendar-grid-border);
-}
-
-/* 日付セル */
-.rbc-date-cell {
-  padding: var(--space-1) var(--space-2);
-  text-align: right;
-}
-
-.rbc-date-cell a,
-.rbc-date-cell > span {
+.fc .fc-daygrid-day-number {
   font-size: var(--font-sm);
   color: var(--text-secondary);
   text-decoration: none;
@@ -128,179 +107,156 @@
   border-radius: var(--radius-full);
 }
 
-.rbc-date-cell a:hover {
+.fc .fc-daygrid-day-number:hover {
   background: var(--bg-hover);
 }
 
-/* 今日の日付（Google Blue の丸） */
-.rbc-today {
-  background: var(--calendar-today-cell-bg);
-}
-
-.rbc-date-cell.rbc-now a,
-.rbc-date-cell.rbc-now > span {
+/* 今日の日付（Google Blue 丸） */
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
   background: var(--calendar-today-bg);
   color: var(--calendar-today-text);
   font-weight: var(--font-weight-bold);
 }
 
 /* 月外の日（グレーアウト） */
-.rbc-off-range-bg {
-  background: var(--bg-subtle);
-}
-
-.rbc-off-range .rbc-date-cell a,
-.rbc-off-range .rbc-date-cell > span {
+.fc .fc-day-other .fc-daygrid-day-number {
   color: var(--text-muted);
 }
 
-/* ============================================================
-   週 / 日ビュー
-   ============================================================ */
-
-.rbc-time-view {
-  border: 1px solid var(--calendar-grid-border);
-  border-radius: var(--radius-sm);
-}
-
-.rbc-time-header {
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--calendar-grid-border);
-}
-
-.rbc-time-header-content .rbc-header {
-  font-size: var(--font-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-left: 1px solid var(--calendar-grid-border);
-  text-align: center;
-  padding: var(--space-2) 0;
-}
-
-.rbc-time-header-content .rbc-today {
-  color: var(--calendar-google-blue);
-}
-
-.rbc-time-gutter {
-  background: var(--bg-surface);
-}
-
-.rbc-timeslot-group {
-  border-bottom: 1px solid var(--calendar-grid-border);
-  min-height: 40px;
-}
-
-.rbc-time-slot {
-  font-size: var(--font-xs);
-  color: var(--text-muted);
-}
-
-.rbc-time-column .rbc-timeslot-group {
-  border-left: 1px solid var(--calendar-grid-border);
-}
-
-/* 現在時刻インジケーター（赤線） */
-.rbc-current-time-indicator {
-  background-color: var(--danger);
-  height: 2px;
-}
-
-.rbc-current-time-indicator::before {
-  content: "";
-  position: absolute;
-  left: -4px;
-  top: -4px;
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background-color: var(--danger);
-}
-
-/* ============================================================
-   イベントチップ（共通）
-   ============================================================ */
-
-.rbc-event {
-  border: none !important;
-  border-radius: var(--radius-xs) !important;
-  padding: 1px var(--space-1) !important;
-  font-size: var(--font-xs) !important;
-  line-height: 1.4 !important;
-  cursor: pointer;
-  transition: filter var(--transition-micro);
-}
-
-.rbc-event:hover {
-  filter: brightness(0.92);
-}
-
-.rbc-event:focus {
-  outline: 2px solid var(--calendar-google-blue);
-  outline-offset: 1px;
-}
-
-.rbc-event-label {
-  font-size: var(--font-xs);
-  font-weight: var(--font-weight-medium);
-}
-
-.rbc-event-content {
-  font-size: var(--font-xs);
-}
-
-/* 複数日イベント */
-.rbc-show-more {
+/* 「+N more」リンク */
+.fc .fc-daygrid-more-link {
   color: var(--calendar-google-blue);
   font-size: var(--font-xs);
   font-weight: var(--font-weight-medium);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 1px var(--space-1);
 }
 
-.rbc-show-more:hover {
+.fc .fc-daygrid-more-link:hover {
   background: var(--calendar-google-blue-light);
   border-radius: var(--radius-xs);
 }
 
 /* ============================================================
-   スロット選択（クリックして予定追加）
+   週 / 日ビュー（timeGrid）
    ============================================================ */
 
-.rbc-slot-selection {
+.fc .fc-timegrid-slot {
+  height: 24px;
+  border-color: var(--calendar-grid-border);
+}
+
+.fc .fc-timegrid-slot-minor {
+  border-top-style: dotted;
+}
+
+.fc .fc-timegrid-slot-label {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  vertical-align: top;
+  padding-right: var(--space-2);
+}
+
+/* 現在時刻インジケーター（赤線 + 赤ドット） */
+.fc .fc-timegrid-now-indicator-line {
+  border-color: var(--danger);
+  border-width: 2px;
+}
+
+.fc .fc-timegrid-now-indicator-arrow {
+  border-color: var(--danger);
+  border-width: 5px;
+  margin-top: -5px;
+}
+
+/* スロット選択ハイライト */
+.fc .fc-highlight {
   background: var(--calendar-google-blue-light);
   border: 1px solid var(--calendar-google-blue);
   border-radius: var(--radius-xs);
 }
 
-.rbc-selecting {
-  background: var(--calendar-google-blue-light);
-  border: 1px solid var(--calendar-google-blue);
+/* ============================================================
+   全日イベントエリア
+   ============================================================ */
+
+.fc .fc-timegrid-axis {
+  background: var(--bg-surface);
+}
+
+.fc .fc-scrollgrid-sync-inner {
+  background: var(--bg-surface);
 }
 
 /* ============================================================
-   ポップアップ（+N more クリック時）
+   ポップアップ（月ビューの "+N more" クリック時）
    ============================================================ */
 
-.rbc-overlay {
+.fc .fc-popover {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-dropdown);
-  padding: var(--space-2);
   z-index: var(--z-dropdown);
 }
 
-.rbc-overlay-header {
+.fc .fc-popover-header {
   font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
-  padding: var(--space-1) var(--space-2);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: var(--space-1);
+  background: var(--bg-subtle);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+/* ============================================================
+   スクロールグリッド枠線
+   ============================================================ */
+
+.fc .fc-scrollgrid {
+  border-color: var(--calendar-grid-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.fc .fc-scrollgrid td,
+.fc .fc-scrollgrid th {
+  border-color: var(--calendar-grid-border);
+}
+
+/* ============================================================
+   カスタムコンテナ（ローディング / ツールバー統合）
+   ============================================================ */
+
+.gcal-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 260px);
+  min-height: 500px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--calendar-grid-border);
+}
+
+.gcal-container .fc {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.gcal-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg-surface);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-base);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  pointer-events: none;
 }
 
 /* ============================================================
@@ -314,6 +270,7 @@
   background: var(--bg-surface);
   border-bottom: 1px solid var(--calendar-grid-border);
   gap: var(--space-3);
+  flex-shrink: 0;
 }
 
 .gcal-toolbar__create {
