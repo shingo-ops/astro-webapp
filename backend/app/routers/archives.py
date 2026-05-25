@@ -113,6 +113,7 @@ async def archive_record(
                            action="archive", table_name=data.source_table, record_id=data.source_id,
                            old_data=dict(row))
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return ArchiveResponse(**dict(arch_row))
 
 
@@ -159,4 +160,5 @@ async def restore_record(
                            action="restore", table_name=table, record_id=arch["source_id"],
                            new_data={"archive_id": archive_id})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return ArchiveResponse(**dict(row))

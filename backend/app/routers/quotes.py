@@ -229,6 +229,7 @@ async def create_quote(
         },
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
     # commit後にsearch_path再設定
@@ -286,6 +287,7 @@ async def update_quote(
         old_data=dict(old_row), new_data=update_data,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     return QuoteResponse(**dict(row))
 
@@ -314,6 +316,7 @@ async def send_quote(
                            action="send", table_name="quotes", record_id=quote_id,
                            new_data={"status": "sent"})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return QuoteResponse(**dict(row))
 
 
@@ -341,6 +344,7 @@ async def approve_quote(
                            action="approve", table_name="quotes", record_id=quote_id,
                            new_data={"status": "approved"})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     return QuoteResponse(**dict(row))
 
@@ -369,6 +373,7 @@ async def reject_quote(
                            action="reject", table_name="quotes", record_id=quote_id,
                            new_data={"status": "rejected"})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return QuoteResponse(**dict(row))
 
 
@@ -396,4 +401,5 @@ async def delete_quote(
                            action="delete", table_name="quotes", record_id=quote_id,
                            old_data=dict(old_row))
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)

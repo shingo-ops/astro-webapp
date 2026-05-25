@@ -18,7 +18,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.schemas.shipping import (
@@ -106,6 +111,7 @@ async def create_zone(
         new_data=data.model_dump(),
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return ShippingZoneResponse(**dict(row))
 
 
@@ -131,6 +137,7 @@ async def delete_zone(
         action="delete", table_name="shipping_zones", record_id=zone_id,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
 
 # =========================================================================
@@ -206,6 +213,7 @@ async def create_rate(
         new_data=data.model_dump(mode="json"),
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return ShippingRateResponse(**dict(row))
 
 
@@ -231,6 +239,7 @@ async def delete_rate(
         action="delete", table_name="shipping_rates", record_id=rate_id,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
 
 # =========================================================================

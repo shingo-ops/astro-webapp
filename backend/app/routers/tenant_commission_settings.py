@@ -27,9 +27,10 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import (
-    get_current_user,
     get_current_tenant,
+    get_current_user,
     require_permission,
+    reset_tenant_context,
 )
 from app.database import get_db
 from app.models import User
@@ -102,6 +103,7 @@ async def _create_default(db: AsyncSession, tenant_id: int) -> dict:
         )
         row = res.mappings().first()
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
         return dict(row)
     except Exception:
         await db.rollback()
@@ -169,5 +171,6 @@ async def update_tenant_commission_settings(
         new_data={"commission_rates": data.commission_rates.model_dump(mode="json")},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
     return _row_to_response(new_row)

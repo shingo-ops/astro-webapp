@@ -375,6 +375,7 @@ async def create_company(
             new_data=new_data_payload,
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except IntegrityError as e:
         await db.rollback()
         logger.warning("create_company IntegrityError: tenant=%d, err=%s", tenant_id, e.orig)
@@ -474,6 +475,7 @@ async def update_company(
         old_data=dict(old_row), new_data=new_data_payload,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     # commit 後の副テーブル SELECT 前に tenant コンテキスト再設定
     await reset_tenant_context(db, tenant_id)
@@ -527,6 +529,7 @@ async def delete_company(
             old_data=old_data_payload,
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except IntegrityError:
         await db.rollback()
         raise HTTPException(
@@ -917,6 +920,7 @@ async def merge_companies(
     )
 
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
     # 12) commit 後の SELECT 前に tenant コンテキストを再設定

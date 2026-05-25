@@ -23,7 +23,12 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.services.audit import record_audit_log
@@ -127,6 +132,7 @@ async def export_invoices_for_erp(
                                action="erp_export", table_name="invoices", record_id=log_id,
                                new_data={"record_count": len(rows)})
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
         return Response(
             content=output.getvalue(),
@@ -141,6 +147,7 @@ async def export_invoices_for_erp(
                 {"err": str(e)[:500], "id": log_id},
             )
             await db.commit()
+            await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
         except Exception:
             logger.exception("erp_sync_logs の失敗ステータス更新に失敗 log_id=%s", log_id)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"ERP エクスポート失敗: {e}")

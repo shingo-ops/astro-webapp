@@ -216,6 +216,7 @@ async def create_invoice_from_quote(
         new_data={"quote_id": quote_id, "invoice_number": invoice_number},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
     await reset_tenant_context(db, tenant_id)
@@ -316,6 +317,7 @@ async def create_invoice(
         },
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
     await reset_tenant_context(db, tenant_id)
@@ -363,6 +365,7 @@ async def update_invoice(
                            action="update", table_name="invoices", record_id=invoice_id,
                            old_data=dict(old_row), new_data=update_data)
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return InvoiceResponse(**dict(row))
 
 
@@ -390,6 +393,7 @@ async def issue_invoice(
                            action="issue", table_name="invoices", record_id=invoice_id,
                            new_data={"status": "issued"})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     return InvoiceResponse(**dict(row))
 
@@ -418,6 +422,7 @@ async def pay_invoice(
                            action="pay", table_name="invoices", record_id=invoice_id,
                            new_data={"status": "paid"})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     return InvoiceResponse(**dict(row))
 
@@ -461,5 +466,6 @@ async def void_invoice(
                            action="void", table_name="invoices", record_id=invoice_id,
                            old_data=dict(old_row), new_data={"status": "voided", "reason": data.reason})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     return InvoiceResponse(**dict(row))
