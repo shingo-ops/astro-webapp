@@ -55,7 +55,7 @@ async def _fetch_ui_prefs(db: AsyncSession, staff_id: int) -> StaffUIPreferences
     res = await db.execute(
         text("""
             SELECT dark_mode, show_chat_menu, show_sales_menu, show_settings_menu,
-                   show_admin_menu, show_buddy_menu, show_sidebar
+                   show_admin_menu, show_sidebar
             FROM staff_ui_preferences WHERE staff_id = :sid
         """),
         {"sid": staff_id},
@@ -108,15 +108,14 @@ async def _upsert_ui_prefs(db: AsyncSession, staff_id: int, prefs: StaffUIPrefer
         text("""
             INSERT INTO staff_ui_preferences (
                 staff_id, dark_mode, show_chat_menu, show_sales_menu,
-                show_settings_menu, show_admin_menu, show_buddy_menu, show_sidebar
-            ) VALUES (:sid, :dm, :chat, :sales, :settings, :admin, :buddy, :sidebar)
+                show_settings_menu, show_admin_menu, show_sidebar
+            ) VALUES (:sid, :dm, :chat, :sales, :settings, :admin, :sidebar)
             ON CONFLICT (staff_id) DO UPDATE SET
                 dark_mode = EXCLUDED.dark_mode,
                 show_chat_menu = EXCLUDED.show_chat_menu,
                 show_sales_menu = EXCLUDED.show_sales_menu,
                 show_settings_menu = EXCLUDED.show_settings_menu,
                 show_admin_menu = EXCLUDED.show_admin_menu,
-                show_buddy_menu = EXCLUDED.show_buddy_menu,
                 show_sidebar = EXCLUDED.show_sidebar,
                 updated_at = NOW()
         """),
@@ -124,7 +123,7 @@ async def _upsert_ui_prefs(db: AsyncSession, staff_id: int, prefs: StaffUIPrefer
             "sid": staff_id, "dm": prefs.dark_mode,
             "chat": prefs.show_chat_menu, "sales": prefs.show_sales_menu,
             "settings": prefs.show_settings_menu, "admin": prefs.show_admin_menu,
-            "buddy": prefs.show_buddy_menu, "sidebar": prefs.show_sidebar,
+            "sidebar": prefs.show_sidebar,
         },
     )
 

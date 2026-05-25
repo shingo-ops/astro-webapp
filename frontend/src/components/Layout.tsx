@@ -153,8 +153,6 @@ export default function Layout() {
     );
 
   const moreItems: NavItem[] = [
-    ...(prefs.show_buddy_menu && hasPermission("buddy.view_own") ? [{ to: "/knowledge", labelKey: "nav.buddy" }] : []),
-    ...(hasPermission("badges.view") ? [{ to: "/prompts", labelKey: "nav.badges" }] : []),
     { to: "/templates", labelKey: "nav.templates" },
   ];
 
@@ -293,7 +291,7 @@ export default function Layout() {
                 label={t("nav.more")}
                 icon={<NAV_ICONS.more size={ICON.base} />}
                 items={moreItems}
-                activePaths={["/knowledge", "/prompts", "/templates"]}
+                activePaths={["/templates"]}
                 isExpanded={sidebarExpanded}
                 isOpen={openAccordion === "more"}
                 onToggle={() => toggleAccordion("more")}

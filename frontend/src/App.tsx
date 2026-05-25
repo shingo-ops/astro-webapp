@@ -32,8 +32,6 @@ import StaffReportsPage from "./pages/staff-reports/StaffReportsPage";
 import ArchivesPage from "./pages/archives/ArchivesPage";
 import ShiftsPage from "./pages/shifts/ShiftsPage";
 import SchedulePage from "./pages/schedule/SchedulePage";
-import BuddyPage from "./pages/buddy/BuddyPage";
-import BadgesPage from "./pages/badges/BadgesPage";
 import ERPPage from "./pages/erp/ERPPage";
 import StaffPage from "./pages/staff/StaffPage";
 import BotsPage from "./pages/bots/BotsPage";
@@ -172,8 +170,6 @@ function App() {
                   <Route path="/settings" element={<NotificationsPage />} />
 
                   {/* その他 */}
-                  <Route path="/knowledge" element={<BuddyPage />} />
-                  <Route path="/prompts" element={<BadgesPage />} />
                   <Route
                     path="/templates"
                     element={

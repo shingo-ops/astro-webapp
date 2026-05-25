@@ -726,7 +726,6 @@ CREATE TABLE IF NOT EXISTS {schema}.staff_ui_preferences (
     show_sales_menu BOOLEAN NOT NULL DEFAULT TRUE,
     show_settings_menu BOOLEAN NOT NULL DEFAULT TRUE,
     show_admin_menu BOOLEAN NOT NULL DEFAULT FALSE,
-    show_buddy_menu BOOLEAN NOT NULL DEFAULT TRUE,
     show_sidebar BOOLEAN NOT NULL DEFAULT TRUE,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

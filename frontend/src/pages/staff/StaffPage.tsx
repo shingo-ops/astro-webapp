@@ -19,7 +19,6 @@ interface StaffUIPreferences {
   show_sales_menu: boolean;
   show_settings_menu: boolean;
   show_admin_menu: boolean;
-  show_buddy_menu: boolean;
   show_sidebar: boolean;
 }
 
@@ -57,7 +56,6 @@ const emptyPrefs: StaffUIPreferences = {
   show_sales_menu: true,
   show_settings_menu: true,
   show_admin_menu: false,
-  show_buddy_menu: true,
   show_sidebar: true,
 };
 
@@ -260,7 +258,6 @@ export default function StaffPage() {
                   show_sales_menu: t("staff.showSalesMenu"),
                   show_settings_menu: t("staff.showSettingsMenu"),
                   show_admin_menu: t("staff.showAdminMenu"),
-                  show_buddy_menu: t("staff.showBuddyMenu"),
                   show_sidebar: t("staff.showSidebar"),
                 };
                 return (Object.entries(labels) as Array<[keyof StaffUIPreferences, string]>).map(([k, label]) => (

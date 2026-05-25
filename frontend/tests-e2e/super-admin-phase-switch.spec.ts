@@ -28,7 +28,6 @@ const baseMocks = (isSuperAdmin: boolean, currentPhase: "A" | "B" | "C" = "A"): 
       show_sales_menu: true,
       show_settings_menu: true,
       show_admin_menu: true,
-      show_buddy_menu: true,
       show_sidebar: true,
     },
   },
