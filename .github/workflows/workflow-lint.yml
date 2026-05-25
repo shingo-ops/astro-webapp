@@ -1,0 +1,98 @@
+name: CI設定整合性チェック
+
+# CI最適化（PR #801）とポカよけ設定（migration-guard, e2e）が
+# 意図せず変更されていないことを検証する。
+#
+# [重要] このファイルは変更禁止（CLAUDE.md §不可逆操作 参照）。
+# PO（しんごさん）確認なしに paths: の追加・削除・ロジック変更をしないこと。
+# Required Status Check として設定されているため、
+# このチェックが失敗すると Claude Code を含む全ての PR がマージ不可になる。
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    name: CI設定整合性チェック
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: workflow-lint.yml 自身の改ざん検知
+        if: github.event_name == 'pull_request'
+        run: |
+          CHANGED=$(git diff origin/${{ github.base_ref }}...HEAD -- .github/workflows/workflow-lint.yml)
+          if [ -n "$CHANGED" ]; then
+            echo "::error::workflow-lint.yml の変更は PO 確認必須操作です（CLAUDE.md §不可逆操作 参照）"
+            exit 1
+          fi
+
+      - name: ポカよけCI・最適化CI の設定を検証
+        run: |
+          python3 - << 'EOF'
+          import yaml, sys
+
+          checks = [
+              {
+                  "file": ".github/workflows/migration-guard.yml",
+                  "rule": "no_paths",
+                  "reason": "ADR-036 DBポカよけ: 常時実行必須。paths追加で検出漏れが発生する",
+              },
+              {
+                  "file": ".github/workflows/e2e.yml",
+                  "rule": "no_paths",
+                  "reason": "Issue #523 学習済み。paths追加でデッドロックが発生する",
+              },
+              {
+                  "file": ".github/workflows/test.yml",
+                  "rule": "has_backend_in_paths",
+                  "reason": "PR #801 CI最適化: backend/**がpathsに必須。削除するとバックエンドCIが常時スキップされる",
+              },
+          ]
+
+          errors = []
+          for check in checks:
+              with open(check["file"]) as f:
+                  data = yaml.safe_load(f)
+
+              on_section = data.get("on", {})
+              pr_section = on_section.get("pull_request", {})
+              paths = pr_section.get("paths", None)
+
+              if check["rule"] == "no_paths" and paths is not None:
+                  errors.append(
+                      f"❌ {check['file']}: paths: filter が追加されています\n"
+                      f"   理由: {check['reason']}"
+                  )
+              elif check["rule"] == "has_backend_in_paths":
+                  if paths is None:
+                      errors.append(
+                          f"❌ {check['file']}: paths: filter が削除されています\n"
+                          f"   理由: {check['reason']}"
+                      )
+                  elif "backend/**" not in paths:
+                      errors.append(
+                          f"❌ {check['file']}: paths に backend/** が含まれていません\n"
+                          f"   現在の paths: {paths}\n"
+                          f"   理由: {check['reason']}"
+                      )
+
+          if errors:
+              print("=" * 60)
+              print("CI設定整合性チェック FAILED")
+              print("=" * 60)
+              for e in errors:
+                  print(e)
+              print()
+              print("修正するには docs/adr/ の該当ADRを確認し PO に承認を得ること。")
+              sys.exit(1)
+
+          print("✅ CI設定整合性チェック: 全て正常")
+          EOF
