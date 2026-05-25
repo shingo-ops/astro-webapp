@@ -29,6 +29,8 @@
 import { useEffect, useMemo, useRef, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../../lib/api";
+import { PageLayout } from "../../components/PageLayout";
+import { usePermissions } from "../../hooks/usePermissions";
 import ConfirmModal from "../../components/ConfirmModal";
 import CompanyContactSelector from "../../components/CompanyContactSelector";
 import OrderFinancialPanel, {
@@ -93,6 +95,7 @@ const emptyForm = {
 
 export default function OrdersPage() {
   const { t } = useTranslation();
+  const { hasPermission } = usePermissions();
 
   const STATUS_LABELS: Record<string, string> = {
     pending: t("orders.status_pending"),
@@ -454,23 +457,22 @@ export default function OrdersPage() {
     setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"));
   };
 
+  const newOrderButton = hasPermission("orders.create") ? (
+    <button
+      className="btn-primary"
+      onClick={() => {
+        setShowForm(true);
+        setEditId(null);
+        setForm(emptyForm);
+        resetSelector();
+      }}
+    >
+      {t("orders.newOrder")}
+    </button>
+  ) : null;
+
   return (
-    <div className="page">
-      <div className="page-header">
-        {/* eslint-disable-next-line no-restricted-syntax */}
-        <h2>{t("orders.title")}</h2>
-        <button
-          className="btn-primary"
-          onClick={() => {
-            setShowForm(true);
-            setEditId(null);
-            setForm(emptyForm);
-            resetSelector();
-          }}
-        >
-          {t("orders.newOrder")}
-        </button>
-      </div>
+    <PageLayout navKey="nav.orders" headerAction={newOrderButton}>
 
       {/* グループ件数バッジ（ADR-021 AC-1.6）。
           search 連動 / status fitler 非連動で全体ステータス分布を見せる。 */}
@@ -833,6 +835,6 @@ export default function OrdersPage() {
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }
