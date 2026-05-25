@@ -34,32 +34,17 @@ export default function ManagementCenterPage() {
       key: "team",
       titleKey: "managementCenter.sectionTeam",
       items: [
-        { to: "teams",  labelKey: "nav.teams",  visible: hasPermission("teams.view") },
-        { to: "staff",  labelKey: "nav.staff",  visible: hasPermission("staff.view") },
-        { to: "shifts", labelKey: "nav.shifts", visible: hasPermission("shifts.view") },
-      ],
-    },
-    {
-      key: "security",
-      titleKey: "managementCenter.sectionSecurity",
-      items: [
-        {
-          to: "roles",
-          labelKey: "nav.rolesPermissions",
-          visible: hasAny("roles.view", "roles.create"),
-        },
-        {
-          to: "inventory-visibility",
-          labelKey: "nav.inventoryVisibility",
-          visible: hasPermission("tenant.inventory_visibility.edit"),
-        },
+        { to: "teams",      labelKey: "nav.teams",             visible: hasPermission("teams.view") },
+        { to: "staff",      labelKey: "nav.staff",             visible: hasPermission("staff.view") },
+        { to: "shifts",     labelKey: "nav.shifts",            visible: hasPermission("shifts.view") },
+        { to: "commission", labelKey: "nav.commissionSettings", visible: hasPermission("orders.view") },
+        { to: "roles",      labelKey: "nav.roles",             visible: hasAny("roles.view", "roles.create") },
       ],
     },
     {
       key: "business",
       titleKey: "managementCenter.sectionBusiness",
       items: [
-        { to: "commission",    labelKey: "nav.commissionSettings", visible: hasPermission("orders.view") },
         { to: "tenant-profile", labelKey: "nav.tenantProfile",
           visible: hasAny("tenant.profile.edit", "tenant.profile.view") },
         { to: "channels",       labelKey: "nav.channels",       visible: hasPermission("channels.view") },
