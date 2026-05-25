@@ -23,7 +23,7 @@ export default function LoginPage() {
     } catch (err) {
       // Phase 1-E M-DYN-1: Firebase の生エラー文字列を日本語メッセージに変換
       // (旧実装は err.message をそのまま表示し "Firebase: Error (auth/invalid-credential)." が UI に出ていた)
-      setError(firebaseErrorMessage(err));
+      setError(firebaseErrorMessage(err, t));
     } finally {
       setLoading(false);
     }

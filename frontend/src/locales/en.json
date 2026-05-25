@@ -57,7 +57,10 @@
     "notDone": "Not Done",
     "submitting": "Submitting...",
     "deleteConfirmSuffix": " will be deleted.",
-    "saved": "Saved"
+    "saved": "Saved",
+    "requestFailed": "Request failed",
+    "blobFetchFailed": "Failed to fetch file",
+    "downloadFailed": "Download failed"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -549,7 +552,27 @@
     "close": "Close",
     "reauthRequired": "Please reconnect Facebook to enable Business Manager Page support.",
     "reauthBadge": "Reconnect required",
-    "reauthAction": "Reconnect Facebook"
+    "reauthAction": "Reconnect Facebook",
+    "connectedSuccess": "\"{{pageName}}\" connected successfully.",
+    "connectedSuccessNoName": "Page connected successfully.",
+    "partialConnect": "Connected {{succeeded}} Page(s) but {{failedCount}} failed. Please retry the failed Pages.",
+    "partialConnectWithPages": "Connected {{succeeded}} Page(s) but {{failedCount}} failed ({{failedPages}}). Please retry the failed Pages.",
+    "disconnectedSuccess": "Disconnected \"{{pageName}}\".",
+    "disconnectFailedMsg": "Disconnect failed: {{msg}}",
+    "connectError": "Couldn't start the connection",
+    "authUrlError": "Failed to obtain auth_url",
+    "loadErrorFallback": "Failed to load channels",
+    "errorReason": {
+      "user_denied": "The connection was denied on Facebook. Please try again.",
+      "state_mismatch": "Security token mismatch. Please try connecting again.",
+      "state_expired": "Your connection session has expired. Please try again.",
+      "meta_api_error": "Couldn't connect due to a Meta API error. Please try again in a moment.",
+      "meta_timeout": "The Meta API request timed out. Please check your network connection.",
+      "no_pages": "No manageable Facebook Pages were found. Please create a Page and try again.",
+      "permission_denied": "You don't have permission to connect channels. Please contact your administrator.",
+      "internal_error": "An internal error occurred. Please contact support.",
+      "unknown": "Connection failed (reason: {{reason}})."
+    }
   },
   "deals": {
     "title": "Deal Management",
@@ -741,7 +764,8 @@
     "actionResendEmail": "Resend",
     "emailSent": "Email sent",
     "emailResent": "Email resent",
-    "emailSendFailed": "Failed to send email"
+    "emailSendFailed": "Failed to send email",
+    "pdfDownloadFailed": "PDF download failed (HTTP {{status}})"
   },
   "tenantProfile": {
     "title": "Issuer Profile",
@@ -1385,5 +1409,16 @@
     "loadingMatrix": "Loading matrix...",
     "noRoles": "No roles found",
     "permissionRequired": "You need tenant.inventory_visibility.edit permission to edit this screen"
+  },
+  "firebaseError": {
+    "invalidCredential": "Incorrect email address or password.",
+    "invalidEmail": "Email address format is invalid.",
+    "userDisabled": "This account has been disabled. Please contact your administrator.",
+    "tooManyRequests": "Too many sign-in attempts. Please wait a moment and try again.",
+    "networkRequestFailed": "Network error. Please check your connection and try again.",
+    "operationNotAllowed": "This sign-in method is not currently available. Please contact support.",
+    "expiredActionCode": "This link has expired. Please start over.",
+    "invalidActionCode": "This link is invalid. Please use the latest email.",
+    "default": "Sign-in failed. Please try again later. Contact support if the problem persists."
   }
 }
