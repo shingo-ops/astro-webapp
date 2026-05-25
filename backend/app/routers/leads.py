@@ -35,6 +35,37 @@ from app.services.meta_graph import MetaGraphAPIError, MetaGraphError, MetaGraph
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
+def _is_postgresql(db: AsyncSession) -> bool:
+    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
+
+    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
+    "no such table: tenant_NNN.leads" で失敗する。本判定で SQLite 系を
+    検出して prefix なしに倒す。
+    """
+    bind = db.get_bind() if hasattr(db, "get_bind") else None
+    if bind is None:
+        bind = getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    return name.startswith("postgresql")
+
+
+def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
+    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
+
+    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
+    - SQLite (pytest): `{name}` (schema 概念なし)
+
+    AsyncSession の commit 後は新コネクションが払い出されて session-level
+    の search_path が失われる可能性があるため、raw text() を使う箇所では
+    schema prefix を明示するのが安全 (Issue #563 / #565)。
+    """
+    if _is_postgresql(db):
+        safe_id = int(tenant_id)
+        return f"tenant_{safe_id:03d}.{name}"
+    return name
+
+
 _LEAD_COLUMNS = """
     id, lead_code, customer_name, company_name, email, phone,
     source, type, status, temperature, estimated_scale, customer_type,
@@ -148,10 +179,11 @@ async def list_leads(
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
+    leads_t = _t(db, tenant_id, "leads")
     result = await db.execute(
         text(f"""
             SELECT {_LEAD_COLUMNS}
-            FROM leads
+            FROM {leads_t}
             {where_clause}
             ORDER BY updated_at DESC
             LIMIT :limit OFFSET :offset
@@ -174,8 +206,9 @@ async def get_lead(
     current_user: User = Depends(get_current_user),
 ):
     """リード詳細を取得する"""
+    leads_t = _t(db, tenant_id, "leads")
     result = await db.execute(
-        text(f"SELECT {_LEAD_COLUMNS} FROM leads WHERE id = :id"),
+        text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": lead_id},
     )
     row = result.mappings().first()
@@ -205,9 +238,10 @@ async def create_lead(
         data.monthly_forecast,
     )
 
+    leads_t = _t(db, tenant_id, "leads")
     result = await db.execute(
-        text("""
-            INSERT INTO leads (
+        text(f"""
+            INSERT INTO {leads_t} (
                 tenant_id, customer_name, company_name, email, phone,
                 source, type, status, temperature, estimated_scale, customer_type,
                 response_speed, monthly_forecast, prospect_rank, assigned_to, notes
@@ -242,12 +276,12 @@ async def create_lead(
 
     # lead_code = LD-00001 形式で自動採番（Python側で生成してDB非依存）
     await db.execute(
-        text("UPDATE leads SET lead_code = :code WHERE id = :id"),
+        text(f"UPDATE {leads_t} SET lead_code = :code WHERE id = :id"),
         {"code": f"LD-{new_id:05d}", "id": new_id},
     )
 
     fetched = await db.execute(
-        text(f"SELECT {_LEAD_COLUMNS} FROM leads WHERE id = :id"),
+        text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": new_id},
     )
     row = fetched.mappings().first()
@@ -281,8 +315,9 @@ async def update_lead(
     current_user: User = Depends(get_current_user),
 ):
     """リード情報を更新する（部分更新、prospect_rankは自動再計算）"""
+    leads_t = _t(db, tenant_id, "leads")
     old_result = await db.execute(
-        text(f"SELECT {_LEAD_COLUMNS} FROM leads WHERE id = :id"),
+        text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": lead_id},
     )
     old_row = old_result.mappings().first()
@@ -319,7 +354,7 @@ async def update_lead(
 
     result = await db.execute(
         text(f"""
-            UPDATE leads SET {set_clauses}, updated_at = NOW()
+            UPDATE {leads_t} SET {set_clauses}, updated_at = NOW()
             WHERE id = :id
             RETURNING {_LEAD_COLUMNS}
         """),
@@ -355,15 +390,16 @@ async def delete_lead(
     current_user: User = Depends(get_current_user),
 ):
     """リードを削除する"""
+    leads_t = _t(db, tenant_id, "leads")
     old_result = await db.execute(
-        text(f"SELECT {_LEAD_COLUMNS} FROM leads WHERE id = :id"),
+        text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": lead_id},
     )
     old_row = old_result.mappings().first()
     if not old_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="リードが見つかりません")
 
-    await db.execute(text("DELETE FROM leads WHERE id = :id"), {"id": lead_id})
+    await db.execute(text(f"DELETE FROM {leads_t} WHERE id = :id"), {"id": lead_id})
     await record_audit_log(
         db=db, tenant_id=tenant_id, user_id=current_user.id,
         action="delete", table_name="leads", record_id=lead_id,
@@ -398,8 +434,11 @@ async def convert_lead(
         アトミックにクレーム。並行変換でクレームに失敗した場合は
         作成済みdealと共にrollbackして409を返す。
     """
+    leads_t = _t(db, tenant_id, "leads")
+    contacts_t = _t(db, tenant_id, "contacts")
+    deals_t = _t(db, tenant_id, "deals")
     lead_result = await db.execute(
-        text(f"SELECT {_LEAD_COLUMNS} FROM leads WHERE id = :id"),
+        text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": lead_id},
     )
     lead_row = lead_result.mappings().first()
@@ -411,7 +450,7 @@ async def convert_lead(
 
     # Step 5d: contact / company の存在 + 所属一致確認のみ
     contact_check = await db.execute(
-        text("SELECT company_id FROM contacts WHERE id = :id"),
+        text(f"SELECT company_id FROM {contacts_t} WHERE id = :id"),
         {"id": data.contact_id},
     )
     contact_row = contact_check.first()
@@ -425,8 +464,8 @@ async def convert_lead(
 
     # 新案件作成（company_id + contact_id ベース）
     deal_result = await db.execute(
-        text("""
-            INSERT INTO deals (
+        text(f"""
+            INSERT INTO {deals_t} (
                 tenant_id, company_id, contact_id, lead_id, title, amount,
                 currency, status, stage, probability, assigned_to, notes
             )
@@ -450,7 +489,7 @@ async def convert_lead(
     )
     new_deal_id = deal_result.scalar_one()
     await db.execute(
-        text("UPDATE deals SET deal_code = :code WHERE id = :id"),
+        text(f"UPDATE {deals_t} SET deal_code = :code WHERE id = :id"),
         {"code": f"DL-{new_deal_id:05d}", "id": new_deal_id},
     )
 
@@ -458,7 +497,7 @@ async def convert_lead(
     # 並行リクエストで既に商談中になっていた場合は0行返却 → 例外で全ロールバック
     updated = await db.execute(
         text(f"""
-            UPDATE leads
+            UPDATE {leads_t}
             SET status = '商談中', converted_deal_id = :deal_id, updated_at = NOW()
             WHERE id = :id AND converted_deal_id IS NULL
             RETURNING {_LEAD_COLUMNS}
@@ -584,8 +623,10 @@ async def list_lead_messages(
     """
     # lead 存在 + tenant 確認（RLS が PostgreSQL でテナント分離するが、SQLite では
     # WHERE で tenant_id を必須にする）
+    leads_t = _t(db, tenant_id, "leads")
+    meta_messages_t = _t(db, tenant_id, "meta_messages")
     lead_result = await db.execute(
-        text(f"SELECT {_LEAD_COLUMNS} FROM leads WHERE id = :id AND tenant_id = :tenant_id"),
+        text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id AND tenant_id = :tenant_id"),
         {"id": lead_id, "tenant_id": tenant_id},
     )
     lead_row = lead_result.mappings().first()
@@ -611,7 +652,7 @@ async def list_lead_messages(
                 sent_by_staff_id, error_code, error_message,
                 seen_at, seen_by_staff_id,
                 created_at
-            FROM meta_messages
+            FROM {meta_messages_t}
             WHERE {where_sql}
             ORDER BY created_at ASC, id ASC
             LIMIT :limit
@@ -649,7 +690,7 @@ async def list_lead_messages(
     else:
         plat_q = await db.execute(
             text(
-                "SELECT platform FROM meta_messages "
+                f"SELECT platform FROM {meta_messages_t} "
                 "WHERE lead_id = :lead_id AND tenant_id = :tenant_id "
                 "ORDER BY created_at DESC, id DESC LIMIT 1"
             ),
@@ -663,7 +704,7 @@ async def list_lead_messages(
     # フィルタ無しで再クエリ
     inbound_q = await db.execute(
         text(
-            "SELECT MAX(created_at) FROM meta_messages "
+            f"SELECT MAX(created_at) FROM {meta_messages_t} "
             "WHERE lead_id = :lead_id AND tenant_id = :tenant_id "
             "AND direction = 'inbound'"
         ),
@@ -707,8 +748,11 @@ async def mark_lead_messages_read(
     Meta 側 mark_seen Send API は呼ばない（DB のみで管理）。Meta 既読同期は
     out of scope（spec §5-6 注記）。
     """
+    leads_t = _t(db, tenant_id, "leads")
+    staff_t = _t(db, tenant_id, "staff")
+    meta_messages_t = _t(db, tenant_id, "meta_messages")
     lead_q = await db.execute(
-        text("SELECT id FROM leads WHERE id = :id AND tenant_id = :tenant_id"),
+        text(f"SELECT id FROM {leads_t} WHERE id = :id AND tenant_id = :tenant_id"),
         {"id": lead_id, "tenant_id": tenant_id},
     )
     if lead_q.first() is None:
@@ -722,7 +766,7 @@ async def mark_lead_messages_read(
     if current_user.email:
         try:
             sr = await db.execute(
-                text("SELECT id FROM staff WHERE primary_email = :email "
+                text(f"SELECT id FROM {staff_t} WHERE primary_email = :email "
                      "ORDER BY id ASC LIMIT 1"),
                 {"email": current_user.email},
             )
@@ -733,8 +777,8 @@ async def mark_lead_messages_read(
             staff_id = None
 
     upd = await db.execute(
-        text("""
-            UPDATE meta_messages
+        text(f"""
+            UPDATE {meta_messages_t}
             SET seen_at = NOW(),
                 seen_by_staff_id = :staff_id
             WHERE lead_id = :lead_id
@@ -859,8 +903,12 @@ async def send_lead_message(
         502: Meta Send API がエラー / タイムアウト
     """
     # ----- (1) lead 存在 + tenant 確認 -----
+    leads_t = _t(db, tenant_id, "leads")
+    meta_messages_t = _t(db, tenant_id, "meta_messages")
+    tenant_meta_config_t = _t(db, tenant_id, "tenant_meta_config")
+    staff_t = _t(db, tenant_id, "staff")
     lead_q = await db.execute(
-        text(f"SELECT {_LEAD_COLUMNS} FROM leads "
+        text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} "
              "WHERE id = :id AND tenant_id = :tenant_id"),
         {"id": lead_id, "tenant_id": tenant_id},
     )
@@ -881,9 +929,9 @@ async def send_lead_message(
 
     # ----- (2) 直近 inbound 取得 + platform 推論 -----
     inbound_q = await db.execute(
-        text("""
+        text(f"""
             SELECT created_at, sender_id, platform
-            FROM meta_messages
+            FROM {meta_messages_t}
             WHERE lead_id = :lead_id
               AND tenant_id = :tenant_id
               AND direction = 'inbound'
@@ -941,9 +989,9 @@ async def send_lead_message(
     # ----- (5) tenant_meta_config から Page Access Token を復号 -----
     if platform == "messenger":
         token_q = await db.execute(
-            text("""
+            text(f"""
                 SELECT id, page_id, page_access_token_encrypted, instagram_business_account_id
-                FROM tenant_meta_config
+                FROM {tenant_meta_config_t}
                 WHERE tenant_id = :tenant_id AND is_active = TRUE
                 ORDER BY connected_at DESC, id DESC
                 LIMIT 1
@@ -953,9 +1001,9 @@ async def send_lead_message(
     else:
         # instagram: ig_business_account_id がセットされている行を優先
         token_q = await db.execute(
-            text("""
+            text(f"""
                 SELECT id, page_id, page_access_token_encrypted, instagram_business_account_id
-                FROM tenant_meta_config
+                FROM {tenant_meta_config_t}
                 WHERE tenant_id = :tenant_id
                   AND is_active = TRUE
                   AND instagram_business_account_id IS NOT NULL
@@ -1091,7 +1139,7 @@ async def send_lead_message(
     if current_user.email:
         try:
             sr = await db.execute(
-                text("SELECT id FROM staff WHERE primary_email = :email "
+                text(f"SELECT id FROM {staff_t} WHERE primary_email = :email "
                      "ORDER BY id ASC LIMIT 1"),
                 {"email": current_user.email},
             )
@@ -1122,8 +1170,8 @@ async def send_lead_message(
         "page_id": page_id_for_message,
     }
     insert_result = await db.execute(
-        text("""
-            INSERT INTO meta_messages (
+        text(f"""
+            INSERT INTO {meta_messages_t} (
                 tenant_id, lead_id, platform, sender_id, message_text,
                 direction, message_id, recipient_id,
                 messaging_type, message_tag, sent_by_staff_id, page_id, created_at
@@ -1141,8 +1189,8 @@ async def send_lead_message(
     if new_row is None:
         # RETURNING 非対応の SQLite 古バージョンへの保険
         await db.execute(
-            text("""
-                INSERT INTO meta_messages (
+            text(f"""
+                INSERT INTO {meta_messages_t} (
                     tenant_id, lead_id, platform, sender_id, message_text,
                     direction, message_id, recipient_id,
                     messaging_type, message_tag, sent_by_staff_id, page_id, created_at
