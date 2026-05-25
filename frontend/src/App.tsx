@@ -218,7 +218,7 @@ function App() {
 
                   {/* 管理センター: 左サブナビ + 右コンテンツのシェル。権限に基づいて項目を制御 */}
                   <Route path="/management-center" element={<ManagementCenterPage />}>
-                    <Route index element={<Navigate to="teams" replace />} />
+                    <Route index element={<Navigate to="staff" replace />} />
                     <Route path="teams"               element={<TeamsPage />} />
                     <Route path="staff"               element={<StaffPage />} />
                     <Route path="shifts"              element={<ShiftsPage />} />
@@ -233,6 +233,7 @@ function App() {
                     <Route path="purchase-orders"     element={<PurchaseOrdersPage />} />
                     <Route path="data"                element={<ERPPage />} />
                     <Route path="notifications"       element={<NotificationsPage />} />
+                    <Route path="reports"             element={<StaffReportsPage />} />
                     <Route path="super-admin/masters" element={<SuperAdminMastersPage />} />
                     <Route path="super-admin/inbound" element={<DiscordInboundPage />} />
                     <Route path="super-admin/phase"   element={<PhaseSwitchPage />} />

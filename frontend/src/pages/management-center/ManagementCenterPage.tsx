@@ -34,11 +34,12 @@ export default function ManagementCenterPage() {
       key: "team",
       titleKey: "managementCenter.sectionTeam",
       items: [
-        { to: "teams",      labelKey: "nav.teams",             visible: hasPermission("teams.view") },
         { to: "staff",      labelKey: "nav.staff",             visible: hasPermission("staff.view") },
+        { to: "roles",      labelKey: "nav.roles",             visible: hasAny("roles.view", "roles.create") },
+        { to: "teams",      labelKey: "nav.teams",             visible: hasPermission("teams.view") },
         { to: "shifts",     labelKey: "nav.shifts",            visible: hasPermission("shifts.view") },
         { to: "commission", labelKey: "nav.commissionSettings", visible: hasPermission("orders.view") },
-        { to: "roles",      labelKey: "nav.roles",             visible: hasAny("roles.view", "roles.create") },
+        { to: "reports",    labelKey: "nav.reports",           visible: true },
       ],
     },
     {
