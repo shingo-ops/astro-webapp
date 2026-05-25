@@ -215,6 +215,15 @@
   --selection-strip-w:      2px;   /* 選択中会話アイテムの右端インジケータ幅 */
   --platform-dot-offset:   -2px;   /* プラットフォームドットのavatar外側オフセット */
 
+  /* ---- Promoted tokens（InboxPage由来 → アプリ標準へ昇格 / ADR-069） ---- */
+  --send-top-row-padding:    var(--space-10px) var(--space-10px) var(--space-6px);
+  --center-header-min-h:     81px;   /* パネル中央ヘッダー最小高（受信箱実測値） */
+  --toggle-width:            40px;   /* トグルスイッチ幅 */
+  --toggle-height:           22px;   /* トグルスイッチ高さ */
+  --toggle-thumb-size:       16px;   /* トグルサムサイズ */
+  --right-panel-avatar-size: var(--size-avatar-md);  /* 右パネルアバター（40px） */
+  --mc-subnav-width:         200px;  /* 管理センターサブナビ幅 */
+
   /* ---- Modal sizes ---- */
   --max-width-modal-sm:   420px;  /* 確認モーダル・小型ダイアログ最大幅 */
 
