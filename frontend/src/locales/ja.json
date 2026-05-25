@@ -1401,7 +1401,17 @@
     "errorUpdate": "予定の更新に失敗しました",
     "errorDelete": "予定の削除に失敗しました",
     "noTitle": "（タイトルなし）",
-    "today": "今日"
+    "today": "今日",
+    "statusConnected": "Google カレンダー接続中",
+    "statusLastSync": "最終同期: {{time}}",
+    "statusJustNow": "たった今",
+    "statusMinutesAgo": "{{count}} 分前",
+    "statusDisconnected": "Google カレンダーの接続が切れました",
+    "statusReconnect": "再接続する",
+    "statusNotLinked": "Google カレンダーが未連携です",
+    "statusConnectPrompt": "連携する",
+    "prevPeriod": "前へ",
+    "nextPeriod": "次へ"
   },
   "inventoryVisibility": {
     "title": "在庫表示権限の設定",

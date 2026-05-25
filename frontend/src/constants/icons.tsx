@@ -39,6 +39,9 @@ export const STATUS_ICONS = {
   error:   X,
 } satisfies Record<string, Icon>;
 
+// 個別エクスポート（StatusBar 等で直接参照）
+export { Check, Warning, X };
+
 // カテゴリ（RolesPage の CATEGORY_META 用）
 // "_default" はフォールバック用
 export const CATEGORY_ICONS: Record<string, Icon> = {
