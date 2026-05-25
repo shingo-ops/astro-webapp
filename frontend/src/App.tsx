@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { IconContext } from "@phosphor-icons/react";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -53,6 +53,7 @@ import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
 // spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
 import PhaseSwitchPage from "./pages/super-admin/PhaseSwitchPage";
+import ManagementCenterPage from "./pages/ManagementCenterPage";
 import "./sidebar.css";
 import "./topbar.css";
 import "./components.css";
@@ -199,6 +200,28 @@ function App() {
                     path="/admin/tenant-profile"
                     element={<TenantProfilePage />}
                   />
+
+                  {/* 管理センター: 左サブナビ + 右コンテンツのシェル。権限に基づいて項目を制御 */}
+                  <Route path="/management-center" element={<ManagementCenterPage />}>
+                    <Route index element={<Navigate to="teams" replace />} />
+                    <Route path="teams"               element={<TeamsPage />} />
+                    <Route path="staff"               element={<StaffPage />} />
+                    <Route path="shifts"              element={<ShiftsPage />} />
+                    <Route path="roles"               element={<RolesPage />} />
+                    <Route path="inventory-visibility" element={<InventoryVisibilityPage />} />
+                    <Route path="commission"          element={<CommissionSettingsPage />} />
+                    <Route path="tenant-profile"      element={<TenantProfilePage />} />
+                    <Route path="channels"            element={<ChannelsPage />} />
+                    <Route path="bots"                element={<BotsPage />} />
+                    <Route path="companies"           element={<CompaniesPage />} />
+                    <Route path="deals"               element={<DealsPage />} />
+                    <Route path="suppliers"           element={<SuppliersPage />} />
+                    <Route path="purchase-orders"     element={<PurchaseOrdersPage />} />
+                    <Route path="data"                element={<ERPPage />} />
+                    <Route path="super-admin/masters" element={<SuperAdminMastersPage />} />
+                    <Route path="super-admin/inbound" element={<DiscordInboundPage />} />
+                    <Route path="super-admin/phase"   element={<PhaseSwitchPage />} />
+                  </Route>
                 </Route>
               </Routes>
             </ThemeProvider>

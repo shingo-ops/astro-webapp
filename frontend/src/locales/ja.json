@@ -109,7 +109,15 @@
     "account": "アカウント",
     "openUserMenu": "ユーザーメニューを開く",
     "switchToDark": "ダークモード",
-    "switchToLight": "ライトモード"
+    "switchToLight": "ライトモード",
+    "managementCenter": "管理センター"
+  },
+  "managementCenter": {
+    "sectionTeam":      "チーム・人事",
+    "sectionSecurity":  "権限・セキュリティ",
+    "sectionBusiness":  "ビジネス設定",
+    "sectionData":      "データ管理",
+    "sectionSuperAdmin":"スーパー管理者"
   },
   "login": {
     "email": "メールアドレス",

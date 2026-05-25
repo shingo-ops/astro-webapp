@@ -135,9 +135,9 @@ test.describe("Scene 1: Dashboard Overview", () => {
     const nav = page.locator("nav.sidebar-nav-items");
     await expect(nav).toBeVisible();
 
-    // sidebar 内の主要ラベル: ダッシュボード（NavLink） / 顧客管理（Accordion, PR #531） / 管理（Accordion）
+    // sidebar 内の主要ラベル: ダッシュボード（NavLink） / 顧客管理（NavLink） / 管理センター（NavLink, 管理アコーディオン廃止）
     await expect(nav.getByText("ダッシュボード", { exact: true })).toBeVisible();
     await expect(nav.getByText("顧客管理", { exact: true })).toBeVisible();
-    await expect(nav.getByText("管理", { exact: true })).toBeVisible();
+    await expect(nav.getByText("管理センター", { exact: true })).toBeVisible();
   });
 });
