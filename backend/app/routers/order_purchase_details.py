@@ -53,6 +53,36 @@ from app.services.audit import record_audit_log
 router = APIRouter()
 
 
+def _is_postgresql(db: AsyncSession) -> bool:
+    """db の dialect が PostgreSQL 系か判定する (Issue #766)。
+
+    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
+    "no such table: tenant_NNN.order_purchase_details" で失敗する。本判定で
+    SQLite 系を検出して prefix なしに倒す。
+    """
+    bind = db.get_bind() if hasattr(db, "get_bind") else None
+    if bind is None:
+        bind = getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    return name.startswith("postgresql")
+
+
+def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
+    """tenant スキーマ修飾テーブル参照を返す (Issue #766)。
+
+    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
+    - SQLite (pytest): `{name}` (schema 概念なし)
+
+    AsyncSession の commit 後は新コネクションが払い出されて session-level
+    の search_path が失われる可能性があるため、raw text() を使う箇所では
+    schema prefix を明示するのが安全 (Issue #563 / #565 / #766)。
+    """
+    if _is_postgresql(db):
+        safe_id = int(tenant_id)
+        return f"tenant_{safe_id:03d}.{name}"
+    return name
+
+
 # DB 列のうち入出力対象のホワイトリスト。動的 INSERT / UPDATE の組み立ては必ず
 # この集合を経由すること（外部キー以外の任意フィールド書き換えを防ぐ）。
 _UPDATABLE_COLUMNS: frozenset[str] = frozenset(INPUT_FIELDS)
@@ -98,10 +128,11 @@ _SUPPLIER_SORTABLE_COLUMNS = {
 }
 
 
-async def _ensure_order_exists(db: AsyncSession, order_id: int) -> None:
-    """受注の存在を確認する（テナント境界は既存 search_path で担保）。"""
+async def _ensure_order_exists(db: AsyncSession, order_id: int, tenant_id: int) -> None:
+    """受注の存在を確認する (Issue #766: schema prefix 明示)。"""
+    orders_t = _t(db, tenant_id, "orders")
     res = await db.execute(
-        text("SELECT id FROM orders WHERE id = :id"),
+        text(f"SELECT id FROM {orders_t} WHERE id = :id"),
         {"id": order_id},
     )
     if not res.first():
@@ -111,9 +142,10 @@ async def _ensure_order_exists(db: AsyncSession, order_id: int) -> None:
         )
 
 
-async def _fetch_purchase_row(db: AsyncSession, order_id: int) -> dict | None:
+async def _fetch_purchase_row(db: AsyncSession, order_id: int, tenant_id: int) -> dict | None:
+    order_purchase_details_t = _t(db, tenant_id, "order_purchase_details")
     res = await db.execute(
-        text(f"SELECT {_SELECT_COLS} FROM order_purchase_details WHERE order_id = :order_id"),
+        text(f"SELECT {_SELECT_COLS} FROM {order_purchase_details_t} WHERE order_id = :order_id"),
         {"order_id": order_id},
     )
     row = res.mappings().first()
@@ -141,9 +173,9 @@ async def create_order_purchase(
     current_user: User = Depends(get_current_user),
 ):
     """受注に仕入情報を新規登録する。既存があれば 409。"""
-    await _ensure_order_exists(db, order_id)
+    await _ensure_order_exists(db, order_id, tenant_id)
 
-    existing = await _fetch_purchase_row(db, order_id)
+    existing = await _fetch_purchase_row(db, order_id, tenant_id)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -166,8 +198,9 @@ async def create_order_purchase(
             insert_vals.append(f":{col}")
             params[col] = value
 
+    order_purchase_details_t = _t(db, tenant_id, "order_purchase_details")
     insert_sql = text(f"""
-        INSERT INTO order_purchase_details ({', '.join(insert_cols)})
+        INSERT INTO {order_purchase_details_t} ({', '.join(insert_cols)})
         VALUES ({', '.join(insert_vals)})
         RETURNING {_SELECT_COLS}
     """)
@@ -200,7 +233,7 @@ async def get_order_purchase(
     current_user: User = Depends(get_current_user),
 ):
     """受注の仕入情報を取得する。"""
-    row = await _fetch_purchase_row(db, order_id)
+    row = await _fetch_purchase_row(db, order_id, tenant_id)
     if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -222,7 +255,7 @@ async def update_order_purchase(
     current_user: User = Depends(get_current_user),
 ):
     """受注の仕入情報を部分更新する（自動 updated_at）。"""
-    old_row = await _fetch_purchase_row(db, order_id)
+    old_row = await _fetch_purchase_row(db, order_id, tenant_id)
     if not old_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -245,8 +278,9 @@ async def update_order_purchase(
     params = dict(update_data)
     params["order_id"] = order_id
 
+    order_purchase_details_t = _t(db, tenant_id, "order_purchase_details")
     update_sql = text(f"""
-        UPDATE order_purchase_details
+        UPDATE {order_purchase_details_t}
         SET {set_clauses}, updated_at = NOW()
         WHERE order_id = :order_id
         RETURNING {_SELECT_COLS}
@@ -281,15 +315,16 @@ async def delete_order_purchase(
     current_user: User = Depends(get_current_user),
 ):
     """受注の仕入情報を削除する（受注本体は残る）。"""
-    old_row = await _fetch_purchase_row(db, order_id)
+    old_row = await _fetch_purchase_row(db, order_id, tenant_id)
     if not old_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="仕入情報が見つかりません",
         )
 
+    order_purchase_details_t = _t(db, tenant_id, "order_purchase_details")
     await db.execute(
-        text("DELETE FROM order_purchase_details WHERE order_id = :order_id"),
+        text(f"DELETE FROM {order_purchase_details_t} WHERE order_id = :order_id"),
         {"order_id": order_id},
     )
 
@@ -322,7 +357,7 @@ async def update_order_purchase_status(
     body 省略時は `purchase_status='confirmed'` に切り替える（最頻ユースケース）。
     body で `status: ""` を渡された場合は確認中に戻す（取り消し用途）。
     """
-    old_row = await _fetch_purchase_row(db, order_id)
+    old_row = await _fetch_purchase_row(db, order_id, tenant_id)
     if not old_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -333,8 +368,9 @@ async def update_order_purchase_status(
     if data is not None and data.status is not None:
         new_status = data.status
 
+    order_purchase_details_t = _t(db, tenant_id, "order_purchase_details")
     update_sql = text(f"""
-        UPDATE order_purchase_details
+        UPDATE {order_purchase_details_t}
         SET purchase_status = :status, updated_at = NOW()
         WHERE order_id = :order_id
         RETURNING {_SELECT_COLS}
@@ -412,9 +448,11 @@ async def list_purchase_by_supplier(
     where_sql = ("WHERE " + " AND ".join(where_parts)) if where_parts else ""
 
     # COUNT は同じ where を使う（JOIN なし）
+    order_purchase_details_t = _t(db, tenant_id, "order_purchase_details")
+    orders_t = _t(db, tenant_id, "orders")
     count_sql = text(f"""
         SELECT COUNT(*) AS total
-        FROM order_purchase_details p
+        FROM {order_purchase_details_t} p
         {where_sql}
     """)
     cnt_res = await db.execute(count_sql, params)
@@ -436,8 +474,8 @@ async def list_purchase_by_supplier(
             p.purchase_total, p.purchase_shipping,
             p.purchase_status,
             p.created_at, p.updated_at
-        FROM order_purchase_details p
-        LEFT JOIN orders o ON o.id = p.order_id
+        FROM {order_purchase_details_t} p
+        LEFT JOIN {orders_t} o ON o.id = p.order_id
         {where_sql}
         ORDER BY p.{sort_by} {sort_dir}, p.id DESC
         LIMIT :limit OFFSET :offset
