@@ -28,20 +28,16 @@ import { useSSE } from "../hooks/useSSE";
 import { listConversations } from "../lib/messages";
 import ConfirmModal from "./ConfirmModal";
 import { ICON } from "../constants/iconSizes";
+import type { NavItem } from "../types/nav";
 
 /* ------------------------------------------------------------------ */
 /* SidebarAccordion                                                     */
 /* ------------------------------------------------------------------ */
 
-interface SubItem {
-  to: string;
-  label: string;
-}
-
 interface SidebarAccordionProps {
   label: string;
   icon: React.ReactNode;
-  items: SubItem[];
+  items: NavItem[];
   activePaths: string[];
   isExpanded: boolean;
   isOpen: boolean;
@@ -51,6 +47,7 @@ interface SidebarAccordionProps {
 function SidebarAccordion({
   label, icon, items, activePaths, isExpanded, isOpen, onToggle,
 }: SidebarAccordionProps) {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const isActive = activePaths.some((p) => pathname.startsWith(p));
 
@@ -80,7 +77,7 @@ function SidebarAccordion({
               to={item.to}
               className={({ isActive: a }) => `sidebar-sub-item${a ? " active" : ""}`}
             >
-              {item.label}
+              {t(item.labelKey)}
             </NavLink>
           ))}
         </div>
@@ -155,10 +152,10 @@ export default function Layout() {
       "tenant.profile.view", "tenant.inventory_visibility.edit",
     );
 
-  const moreItems: SubItem[] = [
-    ...(prefs.show_buddy_menu && hasPermission("buddy.view_own") ? [{ to: "/knowledge", label: t("nav.buddy") }] : []),
-    ...(hasPermission("badges.view") ? [{ to: "/prompts", label: t("nav.badges") }] : []),
-    { to: "/templates", label: t("nav.templates") },
+  const moreItems: NavItem[] = [
+    ...(prefs.show_buddy_menu && hasPermission("buddy.view_own") ? [{ to: "/knowledge", labelKey: "nav.buddy" }] : []),
+    ...(hasPermission("badges.view") ? [{ to: "/prompts", labelKey: "nav.badges" }] : []),
+    { to: "/templates", labelKey: "nav.templates" },
   ];
 
   return (
