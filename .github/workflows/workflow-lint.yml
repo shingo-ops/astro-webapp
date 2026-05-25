@@ -63,7 +63,8 @@ jobs:
               with open(check["file"]) as f:
                   data = yaml.safe_load(f)
 
-              on_section = data.get("on", {})
+              # PyYAML は `on:` を True (bool) として解析するため両方を試みる
+              on_section = data.get(True, data.get("on", {}))
               pr_section = on_section.get("pull_request", {})
               paths = pr_section.get("paths", None)
 
