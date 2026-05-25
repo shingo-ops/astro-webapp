@@ -16,18 +16,12 @@ import { useTranslation } from "react-i18next";
 import { PageLayout } from "../components/PageLayout";
 import { usePermissions } from "../hooks/usePermissions";
 import { useSuperAdmin } from "../hooks/useSuperAdmin";
+import type { NavItem, NavSection } from "../types/nav";
 import "./ManagementCenterPage.css";
 
-interface SubNavItem {
-  to: string;
-  labelKey: string;
+/** 権限フィルタリング前の生アイテム（このファイル内のみで使用） */
+interface RawNavItem extends NavItem {
   visible: boolean;
-}
-
-interface SubNavSection {
-  key: string;
-  titleKey: string;
-  items: SubNavItem[];
 }
 
 export default function ManagementCenterPage() {
@@ -35,7 +29,7 @@ export default function ManagementCenterPage() {
   const { hasPermission, hasAny } = usePermissions();
   const { isSuperAdmin } = useSuperAdmin();
 
-  const sections: SubNavSection[] = [
+  const rawSections: { key: string; titleKey: string; items: RawNavItem[] }[] = [
     {
       key: "team",
       titleKey: "managementCenter.sectionTeam",
@@ -94,21 +88,20 @@ export default function ManagementCenterPage() {
     },
   ];
 
-  const visibleSections = sections.filter((s) =>
-    s.items.some((i) => i.visible),
-  );
+  // 権限フィルタリングして共有型 NavSection[] に変換
+  const sections: NavSection[] = rawSections
+    .map((s) => ({ key: s.key, titleKey: s.titleKey, items: s.items.filter((i) => i.visible) }))
+    .filter((s) => s.items.length > 0);
 
   return (
     <PageLayout navKey="nav.managementCenter" noScroll>
       <div className="mc-shell">
         {/* 左サブナビ */}
         <nav className="mc-subnav" aria-label={t("nav.managementCenter")}>
-          {visibleSections.map((section) => (
+          {sections.map((section) => (
             <div key={section.key} className="mc-subnav-section">
               <span className="mc-subnav-title">{t(section.titleKey)}</span>
-              {section.items
-                .filter((i) => i.visible)
-                .map((item) => (
+              {section.items.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
@@ -118,7 +111,7 @@ export default function ManagementCenterPage() {
                   >
                     {t(item.labelKey)}
                   </NavLink>
-                ))}
+              ))}
             </div>
           ))}
         </nav>
