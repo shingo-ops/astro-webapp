@@ -3,6 +3,8 @@ name: Migration Guard
 on:
   pull_request:
     branches: [main, develop]
+    paths:
+      - 'backend/**'  # [TEST] 意図的な違反 — workflow-lint が検知するか確認
 
 jobs:
   check:
