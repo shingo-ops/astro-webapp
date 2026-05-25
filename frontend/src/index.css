@@ -20,6 +20,7 @@
   /* ボーダー */
   --border: #e2e8f0;
   --border-strong: #cbd5e0;
+  --border-icon: #000000;    /* アイコン枠線（SSoT: .icon-frame で参照） */
 
   /* アクセント（Meta Business Suite 青系） */
   --accent: #1877F2;             /* プライマリボタン・フォーカス */
@@ -185,6 +186,7 @@
 
   --border: #334155;
   --border-strong: #475569;
+  --border-icon: #e2e8f0;    /* アイコン枠線（ダーク: 視認性確保のため明色） */
 
   --accent: #818cf8;
   --accent-hover: #6366f1;
@@ -316,6 +318,11 @@
   --calendar-status-error-text:  #f87171;
 
   color-scheme: dark;
+}
+
+/* ====== 共通アイコン枠線（SSoT: --border-icon トークンを参照） ====== */
+.icon-frame {
+  border: 1px solid var(--border-icon);
 }
 
 * {
