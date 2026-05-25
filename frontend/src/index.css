@@ -322,7 +322,7 @@
 
 /* ====== 共通アイコン枠線（SSoT: --border-icon トークンを参照） ====== */
 .icon-frame {
-  border: 1px solid var(--border-icon);
+  border: 3px solid var(--border-icon);
 }
 
 * {
