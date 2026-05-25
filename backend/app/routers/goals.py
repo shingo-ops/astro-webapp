@@ -16,7 +16,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_tenant, get_current_user, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.schemas.goal import (
@@ -133,6 +138,7 @@ async def create_goal(
         },
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     row = result.mappings().first()
     return GoalResponse(**dict(row))
 
@@ -160,6 +166,7 @@ async def update_goal(
         {"target_value": body.target_value, "id": goal_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     row = result.mappings().first()
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="目標が見つかりません")
@@ -183,6 +190,7 @@ async def delete_goal(
         {"id": goal_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     if not result.mappings().first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="目標が見つかりません")
 

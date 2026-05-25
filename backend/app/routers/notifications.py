@@ -18,7 +18,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.services.audit import record_audit_log
@@ -82,6 +87,7 @@ async def create_channel(data: ChannelCreate, db: AsyncSession = Depends(get_db)
                            action="create", table_name="notification_channels", record_id=row["id"],
                            new_data={"channel_name": data.channel_name})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return ChannelResponse(**dict(row))
 
 
@@ -96,6 +102,7 @@ async def delete_channel(channel_id: int, db: AsyncSession = Depends(get_db),
     await record_audit_log(db=db, tenant_id=tenant_id, user_id=current_user.id,
                            action="delete", table_name="notification_channels", record_id=channel_id)
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
 
 async def send_discord_notification(db: AsyncSession, tenant_id: int, event_type: str, title: str, message: str) -> None:
@@ -123,5 +130,6 @@ async def send_discord_notification(db: AsyncSession, tenant_id: int, event_type
                 except Exception as e:
                     logger.warning("Discord送信失敗 channel=%d: %s", ch["id"], e)
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except Exception as e:
         logger.warning("Discord通知処理失敗: %s", e)

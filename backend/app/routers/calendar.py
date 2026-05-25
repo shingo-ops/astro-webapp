@@ -22,7 +22,11 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_tenant, get_current_user
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.services import calendar_service as cal_svc
@@ -254,6 +258,7 @@ async def update_sync_mode(
         {"mode": body.sync_mode, "tid": tenant_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
     # Webhook の登録/解除を同期モードに合わせて調整
     from app.services import google_webhook as webhook_svc

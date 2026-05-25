@@ -22,6 +22,7 @@ from app.auth.dependencies import (
     get_current_tenant,
     get_current_user,
     require_permission,
+    reset_tenant_context,
 )
 from app.cache import invalidate_tenant_permissions
 from app.database import get_db
@@ -170,6 +171,7 @@ async def set_role_visibility(
         )
 
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     # ロール所持者全員の権限キャッシュをパージ
     await invalidate_tenant_permissions(tenant_id)
     return {
