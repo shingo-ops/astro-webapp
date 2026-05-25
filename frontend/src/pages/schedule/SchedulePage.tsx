@@ -570,7 +570,22 @@ export default function SchedulePage() {
           slotMaxTime="24:00:00"
           slotDuration="00:30:00"
           slotLabelInterval="01:00:00"
+          slotLabelFormat={{ hour: "numeric", minute: "2-digit", omitZeroMinute: true, meridiem: false }}
           moreLinkContent={(args) => `+${args.num}`}
+          dayHeaderContent={({ date, isToday, view }) => {
+            const dayName = new Intl.DateTimeFormat("ja-JP", { weekday: "narrow" }).format(date);
+            if (view.type === "dayGridMonth") {
+              return <span className="gcal-month-col-name">{dayName}</span>;
+            }
+            return (
+              <div className="gcal-day-header">
+                <span className="gcal-day-header__name">{dayName}</span>
+                <span className={`gcal-day-header__num${isToday ? " today" : ""}`}>
+                  {date.getDate()}
+                </span>
+              </div>
+            );
+          }}
         />
       </div>
 
