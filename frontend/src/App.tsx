@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { IconContext } from "@phosphor-icons/react";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -54,12 +54,18 @@ import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
 // spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
 import PhaseSwitchPage from "./pages/super-admin/PhaseSwitchPage";
 import ManagementCenterPage from "./pages/management-center/ManagementCenterPage";
+import CustomerHubPage from "./pages/crm/CustomerHubPage";
 import "./sidebar.css";
 import "./topbar.css";
 import "./components.css";
 import "./pages-layout.css";
 import "./company-forms.css";
 import "./responsive.css";
+
+function CompanyIdRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/crm/companies/${id}`} replace />;
+}
 
 function App() {
   const { t } = useTranslation();
@@ -85,20 +91,29 @@ function App() {
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/goals/settings" element={<GoalSettingPage />} />
 
-                  {/* リード系 */}
-                  <Route path="/leads" element={<LeadsPage />} />
-                  <Route path="/customers" element={<CustomersPage />} />
-                  {/* Phase 1-B-2 Step 5c-1: 新 B2B モデル（会社 + 担当者） */}
-                  <Route path="/companies" element={<CompaniesPage />} />
-                  {/* Step 5c-2: 会社詳細ページ（multi_branch 住所編集 + 担当者タブ） */}
-                  <Route
-                    path="/companies/:id"
-                    element={<CompanyDetailPage />}
-                  />
-                  <Route path="/contacts" element={<ContactsPage />} />
+                  {/* 旧ルート後方互換リダイレクト（/crm/* ハブへ転送） */}
+                  <Route path="/leads"         element={<Navigate to="/crm/leads"     replace />} />
+                  <Route path="/customers"     element={<Navigate to="/crm/customers"  replace />} />
+                  <Route path="/companies"     element={<Navigate to="/crm/companies"  replace />} />
+                  <Route path="/companies/:id" element={<CompanyIdRedirect />} />
+                  <Route path="/contacts"      element={<Navigate to="/crm/contacts"   replace />} />
+                  <Route path="/archive"       element={<Navigate to="/crm/archive"    replace />} />
+
                   {/* Phase 1-D Sprint 4: Meta Inbox UI（左ペイン会話 + 右ペインメッセージ） */}
                   <Route path="/lead-chat" element={<InboxPage />} />
-                  <Route path="/archive" element={<ArchivesPage />} />
+
+                  {/* 顧客管理ハブ: 左サブナビ + 右コンテンツのシェル。権限に基づいて項目を制御 */}
+                  <Route path="/crm" element={<CustomerHubPage />}>
+                    <Route index element={<Navigate to="/crm/leads" replace />} />
+                    {/* Phase 1-B-2 Step 5c-1: 新 B2B モデル（会社 + 担当者） */}
+                    <Route path="leads"           element={<LeadsPage />} />
+                    <Route path="companies"       element={<CompaniesPage />} />
+                    {/* Step 5c-2: 会社詳細ページ（multi_branch 住所編集 + 担当者タブ） */}
+                    <Route path="companies/:id"   element={<CompanyDetailPage />} />
+                    <Route path="contacts"        element={<ContactsPage />} />
+                    <Route path="customers"       element={<CustomersPage />} />
+                    <Route path="archive"         element={<ArchivesPage />} />
+                  </Route>
 
                   {/* 在庫 */}
                   <Route path="/inventory" element={<ProductsPage />} />
@@ -213,7 +228,6 @@ function App() {
                     <Route path="tenant-profile"      element={<TenantProfilePage />} />
                     <Route path="channels"            element={<ChannelsPage />} />
                     <Route path="bots"                element={<BotsPage />} />
-                    <Route path="companies"           element={<CompaniesPage />} />
                     <Route path="deals"               element={<DealsPage />} />
                     <Route path="suppliers"           element={<SuppliersPage />} />
                     <Route path="purchase-orders"     element={<PurchaseOrdersPage />} />
