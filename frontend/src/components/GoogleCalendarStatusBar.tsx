@@ -1,8 +1,9 @@
 /**
  * Google Calendar 接続ステータスバー
  *
- * 接続状態を常時表示し、切断時は再接続ボタンを表示する。
- * 30秒ごとに自動ポーリングして状態を更新する。
+ * - 未連携（一度も接続したことがない）: 連携ボタンのみ表示（警告バーなし）
+ * - 切断中（過去に接続したが現在切断）: エラーバー + 再接続ボタン
+ * - 接続中: 緑色ステータスバー
  *
  * ADR-027: 全 UI 文字列は t() 経由
  * ADR-067: デザイントークン参照のみ（ハードコード禁止）
@@ -10,9 +11,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Warning, X } from "../constants/icons";
+import { Check, X } from "../constants/icons";
 import { api } from "../lib/api";
 
+/**
+ * connected    : 接続中
+ * disconnected : 過去に接続したことがあるが現在切断中（エラー表示）
+ * not_linked   : 一度も連携したことがない（連携ボタンのみ表示）
+ * loading      : 状態取得中
+ */
 type SyncStatus = "connected" | "disconnected" | "loading" | "not_linked";
 
 interface StatusBarProps {
@@ -38,6 +45,7 @@ export function GoogleCalendarStatusBar({
     try {
       const res = await api.get<{
         connected: boolean;
+        configured: boolean;
         connected_at: string | null;
       }>("/google-calendar/status");
 
@@ -45,11 +53,17 @@ export function GoogleCalendarStatusBar({
         setSyncStatus("connected");
         setLastSyncTime(new Date());
         onStatusChange?.(true);
+      } else if (res.configured) {
+        // 過去に接続済みだが現在切断 → エラー表示
+        setSyncStatus("disconnected");
+        onStatusChange?.(false);
       } else {
+        // 一度も連携したことがない → 連携ボタンのみ
         setSyncStatus("not_linked");
         onStatusChange?.(false);
       }
     } catch {
+      // API エラー（ネットワーク障害等）→ 切断扱い
       setSyncStatus("disconnected");
       onStatusChange?.(false);
     }
@@ -80,6 +94,30 @@ export function GoogleCalendarStatusBar({
   };
 
   if (syncStatus === "loading") return null;
+
+  // 未連携：警告バーを出さず、管理者にだけ連携ボタンをコンパクトに表示
+  if (syncStatus === "not_linked") {
+    if (!canManage) return null;
+    return (
+      <div style={{ marginBottom: "var(--space-3)", display: "flex", justifyContent: "flex-end" }}>
+        <button
+          onClick={onConnect}
+          style={{
+            padding: "var(--space-1) var(--space-3)",
+            background: "var(--calendar-google-blue)",
+            color: "var(--on-accent)",
+            border: "none",
+            borderRadius: "var(--radius-sm)",
+            cursor: "pointer",
+            fontSize: "var(--font-sm)",
+            fontWeight: "var(--font-weight-medium)",
+          }}
+        >
+          {t("schedule.statusConnectPrompt")}
+        </button>
+      </div>
+    );
+  }
 
   const configs = {
     connected: {
@@ -113,30 +151,6 @@ export function GoogleCalendarStatusBar({
           }}
         >
           {reconnecting ? t("common.saving") : t("schedule.statusReconnect")}
-        </button>
-      ) : null,
-    },
-    not_linked: {
-      bg: "var(--bg-subtle)",
-      color: "var(--text-secondary)",
-      Icon: Warning,
-      message: t("schedule.statusNotLinked"),
-      action: canManage ? (
-        <button
-          onClick={onConnect}
-          style={{
-            marginLeft: "var(--space-3)",
-            padding: "var(--space-1) var(--space-3)",
-            background: "var(--calendar-google-blue)",
-            color: "var(--on-accent)",
-            border: "none",
-            borderRadius: "var(--radius-sm)",
-            cursor: "pointer",
-            fontSize: "var(--font-sm)",
-            fontWeight: "var(--font-weight-medium)",
-          }}
-        >
-          {t("schedule.statusConnectPrompt")}
         </button>
       ) : null,
     },
