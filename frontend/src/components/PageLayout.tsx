@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 interface PageLayoutProps {
   navKey: `nav.${string}`;
   subtitleKey?: string;
+  /** タイトルのすぐ右に並べるコンテンツ（ナビゲーション等）*/
+  headerLeft?: React.ReactNode;
   headerAction?: React.ReactNode;
   noScroll?: boolean;
   children: React.ReactNode;
@@ -11,6 +13,7 @@ interface PageLayoutProps {
 export function PageLayout({
   navKey,
   subtitleKey,
+  headerLeft,
   headerAction,
   noScroll,
   children,
@@ -21,7 +24,10 @@ export function PageLayout({
       <header className="page-layout-header">
         <div className={`page-layout-title-row${subtitleKey ? " page-layout-title-row--has-subtitle" : ""}`}>
           <h2 className="text-page-title">{t(navKey)}</h2>
-          {headerAction}
+          {headerLeft}
+          {headerAction && (
+            <div className="page-layout-header-right">{headerAction}</div>
+          )}
         </div>
         {subtitleKey && (
           <p className="page-subtitle">{t(subtitleKey)}</p>
