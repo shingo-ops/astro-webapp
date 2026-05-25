@@ -109,7 +109,15 @@
     "account": "Account",
     "openUserMenu": "Open user menu",
     "switchToDark": "Dark mode",
-    "switchToLight": "Light mode"
+    "switchToLight": "Light mode",
+    "managementCenter": "Management Center"
+  },
+  "managementCenter": {
+    "sectionTeam":      "Team & HR",
+    "sectionSecurity":  "Permissions & Security",
+    "sectionBusiness":  "Business Settings",
+    "sectionData":      "Data Management",
+    "sectionSuperAdmin":"Super Admin"
   },
   "login": {
     "email": "Email address",

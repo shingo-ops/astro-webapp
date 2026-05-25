@@ -145,48 +145,15 @@ export default function Layout() {
     (hasPermission("quotes.view") || hasPermission("invoices.view"));
   const salesLinkTo = hasPermission("quotes.view") ? "/quotes" : "/invoices";
 
-  const adminItems: SubItem[] = [
-    ...(hasPermission("customers.view") ? [
-      { to: "/companies", label: t("nav.companies") },
-    ] : []),
-    ...(hasPermission("deals.view") ? [{ to: "/deals", label: t("nav.deals") }] : []),
-    ...(hasPermission("suppliers.view") ? [{ to: "/suppliers", label: t("nav.suppliers") }] : []),
-    ...(hasPermission("purchase_orders.view") ? [{ to: "/purchase-orders", label: t("nav.purchaseOrders") }] : []),
-    ...(hasPermission("staff.view") ? [{ to: "/staff", label: t("nav.staff") }] : []),
-    ...(hasPermission("bots.view") ? [{ to: "/bots", label: t("nav.bots") }] : []),
-    ...(hasPermission("teams.view") ? [{ to: "/teams", label: t("nav.teams") }] : []),
-    ...(hasPermission("shifts.view") ? [{ to: "/shifts", label: t("nav.shifts") }] : []),
-    ...(hasAny("roles.view", "roles.create") ? [{ to: "/roles", label: t("nav.rolesPermissions") }] : []),
-    ...(hasPermission("erp.view") ? [{ to: "/data", label: t("nav.dataManagement") }] : []),
-    ...(hasPermission("orders.view") ? [{ to: "/commission-settings", label: t("nav.commissionSettings") }] : []),
-    ...(hasPermission("channels.view") ? [{ to: "/channels", label: t("nav.channels") }] : []),
-    // spec.md v1.1 F2 (Sprint 2): テナント admin 用「在庫表示権限」
-    ...(hasPermission("tenant.inventory_visibility.edit")
-      ? [{ to: "/admin/inventory-visibility", label: t("nav.inventoryVisibility") }]
-      : []),
-    // spec.md v1.1 F8 (Sprint 8): テナント admin 用「発行者情報」 (PO PDF / メール差出人)
-    ...(hasPermission("tenant.profile.edit") || hasPermission("tenant.profile.view")
-      ? [{ to: "/admin/tenant-profile", label: t("nav.tenantProfile") }]
-      : []),
-    // spec.md v1.1 F2 (Sprint 2): 中央 admin 専用「マスタ管理」リンク
-    // is_super_admin=true のユーザーにだけ表示。
-    // バックエンド側でも require_super_admin で二重ガード（AC2.1）。
-    ...(isSuperAdmin
-      ? [{ to: "/super-admin/masters", label: t("nav.superAdminMasters") }]
-      : []),
-    // spec.md v1.1 F5 (Sprint 5): 中央 admin 専用「Discord 受信一覧」リンク
-    // is_super_admin=true のユーザーにだけ表示。
-    // バックエンド側でも require_super_admin で二重ガード（AC5.5 / AC6.8 と同パターン）。
-    ...(isSuperAdmin
-      ? [{ to: "/super-admin/inbound", label: t("nav.superAdminInbound") }]
-      : []),
-    // spec.md v1.2 F9 (Sprint 9): 中央 admin 専用「スプレッドシート Phase」リンク
-    // is_super_admin=true のユーザーにだけ表示。
-    // バックエンド側でも require_super_admin で二重ガード。
-    ...(isSuperAdmin
-      ? [{ to: "/super-admin/phase-switch", label: t("nav.superAdminPhaseSwitch") }]
-      : []),
-  ];
+  // 管理センターリンクを表示する権限チェック（いずれか1つでも持っていれば表示）
+  const showManagementCenter =
+    isSuperAdmin ||
+    hasAny(
+      "staff.view", "teams.view", "roles.view", "bots.view",
+      "shifts.view", "channels.view", "erp.view", "orders.view",
+      "customers.view", "deals.view", "suppliers.view", "purchase_orders.view",
+      "tenant.profile.view", "tenant.inventory_visibility.edit",
+    );
 
   const moreItems: SubItem[] = [
     ...(prefs.show_buddy_menu && hasPermission("buddy.view_own") ? [{ to: "/knowledge", label: t("nav.buddy") }] : []),
@@ -312,16 +279,14 @@ export default function Layout() {
                 <span className="sidebar-label">{t("nav.faq")}</span>
               </NavLink>
 
-              {prefs.show_admin_menu && (
-                <SidebarAccordion
-                  label={t("nav.admin")}
-                  icon={<NAV_ICONS.admin size={ICON.base} />}
-                  items={adminItems}
-                  activePaths={["/companies", "/deals", "/staff", "/bots", "/teams", "/roles", "/data", "/suppliers", "/purchase-orders", "/shifts", "/channels", "/commission-settings", "/admin/inventory-visibility", "/admin/tenant-profile", "/super-admin/masters", "/super-admin/inbound", "/super-admin/phase-switch"]}
-                  isExpanded={sidebarExpanded}
-                  isOpen={openAccordion === "admin"}
-                  onToggle={() => toggleAccordion("admin")}
-                />
+              {showManagementCenter && (
+                <NavLink
+                  to="/management-center"
+                  className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                >
+                  <span className="sidebar-icon"><NAV_ICONS.admin size={ICON.base} /></span>
+                  <span className="sidebar-label">{t("nav.managementCenter")}</span>
+                </NavLink>
               )}
 
               {prefs.show_settings_menu && (

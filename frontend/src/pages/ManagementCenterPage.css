@@ -1,0 +1,84 @@
+/* ───────────────────────────────────────────────────────────
+   管理センター シェルレイアウト
+   SSoT準拠: 全値は CSS 変数から参照。ハードコード禁止。
+   ─────────────────────────────────────────────────────────── */
+
+/* シェル: 左サブナビ + 右コンテンツの2カラム */
+.mc-shell {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── 左サブナビ ── */
+.mc-subnav {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: var(--space-2) 0 var(--space-6);
+  background: var(--bg-surface);
+}
+
+.mc-subnav-section {
+  margin-bottom: var(--space-4);
+}
+
+.mc-subnav-title {
+  display: block;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
+.mc-subnav-item {
+  display: block;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  margin-right: var(--space-2);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  text-decoration: none;
+}
+
+.mc-subnav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.mc-subnav-item.active {
+  background: var(--sidebar-item-active-bg);
+  color: var(--accent);
+  font-weight: var(--font-weight-semi);
+}
+
+/* ── 右コンテンツ ── */
+.mc-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden; /* 子ページの PageLayout がスクロールを管理する */
+}
+
+/* ── レスポンシブ: スマートフォン ── */
+@media (max-width: 767px) {
+  .mc-shell {
+    flex-direction: column;
+  }
+
+  .mc-subnav {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-2) 0;
+    max-height: 200px;
+  }
+
+  .mc-content {
+    overflow-y: auto;
+  }
+}
