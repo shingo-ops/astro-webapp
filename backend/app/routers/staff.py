@@ -18,7 +18,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.schemas.staff import StaffCreate, StaffEmailInput, StaffResponse, StaffUIPreferences, StaffUpdate
@@ -365,6 +370,7 @@ async def create_staff(data: StaffCreate, db: AsyncSession = Depends(get_db),
             new_data=data.model_dump(exclude_none=True, mode="json"),
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
     except IntegrityError as e:
         await db.rollback()
         logger.warning("create_staff IntegrityError: tenant=%d err=%s", tenant_id, e.orig)
@@ -433,6 +439,7 @@ async def update_staff(staff_id: int, data: StaffUpdate,
         old_data=dict(old_row), new_data=data.model_dump(exclude_unset=True, mode="json"),
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2: commit 後の SELECT で search_path 喪失を防ぐ
 
     fetched = await db.execute(
         text(f"SELECT {_STAFF_COLS} FROM staff s LEFT JOIN roles r ON r.id = s.role_id WHERE s.id = :id"),
@@ -462,6 +469,7 @@ async def delete_staff(staff_id: int, db: AsyncSession = Depends(get_db),
             old_data=dict(old_row),
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
     except IntegrityError:
         await db.rollback()
         raise HTTPException(

@@ -11,21 +11,40 @@
 #   既存のbackup.shの後に実行する。
 #
 # cron登録（毎日 3:30 = backup.sh完了後）:
-#   30 3 * * * /path/to/scripts/backup_to_s3.sh >> /var/log/s3_backup.log 2>&1
+#   30 3 * * * TZ=Asia/Tokyo /path/to/scripts/backup_to_s3.sh >> /var/log/s3_backup.log 2>&1
 #
 # 前提:
 #   - AWS CLI v2 がインストール済み
-#   - IAMユーザーに s3:PutObject, s3:GetObject, s3:ListBucket 権限
+#   - IAMユーザーに以下の権限が必要:
+#       s3:PutObject, s3:GetObject, s3:DeleteObject, s3:ListBucket,
+#       s3:GetObjectAttributes, s3:RestoreObject
 #   - 環境変数 or ~/.aws/credentials に認証情報を設定済み
+#
+# Glacier月次アーカイブからの復元手順（3〜5時間かかります）:
+#   1. 復元リクエスト:
+#      aws s3api restore-object --bucket salesanchor-backups \
+#        --key "monthly-archives/2026-01/salesanchor_db_20260101_030000.sql.gz" \
+#        --restore-request '{"Days":7,"GlacierJobParameters":{"Tier":"Standard"}}'
+#   2. 復元完了確認（3〜5時間後）:
+#      aws s3api head-object --bucket salesanchor-backups \
+#        --key "monthly-archives/2026-01/salesanchor_db_20260101_030000.sql.gz"
+#      → "Restore" フィールドに ongoing-request="false" と表示されれば完了
+#   3. ダウンロード:
+#      aws s3 cp "s3://salesanchor-backups/monthly-archives/2026-01/..." /tmp/
+#   4. リストア: bash restore.sh /tmp/salesanchor_db_20260101_030000.sql.gz
+#
+# アーカイブ一覧確認:
+#   aws s3 ls "s3://salesanchor-backups/monthly-archives/" --recursive --human-readable
 # =============================================================
 
 set -euo pipefail
+export TZ=Asia/Tokyo
 
 # --- 設定 ---
 S3_BUCKET="${S3_BACKUP_BUCKET:-salesanchor-backups}"
 S3_PREFIX="postgres-backups"
 LOCAL_BACKUP_DIR="/home/ubuntu/backups/postgres"
-RETENTION_DAYS=90  # S3上の保持日数
+RETENTION_DAYS=90  # S3上の保持日数（monthly-archives/ は対象外）
 
 echo "=== S3バックアップ転送開始: $(date) ==="
 
@@ -58,6 +77,7 @@ else
 fi
 
 # 4. 古いS3オブジェクトの削除（90日以上前）
+# 注: monthly-archives/ は別プレフィックスのため、このステップの影響なし（永久保存）
 echo "  古いバックアップを削除中（${RETENTION_DAYS}日以上前）..."
 CUTOFF_DATE=$(date -d "-${RETENTION_DAYS} days" +%Y-%m-%d 2>/dev/null || date -v-${RETENTION_DAYS}d +%Y-%m-%d)
 
@@ -71,5 +91,26 @@ aws s3api list-objects-v2 \
     echo "    削除: ${KEY}"
     aws s3api delete-object --bucket "$S3_BUCKET" --key "$KEY"
 done
+
+# 5. 月次アーカイブ（毎月1日のバックアップをGlacierに永久保存）
+if [ "$(date +%d)" = "01" ]; then
+  MONTHLY_KEY="monthly-archives/$(date +%Y-%m)/${FILENAME}"
+  echo "  月次アーカイブをGlacierにアップロード中..."
+  aws s3 cp "$LATEST_BACKUP" "s3://${S3_BUCKET}/${MONTHLY_KEY}" \
+    --storage-class GLACIER \
+    --only-show-errors
+
+  # アップロード検証（LOCAL_SIZEはステップ3で取得済み）
+  GLACIER_SIZE=$(aws s3api head-object \
+    --bucket "$S3_BUCKET" \
+    --key "$MONTHLY_KEY" \
+    --query ContentLength --output text 2>/dev/null)
+  if [ "$GLACIER_SIZE" = "$LOCAL_SIZE" ]; then
+    echo "  月次アーカイブ完了（検証OK）: ${MONTHLY_KEY}"
+  else
+    echo "  ERROR: 月次アーカイブのサイズ不一致 local=${LOCAL_SIZE} glacier=${GLACIER_SIZE}"
+    exit 1
+  fi
+fi
 
 echo "=== S3バックアップ転送完了: $(date) ==="

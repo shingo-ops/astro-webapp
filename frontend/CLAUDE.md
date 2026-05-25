@@ -18,7 +18,7 @@
 </PageLayout>
 ```
 
-新規ページ: ja.json + en.json の `"nav"` セクションに同キー追加 → `navKey="nav.xxx"` で参照。サブタイトルは `subtitleKey="xxx.subtitle"` で渡す（`.page-subtitle` クラスを直接 JSX に書かないこと・インラインスタイル禁止）。
+新規ページ: ja.json + en.json の `"nav"` セクションに同キー追加 → `navKey="nav.xxx"` で参照。サブタイトルは `subtitleKey="xxx.subtitle"` で渡す（`.page-subtitle` クラスを直接 JSX に書かないこと・インラインスタイル禁止）。ページ右上ボタンは必ず `headerAction` プロップ経由（`position: fixed` で直接配置すると `.avatar-btn` と同座標に重なり不可視になる。`check:css-fixed-position` で自動ブロック）。
 
 ---
 

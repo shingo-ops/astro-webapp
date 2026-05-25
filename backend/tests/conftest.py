@@ -905,6 +905,21 @@ async def setup_test_db(test_engine):
                 restored_by INTEGER
             )
         """))
+        # Phase 5: シフト管理
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS shifts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id INTEGER NOT NULL DEFAULT 999,
+                user_id INTEGER NOT NULL,
+                shift_date TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                shift_type TEXT NOT NULL DEFAULT 'normal',
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
         # public.users 相当（SQLiteにはスキーマがないのでusersテーブルで代用）
         # ADR-027: locale カラム追加 / ADR-033: theme カラム追加
         await conn.execute(text("""
@@ -976,6 +991,7 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM company_addresses"))
         await conn.execute(text("DELETE FROM companies"))
         await conn.execute(text("DELETE FROM bots"))
+        await conn.execute(text("DELETE FROM shifts"))
         await conn.execute(text("DELETE FROM staff_ui_preferences"))
         await conn.execute(text("DELETE FROM staff_emails"))
         await conn.execute(text("DELETE FROM staff"))
