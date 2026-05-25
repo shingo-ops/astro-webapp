@@ -28,8 +28,8 @@
 --   - 019 で {schema}.staff 作成済（本 migration では不要だが依存順序の参考）
 --
 -- 設計書参照:
---   - jarvis_crm_staff_roles_bots_design.docx §3-2, §3-4
---   - jarvis_crm_system_overview.docx 第3章 3-2 HIGH LIFE JPN 用7役割
+--   - salesanchor_staff_roles_bots_design.docx §3-2, §3-4
+--   - salesanchor_system_overview.docx 第3章 3-2 HIGH LIFE JPN 用7役割
 --   - migrate_staff_roles_bots_PATCH.md §4-4
 --
 -- 変更履歴:

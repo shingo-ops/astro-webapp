@@ -12,8 +12,8 @@
                 "s3:GetObjectAttributes"
             ],
             "Resource": [
-                "arn:aws:s3:::jarvis-crm-backups",
-                "arn:aws:s3:::jarvis-crm-backups/*"
+                "arn:aws:s3:::salesanchor-backups",
+                "arn:aws:s3:::salesanchor-backups/*"
             ]
         }
     ]

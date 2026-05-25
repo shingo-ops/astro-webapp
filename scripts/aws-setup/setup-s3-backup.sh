@@ -2,7 +2,7 @@
 # =============================================================
 # AWS S3バックアップセットアップスクリプト
 #
-# 用途: Jarvis CRMのS3バックアップ環境をワンステップでセットアップ
+# 用途: Sales AnchorのS3バックアップ環境をワンステップでセットアップ
 #
 # 前提:
 #   1. AWSアカウントを作成済み
@@ -16,12 +16,12 @@
 
 set -euo pipefail
 
-BUCKET_NAME="jarvis-crm-backups"
+BUCKET_NAME="salesanchor-backups"
 REGION="ap-northeast-1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "============================================"
-echo "Jarvis CRM S3バックアップセットアップ"
+echo "Sales Anchor S3バックアップセットアップ"
 echo "============================================"
 echo ""
 

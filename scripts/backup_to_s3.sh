@@ -22,7 +22,7 @@
 set -euo pipefail
 
 # --- 設定 ---
-S3_BUCKET="${S3_BACKUP_BUCKET:-jarvis-crm-backups}"
+S3_BUCKET="${S3_BACKUP_BUCKET:-salesanchor-backups}"
 S3_PREFIX="postgres-backups"
 LOCAL_BACKUP_DIR="/home/ubuntu/backups/postgres"
 RETENTION_DAYS=90  # S3上の保持日数

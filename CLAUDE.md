@@ -8,11 +8,11 @@
 
 - **PO**: しんごさん（`shingo-ops`）— 本番アクセス・ADR起案・不可逆操作の最終判断
 - **Dev**: Hikky-dev（Claude Code）— 設計・実装・PR起票
-- **事業**: Jarvis CRM / salesanchor — B2B SaaS CRM（HIGH LIFE JPN / Treasure Island JP）
+- **事業**: Sales Anchor (salesanchor) — B2B SaaS CRM（HIGH LIFE JPN / Treasure Island JP）
 - **スタック**: Python 3.12 / FastAPI / PostgreSQL 16 | React 18 + TypeScript + Vite | Astro | Docker + さくらVPS
 - **本番 URL**: App `https://app.salesanchor.jp/` / API `https://api.salesanchor.jp/` / LP `https://salesanchor.jp/`
 - **Legacy**: `https://jarvis-claude.uk/`（並行稼働中・**独断削除禁止、PO確認必須**）
-- **仕様書**: `jarvis_crm_system_overview.docx` 他 3 冊（リポジトリ外・PO から入手）
+- **仕様書**: `salesanchor_system_overview.docx` 他 3 冊（リポジトリ外・PO から入手）
 - **設計判断**: `docs/adr/ADR-NNN-*.md` で起案。メモリ・チャット履歴を根拠にしない
 
 ---

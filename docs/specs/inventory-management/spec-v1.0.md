@@ -1,10 +1,10 @@
-# Jarvis CRM 在庫管理機能整備（仕入受信〜営業フロー連鎖）
+# Sales Anchor 在庫管理機能整備（仕入受信〜営業フロー連鎖）
 
 > 注: このリポジトリの直前 `spec.md` は ADR-021 Sprint 5（Sales Anchor / shingo-ops）の起案で、本仕様とは別件。前版は `.claude-pipeline/spec-prev-adr021-sprint5.md` に退避済み。
 
 ## Overview
 
-Jarvis CRM（HIGH LIFE JPN / Treasure Island JP の B2B SaaS CRM、本番テナント `tenant_004 / highlife-jpn`）は Phase 1〜2 で商品・顧客・見積・請求・発注の基本 CRUD と Phase 1-C M-MVP で TCG B2B 輸出向けの 11 列拡張（migration 038、`jan_code/card_number/expansion_code/rarity/language/unit_price_usd|eur/image_url/is_archived/archived_at/supplier_default_id`）まで完了している。一方、現場の在庫運用は依然として Google スプレッドシート（45 仕入元、複数 TCG マスタ、API 解析シート、正規化在庫リスト）に依存しており、Discord で届く仕入元メッセージの正規化〜在庫反映〜営業活動への連携が CRM に取り込まれていない。
+Sales Anchor（HIGH LIFE JPN / Treasure Island JP の B2B SaaS CRM、本番テナント `tenant_004 / highlife-jpn`）は Phase 1〜2 で商品・顧客・見積・請求・発注の基本 CRUD と Phase 1-C M-MVP で TCG B2B 輸出向けの 11 列拡張（migration 038、`jan_code/card_number/expansion_code/rarity/language/unit_price_usd|eur/image_url/is_archived/archived_at/supplier_default_id`）まで完了している。一方、現場の在庫運用は依然として Google スプレッドシート（45 仕入元、複数 TCG マスタ、API 解析シート、正規化在庫リスト）に依存しており、Discord で届く仕入元メッセージの正規化〜在庫反映〜営業活動への連携が CRM に取り込まれていない。
 
 本スプリント群は、この **Discord 受信 → 正規化解析（ルール＋LLM ハイブリッド）→ 担当者承認 → 在庫反映 → 営業（在庫検索・見積・発注書）連携** の一気通貫を CRM 側に実装し、スプレッドシートを Phase A（並走）→ Phase B（書込切替）→ Phase C（閉鎖）で段階的に廃止する。新規実装ではなく、既存資産（`backend/migrations/005|007|038`、`discord_gateway/` M2 段階、Meta webhook HMAC 検証パターン、`ProductsPage/QuotesPage/QuoteCreatePage/PurchaseOrdersPage/SuppliersPage` などの React ページ、Phase 1 の `require_permission()` パターン、ADR-027 i18n、ADR-034 で整備中の新規テナント migration 自動適用）をすべて拡張ベースで活用する。
 

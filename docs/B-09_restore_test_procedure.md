@@ -24,7 +24,7 @@ ls -lh /home/ubuntu/backups/postgres/
 # → 最新の .gz ファイルがあること���確認
 
 # S3バックアップの確認（B-8導入後）
-aws s3 ls s3://jarvis-crm-backups/postgres-backups/ --human-readable | tail -5
+aws s3 ls s3://salesanchor-backups/postgres-backups/ --human-readable | tail -5
 ```
 
 ### Step 2: テスト用DBの作成
