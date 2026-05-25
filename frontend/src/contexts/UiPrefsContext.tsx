@@ -34,7 +34,6 @@ export interface UiPrefs {
   show_sales_menu: boolean;
   show_settings_menu: boolean;
   show_admin_menu: boolean;
-  show_buddy_menu: boolean;
   show_sidebar: boolean;
 }
 
@@ -48,7 +47,6 @@ export const DEFAULT_UI_PREFS: UiPrefs = {
   // 取得失敗時はあえて true にして詰みを防ぐ。明示的に false に設定したい場合は
   // /staff/me で正しく取得すれば override される。
   show_admin_menu: true,
-  show_buddy_menu: true,
   show_sidebar: true,
 };
 

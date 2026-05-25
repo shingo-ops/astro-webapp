@@ -49,8 +49,6 @@ from app.routers import notifications
 from app.routers import staff_reports
 from app.routers import archives
 from app.routers import shifts
-from app.routers import buddy
-from app.routers import badges
 from app.routers import erp
 from app.routers import staff
 from app.routers import bots
@@ -304,14 +302,6 @@ app.include_router(
 # Phase 5: 拡張機能
 app.include_router(
     shifts.router, prefix="/api/v1", tags=["shifts"],
-    dependencies=[Depends(get_current_tenant)],
-)
-app.include_router(
-    buddy.router, prefix="/api/v1", tags=["buddy"],
-    dependencies=[Depends(get_current_tenant)],
-)
-app.include_router(
-    badges.router, prefix="/api/v1", tags=["badges"],
     dependencies=[Depends(get_current_tenant)],
 )
 app.include_router(

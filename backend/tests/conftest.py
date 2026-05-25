@@ -333,7 +333,6 @@ async def setup_test_db(test_engine):
                 show_sales_menu BOOLEAN NOT NULL DEFAULT 1,
                 show_settings_menu BOOLEAN NOT NULL DEFAULT 1,
                 show_admin_menu BOOLEAN NOT NULL DEFAULT 0,
-                show_buddy_menu BOOLEAN NOT NULL DEFAULT 1,
                 show_sidebar BOOLEAN NOT NULL DEFAULT 1,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -1048,8 +1047,6 @@ ALL_TEST_PERMISSIONS = {
     "archive.view", "archive.manage",
     # Phase 5
     "shifts.view", "shifts.manage",
-    "buddy.view_own", "buddy.review", "buddy.manage",
-    "badges.view", "badges.manage",
     "erp.view", "erp.sync",
     # Phase 1 再設計: staff / bots
     "staff.view", "staff.create", "staff.update", "staff.delete",
@@ -1123,7 +1120,7 @@ async def client(db_session):
         "app.routers.invoices", "app.routers.suppliers", "app.routers.purchase_orders",
         "app.routers.notifications",
         "app.routers.staff_reports", "app.routers.archives",
-        "app.routers.shifts", "app.routers.buddy", "app.routers.badges",
+        "app.routers.shifts",
         "app.routers.erp",
         # Phase 1-B-2 Step 5b-1: 新 routers
         "app.routers.companies", "app.routers.contacts",

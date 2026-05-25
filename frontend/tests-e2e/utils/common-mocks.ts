@@ -30,8 +30,6 @@ export const ALL_PERMISSIONS = [
   "erp.view",
   "channels.view",
   "channels.manage",
-  "buddy.view_own",
-  "badges.view",
   "messages.send",
   "messages.read",
   // Sprint 8 / F8: PO PDF / メール / テナント発行者情報
@@ -55,7 +53,6 @@ export function commonMocks(): MockMap {
         show_sales_menu: true,
         show_settings_menu: true,
         show_admin_menu: true,
-        show_buddy_menu: true,
         show_sidebar: true,
       },
     },
