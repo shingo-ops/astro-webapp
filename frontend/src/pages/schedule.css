@@ -268,11 +268,43 @@
   border: none;
 }
 
+/* 列区切り縦線は残す。外枠（table border）は上記 border:none で除去済み */
 .fc .fc-scrollgrid td,
 .fc .fc-scrollgrid th {
   border-color: var(--calendar-grid-border);
-  border-left: none;
+}
+
+/* 時間ラベル列とグリッドの境界線を非表示（左端の余分な縦線を除去） */
+.fc .fc-timegrid-axis,
+.fc .fc-timegrid-axis-frame {
   border-right: none;
+}
+
+/* ============================================================
+   終日エリア（Google Calendar 準拠: タイムライン最上部に最小スペース）
+   ============================================================ */
+
+.fc .fc-timegrid-axis.fc-scrollgrid-shrink {
+  border-right: none;
+}
+
+/* 終日ラベル（"終日" テキスト）を非表示 */
+.fc .fc-timegrid-axis-cushion {
+  display: none;
+}
+
+/* 終日セル行の高さを最小化 */
+.fc .fc-daygrid-body {
+  width: 100% !important;
+}
+
+.fc .fc-timegrid-allday-table {
+  min-height: 0;
+}
+
+.fc .fc-timegrid-allday .fc-daygrid-day-events {
+  min-height: 24px;
+  padding: var(--space-1) 0;
 }
 
 /* ============================================================
@@ -331,9 +363,9 @@
 .gcal-nav__today {
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--border);
-  background: var(--bg-surface);
+  background: transparent;
   color: var(--text-primary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   cursor: pointer;
   font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
@@ -392,4 +424,47 @@
   outline: none;
   border-color: var(--accent);
   box-shadow: var(--focus-ring-shadow);
+}
+
+/* ヘッダー右側アクション（ビュー切替 + 連携ボタン） */
+.schedule-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Google Calendar 連携ボタン — 状態別スタイル */
+.gcal-connect-btn {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  min-height: 32px;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.gcal-connect-btn:hover {
+  background: var(--bg-hover);
+}
+
+.gcal-connect-btn--connected {
+  border-color: var(--success);
+  background: var(--success-bg);
+  color: var(--success-text);
+  cursor: default;
+}
+
+.gcal-connect-btn--connected:hover {
+  background: var(--success-bg);
+}
+
+.gcal-connect-btn--error {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger-text);
 }

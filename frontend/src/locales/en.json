@@ -1385,6 +1385,8 @@
     "nextPeriod": "Next",
     "allDay": "All day",
     "connectBtn": "Google Calendar",
+    "connectBtnConnected": "✔︎ Connected",
+    "connectBtnError": "× Connection Error",
     "viewSelect": "Select view"
   },
   "inventoryVisibility": {
