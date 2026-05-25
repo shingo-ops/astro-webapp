@@ -374,7 +374,6 @@ export default function LeadsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t("leads.code")}</th>
               <th>{t("leads.customerName")}</th>
               <th>{t("leads.companyName")}</th>
               <th>{t("leads.status")}</th>
@@ -386,7 +385,6 @@ export default function LeadsPage() {
           <tbody>
             {leads.map((l) => (
               <tr key={l.id}>
-                <td className="mono">{l.lead_code || "-"}</td>
                 <td>{l.customer_name}</td>
                 <td>{l.company_name || "-"}</td>
                 <td><span className={`badge lead-badge-${l.status}`}>{translateLeadStatus(l.status)}</span></td>

@@ -198,22 +198,22 @@ export default function ChannelsPage() {
         marginBottom: "var(--space-4)",
         background:
           banner.type === "success"
-            ? "#e6f4ea"
+            ? "var(--banner-success-bg)"
             : banner.type === "warning"
-              ? "#fff4e5"
-              : "#fdecea",
+              ? "var(--banner-warning-bg)"
+              : "var(--banner-error-bg)",
         color:
           banner.type === "success"
-            ? "#137333"
+            ? "var(--banner-success-text)"
             : banner.type === "warning"
-              ? "#a45a00"
-              : "#a50e0e",
+              ? "var(--banner-warning-text)"
+              : "var(--banner-error-text)",
         border: `1px solid ${
           banner.type === "success"
-            ? "#137333"
+            ? "var(--banner-success-text)"
             : banner.type === "warning"
-              ? "#a45a00"
-              : "#a50e0e"
+              ? "var(--banner-warning-text)"
+              : "var(--banner-error-text)"
         }`,
       }
     : {};

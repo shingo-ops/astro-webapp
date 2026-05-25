@@ -54,6 +54,14 @@
   --success-bg: #c6f6d5;
   --success-text: #22543d;
 
+  /* バナー通知色（ChannelsPage バナー — Material Design 準拠） */
+  --banner-success-bg: #e6f4ea;
+  --banner-success-text: #137333;
+  --banner-warning-bg: #fff4e5;
+  --banner-warning-text: #a45a00;
+  --banner-error-bg: #fdecea;
+  --banner-error-text: #a50e0e;
+
   /* 影スケール（Tailwind 準拠 × Meta 実測値調整） */
   --shadow-xs:    0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.08);
@@ -197,6 +205,14 @@
   --warning-text: #fde68a;
   --success-bg: #14432b;
   --success-text: #bbf7d0;
+
+  /* バナー通知色（ダーク） */
+  --banner-success-bg: #1a3a25;
+  --banner-success-text: #86efac;
+  --banner-warning-bg: #3a2300;
+  --banner-warning-text: #fcd34d;
+  --banner-error-bg: #3a1515;
+  --banner-error-text: #fca5a5;
 
   --shadow-xs:    0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.4);
