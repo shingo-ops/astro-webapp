@@ -19,10 +19,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import (
-    get_current_user,
     get_current_tenant,
+    get_current_user,
     load_user_permissions,
     require_permission,
+    reset_tenant_context,
 )
 from app.cache import invalidate_tenant_permissions, invalidate_user_permissions
 from app.database import get_db
@@ -210,9 +211,9 @@ async def create_role(
         new_data=data.model_dump(exclude_none=True),
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
 
-    # commit後のSELECTはプールから別コネクションが払い出されてsearch_pathが
-    # 失われる可能性があるため、INSERT RETURNING で取得した row をそのまま返す。
+    # INSERT RETURNING で取得した row をそのまま返す (commit 後の SELECT を避ける)
     return RoleResponse(**dict(row))
 
 
@@ -280,11 +281,11 @@ async def update_role(
         old_data=old, new_data=update_data,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
 
     # ロール所持者全員の権限キャッシュをパージ
     await invalidate_tenant_permissions(tenant_id)
 
-    # commit後のSELECTはsearch_pathが失われる可能性があるため、
     # UPDATE RETURNING で取得した row をそのまま返す
     return RoleResponse(**dict(row))
 
@@ -321,6 +322,7 @@ async def delete_role(
         old_data=old,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
 
     await invalidate_tenant_permissions(tenant_id)
 
@@ -430,6 +432,7 @@ async def set_role_permissions(
         new_data={"permission_ids": data.permission_ids},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
 
     # ロール所持者全員の権限キャッシュをパージ
     await invalidate_tenant_permissions(tenant_id)
@@ -536,6 +539,7 @@ async def set_user_roles(
         new_data={"role_ids": data.role_ids},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
 
     # 対象ユーザーの権限キャッシュをパージ
     await invalidate_user_permissions(tenant_id, user_id)
