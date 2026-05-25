@@ -24,7 +24,7 @@ import "../schedule.css";
 import { api } from "../../lib/api";
 import { usePermissions } from "../../hooks/usePermissions";
 import { PageLayout } from "../../components/PageLayout";
-import { GoogleCalendarStatusBar } from "../../components/GoogleCalendarStatusBar";
+import { GoogleCalendarStatusBar, type SyncStatus } from "../../components/GoogleCalendarStatusBar";
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -104,70 +104,7 @@ function toTimeInput(d: Date): string {
 }
 
 // ---------------------------------------------------------------------------
-// GCalToolbar（Google Calendar デザイン準拠ツールバー）
 // ---------------------------------------------------------------------------
-
-const AVAILABLE_VIEWS = ["dayGridMonth", "timeGridWeek", "timeGridDay"];
-
-interface GCalToolbarProps {
-  label: string;
-  view: string;
-  onNavigate: (action: "PREV" | "NEXT" | "TODAY") => void;
-  onView: (view: string) => void;
-  onCreateEvent: () => void;
-}
-
-function GCalToolbar({ label, view, onNavigate, onView, onCreateEvent }: GCalToolbarProps) {
-  const { t } = useTranslation();
-  const viewLabels: Record<string, string> = {
-    dayGridMonth: t("schedule.monthView"),
-    timeGridWeek: t("schedule.weekView"),
-    timeGridDay: t("schedule.dayView"),
-  };
-
-  return (
-    <div className="gcal-toolbar">
-      <button className="gcal-toolbar__create" onClick={onCreateEvent}>
-        <span className="gcal-toolbar__create-icon" aria-hidden="true">+</span>
-        {t("schedule.addEvent")}
-      </button>
-
-      <div className="gcal-toolbar__nav">
-        <button className="gcal-toolbar__today-btn" onClick={() => onNavigate("TODAY")}>
-          {t("schedule.today")}
-        </button>
-        <button
-          className="gcal-toolbar__arrow"
-          onClick={() => onNavigate("PREV")}
-          aria-label={t("schedule.prevPeriod")}
-        >
-          ‹
-        </button>
-        <button
-          className="gcal-toolbar__arrow"
-          onClick={() => onNavigate("NEXT")}
-          aria-label={t("schedule.nextPeriod")}
-        >
-          ›
-        </button>
-      </div>
-
-      <span className="gcal-toolbar__label">{label}</span>
-
-      <div className="gcal-toolbar__views">
-        {AVAILABLE_VIEWS.map((v) => (
-          <button
-            key={v}
-            className={`gcal-toolbar__view-btn${v === view ? " active" : ""}`}
-            onClick={() => onView(v)}
-          >
-            {viewLabels[v] ?? v}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // EventModal
@@ -345,8 +282,9 @@ export default function SchedulePage() {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const [calTitle, setCalTitle] = useState("");
+  const [calMonthLabel, setCalMonthLabel] = useState("");
   const [calView, setCalView] = useState("timeGridWeek");
+  const [gcalStatus, setGcalStatus] = useState<SyncStatus>("loading");
   const calendarRef = useRef<FullCalendar>(null);
 
   const [modalEvent, setModalEvent] = useState<CalEvent | null>(null);
@@ -419,8 +357,10 @@ export default function SchedulePage() {
 
   // FullCalendar のビュー変更 / ナビゲーション時に呼ばれる（初回マウント含む）
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
-    setCalTitle(arg.view.title);
     setCalView(arg.view.type);
+    setCalMonthLabel(
+      new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "long" }).format(arg.view.activeStart)
+    );
     loadEvents(arg.startStr, arg.endStr);
   }, [loadEvents]);
 
@@ -499,20 +439,74 @@ export default function SchedulePage() {
     setNewSlot({ start: arg.start, end: arg.end });
   };
 
+  const gcalConnectBtnClass =
+    gcalStatus === "connected"
+      ? "gcal-connect-btn gcal-connect-btn--connected"
+      : gcalStatus === "disconnected"
+      ? "gcal-connect-btn gcal-connect-btn--error"
+      : "gcal-connect-btn";
+
+  const gcalConnectBtnLabel =
+    gcalStatus === "connected"
+      ? t("schedule.connectBtnConnected")
+      : gcalStatus === "disconnected"
+      ? t("schedule.connectBtnError")
+      : t("schedule.connectBtn");
+
   return (
     <PageLayout
       navKey="nav.schedule"
-      headerAction={canManage ? (
-        <button className="btn-secondary" onClick={handleGoogleConnect}>
-          {t("schedule.connectBtn")}
-        </button>
-      ) : undefined}
+      headerLeft={
+        <div className="schedule-header-nav">
+          <button className="gcal-nav__today" onClick={() => handleToolbarNavigate("TODAY")}>
+            {t("schedule.today")}
+          </button>
+          <button
+            className="gcal-nav__arrow"
+            onClick={() => handleToolbarNavigate("PREV")}
+            aria-label={t("schedule.prevPeriod")}
+          >
+            ‹
+          </button>
+          <button
+            className="gcal-nav__arrow"
+            onClick={() => handleToolbarNavigate("NEXT")}
+            aria-label={t("schedule.nextPeriod")}
+          >
+            ›
+          </button>
+          <span className="schedule-header-month">{calMonthLabel}</span>
+        </div>
+      }
+      headerAction={
+        <div className="schedule-header-actions">
+          <select
+            className="schedule-view-select"
+            value={calView}
+            onChange={(e) => handleToolbarView(e.target.value)}
+            aria-label={t("schedule.viewSelect")}
+          >
+            <option value="dayGridMonth">{t("schedule.monthView")}</option>
+            <option value="timeGridWeek">{t("schedule.weekView")}</option>
+            <option value="timeGridDay">{t("schedule.dayView")}</option>
+          </select>
+          {canManage && (
+            <button
+              className={gcalConnectBtnClass}
+              onClick={gcalStatus !== "connected" ? handleGoogleConnect : undefined}
+            >
+              {gcalConnectBtnLabel}
+            </button>
+          )}
+        </div>
+      }
     >
       {/* Google Calendar 接続ステータスバー（接続中/切断中のみ表示） */}
       <GoogleCalendarStatusBar
         onReconnect={handleGoogleConnect}
         onConnect={handleGoogleConnect}
         canManage={canManage}
+        onSyncStatusChange={setGcalStatus}
       />
 
       {/* OAuth コールバック後バナー */}
@@ -546,18 +540,6 @@ export default function SchedulePage() {
           </div>
         )}
 
-        <GCalToolbar
-          label={calTitle}
-          view={calView}
-          onNavigate={handleToolbarNavigate}
-          onView={handleToolbarView}
-          onCreateEvent={() => {
-            setModalEvent(null);
-            setIsNewEvent(true);
-            setNewSlot(null);
-          }}
-        />
-
         <FullCalendar
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -571,13 +553,13 @@ export default function SchedulePage() {
           select={handleSelect}
           eventClick={handleEventClick}
           datesSet={handleDatesSet}
-          height="calc(100vh - 320px)"
+          height="100%"
           nowIndicator
+          allDaySlot
           slotMinTime="00:00:00"
           slotMaxTime="24:00:00"
           slotDuration="00:30:00"
           slotLabelInterval="01:00:00"
-          allDayText={t("schedule.allDay")}
           slotLabelFormat={{ hour: "numeric", minute: "2-digit", omitZeroMinute: true, meridiem: false }}
           moreLinkContent={(args) => `+${args.num}`}
           dayHeaderContent={({ date, isToday, view }) => {

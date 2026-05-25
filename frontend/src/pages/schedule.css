@@ -75,6 +75,8 @@
 
 .fc .fc-col-header-cell {
   border-bottom: 1px solid var(--calendar-grid-border);
+  border-left: none;
+  border-right: none;
   background: var(--bg-surface);
   padding: 0;
 }
@@ -190,20 +192,26 @@
    ============================================================ */
 
 .fc .fc-timegrid-slot {
-  height: 40px;
+  height: 80px;   /* 1時間 = 160px（30分スロット×2）— 旧: 40px */
   border-color: var(--calendar-grid-border);
 }
 
 /* 半時間の区切り線を非表示（Googleカレンダー準拠: 1時間線のみ） */
 .fc .fc-timegrid-slot-minor {
-  border-top: none;
+  border-top: none !important;
 }
 
+/* 時間ラベルをグリッド線に揃える（Google Calendar 準拠: ラベル中心 = 線の位置） */
 .fc .fc-timegrid-slot-label {
   font-size: var(--font-xs);
   color: var(--text-muted);
   vertical-align: top;
+}
+
+.fc .fc-timegrid-slot-label-cushion {
+  display: inline-block;
   padding-right: var(--space-2);
+  transform: translateY(-50%);
 }
 
 /* 現在時刻インジケーター（赤線 + 赤ドット） */
@@ -263,30 +271,59 @@
    ============================================================ */
 
 .fc .fc-scrollgrid {
-  border-color: var(--calendar-grid-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  border: none;
 }
 
+/* 列区切り縦線は残す。外枠（table border）は上記 border:none で除去済み */
 .fc .fc-scrollgrid td,
 .fc .fc-scrollgrid th {
   border-color: var(--calendar-grid-border);
 }
 
+/* 時間ラベル列とグリッドの境界線を非表示（左端の余分な縦線を除去） */
+.fc .fc-timegrid-axis,
+.fc .fc-timegrid-axis-frame {
+  border-right: none;
+}
+
 /* ============================================================
-   カスタムコンテナ（ローディング / ツールバー統合）
+   終日エリア（Google Calendar 準拠: タイムライン最上部に最小スペース）
+   ============================================================ */
+
+.fc .fc-timegrid-axis.fc-scrollgrid-shrink {
+  border-right: none;
+}
+
+/* 終日ラベル（"終日" テキスト）を非表示 */
+.fc .fc-timegrid-axis-cushion {
+  display: none;
+}
+
+/* 終日セル行の高さを最小化 */
+.fc .fc-daygrid-body {
+  width: 100% !important;
+}
+
+.fc .fc-timegrid-allday-table {
+  min-height: 0;
+}
+
+.fc .fc-timegrid-allday .fc-daygrid-day-events {
+  min-height: 24px;
+  padding: var(--space-1) 0;
+}
+
+/* ============================================================
+   カスタムコンテナ
    ============================================================ */
 
 .gcal-container {
   position: relative;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 260px);
+  height: calc(100vh - 180px);
   min-height: 500px;
   background: var(--bg-surface);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--calendar-grid-border);
 }
 
 .gcal-container .fc {
@@ -311,71 +348,43 @@
 }
 
 /* ============================================================
-   カスタムツールバー（Google Calendar レイアウト）
+   ヘッダーナビゲーション（Google Calendar 準拠・PageLayout headerAction 内）
    ============================================================ */
 
-.gcal-toolbar {
-  display: flex;
-  align-items: center;
-  padding: var(--space-3) var(--space-4);
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--calendar-grid-border);
-  gap: var(--space-3);
-  flex-shrink: 0;
-}
-
-.gcal-toolbar__create {
+.schedule-header-nav {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  font-size: var(--font-sm);
+}
+
+.schedule-header-month {
+  font-size: var(--font-xl);
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
-  box-shadow: var(--shadow-xs);
-  transition: box-shadow var(--transition-fast), background var(--transition-fast);
+  min-width: 100px;
   white-space: nowrap;
+  margin-right: var(--space-2);
 }
 
-.gcal-toolbar__create:hover {
-  background: var(--bg-hover);
-  box-shadow: var(--shadow-sm);
-}
-
-.gcal-toolbar__create-icon {
-  font-size: 20px;
-  line-height: 1;
-  color: var(--calendar-google-blue);
-}
-
-.gcal-toolbar__nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.gcal-toolbar__today-btn {
+.gcal-nav__today {
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--border);
-  background: var(--bg-surface);
+  background: transparent;
   color: var(--text-primary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   cursor: pointer;
   font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
   min-height: 32px;
   transition: background var(--transition-fast);
+  white-space: nowrap;
 }
 
-.gcal-toolbar__today-btn:hover {
+.gcal-nav__today:hover {
   background: var(--bg-hover);
 }
 
-.gcal-toolbar__arrow {
+.gcal-nav__arrow {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -390,50 +399,78 @@
   transition: background var(--transition-fast);
 }
 
-.gcal-toolbar__arrow:hover {
+.gcal-nav__arrow:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
 
-.gcal-toolbar__label {
-  font-size: var(--font-xl);
-  font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
-  flex: 1;
-  text-align: center;
-}
-
-.gcal-toolbar__views {
-  display: flex;
+/* ビュー切替プルダウン */
+.schedule-view-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: var(--space-1) var(--space-5) var(--space-1) var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  background: var(--bg-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right var(--space-2) center;
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  min-height: 32px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  white-space: nowrap;
 }
 
-.gcal-toolbar__view-btn {
+.schedule-view-select:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.schedule-view-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring-shadow);
+}
+
+/* ヘッダー右側アクション（ビュー切替 + 連携ボタン） */
+.schedule-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Google Calendar 連携ボタン — 状態別スタイル */
+.gcal-connect-btn {
   padding: var(--space-1) var(--space-3);
-  border: none;
+  border: 1px solid var(--border);
   background: var(--bg-surface);
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
   min-height: 32px;
-  transition: background var(--transition-fast);
-  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
-.gcal-toolbar__view-btn:last-child {
-  border-right: none;
-}
-
-.gcal-toolbar__view-btn:hover {
+.gcal-connect-btn:hover {
   background: var(--bg-hover);
-  color: var(--text-primary);
 }
 
-.gcal-toolbar__view-btn.active {
-  background: var(--calendar-google-blue-light);
-  color: var(--calendar-google-blue);
-  font-weight: var(--font-weight-semi);
+.gcal-connect-btn--connected {
+  border-color: var(--success);
+  background: var(--success-bg);
+  color: var(--success-text);
+  cursor: default;
+}
+
+.gcal-connect-btn--connected:hover {
+  background: var(--success-bg);
+}
+
+.gcal-connect-btn--error {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger-text);
 }

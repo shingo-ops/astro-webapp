@@ -1384,7 +1384,10 @@
     "prevPeriod": "Previous",
     "nextPeriod": "Next",
     "allDay": "All day",
-    "connectBtn": "Google Calendar"
+    "connectBtn": "Google Calendar",
+    "connectBtnConnected": "✔︎ Connected",
+    "connectBtnError": "× Connection Error",
+    "viewSelect": "Select view"
   },
   "inventoryVisibility": {
     "title": "Inventory Visibility Settings",

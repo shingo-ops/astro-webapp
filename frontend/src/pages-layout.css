@@ -52,14 +52,21 @@
 
 .page-layout-header {
   flex-shrink: 0;
-  padding: var(--page-padding-y) var(--page-padding-x) 0;
+  padding: var(--page-padding-y) var(--page-header-avatar-clearance) 0 var(--page-padding-x);
 }
 
 .page-layout-title-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: var(--space-3);
   margin-bottom: var(--page-header-mb);
+}
+
+/* headerAction ラッパー: 右端に押し付ける */
+.page-layout-header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
 }
 
 .page-layout-content {

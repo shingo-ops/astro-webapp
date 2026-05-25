@@ -1384,7 +1384,10 @@
     "prevPeriod": "前へ",
     "nextPeriod": "次へ",
     "allDay": "終日",
-    "connectBtn": "Googleカレンダー連携"
+    "connectBtn": "Googleカレンダー連携",
+    "connectBtnConnected": "✔︎連携済",
+    "connectBtnError": "×接続エラー",
+    "viewSelect": "ビューを選択"
   },
   "inventoryVisibility": {
     "title": "在庫表示権限の設定",

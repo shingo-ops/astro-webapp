@@ -20,14 +20,16 @@ import { api } from "../lib/api";
  * not_linked   : 一度も連携したことがない（連携ボタンのみ表示）
  * loading      : 状態取得中
  */
-type SyncStatus = "connected" | "disconnected" | "loading" | "not_linked";
+export type SyncStatus = "connected" | "disconnected" | "loading" | "not_linked";
 
 interface StatusBarProps {
   onReconnect: () => void;
   onConnect: () => void;
   canManage: boolean;
-  /** 接続状態が変化したときに親に通知 */
+  /** 接続状態が変化したときに親に通知（boolean: 後方互換） */
   onStatusChange?: (connected: boolean) => void;
+  /** 詳細ステータスが変化したときに親に通知 */
+  onSyncStatusChange?: (status: SyncStatus) => void;
 }
 
 export function GoogleCalendarStatusBar({
@@ -35,6 +37,7 @@ export function GoogleCalendarStatusBar({
   onConnect,
   canManage,
   onStatusChange,
+  onSyncStatusChange,
 }: StatusBarProps) {
   const { t } = useTranslation();
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("loading");
@@ -53,21 +56,25 @@ export function GoogleCalendarStatusBar({
         setSyncStatus("connected");
         setLastSyncTime(new Date());
         onStatusChange?.(true);
+        onSyncStatusChange?.("connected");
       } else if (res.configured) {
         // 過去に接続済みだが現在切断 → エラー表示
         setSyncStatus("disconnected");
         onStatusChange?.(false);
+        onSyncStatusChange?.("disconnected");
       } else {
         // 一度も連携したことがない → 連携ボタンのみ
         setSyncStatus("not_linked");
         onStatusChange?.(false);
+        onSyncStatusChange?.("not_linked");
       }
     } catch {
       // API エラー時: 既に connected/disconnected 状態ならそのまま維持。
       // loading または not_linked なら not_linked に留め、エラーバーを出さない。
       setSyncStatus((prev) => {
-        if (prev === "loading" || prev === "not_linked") return "not_linked";
-        return "disconnected";
+        const next = (prev === "loading" || prev === "not_linked") ? "not_linked" : "disconnected";
+        onSyncStatusChange?.(next);
+        return next;
       });
       onStatusChange?.(false);
     }
