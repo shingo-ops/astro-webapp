@@ -28,7 +28,6 @@ class StaffUIPreferences(BaseModel):
     show_sales_menu: bool = True
     show_settings_menu: bool = True
     show_admin_menu: bool = False
-    show_buddy_menu: bool = True
     show_sidebar: bool = True
 
 

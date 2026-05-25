@@ -3,10 +3,6 @@
 
 追加テーブル (per-tenant schema):
   - shifts             (シフト管理)
-  - buddy_pairs        (Buddy ペアリング)
-  - buddy_feedbacks    (Buddy フィードバック)
-  - badge_definitions  (バッジ定義)
-  - user_badges        (ユーザーバッジ獲得)
   - erp_sync_logs      (ERP 連携ログ)
 
 すべて RLS (tenant_isolation_* policy) 設定済。

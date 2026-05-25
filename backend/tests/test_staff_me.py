@@ -34,8 +34,8 @@ async def test_get_my_staff_via_email_fallback(client, db_session):
     await db_session.execute(text("""
         INSERT INTO staff_ui_preferences (
             staff_id, dark_mode, show_chat_menu, show_sales_menu,
-            show_settings_menu, show_admin_menu, show_buddy_menu, show_sidebar
-        ) VALUES (500, 1, 1, 1, 1, 0, 1, 1)
+            show_settings_menu, show_admin_menu, show_sidebar
+        ) VALUES (500, 1, 1, 1, 1, 0, 1)
     """))
     await db_session.commit()
 

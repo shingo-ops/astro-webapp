@@ -211,11 +211,11 @@ async def insert_staff_with_related(
             INSERT INTO {schema}.staff_ui_preferences (
                 staff_id, dark_mode,
                 show_chat_menu, show_sales_menu, show_settings_menu,
-                show_admin_menu, show_buddy_menu, show_sidebar
+                show_admin_menu, show_sidebar
             ) VALUES (
                 :staff_id, :dark_mode,
                 :show_chat_menu, :show_sales_menu, :show_settings_menu,
-                :show_admin_menu, :show_buddy_menu, :show_sidebar
+                :show_admin_menu, :show_sidebar
             )
             ON CONFLICT (staff_id) DO UPDATE SET
                 dark_mode = EXCLUDED.dark_mode,
@@ -223,7 +223,6 @@ async def insert_staff_with_related(
                 show_sales_menu = EXCLUDED.show_sales_menu,
                 show_settings_menu = EXCLUDED.show_settings_menu,
                 show_admin_menu = EXCLUDED.show_admin_menu,
-                show_buddy_menu = EXCLUDED.show_buddy_menu,
                 show_sidebar = EXCLUDED.show_sidebar,
                 updated_at = NOW()
         """),
@@ -234,7 +233,6 @@ async def insert_staff_with_related(
             "show_sales_menu": parse_bool_loose(main_row.get("営業メニュー表示")),
             "show_settings_menu": parse_bool_loose(main_row.get("設定メニュー表示")),
             "show_admin_menu": parse_bool_loose(main_row.get("管理者メニュー表示")),
-            "show_buddy_menu": parse_bool_loose(main_row.get("Buddyメンテナンスメニュー表示")),
             "show_sidebar": parse_bool_loose(main_row.get("サイドバー表示")),
         },
     )
