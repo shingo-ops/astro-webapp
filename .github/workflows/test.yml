@@ -9,7 +9,7 @@ on:
     # フロントエンドのみの変更ではスキップしてボトルネックを解消する。
     # push には paths を設定しない（develop/main への merge 後は常時実行でフォールセーフ）。
     paths:
-      - 'backend/**'
+      # - 'backend/**'  # [TEST] 意図的に削除 — workflow-lint が検知するか確認
       - 'migrations/**'
       - 'scripts/**'
       - 'pyproject.toml'
