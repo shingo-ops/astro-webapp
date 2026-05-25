@@ -28,7 +28,8 @@ jobs:
       - name: workflow-lint.yml 自身の改ざん検知
         if: github.event_name == 'pull_request'
         run: |
-          CHANGED=$(git diff origin/${{ github.base_ref }}...HEAD -- .github/workflows/workflow-lint.yml)
+          # --diff-filter=M: 初回追加（A）は許可。変更（M）のみブロック。
+          CHANGED=$(git diff --diff-filter=M origin/${{ github.base_ref }}...HEAD -- .github/workflows/workflow-lint.yml)
           if [ -n "$CHANGED" ]; then
             echo "::error::workflow-lint.yml の変更は PO 確認必須操作です（CLAUDE.md §不可逆操作 参照）"
             exit 1
