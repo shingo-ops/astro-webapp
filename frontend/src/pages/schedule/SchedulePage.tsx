@@ -6,37 +6,25 @@
  *   - GET /shifts を並列取得し、シフト（緑）と予定（青）を色分け表示
  *   - Google Calendar 接続ステータスバーを常時表示
  *   - イベントの作成 / 更新 / 削除（DB 経由 → Google に自動同期）
- *   - Google Calendar デザイン準拠 UI（schedule.css オーバーライド）
+ *   - FullCalendar による Google Calendar クローン UI（週/月/日ビュー）
  *
  * ADR-027: 全 UI 文字列は t() 経由
  * ADR-067: デザイントークン参照のみ（ハードコード禁止）
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Calendar, dateFnsLocalizer, Views, type View, type ToolbarProps } from "react-big-calendar";
-import { format, parse, startOfWeek, getDay } from "date-fns";
-import { ja } from "date-fns/locale";
-import "react-big-calendar/lib/css/react-big-calendar.css";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import type { EventClickArg, DateSelectArg, DatesSetArg } from "@fullcalendar/core";
 import "../schedule.css";
 import { api } from "../../lib/api";
 import { usePermissions } from "../../hooks/usePermissions";
 import { PageLayout } from "../../components/PageLayout";
 import { GoogleCalendarStatusBar } from "../../components/GoogleCalendarStatusBar";
-
-// ---------------------------------------------------------------------------
-// date-fns ローカライザー設定
-// ---------------------------------------------------------------------------
-
-const locales = { ja };
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
-  getDay,
-  locales,
-});
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -65,6 +53,21 @@ interface Shift {
   notes: string | null;
 }
 
+// FullCalendar に渡すイベント形式
+interface FCEvent {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  allDay?: boolean;
+  classNames: string[];
+  extendedProps: {
+    source: "app" | "google" | "shift";
+    raw?: AppEvent;
+  };
+}
+
+// EventModal に渡すイベント形式（Date 型が必要）
 interface CalEvent {
   id: string;
   title: string;
@@ -100,52 +103,26 @@ function toTimeInput(d: Date): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function toRfc3339(date: Date): string {
-  return date.toISOString();
-}
-
-function rangeOf(view: string, date: Date): { start: Date; end: Date } {
-  const d = new Date(date);
-  if (view === Views.MONTH) {
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    start.setDate(start.getDate() - 7);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    end.setDate(end.getDate() + 7);
-    return { start, end };
-  }
-  if (view === Views.WEEK) {
-    const start = startOfWeek(d, { weekStartsOn: 1 });
-    const end = new Date(start);
-    end.setDate(end.getDate() + 7);
-    return { start, end };
-  }
-  // day
-  const start = new Date(d);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(d);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
-}
-
 // ---------------------------------------------------------------------------
 // GCalToolbar（Google Calendar デザイン準拠ツールバー）
 // ---------------------------------------------------------------------------
 
+const AVAILABLE_VIEWS = ["dayGridMonth", "timeGridWeek", "timeGridDay"];
+
 interface GCalToolbarProps {
   label: string;
-  view: View;
-  views: View[];
+  view: string;
   onNavigate: (action: "PREV" | "NEXT" | "TODAY") => void;
-  onView: (view: View) => void;
+  onView: (view: string) => void;
   onCreateEvent: () => void;
 }
 
-function GCalToolbar({ label, view, views, onNavigate, onView, onCreateEvent }: GCalToolbarProps) {
+function GCalToolbar({ label, view, onNavigate, onView, onCreateEvent }: GCalToolbarProps) {
   const { t } = useTranslation();
   const viewLabels: Record<string, string> = {
-    month: t("schedule.monthView"),
-    week: t("schedule.weekView"),
-    day: t("schedule.dayView"),
+    dayGridMonth: t("schedule.monthView"),
+    timeGridWeek: t("schedule.weekView"),
+    timeGridDay: t("schedule.dayView"),
   };
 
   return (
@@ -178,13 +155,13 @@ function GCalToolbar({ label, view, views, onNavigate, onView, onCreateEvent }: 
       <span className="gcal-toolbar__label">{label}</span>
 
       <div className="gcal-toolbar__views">
-        {views.map((v) => (
+        {AVAILABLE_VIEWS.map((v) => (
           <button
             key={v}
             className={`gcal-toolbar__view-btn${v === view ? " active" : ""}`}
             onClick={() => onView(v)}
           >
-            {viewLabels[v as string] ?? v}
+            {viewLabels[v] ?? v}
           </button>
         ))}
       </div>
@@ -364,12 +341,13 @@ export default function SchedulePage() {
 
   const canManage = hasPermission("channels.manage");
 
-  const [events, setEvents] = useState<CalEvent[]>([]);
+  const [events, setEvents] = useState<FCEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [banner, setBanner] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const [currentView, setCurrentView] = useState<View>(Views.WEEK);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [calTitle, setCalTitle] = useState("");
+  const [calView, setCalView] = useState("timeGridWeek");
+  const calendarRef = useRef<FullCalendar>(null);
 
   const [modalEvent, setModalEvent] = useState<CalEvent | null>(null);
   const [isNewEvent, setIsNewEvent] = useState(false);
@@ -392,31 +370,29 @@ export default function SchedulePage() {
   }, []);
 
   // イベント取得（DB 経由 — Google 未接続でも動作）
-  const loadEvents = useCallback(async (view: View, date: Date) => {
+  const loadEvents = useCallback(async (startStr: string, endStr: string) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
     setLoadingEvents(true);
 
-    const { start, end } = rangeOf(view, date);
     try {
       const [evRes, shiftsRes] = await Promise.allSettled([
-        api.get<{ events: AppEvent[] }>(
-          `/calendar/events?start=${toRfc3339(start)}&end=${toRfc3339(end)}`
-        ),
+        api.get<{ events: AppEvent[] }>(`/calendar/events?start=${startStr}&end=${endStr}`),
         api.get<Shift[]>("/shifts"),
       ]);
 
-      const calEvents: CalEvent[] = [];
+      const calEvents: FCEvent[] = [];
 
       if (evRes.status === "fulfilled") {
         for (const ev of evRes.value.events) {
           calEvents.push({
             id: String(ev.id),
             title: ev.title,
-            start: new Date(ev.start_datetime),
-            end: new Date(ev.end_datetime),
-            source: ev.source,
-            raw: ev,
+            start: ev.start_datetime,
+            end: ev.end_datetime,
+            allDay: ev.is_all_day,
+            classNames: ["fc-event--app"],
+            extendedProps: { source: ev.source, raw: ev },
           });
         }
       }
@@ -426,9 +402,10 @@ export default function SchedulePage() {
           calEvents.push({
             id: `shift-${sh.id}`,
             title: `[${t("schedule.shiftLabel")}] ${sh.shift_type}`,
-            start: new Date(`${sh.shift_date}T${sh.start_time}`),
-            end: new Date(`${sh.shift_date}T${sh.end_time}`),
-            source: "shift",
+            start: `${sh.shift_date}T${sh.start_time}`,
+            end: `${sh.shift_date}T${sh.end_time}`,
+            classNames: ["fc-event--shift"],
+            extendedProps: { source: "shift" },
           });
         }
       }
@@ -440,20 +417,22 @@ export default function SchedulePage() {
     }
   }, [t]);
 
-  useEffect(() => {
-    loadEvents(currentView, currentDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // FullCalendar のビュー変更 / ナビゲーション時に呼ばれる（初回マウント含む）
+  const handleDatesSet = useCallback((arg: DatesSetArg) => {
+    setCalTitle(arg.view.title);
+    setCalView(arg.view.type);
+    loadEvents(arg.startStr, arg.endStr);
+  }, [loadEvents]);
 
-  const handleNavigate = (date: Date) => {
-    setCurrentDate(date);
-    loadEvents(currentView, date);
-  };
-
-  const handleViewChange = (view: View) => {
-    setCurrentView(view);
-    loadEvents(view, currentDate);
-  };
+  // 現在表示中の範囲でリロード（イベント保存・削除後）
+  const reloadCurrentView = useCallback(() => {
+    const calApi = calendarRef.current?.getApi();
+    if (!calApi) return;
+    loadEvents(
+      calApi.view.activeStart.toISOString(),
+      calApi.view.activeEnd.toISOString(),
+    );
+  }, [loadEvents]);
 
   // Google OAuth 接続開始（未連携 / 再接続共通）
   const handleGoogleConnect = async () => {
@@ -476,60 +455,48 @@ export default function SchedulePage() {
     } else {
       await api.post("/calendar/events", body);
     }
-    await loadEvents(currentView, currentDate);
+    reloadCurrentView();
   };
 
   // イベント削除
   const handleDelete = async (id: string) => {
     await api.delete(`/calendar/events/${id}`);
-    await loadEvents(currentView, currentDate);
+    reloadCurrentView();
   };
 
-  // イベント色分け（ADR-067 準拠: CSS 変数のみ使用）
-  const eventStyleGetter = (event: CalEvent) => {
-    const isShift = event.source === "shift";
-    return {
-      style: {
-        backgroundColor: isShift ? "var(--success)" : "var(--calendar-google-blue)",
-        color: "var(--on-accent)",
-        opacity: "var(--opacity-soft)",
-      },
-    };
+  // ツールバー ナビゲーション
+  const handleToolbarNavigate = (action: "PREV" | "NEXT" | "TODAY") => {
+    const calApi = calendarRef.current?.getApi();
+    if (!calApi) return;
+    if (action === "PREV") calApi.prev();
+    else if (action === "NEXT") calApi.next();
+    else calApi.today();
   };
 
-  // カスタムツールバー用 create ハンドラ（ref で安定参照）
-  const createHandlerRef = useRef<() => void>(() => {});
-  createHandlerRef.current = () => {
-    setModalEvent(null);
-    setIsNewEvent(true);
+  // ツールバー ビュー切り替え
+  const handleToolbarView = (viewName: string) => {
+    calendarRef.current?.getApi().changeView(viewName);
+  };
+
+  // イベントクリック → モーダル表示
+  const handleEventClick = (arg: EventClickArg) => {
+    setModalEvent({
+      id: arg.event.id,
+      title: arg.event.title,
+      start: arg.event.start ?? new Date(),
+      end: arg.event.end ?? arg.event.start ?? new Date(),
+      source: arg.event.extendedProps.source as "app" | "google" | "shift",
+      raw: arg.event.extendedProps.raw as AppEvent | undefined,
+    });
+    setIsNewEvent(false);
     setNewSlot(null);
   };
 
-  // react-big-calendar に渡す安定なツールバーコンポーネント
-  // props 型は react-big-calendar 内部型のため any を使用
-  const CustomToolbar = useMemo(() => {
-    return function Toolbar({ label, view, views, onNavigate, onView }: ToolbarProps<CalEvent, object>) {
-      return (
-        <GCalToolbar
-          label={label}
-          view={view}
-          views={views as View[]}
-          onNavigate={onNavigate}
-          onView={onView}
-          onCreateEvent={() => createHandlerRef.current()}
-        />
-      );
-    };
-  }, []);
-
-  const messages = {
-    month: t("schedule.monthView"),
-    week: t("schedule.weekView"),
-    day: t("schedule.dayView"),
-    today: t("schedule.today"),
-    next: "›",
-    previous: "‹",
-    showMore: (total: number) => `+${total}`,
+  // スロット選択 → 新規イベントモーダル
+  const handleSelect = (arg: DateSelectArg) => {
+    setModalEvent(null);
+    setIsNewEvent(true);
+    setNewSlot({ start: arg.start, end: arg.end });
   };
 
   return (
@@ -564,60 +531,46 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {/* カレンダー本体（常時表示 — Google 未接続でも DB からイベントを表示） */}
-      <div
-        style={{
-          height: "calc(100vh - 260px)",
-          minHeight: "500px",
-          position: "relative",
-        }}
-      >
+      {/* カレンダー本体 */}
+      <div className="gcal-container">
         {loadingEvents && (
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              background: "var(--bg-surface)",
-              padding: "var(--space-3) var(--space-6)",
-              borderRadius: "var(--radius-md)",
-              boxShadow: "var(--shadow-md)",
-              zIndex: 10,
-              fontSize: "var(--font-sm)",
-              color: "var(--text-secondary)",
-            }}
-          >
+          <div className="gcal-loading">
             {t("schedule.loading")}
           </div>
         )}
 
-        <Calendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          culture="ja"
-          messages={messages}
-          view={currentView}
-          onView={handleViewChange}
-          date={currentDate}
-          onNavigate={handleNavigate}
-          style={{ height: "100%" }}
-          eventPropGetter={eventStyleGetter}
-          onSelectEvent={(event) => {
-            setModalEvent(event as CalEvent);
-            setIsNewEvent(false);
-            setNewSlot(null);
-          }}
-          onSelectSlot={(slot) => {
+        <GCalToolbar
+          label={calTitle}
+          view={calView}
+          onNavigate={handleToolbarNavigate}
+          onView={handleToolbarView}
+          onCreateEvent={() => {
             setModalEvent(null);
             setIsNewEvent(true);
-            setNewSlot({ start: slot.start as Date, end: slot.end as Date });
+            setNewSlot(null);
           }}
-          selectable
-          popup
-          components={{ toolbar: CustomToolbar }}
+        />
+
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView="timeGridWeek"
+          locale="ja"
+          firstDay={0}
+          headerToolbar={false}
+          events={events}
+          selectable={canManage}
+          selectMirror
+          select={handleSelect}
+          eventClick={handleEventClick}
+          datesSet={handleDatesSet}
+          height="calc(100vh - 320px)"
+          nowIndicator
+          slotMinTime="00:00:00"
+          slotMaxTime="24:00:00"
+          slotDuration="00:30:00"
+          slotLabelInterval="01:00:00"
+          moreLinkContent={(args) => `+${args.num}`}
         />
       </div>
 

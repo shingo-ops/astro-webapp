@@ -44,13 +44,14 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
 
     // ページ見出し
     await expect(
-      page.getByRole("heading", { name: "チャンネル" }),
+      page.getByRole("heading", { name: "チャンネル", exact: true }),
     ).toBeVisible({ timeout: 20_000 });
 
     // 0 件 onboarding（空 state） — ADR-044: i18n 化により t("channels.noChannels")
     await expect(
       page.getByRole("heading", {
         name: "接続済みチャンネルがありません",
+        exact: true,
       }),
     ).toBeVisible();
 
@@ -101,7 +102,7 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
 
     await page.goto("/channels");
     await expect(
-      page.getByRole("heading", { name: "チャンネル" }),
+      page.getByRole("heading", { name: "チャンネル", exact: true }),
     ).toBeVisible({ timeout: 20_000 });
 
     // 接続ボタンを押す（ヘッダ側を click） — i18n 化以降は "Facebookページを接続"

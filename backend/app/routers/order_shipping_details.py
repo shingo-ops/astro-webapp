@@ -46,6 +46,36 @@ from app.services.shipping_carriers import get_adapter
 router = APIRouter()
 
 
+def _is_postgresql(db: AsyncSession) -> bool:
+    """db の dialect が PostgreSQL 系か判定する (Issue #766)。
+
+    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
+    "no such table: tenant_NNN.order_shipping_details" で失敗する。本判定で
+    SQLite 系を検出して prefix なしに倒す。
+    """
+    bind = db.get_bind() if hasattr(db, "get_bind") else None
+    if bind is None:
+        bind = getattr(db, "bind", None)
+    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    return name.startswith("postgresql")
+
+
+def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
+    """tenant スキーマ修飾テーブル参照を返す (Issue #766)。
+
+    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
+    - SQLite (pytest): `{name}` (schema 概念なし)
+
+    AsyncSession の commit 後は新コネクションが払い出されて session-level
+    の search_path が失われる可能性があるため、raw text() を使う箇所では
+    schema prefix を明示するのが安全 (Issue #563 / #565 / #766)。
+    """
+    if _is_postgresql(db):
+        safe_id = int(tenant_id)
+        return f"tenant_{safe_id:03d}.{name}"
+    return name
+
+
 # DB 列のうち入出力対象のホワイトリスト。動的 INSERT / UPDATE の組み立ては必ず
 # この集合を経由すること（外部キー以外の任意フィールド書き換えを防ぐ）。
 _UPDATABLE_COLUMNS: frozenset[str] = frozenset(INPUT_FIELDS)
@@ -68,10 +98,11 @@ _SELECT_COLS = """
 """
 
 
-async def _ensure_order_exists(db: AsyncSession, order_id: int) -> None:
-    """受注の存在を確認する（テナント境界は既存 search_path で担保）。"""
+async def _ensure_order_exists(db: AsyncSession, order_id: int, tenant_id: int) -> None:
+    """受注の存在を確認する (Issue #766: schema prefix 明示)。"""
+    orders_t = _t(db, tenant_id, "orders")
     res = await db.execute(
-        text("SELECT id FROM orders WHERE id = :id"),
+        text(f"SELECT id FROM {orders_t} WHERE id = :id"),
         {"id": order_id},
     )
     if not res.first():
@@ -81,22 +112,24 @@ async def _ensure_order_exists(db: AsyncSession, order_id: int) -> None:
         )
 
 
-async def _fetch_shipping_row(db: AsyncSession, order_id: int) -> dict | None:
+async def _fetch_shipping_row(db: AsyncSession, order_id: int, tenant_id: int) -> dict | None:
+    order_shipping_details_t = _t(db, tenant_id, "order_shipping_details")
     res = await db.execute(
-        text(f"SELECT {_SELECT_COLS} FROM order_shipping_details WHERE order_id = :order_id"),
+        text(f"SELECT {_SELECT_COLS} FROM {order_shipping_details_t} WHERE order_id = :order_id"),
         {"order_id": order_id},
     )
     row = res.mappings().first()
     return dict(row) if row else None
 
 
-async def _fetch_order_for_csv(db: AsyncSession, order_id: int) -> dict | None:
+async def _fetch_order_for_csv(db: AsyncSession, order_id: int, tenant_id: int) -> dict | None:
     """eLogi CSV 用に受注本体の必要カラム（order_number / created_at / notes）を取得する。"""
+    orders_t = _t(db, tenant_id, "orders")
     res = await db.execute(
-        text("""
+        text(f"""
             SELECT id, order_number, total_amount, currency, status,
                    notes, created_at, updated_at
-            FROM orders WHERE id = :id
+            FROM {orders_t} WHERE id = :id
         """),
         {"id": order_id},
     )
@@ -118,9 +151,9 @@ async def create_order_shipping(
     current_user: User = Depends(get_current_user),
 ):
     """受注に発送情報を新規登録する。既存があれば 409。"""
-    await _ensure_order_exists(db, order_id)
+    await _ensure_order_exists(db, order_id, tenant_id)
 
-    existing = await _fetch_shipping_row(db, order_id)
+    existing = await _fetch_shipping_row(db, order_id, tenant_id)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -139,8 +172,9 @@ async def create_order_shipping(
             insert_vals.append(f":{col}")
             params[col] = payload[col]
 
+    order_shipping_details_t = _t(db, tenant_id, "order_shipping_details")
     insert_sql = text(f"""
-        INSERT INTO order_shipping_details ({', '.join(insert_cols)})
+        INSERT INTO {order_shipping_details_t} ({', '.join(insert_cols)})
         VALUES ({', '.join(insert_vals)})
         RETURNING {_SELECT_COLS}
     """)
@@ -173,7 +207,7 @@ async def get_order_shipping(
     current_user: User = Depends(get_current_user),
 ):
     """受注の発送情報を取得する。"""
-    row = await _fetch_shipping_row(db, order_id)
+    row = await _fetch_shipping_row(db, order_id, tenant_id)
     if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -195,7 +229,7 @@ async def update_order_shipping(
     current_user: User = Depends(get_current_user),
 ):
     """受注の発送情報を部分更新する（自動 updated_at）。"""
-    old_row = await _fetch_shipping_row(db, order_id)
+    old_row = await _fetch_shipping_row(db, order_id, tenant_id)
     if not old_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -215,8 +249,9 @@ async def update_order_shipping(
     params = dict(update_data)
     params["order_id"] = order_id
 
+    order_shipping_details_t = _t(db, tenant_id, "order_shipping_details")
     update_sql = text(f"""
-        UPDATE order_shipping_details
+        UPDATE {order_shipping_details_t}
         SET {set_clauses}, updated_at = NOW()
         WHERE order_id = :order_id
         RETURNING {_SELECT_COLS}
@@ -251,15 +286,16 @@ async def delete_order_shipping(
     current_user: User = Depends(get_current_user),
 ):
     """受注の発送情報を削除する（受注本体は残る）。"""
-    old_row = await _fetch_shipping_row(db, order_id)
+    old_row = await _fetch_shipping_row(db, order_id, tenant_id)
     if not old_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="発送情報が見つかりません",
         )
 
+    order_shipping_details_t = _t(db, tenant_id, "order_shipping_details")
     await db.execute(
-        text("DELETE FROM order_shipping_details WHERE order_id = :order_id"),
+        text(f"DELETE FROM {order_shipping_details_t} WHERE order_id = :order_id"),
         {"order_id": order_id},
     )
 
@@ -315,13 +351,13 @@ async def get_order_shipping_elogi_csv(
     current_user: User = Depends(get_current_user),
 ):
     """単一受注の eLogi CSV（ヘッダ 1 行 + データ 1 行）を text/csv で返す。"""
-    order_row = await _fetch_order_for_csv(db, order_id)
+    order_row = await _fetch_order_for_csv(db, order_id, tenant_id)
     if not order_row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="注文が見つかりません",
         )
-    shipping_row = await _fetch_shipping_row(db, order_id)
+    shipping_row = await _fetch_shipping_row(db, order_id, tenant_id)
     # 発送情報が無くても CSV 自体は出す（一部列が空で出るだけ）。
     # eLogi 側で「最小の order_number だけ」も取り込めるユースケースに対応。
 
@@ -395,10 +431,10 @@ async def bulk_export_elogi_csv(
     # 受注本体と発送情報を一括取得。順序はリクエスト指定順を維持。
     entries: list[dict] = []
     for oid in ids:
-        order_row = await _fetch_order_for_csv(db, oid)
+        order_row = await _fetch_order_for_csv(db, oid, tenant_id)
         if not order_row:
             continue  # 存在しない id はスキップ
-        shipping_row = await _fetch_shipping_row(db, oid)
+        shipping_row = await _fetch_shipping_row(db, oid, tenant_id)
         entries.append(_build_csv_entry(order_row, shipping_row))
 
     if not entries:
