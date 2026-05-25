@@ -108,10 +108,10 @@
 /* --- Fixed avatar button (Chrome / Meta style) --- */
 .avatar-btn {
   position: fixed;
-  top: var(--space-3);
-  right: var(--space-4);
-  width: var(--space-10);
-  height: var(--space-10);
+  top: var(--avatar-zone-top);    /* tokens.css で一元定義 — Avatar Zone SSoT */
+  right: var(--avatar-zone-right);
+  width: var(--avatar-zone-width);
+  height: var(--avatar-zone-width);
   border-radius: 50%;
   background: var(--accent);
   color: var(--on-accent);
@@ -122,7 +122,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-avatar);
+  z-index: var(--avatar-zone-z);
   transition: background var(--transition-fast), transform var(--transition-micro);
   box-shadow: var(--shadow-md);
   text-transform: uppercase;
