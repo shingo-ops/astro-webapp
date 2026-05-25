@@ -262,14 +262,6 @@ export default function Layout() {
               )}
 
               <NavLink
-                to="/reports"
-                className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
-              >
-                <span className="sidebar-icon"><NAV_ICONS.report size={ICON.base} /></span>
-                <span className="sidebar-label">{t("nav.reports")}</span>
-              </NavLink>
-
-              <NavLink
                 to="/schedule"
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
               >
