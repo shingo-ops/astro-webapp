@@ -21,6 +21,7 @@
  */
 
 import "./InboxPage.css";
+import { useNavigate } from "react-router-dom";
 import { INBOX_ACTION_ICONS, NAV_ICONS, PAGE_ICONS, PlatformIcon } from "../../constants/icons";
 import { PageLayout } from "../../components/PageLayout";
 import { ICON } from "../../constants/iconSizes";
@@ -59,21 +60,34 @@ export default function InboxPage() {
     messageListRef,
   } = useInboxState();
 
-  const settingsBtn = (
-    <button
-      type="button"
-      className="inbox-settings-btn icon-frame"
-      onClick={() => setShowSettings(true)}
-      aria-label={t("inbox.settings.title")}
-      data-tooltip={t("inbox.settings.tooltip")}
-    >
-      <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
-    </button>
+  const navigate = useNavigate();
+
+  const headerActions = (
+    <>
+      <button
+        type="button"
+        className="inbox-settings-btn icon-frame"
+        onClick={() => navigate("/faq")}
+        aria-label={t("faq.title")}
+        data-tooltip={t("faq.title")}
+      >
+        <NAV_ICONS.help size={ICON.base} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className="inbox-settings-btn icon-frame"
+        onClick={() => setShowSettings(true)}
+        aria-label={t("inbox.settings.title")}
+        data-tooltip={t("inbox.settings.tooltip")}
+      >
+        <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
+      </button>
+    </>
   );
 
   return (
     <>
-      <PageLayout navKey="nav.leadChat" subtitleKey="inbox.subtitle" noScroll headerAction={settingsBtn}>
+      <PageLayout navKey="nav.leadChat" subtitleKey="inbox.subtitle" noScroll headerAction={headerActions}>
       <div className="inbox-wrapper">
         {/* 左+中央エリア（タブ+カラム） */}
         <div className="inbox-main-area">
