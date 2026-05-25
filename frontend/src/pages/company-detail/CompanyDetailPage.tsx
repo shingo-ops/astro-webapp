@@ -450,7 +450,7 @@ export default function CompanyDetailPage() {
       <div className="page-header">
         <div>
           <button className="btn-sm" onClick={() => navigate("/companies")}>&larr; {t("common.back")}</button>
-          <h1>{company.name} <span style={{ color: "var(--text-muted)", fontSize: "var(--font-2xs)" }}>({company.company_code})</span></h1>
+          <h1>{company.name}</h1>
         </div>
         <div className="page-header-actions">
           <span className={`status-badge status-${company.status}`}>{company.status}</span>
@@ -682,7 +682,7 @@ export default function CompanyDetailPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>{t("common.code")}</th><th>{t("common.name")}</th><th>{t("contacts.position")}</th><th>{t("contacts.isPrimary")}</th><th>{t("common.email")}</th><th>{t("common.phone")}</th><th>{t("common.status")}</th>
+                  <th>{t("common.name")}</th><th>{t("contacts.position")}</th><th>{t("contacts.isPrimary")}</th><th>{t("common.email")}</th><th>{t("common.phone")}</th><th>{t("common.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -690,7 +690,6 @@ export default function CompanyDetailPage() {
                   const name = c.display_name || `${c.surname || ""} ${c.given_name || ""}`.trim() || "-";
                   return (
                     <tr key={c.id}>
-                      <td>{c.contact_code}</td>
                       <td>{name}</td>
                       <td>{c.job_title || "-"}</td>
                       <td>{c.is_primary_contact ? <STATUS_ICONS.check size={ICON.sm} aria-hidden="true" /> : ""}</td>

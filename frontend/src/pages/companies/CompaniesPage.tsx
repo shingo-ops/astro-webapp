@@ -394,7 +394,6 @@ export default function CompaniesPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t("companies.companyCode")}</th>
               <th>{t("common.name")}</th>
               <th>{t("companies.industry")}</th>
               <th>{t("common.status")}</th>
@@ -405,14 +404,13 @@ export default function CompaniesPage() {
           </thead>
           <tbody>
             {companies.length === 0 ? (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: "var(--space-4)" }}>{t("companies.noCompanies")}</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "var(--space-4)" }}>{t("companies.noCompanies")}</td></tr>
             ) : (
               companies.map((c) => (
                 <tr
                   key={c.id}
                   className={c.status === "pending_dedup_review" ? "row-pending-dedup" : ""}
                 >
-                  <td>{c.company_code}</td>
                   <td>
                     {/* 詳細ページへ: multi_branch 住所編集 / 担当者タブ / 販売チャネル */}
                     <Link to={`/companies/${c.id}`}>{companyDisplayName(c)}</Link>

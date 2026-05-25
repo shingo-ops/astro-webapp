@@ -240,7 +240,7 @@ export default function InboxPage() {
                     <div className="conv-info">
                       <div className="conv-header">
                         <span className={`conv-name${(conv.unread_count ?? 0) > 0 ? " unread" : ""}`}>
-                          {conv.customer_name ?? conv.lead_code ?? `Lead #${conv.lead_id}`}
+                          {conv.customer_name ?? `Lead #${conv.lead_id}`}
                         </span>
                         {conv.lead_status && (
                           <span className="conv-status-badge">{conv.lead_status}</span>

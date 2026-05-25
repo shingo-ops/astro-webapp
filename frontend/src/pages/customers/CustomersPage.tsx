@@ -691,7 +691,6 @@ export default function CustomersPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t("common.code")}</th>
               <th>{t("customers.title")}</th>
               <th>{t("customers.companyName")}</th>
               <th>{t("companies.billing")}</th>
@@ -706,7 +705,6 @@ export default function CustomersPage() {
               const delivery = c.addresses.find((a) => a.address_type === "delivery");
               return (
                 <tr key={c.id}>
-                  <td className="mono">{c.customer_code}</td>
                   <td>{customerDisplayName(c)}</td>
                   <td>{c.company_name || "-"}</td>
                   <td>{addressDisplay(billing)}</td>
@@ -724,7 +722,7 @@ export default function CustomersPage() {
               );
             })}
             {customers.length === 0 && (
-              <tr><td colSpan={7} className="empty">{t("customers.noCustomers")}</td></tr>
+              <tr><td colSpan={6} className="empty">{t("customers.noCustomers")}</td></tr>
             )}
           </tbody>
         </table>

@@ -335,9 +335,7 @@ export default function ProductsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>{t("products.productCode")}</th>
               <th>{t("common.name")}</th>
-              <th>{t("common.code")}</th>
               <th>{t("quotes.items")}</th>
               <th>{t("language.label")}</th>
               <th>{t("leads.type")}</th>
@@ -350,13 +348,11 @@ export default function ProductsPage() {
           <tbody>
             {products.map((p) => (
               <tr key={p.id} style={p.is_archived ? { opacity: "var(--opacity-archived)" } : undefined}>
-                <td className="mono">{p.product_code || "-"}</td>
                 <td>
                   {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: "var(--radius-xs)" }} />}
                   {p.name_ja}
                   {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: "var(--space-6px)" }}>{t("products.status_discontinued")}</span>}
                 </td>
-                <td className="mono">{p.card_number || "-"}</td>
                 <td>{p.rarity || "-"}</td>
                 <td>{p.language || "-"}</td>
                 <td>{p.category || "-"}</td>
@@ -387,7 +383,7 @@ export default function ProductsPage() {
                 </td>
               </tr>
             ))}
-            {products.length === 0 && <tr><td colSpan={10} className="empty">{t("products.noProducts")}</td></tr>}
+            {products.length === 0 && <tr><td colSpan={8} className="empty">{t("products.noProducts")}</td></tr>}
           </tbody>
         </table>
       )}
