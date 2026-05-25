@@ -138,6 +138,7 @@ async def create_po(
                            action="create", table_name="purchase_orders", record_id=po_id,
                            new_data={"supplier_id": data.supplier_id, "items_count": len(data.items), "total": str(total)})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     await reset_tenant_context(db, tenant_id)
 
@@ -164,6 +165,7 @@ async def mark_ordered(po_id: int, db: AsyncSession = Depends(get_db),
                            action="order", table_name="purchase_orders", record_id=po_id,
                            new_data={"status": "ordered"})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return POResponse(**dict(row))
 
 
@@ -197,6 +199,7 @@ async def mark_received(po_id: int, db: AsyncSession = Depends(get_db),
                            action="receive", table_name="purchase_orders", record_id=po_id,
                            new_data={"status": "received", "items_received": len(items)})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     return POResponse(**dict(row))
 
@@ -218,6 +221,7 @@ async def cancel_po(po_id: int, db: AsyncSession = Depends(get_db),
                            action="cancel", table_name="purchase_orders", record_id=po_id,
                            new_data={"status": "cancelled"})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return POResponse(**dict(row))
 
 
@@ -355,6 +359,7 @@ async def send_po_email(
         )
 
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
     fetched = await db.execute(
         text(f"SELECT {_PO_COLS} FROM purchase_orders WHERE id = :id"),

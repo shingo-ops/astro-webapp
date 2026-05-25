@@ -27,7 +27,11 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_tenant, get_current_user
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.services import google_calendar as cal_svc
@@ -144,6 +148,7 @@ async def connect_callback(
             {"tid": tenant_id, "at": access_enc, "rt": refresh_enc, "exp": expiry, "uid": user_id},
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except Exception as e:
         await db.rollback()
         logger.error("Google Calendar callback: DB 保存失敗 %s", e)
@@ -203,6 +208,7 @@ async def disconnect(
         {"tid": tenant_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
 
 # ---------------------------------------------------------------------------

@@ -7,7 +7,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.services.audit import record_audit_log
@@ -68,6 +73,7 @@ async def create_badge(data: BadgeCreate, db: AsyncSession = Depends(get_db),
                            action="create", table_name="badge_definitions", record_id=row["id"],
                            new_data=data.model_dump())
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return BadgeResponse(**dict(row))
 
 
@@ -115,6 +121,7 @@ async def award_badge(data: AwardRequest, db: AsyncSession = Depends(get_db),
                            action="award", table_name="user_badges", record_id=row["id"],
                            new_data={"user_id": data.user_id, "badge_id": data.badge_id})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return UserBadgeResponse(id=row["id"], user_id=row["user_id"], badge_id=row["badge_id"],
                              badge_name=b["name"] if b else "", badge_icon=b["icon"] if b else None,
                              earned_at=str(row["earned_at"]))

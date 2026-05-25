@@ -14,7 +14,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.services.audit import record_audit_log
@@ -126,6 +131,7 @@ async def create_report(
                            action="create", table_name="staff_reports", record_id=new_id,
                            new_data={"report_type": data.report_type.value, "period": data.period})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return StaffReportResponse(**row)
 
 
@@ -155,4 +161,5 @@ async def review_report(
                            action="review", table_name="staff_reports", record_id=report_id,
                            new_data={"reviewer_comment": data.comment})
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     return StaffReportResponse(**dict(row))

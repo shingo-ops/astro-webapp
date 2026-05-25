@@ -493,6 +493,7 @@ async def create_customer(
             new_data=data.model_dump(exclude_none=True, mode="json"),
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except IntegrityError as e:
         await db.rollback()
         # 詳細はログにのみ、API には generic なメッセージ（制約名漏洩防止）
@@ -633,6 +634,7 @@ async def update_customer(
         old_data=dict(old_row), new_data=data.model_dump(exclude_unset=True, mode="json"),
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
     # commit 後の副テーブル SELECT 前に tenant コンテキスト再設定
     await reset_tenant_context(db, tenant_id)
@@ -673,6 +675,7 @@ async def delete_customer(
             old_data=dict(old_row),
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except IntegrityError:
         await db.rollback()
         raise HTTPException(

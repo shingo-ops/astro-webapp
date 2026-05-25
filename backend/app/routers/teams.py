@@ -134,6 +134,7 @@ async def create_team(
         new_data=data.model_dump(exclude_none=True),
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     # commit後のクエリはsearch_pathが失われている可能性があるため再設定
     await reset_tenant_context(db, tenant_id)
     team = await _load_team(db, new_id)
@@ -211,6 +212,7 @@ async def delete_team(
         old_data=old,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
 
 
 @router.get(
@@ -287,6 +289,7 @@ async def add_team_member(
         new_data={"team_id": team_id, "user_id": data.user_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     # commit後のクエリはsearch_pathが失われている可能性があるため再設定
     await reset_tenant_context(db, tenant_id)
 
@@ -330,3 +333,4 @@ async def remove_team_member(
         old_data={"team_id": team_id, "user_id": user_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
