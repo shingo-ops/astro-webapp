@@ -500,8 +500,15 @@ export default function SchedulePage() {
   };
 
   return (
-    <PageLayout navKey="nav.schedule" subtitleKey="schedule.subtitle">
-      {/* Google Calendar 接続ステータスバー（常時表示） */}
+    <PageLayout
+      navKey="nav.schedule"
+      headerAction={canManage ? (
+        <button className="btn-secondary" onClick={handleGoogleConnect}>
+          {t("schedule.connectBtn")}
+        </button>
+      ) : undefined}
+    >
+      {/* Google Calendar 接続ステータスバー（接続中/切断中のみ表示） */}
       <GoogleCalendarStatusBar
         onReconnect={handleGoogleConnect}
         onConnect={handleGoogleConnect}
@@ -570,6 +577,7 @@ export default function SchedulePage() {
           slotMaxTime="24:00:00"
           slotDuration="00:30:00"
           slotLabelInterval="01:00:00"
+          allDayText={t("schedule.allDay")}
           slotLabelFormat={{ hour: "numeric", minute: "2-digit", omitZeroMinute: true, meridiem: false }}
           moreLinkContent={(args) => `+${args.num}`}
           dayHeaderContent={({ date, isToday, view }) => {
