@@ -218,6 +218,7 @@ function App() {
                     <Route path="suppliers"           element={<SuppliersPage />} />
                     <Route path="purchase-orders"     element={<PurchaseOrdersPage />} />
                     <Route path="data"                element={<ERPPage />} />
+                    <Route path="notifications"       element={<NotificationsPage />} />
                     <Route path="super-admin/masters" element={<SuperAdminMastersPage />} />
                     <Route path="super-admin/inbound" element={<DiscordInboundPage />} />
                     <Route path="super-admin/phase"   element={<PhaseSwitchPage />} />
