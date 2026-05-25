@@ -24,7 +24,7 @@
 --     （循環依存回避）。FK 付与は 022 の後、データ投入前に別途実施する必要あり
 --
 -- 設計書参照:
---   - jarvis_crm_staff_roles_bots_design.docx §3-3
+--   - salesanchor_staff_roles_bots_design.docx §3-3
 --   - migrate_staff_roles_bots_PATCH.md §3
 --
 -- 変更履歴:

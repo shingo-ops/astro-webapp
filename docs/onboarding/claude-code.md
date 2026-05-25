@@ -1,4 +1,4 @@
-# Claude Code セットアップガイド（Jarvis CRM / salesanchor 開発者向け）
+# Claude Code セットアップガイド（Sales Anchor / salesanchor 開発者向け）
 
 このドキュメントは、本リポジトリで Claude Code を使って開発するためのオンボーディング手順をまとめたもの。
 

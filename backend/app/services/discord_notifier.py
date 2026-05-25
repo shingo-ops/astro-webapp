@@ -47,7 +47,7 @@ async def _post_discord_webhook(url: str, content: str) -> bool:
     payload: dict[str, Any] = {
         "content": content[:_MAX_MESSAGE_CHARS],
         # Discord 側で username override したい場合に使う
-        "username": "Jarvis CRM 在庫管理 LLM 予算アラート",
+        "username": "Sales Anchor 在庫管理 LLM 予算アラート",
     }
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:

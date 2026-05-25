@@ -200,12 +200,12 @@
     }
   ],
   "schemaVersion": 39,
-  "tags": ["jarvis-crm", "system"],
+  "tags": ["salesanchor", "system"],
   "templating": { "list": [] },
   "time": { "from": "now-6h", "to": "now" },
   "timepicker": {},
   "timezone": "Asia/Tokyo",
-  "title": "Jarvis CRM - システム概要",
+  "title": "Sales Anchor - システム概要",
   "uid": "jarvis-system-overview",
   "version": 1
 }

@@ -7,8 +7,8 @@
             "Principal": "*",
             "Action": "s3:*",
             "Resource": [
-                "arn:aws:s3:::jarvis-crm-backups",
-                "arn:aws:s3:::jarvis-crm-backups/*"
+                "arn:aws:s3:::salesanchor-backups",
+                "arn:aws:s3:::salesanchor-backups/*"
             ],
             "Condition": {
                 "Bool": {
