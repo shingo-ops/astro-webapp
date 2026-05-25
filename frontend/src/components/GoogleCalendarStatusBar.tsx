@@ -63,8 +63,12 @@ export function GoogleCalendarStatusBar({
         onStatusChange?.(false);
       }
     } catch {
-      // API エラー（ネットワーク障害等）→ 切断扱い
-      setSyncStatus("disconnected");
+      // API エラー時: 既に connected/disconnected 状態ならそのまま維持。
+      // loading または not_linked なら not_linked に留め、エラーバーを出さない。
+      setSyncStatus((prev) => {
+        if (prev === "loading" || prev === "not_linked") return "not_linked";
+        return "disconnected";
+      });
       onStatusChange?.(false);
     }
   }, [onStatusChange]);
