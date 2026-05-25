@@ -62,7 +62,7 @@ export default function InboxPage() {
   const settingsBtn = (
     <button
       type="button"
-      className="inbox-settings-btn"
+      className="inbox-settings-btn icon-frame"
       onClick={() => setShowSettings(true)}
       aria-label={t("inbox.settings.title")}
       data-tooltip={t("inbox.settings.tooltip")}
@@ -231,8 +231,8 @@ export default function InboxPage() {
                           getInitials(conv.customer_name)
                         )}
                       </div>
-                      <span className="conv-platform-dot">
-                        <PlatformIcon platform={conv.platform} size={18} />
+                      <span className="conv-platform-dot icon-frame">
+                        <PlatformIcon platform={conv.platform} size={ICON.base} />
                       </span>
                     </div>
 

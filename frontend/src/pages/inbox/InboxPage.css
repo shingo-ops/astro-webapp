@@ -277,7 +277,6 @@
   width: var(--icon-base);
   height: var(--icon-base);
   border-radius: var(--radius-full);
-  border: 2px solid var(--bg-surface);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -936,7 +935,6 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
   height: var(--space-10);
   display: flex; align-items: center; justify-content: center;
   background: transparent;
-  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   cursor: pointer;
   color: var(--text-primary);
