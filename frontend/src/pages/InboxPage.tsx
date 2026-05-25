@@ -202,7 +202,6 @@ html.force-dark .inbox-wrapper {
   align-items: center;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
-  border-radius: var(--radius-sm);
   flex-shrink: 0;
   overflow-x: auto;
   scrollbar-width: none;
@@ -228,7 +227,7 @@ html.force-dark .inbox-wrapper {
   font-family: inherit;
   display: flex;
   align-items: center;
-  line-height: 1;
+  line-height: var(--line-height-tight);
 }
 .inbox-full-tab:hover:not(.active) {
   background: var(--color-hover-overlay);
@@ -317,8 +316,8 @@ html.force-dark .inbox-wrapper {
 .inbox-manage-btn {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 7px 12px;
+  gap: var(--space-6px);
+  padding: var(--space-6px) var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-surface);
@@ -379,7 +378,7 @@ html.force-dark .inbox-wrapper {
   transition: background var(--transition-micro), color var(--transition-micro);
   font-family: inherit;
   white-space: nowrap;
-  line-height: 1.5;
+  line-height: var(--line-height-base);
 }
 /* Meta実測: アクティブ bg=rgb(225,237,247), color=rgb(10,120,190), fw=700 */
 .inbox-sub-filter-pill.active {
@@ -397,12 +396,12 @@ html.force-dark .inbox-wrapper {
   overflow-y: auto;
 }
 
-/* 会話アイテム — Meta実測: padding=12px 0 12px 12px, h=92px, borderなし */
+/* 会話アイテム — Meta実測: padding=12px, h=92px, borderなし */
 .conv-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) 0 var(--space-3) var(--space-3);
+  padding: var(--space-3);
   width: 100%;
   min-height: var(--min-height-conv-item);
   border: none;
@@ -417,14 +416,14 @@ html.force-dark .inbox-wrapper {
 /* Meta実測: hover/selected = rgba(0,0,0,0.05) オーバーレイ */
 .conv-item:hover { background: var(--color-hover-overlay); }
 .conv-item.selected { background: var(--color-hover-overlay); }
-/* 選択中インジケータ = 2px右端ストリップ */
+/* 選択中インジケータ = 右端ストリップ */
 .conv-item.selected::after {
   content: '';
   position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
-  width: 2px;
+  width: var(--selection-strip-w);
   background: var(--indicator);
 }
 
@@ -434,8 +433,8 @@ html.force-dark .inbox-wrapper {
   flex-shrink: 0;
 }
 .conv-avatar {
-  width: var(--icon-xl);
-  height: var(--icon-xl);
+  width: var(--size-avatar-lg);
+  height: var(--size-avatar-lg);
   border-radius: 50%;
   background: var(--avatar-bg);
   color: var(--text-primary);
@@ -450,8 +449,8 @@ html.force-dark .inbox-wrapper {
 .conv-item .conv-avatar { background: var(--bg-hover); }
 .conv-platform-dot {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
+  bottom: var(--platform-dot-offset);
+  right: var(--platform-dot-offset);
   width: var(--icon-base);
   height: var(--icon-base);
   border-radius: var(--radius-full);
@@ -522,10 +521,26 @@ html.force-dark .inbox-wrapper {
   background: var(--accent);
   color: var(--on-accent);
   border-radius: var(--radius-xl);
-  padding: 1px 6px;
+  padding: var(--space-1px) var(--space-6px);
   font-size: var(--font-2xs);
   font-weight: 700;
   flex-shrink: 0;
+}
+
+/* ページフィルター（複数Page時のドロップダウン） */
+.inbox-page-filter-wrap {
+  padding: var(--space-1) var(--space-3) var(--space-6px);
+}
+.inbox-page-filter-select {
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-xs);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  box-sizing: border-box;
 }
 
 /* ---- 中央パネル ---- */
@@ -1854,21 +1869,12 @@ export default function InboxPage() {
 
           {/* Page フィルタ（複数 Page 時） */}
           {(availablePageIds.length > 1 || !!pageIdFilter) && (
-            <div style={{ padding: "4px 12px 6px" }}>
+            <div className="inbox-page-filter-wrap">
               <select
                 value={pageIdFilter}
                 onChange={(e) => onPageFilterChange(e.target.value)}
                 aria-label="Filter by Page"
-                style={{
-                  width: "100%",
-                  padding: "4px 8px",
-                  fontSize: "var(--font-xs)",
-                  borderRadius: "var(--radius-xl)",
-                  border: "1px solid var(--border)",
-                  background: "var(--bg-surface)",
-                  color: "var(--text-primary)",
-                  fontFamily: "inherit",
-                }}
+                className="inbox-page-filter-select"
               >
                 <option value="">{t("inbox.allPages")}</option>
                 {availablePageIds.map((pid) => (
