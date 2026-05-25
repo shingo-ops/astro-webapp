@@ -62,8 +62,9 @@ export default function ManagementCenterPage() {
         { to: "commission",    labelKey: "nav.commissionSettings", visible: hasPermission("orders.view") },
         { to: "tenant-profile", labelKey: "nav.tenantProfile",
           visible: hasAny("tenant.profile.edit", "tenant.profile.view") },
-        { to: "channels",      labelKey: "nav.channels", visible: hasPermission("channels.view") },
-        { to: "bots",          labelKey: "nav.bots",     visible: hasPermission("bots.view") },
+        { to: "channels",       labelKey: "nav.channels",       visible: hasPermission("channels.view") },
+        { to: "bots",           labelKey: "nav.bots",           visible: hasPermission("bots.view") },
+        { to: "notifications",  labelKey: "nav.notifications",  visible: hasPermission("notifications.manage") },
       ],
     },
     {
