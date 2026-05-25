@@ -791,7 +791,7 @@
 
   /* 右パネルをフルハイト固定オーバーレイに変換 */
   .inbox-right-panel {
-    position: fixed !important;
+    position: fixed !important; /* fixed-ok: responsive-right-panel-overlay */
     top: 0; right: 0; bottom: 0;
     width: 360px !important; max-width: 92vw !important;
     max-height: none !important;
@@ -809,7 +809,7 @@
   /* バックドロップ: パネル背後の半透明オーバーレイ */
   .karte-overlay {
     display: block;
-    position: fixed; inset: 0;
+    position: fixed; inset: 0; /* fixed-ok: karte-overlay-backdrop */
     z-index: var(--z-backdrop);
     background: var(--overlay-bg);
     animation: fadeIn var(--duration-base) ease;
@@ -928,13 +928,9 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 
 /* ====== 受信箱設定ボタン ====== */
 .inbox-header-btns {
-  position: fixed;
-  top: var(--space-3);
-  right: var(--space-4);
   display: flex;
   gap: var(--space-2);
   align-items: center;
-  z-index: calc(var(--z-avatar) - 1);
 }
 .inbox-faq-btn {
   height: var(--space-10);
@@ -966,7 +962,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 
 /* ====== 受信箱設定モーダル ====== */
 .inbox-settings-overlay {
-  position: fixed; inset: 0; z-index: var(--z-modal);
+  position: fixed; inset: 0; z-index: var(--z-modal); /* fixed-ok: settings-modal-overlay */
   background: rgba(0,0,0,var(--opacity-overlay));
   display: flex; align-items: center; justify-content: center;
 }
@@ -1024,7 +1020,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 
 /* ====== プロフィールモーダル ====== */
 .inbox-profile-overlay {
-  position: fixed; inset: 0; z-index: var(--z-modal);
+  position: fixed; inset: 0; z-index: var(--z-modal); /* fixed-ok: profile-modal-overlay */
   background: rgba(0,0,0,var(--opacity-overlay));
   display: flex; align-items: center; justify-content: center;
   padding: var(--space-4);

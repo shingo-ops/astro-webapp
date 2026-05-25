@@ -171,6 +171,17 @@
   --page-padding-x:  var(--space-6);  /* 24px — 左右余白 */
   --page-padding-y:  var(--space-4);  /* 16px — 上下余白 */
   --page-header-mb:  var(--space-5);  /* 20px — 見出し下余白 */
+  /* ---- Avatar Zone（固定アバターの占有座標 — Single Source of Truth）
+     .avatar-btn の position:fixed 座標をここで一元定義する。
+     このゾーンと同座標に position:fixed 要素を置いてはいけない。
+     ページ右上ボタンは <PageLayout headerAction> + --page-header-avatar-clearance を使うこと。 */
+  --avatar-zone-top:   var(--space-3);        /* 12px — .avatar-btn top */
+  --avatar-zone-right: var(--space-4);        /* 16px — .avatar-btn right */
+  --avatar-zone-width: var(--size-avatar-md); /* 40px — .avatar-btn width/height */
+  --avatar-zone-z:     var(--z-avatar);       /* 300  — .avatar-btn z-index */
+  /* ページヘッダー右端のアバターボタン被り防止クリアランス（--avatar-zone-* 由来）
+     計算: 40px (avatar) + 16px (right) + 12px (breathing room) = 68px */
+  --page-header-avatar-clearance: calc(var(--avatar-zone-width) + var(--avatar-zone-right) + var(--space-3));
 
   /* ---- レイアウト高さ制約ルール（全ページ遵守必須） ----
      .page-subtitle は margin-bottom: var(--space-3) = 12px（pages-layout.css）。
