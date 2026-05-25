@@ -39,7 +39,8 @@
   display: block;
   padding: var(--space-2) var(--space-4);
   font-size: var(--font-sm);
-  color: var(--text-secondary);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
   margin-right: var(--space-2);
   transition: background var(--transition-fast), color var(--transition-fast);
