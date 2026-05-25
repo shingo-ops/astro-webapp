@@ -19,7 +19,7 @@
 --   - 019 で {schema}.staff 作成済
 --
 -- 設計書参照:
---   - jarvis_crm_staff_roles_bots_design.docx §3-5, §4-3
+--   - salesanchor_staff_roles_bots_design.docx §3-5, §4-3
 --   - migrate_staff_roles_bots_PATCH.md §5
 --
 -- 変更履歴:

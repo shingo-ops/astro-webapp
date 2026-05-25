@@ -15,7 +15,8 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import text
 
-from app.routers.tenant_profile import _tenant_profile_table
+# ADR-072 Phase 1: _tenant_profile_table は public `tenant_table_ref` に統合済。
+# 個別 helper テストは test_tenant_schema_helpers.py で包括的に検証する。
 
 
 @pytest.mark.asyncio
@@ -120,34 +121,6 @@ async def test_update_tenant_profile_404_when_not_seeded(client, db_session):
 
 
 # ──────────────────────────────────────────────────────────────────
-# Issue #563 回帰: _tenant_profile_table の schema prefix 組み立て
+# Issue #563 回帰: schema prefix 組み立てテストは
+# `test_tenant_schema_helpers.py` (ADR-072 Phase 1) に移動済。
 # ──────────────────────────────────────────────────────────────────
-
-
-@pytest.mark.asyncio
-async def test_tenant_profile_table_sqlite_no_prefix(db_session):
-    """SQLite (テスト) では prefix なし `tenant_profile` を返す。"""
-    table = _tenant_profile_table(db_session, tenant_id=999)
-    assert table == "tenant_profile"
-
-
-def test_tenant_profile_table_postgresql_with_prefix():
-    """PostgreSQL dialect では `tenant_NNN.tenant_profile` を組み立てる (Issue #563)。
-
-    実際の AsyncSession を作らず、dialect.name="postgresql" を持つ stub を渡す。
-    """
-    class _StubDialect:
-        name = "postgresql"
-
-    class _StubBind:
-        dialect = _StubDialect()
-
-    class _StubSession:
-        def get_bind(self):
-            return _StubBind()
-
-    table = _tenant_profile_table(_StubSession(), tenant_id=6)
-    assert table == "tenant_006.tenant_profile"
-
-    table = _tenant_profile_table(_StubSession(), tenant_id=42)
-    assert table == "tenant_042.tenant_profile"

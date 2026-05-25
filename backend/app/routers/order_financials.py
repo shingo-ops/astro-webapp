@@ -31,9 +31,10 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import (
-    get_current_user,
     get_current_tenant,
+    get_current_user,
     require_permission,
+    tenant_table_ref,
 )
 from app.database import get_db
 from app.models import User
@@ -49,35 +50,7 @@ from app.services.time import _jst_month_range_utc
 
 router = APIRouter()
 
-
-def _is_postgresql(db: AsyncSession) -> bool:
-    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
-
-    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
-    "no such table: tenant_NNN.order_financials" で失敗する。本判定で
-    SQLite 系を検出して prefix なしに倒す。
-    """
-    bind = db.get_bind() if hasattr(db, "get_bind") else None
-    if bind is None:
-        bind = getattr(db, "bind", None)
-    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
-    return name.startswith("postgresql")
-
-
-def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
-    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
-
-    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
-    - SQLite (pytest): `{name}` (schema 概念なし)
-
-    AsyncSession の commit 後は新コネクションが払い出されて session-level
-    の search_path が失われる可能性があるため、raw text() を使う箇所では
-    schema prefix を明示するのが安全 (Issue #563 / #565)。
-    """
-    if _is_postgresql(db):
-        safe_id = int(tenant_id)
-        return f"tenant_{safe_id:03d}.{name}"
-    return name
+# ADR-072 Phase 1: ローカル helper を削除し、`tenant_table_ref` を import 使用。
 
 
 # DB 列のうち入出力対象のホワイトリスト。動的 UPDATE の組み立ては必ずこの集合
@@ -112,7 +85,7 @@ _SELECT_COLS = """
 
 async def _ensure_order_exists(db: AsyncSession, order_id: int, tenant_id: int) -> None:
     """受注の存在を確認する (Issue #565: schema prefix 明示)。"""
-    orders_t = _t(db, tenant_id, "orders")
+    orders_t = tenant_table_ref(db, tenant_id, "orders")
     res = await db.execute(
         text(f"SELECT id FROM {orders_t} WHERE id = :id"),
         {"id": order_id},
@@ -125,7 +98,7 @@ async def _ensure_order_exists(db: AsyncSession, order_id: int, tenant_id: int) 
 
 
 async def _fetch_financial_row(db: AsyncSession, order_id: int, tenant_id: int) -> dict | None:
-    order_financials_t = _t(db, tenant_id, "order_financials")
+    order_financials_t = tenant_table_ref(db, tenant_id, "order_financials")
     res = await db.execute(
         text(f"SELECT {_SELECT_COLS} FROM {order_financials_t} WHERE order_id = :order_id"),
         {"order_id": order_id},
@@ -172,7 +145,7 @@ async def create_order_financial(
         "notes": payload.get("notes"),
     }
 
-    order_financials_t = _t(db, tenant_id, "order_financials")
+    order_financials_t = tenant_table_ref(db, tenant_id, "order_financials")
     insert_sql = text(f"""
         INSERT INTO {order_financials_t} (
             tenant_id, order_id,
@@ -265,7 +238,7 @@ async def update_order_financial(
     params = dict(update_data)
     params["order_id"] = order_id
 
-    order_financials_t = _t(db, tenant_id, "order_financials")
+    order_financials_t = tenant_table_ref(db, tenant_id, "order_financials")
     update_sql = text(f"""
         UPDATE {order_financials_t}
         SET {set_clauses}, updated_at = NOW()
@@ -309,7 +282,7 @@ async def delete_order_financial(
             detail="売上情報が見つかりません",
         )
 
-    order_financials_t = _t(db, tenant_id, "order_financials")
+    order_financials_t = tenant_table_ref(db, tenant_id, "order_financials")
     await db.execute(
         text(f"DELETE FROM {order_financials_t} WHERE order_id = :order_id"),
         {"order_id": order_id},
@@ -358,7 +331,7 @@ async def get_monthly_summary(
     # 集計クエリ。COALESCE で空期間時の NULL を 0 に丸める。
     # SUM の戻りは数値型 / NULL のいずれか（PostgreSQL）/ 文字列 (SQLite テスト) もあり得るが、
     # _to_decimal で吸収する。
-    order_financials_t = _t(db, tenant_id, "order_financials")
+    order_financials_t = tenant_table_ref(db, tenant_id, "order_financials")
     sql = text(f"""
         SELECT
             COUNT(*) AS cnt,

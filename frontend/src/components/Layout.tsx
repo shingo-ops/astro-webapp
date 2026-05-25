@@ -209,20 +209,13 @@ export default function Layout() {
                 </NavLink>
               )}
 
-              {showCrmLink && (
-                <NavLink
-                  to="/crm"
-                  className={() => {
-                    const onCrm =
-                      location.pathname === "/crm" ||
-                      location.pathname.startsWith("/crm/");
-                    return `sidebar-item${onCrm ? " active" : ""}`;
-                  }}
-                >
-                  <span className="sidebar-icon"><NAV_ICONS.leads size={ICON.base} /></span>
-                  <span className="sidebar-label">{t("nav.leads")}</span>
-                </NavLink>
-              )}
+              <NavLink
+                to="/schedule"
+                className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+              >
+                <span className="sidebar-icon"><NAV_ICONS.schedule size={ICON.base} /></span>
+                <span className="sidebar-label">{t("nav.schedule")}</span>
+              </NavLink>
 
               {hasPermission("products.view") && (
                 <NavLink
@@ -249,6 +242,21 @@ export default function Layout() {
                 </NavLink>
               )}
 
+              {showCrmLink && (
+                <NavLink
+                  to="/crm"
+                  className={() => {
+                    const onCrm =
+                      location.pathname === "/crm" ||
+                      location.pathname.startsWith("/crm/");
+                    return `sidebar-item${onCrm ? " active" : ""}`;
+                  }}
+                >
+                  <span className="sidebar-icon"><NAV_ICONS.leads size={ICON.base} /></span>
+                  <span className="sidebar-label">{t("nav.leads")}</span>
+                </NavLink>
+              )}
+
               {hasPermission("orders.view") && (
                 <NavLink
                   to="/orders"
@@ -258,14 +266,6 @@ export default function Layout() {
                   <span className="sidebar-label">{t("nav.orders")}</span>
                 </NavLink>
               )}
-
-              <NavLink
-                to="/schedule"
-                className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
-              >
-                <span className="sidebar-icon"><NAV_ICONS.schedule size={ICON.base} /></span>
-                <span className="sidebar-label">{t("nav.schedule")}</span>
-              </NavLink>
 
               <NavLink
                 to="/faq"

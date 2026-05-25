@@ -1,7 +1,7 @@
 # Inventory Parser Samples - Fixture
 
 ## 概要
-Jarvis CRM Sprint 3 AC3.2 の「raw_content パーサー」テスト用 fixture。
+Sales Anchor Sprint 3 AC3.2 の「raw_content パーサー」テスト用 fixture。
 Google スプレッドシート「API解析シート」から抽出した実データのメッセージ原文 5 件。
 
 ## 出典

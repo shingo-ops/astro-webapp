@@ -9,7 +9,7 @@
 | 関連ロードマップ | 仕様書 第8章 8-1（Phase 1-C: 商品マスタ、M-MVP 完了、M3/M4 残） |
 | 関連未確定事項 | 仕様書 第8章 8-3「商品マスタ #24 の列構成と、在庫管理（SCM出力同期 #22・集計同期 #23）との関係整理」 |
 | 関連 ADR | ADR-008 Supplier Intelligence（normalized_products / product_supplier_mappings の上位設計） |
-| 関連設計書 | `jarvis_crm_system_overview.docx` 第5章 5-1、第6章 6-2/6-4/6-6、第8章 |
+| 関連設計書 | `salesanchor_system_overview.docx` 第5章 5-1、第6章 6-2/6-4/6-6、第8章 |
 | 関連実装 | `backend/app/routers/products.py` (264行)、`backend/app/schemas/product.py`、`migrations/005_add_phase2_tenant_tables.sql` (L22-41)、`migrations/007_add_phase3_tenant_tables.sql` (suppliers, purchase_order_items.product_id FK)、`frontend/src/pages/ProductsPage.tsx` (250行) |
 | 対象フェーズ | Phase 1-C（顧客マスタ・担当者マスタの後、Phase 2 ルックアップ群の前） |
 | 対象テナント | tenant_004 (highlife-jpn) のみ（test-corp は空） |

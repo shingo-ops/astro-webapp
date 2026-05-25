@@ -128,7 +128,7 @@ bash scripts/aws-setup/setup-s3-backup.sh
 ```
 
 このスクリプトが以下を自動実行します:
-1. S3バケット `jarvis-crm-backups` を作成
+1. S3バケット `salesanchor-backups` を作成
 2. サーバーサイド暗号化（AES-256）を有効化
 3. パブリックアクセスを完全ブロック
 4. バージョニング有効化（誤削除対策）
@@ -164,7 +164,7 @@ crontab -e
 
 以下を追加:
 ```cron
-# Jarvis CRM 日次バックアップ
+# Sales Anchor 日次バックアップ
 0 3 * * * /home/ubuntu/salesanchor/scripts/backup.sh >> /var/log/jarvis_backup.log 2>&1
 30 3 * * * /home/ubuntu/salesanchor/scripts/backup_to_s3.sh >> /var/log/s3_backup.log 2>&1
 ```
@@ -182,7 +182,7 @@ tail -50 /var/log/s3_backup.log
 ```
 
 S3コンソールでも確認:
-https://s3.console.aws.amazon.com/s3/buckets/jarvis-crm-backups
+https://s3.console.aws.amazon.com/s3/buckets/salesanchor-backups
 
 ---
 
@@ -198,7 +198,7 @@ https://s3.console.aws.amazon.com/s3/buckets/jarvis-crm-backups
 
 ### エラー: "BucketAlreadyExists"
 
-→ S3バケット名は世界中で一意である必要があります。既に他の人が `jarvis-crm-backups` を使っている場合は、`backup_to_s3.sh` の `S3_BUCKET` 変数と `setup-s3-backup.sh` の `BUCKET_NAME` を別の名前（例: `jarvis-crm-backups-yourname`）に変更してください。
+→ S3バケット名は世界中で一意である必要があります。既に他の人が `salesanchor-backups` を使っている場合は、`backup_to_s3.sh` の `S3_BUCKET` 変数と `setup-s3-backup.sh` の `BUCKET_NAME` を別の名前（例: `salesanchor-backups-yourname`）に変更してください。
 
 ### バックアップサイズが想定より大きい
 
@@ -218,8 +218,8 @@ sudo apt install -y awscli
 aws configure
 
 # 3. 最新バックアップをダウンロード
-LATEST=$(aws s3 ls s3://jarvis-crm-backups/postgres-backups/ | sort | tail -1 | awk '{print $4}')
-aws s3 cp s3://jarvis-crm-backups/postgres-backups/$LATEST /tmp/
+LATEST=$(aws s3 ls s3://salesanchor-backups/postgres-backups/ | sort | tail -1 | awk '{print $4}')
+aws s3 cp s3://salesanchor-backups/postgres-backups/$LATEST /tmp/
 
 # 4. 既存のrestore.shで復元
 bash scripts/restore.sh /tmp/$LATEST

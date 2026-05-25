@@ -19,7 +19,7 @@ class TestCeleryAppConfig:
     def test_celery_app_import(self):
         """celery_appがインポートできること"""
         from app.celery_app import celery_app
-        assert celery_app.main == "jarvis_crm"
+        assert celery_app.main == "salesanchor"
 
     def test_celery_config(self):
         """Celery設定が正しいこと"""

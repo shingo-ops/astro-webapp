@@ -22,7 +22,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    tenant_table_ref,
+)
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
@@ -35,35 +40,7 @@ from app.services.meta_graph import MetaGraphAPIError, MetaGraphError, MetaGraph
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
-def _is_postgresql(db: AsyncSession) -> bool:
-    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
-
-    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
-    "no such table: tenant_NNN.leads" で失敗する。本判定で SQLite 系を
-    検出して prefix なしに倒す。
-    """
-    bind = db.get_bind() if hasattr(db, "get_bind") else None
-    if bind is None:
-        bind = getattr(db, "bind", None)
-    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
-    return name.startswith("postgresql")
-
-
-def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
-    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
-
-    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
-    - SQLite (pytest): `{name}` (schema 概念なし)
-
-    AsyncSession の commit 後は新コネクションが払い出されて session-level
-    の search_path が失われる可能性があるため、raw text() を使う箇所では
-    schema prefix を明示するのが安全 (Issue #563 / #565)。
-    """
-    if _is_postgresql(db):
-        safe_id = int(tenant_id)
-        return f"tenant_{safe_id:03d}.{name}"
-    return name
+# ADR-072 Phase 1: ローカル helper を削除し、`tenant_table_ref` を import 使用。
 
 
 _LEAD_COLUMNS = """
@@ -179,7 +156,7 @@ async def list_leads(
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
-    leads_t = _t(db, tenant_id, "leads")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
     result = await db.execute(
         text(f"""
             SELECT {_LEAD_COLUMNS}
@@ -206,7 +183,7 @@ async def get_lead(
     current_user: User = Depends(get_current_user),
 ):
     """リード詳細を取得する"""
-    leads_t = _t(db, tenant_id, "leads")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
     result = await db.execute(
         text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": lead_id},
@@ -238,7 +215,7 @@ async def create_lead(
         data.monthly_forecast,
     )
 
-    leads_t = _t(db, tenant_id, "leads")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
     result = await db.execute(
         text(f"""
             INSERT INTO {leads_t} (
@@ -315,7 +292,7 @@ async def update_lead(
     current_user: User = Depends(get_current_user),
 ):
     """リード情報を更新する（部分更新、prospect_rankは自動再計算）"""
-    leads_t = _t(db, tenant_id, "leads")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
     old_result = await db.execute(
         text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": lead_id},
@@ -390,7 +367,7 @@ async def delete_lead(
     current_user: User = Depends(get_current_user),
 ):
     """リードを削除する"""
-    leads_t = _t(db, tenant_id, "leads")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
     old_result = await db.execute(
         text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": lead_id},
@@ -434,9 +411,9 @@ async def convert_lead(
         アトミックにクレーム。並行変換でクレームに失敗した場合は
         作成済みdealと共にrollbackして409を返す。
     """
-    leads_t = _t(db, tenant_id, "leads")
-    contacts_t = _t(db, tenant_id, "contacts")
-    deals_t = _t(db, tenant_id, "deals")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
+    contacts_t = tenant_table_ref(db, tenant_id, "contacts")
+    deals_t = tenant_table_ref(db, tenant_id, "deals")
     lead_result = await db.execute(
         text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id"),
         {"id": lead_id},
@@ -623,8 +600,8 @@ async def list_lead_messages(
     """
     # lead 存在 + tenant 確認（RLS が PostgreSQL でテナント分離するが、SQLite では
     # WHERE で tenant_id を必須にする）
-    leads_t = _t(db, tenant_id, "leads")
-    meta_messages_t = _t(db, tenant_id, "meta_messages")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
+    meta_messages_t = tenant_table_ref(db, tenant_id, "meta_messages")
     lead_result = await db.execute(
         text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} WHERE id = :id AND tenant_id = :tenant_id"),
         {"id": lead_id, "tenant_id": tenant_id},
@@ -748,9 +725,9 @@ async def mark_lead_messages_read(
     Meta 側 mark_seen Send API は呼ばない（DB のみで管理）。Meta 既読同期は
     out of scope（spec §5-6 注記）。
     """
-    leads_t = _t(db, tenant_id, "leads")
-    staff_t = _t(db, tenant_id, "staff")
-    meta_messages_t = _t(db, tenant_id, "meta_messages")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
+    meta_messages_t = tenant_table_ref(db, tenant_id, "meta_messages")
     lead_q = await db.execute(
         text(f"SELECT id FROM {leads_t} WHERE id = :id AND tenant_id = :tenant_id"),
         {"id": lead_id, "tenant_id": tenant_id},
@@ -903,10 +880,10 @@ async def send_lead_message(
         502: Meta Send API がエラー / タイムアウト
     """
     # ----- (1) lead 存在 + tenant 確認 -----
-    leads_t = _t(db, tenant_id, "leads")
-    meta_messages_t = _t(db, tenant_id, "meta_messages")
-    tenant_meta_config_t = _t(db, tenant_id, "tenant_meta_config")
-    staff_t = _t(db, tenant_id, "staff")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
+    meta_messages_t = tenant_table_ref(db, tenant_id, "meta_messages")
+    tenant_meta_config_t = tenant_table_ref(db, tenant_id, "tenant_meta_config")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
     lead_q = await db.execute(
         text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} "
              "WHERE id = :id AND tenant_id = :tenant_id"),

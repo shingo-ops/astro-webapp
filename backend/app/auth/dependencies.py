@@ -241,6 +241,52 @@ async def reset_tenant_context(db: AsyncSession, tenant_id: int) -> None:
     await db.execute(text(f"SET app.tenant_id = '{safe_id}'"))
 
 
+# ---------------------------------------------------------------------------
+# ADR-072 Phase 1: tenant schema 修飾の公開 helper
+# ---------------------------------------------------------------------------
+#
+# PR #564 / #757 / #768 で各 router ローカルに `_is_postgresql` / `_t` を
+# byte-equivalent でコピーしてきた経緯 (10 ファイル重複) を解消するため、
+# 本ファイルに公開 API として集約する。
+#
+# `is_postgresql` は既存 `_dialect_supports_search_path` の thin wrapper
+# (新規実装ではなく re-export) として、ADR-072 §「helper 共通化」の意図
+# どおり二重実装を避ける。
+#
+# 詳細は docs/adr/ADR-072-tenant-schema-prefix-enforcement.md §「決定」§3。
+
+
+def is_postgresql(db: AsyncSession) -> bool:
+    """db の dialect が PostgreSQL 系か判定する公開 API (ADR-072 Phase 1)。
+
+    `_dialect_supports_search_path` と等価。raw `text()` 内に tenant schema
+    prefix を埋め込むかを判断するために router 側から呼ぶ。
+
+    実装は `_dialect_supports_search_path` に委譲（二重実装回避、ADR-072 §3）。
+    """
+    return _dialect_supports_search_path(db)
+
+
+def tenant_table_ref(db: AsyncSession, tenant_id: int, name: str) -> str:
+    """tenant スキーマ修飾テーブル参照を返す公開 API (ADR-072 Phase 1)。
+
+    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
+    - SQLite (pytest): `{name}` (schema 概念なし)
+
+    案 A (schema prefix 明示) 採用 router で使用する。AsyncSession の
+    commit 後に session-level の search_path が失われる可能性があるため、
+    raw `text()` を使う箇所では schema prefix を明示するのが安全
+    (Issue #563 / #565 / #766)。
+
+    PR #564 / #757 / #768 で各 router ローカルに置いていた `_t` ヘルパー
+    と byte-equivalent。本 PR で 10 ファイルから import に置換した。
+    """
+    if is_postgresql(db):
+        safe_id = int(tenant_id)
+        return f"tenant_{safe_id:03d}.{name}"
+    return name
+
+
 async def get_current_admin(
     current_user: User = Depends(get_current_user),
 ) -> User:
