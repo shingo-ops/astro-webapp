@@ -135,7 +135,7 @@ export default function Layout() {
 
   /* ---- permission-filtered sub-item lists ---- */
 
-  const showLeadsLink = hasPermission("leads.view") || hasPermission("customers.view");
+  const showCrmLink = hasPermission("leads.view") || hasPermission("customers.view");
 
   const showSalesLink =
     prefs.show_sales_menu &&
@@ -148,7 +148,7 @@ export default function Layout() {
     hasAny(
       "staff.view", "teams.view", "roles.view", "bots.view",
       "shifts.view", "channels.view", "erp.view", "orders.view",
-      "customers.view", "deals.view", "suppliers.view", "purchase_orders.view",
+      "deals.view", "suppliers.view", "purchase_orders.view",
       "tenant.profile.view", "tenant.inventory_visibility.edit",
     );
 
@@ -211,15 +211,14 @@ export default function Layout() {
                 </NavLink>
               )}
 
-              {showLeadsLink && (
+              {showCrmLink && (
                 <NavLink
-                  to="/leads"
+                  to="/crm"
                   className={() => {
-                    const onLeadsSection =
-                      location.pathname.startsWith("/leads") ||
-                      location.pathname.startsWith("/customers") ||
-                      location.pathname.startsWith("/archive");
-                    return `sidebar-item${onLeadsSection ? " active" : ""}`;
+                    const onCrm =
+                      location.pathname === "/crm" ||
+                      location.pathname.startsWith("/crm/");
+                    return `sidebar-item${onCrm ? " active" : ""}`;
                   }}
                 >
                   <span className="sidebar-icon"><NAV_ICONS.leads size={ICON.base} /></span>
