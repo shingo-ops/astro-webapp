@@ -17,7 +17,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    tenant_table_ref,
+)
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
@@ -26,35 +31,7 @@ from app.services.audit import record_audit_log
 
 router = APIRouter()
 
-
-def _is_postgresql(db: AsyncSession) -> bool:
-    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
-
-    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
-    "no such table: tenant_NNN.deals" で失敗する。本判定で SQLite 系を
-    検出して prefix なしに倒す。
-    """
-    bind = db.get_bind() if hasattr(db, "get_bind") else None
-    if bind is None:
-        bind = getattr(db, "bind", None)
-    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
-    return name.startswith("postgresql")
-
-
-def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
-    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
-
-    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
-    - SQLite (pytest): `{name}` (schema 概念なし)
-
-    AsyncSession の commit 後は新コネクションが払い出されて session-level
-    の search_path が失われる可能性があるため、raw text() を使う箇所では
-    schema prefix を明示するのが安全 (Issue #563 / #565)。
-    """
-    if _is_postgresql(db):
-        safe_id = int(tenant_id)
-        return f"tenant_{safe_id:03d}.{name}"
-    return name
+# ADR-072 Phase 1: ローカル helper を削除し、`tenant_table_ref` を import 使用。
 
 
 _DEAL_COLUMNS = """
@@ -112,7 +89,7 @@ async def list_deals(
 
     where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
-    deals_t = _t(db, tenant_id, "deals")
+    deals_t = tenant_table_ref(db, tenant_id, "deals")
     result = await db.execute(
         text(f"""
             SELECT {_DEAL_COLUMNS}
@@ -139,7 +116,7 @@ async def get_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談詳細を取得する"""
-    deals_t = _t(db, tenant_id, "deals")
+    deals_t = tenant_table_ref(db, tenant_id, "deals")
     result = await db.execute(
         text(f"SELECT {_DEAL_COLUMNS} FROM {deals_t} WHERE id = :id"),
         {"id": deal_id},
@@ -163,9 +140,9 @@ async def create_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談を登録する（deal_codeは自動採番）"""
-    deals_t = _t(db, tenant_id, "deals")
-    contacts_t = _t(db, tenant_id, "contacts")
-    leads_t = _t(db, tenant_id, "leads")
+    deals_t = tenant_table_ref(db, tenant_id, "deals")
+    contacts_t = tenant_table_ref(db, tenant_id, "contacts")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
     # Step 5d: contact / company の存在 + 所属一致確認のみ
     contact_check = await db.execute(
         text(f"SELECT company_id FROM {contacts_t} WHERE id = :id"),
@@ -257,10 +234,10 @@ async def update_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談情報を更新する（部分更新）"""
-    deals_t = _t(db, tenant_id, "deals")
-    contacts_t = _t(db, tenant_id, "contacts")
-    companies_t = _t(db, tenant_id, "companies")
-    leads_t = _t(db, tenant_id, "leads")
+    deals_t = tenant_table_ref(db, tenant_id, "deals")
+    contacts_t = tenant_table_ref(db, tenant_id, "contacts")
+    companies_t = tenant_table_ref(db, tenant_id, "companies")
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
     old_result = await db.execute(
         text(f"SELECT {_DEAL_COLUMNS} FROM {deals_t} WHERE id = :id"),
         {"id": deal_id},
@@ -366,7 +343,7 @@ async def delete_deal(
     current_user: User = Depends(get_current_user),
 ):
     """商談を削除する"""
-    deals_t = _t(db, tenant_id, "deals")
+    deals_t = tenant_table_ref(db, tenant_id, "deals")
     old_result = await db.execute(
         text(f"SELECT {_DEAL_COLUMNS} FROM {deals_t} WHERE id = :id"),
         {"id": deal_id},

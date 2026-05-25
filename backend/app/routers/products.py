@@ -23,7 +23,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    is_postgresql,
+    require_permission,
+    tenant_table_ref,
+)
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
@@ -38,35 +44,9 @@ from app.services.audit import record_audit_log
 
 router = APIRouter()
 
-
-def _is_postgresql(db: AsyncSession) -> bool:
-    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
-
-    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
-    "no such table: tenant_NNN.products" で失敗する。本判定で SQLite 系を
-    検出して prefix なしに倒す。
-    """
-    bind = db.get_bind() if hasattr(db, "get_bind") else None
-    if bind is None:
-        bind = getattr(db, "bind", None)
-    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
-    return name.startswith("postgresql")
-
-
-def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
-    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
-
-    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
-    - SQLite (pytest): `{name}` (schema 概念なし)
-
-    AsyncSession の commit 後は新コネクションが払い出されて session-level
-    の search_path が失われる可能性があるため、raw text() を使う箇所では
-    schema prefix を明示するのが安全 (Issue #563 / #565)。
-    """
-    if _is_postgresql(db):
-        safe_id = int(tenant_id)
-        return f"tenant_{safe_id:03d}.{name}"
-    return name
+# ADR-072 Phase 1: ローカル helper を削除し、`is_postgresql` / `tenant_table_ref`
+# を import 使用。`_check_product_references` は dialect 分岐で SQLite フォール
+# バックを行うため `is_postgresql` も使う。
 
 
 _PRODUCT_COLUMNS = """
@@ -128,7 +108,7 @@ async def list_products(
 
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
-    products_t = _t(db, tenant_id, "products")
+    products_t = tenant_table_ref(db, tenant_id, "products")
     result = await db.execute(
         text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} {where} ORDER BY updated_at DESC LIMIT :limit OFFSET :offset"),
         params,
@@ -147,7 +127,7 @@ async def get_product(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    products_t = _t(db, tenant_id, "products")
+    products_t = tenant_table_ref(db, tenant_id, "products")
     result = await db.execute(
         text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} WHERE id = :id"),
         {"id": product_id},
@@ -175,7 +155,7 @@ async def create_product(
         payload["status"] = payload["status"].value if hasattr(payload["status"], "value") else payload["status"]
     payload["tenant_id"] = tenant_id
 
-    products_t = _t(db, tenant_id, "products")
+    products_t = tenant_table_ref(db, tenant_id, "products")
     result = await db.execute(
         text(f"""
             INSERT INTO {products_t} (
@@ -232,7 +212,7 @@ async def update_product(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    products_t = _t(db, tenant_id, "products")
+    products_t = tenant_table_ref(db, tenant_id, "products")
     old_result = await db.execute(
         text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} WHERE id = :id"),
         {"id": product_id},
@@ -311,9 +291,9 @@ async def _check_product_references(
     """
     blocking: list[str] = []
     for table in _DOWNSTREAM_TABLES_TO_CHECK:
-        qualified = _t(db, tenant_id, table)
+        qualified = tenant_table_ref(db, tenant_id, table)
         # テーブル存在確認。未投入テナントは無音 SKIP（dangling FK にはならない）
-        if _is_postgresql(db):
+        if is_postgresql(db):
             exists_result = await db.execute(
                 text("SELECT to_regclass(:qname) IS NOT NULL"),
                 {"qname": qualified},
@@ -361,7 +341,7 @@ async def delete_product(
     Q9（2026-04-28 確定）: FK 参照あり時は 409 を返し、is_archived=true の
     アーカイブ運用に誘導する。参照なしのときだけ物理削除する。
     """
-    products_t = _t(db, tenant_id, "products")
+    products_t = tenant_table_ref(db, tenant_id, "products")
     old_result = await db.execute(
         text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} WHERE id = :id"),
         {"id": product_id},
@@ -457,7 +437,7 @@ async def check_inventory(
     current_user: User = Depends(get_current_user),
 ):
     """指定商品の在庫が要求数量を満たすか確認する"""
-    products_t = _t(db, tenant_id, "products")
+    products_t = tenant_table_ref(db, tenant_id, "products")
     result = await db.execute(
         text(f"SELECT id, name_ja, quantity FROM {products_t} WHERE id = :id"),
         {"id": product_id},
