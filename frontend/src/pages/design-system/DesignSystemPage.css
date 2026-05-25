@@ -45,8 +45,8 @@
 }
 
 .ds-color-preview {
-  width: 36px;
-  height: 36px;
+  width: var(--ds-swatch-size);
+  height: var(--ds-swatch-size);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   flex-shrink: 0;

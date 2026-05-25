@@ -80,6 +80,7 @@
   /* 4pxグリッド非準拠・既存デザイン由来の例外値（新規使用は非推奨） */
   --space-1px:  1px;   /* 未読バッジ縦余白（Meta実測値） */
   --space-2px:  2px;   /* バッジ縦余白・極小調整 */
+  --space-3px:  3px;   /* ランクバッジ縦余白 */
   --space-6px:  6px;   /* コンパクトギャップ・小ボタン余白 */
   --space-10px: 10px;  /* 中間パディング（セクション・フォーム） */
   --space-14px: 14px;  /* ボタン横余白 */
@@ -232,11 +233,66 @@
   --toggle-width:            40px;   /* トグルスイッチ幅 */
   --toggle-height:           22px;   /* トグルスイッチ高さ */
   --toggle-thumb-size:       16px;   /* トグルサムサイズ */
+  --toggle-thumb-offset:     3px;    /* トグルサム内側マージン */
+  --toggle-translate:        18px;   /* トグルサム移動量（checked状態） */
   --right-panel-avatar-size: var(--size-avatar-md);  /* 右パネルアバター（40px） */
   --mc-subnav-width:         200px;  /* 管理センターサブナビ幅 */
 
   /* ---- Modal sizes ---- */
-  --max-width-modal-sm:   420px;  /* 確認モーダル・小型ダイアログ最大幅 */
+  --max-width-modal-sm:      420px;  /* 確認モーダル・小型ダイアログ最大幅 */
+  --modal-max-w:             500px;  /* 標準モーダル最大幅 */
+  --modal-profile-min-w:     480px;  /* プロフィールモーダル最小幅 */
+  --modal-profile-max-w:     640px;  /* プロフィールモーダル最大幅 */
+  --inbox-settings-min-w:    320px;  /* 受信箱設定モーダル最小幅 */
+  --inbox-settings-max-w:    480px;  /* 受信箱設定モーダル最大幅 */
+
+  /* ---- Inbox layout ---- */
+  --inbox-left-panel-min-w:  220px;  /* 受信箱左パネル最小幅（タブレット） */
+  --inbox-collapsed-panel-w: 360px;  /* 受信箱折りたたみパネル幅 */
+  --inbox-center-min-h:      300px;  /* 受信箱中央パネル最小高（モバイル） */
+  --inbox-textarea-min-h:    60px;   /* カルテメモフィールド最小高 */
+
+  /* ---- Sidebar ---- */
+  --sidebar-logo-h:          64px;   /* サイドバーロゴエリア高さ */
+  --sidebar-logo-text-h:     28px;   /* サイドバーロゴテキスト画像高さ */
+  --sidebar-logo-max-w:      160px;  /* サイドバーロゴ最大幅 */
+  --sidebar-item-padding-v:  11px;   /* サイドバー項目垂直パディング（実測値） */
+  --sidebar-sub-item-indent: 56px;   /* サイドバーサブ項目インデント */
+  --nav-badge-size:          18px;   /* ナビ未読バッジサイズ */
+
+  /* ---- Topbar / Responsive ---- */
+  --search-bar-max-w:        480px;  /* トップバー検索フォーム最大幅 */
+  --topnav-email-max-w:      140px;  /* トップナビ メールアドレス最大幅 */
+
+  /* ---- Auth / Login page ---- */
+  --card-login-max-w:        400px;  /* ログインカード最大幅 */
+  --login-logo-max-w:        280px;  /* ログインロゴ最大幅 */
+
+  /* ---- Coming Soon page ---- */
+  --coming-soon-max-w:       600px;  /* 準備中ページ最大幅 */
+  --coming-soon-icon-size:   64px;   /* 準備中アイコンサイズ */
+  --coming-soon-margin-top:  80px;   /* 準備中ページ上余白 */
+
+  /* ---- Components ---- */
+  --filter-pill-h:           28px;   /* フィルターピル高さ */
+  --input-select-min-w:      280px;  /* セレクト最小幅 */
+  --dropdown-max-h:          200px;  /* ドロップダウン最大高 */
+
+  /* ---- Dashboard ---- */
+  --dashboard-badge-min-w:   38px;   /* ダッシュボードバッジ最小幅 */
+  --progress-bar-h:          4px;    /* プログレスバー高さ */
+  --dashboard-rank-badge:    20px;   /* ランキングバッジサイズ */
+
+  /* ---- Design System page ---- */
+  --ds-swatch-size:          36px;   /* デザインシステム スウォッチサイズ */
+
+  /* ---- Schedule page ---- */
+  --schedule-mini-size:      46px;   /* スケジュールイベントミニサイズ */
+  --schedule-cell-icon-size: 24px;   /* スケジュールセルアイコンサイズ */
+  --schedule-min-h:          500px;  /* カレンダー最小高 */
+  --schedule-mini-col-min-w: 100px;  /* ミニカレンダーカラム最小幅 */
+  --schedule-slot-h:         80px;   /* タイムグリッド1時間スロット高（30分×2） */
+  --schedule-nav-btn-size:   32px;   /* カレンダーナビボタン幅・高さ */
 
   /* ---- Field sizes ---- */
   --min-width-input-sm:   120px;  /* 小型入力フィールド最小幅 */

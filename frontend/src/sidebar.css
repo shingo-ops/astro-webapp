@@ -40,7 +40,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  height: 64px;
+  height: var(--sidebar-logo-h);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -75,9 +75,9 @@
 }
 
 .sidebar-logo-text-img {
-  height: 28px;
+  height: var(--sidebar-logo-text-h);
   width: auto;
-  max-width: 160px;
+  max-width: var(--sidebar-logo-max-w);
   object-fit: contain;
   animation: fadeIn var(--duration-base) ease-in;
 }
@@ -112,7 +112,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 11px 14px; /* collapsed: border(3)+padding(14)+icon-center(10)=27px=54px÷2 */
+  padding: var(--sidebar-item-padding-v) var(--space-14px); /* collapsed: border(3)+padding(14)+icon-center(10)=27px=54px÷2 */
   color: var(--text-secondary);
   text-decoration: none;
   font-size: var(--font-sm);
@@ -160,7 +160,7 @@
 }
 
 .sidebar-expanded .sidebar-item {
-  padding: 11px 20px;
+  padding: var(--sidebar-item-padding-v) var(--space-5);
 }
 
 /* Accordion */
@@ -191,7 +191,7 @@
 
 .sidebar-sub-item {
   display: block;
-  padding: 8px 16px 8px 56px;
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--sidebar-sub-item-indent);
   color: var(--text-secondary);
   text-decoration: none;
   font-size: var(--font-sm);
@@ -237,8 +237,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
+  min-width: var(--nav-badge-size);
+  height: var(--nav-badge-size);
   padding: 0 var(--space-1);
   border-radius: var(--radius-badge);
   background: var(--accent);

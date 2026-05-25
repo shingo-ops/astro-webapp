@@ -53,6 +53,13 @@ export default [
           message:
             "❌ インラインスタイルへの zIndex 数値直書き禁止（ADR-067）。CSS変数を使ってください: style={{ zIndex: 'var(--z-topbar)' }}",
         },
+        // rgba()/rgb() 色直書き禁止: style={{ background: "rgba(0,0,0,0.5)" }}
+        {
+          selector:
+            "JSXAttribute[name.name='style'] Property > Literal[value=/rgba?\\s*\\(/]",
+          message:
+            "❌ インラインスタイルへの rgba()/rgb() 色直書き禁止（ADR-067）。CSS変数を使ってください: style={{ background: 'var(--overlay-bg)' }}",
+        },
       ],
 
       // アイコン一元管理（ADR-067 拡張）:

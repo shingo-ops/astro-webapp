@@ -87,7 +87,7 @@
 .gs-label {
   font-size: var(--font-sm);
   color: var(--text-primary);
-  min-width: 120px;
+  min-width: var(--min-width-input-sm);
   flex-shrink: 0;
 }
 

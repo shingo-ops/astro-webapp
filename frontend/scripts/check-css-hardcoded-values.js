@@ -22,7 +22,8 @@ const SRC_DIR = join(__dirname, '../src');
 // 変数定義ファイルは除外（値定義として数値が書かれる）
 const EXCLUDE_FILES = new Set(['index.css', 'tokens.css']);
 
-// 検出パターン: var() を含まない行のみ対象
+// 検出パターン
+// ※ var() / calc() を含む値はプロパティ名ごとに個別にスキップする（下記の行単位スキップは廃止）
 const PATTERNS = [
   {
     name: 'opacity',
@@ -32,8 +33,8 @@ const PATTERNS = [
   },
   {
     name: 'border-radius-px',
-    // border-radius: 3px, border-radius: 10px 等を検出
-    regex: /border-radius\s*:\s*\d+(?:\.\d+)?px/,
+    // border-radius: 3px, border-radius: 10px 等を検出（var/calc を含む場合はスキップ）
+    regex: /border-radius\s*:(?![^;]*(?:var|calc)\()[^;]*\d+(?:\.\d+)?px/,
     message: '→ CSS変数を使ってください: var(--radius-xxx)（ADR-067）',
   },
   {
@@ -47,6 +48,22 @@ const PATTERNS = [
     // animation: fadeIn 200ms, animation-duration: 200ms 等を検出
     regex: /(?:animation(?:-duration)?)\s*:[^;]*\d+ms/,
     message: '→ CSS変数を使ってください: var(--transition-xxx) または var(--duration-base)（ADR-067）',
+  },
+  {
+    name: 'spacing-px',
+    // padding/margin/gap に生px値（≥4px）を直書きした場合を検出
+    // var()/calc() を含む値はスキップ（既にCSS式使用済み）
+    // 除外: 0/1px/2px/3px（ボーダー等の構造的値）
+    regex: /(?:padding|margin|gap|row-gap|column-gap)\s*:(?![^;]*(?:var|calc)\()[^;]*\b(?:[4-9]|\d{2,})\d*px/,
+    message: '→ CSS変数を使ってください: var(--space-xxx)（ADR-067）',
+  },
+  {
+    name: 'sizing-px',
+    // width/height/min-*/max-* に生px値（≥4px）を直書きした場合を検出
+    // var()/calc() を含む値はスキップ
+    // (?<![a-zA-Z-]) で border-width / outline-width 等の誤検出を防ぐ（負の後読み）
+    regex: /(?<![a-zA-Z-])(?:width|height|min-width|max-width|min-height|max-height)\s*:(?![^;]*(?:var|calc)\()[^;]*\b(?:[4-9]|\d{2,})\d*px/,
+    message: '→ CSS変数を使ってください: var(--size-xxx) または var(--space-xxx)（ADR-067）',
   },
 ];
 
@@ -71,16 +88,23 @@ let hasError = false;
 
 for (const file of cssFiles) {
   const lines = readFileSync(file, 'utf8').split('\n');
+  let inBlockComment = false;
+
   lines.forEach((line, i) => {
     const trimmed = line.trim();
 
-    // コメント行はスキップ
-    if (
-      trimmed.startsWith('/*') ||
-      trimmed.startsWith('*') ||
-      trimmed.startsWith('//')
-    )
+    // ブロックコメント開始/終了をトラッキング
+    if (inBlockComment) {
+      if (trimmed.includes('*/')) inBlockComment = false;
+      return; // ブロックコメント内はスキップ
+    }
+    if (trimmed.startsWith('/*')) {
+      if (!trimmed.includes('*/')) inBlockComment = true; // 複数行コメント開始
       return;
+    }
+
+    // 行コメントはスキップ
+    if (trimmed.startsWith('*') || trimmed.startsWith('//')) return;
 
     // CSS変数定義行はスキップ（--xxx: 値定義）
     if (trimmed.startsWith('--')) return;
@@ -88,8 +112,8 @@ for (const file of cssFiles) {
     // @media クエリ行はスキップ（ブレークポイント数値 768px 等）
     if (trimmed.startsWith('@media') || trimmed.startsWith('@keyframes')) return;
 
-    // var() を含む行はスキップ（既にトークン参照済み）
-    if (trimmed.includes('var(')) return;
+    // var()/calc() を含む行のスキップは廃止。
+    // 各パターンが (?![^;]*(?:var|calc)\() でプロパティ値ごとに個別判定する。
 
     for (const { name, regex, message } of PATTERNS) {
       if (regex.test(trimmed)) {
