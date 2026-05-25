@@ -21,7 +21,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    tenant_table_ref,
+)
 from app.database import get_db
 from app.models import User
 from app.schemas.bot import BotCreate, BotCreatedResponse, BotResponse, BotUpdate
@@ -30,35 +35,8 @@ from app.services.audit import record_audit_log
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-
-def _is_postgresql(db: AsyncSession) -> bool:
-    """db の dialect が PostgreSQL 系か判定する (Issue #565)。
-
-    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
-    "no such table: tenant_NNN.bots" で失敗する。本判定で SQLite 系を
-    検出して prefix なしに倒す。
-    """
-    bind = db.get_bind() if hasattr(db, "get_bind") else None
-    if bind is None:
-        bind = getattr(db, "bind", None)
-    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
-    return name.startswith("postgresql")
-
-
-def _t(db: AsyncSession, tenant_id: int, name: str) -> str:
-    """tenant スキーマ修飾テーブル参照を返す (Issue #565)。
-
-    - PostgreSQL: `tenant_{id:03d}.{name}` (schema prefix 明示)
-    - SQLite (pytest): `{name}` (schema 概念なし)
-
-    AsyncSession の commit 後は新コネクションが払い出されて session-level
-    の search_path が失われる可能性があるため、raw text() を使う箇所では
-    schema prefix を明示するのが安全 (Issue #563 / #565)。
-    """
-    if _is_postgresql(db):
-        safe_id = int(tenant_id)
-        return f"tenant_{safe_id:03d}.{name}"
-    return name
+# ADR-072 Phase 1: ローカル `_is_postgresql` / `_t` は削除し、
+# `app.auth.dependencies.tenant_table_ref` を import して使う。
 
 
 _BOT_COLS = """
@@ -102,8 +80,8 @@ async def list_bots(
         conds.append("b.status = :st")
         params["st"] = status_filter
     where = f"WHERE {' AND '.join(conds)}" if conds else ""
-    bots_t = _t(db, tenant_id, "bots")
-    staff_t = _t(db, tenant_id, "staff")
+    bots_t = tenant_table_ref(db, tenant_id, "bots")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
     result = await db.execute(
         text(f"""
             SELECT {_BOT_COLS}
@@ -123,8 +101,8 @@ async def list_bots(
 async def get_bot(bot_id: int, db: AsyncSession = Depends(get_db),
                   tenant_id: int = Depends(get_current_tenant),
                   current_user: User = Depends(get_current_user)):
-    bots_t = _t(db, tenant_id, "bots")
-    staff_t = _t(db, tenant_id, "staff")
+    bots_t = tenant_table_ref(db, tenant_id, "bots")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
     result = await db.execute(
         text(f"""
             SELECT {_BOT_COLS}
@@ -146,7 +124,7 @@ async def create_bot(data: BotCreate, db: AsyncSession = Depends(get_db),
                      tenant_id: int = Depends(get_current_tenant),
                      current_user: User = Depends(get_current_user)):
     # owner_staff_id の存在チェック（同一テナント）
-    staff_t = _t(db, tenant_id, "staff")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
     check = await db.execute(
         text(f"SELECT id FROM {staff_t} WHERE id = :sid AND tenant_id = :tid"),
         {"sid": data.owner_staff_id, "tid": tenant_id},
@@ -159,7 +137,7 @@ async def create_bot(data: BotCreate, db: AsyncSession = Depends(get_db),
     bot_code = explicit_code if explicit_code else f"BOT-PENDING-{uuid.uuid4().hex}"
     plain_key, key_hash = _generate_api_key()
 
-    bots_t = _t(db, tenant_id, "bots")
+    bots_t = tenant_table_ref(db, tenant_id, "bots")
     try:
         result = await db.execute(
             text(f"""
@@ -218,8 +196,8 @@ async def update_bot(bot_id: int, data: BotUpdate,
                      db: AsyncSession = Depends(get_db),
                      tenant_id: int = Depends(get_current_tenant),
                      current_user: User = Depends(get_current_user)):
-    bots_t = _t(db, tenant_id, "bots")
-    staff_t = _t(db, tenant_id, "staff")
+    bots_t = tenant_table_ref(db, tenant_id, "bots")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
     old = await db.execute(
         text(f"SELECT {_BOT_COLS} FROM {bots_t} b LEFT JOIN {staff_t} s ON s.id = b.owner_staff_id WHERE b.id = :id"),
         {"id": bot_id},
@@ -263,8 +241,8 @@ async def rotate_bot_api_key(bot_id: int, db: AsyncSession = Depends(get_db),
                              tenant_id: int = Depends(get_current_tenant),
                              current_user: User = Depends(get_current_user)):
     """API キーを再発行（旧キーは無効化）。平文は1回のみレスポンスで返す。"""
-    bots_t = _t(db, tenant_id, "bots")
-    staff_t = _t(db, tenant_id, "staff")
+    bots_t = tenant_table_ref(db, tenant_id, "bots")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
     check = await db.execute(text(f"SELECT id FROM {bots_t} WHERE id = :id"), {"id": bot_id})
     if not check.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Botが見つかりません")
@@ -294,8 +272,8 @@ async def rotate_bot_api_key(bot_id: int, db: AsyncSession = Depends(get_db),
 async def delete_bot(bot_id: int, db: AsyncSession = Depends(get_db),
                      tenant_id: int = Depends(get_current_tenant),
                      current_user: User = Depends(get_current_user)):
-    bots_t = _t(db, tenant_id, "bots")
-    staff_t = _t(db, tenant_id, "staff")
+    bots_t = tenant_table_ref(db, tenant_id, "bots")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
     old = await db.execute(
         text(f"SELECT {_BOT_COLS} FROM {bots_t} b LEFT JOIN {staff_t} s ON s.id = b.owner_staff_id WHERE b.id = :id"),
         {"id": bot_id},

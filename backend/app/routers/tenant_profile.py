@@ -35,6 +35,7 @@ from app.auth.dependencies import (
     get_current_tenant,
     get_current_user,
     require_permission,
+    tenant_table_ref,
 )
 from app.database import get_db
 from app.models import User
@@ -43,31 +44,9 @@ from app.services.audit import record_audit_log
 
 router = APIRouter()
 
-
-def _is_postgresql(db: AsyncSession) -> bool:
-    """db の dialect が PostgreSQL 系か判定する。
-
-    pytest は SQLite (aiosqlite) で実行されるため、schema prefix を入れると
-    "no such table: tenant_NNN.tenant_profile" で失敗する。本判定で
-    SQLite 系を検出して prefix なしに倒す。
-    """
-    bind = db.get_bind() if hasattr(db, "get_bind") else None
-    if bind is None:
-        bind = getattr(db, "bind", None)
-    name = getattr(getattr(bind, "dialect", None), "name", "") or ""
-    return name.startswith("postgresql")
-
-
-def _tenant_profile_table(db: AsyncSession, tenant_id: int) -> str:
-    """raw SQL の FROM/UPDATE に埋め込むテーブル参照を返す。
-
-    - PostgreSQL: `tenant_{id:03d}.tenant_profile` (schema prefix 明示)
-    - SQLite (pytest): `tenant_profile` (schema 概念なし)
-    """
-    if _is_postgresql(db):
-        safe_id = int(tenant_id)
-        return f"tenant_{safe_id:03d}.tenant_profile"
-    return "tenant_profile"
+# ADR-072 Phase 1: ローカル helper を削除し、`app.auth.dependencies.tenant_table_ref`
+# を import して使う。旧 `_tenant_profile_table(db, tenant_id)` 呼び出しは
+# `tenant_table_ref(db, tenant_id, "tenant_profile")` に置換済。
 
 
 @router.get(
@@ -84,7 +63,7 @@ async def get_tenant_profile(
 
     migration 069 で既定の空行を seed しているため通常 404 にはならない。
     """
-    table = _tenant_profile_table(db, tenant_id)
+    table = tenant_table_ref(db, tenant_id, "tenant_profile")
     row = (await db.execute(
         text(f"""
             SELECT id, company_name, company_name_en, address, phone, email,
@@ -115,7 +94,7 @@ async def update_tenant_profile(
     current_user: User = Depends(get_current_user),
 ):
     """テナント発行者情報を更新 (PATCH 相当だが PUT で全フィールド指定可)。"""
-    table = _tenant_profile_table(db, tenant_id)
+    table = tenant_table_ref(db, tenant_id, "tenant_profile")
 
     # 既存行を確認
     existing = (await db.execute(
