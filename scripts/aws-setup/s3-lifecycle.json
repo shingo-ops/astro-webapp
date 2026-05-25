@@ -11,6 +11,17 @@
             }
         },
         {
+            "_comment": "monthly-archives/ は永久保存のため削除ルールを意図的に設定しない。Glacierストレージクラスで保持。",
+            "ID": "MonthlyArchivesNoExpiry",
+            "Status": "Disabled",
+            "Filter": {
+                "Prefix": "monthly-archives/"
+            },
+            "Expiration": {
+                "Days": 36500
+            }
+        },
+        {
             "ID": "DeleteIncompleteMultipartUploads",
             "Status": "Enabled",
             "Filter": {},
