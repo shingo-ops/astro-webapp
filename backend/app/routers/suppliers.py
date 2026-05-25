@@ -11,7 +11,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.schemas.supplier import SupplierCreate, SupplierResponse, SupplierUpdate
@@ -86,6 +91,7 @@ async def create_supplier(data: SupplierCreate, db: AsyncSession = Depends(get_d
                            action="create", table_name="suppliers", record_id=new_id,
                            new_data=data.model_dump(exclude_none=True))
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
     return SupplierResponse(**row)
 
 
@@ -113,6 +119,7 @@ async def update_supplier(supplier_id: int, data: SupplierUpdate,
                            action="update", table_name="suppliers", record_id=supplier_id,
                            old_data=dict(old_row), new_data=update_data)
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
     return SupplierResponse(**dict(row))
 
 
@@ -131,3 +138,4 @@ async def delete_supplier(supplier_id: int, db: AsyncSession = Depends(get_db),
                            action="soft_delete", table_name="suppliers", record_id=supplier_id,
                            old_data=dict(old_row))
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2

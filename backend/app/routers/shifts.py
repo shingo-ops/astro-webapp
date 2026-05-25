@@ -7,7 +7,12 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.services.audit import record_audit_log
@@ -86,6 +91,7 @@ async def create_shift(data: ShiftCreate, db: AsyncSession = Depends(get_db),
                            action="create", table_name="shifts", record_id=row["id"],
                            new_data=data.model_dump())
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
     return ShiftResponse(**dict(row))
 
 
@@ -100,3 +106,4 @@ async def delete_shift(shift_id: int, db: AsyncSession = Depends(get_db),
     await record_audit_log(db=db, tenant_id=tenant_id, user_id=current_user.id,
                            action="delete", table_name="shifts", record_id=shift_id)
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2
