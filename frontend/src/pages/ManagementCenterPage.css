@@ -17,7 +17,7 @@
   border-right: 1px solid var(--border);
   overflow-y: auto;
   padding: var(--space-2) 0 var(--space-6);
-  background: var(--bg-surface);
+  background: transparent;
 }
 
 .mc-subnav-section {
