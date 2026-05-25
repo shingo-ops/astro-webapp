@@ -24,7 +24,7 @@ import "../schedule.css";
 import { api } from "../../lib/api";
 import { usePermissions } from "../../hooks/usePermissions";
 import { PageLayout } from "../../components/PageLayout";
-import { GoogleCalendarStatusBar } from "../../components/GoogleCalendarStatusBar";
+import { GoogleCalendarStatusBar, type SyncStatus } from "../../components/GoogleCalendarStatusBar";
 
 // ---------------------------------------------------------------------------
 // 型定義
@@ -284,6 +284,7 @@ export default function SchedulePage() {
 
   const [calMonthLabel, setCalMonthLabel] = useState("");
   const [calView, setCalView] = useState("timeGridWeek");
+  const [gcalStatus, setGcalStatus] = useState<SyncStatus>("loading");
   const calendarRef = useRef<FullCalendar>(null);
 
   const [modalEvent, setModalEvent] = useState<CalEvent | null>(null);
@@ -438,10 +439,24 @@ export default function SchedulePage() {
     setNewSlot({ start: arg.start, end: arg.end });
   };
 
+  const gcalConnectBtnClass =
+    gcalStatus === "connected"
+      ? "gcal-connect-btn gcal-connect-btn--connected"
+      : gcalStatus === "disconnected"
+      ? "gcal-connect-btn gcal-connect-btn--error"
+      : "gcal-connect-btn";
+
+  const gcalConnectBtnLabel =
+    gcalStatus === "connected"
+      ? t("schedule.connectBtnConnected")
+      : gcalStatus === "disconnected"
+      ? t("schedule.connectBtnError")
+      : t("schedule.connectBtn");
+
   return (
     <PageLayout
       navKey="nav.schedule"
-      headerAction={
+      headerLeft={
         <div className="schedule-header-nav">
           <button className="gcal-nav__today" onClick={() => handleToolbarNavigate("TODAY")}>
             {t("schedule.today")}
@@ -461,6 +476,10 @@ export default function SchedulePage() {
             ›
           </button>
           <span className="schedule-header-month">{calMonthLabel}</span>
+        </div>
+      }
+      headerAction={
+        <div className="schedule-header-actions">
           <select
             className="schedule-view-select"
             value={calView}
@@ -472,8 +491,11 @@ export default function SchedulePage() {
             <option value="timeGridDay">{t("schedule.dayView")}</option>
           </select>
           {canManage && (
-            <button className="btn-secondary" onClick={handleGoogleConnect}>
-              {t("schedule.connectBtn")}
+            <button
+              className={gcalConnectBtnClass}
+              onClick={gcalStatus !== "connected" ? handleGoogleConnect : undefined}
+            >
+              {gcalConnectBtnLabel}
             </button>
           )}
         </div>
@@ -484,6 +506,7 @@ export default function SchedulePage() {
         onReconnect={handleGoogleConnect}
         onConnect={handleGoogleConnect}
         canManage={canManage}
+        onSyncStatusChange={setGcalStatus}
       />
 
       {/* OAuth コールバック後バナー */}
@@ -532,7 +555,7 @@ export default function SchedulePage() {
           datesSet={handleDatesSet}
           height="100%"
           nowIndicator
-          allDaySlot={false}
+          allDaySlot
           slotMinTime="00:00:00"
           slotMaxTime="24:00:00"
           slotDuration="00:30:00"
