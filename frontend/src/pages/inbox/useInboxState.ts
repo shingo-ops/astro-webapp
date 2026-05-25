@@ -141,14 +141,15 @@ export function useInboxState(): UseInboxStateReturn {
   const [convLoading, setConvLoading] = useState(true);
   const [convError, setConvError] = useState("");
 
-  // 受信箱設定
-  const [inboxSettings, setInboxSettings] = useState<InboxSettings>(readInboxSettings);
+  // 受信箱設定（localStorage は1回だけ読む — 複数回読むと同一レンダリング内で値がずれる恐れがある）
+  const initialSettings = readInboxSettings();
+  const [inboxSettings, setInboxSettings] = useState<InboxSettings>(initialSettings);
   const [showSettings, setShowSettings] = useState(false);
 
   // フィルタ（設定のデフォルト値を反映）
-  const [statusTab, setStatusTab] = useState<StatusTabKey>(() => readInboxSettings().defaultTab);
+  const [statusTab, setStatusTab] = useState<StatusTabKey>(initialSettings.defaultTab);
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>("all");
-  const [unreadOnly, setUnreadOnly] = useState(() => readInboxSettings().defaultUnreadOnly);
+  const [unreadOnly, setUnreadOnly] = useState(initialSettings.defaultUnreadOnly);
   const [followUpOnly, setFollowUpOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -201,6 +202,11 @@ export function useInboxState(): UseInboxStateReturn {
   const closeKartePanel = useCallback(() => {
     setShowKartePanel(false);
     document.body.style.overflow = "";
+  }, []);
+
+  // アンマウント時に body.style.overflow を必ずリセット（ページ遷移時のスクロール固着対策）
+  useEffect(() => {
+    return () => { document.body.style.overflow = ""; };
   }, []);
 
   // ---------------------------------------------------------------------------
