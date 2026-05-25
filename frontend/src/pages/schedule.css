@@ -76,7 +76,7 @@
 .fc .fc-col-header-cell {
   border-bottom: 1px solid var(--calendar-grid-border);
   border-left: none;
-  border-right: none;
+  border-right: 1px solid var(--calendar-grid-border);
   background: var(--bg-surface);
   padding: 0;
 }
@@ -193,12 +193,15 @@
 
 .fc .fc-timegrid-slot {
   height: 80px;   /* 1時間 = 160px（30分スロット×2）— 旧: 40px */
-  border-color: var(--calendar-grid-border);
+  border-bottom: 1px solid var(--calendar-grid-border);
+  border-top: none;
+  border-left: none;
+  border-right: none;
 }
 
 /* 半時間の区切り線を非表示（Googleカレンダー準拠: 1時間線のみ） */
 .fc .fc-timegrid-slot-minor {
-  border-top: none !important;
+  border-bottom: none !important;
 }
 
 /* 時間ラベルをグリッド線に揃える（Google Calendar 準拠: ラベル中心 = 線の位置） */
@@ -274,10 +277,15 @@
   border: none;
 }
 
-/* 列区切り縦線は残す。外枠（table border）は上記 border:none で除去済み */
+/* 全ボーダーをリセット（Excelグリッド防止）→ 必要な線のみ個別に復元 */
 .fc .fc-scrollgrid td,
 .fc .fc-scrollgrid th {
-  border-color: var(--calendar-grid-border);
+  border: none;
+}
+
+/* 列区切り縦線: 各日付列の右側に */
+.fc .fc-timegrid-col {
+  border-right: 1px solid var(--calendar-grid-border);
 }
 
 /* 時間ラベル列とグリッドの境界線を非表示（左端の余分な縦線を除去） */

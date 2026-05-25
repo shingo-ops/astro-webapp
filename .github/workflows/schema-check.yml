@@ -14,17 +14,23 @@ name: Tenant Schema Integrity Check
 on:
   pull_request:
     branches: [main, develop]
+    # backend/** を絞り込み: テストコード変更（backend/tests/**）では不要。
+    # ORM定義（models.py）と実行スクリプト（scripts/db/**, scripts/setup_tenant.py）のみ対象。
     paths:
-      - 'backend/**'
+      - 'backend/app/models.py'
       - 'migrations/**'
-      - 'scripts/**'
+      - 'scripts/migrate_*.py'
+      - 'scripts/db/**'
+      - 'scripts/setup_tenant.py'
       - '.github/workflows/schema-check.yml'
   push:
     branches: [main, develop]
     paths:
-      - 'backend/**'
+      - 'backend/app/models.py'
       - 'migrations/**'
-      - 'scripts/**'
+      - 'scripts/migrate_*.py'
+      - 'scripts/db/**'
+      - 'scripts/setup_tenant.py'
       - '.github/workflows/schema-check.yml'
 
 jobs:
