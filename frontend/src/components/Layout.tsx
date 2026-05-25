@@ -286,15 +286,7 @@ export default function Layout() {
                 </NavLink>
               )}
 
-              {prefs.show_settings_menu && (
-                <NavLink
-                  to="/settings"
-                  className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
-                >
-                  <span className="sidebar-icon"><NAV_ICONS.settings size={ICON.base} /></span>
-                  <span className="sidebar-label">{t("nav.settings")}</span>
-                </NavLink>
-              )}
+              {/* 通知設定は管理センター（/management-center/notifications）に統合済み */}
 
               <SidebarAccordion
                 label={t("nav.more")}
