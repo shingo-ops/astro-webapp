@@ -30,6 +30,7 @@ import {
   Trash, Archive, EnvelopeOpen,
   CalendarBlank,
   TrendUp, Bell, CalendarCheck, ArrowRight, Flag,
+  Receipt,
 } from "@phosphor-icons/react";
 
 // ステータス（✓ ⚠ ✕ の代替）
@@ -80,6 +81,7 @@ export const NAV_ICONS = {
   leads:       Users,
   inventory:   Package,
   fileText:    FileText,
+  orders:      Receipt,
   report:      ChartBar,
   schedule:    CalendarBlank,
   help:        Question,

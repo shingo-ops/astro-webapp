@@ -251,6 +251,16 @@ export default function Layout() {
                 </NavLink>
               )}
 
+              {hasPermission("orders.view") && (
+                <NavLink
+                  to="/orders"
+                  className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                >
+                  <span className="sidebar-icon"><NAV_ICONS.orders size={ICON.base} aria-hidden="true" /></span>
+                  <span className="sidebar-label">{t("nav.orders")}</span>
+                </NavLink>
+              )}
+
               <NavLink
                 to="/reports"
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
