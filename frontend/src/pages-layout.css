@@ -63,7 +63,7 @@
 }
 
 .page-layout-title-row--has-subtitle {
-  margin-bottom: var(--space-1);  /* 4px — title→subtitle間隔（SSoT: tokens.css --space-1） */
+  margin-bottom: 0;  /* half-leading のみ (~2.5px) で title に密着 */
 }
 
 /* headerAction ラッパー: 右端に押し付ける */

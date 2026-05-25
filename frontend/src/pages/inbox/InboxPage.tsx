@@ -323,7 +323,7 @@ export default function InboxPage() {
                     aria-label={t("inbox.markUnread")}
                     data-tooltip={t("inbox.markUnread")}
                   >
-                    <INBOX_ACTION_ICONS.markUnread size={ICON.sm} aria-hidden="true" />
+                    <INBOX_ACTION_ICONS.markUnread size={ICON.base} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -332,7 +332,7 @@ export default function InboxPage() {
                     aria-label={t("inbox.exclude")}
                     data-tooltip={t("inbox.exclude")}
                   >
-                    <INBOX_ACTION_ICONS.exclude size={ICON.sm} aria-hidden="true" />
+                    <INBOX_ACTION_ICONS.exclude size={ICON.base} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -341,7 +341,7 @@ export default function InboxPage() {
                     aria-label={t("inbox.deleteLead")}
                     data-tooltip={t("inbox.deleteLead")}
                   >
-                    <INBOX_ACTION_ICONS.delete size={ICON.sm} aria-hidden="true" />
+                    <INBOX_ACTION_ICONS.delete size={ICON.base} aria-hidden="true" />
                   </button>
                 </div>
                 {/* モバイル専用カルテトグルボタン（デスクトップでは CSS で非表示） */}
