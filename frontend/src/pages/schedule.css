@@ -192,7 +192,7 @@
    ============================================================ */
 
 .fc .fc-timegrid-slot {
-  height: 40px;
+  height: 80px;   /* 1時間 = 160px（30分スロット×2）— 旧: 40px */
   border-color: var(--calendar-grid-border);
 }
 
@@ -201,11 +201,17 @@
   border-top: none !important;
 }
 
+/* 時間ラベルをグリッド線に揃える（Google Calendar 準拠: ラベル中心 = 線の位置） */
 .fc .fc-timegrid-slot-label {
   font-size: var(--font-xs);
   color: var(--text-muted);
   vertical-align: top;
+}
+
+.fc .fc-timegrid-slot-label-cushion {
+  display: inline-block;
   padding-right: var(--space-2);
+  transform: translateY(-50%);
 }
 
 /* 現在時刻インジケーター（赤線 + 赤ドット） */
