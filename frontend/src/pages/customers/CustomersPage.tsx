@@ -10,6 +10,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
+import { PageLayout } from "../../components/PageLayout";
 import { usePermissions } from "../../hooks/usePermissions";
 
 const PHONE_RE = /^(\+?\d{10,15}|0\d{9,10})$/;
@@ -407,17 +408,16 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="page">
-      <div className="page-header">
-        {/* eslint-disable-next-line no-restricted-syntax */}
-        <h2>{t("customers.title")}</h2>
-        {hasPermission("customers.create") && (
+    <PageLayout
+      navKey="nav.customers"
+      headerAction={
+        hasPermission("customers.create") ? (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); setDiscordTouched(false); }}>
             {t("customers.newCustomer")}
           </button>
-        )}
-      </div>
-
+        ) : undefined
+      }
+    >
       <div className="search-bar">
         <input
           type="text"
@@ -743,6 +743,6 @@ export default function CustomersPage() {
         onConfirm={performDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }

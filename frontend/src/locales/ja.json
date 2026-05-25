@@ -60,7 +60,8 @@
     "saved": "保存しました",
     "requestFailed": "リクエストに失敗しました",
     "blobFetchFailed": "ファイルの取得に失敗しました",
-    "downloadFailed": "ダウンロードに失敗しました"
+    "downloadFailed": "ダウンロードに失敗しました",
+    "devOnly": "開発環境専用"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -112,7 +113,8 @@
     "openUserMenu": "ユーザーメニューを開く",
     "switchToDark": "ダークモード",
     "switchToLight": "ライトモード",
-    "managementCenter": "管理センター"
+    "managementCenter": "管理センター",
+    "designSystem": "デザインシステム"
   },
   "managementCenter": {
     "sectionTeam":      "チーム・人事",

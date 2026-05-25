@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
+import { PageLayout } from "../../components/PageLayout";
 import { usePermissions } from "../../hooks/usePermissions";
 
 const PHONE_RE = /^(\+?\d{10,15}|0\d{9,10})$/;
@@ -350,17 +351,15 @@ export default function CompaniesPage() {
   const pendingDedupCount = companies.filter((c) => c.status === "pending_dedup_review").length;
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1>
-          {t("nav.companies")}
+    <PageLayout
+      navKey="nav.companies"
+      headerAction={
+        <div className="page-header-actions">
           {pendingDedupCount > 0 && (
             <span className="dedup-summary">
               {t("companies.pendingDedupCount", { count: pendingDedupCount })}
             </span>
           )}
-        </h1>
-        <div className="page-header-actions">
           <input
             type="text"
             placeholder={t("companies.searchPlaceholder")}
@@ -384,7 +383,8 @@ export default function CompaniesPage() {
             </button>
           )}
         </div>
-      </div>
+      }
+    >
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -586,6 +586,6 @@ export default function CompaniesPage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </div>
+    </PageLayout>
   );
 }
