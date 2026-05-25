@@ -171,6 +171,9 @@
   --page-padding-x:  var(--space-6);  /* 24px — 左右余白 */
   --page-padding-y:  var(--space-2);  /*  8px — 上下余白 */
   --page-header-mb:  var(--space-5);  /* 20px — 見出し下余白 */
+  /* ページヘッダー右端のアバターボタン被り防止クリアランス（SSoT: --size-avatar-md 由来）
+     計算: 40px (avatar) + 16px (right: var(--space-4)) + 12px (breathing room) = 68px */
+  --page-header-avatar-clearance: calc(var(--size-avatar-md) + var(--space-4) + var(--space-3));
 
   /* ---- レイアウト高さ制約ルール（全ページ遵守必須） ----
      .page-subtitle は margin-bottom: var(--space-3) = 12px（pages-layout.css）。

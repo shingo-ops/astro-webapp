@@ -52,7 +52,7 @@
 
 .page-layout-header {
   flex-shrink: 0;
-  padding: var(--page-padding-y) var(--page-padding-x) 0;
+  padding: var(--page-padding-y) var(--page-header-avatar-clearance) 0 var(--page-padding-x);
 }
 
 .page-layout-title-row {
