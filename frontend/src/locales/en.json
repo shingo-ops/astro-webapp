@@ -1380,7 +1380,8 @@
     "statusNotLinked": "Google Calendar not linked",
     "statusConnectPrompt": "Connect",
     "prevPeriod": "Previous",
-    "nextPeriod": "Next"
+    "nextPeriod": "Next",
+    "allDay": "All day"
   },
   "inventoryVisibility": {
     "title": "Inventory Visibility Settings",
