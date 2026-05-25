@@ -141,8 +141,10 @@ export function useInboxState(): UseInboxStateReturn {
   const [convLoading, setConvLoading] = useState(true);
   const [convError, setConvError] = useState("");
 
-  // 受信箱設定（localStorage は1回だけ読む — 複数回読むと同一レンダリング内で値がずれる恐れがある）
-  const initialSettings = readInboxSettings();
+  // 受信箱設定（localStorage はマウント時1回だけ読む — useRef でキャッシュし再レンダリング時の再読み込みを防ぐ）
+  const _settingsCache = useRef<InboxSettings | null>(null);
+  if (_settingsCache.current === null) _settingsCache.current = readInboxSettings();
+  const initialSettings = _settingsCache.current;
   const [inboxSettings, setInboxSettings] = useState<InboxSettings>(initialSettings);
   const [showSettings, setShowSettings] = useState(false);
 
