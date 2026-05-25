@@ -1381,7 +1381,8 @@
     "statusConnectPrompt": "連携する",
     "prevPeriod": "前へ",
     "nextPeriod": "次へ",
-    "allDay": "終日"
+    "allDay": "終日",
+    "connectBtn": "Googleカレンダー連携"
   },
   "inventoryVisibility": {
     "title": "在庫表示権限の設定",

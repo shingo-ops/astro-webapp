@@ -500,8 +500,15 @@ export default function SchedulePage() {
   };
 
   return (
-    <PageLayout navKey="nav.schedule" subtitleKey="schedule.subtitle">
-      {/* Google Calendar 接続ステータスバー（常時表示） */}
+    <PageLayout
+      navKey="nav.schedule"
+      headerAction={canManage ? (
+        <button className="btn-secondary" onClick={handleGoogleConnect}>
+          {t("schedule.connectBtn")}
+        </button>
+      ) : undefined}
+    >
+      {/* Google Calendar 接続ステータスバー（接続中/切断中のみ表示） */}
       <GoogleCalendarStatusBar
         onReconnect={handleGoogleConnect}
         onConnect={handleGoogleConnect}
