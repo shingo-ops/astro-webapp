@@ -1,0 +1,431 @@
+/**
+ * Google Calendar デザイン準拠のスタイルオーバーライド
+ * react-big-calendar のデフォルト CSS を上書きする
+ *
+ * ADR-067: 全カラーは CSS 変数参照（ハードコード禁止）
+ * 参照: https://github.com/jquense/react-big-calendar
+ */
+
+/* ============================================================
+   ベース / カレンダーコンテナ
+   ============================================================ */
+
+.rbc-calendar {
+  font-family: -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* ============================================================
+   ツールバー（Google Calendar 準拠）
+   ============================================================ */
+
+.rbc-toolbar {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--calendar-grid-border);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.rbc-toolbar-label {
+  flex: 1;
+  text-align: left;
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  padding: 0 var(--space-3);
+}
+
+.rbc-btn-group {
+  display: flex;
+  gap: 2px;
+}
+
+.rbc-btn-group button {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+  min-height: 32px;
+}
+
+.rbc-btn-group button:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.rbc-btn-group button.rbc-active {
+  background: var(--calendar-google-blue-light);
+  border-color: var(--calendar-google-blue);
+  color: var(--calendar-google-blue);
+  font-weight: var(--font-weight-semi);
+}
+
+.rbc-btn-group button.rbc-active:hover {
+  background: var(--calendar-google-blue-light);
+}
+
+/* ============================================================
+   月ビュー
+   ============================================================ */
+
+.rbc-month-view {
+  border: 1px solid var(--calendar-grid-border);
+  border-radius: var(--radius-sm);
+}
+
+.rbc-month-view .rbc-header {
+  padding: var(--space-2) 0;
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--calendar-grid-border);
+  background: var(--bg-surface);
+  text-align: center;
+}
+
+.rbc-month-view .rbc-month-row + .rbc-month-row {
+  border-top: 1px solid var(--calendar-grid-border);
+}
+
+.rbc-month-view .rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid var(--calendar-grid-border);
+}
+
+.rbc-month-view .rbc-header + .rbc-header {
+  border-left: 1px solid var(--calendar-grid-border);
+}
+
+/* 日付セル */
+.rbc-date-cell {
+  padding: var(--space-1) var(--space-2);
+  text-align: right;
+}
+
+.rbc-date-cell a,
+.rbc-date-cell > span {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+}
+
+.rbc-date-cell a:hover {
+  background: var(--bg-hover);
+}
+
+/* 今日の日付（Google Blue の丸） */
+.rbc-today {
+  background: var(--calendar-today-cell-bg);
+}
+
+.rbc-date-cell.rbc-now a,
+.rbc-date-cell.rbc-now > span {
+  background: var(--calendar-today-bg);
+  color: var(--calendar-today-text);
+  font-weight: var(--font-weight-bold);
+}
+
+/* 月外の日（グレーアウト） */
+.rbc-off-range-bg {
+  background: var(--bg-subtle);
+}
+
+.rbc-off-range .rbc-date-cell a,
+.rbc-off-range .rbc-date-cell > span {
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   週 / 日ビュー
+   ============================================================ */
+
+.rbc-time-view {
+  border: 1px solid var(--calendar-grid-border);
+  border-radius: var(--radius-sm);
+}
+
+.rbc-time-header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--calendar-grid-border);
+}
+
+.rbc-time-header-content .rbc-header {
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-left: 1px solid var(--calendar-grid-border);
+  text-align: center;
+  padding: var(--space-2) 0;
+}
+
+.rbc-time-header-content .rbc-today {
+  color: var(--calendar-google-blue);
+}
+
+.rbc-time-gutter {
+  background: var(--bg-surface);
+}
+
+.rbc-timeslot-group {
+  border-bottom: 1px solid var(--calendar-grid-border);
+  min-height: 40px;
+}
+
+.rbc-time-slot {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.rbc-time-column .rbc-timeslot-group {
+  border-left: 1px solid var(--calendar-grid-border);
+}
+
+/* 現在時刻インジケーター（赤線） */
+.rbc-current-time-indicator {
+  background-color: var(--danger);
+  height: 2px;
+}
+
+.rbc-current-time-indicator::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background-color: var(--danger);
+}
+
+/* ============================================================
+   イベントチップ（共通）
+   ============================================================ */
+
+.rbc-event {
+  border: none !important;
+  border-radius: var(--radius-xs) !important;
+  padding: 1px var(--space-1) !important;
+  font-size: var(--font-xs) !important;
+  line-height: 1.4 !important;
+  cursor: pointer;
+  transition: filter var(--transition-micro);
+}
+
+.rbc-event:hover {
+  filter: brightness(0.92);
+}
+
+.rbc-event:focus {
+  outline: 2px solid var(--calendar-google-blue);
+  outline-offset: 1px;
+}
+
+.rbc-event-label {
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.rbc-event-content {
+  font-size: var(--font-xs);
+}
+
+/* 複数日イベント */
+.rbc-show-more {
+  color: var(--calendar-google-blue);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 1px var(--space-1);
+}
+
+.rbc-show-more:hover {
+  background: var(--calendar-google-blue-light);
+  border-radius: var(--radius-xs);
+}
+
+/* ============================================================
+   スロット選択（クリックして予定追加）
+   ============================================================ */
+
+.rbc-slot-selection {
+  background: var(--calendar-google-blue-light);
+  border: 1px solid var(--calendar-google-blue);
+  border-radius: var(--radius-xs);
+}
+
+.rbc-selecting {
+  background: var(--calendar-google-blue-light);
+  border: 1px solid var(--calendar-google-blue);
+}
+
+/* ============================================================
+   ポップアップ（+N more クリック時）
+   ============================================================ */
+
+.rbc-overlay {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-dropdown);
+  padding: var(--space-2);
+  z-index: var(--z-dropdown);
+}
+
+.rbc-overlay-header {
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-1);
+}
+
+/* ============================================================
+   カスタムツールバー（Google Calendar レイアウト）
+   ============================================================ */
+
+.gcal-toolbar {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--calendar-grid-border);
+  gap: var(--space-3);
+}
+
+.gcal-toolbar__create {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition-fast), background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.gcal-toolbar__create:hover {
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.gcal-toolbar__create-icon {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--calendar-google-blue);
+}
+
+.gcal-toolbar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.gcal-toolbar__today-btn {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  min-height: 32px;
+  transition: background var(--transition-fast);
+}
+
+.gcal-toolbar__today-btn:hover {
+  background: var(--bg-hover);
+}
+
+.gcal-toolbar__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: 18px;
+  transition: background var(--transition-fast);
+}
+
+.gcal-toolbar__arrow:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.gcal-toolbar__label {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  flex: 1;
+  text-align: center;
+}
+
+.gcal-toolbar__views {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.gcal-toolbar__view-btn {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  min-height: 32px;
+  transition: background var(--transition-fast);
+  border-right: 1px solid var(--border);
+}
+
+.gcal-toolbar__view-btn:last-child {
+  border-right: none;
+}
+
+.gcal-toolbar__view-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.gcal-toolbar__view-btn.active {
+  background: var(--calendar-google-blue-light);
+  color: var(--calendar-google-blue);
+  font-weight: var(--font-weight-semi);
+}

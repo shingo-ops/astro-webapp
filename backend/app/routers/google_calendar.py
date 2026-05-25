@@ -4,7 +4,8 @@ from __future__ import annotations
 Google Calendar 連携エンドポイント。
 
 Public（認証不要）:
-  GET /google-calendar/connect/callback  — Google OAuth callback（Bearerトークン不要）
+  GET  /google-calendar/connect/callback  — Google OAuth callback（Bearerトークン不要）
+  POST /google-calendar/webhook           — Push Notification 受信（Google から Bearer なし）
 
 Tenant 認証必須:
   GET    /google-calendar/connect/start     — OAuth URL 返却（admin のみ）
@@ -20,8 +21,8 @@ import logging
 import os
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -344,3 +345,41 @@ async def delete_event(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(e),
         )
+
+
+# ---------------------------------------------------------------------------
+# Public: Google Calendar Webhook 受信
+# ---------------------------------------------------------------------------
+
+
+@public_router.post(
+    "/google-calendar/webhook",
+    tags=["google-calendar"],
+    include_in_schema=False,  # Google から Bearer なしで POST されるため public
+)
+async def receive_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Google Calendar Push Notification を受信してイベント差分を DB に反映する。
+
+    Google はこのエンドポイントに Bearer トークンなしで POST するため
+    public_router（認証なし）に属する。
+    テナントの特定は X-Goog-Channel-ID → google_webhook_subscriptions で行う。
+    """
+    channel_id = request.headers.get("X-Goog-Channel-ID", "")
+    resource_state = request.headers.get("X-Goog-Resource-State", "")
+
+    if not channel_id:
+        # 不明なチャンネルは 200 を返して無視（Google がリトライしないようにするため）
+        return JSONResponse(status_code=200, content={"ok": True})
+
+    from app.services import google_webhook as webhook_svc
+
+    try:
+        await webhook_svc.handle_webhook_notification(db, channel_id, resource_state)
+    except Exception as e:
+        logger.error("Webhook 処理エラー (channel=%s): %s", channel_id, e)
+        # Google には常に 200 を返す（5xx を返すと通知チャンネルが無効化される）
+
+    return JSONResponse(status_code=200, content={"ok": True})

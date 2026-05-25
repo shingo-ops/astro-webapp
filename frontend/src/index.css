@@ -137,6 +137,18 @@
   --tooltip-bg:   rgba(26, 32, 44, 0.92);
   --tooltip-text: #ffffff;
 
+  /* Google Calendar デザイントークン（ADR-067 / schedule ページ） */
+  --calendar-google-blue:        #1a73e8;
+  --calendar-google-blue-light:  #e8f0fe;
+  --calendar-today-bg:           #1a73e8;
+  --calendar-today-text:         #ffffff;
+  --calendar-today-cell-bg:      #e8f0fe;
+  --calendar-grid-border:        #dadce0;
+  --calendar-status-ok-bg:       #e6f4ea;
+  --calendar-status-ok-text:     #1e7e34;
+  --calendar-status-error-bg:    #fce8e6;
+  --calendar-status-error-text:  #c5221f;
+
   /* color-scheme: OS非依存（ADR-033: アプリ設定を優先） */
   color-scheme: light;
 }
@@ -270,6 +282,18 @@
   /* Tooltip */
   --tooltip-bg:   rgba(241, 245, 249, 0.94);
   --tooltip-text: #0f172a;
+
+  /* Google Calendar デザイントークン（ダーク） */
+  --calendar-google-blue:        #8ab4f8;
+  --calendar-google-blue-light:  #1e3a5f;
+  --calendar-today-bg:           #8ab4f8;
+  --calendar-today-text:         #0f172a;
+  --calendar-today-cell-bg:      #1e3a5f;
+  --calendar-grid-border:        #3c4043;
+  --calendar-status-ok-bg:       #14432b;
+  --calendar-status-ok-text:     #4ade80;
+  --calendar-status-error-bg:    #4c1d1d;
+  --calendar-status-error-text:  #f87171;
 
   color-scheme: dark;
 }

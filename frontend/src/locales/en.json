@@ -1401,7 +1401,17 @@
     "errorUpdate": "Failed to update event",
     "errorDelete": "Failed to delete event",
     "noTitle": "(No title)",
-    "today": "Today"
+    "today": "Today",
+    "statusConnected": "Google Calendar connected",
+    "statusLastSync": "Last sync: {{time}}",
+    "statusJustNow": "just now",
+    "statusMinutesAgo": "{{count}} min ago",
+    "statusDisconnected": "Google Calendar connection lost",
+    "statusReconnect": "Reconnect",
+    "statusNotLinked": "Google Calendar not linked",
+    "statusConnectPrompt": "Connect",
+    "prevPeriod": "Previous",
+    "nextPeriod": "Next"
   },
   "inventoryVisibility": {
     "title": "Inventory Visibility Settings",
