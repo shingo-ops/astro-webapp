@@ -57,18 +57,12 @@ type Banner =
   | { type: "warning"; text: string }
   | null;
 
-// OAuth callback の reason → 日本語の汎用マップ。
+// OAuth callback の reason → i18n キー対応表（ADR-027: ハードコード禁止）。
 // 具体的なエラー文言は backend の audit_log に残る前提で UI は短く統一する。
-const ERROR_REASON_MAP: Record<string, string> = {
-  user_denied: "The connection was denied on Facebook. Please try again.",
-  state_mismatch: "Security token mismatch. Please try connecting again.",
-  state_expired: "Your connection session has expired. Please try again.",
-  meta_api_error: "Couldn't connect due to a Meta API error. Please try again in a moment.",
-  meta_timeout: "The Meta API request timed out. Please check your network connection.",
-  no_pages: "No manageable Facebook Pages were found. Please create a Page and try again.",
-  permission_denied: "You don't have permission to connect channels. Please contact your administrator.",
-  internal_error: "An internal error occurred. Please contact support.",
-};
+const ERROR_REASON_KEYS = new Set([
+  "user_denied", "state_mismatch", "state_expired", "meta_api_error",
+  "meta_timeout", "no_pages", "permission_denied", "internal_error",
+]);
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -117,18 +111,22 @@ export default function ChannelsPage() {
     if (statusParam === "connected") {
       const pageName = url.searchParams.get("page_name") || "";
       const text = pageName
-        ? `"${pageName}" connected successfully.`
-        : "Page connected successfully.";
+        ? t("channels.connectedSuccess", { pageName })
+        : t("channels.connectedSuccessNoName");
       setBanner({ type: "success", text });
     } else if (statusParam === "partial") {
       const succeeded = url.searchParams.get("succeeded") || "0";
       const failedPagesRaw = url.searchParams.get("failed_pages") || "";
       const failedCount = url.searchParams.get("failed") || (failedPagesRaw ? String(failedPagesRaw.split(",").length) : "0");
-      const text = `Connected ${succeeded} Page(s) but ${failedCount} failed${failedPagesRaw ? ` (${failedPagesRaw})` : ""}. Please retry the failed Pages.`;
+      const text = failedPagesRaw
+        ? t("channels.partialConnectWithPages", { succeeded, failedCount, failedPages: failedPagesRaw })
+        : t("channels.partialConnect", { succeeded, failedCount });
       setBanner({ type: "warning", text });
     } else if (statusParam === "error") {
       const reason = url.searchParams.get("reason") || "internal_error";
-      const text = ERROR_REASON_MAP[reason] || `Connection failed (reason: ${reason}).`;
+      const text = ERROR_REASON_KEYS.has(reason)
+        ? t(`channels.errorReason.${reason}`)
+        : t("channels.errorReason.unknown", { reason });
       setBanner({ type: "error", text });
     }
 
@@ -145,7 +143,7 @@ export default function ChannelsPage() {
       const data = await api.get<ChannelsResponse>("/meta/channels");
       setChannels(data.channels || []);
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "Failed to load channels");
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : t("channels.loadErrorFallback"));
       setLoadError(msg);
     } finally {
       setLoading(false);
@@ -161,12 +159,12 @@ export default function ChannelsPage() {
     try {
       const data = await api.post<ConnectStartResponse>("/meta/connect/start", {});
       if (!data.auth_url) {
-        throw new Error("Failed to obtain auth_url");
+        throw new Error(t("channels.authUrlError"));
       }
       // Facebook OAuth ダイアログへ遷移。state は backend が Redis に保存済み。
       window.location.href = data.auth_url;
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "Couldn't start the connection");
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : t("channels.connectError"));
       setConnectError(msg);
       setConnecting(false);
     }
@@ -181,12 +179,12 @@ export default function ChannelsPage() {
       setDisconnectTarget(null);
       setBanner({
         type: "success",
-        text: `Disconnected "${disconnectTarget.page_name}".`,
+        text: t("channels.disconnectedSuccess", { pageName: disconnectTarget.page_name }),
       });
       await loadChannels();
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : "Disconnect failed");
-      setBanner({ type: "error", text: `Disconnect failed: ${msg}` });
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : t("channels.disconnectFailedMsg", { msg: "" }));
+      setBanner({ type: "error", text: t("channels.disconnectFailedMsg", { msg }) });
     } finally {
       setDisconnecting(false);
     }

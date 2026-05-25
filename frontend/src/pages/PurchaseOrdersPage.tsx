@@ -70,7 +70,7 @@ export default function PurchaseOrdersPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!resp.ok) {
-        throw new Error(`PDF download failed: ${resp.status}`);
+        throw new Error(t("purchaseOrders.pdfDownloadFailed", { status: resp.status }));
       }
       const blob = await resp.blob();
       const url = URL.createObjectURL(blob);

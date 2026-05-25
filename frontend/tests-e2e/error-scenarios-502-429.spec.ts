@@ -54,7 +54,7 @@ test.describe("OAuth callback error display", () => {
     const alertBanner = page.getByRole("alert");
     await expect(alertBanner).toBeVisible({ timeout: 15_000 });
     await expect(alertBanner).toContainText(
-      "Couldn't connect due to a Meta API error. Please try again in a moment.",
+      "Meta APIエラーにより接続できませんでした。しばらく後にもう一度お試しください。",
     );
   });
 
@@ -81,7 +81,7 @@ test.describe("OAuth callback error display", () => {
     const alertBanner = page.getByRole("alert");
     await expect(alertBanner).toBeVisible({ timeout: 15_000 });
     await expect(alertBanner).toContainText(
-      "The Meta API request timed out. Please check your network connection.",
+      "Meta APIリクエストがタイムアウトしました。ネットワーク接続を確認してください。",
     );
   });
 });
