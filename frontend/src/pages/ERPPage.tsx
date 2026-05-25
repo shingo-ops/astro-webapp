@@ -28,7 +28,7 @@ export default function ERPPage() {
         method: "POST",
         headers: { Authorization: `Bearer ${await (await import("firebase/auth")).getAuth().currentUser?.getIdToken()}`, "Content-Type": "application/json" },
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) throw new Error(t("common.operationError"));
       const blob = await resp.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = "erp_invoices.csv"; a.click();

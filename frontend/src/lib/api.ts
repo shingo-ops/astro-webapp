@@ -24,6 +24,7 @@ export class ApiError extends Error {
 }
 
 import { auth } from "./firebase";
+import i18n from "../i18n";
 
 const API_BASE = "/api/v1";
 
@@ -40,7 +41,7 @@ const BLOB_FETCH_TIMEOUT_MS = 120_000;
 
 async function getAuthHeaders(): Promise<HeadersInit> {
   const user = auth.currentUser;
-  if (!user) throw new Error("認証されていません");
+  if (!user) throw new Error(i18n.t("common.notAuthenticated"));
   const token = await user.getIdToken();
   return {
     Authorization: `Bearer ${token}`,
@@ -108,7 +109,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
   }
 
-  throw lastError || new Error("リクエストに失敗しました");
+  throw lastError || new Error(i18n.t("common.requestFailed"));
 }
 
 /**
@@ -149,7 +150,7 @@ async function requestBlob(path: string): Promise<Blob> {
       clearTimeout(blobTimeoutId);
     }
   }
-  throw lastError || new Error("Blob 取得に失敗しました");
+  throw lastError || new Error(i18n.t("common.blobFetchFailed"));
 }
 
 /**

@@ -312,7 +312,7 @@ export default function ShippingDetailPanel({
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        throw new Error(t("common.downloadFailed"));
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

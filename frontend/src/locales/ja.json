@@ -57,7 +57,10 @@
     "notDone": "未",
     "submitting": "送信中...",
     "deleteConfirmSuffix": "を削除します。",
-    "saved": "保存しました"
+    "saved": "保存しました",
+    "requestFailed": "リクエストに失敗しました",
+    "blobFetchFailed": "ファイルの取得に失敗しました",
+    "downloadFailed": "ダウンロードに失敗しました"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -549,7 +552,27 @@
     "close": "閉じる",
     "reauthRequired": "Facebook連携を更新してください。Business Manager管理ページに対応するには再接続が必要です。",
     "reauthBadge": "再接続が必要",
-    "reauthAction": "Facebookを再接続"
+    "reauthAction": "Facebookを再接続",
+    "connectedSuccess": "「{{pageName}}」を接続しました。",
+    "connectedSuccessNoName": "ページを接続しました。",
+    "partialConnect": "{{succeeded}} ページ接続しましたが、{{failedCount}} ページが失敗しました。失敗したページを再試行してください。",
+    "partialConnectWithPages": "{{succeeded}} ページ接続しましたが、{{failedCount}} ページ（{{failedPages}}）が失敗しました。失敗したページを再試行してください。",
+    "disconnectedSuccess": "「{{pageName}}」の接続を解除しました。",
+    "disconnectFailedMsg": "接続解除に失敗しました: {{msg}}",
+    "connectError": "接続を開始できませんでした",
+    "authUrlError": "認証URLを取得できませんでした",
+    "loadErrorFallback": "チャンネルの読み込みに失敗しました",
+    "errorReason": {
+      "user_denied": "Facebookで接続が拒否されました。もう一度お試しください。",
+      "state_mismatch": "セキュリティトークンが一致しません。もう一度接続をお試しください。",
+      "state_expired": "接続セッションの有効期限が切れました。もう一度お試しください。",
+      "meta_api_error": "Meta APIエラーにより接続できませんでした。しばらく後にもう一度お試しください。",
+      "meta_timeout": "Meta APIリクエストがタイムアウトしました。ネットワーク接続を確認してください。",
+      "no_pages": "管理可能なFacebookページが見つかりませんでした。ページを作成してから再試行してください。",
+      "permission_denied": "チャンネルを接続する権限がありません。管理者にお問い合わせください。",
+      "internal_error": "内部エラーが発生しました。サポートにお問い合わせください。",
+      "unknown": "接続に失敗しました（理由: {{reason}}）。"
+    }
   },
   "deals": {
     "title": "案件管理",
@@ -741,7 +764,8 @@
     "actionResendEmail": "再送",
     "emailSent": "メール送信しました",
     "emailResent": "メールを再送しました",
-    "emailSendFailed": "メール送信に失敗しました"
+    "emailSendFailed": "メール送信に失敗しました",
+    "pdfDownloadFailed": "PDFのダウンロードに失敗しました（HTTP {{status}}）"
   },
   "tenantProfile": {
     "title": "発行者情報",
@@ -1385,5 +1409,16 @@
     "loadingMatrix": "マトリクスを読み込み中…",
     "noRoles": "ロールが見つかりません",
     "permissionRequired": "この画面の編集には tenant.inventory_visibility.edit 権限が必要です"
+  },
+  "firebaseError": {
+    "invalidCredential": "メールアドレスまたはパスワードが正しくありません。",
+    "invalidEmail": "メールアドレスの形式が正しくありません。",
+    "userDisabled": "このアカウントは無効になっています。管理者にお問い合わせください。",
+    "tooManyRequests": "ログイン試行回数が多すぎます。しばらく待ってから再試行してください。",
+    "networkRequestFailed": "ネットワークエラーです。接続を確認してから再試行してください。",
+    "operationNotAllowed": "このログイン方法は現在利用できません。サポートにお問い合わせください。",
+    "expiredActionCode": "このリンクの有効期限が切れています。最初からやり直してください。",
+    "invalidActionCode": "このリンクは無効です。最新のメールをご使用ください。",
+    "default": "ログインに失敗しました。しばらく後に再試行してください。問題が続く場合はサポートにお問い合わせください。"
   }
 }
