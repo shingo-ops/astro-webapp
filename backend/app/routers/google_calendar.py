@@ -228,10 +228,12 @@ async def connection_status(
     )
     record = row.first()
     if record is None:
-        return {"connected": False, "calendar_id": None}
+        # 一度も連携したことがない
+        return {"connected": False, "configured": False, "calendar_id": None}
 
     return {
         "connected": True,
+        "configured": True,
         "calendar_id": record[0],
         "connected_at": record[1].isoformat() if record[1] else None,
     }
