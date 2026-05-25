@@ -1,0 +1,54 @@
+name: ADR-072 Lint (Tenant Schema)
+
+# ADR-072 Phase 3 PoC: tenant schema 修飾の lint job。
+#
+# 検出ルール:
+#   Rule A — tenant スキーマ内テーブル名が `text("... FROM <bare-table> ...")`
+#            形式で出現し、かつ同 endpoint が tenant_table_ref / reset_tenant_context
+#            のどちらも呼ばない。
+#   Rule B — write 系 endpoint で `await db.commit()` を呼ぶが、後続に
+#            `reset_tenant_context()` の呼び出しが対称的に来ない。
+#
+# Phase 3 (本 workflow) は **mode=warning で exit 0**。違反を stderr 出力する
+# だけで CI は fail させない。Phase 4 で `mode=strict` に切り替えて required
+# check 昇格する。
+#
+# 参照: docs/adr/ADR-072-tenant-schema-prefix-enforcement.md §4 / §5
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+    paths:
+      - "backend/app/routers/**"
+      - "scripts/lint_tenant_schema.py"
+      - ".github/workflows/lint-tenant-schema.yml"
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - "backend/app/routers/**"
+      - "scripts/lint_tenant_schema.py"
+
+jobs:
+  lint:
+    name: ADR-072 tenant schema lint (warning mode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run ADR-072 linter
+        run: |
+          python3 scripts/lint_tenant_schema.py --mode warning backend/app/routers/
+        # mode=warning なので exit 0、違反は stderr に表示される。
+        # GitHub Actions の log に違反一覧が出力される想定。
