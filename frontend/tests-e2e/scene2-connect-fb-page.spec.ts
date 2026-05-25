@@ -147,9 +147,9 @@ test.describe("Scene 2: Connect Facebook Page via OAuth", () => {
     await page.waitForURL(/\/channels(\?.*)?$/, { timeout: 20_000 });
 
     // success バナー（status=connected の page_name 付き）
-    // ADR-044: 接続成功メッセージは ChannelsPage.tsx:117 で英語固定文字列
+    // ADR-027: 接続成功メッセージは i18n キー channels.connectedSuccess 経由（デフォルト ja）
     await expect(
-      page.getByText(/"HIGH LIFE JPN Test Page" connected successfully/),
+      page.getByText(/「HIGH LIFE JPN Test Page」を接続しました。/),
     ).toBeVisible({ timeout: 10_000 });
 
     // 1:10–1:18 Page カード描画
