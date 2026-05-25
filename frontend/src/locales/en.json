@@ -1381,7 +1381,8 @@
     "statusConnectPrompt": "Connect",
     "prevPeriod": "Previous",
     "nextPeriod": "Next",
-    "allDay": "All day"
+    "allDay": "All day",
+    "connectBtn": "Google Calendar"
   },
   "inventoryVisibility": {
     "title": "Inventory Visibility Settings",
