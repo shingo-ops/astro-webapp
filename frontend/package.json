@@ -22,7 +22,8 @@
     "check:page-layout": "node scripts/check-page-layout.js",
     "check:page-folder": "node scripts/check-page-folder.js",
     "check:icon-sync": "node scripts/check-icon-sync.js",
-    "check:all": "npm run check:claude-size && npm run lint && npm run check:css-colors && npm run check:dark-parity && npm run check:jsx-emoji && npm run check:css-var-fallbacks && npm run check:css-values && npm run check:nav-sync && npm run check:page-layout && npm run check:page-folder && npm run check:icon-sync",
+    "check:css-fixed-position": "node scripts/check-css-fixed-position.js",
+    "check:all": "npm run check:claude-size && npm run lint && npm run check:css-colors && npm run check:dark-parity && npm run check:jsx-emoji && npm run check:css-var-fallbacks && npm run check:css-values && npm run check:nav-sync && npm run check:page-layout && npm run check:page-folder && npm run check:icon-sync && npm run check:css-fixed-position",
     "prepare": "cd .. && husky frontend/.husky"
   },
   "lint-staged": {
@@ -34,7 +35,8 @@
     "src/**/*.css": [
       "node scripts/check-css-hardcoded-colors.js",
       "node scripts/check-css-var-fallbacks.js",
-      "node scripts/check-css-hardcoded-values.js"
+      "node scripts/check-css-hardcoded-values.js",
+      "node scripts/check-css-fixed-position.js"
     ],
     "src/index.css": [
       "node scripts/check-dark-parity.js"
