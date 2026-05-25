@@ -12,11 +12,12 @@
  */
 export const ROUTE_TITLE_KEYS: Record<string, string> = {
   "/":                           "nav.dashboard",
-  "/leads":                      "nav.leads",
   "/lead-chat":                  "nav.leadChat",
-  "/companies":                  "nav.companies",
-  "/contacts":                   "nav.contacts",
-  "/archive":                    "nav.archive",
+  "/crm/leads":                  "nav.leads",
+  "/crm/companies":              "nav.companies",
+  "/crm/contacts":               "nav.contacts",
+  "/crm/customers":              "nav.customers",
+  "/crm/archive":                "nav.archive",
   "/inventory":                  "nav.inventory",
   "/quotes":                     "nav.quotesInvoices",
   "/invoices":                   "nav.quotesInvoices",
