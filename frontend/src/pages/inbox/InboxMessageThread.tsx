@@ -1,5 +1,6 @@
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { INBOX_ACTION_ICONS, PAGE_ICONS } from "../../constants/icons";
+import { INBOX_ACTION_ICONS, NAV_ICONS, PAGE_ICONS } from "../../constants/icons";
 import { ICON } from "../../constants/iconSizes";
 import type { Conversation, MessagesResponse } from "../../lib/messages";
 import { formatAbsolute, getInitials, relativeTime } from "./inbox.types";
@@ -41,6 +42,19 @@ export function InboxMessageThread({
   submitSend, handleKeyDown,
 }: Props) {
   const { t } = useTranslation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   if (selectedLeadId === null) {
     return (
@@ -104,6 +118,44 @@ export function InboxMessageThread({
             {t("inbox.karteToggle")}
           </button>
         )}
+        <div ref={menuRef} className="inbox-header-menu-wrap">
+          <button
+            type="button"
+            className="inbox-header-menu-btn"
+            onClick={() => setMenuOpen(v => !v)}
+            aria-label={t("inbox.moreActions")}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+          >
+            <NAV_ICONS.more size={ICON.base} weight="bold" aria-hidden="true" />
+          </button>
+          {menuOpen && (
+            <div role="menu" className="inbox-header-menu">
+              <button role="menuitem" className="inbox-header-menu-item"
+                onClick={() => { handleMarkUnread(); setMenuOpen(false); }}>
+                <INBOX_ACTION_ICONS.markUnread size={ICON.base} weight="fill" aria-hidden="true" />
+                {t("inbox.markUnread")}
+              </button>
+              <button role="menuitem" className="inbox-header-menu-item"
+                onClick={() => { handleExclude(); setMenuOpen(false); }}>
+                <INBOX_ACTION_ICONS.exclude size={ICON.base} weight="fill" aria-hidden="true" />
+                {t("inbox.exclude")}
+              </button>
+              <button role="menuitem" className="inbox-header-menu-item danger"
+                onClick={() => { handleDeleteLead(); setMenuOpen(false); }}>
+                <INBOX_ACTION_ICONS.delete size={ICON.base} weight="fill" aria-hidden="true" />
+                {t("inbox.deleteLead")}
+              </button>
+              {inboxSettings.showRightPanel && (
+                <button role="menuitem" className="inbox-header-menu-item"
+                  onClick={() => { showKartePanel ? closeKartePanel() : openKartePanel(); setMenuOpen(false); }}>
+                  <PAGE_ICONS.kartePanel size={ICON.base} weight="fill" aria-hidden="true" />
+                  {t("inbox.karteToggle")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </header>
 
       {/* メッセージリスト */}
