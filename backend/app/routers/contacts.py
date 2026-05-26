@@ -470,8 +470,6 @@ async def create_contact(
             detail="担当者の登録に失敗しました（contact_code 重複または制約違反の可能性）",
         )
     await invalidate_dashboard_cache(tenant_id)
-    # commit 後の副テーブル SELECT 前に tenant コンテキスト再設定
-    await reset_tenant_context(db, tenant_id)
     return await _compose_response(db, dict(row))
 
 
@@ -556,8 +554,6 @@ async def update_contact(
     await db.commit()
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
-    # commit 後の副テーブル SELECT 前に tenant コンテキスト再設定
-    await reset_tenant_context(db, tenant_id)
 
     fetched = await db.execute(
         text(f"SELECT {_CONTACT_COLUMNS} FROM contacts WHERE id = :id"),

@@ -23,6 +23,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
+// spec v1.3 F11 AC11.4: 検索結果に同梱する仕入元現在オファー
+export interface InventoryOfferSummary {
+  supplier_id: number;
+  supplier_name: string | null;
+  condition: string;
+  quantity: number | null;  // visibility=False で null マスク
+  unit_price: number | null;  // visibility=False で null マスク
+  status: string;
+}
+
 export interface InventorySearchCandidate {
   product_id: number;
   name: string;
@@ -38,6 +48,8 @@ export interface InventorySearchCandidate {
   image_url: string | null;
   matched_via: string;
   score: number;
+  // spec v1.3 F11 AC11.4: 仕入元 × condition の現在オファー (status='in_stock' のみ)
+  inventory_offers?: InventoryOfferSummary[];
 }
 
 export interface InventorySearchResponse {
@@ -432,6 +444,49 @@ export default function InventorySearchBar({
                     {c.unit_price !== null && (
                       <div style={{ fontSize: "var(--font-sm)" }}>
                         ¥{c.unit_price.toLocaleString()}
+                      </div>
+                    )}
+                    {/* spec v1.3 F11 AC11.4: 仕入元現在オファー (最大 3 件まで compact 表示) */}
+                    {c.inventory_offers && c.inventory_offers.length > 0 && (
+                      <div
+                        data-testid={`${testIdPrefix}-result-${i}-offers`}
+                        style={{
+                          fontSize: "var(--font-xs)",
+                          color: "var(--text-secondary)",
+                          marginTop: "var(--space-2px)",
+                          textAlign: "right",
+                        }}
+                      >
+                        <div style={{ fontWeight: "var(--font-weight-semi)" }}>
+                          {t("inventory.search.offersLabel", {
+                            count: c.inventory_offers.length,
+                          })}
+                        </div>
+                        {c.inventory_offers.slice(0, 3).map((o, oi) => (
+                          <div
+                            key={`${o.supplier_id}-${o.condition}`}
+                            data-testid={`${testIdPrefix}-result-${i}-offer-${oi}`}
+                          >
+                            {o.supplier_name ?? `#${o.supplier_id}`}
+                            {" / "}
+                            <code>{o.condition}</code>
+                            {" "}
+                            {o.quantity === null
+                              ? "***"
+                              : t("inventory.search.qtyShort", { qty: o.quantity })}
+                            {" @ "}
+                            {o.unit_price === null
+                              ? "***"
+                              : `¥${o.unit_price.toLocaleString()}`}
+                          </div>
+                        ))}
+                        {c.inventory_offers.length > 3 && (
+                          <div style={{ fontStyle: "italic" }}>
+                            {t("inventory.search.offersMore", {
+                              extra: c.inventory_offers.length - 3,
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

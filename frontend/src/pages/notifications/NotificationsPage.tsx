@@ -52,6 +52,7 @@ export default function NotificationsPage() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{t("settings.addDiscordWebhook")}</h3>
             <form onSubmit={handleSubmit}>
+              {/* eslint-disable-next-line local/no-japanese-literal -- TODO: placeholder を翻訳キーに統合（ADR-027 既知負債） */}
               <div className="form-group"><label>{t("settings.channelName")} *</label><input required value={form.channel_name} onChange={e => setForm({ ...form, channel_name: e.target.value })} placeholder="例: #crm-activity" /></div>
               <div className="form-group"><label>Webhook URL *</label><input required value={form.webhook_url} onChange={e => setForm({ ...form, webhook_url: e.target.value })} placeholder="https://discord.com/api/webhooks/..." /></div>
               <div className="form-actions">

@@ -38,6 +38,7 @@ from app.routers import (
     goals,  # ダッシュボード強化: 目標管理
     google_calendar,  # Google Calendar OAuth 連携
     health,
+    inventory_offers,  # Sprint 11 / F11 AC11.5: 仕入元現在オファー admin CRUD
     inventory_search,
     invoices,
     leads,
@@ -374,6 +375,13 @@ app.include_router(
     inventory_search.router, prefix="/api/v1",
     tags=["inventory-search"],
     dependencies=[Depends(get_current_tenant)],
+)
+
+# spec.md v1.3 F11 AC11.5 (Sprint 11): 仕入元現在オファー admin CRUD
+# require_super_admin で保護 (router 内の各エンドポイントで明示)
+app.include_router(
+    inventory_offers.router, prefix="/api/v1",
+    tags=["super-admin"],
 )
 
 # spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin API

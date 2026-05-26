@@ -232,9 +232,6 @@ async def create_quote(
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
-    # commit後にsearch_path再設定
-    await reset_tenant_context(db, tenant_id)
-
     # 結果取得
     fetched = await db.execute(text(f"SELECT {_QUOTE_COLUMNS} FROM quotes WHERE id = :id"), {"id": quote_id})
     row = fetched.mappings().first()
