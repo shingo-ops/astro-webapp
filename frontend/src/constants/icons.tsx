@@ -46,6 +46,7 @@ export { Check, Warning, X };
 
 // カテゴリ（RolesPage の CATEGORY_META 用）
 // "_default" はフォールバック用
+/* eslint-disable local/no-japanese-literal -- DB 定義のカテゴリキー（backend permission prefix と一致・変更不可） */
 export const CATEGORY_ICONS: Record<string, Icon> = {
   "レポート": ChartBar,
   "顧客":     User,
@@ -57,6 +58,7 @@ export const CATEGORY_ICONS: Record<string, Icon> = {
   "システム": GearSix,
   "_default": Folder,
 };
+/* eslint-enable local/no-japanese-literal */
 
 // ページ用（🚧 💬 の代替）
 export const PAGE_ICONS = {

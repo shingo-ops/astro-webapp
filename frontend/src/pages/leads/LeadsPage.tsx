@@ -60,12 +60,14 @@ type FormState = {
   notes: string;
 };
 
+/* eslint-disable local/no-japanese-literal -- DB 定義のリードステータス初期値 */
 const emptyForm: FormState = {
   customer_name: "", company_name: "", email: "", phone: "",
   source: "", type: "", status: "新規", temperature: "",
   estimated_scale: "", customer_type: "", response_speed: "",
   monthly_forecast: "", notes: "",
 };
+/* eslint-enable local/no-japanese-literal */
 
 /* ------------------------------------------------------------------ */
 /* Main LeadsPage                                                       */
@@ -99,6 +101,7 @@ export default function LeadsPage() {
   ];
 
   // backend が返す日本語の lead.status 値を i18n key にマッピング (UI 表示専用、API 送信値はそのまま)
+  /* eslint-disable local/no-japanese-literal -- DB 定義のリードステータス値（backend と一致・変更不可） */
   const LEAD_STATUS_I18N_KEY: Record<string, string> = {
     "新規": "leads.status_new",
     "コンタクト中": "leads.status_contact",
@@ -107,6 +110,7 @@ export default function LeadsPage() {
     "失注": "leads.status_lost",
     "保留": "leads.status_hold",
   };
+  /* eslint-enable local/no-japanese-literal */
   const translateLeadStatus = (status: string) => {
     const key = LEAD_STATUS_I18N_KEY[status];
     return key ? t(key) : status;
@@ -238,7 +242,9 @@ export default function LeadsPage() {
       "B+": "badge-confirmed",
       "B": "badge-negotiating",
       "B-": "badge-on_hold",
+      /* eslint-disable-next-line local/no-japanese-literal -- DB 定義の商談ランクコード */
       "仮C": "badge-pending",
+      /* eslint-disable-next-line local/no-japanese-literal -- DB 定義の商談ランクコード */
       "確定C": "badge-lost",
     };
     return <span className={`badge ${colorMap[rank] || ""}`}>{rank}</span>;
@@ -393,6 +399,7 @@ export default function LeadsPage() {
                 <td>{rankBadge(l.prospect_rank)}</td>
                 <td className="actions">
                   {hasPermission("leads.update") && <button className="btn-sm" onClick={() => handleEdit(l)}>{t("common.edit")}</button>}
+                  {/* eslint-disable-next-line local/no-japanese-literal -- DB 定義のリードステータス比較値 */}
                   {hasPermission("leads.convert") && l.status !== "案件化" && (
                     <button className="btn-sm btn-primary" onClick={() => setConvertTarget(l)}>{t("leads.convert")}</button>
                   )}

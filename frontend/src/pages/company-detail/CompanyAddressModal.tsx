@@ -70,9 +70,11 @@ export function CompanyAddressModal({
       <div className="modal-content-wide" onClick={(e) => e.stopPropagation()}>
         {/* eslint-disable-next-line no-restricted-syntax */}
         <h2>
+          {/* eslint-disable local/no-japanese-literal -- TODO: 文章全体を1翻訳キーに統合（ADR-027 既知負債） */}
           {addrForm.id === null
             ? `${typeLabel(t, addrForm.address_type)}${t("companies.address")}を${t("common.add")}`
             : `${typeLabel(t, addrForm.address_type)}${t("companies.address")}を${t("common.edit")}`}
+          {/* eslint-enable local/no-japanese-literal */}
         </h2>
         {/* F6: モーダル内エラー（page top の error-banner は overlay で隠れる） */}
         {addrModalError && <div className="error-banner">{addrModalError}</div>}
