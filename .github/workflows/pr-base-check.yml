@@ -1,0 +1,46 @@
+name: PR base branch check
+
+on:
+  pull_request:
+    types: [opened, reopened, edited]
+
+jobs:
+  check-base-branch:
+    name: base-branch-guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR base branch
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD: ${{ github.event.pull_request.head.ref }}
+        run: |
+          echo "base: ${BASE}"
+          echo "head: ${HEAD}"
+
+          # main 以外へのPRはチェック不要
+          if [ "${BASE}" != "main" ]; then
+            echo "✅ base は main ではありません（${BASE}）— チェックをスキップします"
+            exit 0
+          fi
+
+          # develop または hotfix/* → リリース/ホットフィックスPRとして許可
+          if [ "${HEAD}" = "develop" ] || echo "${HEAD}" | grep -qE '^hotfix/'; then
+            echo "✅ ${HEAD} → main のリリース/ホットフィックスPR: 許可"
+            exit 0
+          fi
+
+          echo ""
+          echo "🚫 PR base check 失敗"
+          echo ""
+          echo "   head : ${HEAD}"
+          echo "   base : main"
+          echo ""
+          echo "   main を向く PR は develop または hotfix/* からのみ許可されています。"
+          echo "   feature ブランチは --base develop で PR を作成してください。"
+          echo ""
+          echo "   修正方法:"
+          echo "     gh pr edit --base develop"
+          echo "   または PR をクローズして以下で作り直し:"
+          echo "     bash scripts/gh-pr-create-safe.sh --title \"...\" ..."
+          echo ""
+          exit 1
