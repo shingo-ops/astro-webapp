@@ -122,7 +122,11 @@ jobs:
           PGPASSWORD: testpass
         run: |
           psql -h localhost -U jarvis -d jarvis_test_db -v ON_ERROR_STOP=1 <<'SQL'
-          CREATE ROLE IF NOT EXISTS jarvis_app WITH LOGIN PASSWORD 'apppass' NOSUPERUSER CREATEDB;
+          DO $$ BEGIN
+            CREATE ROLE jarvis_app WITH LOGIN PASSWORD 'apppass' NOSUPERUSER CREATEDB;
+          EXCEPTION WHEN duplicate_object THEN
+            RAISE NOTICE 'role jarvis_app already exists, skipping';
+          END $$;
           GRANT ALL PRIVILEGES ON DATABASE jarvis_test_db TO jarvis_app;
           GRANT ALL ON SCHEMA public TO jarvis_app;
           ALTER DATABASE jarvis_test_db OWNER TO jarvis_app;
