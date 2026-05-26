@@ -521,6 +521,9 @@
     "exclude": "Mark as excluded",
     "deleteLead": "Delete",
     "confirmDelete": "Delete this lead? This action cannot be undone.",
+    "selectAll": "Select all",
+    "selectedCount": "{{count}} selected",
+    "confirmBulkDelete": "Delete selected leads? This action cannot be undone.",
     "settings": {
       "title": "Inbox Settings",
       "display": "Display Customization",
