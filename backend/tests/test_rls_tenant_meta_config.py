@@ -53,7 +53,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-@pytest_asyncio.fixture(scope="module", loop_scope="module")
+@pytest_asyncio.fixture(scope="module")
 async def pg_engine():
     assert _RLS_DB_URL  # mypy 用
     eng = create_async_engine(_RLS_DB_URL, echo=False, future=True)
@@ -61,7 +61,7 @@ async def pg_engine():
     await eng.dispose()
 
 
-@pytest_asyncio.fixture(scope="module", loop_scope="module")
+@pytest_asyncio.fixture(scope="module")
 async def setup_schemas(pg_engine):
     """tenant_998 / tenant_999 schema + tenant_meta_config + RLS を 1 回だけ作る。
 
@@ -132,7 +132,7 @@ async def setup_schemas(pg_engine):
         await conn.execute(text("DROP SCHEMA IF EXISTS tenant_999 CASCADE"))
 
 
-@pytest_asyncio.fixture(loop_scope="module")
+@pytest_asyncio.fixture()
 async def pg_conn(pg_engine, setup_schemas):
     """各テストごとに独立 AsyncConnection。
 
@@ -166,7 +166,7 @@ async def _insert_dummy(conn: AsyncConnection, tenant_id: int, page_id: str) -> 
     })
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio
 async def test_rls_other_tenant_rows_invisible(pg_conn):
     """テナント A の context で B の行が SELECT で見えない。"""
     # データ投入: 各テナントを 1 件ずつ
@@ -191,7 +191,7 @@ async def test_rls_other_tenant_rows_invisible(pg_conn):
         assert any(r[0] == "page-998-1" for r in rows)
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio
 async def test_rls_visible_when_app_tenant_id_matches(pg_conn):
     """app.tenant_id を切り替えると、そのテナントの行が見えるようになる。"""
     async with pg_conn.begin():
