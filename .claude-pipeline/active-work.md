@@ -14,18 +14,18 @@
 
 ## 現在進行中の作業
 
-| ブランチ名 | 担当機能エリア | 開始日時 | 状態 | 備考 |
-|-----------|--------------|---------|------|------|
-| feature/morimoto/monitoring-tokens-sst | （記入してください） | 2026-05-26 23:45 | IN_PROGRESS | |
-| feature/morimoto/agent-pr-ownership-enforcement | 開発ルール強化（PR混入防止） | 2026-05-27 00:06 | REVIEW | PR #881 |
+| ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
+|-----------|--------------|---------|------|-----|------|
+| feature/morimoto/monitoring-tokens-sst | （記入してください） | 2026-05-26 23:45 | IN_PROGRESS | | |
+| feature/morimoto/agent-pr-ownership-enforcement | 開発ルール強化（PR混入防止） | 2026-05-27 00:06 | REVIEW | 881 | |
 
 ---
 
 ## 記入例
 
 ```
-| feature/morimoto/inbox-redesign | 受信箱 UI | 2026-05-26 10:00 | IN_PROGRESS | タブ1で作業中 |
-| feature/morimoto/schedule-fix   | スケジュール | 2026-05-26 11:30 | IN_PROGRESS | タブ2で作業中 |
+| feature/morimoto/inbox-redesign | 受信箱 UI    | 2026-05-26 10:00 | IN_PROGRESS |     | タブ1で作業中 |
+| feature/morimoto/schedule-fix   | スケジュール  | 2026-05-26 11:30 | REVIEW      | 923 | タブ2で作業中 |
 ```
 
 ## 状態の種類

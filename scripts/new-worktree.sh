@@ -78,14 +78,14 @@ else
 import sys, re
 
 filepath, branch, started = sys.argv[1], sys.argv[2], sys.argv[3]
-new_row = f"| {branch} | （記入してください） | {started} | IN_PROGRESS | |"
+new_row = f"| {branch} | （記入してください） | {started} | IN_PROGRESS | | |"
 
 with open(filepath, encoding="utf-8") as f:
     content = f.read()
 
 # *(なし)* プレースホルダー行を置換（初回登録）
 if "*(なし)*" in content:
-    content = re.sub(r"\| \*\(なし\)\* \| — \| — \| — \| — \|", new_row, content)
+    content = re.sub(r"\| \*\(なし\)\* \| — \| — \| — \| — \| — \|", new_row, content)
 else:
     # テーブルの最終行の直後に挿入（--- セパレータの前）
     # 構造: | 最終行 |\n\n---\n\n## 記入例

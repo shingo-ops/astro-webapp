@@ -1,0 +1,17 @@
+name: active-work lint
+
+on:
+  push:
+    paths:
+      - '.claude-pipeline/active-work.md'
+  pull_request:
+    paths:
+      - '.claude-pipeline/active-work.md'
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check active-work.md column format
+        run: bash scripts/check-active-work-format.sh
