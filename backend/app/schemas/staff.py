@@ -102,6 +102,16 @@ class StaffUpdate(BaseModel):
         return validate_email_loose(v)
 
 
+class StaffProfileUpdate(BaseModel):
+    """本人専用プロフィール更新スキーマ（氏名のみ）。権限不要。"""
+    surname_jp: str | None = Field(default=None, min_length=1, max_length=50)
+    given_name_jp: str | None = Field(default=None, min_length=1, max_length=50)
+    surname_kana: str | None = Field(default=None, max_length=100)
+    given_name_kana: str | None = Field(default=None, max_length=100)
+    surname_en: str | None = Field(default=None, max_length=100)
+    given_name_en: str | None = Field(default=None, max_length=100)
+
+
 class StaffResponse(BaseModel):
     id: int
     tenant_id: int

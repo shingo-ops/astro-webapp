@@ -31,6 +31,7 @@ import {
   CalendarBlank,
   TrendUp, Bell, CalendarCheck, ArrowRight, Flag,
   Receipt,
+  UserCircle, Lock, Phone,
 } from "@phosphor-icons/react";
 
 // ステータス（✓ ⚠ ✕ の代替）
@@ -168,6 +169,13 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
     </span>
   );
 }
+
+// アカウント設定（AccountSettingsPage）
+export const ACCOUNT_ICONS = {
+  profile:  UserCircle,
+  security: Lock,
+  phone:    Phone,
+} satisfies Record<string, Icon>;
 
 // 受信箱ヘッダーアクションアイコン（既読 / 未読にする / 対象外 / 削除）
 export const INBOX_ACTION_ICONS = {
