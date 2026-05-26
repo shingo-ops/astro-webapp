@@ -53,6 +53,10 @@ module.exports = {
         // switch (x) { case "DB値": } は除外
         if (node.parent?.type === 'SwitchCase') return;
 
+        // TypeScript union/intersection 型の文字列リテラルは除外
+        // type Status = "承認済み" | "却下" など DB enum の型定義
+        if (node.parent?.type === 'TSLiteralType') return;
+
         // <option value="DB値"> のみ除外（他の要素の value は対象）
         // node → parent (JSXAttribute) → parent (JSXOpeningElement) → name.name
         const jsxAttr = node.parent?.type === 'JSXAttribute' ? node.parent : null;
