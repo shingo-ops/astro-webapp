@@ -462,11 +462,9 @@ services:
       - ./monitoring/loki/rules:/loki/rules:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3100/ready || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+      # grafana/loki:3.7.2 は distroless イメージのため wget/sh が存在せず CMD-SHELL 不可。
+      # Prometheus による /metrics スクレイプで死活監視を代替。
+      disable: true
     deploy:
       resources:
         limits:
@@ -489,11 +487,9 @@ services:
       - loki
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:9080/ready || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+      # grafana/promtail:3.6.11 は distroless イメージのため wget/sh が存在せず CMD-SHELL 不可。
+      # Prometheus による /metrics スクレイプで死活監視を代替。
+      disable: true
     deploy:
       resources:
         limits:
