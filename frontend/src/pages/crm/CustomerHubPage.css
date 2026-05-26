@@ -12,7 +12,7 @@
 
 /* ── 左サブナビ ── */
 .crm-subnav {
-  width: 200px;
+  width: var(--mc-subnav-width);
   flex-shrink: 0;
   border-right: 1px solid var(--border);
   overflow-y: auto;
@@ -60,7 +60,7 @@
     border-right: none;
     border-bottom: 1px solid var(--border);
     padding: var(--space-2) 0;
-    max-height: 200px;
+    max-height: var(--dropdown-max-h);
   }
 
   .crm-content {

@@ -111,8 +111,8 @@
   font-size: 26px;
   font-weight: 400;
   color: var(--text-secondary);
-  width: 46px;
-  height: 46px;
+  width: var(--schedule-mini-size);
+  height: var(--schedule-mini-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -155,8 +155,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: var(--schedule-cell-icon-size);
+  height: var(--schedule-cell-icon-size);
   border-radius: var(--radius-full);
 }
 
@@ -193,7 +193,7 @@
    ============================================================ */
 
 .fc .fc-timegrid-slot {
-  height: 80px;   /* 1時間 = 160px（30分スロット×2）— 旧: 40px */
+  height: var(--schedule-slot-h);   /* 1時間 = 160px（30分スロット×2）— 旧: 40px */
 }
 
 /* 半時間の区切り線を非表示（Googleカレンダー準拠: 1時間線のみ） */
@@ -202,9 +202,7 @@
   border-top: none !important;
 }
 
-/* 時間ラベルをグリッド線に揃える（Google Calendar 準拠: テキスト下端 = 線の位置） */
-/* FC は border-top で線を描画するため、ラベルは線の上に出るよう translateY(-100%) を使用 */
-/* border-top: none でラベル列に線を出さない（線はグリッド側のみ表示） */
+/* 時間ラベル列の横線を非表示（グリッド列のみ横線を表示） */
 .fc .fc-timegrid-slot-label {
   font-size: var(--font-xs);
   color: var(--text-muted);
@@ -215,7 +213,6 @@
 .fc .fc-timegrid-slot-label-cushion {
   display: inline-block;
   padding-right: var(--space-2);
-  transform: translateY(-100%);
 }
 
 /* 現在時刻インジケーター（赤線 + 赤ドット） */
@@ -335,7 +332,7 @@
   display: flex;
   flex-direction: column;
   height: calc(100vh - 180px);
-  min-height: 500px;
+  min-height: var(--schedule-min-h);
   background: var(--bg-surface);
 }
 
@@ -374,7 +371,7 @@
   font-size: var(--font-xl);
   font-weight: var(--font-weight-medium);
   color: var(--text-primary);
-  min-width: 100px;
+  min-width: var(--schedule-mini-col-min-w);
   white-space: nowrap;
   margin-right: var(--space-2);
 }
@@ -388,7 +385,7 @@
   cursor: pointer;
   font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
-  min-height: 32px;
+  min-height: var(--schedule-nav-btn-size);
   transition: background var(--transition-fast);
   white-space: nowrap;
 }
@@ -401,8 +398,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--schedule-nav-btn-size);
+  height: var(--schedule-nav-btn-size);
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -428,7 +425,7 @@
   color: var(--text-primary);
   font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
-  min-height: 32px;
+  min-height: var(--schedule-nav-btn-size);
   cursor: pointer;
   transition: border-color var(--transition-fast), background-color var(--transition-fast);
   white-space: nowrap;
@@ -462,7 +459,7 @@
   cursor: pointer;
   font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
-  min-height: 32px;
+  min-height: var(--schedule-nav-btn-size);
   white-space: nowrap;
   transition: background var(--transition-fast), border-color var(--transition-fast);
 }
