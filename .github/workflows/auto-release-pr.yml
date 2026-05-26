@@ -33,27 +33,29 @@ jobs:
         if: steps.check.outputs.open_count == '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BODY: |
+            ## リリース PR（自動起票）
+
+            develop ブランチが main より先行したため自動起票しました。
+
+            **しんごさん（PO）が内容確認後マージしてください。**
+
+            ## マージ前チェックリスト
+
+            - [ ] develop の変更内容をすべて確認した
+            - [ ] 本番デプロイの準備ができている
+            - [ ] DB マイグレーションがある場合は手順を確認済み
+            - [ ] 外部サービスの設定変更が不要であることを確認した
+
+            ---
+            *このPRは `develop` ブランチへのプッシュを検知して自動起票されました。*
         run: |
           AHEAD=$(git rev-list --count origin/main..HEAD)
           gh pr create \
             --base main \
             --head develop \
             --title "release: develop → main (${AHEAD} commits)" \
-            --body "## リリース PR（自動起票）
-
-develop ブランチが main より先行したため自動起票しました。
-
-**しんごさん（PO）が内容確認後マージしてください。**
-
-## マージ前チェックリスト
-
-- [ ] develop の変更内容をすべて確認した
-- [ ] 本番デプロイの準備ができている
-- [ ] DB マイグレーションがある場合は手順を確認済み
-- [ ] 外部サービスの設定変更が不要であることを確認した
-
----
-*このPRは \`develop\` ブランチへのプッシュを検知して自動起票されました。*"
+            --body "$PR_BODY"
           echo "✅ release PR を自動起票しました"
 
       - name: スキップ通知
