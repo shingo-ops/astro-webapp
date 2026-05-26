@@ -250,7 +250,7 @@ async def run_gateway(tenant: TenantBotConfig) -> None:
         except discord.LoginFailure:
             logger.critical(
                 "[discord-gateway] LoginFailure tenant=%s — Token 不正/失効。"
-                "Discord Developer Portal で Token を再発行し Bitwarden を更新すること",
+                "Discord Developer Portal で Token を再発行し GitHub Secrets を更新すること",
                 tenant.tenant_code,
             )
             raise

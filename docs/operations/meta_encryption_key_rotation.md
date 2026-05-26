@@ -25,7 +25,7 @@
 |---|---|---|
 | 鍵が漏洩した | 緊急 | GitHub Actions ログに誤って印字、開発者端末から流出 |
 | 計画的ローテーション | 1 年に 1 回程度 | コンプライアンス要件 |
-| 鍵紛失 / `EncryptionConfigurationError` 多発 | 緊急 | Bitwarden / GitHub Secrets 双方を喪失（このときは「再接続」一択） |
+| 鍵紛失 / `EncryptionConfigurationError` 多発 | 緊急 | GitHub Secrets およびバックアップ双方を喪失（このときは「再接続」一択） |
 
 ---
 
@@ -72,9 +72,9 @@ docker exec astro-webapp-postgres-1 \
 
 ### 3.4 旧鍵 / 新鍵のバックアップ
 
-- 旧鍵: 復元用に Bitwarden の別エントリへコピー（`METADATA_FERNET_KEY_PREV_<日付>` 形式）
+- 旧鍵: 復元用に別の安全なバックアップ場所へコピー（`METADATA_FERNET_KEY_PREV_<日付>` 形式で記録）
 - 新鍵: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` で生成
-- 新鍵を Bitwarden に保存してから GitHub Secrets に登録（順序逆転禁止）
+- 新鍵を安全なバックアップに保存してから GitHub Secrets に登録（順序逆転禁止）
 
 ---
 
@@ -155,7 +155,7 @@ docker exec astro-webapp-postgres-1 \
 
 新鍵に切り替えた直後にトラブルが発生した場合:
 
-1. GitHub Secrets を **旧鍵に戻す**（Bitwarden の `METADATA_FERNET_KEY_PREV_<日付>` から復元）
+1. GitHub Secrets を **旧鍵に戻す**（バックアップの `METADATA_FERNET_KEY_PREV_<日付>` から復元）
 2. 直近のデプロイを `gh run rerun` または手動 SSH で再実行し、.env を旧鍵に戻す
 3. Case A の Step 2 で `is_active=false` にしたレコードを `is_active=true` に戻す（旧鍵で復号可能なので接続は復活する）
 4. audit_log に手動で `meta_encryption_key_rotation_rolled_back` を記録（actor_id = PO）
@@ -184,8 +184,8 @@ docker exec -w /app astro-webapp-backend-1 \
 ## 7. 不可逆操作チェックリスト（実行前に PO に提示）
 
 - [ ] 影響テナント数を把握し、PO に書面で報告した
-- [ ] 旧鍵を Bitwarden に `METADATA_FERNET_KEY_PREV_<日付>` として保存した
-- [ ] 新鍵を Bitwarden に保存し、GitHub Secrets を更新した
+- [ ] 旧鍵を安全なバックアップ場所に `METADATA_FERNET_KEY_PREV_<日付>` として保存した
+- [ ] 新鍵を安全なバックアップ場所に保存し、GitHub Secrets を更新した
 - [ ] ローテーション中の Meta 連携停止許容時間を PO と合意した
 - [ ] Meta App Review 撮影・本番デモ・新規顧客オンボーディングが当該期間と重ならない
 - [ ] ロールバック手順を PO と共有済み

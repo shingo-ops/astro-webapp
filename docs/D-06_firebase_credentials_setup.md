@@ -130,7 +130,7 @@ D-6完了後に実施します。
 1. https://console.firebase.google.com/project/sales-ops-with-claude/authentication/users
 2. 「ユーザーを追加」
 3. メール: `test@example.com`
-4. パスワード: 強力なパスワード（Bitwardenで生成）
+4. パスワード: 強力なパスワード（パスワードマネージャーで生成）
 5. **重要**: MFAを有効化（テストアプリでも本番ルールを守る）
 
 ### Step 2: クライアント側からログイン
@@ -207,7 +207,7 @@ docker compose logs backend --tail=30
 
 | 項目 | 対策 |
 |------|------|
-| firebase-credentials.json の漏洩 | .gitignoreで除外、chmod 600、Bitwardenにバックアップ保管 |
+| firebase-credentials.json の漏洩 | .gitignoreで除外、chmod 600、GitHub Secretsで管理 |
 | 鍵の有効期限 | デフォルトで永続。漏洩疑い時は即座にローテーション |
 | ローテーション頻度 | 6ヶ月ごと（B-11_credential_management_policy.md準拠） |
 | 鍵の漏洩時対応 | 1) GCPで該当鍵を即座に削除 2) 新しい鍵を発行 3) インシデント対応Playbook起動 |

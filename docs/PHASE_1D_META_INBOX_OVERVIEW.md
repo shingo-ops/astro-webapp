@@ -326,7 +326,7 @@ ssh ubuntu@49.212.137.46
 cd /home/ubuntu/jarvis
 
 # 1. .env に新規変数注入（METADATA_FERNET_KEY, META_APP_ID, META_OAUTH_REDIRECT_URI 等）
-# Bitwarden から値を取得 → .env を直接編集
+# GitHub Secrets から値を取得 → .env を直接編集
 nano .env
 
 # 2. develop の最新を pull
