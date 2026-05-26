@@ -32,7 +32,7 @@
 | [ADR-029](./ADR-029-self-hosted-runner-fleet.md) | ADR-029: Self-hosted runner fleet — 2 台 Mac 体制と labels 戦略の正式化 | Proposed | — |
 | [ADR-032](./ADR-032.md) | ADR-032: Firebase Authentication カスタム認証ドメイン | Proposed | — |
 | [ADR-033](./ADR-033-app-theme-switching.md) | ADR-033: アプリ内テーマ切り替え（ライト / ダーク） | Proposed | — |
-| [ADR-034](./ADR-034-tenant-migration-automation.md) | ADR-034: 新規テナント migration 自動化 | Proposed | — |
+| [ADR-034](./ADR-034-tenant-migration-automation.md) | ADR-034: 新規テナント migration 自動化 + 既存テナント整合化 | Proposed | — |
 | [ADR-035](./ADR-035-external-state-verification.md) | ADR-035: External State Verification — 6 system × 5-layer defense | Proposed | — |
 | [ADR-036](./ADR-036-tenant-schema-integrity.md) | ADR-036: テナントスキーマ整合性保証 | — | — |
 | [ADR-037](./ADR-037-meta-page-connection-investigation.md) | ADR-037: Meta（Facebook/Instagram）ページ接続経路の現状調査 | Draft - 調査フェーズ | — |

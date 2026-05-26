@@ -38,7 +38,9 @@ DB 由来の値（ステータスコード・カテゴリキー等）は `// esl
 
 ## CSS 変数 / ダークモード
 
-新規 CSS 変数は必ず `:root` と `:root.force-dark` の両方に追加（片方のみ禁止）。詳細: `docs/adr/ADR-067-design-token-enforcement.md`。ローカル確認: `cd frontend && npm run check:all`
+新規 CSS 変数のうち**色トークン**は必ず `:root` と `:root.force-dark` の両方に追加（片方のみ禁止）。
+寸法・サイズ・スペーシング等の非色トークンは `tokens.css` の `:root` のみに追加（`force-dark` 不要）。
+詳細: `docs/adr/ADR-067-design-token-enforcement.md`。ローカル確認: `cd frontend && npm run check:all`
 
 ---
 

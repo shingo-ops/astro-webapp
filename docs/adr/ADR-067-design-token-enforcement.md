@@ -124,6 +124,17 @@ src/index.css      — カラートークン（:root ライト / :root.force-dar
 
 ---
 
+## カラートークン（index.css — Inbox 専用 / ADR-064 準拠）
+
+| トークン名 | 定義ファイル | 用途 |
+|-----------|-----------|------|
+| `--inbox-separator` | index.css | 会話リスト区切り線色 |
+| `--inbox-hover` | index.css | 会話アイテムホバー背景色 |
+| `--inbox-action-icon-color` | index.css | ヘッダーアクションアイコン色 |
+| `--inbox-bulk-icon-color` | index.css | 一括操作アイコン色 |
+
+---
+
 ## 関連 ADR
 
 - ADR-022: Meta Business Suite 風 UI リデザイン

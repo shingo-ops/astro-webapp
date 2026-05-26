@@ -1,7 +1,50 @@
-# Grafana アラート通知設定
-# Slack通知は未設定のため無効化（GF_SLACK_WEBHOOK_URL が未設定）
-# 設定する場合は contactPoints + policies を再追加し、以下の環境変数を設定すること:
-#   docker-compose.yml の grafana サービスに:
-#     - GF_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/XXXXX
+# monitoring/grafana/provisioning/alerting/alerting.yml
+# ============================================================
+# Grafana アラート通知設定（プロビジョニング）
+#
+# 【設定内容】
+#   - contactPoints: Slack 通知先（slack-ops）
+#   - policies: 全アラートを slack-ops へルーティング
+#
+# 【前提条件】
+#   docker-compose.yml の grafana サービスに以下の環境変数が必要:
+#     GF_SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+#   .env に SLACK_WEBHOOK_URL=https://hooks.slack.com/services/XXXXX を設定すること
+#
+# 【SLACK_WEBHOOK_URL が空の場合】
+#   contact point は登録されるが通知は送信されない（サイレント失敗）
+#   設定後は grafana コンテナを再起動すること: docker compose restart grafana
+# ============================================================
 
 apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: slack-ops
+    receivers:
+      - uid: slack-ops-slack
+        type: slack
+        settings:
+          url: ${GF_SLACK_WEBHOOK_URL}
+          title: >-
+            [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}]
+            {{ .GroupLabels.alertname }}
+          text: |-
+            {{ range .Alerts }}
+            *{{ .Annotations.summary }}*
+            {{ if .Annotations.description }}{{ .Annotations.description }}{{ end }}
+            重要度: {{ .Labels.severity | default "unknown" }}
+            {{ end }}
+          mentionChannel: ""
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: slack-ops
+    group_by:
+      - alertname
+      - job
+      - instance
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
