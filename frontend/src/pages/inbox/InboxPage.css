@@ -896,7 +896,7 @@
     position: absolute;
     top: calc(100% + var(--space-1));
     right: 0;
-    min-width: 160px;
+    min-width: var(--min-width-dropdown);
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
