@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models import Tenant, User
 from app.schemas.tenant import TenantCreate, TenantResponse
-from app.services.tenant import create_tenant_schema
 from app.services.audit import record_audit_log
-from app.auth.dependencies import get_current_user
+from app.services.tenant import create_tenant_schema
 
 router = APIRouter()
 

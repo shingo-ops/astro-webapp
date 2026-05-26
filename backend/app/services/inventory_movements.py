@@ -22,7 +22,7 @@ spec.md v1.2 F9 AC9.1 (Sprint 9):
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession

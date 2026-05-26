@@ -31,7 +31,9 @@ if [ -n "$BACKEND_PY_CHANGES" ]; then
   if command -v ruff >/dev/null 2>&1; then
     ruff check app/ --exit-zero
   else
-    echo "⚠️  ruff 未インストール: pip install -r requirements-dev.txt を実行してください"
+    echo "❌ ruff 未インストール: cd backend && pip install -r requirements-dev.txt を実行してください"
+    echo "   backend/app/ の変更をコミットするには ruff が必要です。"
+    exit 1
   fi
   cd "$(git rev-parse --show-toplevel)/frontend"
 fi

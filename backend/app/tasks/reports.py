@@ -16,7 +16,6 @@
 
 import csv
 import io
-import json
 import logging
 import os
 
@@ -202,7 +201,7 @@ def export_csv(tenant_id: int, report_type: str):
 
         result = session.execute(text(export_config["query"]))
         rows = result.fetchall()
-        columns = result.keys()
+        _ = result.keys()  # 将来の CSV ヘッダー出力用（現在は rows のみ使用）
 
     # CSV生成
     output = io.StringIO()

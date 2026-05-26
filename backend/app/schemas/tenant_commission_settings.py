@@ -22,7 +22,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 # 5 ロールの識別子（DB CHECK 制約と一致させること）
 RoleLiteral = Literal["sales", "order", "ship", "purchase", "trouble"]
 ALL_ROLES: tuple[str, ...] = ("sales", "order", "ship", "purchase", "trouble")

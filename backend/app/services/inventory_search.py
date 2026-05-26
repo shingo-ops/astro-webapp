@@ -39,7 +39,6 @@ from dataclasses import dataclass
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 # 検索結果の matched_via 優先順位 (低数値が高優先)
 MATCHED_VIA_PRIORITY: dict[str, int] = {
     "products_card_number_exact": 1,

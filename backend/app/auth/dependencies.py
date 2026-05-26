@@ -1,9 +1,10 @@
 import os
 
 import firebase_admin
-from firebase_admin import auth as firebase_auth, credentials
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from firebase_admin import auth as firebase_auth
+from firebase_admin import credentials
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +20,7 @@ from app.cache import (
     record_auth_failure,
 )
 from app.database import get_db
-from app.models import User, Tenant
+from app.models import Tenant, User
 
 security = HTTPBearer()
 

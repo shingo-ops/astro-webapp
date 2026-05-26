@@ -74,7 +74,7 @@ async def create_supplier(data: SupplierCreate, db: AsyncSession = Depends(get_d
                           tenant_id: int = Depends(get_current_tenant),
                           current_user: User = Depends(get_current_user)):
     result = await db.execute(
-        text(f"""
+        text("""
             INSERT INTO suppliers (tenant_id, name, contact_name, email, phone, address, notes)
             VALUES (:tid, :name, :contact, :email, :phone, :addr, :notes)
             RETURNING id

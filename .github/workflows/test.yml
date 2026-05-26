@@ -81,9 +81,9 @@ jobs:
       # bandit: HIGH/CRITICAL 0件確認済み → ブロック（--exit-zero なし）
       # ruff:   708件の auto-fixable 違反あり → `make fix-lint` 後にブロック化
       # mypy:   型アノテーション整備中 → 警告のみ（|| true）
-      - name: Run ruff linting（警告のみ・auto-fixable 違反あり）
+      - name: Run ruff linting（ブロック）
         working-directory: backend
-        run: ruff check app/ --exit-zero
+        run: ruff check app/
 
       - name: Run bandit security scan（HIGH/CRITICAL 0件・ブロック）
         working-directory: backend

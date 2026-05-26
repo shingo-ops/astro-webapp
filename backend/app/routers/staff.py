@@ -26,7 +26,14 @@ from app.auth.dependencies import (
 )
 from app.database import get_db
 from app.models import User
-from app.schemas.staff import StaffCreate, StaffEmailInput, StaffProfileUpdate, StaffResponse, StaffUIPreferences, StaffUpdate
+from app.schemas.staff import (
+    StaffCreate,
+    StaffEmailInput,
+    StaffProfileUpdate,
+    StaffResponse,
+    StaffUIPreferences,
+    StaffUpdate,
+)
 from app.services.audit import record_audit_log
 
 logger = logging.getLogger(__name__)

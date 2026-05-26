@@ -28,7 +28,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 # 配送キャリア enum（DB の CHECK 制約と一致させる）。
 # 'elogi' / 'fedex' / 'dhl' / 'yamato' / 'other' のみ許可。
 # adapter 層は subclass で簡単に拡張できる構造で、本 Sprint は eLogi のみ実装。

@@ -24,7 +24,6 @@ from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query
 from fastapi.responses import JSONResponse
-
 from sqlalchemy import text
 
 from app.database import AsyncSessionLocal

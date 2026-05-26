@@ -60,7 +60,6 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 # -----------------------------------------------------------------------------
 # 副テーブルスナップショット & diff ユーティリティ（PR #145 F9）
 # -----------------------------------------------------------------------------

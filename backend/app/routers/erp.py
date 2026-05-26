@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 ERP連携API（Phase 5）。
 

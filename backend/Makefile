@@ -13,9 +13,9 @@ lint:
 	bandit -r app/ -lll
 	mypy app/ --no-error-summary
 
-## CI 相当 lint（bandit はブロック、ruff/mypy は段階導入中）
+## CI 相当 lint（ruff/bandit はブロック、mypy は型アノテーション整備中のため警告のみ）
 lint-ci:
-	ruff check app/ --exit-zero
+	ruff check app/
 	bandit -r app/ -lll
 	mypy app/ --no-error-summary || true
 

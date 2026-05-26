@@ -21,6 +21,9 @@ select = [
 ]
 ignore = [
     "E501",  # line too long（formatter に任せる）
+    "E402",  # module-import-not-at-top — FastAPI/dotenv パターンで意図的（dotenv.load_dotenv() 後の import 等）
+    "E702",  # multiple-statements-on-one-line — Phase 1 許容。Phase 2 でコード整形後に削除予定。
+    "E712",  # comparison-to-true — SQLAlchemy where(Column == True) は正当なパターン。is_() より可読性が高い。
 ]
 
 [tool.mypy]
