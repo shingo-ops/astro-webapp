@@ -50,7 +50,7 @@ while IFS= read -r line; do
   [[ "$line" =~ ^\| ]] || continue
 
   # セパレータ行（|---|---| 形式）はスキップ
-  [[ "$line" =~ ^\|[-| ]+\| ]] && continue
+  [[ "$line" =~ ^[|][-|[:space:]]+ ]] && continue
 
   # 列数をカウント（| で分割してフィールド数を数える）
   # 例: "| a | b | c |" → awk で 3フィールドと判定
