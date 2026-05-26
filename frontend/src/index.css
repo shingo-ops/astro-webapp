@@ -77,6 +77,12 @@
   /* オーバーレイ背景（モーダル・ドロワー用） */
   --overlay-bg: rgba(0, 0, 0, 0.4);
 
+  /* 状態色：極薄背景（アイテム状態表示用 — ADR-067 rgba SSoT） */
+  --danger-bg-subtle:  rgba(229, 62, 62, 0.06);    /* 期限超過アイテム背景 */
+  --accent-bg-subtle:  rgba(24, 119, 242, 0.06);   /* 当日期限アイテム背景 */
+  --warning-bg-subtle: rgba(183, 121, 31, 0.06);   /* 停滞アイテム背景 */
+  --success-bg-subtle: rgba(72, 187, 120, 0.05);   /* 保存完了入力背景 */
+
   /* ホバー・選択状態の薄い背景オーバーレイ */
   --color-hover-overlay:    rgba(0, 0, 0, 0.05);   /* リスト行 hover/selected */
   --color-separator-subtle: rgba(203, 210, 217, 0.6); /* 薄いボーダー区切り線 */
@@ -227,6 +233,12 @@
   --shadow-accent-hover: 0 2px 6px rgba(129, 140, 248, 0.2);  /* dark: --accent #818cf8 */
 
   --overlay-bg: rgba(0, 0, 0, 0.6);
+
+  /* 状態色：極薄背景（ダーク — ADR-067 rgba SSoT） */
+  --danger-bg-subtle:  rgba(229, 62, 62, 0.12);    /* ダーク背景向けに不透明度を上げる */
+  --accent-bg-subtle:  rgba(129, 140, 248, 0.12);  /* ダーク accent (#818cf8) 準拠 */
+  --warning-bg-subtle: rgba(253, 230, 138, 0.10);  /* ダーク warning 準拠 */
+  --success-bg-subtle: rgba(74, 222, 128, 0.10);   /* ダーク success 準拠 */
 
   --color-hover-overlay:    rgba(255, 255, 255, 0.06);
   --color-separator-subtle: rgba(148, 163, 184, 0.4);
