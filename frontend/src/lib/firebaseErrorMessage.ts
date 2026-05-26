@@ -38,6 +38,8 @@ const ERROR_KEY_MAP: Record<string, string> = {
   // パスワードリセット系（将来用）
   "auth/expired-action-code":   "firebaseError.expiredActionCode",
   "auth/invalid-action-code":   "firebaseError.invalidActionCode",
+  // パスワード変更: 再ログインが必要
+  "auth/requires-recent-login": "firebaseError.requiresRecentLogin",
 };
 
 /**

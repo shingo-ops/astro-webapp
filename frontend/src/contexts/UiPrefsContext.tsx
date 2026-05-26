@@ -58,9 +58,10 @@ interface UiPrefsContextValue {
    *  完了するまで `<html>` に force-light/force-dark クラスを付けず、OS の
    *  prefers-color-scheme に従わせるためのガード（PR #166 F2）。 */
   prefsFetched: boolean;
-  /** /staff/me から得た自分の staff.id（取得失敗時は null）。
-   *  StaffPage で「編集対象が自分かどうか」判定し、自分の編集時だけ refresh するために使う。 */
+  /** /staff/me から得た自分の staff.id（取得失敗時は null）。 */
   selfStaffId: number | null;
+  /** ドロワー表示用の表示名（"姓 名" 形式。取得失敗時は null）。 */
+  staffName: string | null;
   /** /staff/me から再取得（StaffPage で自分のレコードを保存した直後などに呼ぶ） */
   refresh: () => Promise<void>;
   /** ローカル即時反映（refresh より前に prefs を上書きしてチラつきを防ぐ） */
@@ -72,8 +73,11 @@ const UiPrefsContext = createContext<UiPrefsContextValue | null>(null);
 interface StaffMeResponse {
   id: number;
   primary_email: string;
+  surname_jp: string;
+  given_name_jp: string;
+  surname_en: string | null;
+  given_name_en: string | null;
   ui_preferences: UiPrefs | null;
-  // 他フィールドもあるが UI prefs 反映には不要
 }
 
 export function UiPrefsProvider({ children }: { children: ReactNode }) {
@@ -82,12 +86,14 @@ export function UiPrefsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [prefsFetched, setPrefsFetched] = useState(false);
   const [selfStaffId, setSelfStaffId] = useState<number | null>(null);
+  const [staffName, setStaffName] = useState<string | null>(null);
 
   const fetchPrefs = useCallback(async () => {
     if (!user) {
       // 未ログイン時はデフォルトのまま、loading=false
       setPrefsState(DEFAULT_UI_PREFS);
       setSelfStaffId(null);
+      setStaffName(null);
       setPrefsFetched(false);
       setLoading(false);
       return;
@@ -98,13 +104,14 @@ export function UiPrefsProvider({ children }: { children: ReactNode }) {
       // ui_preferences が null（テーブル未投入）でもデフォルト値で動作させる
       setPrefsState(me.ui_preferences ?? DEFAULT_UI_PREFS);
       setSelfStaffId(me.id);
+      setStaffName(`${me.surname_jp} ${me.given_name_jp}`.trim() || null);
     } catch (e) {
       // 404（staff 未紐づけ）や 5xx の場合はデフォルト値で動作。
       // ログには残すが UI は止めない。
-      // eslint-disable-next-line no-console
       console.warn("[UiPrefs] /staff/me 取得失敗、デフォルト値で動作:", e);
       setPrefsState(DEFAULT_UI_PREFS);
       setSelfStaffId(null);
+      setStaffName(null);
     } finally {
       setPrefsFetched(true);
       setLoading(false);
@@ -131,10 +138,11 @@ export function UiPrefsProvider({ children }: { children: ReactNode }) {
       loading,
       prefsFetched,
       selfStaffId,
+      staffName,
       refresh: fetchPrefs,
       setPrefs,
     }),
-    [prefs, loading, prefsFetched, selfStaffId, fetchPrefs, setPrefs],
+    [prefs, loading, prefsFetched, selfStaffId, staffName, fetchPrefs, setPrefs],
   );
 
   return (
@@ -152,6 +160,7 @@ export function useUiPrefs(): UiPrefsContextValue {
       loading: false,
       prefsFetched: false,
       selfStaffId: null,
+      staffName: null,
       refresh: async () => {},
       setPrefs: () => {},
     };

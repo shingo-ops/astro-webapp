@@ -248,6 +248,7 @@
   --max-width-modal-sm:      420px;  /* 確認モーダル・小型ダイアログ最大幅 */
   --modal-max-w:             500px;  /* 標準モーダル最大幅 */
   --modal-profile-min-w:     480px;  /* プロフィールモーダル最小幅 */
+  --max-width-form:          560px;  /* フォームレイアウト最大幅（アカウント設定等） */
   --modal-profile-max-w:     640px;  /* プロフィールモーダル最大幅 */
   --inbox-settings-min-w:    320px;  /* 受信箱設定モーダル最小幅 */
   --inbox-settings-max-w:    480px;  /* 受信箱設定モーダル最大幅 */

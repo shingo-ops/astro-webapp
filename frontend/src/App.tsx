@@ -52,6 +52,7 @@ import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
 // spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
 import PhaseSwitchPage from "./pages/super-admin/PhaseSwitchPage";
 import ManagementCenterPage from "./pages/management-center/ManagementCenterPage";
+import AccountSettingsPage from "./pages/account-settings/AccountSettingsPage";
 import CustomerHubPage from "./pages/crm/CustomerHubPage";
 // ADR-069: デザインシステム パーツ保管庫（開発環境専用）
 import DesignSystemPage from "./pages/design-system/DesignSystemPage";
@@ -170,6 +171,8 @@ function App() {
 
                   {/* 設定 */}
                   <Route path="/settings" element={<NotificationsPage />} />
+                  {/* 個人アカウント設定 */}
+                  <Route path="/account/settings" element={<AccountSettingsPage />} />
 
                   {/* その他 */}
                   <Route
