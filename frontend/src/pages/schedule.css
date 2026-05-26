@@ -213,6 +213,7 @@
 .fc .fc-timegrid-slot-label-cushion {
   display: inline-block;
   padding-right: var(--space-2);
+  transform: translateY(-50%);
 }
 
 /* 現在時刻インジケーター（赤線 + 赤ドット） */
