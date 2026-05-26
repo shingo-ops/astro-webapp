@@ -22,7 +22,6 @@ from typing import Optional
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,7 +41,6 @@ from app.services.meta_graph import (
     MetaGraphTimeoutError,
     MetaGraphTransportError,
 )
-
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

@@ -9,15 +9,14 @@ from __future__ import annotations
   2026-04-17: 初版作成（Phase 3）
 """
 
-from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import (
-    get_current_user,
     get_current_tenant,
+    get_current_user,
     require_permission,
     reset_tenant_context,
 )
@@ -29,7 +28,6 @@ from app.schemas.purchase_order import (
     PODetailResponse,
     POItemResponse,
     POResponse,
-    POUpdate,
 )
 from app.services.audit import record_audit_log
 from app.services.po_mailer import send_po_email_sync
@@ -113,7 +111,7 @@ async def create_po(
     total = sum(item.quantity * item.unit_cost for item in data.items)
 
     header = await db.execute(
-        text(f"""
+        text("""
             INSERT INTO purchase_orders (tenant_id, supplier_id, status, total_amount, notes, created_by)
             VALUES (:tid, :sid, 'draft', :total, :notes, :by)
             RETURNING id

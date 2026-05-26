@@ -38,7 +38,6 @@ from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Optional
 
-
 # spec §3-3 / §5-4 / §5-5 の messaging window 境界
 RESPONSE_WINDOW_HOURS = 24
 HUMAN_AGENT_WINDOW_DAYS = 7

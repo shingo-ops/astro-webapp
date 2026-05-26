@@ -34,7 +34,6 @@ from typing import Optional
 from app.cache import get_redis
 from app.services import encryption
 
-
 logger = logging.getLogger(__name__)
 
 

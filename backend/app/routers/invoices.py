@@ -20,8 +20,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import (
-    get_current_user,
     get_current_tenant,
+    get_current_user,
     require_permission,
     reset_tenant_context,
 )
@@ -174,7 +174,7 @@ async def create_invoice_from_quote(
 
     # 請求書ヘッダー作成（Step 5d: quote から company_id/contact_id を継承）
     inv_result = await db.execute(
-        text(f"""
+        text("""
             INSERT INTO invoices (
                 tenant_id, invoice_number, quote_id, company_id, contact_id, currency,
                 subtotal, shipping_fee, tax_amount, total_amount,
@@ -265,7 +265,7 @@ async def create_invoice(
     erp_key = str(uuid.uuid4())[:8].upper()
 
     inv_result = await db.execute(
-        text(f"""
+        text("""
             INSERT INTO invoices (
                 tenant_id, invoice_number, company_id, contact_id, currency,
                 subtotal, shipping_fee, tax_amount, total_amount,

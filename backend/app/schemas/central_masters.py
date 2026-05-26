@@ -13,11 +13,10 @@ spec.md v1.1 F2 (Sprint 2):
 """
 from __future__ import annotations
 
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
 
 # ============================================================================
 # knowledge_rules

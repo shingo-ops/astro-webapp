@@ -36,7 +36,6 @@ from app.schemas.tenant_commission_settings import (
     CommissionRatesConfig,
 )
 
-
 # キャンセル判定が適用されるロール（ADR-021 Phase 5 / spec.md の現行式表より）。
 # 仕入 / トラブルはキャンセル判定なしのため、ここには含めない。
 ROLES_WITH_CANCEL_CHECK: frozenset[str] = frozenset({"sales", "order", "ship"})

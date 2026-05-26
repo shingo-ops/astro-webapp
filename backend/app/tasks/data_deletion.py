@@ -21,7 +21,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime, timezone
 
 from celery import shared_task
 from sqlalchemy import create_engine, text
@@ -105,7 +104,7 @@ def process_data_deletion(request_id: str) -> dict:
             logger.error(f"[data_deletion] request_id={request_id} not found in logs")
             return {"request_id": request_id, "status": "not_found"}
 
-        identifier_value, channel, user_type = row[0], row[1], row[2]
+        identifier_value, _, user_type = row[0], row[1], row[2]
 
         session.execute(
             text("""
