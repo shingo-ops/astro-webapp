@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Nginxリバースプロキシ
   nginx:
-    image: nginx:latest
+    image: nginx:1.31.1
     ports:
       - "80:80"
       - "443:443"
@@ -36,7 +36,7 @@ services:
 
   # Certbot（SSL証明書取得・更新）
   certbot:
-    image: certbot/certbot:latest
+    image: certbot/certbot:v5.6.0
     volumes:
       - ./certbot/www:/var/www/certbot:rw
       - ./certbot/conf:/etc/letsencrypt:rw
@@ -323,7 +323,7 @@ services:
 
   # --- B-1: Prometheus（メトリクス収集） ---
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.11.3
     volumes:
       - ./monitoring/prometheus:/etc/prometheus:ro
       - prometheus_data:/prometheus
@@ -348,7 +348,7 @@ services:
 
   # Grafana（可視化・アラート・ダッシュボード）
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.0.1
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
@@ -381,7 +381,7 @@ services:
 
   # Node Exporter（ホストOS: CPU/メモリ/ディスク）
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.11.1
     pid: host
     volumes:
       - /proc:/host/proc:ro
@@ -405,7 +405,7 @@ services:
 
   # PostgreSQL Exporter（DB接続数・クエリ統計）
   postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:latest
+    image: prometheuscommunity/postgres-exporter:v0.19.1
     environment:
       - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
     depends_on:
@@ -423,7 +423,7 @@ services:
 
   # Nginx Exporter（リクエスト数・ステータスコード）
   nginx-exporter:
-    image: nginx/nginx-prometheus-exporter:latest
+    image: nginx/nginx-prometheus-exporter:1.5.1
     command:
       - "-nginx.scrape-uri=http://nginx:80/nginx_status"
     depends_on:
@@ -442,7 +442,7 @@ services:
 
   # --- B-2: Loki（ログ集積 + 異常検知） ---
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.7.2
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
       - loki_data:/loki
@@ -461,7 +461,7 @@ services:
 
   # Promtail（ログ収集 → Lokiに送信）
   promtail:
-    image: grafana/promtail:latest
+    image: grafana/promtail:3.6.11
     volumes:
       - ./monitoring/promtail/promtail.yml:/etc/promtail/config.yml:ro
       - /var/log:/var/log:ro
@@ -482,7 +482,7 @@ services:
 
   # --- B-3: Uptime Kuma（死活監視） ---
   uptime-kuma:
-    image: louislam/uptime-kuma:2
+    image: louislam/uptime-kuma:2.3.0
     volumes:
       - uptime_kuma_data:/app/data
     restart: unless-stopped
