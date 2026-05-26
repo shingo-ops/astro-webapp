@@ -1,0 +1,53 @@
+name: Monitoring Stack Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+# NOTE: paths フィルタ削除（e2e.yml #534 と同じデッドロック回避）。
+# Required check として Ruleset に登録した場合、paths フィルタがあると
+# 関係ないファイルしか変更しない PR で "Expected" のまま pending → merge 不可になる。
+# detect-changes step で変更ファイルを判定し、不要時はスキップ（即 pass）する。
+
+jobs:
+  monitoring-check:
+    name: 監視スタック整合性チェック
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 監視関連ファイル変更検出
+        id: changes
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          if echo "$CHANGED" | grep -qE "^(monitoring/|docker-compose\.yml|\.github/workflows/monitoring-check\.yml)"; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "監視関連ファイルの変更なし — チェックをスキップして即 pass"
+          fi
+
+      - name: Setup Python
+        if: steps.changes.outputs.relevant == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyYAML
+        if: steps.changes.outputs.relevant == 'true'
+        run: pip install pyyaml
+
+      - name: tokens.yml 構文チェック
+        if: steps.changes.outputs.relevant == 'true'
+        run: python3 -c "import yaml; yaml.safe_load(open('monitoring/tokens.yml'))"
+
+      - name: SSoT整合性・バージョン固定・healthcheckチェック
+        if: steps.changes.outputs.relevant == 'true'
+        run: python3 monitoring/scripts/validate_tokens.py
