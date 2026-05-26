@@ -5,37 +5,29 @@ title = "salesanchor gitleaks config"
 useDefault = true
 
 # =============================================================
-# allowlist: 誤検知として許可するパターン
+# allowlist: 誤検知として許可するパターン（グローバル）
 # =============================================================
 
-[[rules.allowlist]]
-description = "env.example はプレースホルダ値のみ。実値なし"
-paths = [".env.example"]
-
-[[rules.allowlist]]
-description = "ドキュメント内の公開済み Meta App ID（秘密情報でない）"
-regexes = ["1250869697105619"]
-
-[[rules.allowlist]]
-description = "Google OAuth クライアントID（公開情報）"
-regexes = ["730863365967-icreuf1q3l7uenlf8iifh3hi0cumqa7e\\.apps\\.googleusercontent\\.com"]
-
-[[rules.allowlist]]
-description = "テスト・サンプル用トークンのプレースホルダ"
+[allowlist]
+description = "プロジェクト固有の誤検知除外ルール"
+paths = [
+  ".env.example",
+]
 regexes = [
+  # ドキュメント内の公開済み Meta App ID（秘密情報でない）
+  "1250869697105619",
+  # Google OAuth クライアントID（公開情報）
+  "730863365967-icreuf1q3l7uenlf8iifh3hi0cumqa7e\\.apps\\.googleusercontent\\.com",
+  # テスト・サンプル用トークンのプレースホルダ
   "your-secret-verify-token-here",
   "your-.*-here",
   "example\\.com",
   "test@example\\.com",
+  # Fernet鍵生成コマンドのサンプル（実値ではない）
+  "Fernet\\.generate_key\\(\\)",
+  # スクリプト内のサンプルARN・リソースID
+  "AWS_ACCOUNT_ID",
 ]
-
-[[rules.allowlist]]
-description = "Fernet鍵生成コマンドのサンプル（実値ではない）"
-regexes = ["Fernet\\.generate_key\\(\\)"]
-
-[[rules.allowlist]]
-description = "スクリプト内のサンプルARN・リソースID"
-regexes = ["AWS_ACCOUNT_ID"]
 
 # =============================================================
 # 追加ルール: このプロジェクト固有のパターン
