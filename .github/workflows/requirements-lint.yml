@@ -1,0 +1,41 @@
+name: Requirements Lint
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/requirements.txt'
+      - 'backend/requirements-dev.txt'
+      - '.github/workflows/requirements-lint.yml'
+
+jobs:
+  check-requirements:
+    name: requirements.txt にテストパッケージが混入していないことを確認
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: テストパッケージが requirements.txt に混入していないことを確認
+        run: |
+          FORBIDDEN="^(pytest|pytest-asyncio|pytest-cov|aiosqlite|pdfminer\.six|aiosmtpd)"
+          if grep -E "${FORBIDDEN}" backend/requirements.txt; then
+            echo "::error file=backend/requirements.txt::テスト用パッケージが requirements.txt に含まれています。requirements-dev.txt に移動してください。"
+            exit 1
+          fi
+          echo "OK: テストパッケージは requirements.txt に含まれていません"
+
+      - name: テストパッケージが requirements-dev.txt に存在することを確認
+        run: |
+          REQUIRED=(pytest pytest-asyncio pytest-cov aiosqlite)
+          MISSING=()
+          for pkg in "${REQUIRED[@]}"; do
+            if ! grep -q "^${pkg}" backend/requirements-dev.txt; then
+              MISSING+=("$pkg")
+            fi
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error file=backend/requirements-dev.txt::以下のテストパッケージが requirements-dev.txt に見つかりません: ${MISSING[*]}"
+            exit 1
+          fi
+          echo "OK: テストパッケージは requirements-dev.txt に存在します"
