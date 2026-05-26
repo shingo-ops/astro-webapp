@@ -1,0 +1,61 @@
+name: Auto Release PR
+
+# develop への push を検知して develop → main の PR を自動起票する。
+# P1（長期分岐の常態化）を防ぐための仕組み。
+# すでに open の PR がある場合はスキップする。
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  open-release-pr:
+    name: develop → main リリース PR 自動起票
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: develop → main の open PR を確認
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN=$(gh pr list --base main --head develop --state open --json number -q 'length')
+          echo "open_count=$OPEN" >> "$GITHUB_OUTPUT"
+
+      - name: リリース PR を起票
+        if: steps.check.outputs.open_count == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          AHEAD=$(git rev-list --count origin/main..HEAD)
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "release: develop → main (${AHEAD} commits)" \
+            --body "## リリース PR（自動起票）
+
+develop ブランチが main より先行したため自動起票しました。
+
+**しんごさん（PO）が内容確認後マージしてください。**
+
+## マージ前チェックリスト
+
+- [ ] develop の変更内容をすべて確認した
+- [ ] 本番デプロイの準備ができている
+- [ ] DB マイグレーションがある場合は手順を確認済み
+- [ ] 外部サービスの設定変更が不要であることを確認した
+
+---
+*このPRは \`develop\` ブランチへのプッシュを検知して自動起票されました。*"
+          echo "✅ release PR を自動起票しました"
+
+      - name: スキップ通知
+        if: steps.check.outputs.open_count != '0'
+        run: echo "ℹ️ develop → main の PR がすでに open のためスキップしました"

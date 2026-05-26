@@ -52,7 +52,7 @@
   color: var(--text-primary);
   font-size: var(--font-sm);
   cursor: pointer;
-  min-width: 120px;
+  min-width: var(--min-width-input-sm);
 }
 
 /* ── 固定エリア ── */
@@ -183,7 +183,7 @@
   font-size: var(--font-xs);
   font-weight: var(--font-weight-semi);
   white-space: nowrap;
-  min-width: 38px;
+  min-width: var(--dashboard-badge-min-w);
   text-align: right;
   grid-column: 3;
   grid-row: 1;
@@ -192,7 +192,7 @@
 .db-progress-wrap {
   grid-column: 1 / -1;
   grid-row: 2;
-  height: 4px;
+  height: var(--progress-bar-h);
   background: var(--bg-primary);
   border-radius: var(--radius-full);
   overflow: hidden;
@@ -252,8 +252,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
+  min-width: var(--dashboard-rank-badge);
+  height: var(--dashboard-rank-badge);
   padding: 0 var(--space-1);
   background: var(--danger);
   color: var(--on-accent);

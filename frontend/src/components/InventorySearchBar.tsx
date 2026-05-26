@@ -350,7 +350,7 @@ export default function InventorySearchBar({
                     background: isActive
                       ? "var(--bg-hover)"
                       : "transparent",
-                    opacity: isZero ? 0.55 : 1,
+                    opacity: isZero ? 'var(--opacity-skipped)' : 'var(--opacity-full)',
                     borderBottom: "1px solid var(--border-light)",
                     display: "flex",
                     alignItems: "center",
