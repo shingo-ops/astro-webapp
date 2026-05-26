@@ -188,7 +188,7 @@ add_para(doc,
 add_callout(doc, "💡 たとえ話",
             "これは「お店に新人スタッフ（配達員）を採用する」作業によく似ています。Bot は Sales Anchor 専用の "
             "配達員、Discord 開発者ポータルは採用面接の窓口、Bot Token は社員証 + 倉庫の鍵、"
-            "パスワードマネージャー（Bitwarden / 1Password など）はその鍵を保管する金庫、"
+            "パスワードマネージャー（1Password 等）はその鍵を保管する金庫、"
             "テスト用ギルドは新人研修用の練習スペース、というイメージです。",
             color="EFF6FF", text_color="1E3A8A")
 
@@ -201,7 +201,7 @@ add_table_with_header(
         ["新人配達員", "Discord Bot（アプリ + Bot 機能）", "タスク 1"],
         ["配達員に「家の中まで入っていい権限」を付与", "Privileged Intents（MESSAGE CONTENT / SERVER MEMBERS）", "タスク 2"],
         ["社員証 + 倉庫の鍵（盗まれたら危ない）", "Bot Token（再発行はできるが流出は事故）", "タスク 3"],
-        ["金庫", "パスワードマネージャー（Bitwarden / 1Password 等）", "タスク 3"],
+        ["金庫", "パスワードマネージャー（1Password 等）または GitHub Secrets", "タスク 3"],
         ["新人研修用の練習スペース", "テスト用 Discord ギルド（本番と別）", "タスク 4"],
         ["お店の本店", "HIGH LIFE JPN の本番 Discord ギルド", "後日（Bot 動作確認後）"],
     ],
@@ -290,7 +290,7 @@ add_horizontal_rule(doc)
 add_heading(doc, "タスク 3: Bot Token をパスワードマネージャーに保管", level=1)
 
 add_callout(doc, "📌 前提",
-            "本書では「パスワードマネージャー」と一般化して書きます。具体的には Bitwarden / 1Password / "
+            "本書では「パスワードマネージャー」と一般化して書きます。具体的には 1Password / "
             "他社製品（KeePass, Dashlane 等）のいずれでも構いません。社内で利用予定のツールに読み替えて"
             "進めてください。",
             color="F3F4F6", text_color="374151")
@@ -324,9 +324,8 @@ add_bullet(doc, "Reset 履歴 → Notes（例: 2026-04-28 初回発行）", leve
 add_step(doc, 7, "パスワードマネージャー側で保存完了を確認したらブラウザのタブを閉じて OK")
 
 add_callout(doc, "💡 ツール別の補足",
-            "Bitwarden: 「Login 項目を追加」→ Name / Username / Password / Notes に上記を入れる。\n"
             "1Password: 「Password」テンプレで作成、または「API Credential」テンプレが Token 用に最適。\n"
-            "両方とも Custom Field（カスタムフィールド）が使えるので Application ID / 発行日はそこに入れると見やすい。",
+            "Custom Field（カスタムフィールド）が使えるので Application ID / 発行日はそこに入れると見やすい。",
             color="F0FDF4", text_color="166534")
 
 add_heading(doc, "やってはいけないこと（NG 行動）", level=3)

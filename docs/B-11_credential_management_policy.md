@@ -9,10 +9,11 @@
 
 ## 基本ルール
 
-### 1. パスワードマネージャーの使用（必須）
+### 1. 認証情報の管理方針
 
-**推奨ツール: Bitwarden**（無料プランで十分）
-- https://bitwarden.com
+**管理場所:**
+- **本番シークレット**: GitHub Secrets（CI/CD 自動注入）
+- **開発環境**: ローカル `.env` ファイル（`.gitignore` で除外済み）
 
 **禁止事項:**
 - ブラウザの自動保存に頼らない
@@ -34,19 +35,19 @@
 
 | 種類 | 保管場所 | 共有方法 |
 |------|---------|---------|
-| VPS SSHパスワード | Bitwarden | Bitwarden共有フォルダ |
-| PostgreSQL パスワード | Bitwarden + .env | Bitwarden共有フォルダ |
-| Firebase サービスアカウントキー | Bitwarden + VPS上のファイル | Bitwarden添付ファイル |
-| GitHub Personal Access Token | Bitwarden | 共有しない（個人発行） |
-| Cloudflare APIキー | Bitwarden | Bitwarden共有フォルダ |
-| Grafana管理者パスワード | Bitwarden + .env | Bitwarden共有フォルダ |
-| AWS IAMキー（S3バックアップ用） | Bitwarden + VPS環境変数 | Bitwarden共有フォルダ |
+| VPS SSHパスワード | GitHub Secrets | PO（しんごさん）経由 |
+| PostgreSQL パスワード | GitHub Secrets + .env | PO経由 |
+| Firebase サービスアカウントキー | GitHub Secrets + VPS上のファイル | PO経由 |
+| GitHub Personal Access Token | GitHub Secrets | 共有しない（個人発行） |
+| Cloudflare APIキー | GitHub Secrets | PO経由 |
+| Grafana管理者パスワード | GitHub Secrets + .env | PO経由 |
+| AWS IAMキー（S3バックアップ用） | GitHub Secrets + VPS環境変数 | PO経由 |
 
 ### 4. .envファイルの取��扱い
 
 - `.env` ファイルは **絶対にGitにコミットしない**（.gitignoreで除外済み）
 - 本番の `.env` はVPS上でのみ管理
-- 新メンバーへの `.env` 共有はBitwarden経由のみ
+- 新メンバーへの `.env` 共有は PO（しんごさん）経由のみ
 
 ### 5. APIキー・トークンのローテーション
 
@@ -61,11 +62,11 @@
 
 ## セットアップ手順（新メンバー向け）
 
-1. Bitwardenアカウントを作成（https://bitwarden.com）
-2. Bitwardenの組織に招待してもらう
-3. 共有フォルダにアクセスし、必要な認証情報を取得
-4. SSH鍵ペアを新規生成し、公開鍵をVPS管理者に送付
-5. MFA（2要素認証）をBitwardenアカウントに設定
+1. PO（しんごさん）に GitHub リポジトリへの招待を依頼
+2. GitHub Secrets の参照権限（リポジトリ Collaborator）を取得
+3. 必要な `.env` 値は PO から直接受け取りローカルに配置
+4. SSH鍵ペアを新規生成し、公開鍵をVPS管理者（PO）に送付
+5. MFA（2要素認証）を GitHub アカウントに設定
 
 ---
 

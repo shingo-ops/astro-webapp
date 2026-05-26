@@ -11,7 +11,7 @@ Fernet による対称鍵暗号化サービス（Phase 1-D）。
   「鍵付きの金庫」。鍵（METADATA_FERNET_KEY）を持つ人だけが
   中の書類（生トークン）を読み書きできる。
   鍵を紛失すると永遠に金庫を開けられなくなるので、
-  Bitwarden 等で鍵を厳重に保管する運用が必須。
+  GitHub Secrets 等で鍵を厳重に管理する運用が必須。
 
 設計判断:
   - cryptography.fernet.Fernet を直接ラップ（業界標準、AES-128-CBC + HMAC-SHA256）

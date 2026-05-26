@@ -58,13 +58,7 @@ gh api repos/shingo-ops/salesanchor/collaborators --jq '.[].login'
 1. https://dash.cloudflare.com → メンバー管理
 2. 対象者を削除
 
-### 6. Bitwardenからの削除
-
-1. Bitwarden組織の管理画面を開く
-2. 対象者を組織から削除
-3. 共有フォルダへのアクセスが即座に無効化されることを確認
-
-### 7. 共有パスワードの変更
+### 6. 共有パスワードの変更
 
 対象者がアクセスしていた認証情報をすべて変更する:
 
@@ -78,7 +72,7 @@ gh api repos/shingo-ops/salesanchor/collaborators --jq '.[].login'
 docker compose down && docker compose up -d
 ```
 
-### 8. CRMユーザーアカウントの無効化
+### 7. CRMユーザーアカウントの無効化
 
 ```bash
 docker compose exec postgres psql -U myapp_user -d myapp_db -c \
@@ -94,11 +88,10 @@ docker compose exec postgres psql -U myapp_user -d myapp_db -c \
 |---|------|------|--------|------|
 | 1 | SSH鍵削除 | [ ] | | |
 | 2 | DBユーザー削除 | [ ] | | |
-| 3 | GitHub削除 | [ ] | | |
+| 3 | GitHub削除（リポジトリ Collaborator 解除） | [ ] | | |
 | 4 | Firebase/GCP削除 | [ ] | | |
 | 5 | Cloudflare削除 | [ ] | | |
-| 6 | Bitwarden削除 | [ ] | | |
-| 7 | 共有パスワード変更 | [ ] | | |
-| 8 | CRMアカウント無効化 | [ ] | | |
+| 6 | 共有パスワード変更 | [ ] | | |
+| 7 | CRMアカウント無効化 | [ ] | | |
 
 **全項目にチェックが入るまで、退職処理は完了としない。**

@@ -107,7 +107,7 @@ webhook 購読設定（subscribed_fields）
 | `META_APP_SECRET` | GitHub Secret に保存（VPS .env に自動書き込み） |
 | `META_VERIFY_TOKEN` | Webhook 検証トークン |
 | `META_OAUTH_REDIRECT_URI` | https://api.salesanchor.jp/api/v1/meta/oauth/callback |
-| `METADATA_FERNET_KEY` | アクセストークン暗号化キー（Bitwarden にも保管必須） |
+| `METADATA_FERNET_KEY` | アクセストークン暗号化キー（GitHub Secrets + 別の安全な場所にバックアップ必須） |
 
 > ⚠️ **METADATA_FERNET_KEY を紛失すると全テナントのトークンが永久に復号不能になる。**  
 > ローテーション手順: `docs/operations/meta_encryption_key_rotation.md`

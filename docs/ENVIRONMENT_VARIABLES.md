@@ -13,7 +13,7 @@
 
 ## 0. 全体方針
 
-- **値の保管**: すべて Bitwarden（しんごさんのアカウント）に保管。リポジトリには平文で含めない
+- **値の保管**: すべて GitHub Secrets（本番）またはローカル `.env`（開発）に保管。リポジトリには平文で含めない
 - **本番投入**: VPS の `/home/ubuntu/jarvis/.env` に直接書き込み。git にはコミットしない（`.gitignore` 済）
 - **テンプレート**: `.env.example` にキー名と用途コメントのみを記載（値は空 or プレースホルダ）
 - **CI**: GitHub Actions では Secret に登録した値を `.env` に展開してから docker compose を起動
@@ -47,7 +47,7 @@
 **生成**: Firebase Console から取得。Service Account JSON は GCP IAM で発行。
 
 **運用注意**:
-- Service Account JSON は **Bitwarden に保管 + VPS の `/app/firebase-credentials.json` に配置**。git に含めない。
+- Service Account JSON は **GitHub Secrets に保管 + VPS の `/app/firebase-credentials.json` に配置**。git に含めない。
 - `FIREBASE_AUTH_DOMAIN` は ADR-032 で `auth.salesanchor.jp`（カスタム認証ドメイン）に切替済。旧値 `sales-ops-with-claude.firebaseapp.com` は Firebase Authorized domains に並行残置されているため、トラブル時は env を旧値に戻すだけで切り戻し可能（再ビルド要）。
 - カスタム認証ドメインの初期セットアップ手順は `docs/FIREBASE_CUSTOM_AUTH_DOMAIN_SETUP.md` 参照。
 
@@ -139,7 +139,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 ```
 
 **運用注意**:
-- Bitwarden に必ず保管。**鍵を紛失すると DB に保存された全 Page Access Token が永遠に復号できなくなる**（再 OAuth が必要）
+- GitHub Secrets に必ず保管。**鍵を紛失すると DB に保存された全 Page Access Token が永遠に復号できなくなる**（再 OAuth が必要）。別の安全な場所にもバックアップを保持すること
 - 鍵をローテートする際は、新旧両方の鍵で復号 → 新鍵で再暗号化する移行スクリプトが必要（Phase 1-E 候補）
 - コードや Slack に貼り付けない。VPS の `.env` のみ
 - backend 起動時に未設定だと warning ログ。`ENFORCE_METADATA_FERNET_KEY=1` を併設すると fail-fast で起動拒否
@@ -154,7 +154,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 **取得**: Meta Developer Portal の App Settings → Basic → App ID。
 
-**運用注意**: 公開しても問題ないが、運用上 Bitwarden に保管推奨。Test Mode と本番モードで App は同一（モード切替のみ）。
+**運用注意**: 公開しても問題ないが、運用上 GitHub Secrets に保管推奨。Test Mode と本番モードで App は同一（モード切替のみ）。
 
 ### 8-3. `META_APP_SECRET`（必須、既存）
 
@@ -166,7 +166,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 **取得**: Meta Developer Portal の App Settings → Basic → App Secret。
 
 **運用注意**:
-- **絶対に公開しない**。Bitwarden 必須
+- **絶対に公開しない**。GitHub Secrets で管理必須
 - 漏洩した場合は即座に Reset Secret + 全 Page Access Token を再 OAuth 取得
 - Sprint 1 までは webhook.py の HMAC 検証用途のみ。Sprint 2 で OAuth で追加利用
 
@@ -232,7 +232,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 **運用注意**:
 - 例: tenant_004 = HIGH LIFE JPN なら `DISCORD_BOT_TOKEN_4`
 - 未設定時は idle 待機（接続せず）
-- Bot Token は Discord 開発者ポータルで取得、Bitwarden 保管
+- Bot Token は Discord 開発者ポータルで取得、GitHub Secrets に保管
 
 ---
 
