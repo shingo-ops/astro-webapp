@@ -38,3 +38,6 @@ docker exec -e TENANT_CODE=highlife-jpn ...
 新規 migration を追加した場合:
 - 既存全テナント + 新規作成テナント両方への適用経路を PR body に明記する
 - PostgreSQL実機で `information_schema.columns` により全テナントschema整合を確認（SQLite不可）
+
+## 品質チェック
+ローカル: `make lint`（ruff/bandit/mypy）/ `make check`（lint + pytest）初回: `pip install -r requirements-dev.txt`

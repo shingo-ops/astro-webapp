@@ -16,6 +16,8 @@ on:
       - 'docker-compose.yml'
       - 'docker-compose.test.yml'
       - '.github/workflows/test.yml'
+      - 'backend/pyproject.toml'
+      - 'backend/Makefile'
   push:
     branches:
       - develop
@@ -61,13 +63,33 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
 
       - name: Install dependencies
         working-directory: backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # ── 静的解析（Phase 1: --exit-zero で警告表示のみ、ブロックなし）──────────
+      # 設定: backend/pyproject.toml（ruff/mypy/bandit/pytest の SSoT）
+      # ローカル確認: cd backend && make lint-ci（--exit-zero）/ make lint（strict）
+      # Phase 2 で ruff から順に --exit-zero を外してブロック化予定。
+      - name: Run ruff linting
+        working-directory: backend
+        run: ruff check app/ --exit-zero
+
+      - name: Run bandit security scan
+        working-directory: backend
+        run: bandit -r app/ -lll --exit-zero
+
+      - name: Run mypy type checking
+        working-directory: backend
+        run: mypy app/ --no-error-summary --exit-zero
+      # ──────────────────────────────────────────────────────────────────────
 
       - name: Generate Fernet key for tests
         id: fernet
@@ -97,7 +119,7 @@ jobs:
           PGPASSWORD: testpass
         run: |
           psql -h localhost -U jarvis -d jarvis_test_db -v ON_ERROR_STOP=1 <<'SQL'
-          CREATE ROLE jarvis_app WITH LOGIN PASSWORD 'apppass' NOSUPERUSER CREATEDB;
+          CREATE ROLE IF NOT EXISTS jarvis_app WITH LOGIN PASSWORD 'apppass' NOSUPERUSER CREATEDB;
           GRANT ALL PRIVILEGES ON DATABASE jarvis_test_db TO jarvis_app;
           GRANT ALL ON SCHEMA public TO jarvis_app;
           ALTER DATABASE jarvis_test_db OWNER TO jarvis_app;

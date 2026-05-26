@@ -20,3 +20,18 @@ fi
 
 echo "✅ ADR-067チェック完了"
 node "$(git rev-parse --show-toplevel)/frontend/scripts/check-claude-size.js"
+
+# ── バックエンド Python 静的解析（ruff）────────────────────────────────────
+# backend/app/ 配下の .py ファイルが変更された場合のみ実行。
+# ruff 未インストールの場合は警告のみ（フロントエンドの lint-staged と同じ思想）。
+BACKEND_PY_CHANGES=$(git diff --cached --name-only | grep -E "^backend/app/.*\.py$" || true)
+if [ -n "$BACKEND_PY_CHANGES" ]; then
+  echo "🐍 backend Python 変更検出 → ruff チェック..."
+  cd "$(git rev-parse --show-toplevel)/backend"
+  if command -v ruff >/dev/null 2>&1; then
+    ruff check app/ --exit-zero
+  else
+    echo "⚠️  ruff 未インストール: pip install -r requirements-dev.txt を実行してください"
+  fi
+  cd "$(git rev-parse --show-toplevel)/frontend"
+fi
