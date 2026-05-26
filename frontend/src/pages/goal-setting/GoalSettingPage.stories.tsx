@@ -23,7 +23,7 @@ type Story = StoryObj
 export const SavedInputState: Story = {
   name: '保存完了状態（--success-bg-subtle）',
   render: () => (
-    <div style={{ width: 320 }}>
+    <div style={{ width: 'var(--ds-preview-width)' }}>
       <div className="gs-input-wrap">
         <input
           className="gs-input gs-input-saved"
