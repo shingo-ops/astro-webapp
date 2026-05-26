@@ -1,0 +1,58 @@
+title = "salesanchor gitleaks config"
+
+[extend]
+# gitleaks デフォルトルールセットを継承
+useDefault = true
+
+# =============================================================
+# allowlist: 誤検知として許可するパターン
+# =============================================================
+
+[[rules.allowlist]]
+description = "env.example はプレースホルダ値のみ。実値なし"
+paths = [".env.example"]
+
+[[rules.allowlist]]
+description = "ドキュメント内の公開済み Meta App ID（秘密情報でない）"
+regexes = ["1250869697105619"]
+
+[[rules.allowlist]]
+description = "Google OAuth クライアントID（公開情報）"
+regexes = ["730863365967-icreuf1q3l7uenlf8iifh3hi0cumqa7e\\.apps\\.googleusercontent\\.com"]
+
+[[rules.allowlist]]
+description = "テスト・サンプル用トークンのプレースホルダ"
+regexes = [
+  "your-secret-verify-token-here",
+  "your-.*-here",
+  "example\\.com",
+  "test@example\\.com",
+]
+
+[[rules.allowlist]]
+description = "Fernet鍵生成コマンドのサンプル（実値ではない）"
+regexes = ["Fernet\\.generate_key\\(\\)"]
+
+[[rules.allowlist]]
+description = "スクリプト内のサンプルARN・リソースID"
+regexes = ["AWS_ACCOUNT_ID"]
+
+# =============================================================
+# 追加ルール: このプロジェクト固有のパターン
+# =============================================================
+
+[[rules]]
+id = "salesanchor-fernet-key"
+description = "METADATA_FERNET_KEY の平文埋め込み検出"
+regex = '''METADATA_FERNET_KEY\s*=\s*[A-Za-z0-9+/=_-]{44,}'''
+tags = ["secret", "fernet"]
+[rules.allowlist]
+paths = [".env.example", "docs/"]
+
+[[rules]]
+id = "salesanchor-meta-app-secret"
+description = "META_APP_SECRET の平文埋め込み検出"
+regex = '''META_APP_SECRET\s*=\s*[a-f0-9]{32,}'''
+tags = ["secret", "meta"]
+[rules.allowlist]
+paths = [".env.example"]
