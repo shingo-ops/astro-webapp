@@ -384,9 +384,6 @@ async def create_company(
             detail="会社の登録に失敗しました（company_code 重複または制約違反の可能性）",
         )
     await invalidate_dashboard_cache(tenant_id)
-    # commit 後はプールから別コネクションが払い出されて search_path が失われる可能性があるため
-    # _compose_response 内部の副テーブル SELECT 前に tenant コンテキストを再設定する
-    await reset_tenant_context(db, tenant_id)
     return await _compose_response(db, dict(row))
 
 
@@ -477,8 +474,6 @@ async def update_company(
     await db.commit()
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
-    # commit 後の副テーブル SELECT 前に tenant コンテキスト再設定
-    await reset_tenant_context(db, tenant_id)
 
     fetched = await db.execute(
         text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id"),
@@ -923,8 +918,6 @@ async def merge_companies(
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
-    # 12) commit 後の SELECT 前に tenant コンテキストを再設定
-    await reset_tenant_context(db, tenant_id)
     fetched = await db.execute(
         text(f"SELECT {_COMPANY_COLUMNS} FROM companies WHERE id = :id"),
         {"id": master_id},

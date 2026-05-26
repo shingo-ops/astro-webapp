@@ -135,8 +135,6 @@ async def create_team(
     )
     await db.commit()
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
-    # commit後のクエリはsearch_pathが失われている可能性があるため再設定
-    await reset_tenant_context(db, tenant_id)
     team = await _load_team(db, new_id)
     return TeamResponse(**team)
 
@@ -290,8 +288,6 @@ async def add_team_member(
     )
     await db.commit()
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
-    # commit後のクエリはsearch_pathが失われている可能性があるため再設定
-    await reset_tenant_context(db, tenant_id)
 
     # 追加したレコードを取得
     fetched = await db.execute(
