@@ -169,8 +169,9 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
   );
 }
 
-// 受信箱ヘッダーアクションアイコン（未読にする / 対象外 / 削除）
+// 受信箱ヘッダーアクションアイコン（既読 / 未読にする / 対象外 / 削除）
 export const INBOX_ACTION_ICONS = {
+  markRead:   Envelope,
   markUnread: EnvelopeOpen,
   exclude:    Archive,
   delete:     Trash,

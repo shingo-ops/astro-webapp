@@ -153,32 +153,80 @@
   white-space: nowrap;
 }
 .inbox-manage-btn:hover { background: var(--bg-subtle); }
-.inbox-manage-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: var(--min-width-dropdown);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-dropdown);
-  z-index: var(--z-topbar);
-  overflow: hidden;
+.inbox-manage-btn.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
 }
-.inbox-manage-item {
-  display: block;
-  width: 100%;
-  padding: var(--space-10px) var(--space-14px);
-  border: none;
-  background: transparent;
-  text-align: left;
+.inbox-manage-btn.active:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+/* 一括アクションバー */
+.inbox-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-10px);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-subtle);
+  flex-shrink: 0;
+}
+.inbox-bulk-check-all {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+.inbox-bulk-count {
   font-size: var(--font-sm);
+  color: var(--text-secondary);
+  flex: 1;
+}
+.inbox-bulk-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
   color: var(--text-primary);
   cursor: pointer;
-  font-family: inherit;
   transition: background var(--transition-micro);
 }
-.inbox-manage-item:hover { background: var(--bg-subtle); }
+.inbox-bulk-action:hover:not(:disabled) { background: var(--bg-hover); }
+.inbox-bulk-action:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
+.inbox-bulk-delete { color: var(--danger); border-color: var(--danger); }
+.inbox-bulk-delete:hover:not(:disabled) { background: var(--danger-bg); }
+
+/* conv-item 内チェックボックス（選択モード） */
+.conv-select-check {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-2xs);
+  background: var(--bg-surface);
+  position: relative;
+  transition: background var(--transition-micro), border-color var(--transition-micro);
+}
+.conv-select-check.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.conv-select-check.checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 8px;
+  border: 2px solid var(--on-accent);
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+.conv-item.bulk-selected { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 
 /* サブフィルターピル（Meta実測: 未読/フォローアップ） */
 .inbox-sub-filter-bar {
@@ -534,19 +582,6 @@
   cursor: not-allowed;
 }
 
-/* 空状態 */
-.inbox-empty-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  font-size: var(--font-base);
-  gap: var(--space-3);
-}
-.inbox-empty-icon svg { width: var(--icon-xl); height: var(--icon-xl); }
-
 /* ---- 右パネル ---- */
 .inbox-right-panel {
   width: var(--drawer-width);
@@ -738,15 +773,6 @@
 }
 
 /* エラー・ローディング */
-.inbox-error-banner {
-  padding: var(--space-2) var(--space-3);
-  background: var(--danger-bg);
-  color: var(--danger-text);
-  border: 1px solid var(--danger);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-sm);
-  margin: 8px 12px;
-}
 .inbox-send-error {
   padding: 6px 10px;
   border-radius: var(--radius-lg);
@@ -961,11 +987,6 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 .inbox-settings-btn:hover { background: var(--color-hover-overlay); }
 
 /* ====== 受信箱設定モーダル ====== */
-.inbox-settings-overlay {
-  position: fixed; inset: 0; z-index: var(--z-modal); /* fixed-ok: settings-modal-overlay */
-  background: rgba(0,0,0,var(--opacity-overlay));
-  display: flex; align-items: center; justify-content: center;
-}
 .inbox-settings-modal {
   background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: var(--space-6);
@@ -1001,30 +1022,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 }
 .inbox-settings-close-btn:hover { opacity: var(--opacity-dim); }
 
-/* ====== トグルスイッチ ====== */
-.inbox-toggle { position: relative; display: inline-flex; width: 40px; height: 22px; cursor: pointer; }
-.inbox-toggle input { opacity: 0; width: 0; height: 0; }
-.inbox-toggle-slider {
-  position: absolute; inset: 0;
-  background: var(--border); border-radius: 11px;
-  transition: background var(--transition-micro);
-}
-.inbox-toggle-slider::before {
-  content: ""; position: absolute;
-  height: 16px; width: 16px; left: 3px; top: 3px;
-  background: var(--bg-surface); border-radius: 50%;
-  transition: transform var(--transition-micro);
-}
-.inbox-toggle input:checked + .inbox-toggle-slider { background: var(--accent); }
-.inbox-toggle input:checked + .inbox-toggle-slider::before { transform: translateX(18px); }
-
 /* ====== プロフィールモーダル ====== */
-.inbox-profile-overlay {
-  position: fixed; inset: 0; z-index: var(--z-modal); /* fixed-ok: profile-modal-overlay */
-  background: rgba(0,0,0,var(--opacity-overlay));
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--space-4);
-}
 .inbox-profile-modal {
   background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: var(--space-6);

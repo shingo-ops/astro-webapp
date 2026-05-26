@@ -26,10 +26,15 @@ jobs:
           fetch-depth: 0
 
       - name: workflow-lint.yml 自身の改ざん検知
-        if: github.event_name == 'pull_request'
         run: |
-          # --diff-filter=M: 初回追加（A）は許可。変更（M）のみブロック。
-          CHANGED=$(git diff --diff-filter=M origin/${{ github.base_ref }}...HEAD -- .github/workflows/workflow-lint.yml)
+          # 対策B: --diff-filter=M を削除 → 追加(A)・削除(D)・変更(M) すべてを検知
+          # 対策C: push/PR 両方で実行。push 時は HEAD~1 と比較
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="HEAD~1"
+          fi
+          CHANGED=$(git diff --name-only ${BASE}...HEAD -- .github/workflows/workflow-lint.yml)
           if [ -n "$CHANGED" ]; then
             echo "::error::workflow-lint.yml の変更は PO 確認必須操作です（CLAUDE.md §不可逆操作 参照）"
             exit 1
@@ -40,6 +45,7 @@ jobs:
           python3 - << 'EOF'
           import yaml, sys
 
+          # 対策E: deploy.yml / claude-pipeline.yml を追加
           checks = [
               {
                   "file": ".github/workflows/migration-guard.yml",
@@ -56,6 +62,16 @@ jobs:
                   "rule": "has_backend_in_paths",
                   "reason": "PR #801 CI最適化: backend/**がpathsに必須。削除するとバックエンドCIが常時スキップされる",
               },
+              {
+                  "file": ".github/workflows/deploy.yml",
+                  "rule": "no_pull_request",
+                  "reason": "本番デプロイ: pull_request トリガー追加で意図しない自動デプロイが発生する",
+              },
+              {
+                  "file": ".github/workflows/claude-pipeline.yml",
+                  "rule": "no_paths",
+                  "reason": "ADR自動起動CI: paths追加でADR実装ループが停止する",
+              },
           ]
 
           errors = []
@@ -66,7 +82,7 @@ jobs:
               # PyYAML は `on:` を True (bool) として解析するため両方を試みる
               on_section = data.get(True, data.get("on", {}))
               pr_section = on_section.get("pull_request", {})
-              paths = pr_section.get("paths", None)
+              paths = pr_section.get("paths", None) if isinstance(pr_section, dict) else None
 
               if check["rule"] == "no_paths" and paths is not None:
                   errors.append(
@@ -83,6 +99,13 @@ jobs:
                       errors.append(
                           f"❌ {check['file']}: paths に backend/** が含まれていません\n"
                           f"   現在の paths: {paths}\n"
+                          f"   理由: {check['reason']}"
+                      )
+              elif check["rule"] == "no_pull_request":
+                  pr_trigger = on_section.get("pull_request", None)
+                  if pr_trigger is not None:
+                      errors.append(
+                          f"❌ {check['file']}: pull_request トリガーが追加されています\n"
                           f"   理由: {check['reason']}"
                       )
 

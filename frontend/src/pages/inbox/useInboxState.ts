@@ -120,6 +120,18 @@ export interface UseInboxStateReturn {
   handleExclude: () => Promise<void>;
   handleDeleteLead: () => Promise<void>;
 
+  // 一括選択
+  selectMode: boolean;
+  selectedLeadIds: Set<number>;
+  isAllSelected: boolean;
+  toggleSelectMode: () => void;
+  toggleSelectConv: (leadId: number) => void;
+  toggleSelectAll: () => void;
+  handleBulkMarkRead: () => Promise<void>;
+  handleBulkMarkUnread: () => void;
+  handleBulkExclude: () => Promise<void>;
+  handleBulkDelete: () => Promise<void>;
+
   // スクロール ref
   messageListRef: RefObject<HTMLDivElement>;
 }
@@ -186,6 +198,10 @@ export function useInboxState(): UseInboxStateReturn {
   // 管理ドロップダウン
   const [manageOpen, setManageOpen] = useState(false);
   const manageRef = useRef<HTMLDivElement>(null);
+
+  // 一括選択
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<number>>(new Set());
 
   // スクロール用 ref
   const messageListRef = useRef<HTMLDivElement>(null);
@@ -564,6 +580,9 @@ export function useInboxState(): UseInboxStateReturn {
 
   const selectedPlatform = inferPlatform(messagesData?.lead, selectedConversation);
 
+  const isAllSelected = filteredConversations.length > 0 &&
+    filteredConversations.every((c) => selectedLeadIds.has(c.lead_id));
+
   // ---------------------------------------------------------------------------
   // 管理ドロップダウン: click-outside で閉じる
   // ---------------------------------------------------------------------------
@@ -631,6 +650,59 @@ export function useInboxState(): UseInboxStateReturn {
       setSelectedLeadId(null);
     } catch { /* noop */ }
   }, [selectedLeadId, t]);
+
+  // ---------------------------------------------------------------------------
+  // 一括選択ハンドラ
+  // ---------------------------------------------------------------------------
+
+  const toggleSelectMode = useCallback(() => {
+    setSelectMode((v) => !v);
+    setSelectedLeadIds(new Set());
+    setManageOpen(false);
+  }, []);
+
+  const toggleSelectConv = useCallback((leadId: number) => {
+    setSelectedLeadIds((prev) => {
+      const next = new Set(prev);
+      next.has(leadId) ? next.delete(leadId) : next.add(leadId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedLeadIds(
+      isAllSelected ? new Set() : new Set(filteredConversations.map((c) => c.lead_id))
+    );
+  }, [isAllSelected, filteredConversations]);
+
+  const handleBulkMarkRead = useCallback(async () => {
+    await Promise.all([...selectedLeadIds].map((id) => markRead(id)));
+    setSelectedLeadIds(new Set());
+  }, [selectedLeadIds, markRead]);
+
+  const handleBulkMarkUnread = useCallback(() => {
+    setConversations((prev) =>
+      prev.map((c) => selectedLeadIds.has(c.lead_id) ? { ...c, unread_count: 1 } : c)
+    );
+    setSelectedLeadIds(new Set());
+  }, [selectedLeadIds]);
+
+  const handleBulkExclude = useCallback(async () => {
+    const targets = [...selectedLeadIds];
+    await Promise.all(targets.map((id) => api.patch<void>(`/leads/${id}`, { status: "対象外" })));
+    setConversations((prev) => prev.filter((c) => !selectedLeadIds.has(c.lead_id)));
+    if (selectedLeadId !== null && selectedLeadIds.has(selectedLeadId)) setSelectedLeadId(null);
+    setSelectedLeadIds(new Set());
+  }, [selectedLeadIds, selectedLeadId]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (!window.confirm(t("inbox.confirmBulkDelete"))) return;
+    const targets = [...selectedLeadIds];
+    await Promise.all(targets.map((id) => api.delete(`/leads/${id}`)));
+    setConversations((prev) => prev.filter((c) => !selectedLeadIds.has(c.lead_id)));
+    if (selectedLeadId !== null && selectedLeadIds.has(selectedLeadId)) setSelectedLeadId(null);
+    setSelectedLeadIds(new Set());
+  }, [selectedLeadIds, selectedLeadId, t]);
 
   // ---------------------------------------------------------------------------
   // 返却
@@ -716,6 +788,18 @@ export function useInboxState(): UseInboxStateReturn {
     handleMarkUnread,
     handleExclude,
     handleDeleteLead,
+
+    // 一括選択
+    selectMode,
+    selectedLeadIds,
+    isAllSelected,
+    toggleSelectMode,
+    toggleSelectConv,
+    toggleSelectAll,
+    handleBulkMarkRead,
+    handleBulkMarkUnread,
+    handleBulkExclude,
+    handleBulkDelete,
 
     // スクロール ref
     messageListRef,

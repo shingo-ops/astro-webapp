@@ -225,10 +225,10 @@ async def get_goal_summary(
 
     if tab == "team":
         if team_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="チームタブでは team_id が必要です",
-            )
+            # hotfix: team タブで team_id 未指定の場合は空 summary を返す。
+            # 422 だと dashboard 全体が error 表示で潰れるため graceful fallback。
+            # 将来 team_id 選択 UI 実装時に required に戻す検討。
+            return GoalSummaryResponse(monthly=[], weekly=[])
         owner_filter = "team_id = :owner_id AND user_id IS NULL"
         owner_id = team_id
     else:

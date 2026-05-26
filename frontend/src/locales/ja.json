@@ -521,6 +521,9 @@
     "exclude": "対象外にする",
     "deleteLead": "削除",
     "confirmDelete": "このリードを削除しますか？この操作は取り消せません。",
+    "selectAll": "すべて選択",
+    "selectedCount": "{{count}}件選択中",
+    "confirmBulkDelete": "選択したリードを削除しますか？この操作は取り消せません。",
     "settings": {
       "title": "受信箱の設定",
       "display": "表示カスタマイズ",
