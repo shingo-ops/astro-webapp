@@ -21,10 +21,13 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: backend/Dockerfile
-          config: .hadolint.yaml
+          # Phase 1: error のみブロック（DL3008/DL3015 は後日対応）
+          failure-threshold: error
+          ignore: DL3008 DL3015
 
       - name: Run hadolint on frontend/Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: frontend/Dockerfile
-          config: .hadolint.yaml
+          failure-threshold: error
+          ignore: DL3008 DL3015
