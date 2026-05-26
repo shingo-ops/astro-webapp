@@ -9,6 +9,7 @@
 #   - ~/.claude/agents/generator.md の Step Final（gh pr create 前に手動実行）
 #
 # 参考: docs/PARALLEL_TERMINAL_GUIDE.md
+#       docs/adr/ADR-074-worktree-agent-enforcement.md
 
 set -e
 
@@ -17,26 +18,47 @@ if [ -n "${GITHUB_ACTIONS}" ]; then
   exit 0
 fi
 
+# ── 中央設定ファイルを読み込む（SSoT: .claude/agent-config.sh）──────────────
+# --git-common-dir でメインリポジトリルートを取得（worktree でも main repo でも動作する）
+GIT_COMMON_DIR="$(git rev-parse --git-common-dir 2>/dev/null)"
+if [[ "${GIT_COMMON_DIR}" = /* ]]; then
+  MAIN_REPO_ROOT="$(dirname "${GIT_COMMON_DIR}")"
+else
+  MAIN_REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+fi
+CONFIG_FILE="${MAIN_REPO_ROOT}/.claude/agent-config.sh"
+if [ -f "${CONFIG_FILE}" ]; then
+  # shellcheck source=.claude/agent-config.sh
+  source "${CONFIG_FILE}"
+fi
+# デフォルト値（config がない環境へのフォールバック）
+AGENT_WORKTREE_BASE="${AGENT_WORKTREE_BASE:-${HOME}/worktrees}"
+AGENT_BASE_BRANCH="${AGENT_BASE_BRANCH:-develop}"
+AGENT_ACTIVE_WORK_REL="${AGENT_ACTIVE_WORK_REL:-.claude-pipeline/active-work.md}"
+AGENT_BRANCH_PREFIX="${AGENT_BRANCH_PREFIX:-feature/morimoto/}"
+
 ACTUAL_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+ACTIVE_WORK_FILE="${MAIN_REPO_ROOT}/${AGENT_ACTIVE_WORK_REL}"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # チェック1: worktree 外での push を禁止
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 各エージェントは ~/worktrees/salesanchor/<branch>/ で作業する（PARALLEL_TERMINAL_GUIDE.md）
+# 各エージェントは AGENT_WORKTREE_BASE/<repo>/<branch>/ で作業する規約
 # メインリポジトリから push すると他エージェントの変更が混入する可能性がある
 
 case "${ACTUAL_ROOT}" in
-  "${HOME}"/worktrees/*) ;;  # OK: 個室（worktree）内で作業している
+  "${AGENT_WORKTREE_BASE}/"*) ;;  # OK: 個室（worktree）内で作業している
   *)
     echo ""
     echo "🚫 push を中断しました: worktree 外での作業は禁止されています。"
     echo ""
     echo "   現在のディレクトリ: ${ACTUAL_ROOT}"
-    echo "   許可される場所   : ~/worktrees/salesanchor/<branch>/"
+    echo "   許可される場所   : ${AGENT_WORKTREE_BASE}/salesanchor/<branch>/"
     echo ""
     echo "   正しい手順:"
-    echo "   1. bash scripts/new-worktree.sh feature/morimoto/<トピック名>"
-    echo "   2. cd ~/worktrees/salesanchor/feature-morimoto-<トピック名>"
+    echo "   1. bash scripts/new-worktree.sh ${AGENT_BRANCH_PREFIX}<トピック名>"
+    echo "   2. cd ${AGENT_WORKTREE_BASE}/salesanchor/${AGENT_BRANCH_PREFIX//\//-}<トピック名>"
     echo "   3. そこから作業・push してください"
     echo ""
     exit 1
@@ -46,13 +68,7 @@ esac
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # チェック2: active-work.md にブランチが登録されているか（完全一致）
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# new-worktree.sh が作成時に自動登録する（SSoT: .claude-pipeline/active-work.md）
-
-# --git-common-dir でメインリポジトリを確実に取得（worktree list は順序不定）
-GIT_COMMON_DIR="$(git rev-parse --git-common-dir 2>/dev/null)"
-MAIN_REPO_ROOT="$(dirname "${GIT_COMMON_DIR}")"
-ACTIVE_WORK_FILE="${MAIN_REPO_ROOT}/.claude-pipeline/active-work.md"
-CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+# new-worktree.sh が作成時に自動登録する（SSoT: AGENT_ACTIVE_WORK_REL）
 
 if [ ! -f "${ACTIVE_WORK_FILE}" ]; then
   echo ""
@@ -78,22 +94,21 @@ fi
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # チェック3: マージベース検証（他エージェントの変更混入チェック）
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# develop と現在ブランチの分岐点が origin/develop の最新コミットと一致するか確認
-# 不一致 = 他エージェントの変更が develop にマージされた後に rebase していない
-#         → そのまま push すると develop の最新が含まれていない状態になる
+# AGENT_BASE_BRANCH と現在ブランチの分岐点が最新であるか確認
+# 不一致 = 他エージェントの変更がベースにマージされた後に rebase していない
 
-if git rev-parse --verify origin/develop >/dev/null 2>&1; then
-  MERGE_BASE="$(git merge-base HEAD origin/develop 2>/dev/null)"
-  DEVELOP_HEAD="$(git rev-parse origin/develop 2>/dev/null)"
+if git rev-parse --verify "origin/${AGENT_BASE_BRANCH}" >/dev/null 2>&1; then
+  MERGE_BASE="$(git merge-base HEAD "origin/${AGENT_BASE_BRANCH}" 2>/dev/null)"
+  BASE_HEAD="$(git rev-parse "origin/${AGENT_BASE_BRANCH}" 2>/dev/null)"
 
-  if [ -n "${MERGE_BASE}" ] && [ -n "${DEVELOP_HEAD}" ]; then
-    if [ "${MERGE_BASE}" != "${DEVELOP_HEAD}" ]; then
+  if [ -n "${MERGE_BASE}" ] && [ -n "${BASE_HEAD}" ]; then
+    if [ "${MERGE_BASE}" != "${BASE_HEAD}" ]; then
       echo ""
-      echo "⚠️  push を中断しました: develop と乖離があります。"
-      echo "   他エージェントの変更が develop にマージされています。"
+      echo "⚠️  push を中断しました: ${AGENT_BASE_BRANCH} と乖離があります。"
+      echo "   他エージェントの変更が ${AGENT_BASE_BRANCH} にマージされています。"
       echo ""
       echo "   正しい手順:"
-      echo "   git fetch origin && git rebase origin/develop"
+      echo "   git fetch origin && git rebase origin/${AGENT_BASE_BRANCH}"
       echo ""
       exit 1
     fi

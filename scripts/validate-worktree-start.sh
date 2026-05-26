@@ -14,6 +14,7 @@
 #   - validate-worktree-start.sh = 始まり（作業開始前）のチェック
 #
 # 参考: docs/PARALLEL_TERMINAL_GUIDE.md
+#       docs/adr/ADR-074-worktree-agent-enforcement.md
 
 set -e
 
@@ -21,6 +22,22 @@ set -e
 if [ -n "${GITHUB_ACTIONS}" ]; then
   exit 0
 fi
+
+# ── 中央設定ファイルを読み込む（SSoT: .claude/agent-config.sh）──────────────
+GIT_COMMON_DIR="$(git rev-parse --git-common-dir 2>/dev/null)"
+if [[ "${GIT_COMMON_DIR}" = /* ]]; then
+  MAIN_REPO_ROOT="$(dirname "${GIT_COMMON_DIR}")"
+else
+  MAIN_REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+fi
+CONFIG_FILE="${MAIN_REPO_ROOT}/.claude/agent-config.sh"
+if [ -f "${CONFIG_FILE}" ]; then
+  # shellcheck source=.claude/agent-config.sh
+  source "${CONFIG_FILE}"
+fi
+# デフォルト値（config がない環境へのフォールバック）
+AGENT_WORKTREE_BASE="${AGENT_WORKTREE_BASE:-${HOME}/worktrees}"
+AGENT_BRANCH_PREFIX="${AGENT_BRANCH_PREFIX:-feature/morimoto/}"
 
 ACTUAL_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
@@ -33,13 +50,13 @@ case "${CURRENT_BRANCH}" in
 esac
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# チェック: ~/worktrees/ 配下かどうか
+# チェック: AGENT_WORKTREE_BASE 配下かどうか
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # メインリポジトリで feature ブランチ作業中 =
 # 他エージェントの git checkout でブランチが変わるリスクがある状態
 
 case "${ACTUAL_ROOT}" in
-  "${HOME}"/worktrees/*) ;;  # OK: 個室（worktree）内で作業している
+  "${AGENT_WORKTREE_BASE}/"*) ;;  # OK: 個室（worktree）内で作業している
   *)
     echo ""
     echo "🚫 作業開始を中断しました: worktree（個室）の外で作業しようとしています。"
@@ -53,7 +70,7 @@ case "${ACTUAL_ROOT}" in
     echo "   正しい手順:"
     echo "   1. bash scripts/new-worktree.sh ${CURRENT_BRANCH} --claude"
     echo "   2. 作成された個室ディレクトリで作業してください"
-    echo "      ~/worktrees/salesanchor/$(echo "${CURRENT_BRANCH}" | tr '/' '-')/"
+    echo "      ${AGENT_WORKTREE_BASE}/salesanchor/$(echo "${CURRENT_BRANCH}" | tr '/' '-')/"
     echo ""
     exit 1
     ;;
