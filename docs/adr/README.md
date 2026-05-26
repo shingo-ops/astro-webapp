@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-05-26 / ADR 総数: 60 件
+最終更新: 2026-05-26 / ADR 総数: 63 件
 
 ## 一覧
 
@@ -32,7 +32,7 @@
 | [ADR-029](./ADR-029-self-hosted-runner-fleet.md) | ADR-029: Self-hosted runner fleet — 2 台 Mac 体制と labels 戦略の正式化 | Proposed | — |
 | [ADR-032](./ADR-032.md) | ADR-032: Firebase Authentication カスタム認証ドメイン | Proposed | — |
 | [ADR-033](./ADR-033-app-theme-switching.md) | ADR-033: アプリ内テーマ切り替え（ライト / ダーク） | Proposed | — |
-| [ADR-034](./ADR-034-tenant-migration-automation.md) | ADR-034: 新規テナント migration 自動化 | Proposed | — |
+| [ADR-034](./ADR-034-tenant-migration-automation.md) | ADR-034: 新規テナント migration 自動化 + 既存テナント整合化 | Proposed | — |
 | [ADR-035](./ADR-035-external-state-verification.md) | ADR-035: External State Verification — 6 system × 5-layer defense | Proposed | — |
 | [ADR-036](./ADR-036-tenant-schema-integrity.md) | ADR-036: テナントスキーマ整合性保証 | — | — |
 | [ADR-037](./ADR-037-meta-page-connection-investigation.md) | ADR-037: Meta（Facebook/Instagram）ページ接続経路の現状調査 | Draft - 調査フェーズ | — |
@@ -68,6 +68,9 @@
 | [ADR-070](./ADR-070-grafana-monitoring-integration.md) | ADR-070: Grafana ドメイン移行 + Uptime Kuma→Prometheus 統合 | — | — |
 | [ADR-071](./ADR-071-orders-nav-placement.md) | ADR-071: 受注管理ナビゲーション導線の追加 | — | — |
 | [ADR-072](./ADR-072-tenant-schema-prefix-enforcement.md) | ADR-072: tenant schema 修飾の戦略統一（schema prefix と reset_tenant_context のハイブリッド） | Proposed | — |
+| [ADR-073](./ADR-073-design-system-kgi-rubric.md) | ADR-073: デザインシステム KGI 100% ルーブリック | — | — |
+| [ADR-074](./ADR-074-worktree-agent-enforcement.md) | ADR-074: Worktree強制によるエージェントPR混入防止 | — | — |
+| [ADR-075](./ADR-075-github-secrets-only-policy.md) | ADR-075: GitHub Secrets 一元管理ポリシー | — | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例

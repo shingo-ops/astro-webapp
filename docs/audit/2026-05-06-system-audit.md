@@ -141,7 +141,7 @@
 | `METADATA_FERNET_KEY` | Page Access Token 暗号化鍵 |
 
 - **`.env.example`**: **あり** — `.env.example`（全キー名 + プレースホルダ値）
-- **VPS `.env` バックアップ**: **あり** — Bitwarden（しんごさんアカウント）に保管（`docs/ENVIRONMENT_VARIABLES.md`）
+- **VPS `.env` バックアップ**: **あり** — GitHub Secrets に保管（`docs/ENVIRONMENT_VARIABLES.md`）
 - **APIキーローテーション手順**: **あり** — `docs/B-11_credential_management_policy.md`
 
 ---
@@ -184,7 +184,7 @@
 | `ZERO_TRUST_POLICY.md` | Zero Trust ポリシー |
 | `USE_CASE_DESCRIPTIONS_v1.1_DRAFT.md` | Meta App Review 申請文書 |
 | `D-06_firebase_credentials_setup.md` | Firebase 認証情報セットアップ |
-| `D-17_bitwarden_setup_guide.md` | Bitwarden セットアップガイド |
+| ~~`D-17_password_manager_setup_guide.md`~~ | 削除済（未使用ツールのガイドのため） |
 | `フェーズ1_セキュリティ基盤_実装ガイド.docx` | セキュリティ実装ガイド（Word） |
 | `B-2_discord_setup_guide_for_shingo.docx` | Discord セットアップガイド（Word） |
 
@@ -223,7 +223,7 @@
 | DB | 復元テスト手順書 | **あり** |
 | シークレット | GitHub Secrets | **あり**（10件） |
 | シークレット | .env.example | **あり** |
-| シークレット | Bitwarden 保管 | **あり** |
+| シークレット | GitHub Secrets 保管 | **あり** |
 | シークレット | ローテーション手順 | **あり** |
 | ドキュメント | README.md | **あり**（2026-04-30） |
 | ドキュメント | docs/ 運用文書 | **あり**（44ファイル） |

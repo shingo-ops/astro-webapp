@@ -162,6 +162,7 @@ export default function CompanyDetailPage() {
         title={t("companies.deleteAddressTitle")}
         message={
           addrDeleteTarget
+            // eslint-disable-next-line local/no-japanese-literal -- TODO: 文章全体を1翻訳キーに統合（ADR-027 既知負債）
             ? `${typeLabel(t, addrDeleteTarget.address_type)}${t("companies.address")}「${addrDeleteTarget.branch_name || addrDeleteTarget.name || "(無名)"}」を${t("common.delete")}しますか？`
             : ""
         }

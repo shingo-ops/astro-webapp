@@ -30,6 +30,11 @@ jobs:
         run: npx tsc --noEmit
         working-directory: frontend
 
+      - name: Audit unused tokens (informational・非ブロック)
+        run: npm run audit:unused-tokens
+        working-directory: frontend
+        continue-on-error: true
+
       - name: Unit tests with coverage gate
         run: |
           # テストファイルが存在する場合のみカバレッジゲートを発動（Phase 0→1 移行保護）
@@ -41,4 +46,8 @@ jobs:
             echo "⚠️  No unit test files found. Coverage gate skipped (Phase 0)."
             echo "    Add src/**/*.test.{ts,tsx} to activate the gate."
           fi
+        working-directory: frontend
+
+      - name: Storybook build check (story files must compile without errors)
+        run: npm run build-storybook
         working-directory: frontend

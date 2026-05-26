@@ -3,22 +3,28 @@
 ## 目的
 パスワード・APIキー等の認証情報を安全に管理するためのルールを定める。
 
-## 最終更新: 2026-04-06
+## 最終更新: 2026-05-26
+
+**設計根拠**: ADR-075（GitHub Secrets 一元管理ポリシー）
 
 ---
 
 ## 基本ルール
 
-### 1. パスワードマネージャーの使用（必須）
+### 1. シークレット管理の方針
 
-**推奨ツール: Bitwarden**（無料プランで十分）
-- https://bitwarden.com
+**本番環境のシークレットは GitHub Secrets で一元管理する。**
+
+| 環境 | 保管場所 | 共有方法 |
+|------|---------|---------|
+| 本番 | GitHub Secrets | CI/CD（`deploy.yml`）経由で VPS `.env` に自動展開 |
+| 開発 | `.env`（`.gitignore` 除外済み） | PO（しんごさん）から直接受け取る |
 
 **禁止事項:**
-- ブラウザの自動保存に頼らない
-- テキストファイル・スプレッドシートでの管理禁止
-- 個人のメモアプリへの保存禁止
-- Slack/メール/チャットでのパスワード送信禁止
+- テキストファイル・スプレッドシートでの管理
+- 個人のメモアプリへの保存
+- Slack / メール / チャットでのシークレット送信
+- `.env` ファイルの Git コミット
 
 ### 2. パスワードポリシー
 
@@ -34,19 +40,24 @@
 
 | 種類 | 保管場所 | 共有方法 |
 |------|---------|---------|
-| VPS SSHパスワード | Bitwarden | Bitwarden共有フォルダ |
-| PostgreSQL パスワード | Bitwarden + .env | Bitwarden共有フォルダ |
-| Firebase サービスアカウントキー | Bitwarden + VPS上のファイル | Bitwarden添付ファイル |
-| GitHub Personal Access Token | Bitwarden | 共有しない（個人発行） |
-| Cloudflare APIキー | Bitwarden | Bitwarden共有フォルダ |
-| Grafana管理者パスワード | Bitwarden + .env | Bitwarden共有フォルダ |
-| AWS IAMキー（S3バックアップ用） | Bitwarden + VPS環境変数 | Bitwarden共有フォルダ |
+| VPS SSH秘密鍵 | GitHub Secrets（`VPS_SSH_KEY`） | GitHub Actions 経由でのみ使用 |
+| PostgreSQL パスワード | GitHub Secrets（`POSTGRES_PASSWORD`）+ 開発 `.env` | PO から直接受け取る |
+| Firebase サービスアカウントキー | GitHub Secrets + VPS上のファイル | PO から直接受け取る |
+| GitHub Personal Access Token | 個人設定 | 共有しない（個人発行） |
+| Cloudflare APIキー | GitHub Secrets | PO から直接受け取る |
+| Grafana管理者パスワード | GitHub Secrets + 開発 `.env` | PO から直接受け取る |
+| AWS IAMキー（S3バックアップ用） | GitHub Secrets + VPS環境変数 | PO から直接受け取る |
+| METADATA_FERNET_KEY | GitHub Secrets + **別の安全なバックアップ保管場所** | PO から直接受け取る |
 
-### 4. .envファイルの取��扱い
+> **METADATA_FERNET_KEY の二重保管について**: この鍵を紛失すると全テナントの暗号化データが復号不能になる。
+> GitHub Secrets 以外にも安全なバックアップ保管場所（暗号化ファイル、オフライン vault 等）に保管すること。
+> 詳細: `docs/operations/meta_encryption_key_rotation.md`
+
+### 4. .envファイルの取扱い
 
 - `.env` ファイルは **絶対にGitにコミットしない**（.gitignoreで除外済み）
-- 本番の `.env` はVPS上でのみ管理
-- 新メンバーへの `.env` 共有はBitwarden経由のみ
+- 本番の `.env` はVPS上でのみ管理（`deploy.yml` が GitHub Secrets から自動展開）
+- 新メンバーへの `.env` 共有は PO（しんごさん）経由のみ
 
 ### 5. APIキー・トークンのローテーション
 
@@ -61,11 +72,17 @@
 
 ## セットアップ手順（新メンバー向け）
 
-1. Bitwardenアカウントを作成（https://bitwarden.com）
-2. Bitwardenの組織に招待してもらう
-3. 共有フォルダにアクセスし、必要な認証情報を取得
-4. SSH鍵ペアを新規生成し、公開鍵をVPS管理者に送付
-5. MFA（2要素認証）をBitwardenアカウントに設定
+1. PO（しんごさん）から開発用 `.env` ファイルを受け取る
+2. SSH鍵ペアを新規生成し、公開鍵をVPS管理者（PO）に送付
+3. 個人 GitHub アカウントにリポジトリへのアクセス権限を付与してもらう
+4. MFA（2要素認証）を GitHub アカウントに設定（必須）
+
+---
+
+## シークレット漏洩検出の仕組み
+
+- **gitleaks CI**: PR・develop/main へのプッシュ時に自動スキャン（`.github/workflows/secret-scan.yml`）
+- **カスタムルール**: `METADATA_FERNET_KEY`・`META_APP_SECRET` 等のプロジェクト固有パターンを検出（`.gitleaks.toml`）
 
 ---
 
@@ -75,4 +92,5 @@
 - 個人アカウント（Gmail等）での業務用認証情報の保管
 - 共有パスワードの使用（個人ごとにアカウントを発行する）
 - `.env` ファイルのメール添付
-- sakura-vps-password.txt のようなファイルをプロジェクトディ���クトリに置くこと
+- `sakura-vps-password.txt` のようなファイルをプロジェクトディレクトリに置くこと
+- シークレット値をコード・ドキュメントに平文で記載すること

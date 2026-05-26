@@ -72,6 +72,7 @@ sheets/
 .claude/*
 !.claude/agents/
 !.claude/settings.json
+!.claude/agent-config.sh
 CLAUDE.local.md
 
 # Claude Code エージェント作業artefact（worktree並行作業・Evaluator実行で生成）
@@ -99,3 +100,6 @@ external-state-snapshots/*/private/
 
 *storybook.log
 storybook-static
+
+# PR所有権管理（各worktreeローカル — コミット対象外）
+.pr-number

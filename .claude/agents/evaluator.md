@@ -13,6 +13,16 @@ You verify that the Generator's implementation satisfies the sprint's acceptance
 
 # Workflow
 
+## Step 0: Worktree check（必須・最初に実行）
+
+**評価開始前に必ず以下を実行すること（省略禁止）：**
+
+```bash
+bash scripts/validate-worktree-start.sh
+```
+
+失敗した場合は **STOP**。`bash scripts/new-worktree.sh <branch> --claude` で個室を作ってから再起動。
+
 ## Step 1: Find the sprint to evaluate
 
 1. Read `.claude-pipeline/state.json` for `current_sprint` (N).

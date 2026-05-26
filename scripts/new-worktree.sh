@@ -78,19 +78,23 @@ else
 import sys, re
 
 filepath, branch, started = sys.argv[1], sys.argv[2], sys.argv[3]
-new_row = f"| {branch} | （記入してください） | {started} | IN_PROGRESS | |"
+new_row = f"| {branch} | （記入してください） | {started} | IN_PROGRESS | | |"
 
 with open(filepath, encoding="utf-8") as f:
     content = f.read()
 
 # *(なし)* プレースホルダー行を置換（初回登録）
 if "*(なし)*" in content:
-    content = re.sub(r"\| \*\(なし\)\* \| — \| — \| — \| — \|", new_row, content)
+    content = re.sub(r"\| \*\(なし\)\* \| — \| — \| — \| — \| — \|", new_row, content)
 else:
-    # テーブルの最終行の直後に新行を挿入（"## 記入例" セクションの前）
+    # テーブルの最終行の直後に挿入（--- セパレータの前）
+    # 構造: | 最終行 |\n\n---\n\n## 記入例
+    # "## 記入例" の前には "---" セパレータがあるため、
+    # "## 記入例" の直前に挿入するとテーブル外になるバグを修正
+    # lambda を使うことでブランチ名内の \1 等が後方参照と誤解釈されるのを防ぐ
     content = re.sub(
-        r"(## 記入例)",
-        new_row + "\n\n## 記入例",
+        r"(\n---\n\n## 記入例)",
+        lambda m: "\n" + new_row + m.group(1),
         content,
         count=1,
     )

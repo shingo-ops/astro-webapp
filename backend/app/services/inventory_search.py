@@ -63,6 +63,21 @@ MAX_TOKENS = 8
 
 
 @dataclass(frozen=True)
+class OfferSummary:
+    """spec v1.3 F11 AC11.4: 検索結果 1 件に紐づく現在オファー (in_stock のみ)。
+
+    visibility.full=False の user では quantity / unit_price=None マスク。
+    """
+
+    supplier_id: int
+    supplier_name: str | None
+    condition: str
+    quantity: int | None
+    unit_price: int | None
+    status: str
+
+
+@dataclass(frozen=True)
 class SearchCandidate:
     """検索候補 1 件。stock_quantity は visibility=False の user で None になる。"""
 
@@ -80,6 +95,8 @@ class SearchCandidate:
     image_url: str | None
     matched_via: str
     score: float
+    # spec v1.3 F11 AC11.4: 仕入元 × condition の現在オファー (status='in_stock' のみ)
+    inventory_offers: tuple[OfferSummary, ...] = ()
 
 
 def _tokenize(query: str) -> list[str]:
@@ -377,14 +394,21 @@ async def search_inventory(
 
     result = await db.execute(text(sql), params)
     rows = result.mappings().all()
+
+    # spec v1.3 F11 AC11.4: 検索結果の product_id 一覧から
+    # public.inventory を batch SELECT (1 query) し、product_id ごとに group。
+    product_ids = [int(r["product_id"]) for r in rows]
+    offers_by_product = await _load_inventory_offers(db, product_ids, mask_stock)
+
     out: list[SearchCandidate] = []
     for r in rows:
         stock = r.get("stock_quantity")
         if mask_stock:
             stock = None
+        pid = int(r["product_id"])
         out.append(
             SearchCandidate(
-                product_id=int(r["product_id"]),
+                product_id=pid,
                 name=str(r["name"]),
                 name_en=r.get("name_en"),
                 product_code=r.get("product_code"),
@@ -398,6 +422,47 @@ async def search_inventory(
                 image_url=r.get("image_url"),
                 matched_via=str(r["matched_via"]),
                 score=float(r["score"]),
+                inventory_offers=tuple(offers_by_product.get(pid, ())),
             )
         )
     return out
+
+
+async def _load_inventory_offers(
+    db: AsyncSession,
+    product_ids: list[int],
+    mask_stock: bool,
+) -> dict[int, list[OfferSummary]]:
+    """spec v1.3 F11 AC11.4: product_id 一覧に対する public.inventory を batch 取得。
+
+    返り値: product_id -> [OfferSummary, ...] の dict。
+    visibility=False の user (mask_stock=True) では quantity / unit_price=None マスク。
+    in_stock 以外 (out_of_stock / reserved / archived) は除外、unit_price 昇順で安価優先。
+    """
+    if not product_ids:
+        return {}
+
+    sql = """
+        SELECT i.supplier_id, i.product_id, i.condition, i.quantity, i.unit_price,
+               i.status, s.name AS supplier_name
+        FROM public.inventory i
+        LEFT JOIN public.suppliers s ON s.id = i.supplier_id
+        WHERE i.product_id = ANY(:pids)
+          AND i.status = 'in_stock'
+        ORDER BY i.product_id, i.unit_price ASC, i.supplier_id ASC
+    """
+    result = await db.execute(text(sql), {"pids": product_ids})
+    grouped: dict[int, list[OfferSummary]] = {}
+    for row in result.mappings().all():
+        pid = int(row["product_id"])
+        grouped.setdefault(pid, []).append(
+            OfferSummary(
+                supplier_id=int(row["supplier_id"]),
+                supplier_name=row.get("supplier_name"),
+                condition=str(row["condition"]),
+                quantity=(None if mask_stock else int(row["quantity"])),
+                unit_price=(None if mask_stock else int(row["unit_price"])),
+                status=str(row["status"]),
+            )
+        )
+    return grouped
