@@ -106,19 +106,19 @@ export function InboxConversationList({
           </span>
           <button type="button" className="inbox-bulk-action" onClick={handleBulkMarkRead}
             disabled={selectedLeadIds.size === 0} title={t("inbox.markAllRead")} aria-label={t("inbox.markAllRead")}>
-            <INBOX_ACTION_ICONS.markRead size={14} aria-hidden="true" />
+            <INBOX_ACTION_ICONS.markRead size={14} weight="fill" aria-hidden="true" />
           </button>
           <button type="button" className="inbox-bulk-action" onClick={handleBulkMarkUnread}
             disabled={selectedLeadIds.size === 0} title={t("inbox.markUnread")} aria-label={t("inbox.markUnread")}>
-            <INBOX_ACTION_ICONS.markUnread size={14} aria-hidden="true" />
+            <INBOX_ACTION_ICONS.markUnread size={14} weight="fill" aria-hidden="true" />
           </button>
           <button type="button" className="inbox-bulk-action" onClick={handleBulkExclude}
             disabled={selectedLeadIds.size === 0} title={t("inbox.exclude")} aria-label={t("inbox.exclude")}>
-            <INBOX_ACTION_ICONS.exclude size={14} aria-hidden="true" />
+            <INBOX_ACTION_ICONS.exclude size={14} weight="fill" aria-hidden="true" />
           </button>
           <button type="button" className="inbox-bulk-action inbox-bulk-delete" onClick={handleBulkDelete}
             disabled={selectedLeadIds.size === 0} title={t("inbox.deleteLead")} aria-label={t("inbox.deleteLead")}>
-            <INBOX_ACTION_ICONS.delete size={14} aria-hidden="true" />
+            <INBOX_ACTION_ICONS.delete size={14} weight="fill" aria-hidden="true" />
           </button>
         </div>
       )}
