@@ -17,6 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | 備考 |
 |-----------|--------------|---------|------|------|
 | feature/morimoto/monitoring-tokens-sst | （記入してください） | 2026-05-26 23:45 | IN_PROGRESS | |
+| feature/morimoto/agent-pr-ownership-enforcement | 開発ルール強化（PR混入防止） | 2026-05-27 00:06 | REVIEW | PR #881 |
 
 ---
 
