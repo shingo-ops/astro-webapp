@@ -171,8 +171,8 @@
   flex-shrink: 0;
 }
 .inbox-bulk-check-all {
-  width: 15px;
-  height: 15px;
+  width: var(--size-checkbox-sm);
+  height: var(--size-checkbox-sm);
   cursor: pointer;
   flex-shrink: 0;
   accent-color: var(--accent);
@@ -202,8 +202,8 @@
 /* conv-item 内チェックボックス（選択モード） */
 .conv-select-check {
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
+  width: var(--size-checkbox);
+  height: var(--size-checkbox);
   border: 1.5px solid var(--border-strong);
   border-radius: var(--radius-2xs);
   background: var(--bg-surface);
@@ -219,8 +219,8 @@
   position: absolute;
   left: 4px;
   top: 1px;
-  width: 5px;
-  height: 8px;
+  width: var(--size-check-mark-w);
+  height: var(--space-2);
   border: 2px solid var(--on-accent);
   border-top: none;
   border-left: none;
@@ -429,7 +429,7 @@
   align-items: center;
   gap: var(--space-3);
   flex-shrink: 0;
-  min-height: 81px;
+  min-height: var(--center-header-min-h);
   box-sizing: border-box;
 }
 .inbox-center-title {
@@ -531,7 +531,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  padding: 10px 10px 6px;
+  padding: var(--send-top-row-padding);
 }
 /* 入力ラップ（Meta実測: br=18px → --radius-pill=20px 吸収済み ±2px許容） */
 .send-input-wrap {
@@ -608,8 +608,8 @@
 }
 /* Meta実測: 右パネルアバター 40×40px（コンパクトヘッダー用） */
 .right-panel-avatar {
-  width: 40px;
-  height: 40px;
+  width: var(--right-panel-avatar-size);
+  height: var(--right-panel-avatar-size);
   border-radius: 50%;
   background: var(--avatar-bg);
   color: var(--text-primary);
@@ -731,7 +731,7 @@
 /* 見込度バッジ */
 .right-panel-rank {
   margin-top: 6px;
-  padding: 3px 12px;
+  padding: var(--space-3px) var(--space-3);
   border-radius: var(--radius-pill);
   font-size: var(--font-2xs);
   font-weight: 700;
@@ -757,9 +757,9 @@
   word-break: break-word;
   background: var(--bg-subtle);
   border-radius: var(--radius-md);
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-10px);
   margin-top: var(--space-1);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-6px);
 }
 
 /* メモ内サブラベル */
@@ -769,12 +769,21 @@
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 /* エラー・ローディング */
+.inbox-error-banner {
+  padding: var(--space-2) var(--space-3);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
+  margin: var(--space-2) var(--space-3);
+}
 .inbox-send-error {
-  padding: 6px 10px;
+  padding: var(--space-6px) var(--space-10px);
   border-radius: var(--radius-lg);
   background: var(--danger-bg);
   color: var(--danger-text);
@@ -801,7 +810,7 @@
 /* ====== 中間〜タブレット（≤1279px）: 右ドロワー方式に切り替え ====== */
 @media (max-width: 1279px) {
   /* 左パネルは比率縮小（メッセージ欄の圧迫解消） */
-  .inbox-left-panel { width: 35%; min-width: 220px; }
+  .inbox-left-panel { width: 35%; min-width: var(--inbox-left-panel-min-w); }
 
   /* 「カルテ」トグルボタン: 会話ヘッダーに表示 */
   .karte-toggle-btn {
@@ -819,7 +828,7 @@
   .inbox-right-panel {
     position: fixed !important; /* fixed-ok: responsive-right-panel-overlay */
     top: 0; right: 0; bottom: 0;
-    width: 360px !important; max-width: 92vw !important;
+    width: var(--inbox-collapsed-panel-w) !important; max-width: 92vw !important;
     max-height: none !important;
     margin: 0 !important;
     border-left: 1px solid var(--border) !important;
@@ -878,7 +887,7 @@
     border-bottom: 1px solid var(--border);
     overflow-y: auto;
   }
-  .inbox-center  { width: 100%; flex: 1; min-height: 300px; }
+  .inbox-center  { width: 100%; flex: 1; min-height: var(--inbox-center-min-h); }
   .msg-bubble    { max-width: 85%; }
   .inbox-send-btn { padding: var(--space-2) var(--space-4); }
   .inbox-search-row { padding: var(--space-2) var(--space-2) var(--space-1); }
@@ -915,7 +924,7 @@
   transition: border-color var(--transition-micro);
 }
 .right-panel-field:focus { outline: none; border-color: var(--accent); }
-textarea.right-panel-field { resize: vertical; min-height: 60px; }
+textarea.right-panel-field { resize: vertical; min-height: var(--inbox-textarea-min-h); }
 .right-panel-name-field {
   font-weight: 600; font-size: var(--font-base); text-align: left;
   border: 1px solid transparent; background: transparent;
@@ -946,7 +955,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 .right-panel-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
 .right-panel-save-indicator {
   font-size: var(--font-xs); color: var(--text-muted);
-  min-height: 16px; text-align: right; padding: 0 var(--space-3);
+  min-height: var(--toggle-thumb-size); text-align: right; padding: 0 var(--space-3);
   margin-bottom: var(--space-1);
 }
 .right-panel-save-indicator .saved { color: var(--success-bg); }
@@ -990,7 +999,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 .inbox-settings-modal {
   background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: var(--space-6);
-  min-width: 320px; max-width: 480px; width: 90%;
+  min-width: var(--inbox-settings-min-w); max-width: var(--inbox-settings-max-w); width: 90%;
   box-shadow: var(--shadow-lg);
 }
 .inbox-settings-modal-title {
@@ -1022,11 +1031,28 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 }
 .inbox-settings-close-btn:hover { opacity: var(--opacity-dim); }
 
+/* ====== トグルスイッチ ====== */
+.inbox-toggle { position: relative; display: inline-flex; width: var(--toggle-width); height: var(--toggle-height); cursor: pointer; }
+.inbox-toggle input { opacity: 0; width: 0; height: 0; }
+.inbox-toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--border); border-radius: var(--radius-full);
+  transition: background var(--transition-micro);
+}
+.inbox-toggle-slider::before {
+  content: ""; position: absolute;
+  height: var(--toggle-thumb-size); width: var(--toggle-thumb-size); left: var(--toggle-thumb-offset); top: var(--toggle-thumb-offset);
+  background: var(--bg-surface); border-radius: 50%;
+  transition: transform var(--transition-micro);
+}
+.inbox-toggle input:checked + .inbox-toggle-slider { background: var(--accent); }
+.inbox-toggle input:checked + .inbox-toggle-slider::before { transform: translateX(var(--toggle-translate)); }
+
 /* ====== プロフィールモーダル ====== */
 .inbox-profile-modal {
   background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: var(--space-6);
-  min-width: 480px; max-width: 640px; width: 90%; height: 85vh;
+  min-width: var(--modal-profile-min-w); max-width: var(--modal-profile-max-w); width: 90%; height: 85vh;
   overflow-y: auto; box-shadow: var(--shadow-lg);
   display: flex; flex-direction: column; gap: var(--space-4);
 }

@@ -1,0 +1,17 @@
+# CODEOWNERS — コンフリクトホットスポットファイルのオーナー定義
+#
+# 以下のファイルは過去に複数の feature branch から並行編集されてコンフリクトが
+# 発生した実績があります。同一スプリントで複数 PR を同時に開くことを避けてください。
+#
+# 参考: docs/PARALLEL_TERMINAL_GUIDE.md
+
+# デザイントークン（全体影響範囲大・変更は慎重に）
+frontend/src/tokens.css                    @shingo-ops
+frontend/src/index.css                     @shingo-ops
+
+# コンフリクト頻発ファイル（受信箱・スケジュール）
+frontend/src/pages/inbox/InboxPage.css     @shingo-ops
+frontend/src/pages/schedule.css            @shingo-ops
+
+# GitHub Actions ワークフロー（workflow-lint.yml は変更禁止）
+.github/workflows/workflow-lint.yml        @shingo-ops

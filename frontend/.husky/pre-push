@@ -1,0 +1,19 @@
+#!/bin/sh
+# rebase 進行中の push を禁止する（P4: incomplete rebase 防止）
+#
+# 複数ターミナルで並行開発中に rebase の途中で別ターミナルから push すると
+# "pull --rebase abort" が連鎖してコンフリクトが拡大する。
+# 参考: docs/PARALLEL_TERMINAL_GUIDE.md
+
+GIT_DIR="$(git rev-parse --git-dir 2>/dev/null)"
+
+if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
+  echo ""
+  echo "🚫 push を中断しました: rebase が進行中です。"
+  echo "   先に rebase を完了または中断してから push してください。"
+  echo ""
+  echo "   完了: git rebase --continue"
+  echo "   中断: git rebase --abort"
+  echo ""
+  exit 1
+fi

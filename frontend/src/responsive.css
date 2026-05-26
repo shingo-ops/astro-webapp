@@ -57,7 +57,7 @@
     margin-left: auto;
   }
   .topnav-email {
-    max-width: 140px;
+    max-width: var(--topnav-email-max-w);
   }
   .brandbar {
     flex-direction: column;

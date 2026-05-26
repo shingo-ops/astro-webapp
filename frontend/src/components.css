@@ -106,7 +106,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: var(--font-base);
-  min-width: 280px;
+  min-width: var(--input-select-min-w);
   background: var(--bg-surface);
   color: var(--text-primary);
 }
@@ -345,7 +345,7 @@
   border-radius: var(--radius-lg);
   padding: var(--space-8);
   width: 100%;
-  max-width: 500px;
+  max-width: var(--modal-max-w);
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-modal);
@@ -457,8 +457,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--size-avatar-sm);
+  height: var(--size-avatar-sm);
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
@@ -507,7 +507,7 @@
 
 /* --- Filter Pill --- */
 .filter-pill {
-  height: 28px;
+  height: var(--filter-pill-h);
   padding: 0 var(--space-3);
   display: inline-flex;
   align-items: center;
@@ -623,7 +623,7 @@
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .toggle-switch-slider {
   position: absolute; inset: 0;
-  background: var(--border); border-radius: 11px;
+  background: var(--border); border-radius: var(--radius-xl);
   transition: background var(--transition-micro);
 }
 .toggle-switch-slider::before {

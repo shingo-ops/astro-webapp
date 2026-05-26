@@ -143,7 +143,7 @@
   border-radius: var(--radius-lg);
   padding: var(--space-10);
   width: 100%;
-  max-width: 400px;
+  max-width: var(--card-login-max-w);
   box-shadow: var(--shadow-md);
   border-top: 3px solid var(--accent);
 }
@@ -158,7 +158,7 @@
 .login-logo {
   display: block;
   margin: 0 auto var(--space-3);
-  max-width: 280px;
+  max-width: var(--login-logo-max-w);
   height: auto;
 }
 
@@ -265,8 +265,8 @@
 /* 準備中ページ
    ※ App.css L719-766 よりレガシーセクションから救出 */
 .coming-soon {
-  max-width: 600px;
-  margin: 80px auto;
+  max-width: var(--coming-soon-max-w);
+  margin: var(--coming-soon-margin-top) auto;
   text-align: center;
   background: var(--bg-surface);
   padding: var(--space-8) var(--space-8);
@@ -278,8 +278,8 @@
   margin-bottom: var(--space-4);
 }
 .coming-soon-icon svg {
-  width: 64px;
-  height: 64px;
+  width: var(--coming-soon-icon-size);
+  height: var(--coming-soon-icon-size);
 }
 
 .coming-soon h2 {
@@ -347,12 +347,12 @@
 }
 
 /* リードステータスバッジ（ADR-067: CSS変数使用） */
-.lead-badge-新規       { background: var(--info-bg);           color: var(--info-text);     padding: 2px 8px; border-radius: var(--radius-sm); }
-.lead-badge-コンタクト中 { background: var(--lead-contact-bg);   color: var(--lead-contact-text); padding: 2px 8px; border-radius: var(--radius-sm); }
-.lead-badge-提案中     { background: var(--purple-bg);         color: var(--purple-text);   padding: 2px 8px; border-radius: var(--radius-sm); }
-.lead-badge-案件化     { background: var(--success-bg);        color: var(--success-text);  padding: 2px 8px; border-radius: var(--radius-sm); }
-.lead-badge-失注       { background: var(--danger-bg);         color: var(--danger-text);   padding: 2px 8px; border-radius: var(--radius-sm); }
-.lead-badge-保留       { background: var(--bg-hover);          color: var(--text-primary);  padding: 2px 8px; border-radius: var(--radius-sm); }
+.lead-badge-新規       { background: var(--info-bg);           color: var(--info-text);     padding: var(--space-2px) var(--space-2); border-radius: var(--radius-sm); }
+.lead-badge-コンタクト中 { background: var(--lead-contact-bg);   color: var(--lead-contact-text); padding: var(--space-2px) var(--space-2); border-radius: var(--radius-sm); }
+.lead-badge-提案中     { background: var(--purple-bg);         color: var(--purple-text);   padding: var(--space-2px) var(--space-2); border-radius: var(--radius-sm); }
+.lead-badge-案件化     { background: var(--success-bg);        color: var(--success-text);  padding: var(--space-2px) var(--space-2); border-radius: var(--radius-sm); }
+.lead-badge-失注       { background: var(--danger-bg);         color: var(--danger-text);   padding: var(--space-2px) var(--space-2); border-radius: var(--radius-sm); }
+.lead-badge-保留       { background: var(--bg-hover);          color: var(--text-primary);  padding: var(--space-2px) var(--space-2); border-radius: var(--radius-sm); }
 
 /* ランクバッジ拡張 */
 .badge-confirmed { background: var(--info-bg); color: var(--info-text); }
