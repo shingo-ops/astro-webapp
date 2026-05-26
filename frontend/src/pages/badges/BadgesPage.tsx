@@ -24,6 +24,7 @@ export default function BadgesPage() {
     } catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -37,6 +38,7 @@ export default function BadgesPage() {
   return (
     <PageLayout
       navKey="nav.badges"
+      subtitleKey="badges.subtitle"
       headerAction={hasPermission("badges.manage") ? (
         <button className="btn-primary" onClick={() => setShowForm(true)}>{t("badges.newBadge")}</button>
       ) : undefined}

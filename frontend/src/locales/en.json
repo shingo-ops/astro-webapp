@@ -307,6 +307,7 @@
     "subtitle": "Manage leads and convert them into deals."
   },
   "customers": {
+    "subtitle": "Manage detailed customer information.",
     "title": "Customers",
     "newCustomer": "New Customer",
     "editCustomer": "Edit Customer",
@@ -690,6 +691,7 @@
     "subtitle": "Create, send, and track quotes."
   },
   "invoices": {
+    "subtitle": "Create and manage invoices.",
     "title": "Invoices",
     "invoiceCode": "Invoice code",
     "dueDate": "Due date",
@@ -738,6 +740,7 @@
     "subtitle": "Manage financials, shipping, purchasing, and commissions."
   },
   "products": {
+    "subtitle": "Manage products and inventory.",
     "title": "Inventory",
     "newProduct": "New Product",
     "editProduct": "Edit Product",
@@ -955,6 +958,7 @@
     "subtitle": "Manage automation bots and API keys."
   },
   "reports": {
+    "subtitle": "View staff activity reports.",
     "title": "Reports"
   },
   "settings": {
@@ -967,6 +971,7 @@
     "subtitle": "Configure and manage Webhook notification channels."
   },
   "erp": {
+    "subtitle": "Sync inventory and sales data with external systems.",
     "title": "Data Management",
     "exportInvoices": "Export Invoices CSV",
     "exporting": "Exporting...",
@@ -1464,5 +1469,11 @@
     "passwordChanged": "Password changed successfully",
     "saving": "Saving...",
     "changing": "Changing..."
+  },
+  "badges": {
+    "subtitle": "Manage badges and achievement conditions."
+  },
+  "buddy": {
+    "subtitle": "Manage buddy assignments and pairings."
   }
 }

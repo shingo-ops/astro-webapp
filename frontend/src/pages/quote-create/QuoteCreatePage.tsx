@@ -150,7 +150,7 @@ export default function QuoteCreatePage() {
 
         <h3 style={{ marginBottom: "var(--space-3)" }}>{t("quotes.items")}</h3>
         <div style={{ overflowX: "auto", marginBottom: "var(--space-4)" }}>
-          <table className="data-table" style={{ minWidth: 720 }}>
+          <table className="data-table" style={{ minWidth: 'var(--table-min-width-base)' }}>
             <thead>
               <tr>
                 <th>{t("quotes.selectProduct")}</th>
@@ -165,7 +165,7 @@ export default function QuoteCreatePage() {
             <tbody>
               {items.map((item, i) => (
                 <tr key={i} data-testid={`quote-item-row-${i}`}>
-                  <td style={{ minWidth: 280 }}>
+                  <td style={{ minWidth: 'var(--table-col-min-width)' }}>
                     <InventorySearchBar
                       onSelect={(c) => onPickProduct(i, c)}
                       testIdPrefix={`quote-inventory-search-${i}`}
@@ -181,16 +181,16 @@ export default function QuoteCreatePage() {
                     )}
                   </td>
                   <td>
-                    <input value={item.product_name} onChange={(e) => updateItem(i, "product_name", e.target.value)} style={{ minWidth: 120, maxWidth: "100%" }} data-testid={`quote-item-row-${i}-name`} />
+                    <input value={item.product_name} onChange={(e) => updateItem(i, "product_name", e.target.value)} style={{ minWidth: 'var(--min-width-input-sm)', maxWidth: "100%" }} data-testid={`quote-item-row-${i}-name`} />
                   </td>
                   <td>
-                    <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} style={{ width: 70 }} />
+                    <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} style={{ width: 'var(--input-width-qty)' }} />
                   </td>
                   <td>
-                    <input type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => updateItem(i, "unit_price", Number(e.target.value))} style={{ width: 90 }} />
+                    <input type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => updateItem(i, "unit_price", Number(e.target.value))} style={{ width: 'var(--input-width-year)' }} />
                   </td>
                   <td>
-                    <input type="number" min="0" step="0.001" value={item.weight || ""} onChange={(e) => updateItem(i, "weight", e.target.value ? Number(e.target.value) : null)} style={{ width: 80 }} />
+                    <input type="number" min="0" step="0.001" value={item.weight || ""} onChange={(e) => updateItem(i, "weight", e.target.value ? Number(e.target.value) : null)} style={{ width: 'var(--input-width-weight)' }} />
                   </td>
                   <td style={{ fontWeight: "var(--font-weight-semi)", whiteSpace: "nowrap" }}>{(item.quantity * item.unit_price).toLocaleString()}</td>
                   <td>

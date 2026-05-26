@@ -104,6 +104,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
       cancelled = true;
       window.clearTimeout(handle);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, source.id, search]);
 
   // 検索文字列が変わって候補リストから消えても、選択済 master を維持できるように
@@ -144,7 +145,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
       <div
         className="modal-content-wide"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 640 }}
+        style={{ maxWidth: 'var(--modal-profile-max-w)' }}
       >
         <h2>{t("mergeCompany.title")}</h2>
         <p style={{ color: "var(--text-muted)", fontSize: "var(--font-base)", marginTop: "var(--space-1)" }}>
@@ -182,7 +183,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
 
             <div
               style={{
-                maxHeight: 280,
+                maxHeight: 'var(--dropdown-list-h)',
                 overflowY: "auto",
                 border: "1px solid var(--border-light)",
                 borderRadius: "var(--radius-sm)",
@@ -199,7 +200,7 @@ export default function MergeCompanyModal({ open, source, onMerged, onCancel }: 
                 <table className="data-table" style={{ marginBottom: 0 }}>
                   <thead>
                     <tr>
-                      <th style={{ width: 40 }}></th>
+                      <th style={{ width: 'var(--col-width-checkbox)' }}></th>
                       <th>{t("mergeCompany.col_code")}</th>
                       <th>{t("mergeCompany.col_name")}</th>
                       <th>{t("mergeCompany.col_status")}</th>

@@ -29,6 +29,7 @@ export default function StaffReportsPage() {
     catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [typeFilter]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -45,6 +46,7 @@ export default function StaffReportsPage() {
   return (
     <PageLayout
       navKey="nav.reports"
+      subtitleKey="reports.subtitle"
       headerAction={hasPermission("staff_reports.create") ? (
         <button className="btn-primary" onClick={() => setShowForm(true)}>{t("common.add")}</button>
       ) : undefined}
@@ -67,7 +69,7 @@ export default function StaffReportsPage() {
                 </select>
               </div>
               <div className="form-group"><label>{t("common.date")} *</label><input required value={form.period} onChange={e => setForm({ ...form, period: e.target.value })} /></div>
-              <div className="form-group"><label>{t("common.description")} *</label><textarea required value={form.review} onChange={e => setForm({ ...form, review: e.target.value })} style={{ minHeight: 120 }} /></div>
+              <div className="form-group"><label>{t("common.description")} *</label><textarea required value={form.review} onChange={e => setForm({ ...form, review: e.target.value })} style={{ minHeight: 'var(--textarea-min-h-lg)' }} /></div>
               <div className="form-group"><label>{t("common.notes")}</label><textarea value={form.goals} onChange={e => setForm({ ...form, goals: e.target.value })} /></div>
               <div className="form-group"><label>{t("common.notes")}</label><textarea value={form.challenges} onChange={e => setForm({ ...form, challenges: e.target.value })} /></div>
               <div className="form-actions">
