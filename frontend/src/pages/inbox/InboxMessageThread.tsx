@@ -47,7 +47,7 @@ export function InboxMessageThread({
       <main className="inbox-center">
         <div className="empty-state">
           <div className="empty-state-icon" aria-hidden="true">
-            <PAGE_ICONS.inboxEmpty size={ICON.xl} />
+            <PAGE_ICONS.inboxEmpty size={ICON.xl} weight="fill" />
           </div>
           <p>{t("inbox.selectConversation")}</p>
         </div>
@@ -100,7 +100,7 @@ export function InboxMessageThread({
           <button type="button" className="karte-toggle-btn"
             onClick={() => showKartePanel ? closeKartePanel() : openKartePanel()}
             aria-label={t("inbox.karteToggle")}>
-            <PAGE_ICONS.kartePanel size={ICON.base} aria-hidden="true" />
+            <PAGE_ICONS.kartePanel size={ICON.base} weight="fill" aria-hidden="true" />
             {t("inbox.karteToggle")}
           </button>
         )}

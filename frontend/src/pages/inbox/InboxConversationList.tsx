@@ -57,7 +57,7 @@ export function InboxConversationList({
       {/* 検索 + 管理ボタン */}
       <div className="inbox-search-row">
         <div className="inbox-search-wrap">
-          <NAV_ICONS.search size={14} className="inbox-search-icon" aria-hidden="true" />
+          <NAV_ICONS.search size={14} weight="fill" className="inbox-search-icon" aria-hidden="true" />
           <input
             type="text"
             className="search-input-field inbox-search-input"
@@ -73,7 +73,7 @@ export function InboxConversationList({
             onClick={toggleSelectMode}
             aria-pressed={selectMode}
           >
-            <NAV_ICONS.filter size={13} />
+            <NAV_ICONS.filter size={13} weight="fill" />
             {t("inbox.manage")}
           </button>
           {!selectMode && manageOpen && (

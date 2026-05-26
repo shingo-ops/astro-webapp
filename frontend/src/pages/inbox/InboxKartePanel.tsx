@@ -78,7 +78,7 @@ export function InboxKartePanel({
             <span className="karte-close-title">{t("inbox.karteToggle")}</span>
             <button type="button" className="karte-close-btn" onClick={closeKartePanel}
               aria-label={t("common.close")} data-tooltip={t("common.close")}>
-              <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
+              <NAV_ICONS.close size={ICON.md} weight="fill" aria-hidden="true" />
             </button>
           </div>
 

@@ -272,6 +272,8 @@
   --sidebar-item-active-bg:     #1e3a8a;
   --sidebar-item-active-color:  #93c5fd;
   --sidebar-item-active-border: #818cf8;
+  --sidebar-width-collapsed:    54px;   /* ライトと同値（パリティ維持） */
+  --sidebar-width-expanded:     240px;  /* ライトと同値（パリティ維持） */
 
   /* accent背景上のテキスト（常に白） */
   --on-accent: #ffffff;
