@@ -1,7 +1,7 @@
 #!/bin/bash
 # check-active-work-format.sh — active-work.md テーブルフォーマット検証
 #
-# 目的: active-work.md の列数不一致を早期検出する
+# 目的: active-work.md の「現在進行中の作業」テーブルの列数不一致を早期検出する
 #       PR#列追加(6列化)後に旧形式(5列)のエントリが混入していないかチェックする
 #
 # 呼び出し元:
@@ -33,44 +33,47 @@ fi
 
 echo "🔍 active-work.md フォーマット検証: ${ACTIVE_WORK_FILE}"
 
-# 「現在進行中の作業」セクションのテーブル行のみチェック
-# 他セクション（ルール表・状態表・記入例）は列数が異なるため対象外
+# 「現在進行中の作業」セクションのテーブル行のみを検証する
+# - セクション開始: "## 現在進行中の作業"
+# - セクション終了: 次の "##" セクションまたはファイル末尾
+# - ヘッダー行・セパレータ行・コードブロック内はスキップ
+IN_SECTION=0
 IN_CODE=0
-IN_WORK_SECTION=0
 LINE_NUM=0
-# bash の [[ =~ ]] で | を直書きすると構文エラーになるため変数経由で渡す
-SEP_RE='^\|[-| ]+\|'
+
 while IFS= read -r line; do
   LINE_NUM=$((LINE_NUM + 1))
 
-  # コードブロックの開閉を追跡（コードブロック内はスキップ）
+  # セクション開始を検出
+  if [[ "$line" == "## 現在進行中の作業" ]]; then
+    IN_SECTION=1
+    continue
+  fi
+
+  # 別セクション（## で始まる行）でセクション終了
+  if [[ "$line" =~ ^## ]] && [ "$IN_SECTION" -eq 1 ]; then
+    IN_SECTION=0
+    continue
+  fi
+
+  [ "$IN_SECTION" -eq 0 ] && continue
+
+  # コードブロックの開閉を追跡
   if [[ "$line" =~ ^\`\`\` ]]; then
     IN_CODE=$(( 1 - IN_CODE ))
     continue
   fi
   [ "$IN_CODE" -eq 1 ] && continue
 
-  # セクション見出し（##）でセクションを追跡
-  if [[ "$line" =~ ^## ]]; then
-    if [[ "$line" =~ 現在進行中 ]]; then
-      IN_WORK_SECTION=1
-    else
-      IN_WORK_SECTION=0
-    fi
-    continue
-  fi
-
-  # 「現在進行中の作業」セクション外の行はスキップ
-  [ "$IN_WORK_SECTION" -eq 0 ] && continue
-
   # テーブル行のみ対象（| で始まる行）
   [[ "$line" =~ ^\| ]] || continue
 
   # セパレータ行（|---|---| 形式）はスキップ
-  [[ "$line" =~ $SEP_RE ]] && continue
+  # awk: 全フィールドが空白とハイフンのみで構成されていればセパレータ
+  IS_SEP=$(echo "$line" | awk -F'|' 'BEGIN{sep=1} {for(i=2;i<=NF-1;i++){s=$i; gsub(/[ -]/,"",s); if(length(s)>0){sep=0;break}}} END{print sep}')
+  [ "$IS_SEP" -eq 1 ] && continue
 
-  # 列数をカウント（| で分割してフィールド数を数える）
-  # 例: "| a | b | c |" → awk で 3フィールドと判定
+  # 列数をカウント（先頭末尾の | を除いたフィールド数）
   COL_COUNT=$(echo "$line" | awk -F'|' '{print NF - 2}')
 
   if [ "$COL_COUNT" -ne "$EXPECTED_COLS" ]; then
@@ -84,7 +87,7 @@ if [ "$ERRORS" -gt 0 ]; then
   echo ""
   echo "🚫 フォーマットエラー: ${ERRORS}件"
   echo ""
-  echo "   active-work.md は現在 ${EXPECTED_COLS}列形式が必須です:"
+  echo "   active-work.md の「現在進行中の作業」テーブルは ${EXPECTED_COLS}列形式が必須です:"
   echo "   | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |"
   echo ""
   echo "   修正方法: 各行に PR# 列(空欄可)を追加してください"
@@ -93,5 +96,5 @@ if [ "$ERRORS" -gt 0 ]; then
   exit 1
 fi
 
-echo "✅ フォーマット正常: 全行 ${EXPECTED_COLS}列"
+echo "✅ フォーマット正常: 「現在進行中の作業」テーブル全行 ${EXPECTED_COLS}列"
 exit 0
