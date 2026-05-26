@@ -1,6 +1,7 @@
 # backend/CLAUDE.md
 
 `backend/` 配下の作業時のみ適用。プロジェクト全体ルールは `/CLAUDE.md` を参照。
+<!-- ADR-067 Phase 5B: 2026-05-26 デザイントークン width/height 強制完了 -->
 
 ---
 
