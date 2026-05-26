@@ -27,6 +27,7 @@ export const STATUS_TABS = [
 ] as const;
 
 export type StatusTabKey = "all" | "lead" | "deal" | "existing" | "followup" | "archive";
+export type KarteTabKey = "contact" | "company" | "deal";
 
 // ---------------------------------------------------------------------------
 // リードステータス分類定数
