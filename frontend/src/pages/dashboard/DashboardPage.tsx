@@ -185,7 +185,10 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState<Tab>("team");
+  // hotfix: default を "individual" にして team_id 未指定での 422 を避ける。
+  // team タブには team_id 選択 UI が未実装のため、ユーザーが手動で切替えた
+  // 場合のみ team モードに入る (graceful fallback は backend 側で対応済)。
+  const [tab, setTab] = useState<Tab>("individual");
   const [period, setPeriod] = useState<Period>("1m");
 
   const [goals, setGoals] = useState<GoalSummary | null>(null);
