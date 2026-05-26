@@ -1327,24 +1327,26 @@
     },
     "phaseSwitch": {
       "title": "スプレッドシート並走 Phase",
-      "subtitle": "本機能の Phase（A / B / C）切替を行います。spec v1.2 では Phase A 固定運用です。",
+      "subtitle": "本機能の Phase（A / B / C）切替を行います。spec v1.3 では Phase B 標準運用、Phase A は緊急戻し用です。",
       "currentLabel": "現在の Phase",
-      "phaseADesc": "スプレッドシート併走中、在庫の真値は GS",
-      "phaseABanner": "Phase A 並走中: products.stock_quantity は更新されません。在庫の真値はスプレッドシート (GS) 側で管理されます。",
-      "outOfScope": "Phase {{phase}} への切替は Out-of-scope です（spec v1.2、別 ADR で検討中）",
+      "phaseADesc": "緊急戻し状態。products.stock_quantity は更新されません。",
+      "phaseBDesc": "CRM 正本化運用 (標準)",
+      "phaseABanner": "Phase A (緊急戻し中): products.stock_quantity は更新されません。spec v1.3 の標準は Phase B です。早めに Phase B に戻してください。",
+      "outOfScope": "Phase {{phase}} への切替は Out-of-scope です（spec v1.3、別 ADR で検討中）",
       "outOfScopeBadge": "別 ADR で検討中",
-      "outOfScopeTooltip": "Phase B / C への切替は spec v1.2 では Out-of-scope。CRM 運用が軌道に乗ってから別 ADR で時期判断します",
+      "outOfScopeTooltip": "Phase C への切替は spec v1.3 では Out-of-scope。スプレッドシート完全閉鎖 + 本格データ移行は別 ADR で時期判断します",
       "currentTooltip": "現在の Phase です",
       "switchTo": "Phase {{phase}} に切替",
       "switchSuccess": "Phase {{phase}} に切り替えました",
       "tenantIdMissing": "テナント ID を取得できませんでした。再ログインしてください",
-      "helpPhaseA": "Phase A: CRM 側は受信・解析・記録のみ。在庫数の真値はスプレッドシート側。",
-      "helpPhaseBC": "Phase B / C: 別 ADR で時期判断中。CRM が軌道に乗ったタイミングで起案予定。"
+      "helpPhaseA": "Phase A (緊急戻し): CRM 側は受信・解析・記録のみ。products.stock_quantity は更新されません。標準ではありません。",
+      "helpPhaseB": "Phase B (標準運用): CRM 側で products.stock_quantity を実更新。スプレッドシートのデータをテストデータとして活用。",
+      "helpPhaseC": "Phase C: スプレッドシート完全閉鎖 + 本格データ移行。別 ADR で時期判断中。"
     },
     "parseReview": {
       "phaseAWarning": {
-        "always": "Phase A: スプレッドシート併走中、在庫数の真値は GS（CRM の products.stock_quantity は表示用のみ）",
-        "afterApprove": "承認しましたが、Phase A 並走中のため products.stock_quantity は更新されませんでした（{{count}} 件は inventory_movements に記録済）。スプレッドシート反映が必要です。"
+        "always": "Phase A (緊急戻し中): 在庫数は更新されません。CRM 標準運用は Phase B です。",
+        "afterApprove": "承認しましたが、Phase A (緊急戻し) 中のため products.stock_quantity は更新されませんでした（{{count}} 件は inventory_movements に記録済）。"
       }
     }
   },

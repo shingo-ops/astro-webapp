@@ -1327,24 +1327,26 @@
     },
     "phaseSwitch": {
       "title": "Spreadsheet parallel-run Phase",
-      "subtitle": "Switch the inventory parallel-run Phase (A / B / C). spec v1.2 fixes Phase A.",
+      "subtitle": "Switch the inventory parallel-run Phase (A / B / C). spec v1.3 standardizes Phase B; Phase A is for emergency rollback only.",
       "currentLabel": "Current Phase",
-      "phaseADesc": "Spreadsheet parallel-run, stock truth on GS",
-      "phaseABanner": "Phase A parallel-run: products.stock_quantity is not updated. The source of truth for stock counts remains the spreadsheet (GS).",
-      "outOfScope": "Switching to Phase {{phase}} is out of scope (spec v1.2, planned for a separate ADR)",
+      "phaseADesc": "Emergency rollback. products.stock_quantity is not updated.",
+      "phaseBDesc": "CRM source-of-truth operation (standard)",
+      "phaseABanner": "Phase A (emergency rollback): products.stock_quantity is not updated. The spec v1.3 standard is Phase B. Please switch back to Phase B as soon as possible.",
+      "outOfScope": "Switching to Phase {{phase}} is out of scope (spec v1.3, planned for a separate ADR)",
       "outOfScopeBadge": "separate ADR pending",
-      "outOfScopeTooltip": "Phase B / C switch is out of scope in spec v1.2. A separate ADR will decide timing once CRM operations stabilize.",
+      "outOfScopeTooltip": "Phase C is out of scope in spec v1.3. Full spreadsheet closure and bulk data migration will be decided in a separate ADR.",
       "currentTooltip": "This is the current Phase",
       "switchTo": "Switch to Phase {{phase}}",
       "switchSuccess": "Switched to Phase {{phase}}",
       "tenantIdMissing": "Failed to resolve tenant ID. Please log in again.",
-      "helpPhaseA": "Phase A: CRM only receives/parses/records. Spreadsheet remains the source of truth for stock counts.",
-      "helpPhaseBC": "Phase B / C: A separate ADR will decide timing. To be drafted once CRM operations stabilize."
+      "helpPhaseA": "Phase A (emergency rollback): CRM only receives/parses/records. products.stock_quantity is not updated. Not standard.",
+      "helpPhaseB": "Phase B (standard): CRM updates products.stock_quantity in real time. Uses spreadsheet data as test data.",
+      "helpPhaseC": "Phase C: Full spreadsheet closure + bulk data migration. Pending separate ADR."
     },
     "parseReview": {
       "phaseAWarning": {
-        "always": "Phase A: spreadsheet parallel-run — stock truth is on GS (CRM products.stock_quantity is display-only)",
-        "afterApprove": "Approved, but products.stock_quantity was not updated due to Phase A parallel-run ({{count}} movements recorded). Please reflect changes to the spreadsheet manually."
+        "always": "Phase A (emergency rollback): stock counts are not updated. The standard operation is Phase B.",
+        "afterApprove": "Approved, but products.stock_quantity was not updated due to Phase A (emergency rollback) ({{count}} movements recorded)."
       }
     }
   },
