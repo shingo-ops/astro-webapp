@@ -16,6 +16,8 @@ import { NAV_ICONS } from "../../constants/icons";
 import { PageLayout } from "../../components/PageLayout";
 import { ICON } from "../../constants/iconSizes";
 import { useInboxState } from "./useInboxState";
+import { STATUS_TABS } from "./inbox.types";
+import type { PlatformFilter } from "../../lib/messages";
 import { InboxConversationList } from "./InboxConversationList";
 import { InboxMessageThread } from "./InboxMessageThread";
 import { InboxKartePanel } from "./InboxKartePanel";
@@ -67,12 +69,29 @@ export default function InboxPage() {
         <div className="inbox-wrapper">
           {/* 左+中央エリア */}
           <div className="inbox-main-area">
+            {/* ステータスタブ + プラットフォームフィルタ */}
+            <div className="inbox-full-tab-bar">
+              {STATUS_TABS.map((tab) => (
+                <button key={tab.key} type="button"
+                  className={`inbox-full-tab${state.statusTab === tab.key ? " active" : ""}`}
+                  onClick={() => state.setStatusTab(tab.key)}>
+                  {t(tab.labelKey)}
+                </button>
+              ))}
+              <select
+                className="inbox-platform-select"
+                value={state.platformFilter}
+                onChange={(e) => state.setPlatformFilter(e.target.value as PlatformFilter)}
+                aria-label={t("inbox.platformFilter")}
+              >
+                <option value="all">{t("inbox.platformAll")}</option>
+                <option value="messenger">{t("inbox.platformMessenger")}</option>
+                <option value="instagram">{t("inbox.platformInstagram")}</option>
+              </select>
+            </div>
+
             <div className="inbox-columns">
               <InboxConversationList
-                statusTab={state.statusTab}
-                setStatusTab={state.setStatusTab}
-                platformFilter={state.platformFilter}
-                setPlatformFilter={state.setPlatformFilter}
                 unreadOnly={state.unreadOnly}
                 setUnreadOnly={state.setUnreadOnly}
                 followUpOnly={state.followUpOnly}
