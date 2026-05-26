@@ -38,8 +38,6 @@ echo "🔍 active-work.md フォーマット検証: ${ACTIVE_WORK_FILE}"
 IN_CODE=0
 IN_WORK_SECTION=0
 LINE_NUM=0
-# bash の [[ =~ ]] で | を直書きすると構文エラーになるため変数経由で渡す
-SEP_RE='^\|[-| ]+\|'
 while IFS= read -r line; do
   LINE_NUM=$((LINE_NUM + 1))
 
@@ -66,8 +64,8 @@ while IFS= read -r line; do
   # テーブル行のみ対象（| で始まる行）
   [[ "$line" =~ ^\| ]] || continue
 
-  # セパレータ行（|---|---| 形式）はスキップ
-  [[ "$line" =~ $SEP_RE ]] && continue
+  # セパレータ行（|---|---| 形式）はスキップ（bash 3.2 互換: grep -E で代替）
+  echo "$line" | grep -qE '^\|[-| ]+\|' && continue
 
   # 列数をカウント（| で分割してフィールド数を数える）
   # 例: "| a | b | c |" → awk で 3フィールドと判定
