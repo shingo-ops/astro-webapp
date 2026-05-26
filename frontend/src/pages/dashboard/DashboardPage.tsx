@@ -242,7 +242,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <PageLayout navKey="nav.dashboard">
+      <PageLayout navKey="nav.dashboard" subtitleKey="dashboard.subtitle">
         <div className="error-message">{error}</div>
       </PageLayout>
     );
@@ -251,6 +251,7 @@ export default function DashboardPage() {
   return (
     <PageLayout
       navKey="nav.dashboard"
+      subtitleKey="dashboard.subtitle"
       headerLeft={
         <div className="db-tabs">
           <button

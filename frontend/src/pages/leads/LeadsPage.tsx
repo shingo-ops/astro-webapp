@@ -247,6 +247,7 @@ export default function LeadsPage() {
   return (
     <PageLayout
       navKey="nav.leads"
+      subtitleKey="leads.subtitle"
       headerAction={hasPermission("leads.create") ? (
         <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("leads.newLead")}</button>
       ) : undefined}

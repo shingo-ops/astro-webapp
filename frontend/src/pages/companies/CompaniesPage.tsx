@@ -185,6 +185,7 @@ export default function CompaniesPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadCompanies(); }, [search]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -353,6 +354,7 @@ export default function CompaniesPage() {
   return (
     <PageLayout
       navKey="nav.companies"
+      subtitleKey="companies.subtitle"
       headerAction={
         <div className="page-header-actions">
           {pendingDedupCount > 0 && (

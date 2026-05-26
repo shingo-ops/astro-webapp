@@ -67,6 +67,7 @@ export default function TeamsPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadTeams(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -146,6 +147,7 @@ export default function TeamsPage() {
   return (
     <PageLayout
       navKey="nav.teams"
+      subtitleKey="teams.subtitle"
       headerAction={hasPermission("teams.create") ? (
         <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("teams.newTeam")}</button>
       ) : undefined}

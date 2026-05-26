@@ -80,7 +80,7 @@ export default function ManagementCenterPage() {
     .filter((s) => s.items.length > 0);
 
   return (
-    <PageLayout navKey="nav.managementCenter" noScroll>
+    <PageLayout navKey="nav.managementCenter" subtitleKey="managementCenter.subtitle" noScroll>
       <div className="mc-shell">
         {/* 左サブナビ */}
         <nav className="mc-subnav" aria-label={t("nav.managementCenter")}>

@@ -136,6 +136,7 @@ export default function CommissionSettingsPage() {
 
   useEffect(() => {
     loadSettings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     loadMonthly(year, month);
@@ -170,7 +171,7 @@ export default function CommissionSettingsPage() {
     n.toLocaleString("ja-JP", { style: "currency", currency: "JPY" });
 
   return (
-    <PageLayout navKey="nav.commissionSettings">
+    <PageLayout navKey="nav.commissionSettings" subtitleKey="commissions.subtitle">
       {loading ? (
         <div className="loading">{t("common.loading")}</div>
       ) : (

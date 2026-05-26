@@ -50,6 +50,7 @@ export default function QuotesPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [statusFilter]);
 
   const fmt = (n: number | null, ccy: string) => {
@@ -61,6 +62,7 @@ export default function QuotesPage() {
   return (
     <PageLayout
       navKey="nav.quotesInvoices"
+      subtitleKey="quotes.subtitle"
       headerAction={hasPermission("quotes.create") ? (
         <button className="btn-primary" onClick={() => navigate("/quotes/new")}>{t("quotes.newQuote")}</button>
       ) : undefined}
