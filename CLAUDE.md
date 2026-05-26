@@ -81,3 +81,19 @@ ADR は What/Why/Scope のみ記述（実装手順 How は書かない）。`cla
 8. 上記をすべて通過した場合のみ追加。既存セクションへの統合を最優先（新セクション追加は最後の手段）。
 
 **ファイル全体が 90 行を超えたら `frontend/scripts/check-claude-size.js` がコミットをブロックする。**
+
+---
+
+## ルール所在マップ（SSoT索引）
+
+| ルール | 設定ファイル（SSoT） | 機械強制 |
+|--------|---------------------|----------|
+| ブランチ運用 | このファイル | Branch Protection Ruleset |
+| i18n 強制 | このファイル §i18n + ADR-027 | ESLint |
+| デザイントークン | `frontend/CLAUDE.md` + ADR-067 | ESLint / `check:all` |
+| フロントカバレッジ閾値 | `frontend/vite.config.ts` | `frontend-check.yml` |
+| バックエンドカバレッジ閾値 | `backend/pyproject.toml` | `test.yml` |
+| ADR 一覧 | `docs/adr/README.md`（自動生成） | `adr-index-check.yml` |
+| アイコン管理 | `frontend/CLAUDE.md` §アイコン | ESLint |
+| テナントスキーマ | `backend/CLAUDE.md` + ADR-072 | `lint-tenant-schema.yml` |
+| CSS 変数/ダークモード | ADR-067 | `check:css-*` / ESLint |

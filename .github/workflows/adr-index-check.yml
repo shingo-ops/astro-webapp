@@ -1,0 +1,23 @@
+name: ADR Index Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'docs/adr/ADR-*.md'
+      - 'docs/adr/README.md'
+      - 'scripts/generate-adr-index.js'
+
+jobs:
+  check:
+    name: ADR index is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check ADR index is up to date
+        run: node scripts/generate-adr-index.js --check
