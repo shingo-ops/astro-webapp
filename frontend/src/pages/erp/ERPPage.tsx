@@ -19,6 +19,7 @@ export default function ERPPage() {
     catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const exportInvoices = async () => {
@@ -41,6 +42,7 @@ export default function ERPPage() {
   return (
     <PageLayout
       navKey="nav.dataManagement"
+      subtitleKey="erp.subtitle"
       headerAction={hasPermission("erp.sync") ? (
         <button className="btn-primary" onClick={exportInvoices} disabled={exporting}>
           {exporting ? t("erp.exporting") : t("erp.exportInvoices")}

@@ -208,6 +208,7 @@ export default function CustomersPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadCustomers(); }, [search]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -410,6 +411,7 @@ export default function CustomersPage() {
   return (
     <PageLayout
       navKey="nav.customers"
+      subtitleKey="customers.subtitle"
       headerAction={
         hasPermission("customers.create") ? (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); setDiscordTouched(false); }}>
