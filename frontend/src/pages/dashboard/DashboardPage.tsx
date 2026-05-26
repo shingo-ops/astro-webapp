@@ -249,10 +249,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <PageLayout navKey="nav.dashboard">
-      {/* ── ヘッダーコントロール ── */}
-      <div className="db-controls">
-        {/* タブ */}
+    <PageLayout
+      navKey="nav.dashboard"
+      headerLeft={
         <div className="db-tabs">
           <button
             className={`db-tab${tab === "team" ? " active" : ""}`}
@@ -267,7 +266,8 @@ export default function DashboardPage() {
             {t("dashboard.tabIndividual")}
           </button>
         </div>
-        {/* 期間プルダウン */}
+      }
+      headerAction={
         <select
           className="db-period-select"
           value={period}
@@ -280,7 +280,8 @@ export default function DashboardPage() {
           <option value="6m">{t("dashboard.period6m")}</option>
           <option value="12m">{t("dashboard.period12m")}</option>
         </select>
-      </div>
+      }
+    >
 
       {/* -------------------------------------------------
           固定エリア（期間変更でも不変）
