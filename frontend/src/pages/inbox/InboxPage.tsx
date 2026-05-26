@@ -56,6 +56,10 @@ export default function InboxPage() {
     submitSend, handleKeyDown,
     // 管理ドロップダウン
     manageOpen, setManageOpen, manageRef, handleMarkAllRead, handleMarkUnread, handleExclude, handleDeleteLead,
+    // 一括選択
+    selectMode, selectedLeadIds, isAllSelected,
+    toggleSelectMode, toggleSelectConv, toggleSelectAll,
+    handleBulkMarkRead, handleBulkMarkUnread, handleBulkExclude, handleBulkDelete,
     // スクロール ref
     messageListRef,
   } = useInboxState();
@@ -136,18 +140,18 @@ export default function InboxPage() {
             <div className="inbox-manage-wrap" ref={manageRef}>
               <button
                 type="button"
-                className="inbox-manage-btn"
-                onClick={() => setManageOpen((v) => !v)}
-                aria-expanded={manageOpen}
+                className={`inbox-manage-btn${selectMode ? " active" : ""}`}
+                onClick={toggleSelectMode}
+                aria-pressed={selectMode}
               >
                 <NAV_ICONS.filter size={13} />
                 {t("inbox.manage")}
               </button>
-              {manageOpen && (
-                <div className="inbox-manage-dropdown" role="menu">
+              {!selectMode && manageOpen && (
+                <div className="dropdown-menu" role="menu">
                   <button
                     type="button"
-                    className="inbox-manage-item"
+                    className="dropdown-item"
                     role="menuitem"
                     onClick={handleMarkAllRead}
                   >
@@ -157,6 +161,62 @@ export default function InboxPage() {
               )}
             </div>
           </div>
+
+          {/* 一括アクションバー（選択モード時） */}
+          {selectMode && (
+            <div className="inbox-bulk-bar">
+              <input
+                type="checkbox"
+                className="inbox-bulk-check-all"
+                checked={isAllSelected}
+                onChange={toggleSelectAll}
+                aria-label={t("inbox.selectAll")}
+              />
+              <span className="inbox-bulk-count">
+                {t("inbox.selectedCount", { count: selectedLeadIds.size })}
+              </span>
+              <button
+                type="button"
+                className="inbox-bulk-action"
+                onClick={handleBulkMarkRead}
+                disabled={selectedLeadIds.size === 0}
+                title={t("inbox.markAllRead")}
+                aria-label={t("inbox.markAllRead")}
+              >
+                <INBOX_ACTION_ICONS.markRead size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="inbox-bulk-action"
+                onClick={handleBulkMarkUnread}
+                disabled={selectedLeadIds.size === 0}
+                title={t("inbox.markUnread")}
+                aria-label={t("inbox.markUnread")}
+              >
+                <INBOX_ACTION_ICONS.markUnread size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="inbox-bulk-action"
+                onClick={handleBulkExclude}
+                disabled={selectedLeadIds.size === 0}
+                title={t("inbox.exclude")}
+                aria-label={t("inbox.exclude")}
+              >
+                <INBOX_ACTION_ICONS.exclude size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="inbox-bulk-action inbox-bulk-delete"
+                onClick={handleBulkDelete}
+                disabled={selectedLeadIds.size === 0}
+                title={t("inbox.deleteLead")}
+                aria-label={t("inbox.deleteLead")}
+              >
+                <INBOX_ACTION_ICONS.delete size={14} aria-hidden="true" />
+              </button>
+            </div>
+          )}
 
           {/* サブフィルターピル（未読 / フォローアップ / アーカイブ） */}
           <div className="inbox-sub-filter-bar">
@@ -196,7 +256,7 @@ export default function InboxPage() {
           {/* 会話リスト */}
           <div className="inbox-conversation-list">
             {convError && (
-              <div className="inbox-error-banner">
+              <div className="error-banner">
                 {t("inbox.fetchError")}
                 <button
                   type="button"
@@ -224,13 +284,23 @@ export default function InboxPage() {
             ) : (
               filteredConversations.map((conv) => {
                 const isSelected = conv.lead_id === selectedLeadId;
+                const isBulkChecked = selectedLeadIds.has(conv.lead_id);
                 return (
                   <button
                     key={conv.lead_id}
                     type="button"
-                    className={`conv-item conversation-item${isSelected ? " selected" : ""}`}
-                    onClick={() => selectLead(conv.lead_id)}
+                    role={selectMode ? "checkbox" : undefined}
+                    aria-checked={selectMode ? isBulkChecked : undefined}
+                    className={`conv-item conversation-item${isSelected ? " selected" : ""}${selectMode && isBulkChecked ? " bulk-selected" : ""}`}
+                    onClick={() => selectMode ? toggleSelectConv(conv.lead_id) : selectLead(conv.lead_id)}
                   >
+                    {/* 選択モード: チェックボックス */}
+                    {selectMode && (
+                      <span
+                        aria-hidden="true"
+                        className={`conv-select-check${isBulkChecked ? " checked" : ""}`}
+                      />
+                    )}
                     {/* アバター */}
                     <div className="conv-avatar-wrap">
                       <div className="conv-avatar">
@@ -283,8 +353,8 @@ export default function InboxPage() {
         {/* ============================== 中央パネル ============================== */}
         <main className="inbox-center">
           {selectedLeadId === null ? (
-            <div className="inbox-empty-center">
-              <div className="inbox-empty-icon" aria-hidden="true">
+            <div className="empty-state">
+              <div className="empty-state-icon" aria-hidden="true">
                 <PAGE_ICONS.inboxEmpty size={ICON.xl} />
               </div>
               <p>{t("inbox.selectConversation")}</p>
@@ -323,7 +393,7 @@ export default function InboxPage() {
                     aria-label={t("inbox.markUnread")}
                     data-tooltip={t("inbox.markUnread")}
                   >
-                    <INBOX_ACTION_ICONS.markUnread size={ICON.base} aria-hidden="true" />
+                    <INBOX_ACTION_ICONS.markUnread size={ICON.base} weight="fill" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -332,7 +402,7 @@ export default function InboxPage() {
                     aria-label={t("inbox.exclude")}
                     data-tooltip={t("inbox.exclude")}
                   >
-                    <INBOX_ACTION_ICONS.exclude size={ICON.base} aria-hidden="true" />
+                    <INBOX_ACTION_ICONS.exclude size={ICON.base} weight="fill" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -341,7 +411,7 @@ export default function InboxPage() {
                     aria-label={t("inbox.deleteLead")}
                     data-tooltip={t("inbox.deleteLead")}
                   >
-                    <INBOX_ACTION_ICONS.delete size={ICON.base} aria-hidden="true" />
+                    <INBOX_ACTION_ICONS.delete size={ICON.base} weight="fill" aria-hidden="true" />
                   </button>
                 </div>
                 {/* モバイル専用カルテトグルボタン（デスクトップでは CSS で非表示） */}
@@ -366,7 +436,7 @@ export default function InboxPage() {
                   </div>
                 )}
                 {msgError && (
-                  <div className="inbox-error-banner">{msgError}</div>
+                  <div className="error-banner">{msgError}</div>
                 )}
                 {messagesData && messagesData.messages.length === 0 && !msgError && (
                   <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "var(--space-8)" }}>
@@ -779,7 +849,7 @@ export default function InboxPage() {
 
       {/* ============================== 受信箱設定モーダル ============================== */}
       {showSettings && (
-        <div className="inbox-settings-overlay" onClick={() => setShowSettings(false)}>
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="inbox-settings-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h3>
 
@@ -787,10 +857,10 @@ export default function InboxPage() {
 
             <div className="inbox-settings-row">
               <span className="inbox-settings-label">{t("inbox.settings.showRightPanel")}</span>
-              <label className="inbox-toggle">
+              <label className="toggle-switch">
                 <input type="checkbox" checked={inboxSettings.showRightPanel}
                   onChange={(e) => updateInboxSetting("showRightPanel", e.target.checked)} />
-                <span className="inbox-toggle-slider" />
+                <span className="toggle-switch-slider" />
               </label>
             </div>
 
@@ -810,10 +880,10 @@ export default function InboxPage() {
 
             <div className="inbox-settings-row">
               <span className="inbox-settings-label">{t("inbox.settings.defaultUnreadOnly")}</span>
-              <label className="inbox-toggle">
+              <label className="toggle-switch">
                 <input type="checkbox" checked={inboxSettings.defaultUnreadOnly}
                   onChange={(e) => updateInboxSetting("defaultUnreadOnly", e.target.checked)} />
-                <span className="inbox-toggle-slider" />
+                <span className="toggle-switch-slider" />
               </label>
             </div>
 
@@ -823,7 +893,7 @@ export default function InboxPage() {
 
             <div className="inbox-settings-row">
               <span className="inbox-settings-label">{t("inbox.settings.browserNotifications")}</span>
-              <label className="inbox-toggle">
+              <label className="toggle-switch">
                 <input type="checkbox" checked={inboxSettings.browserNotifications}
                   onChange={async (e) => {
                     if (e.target.checked) {
@@ -835,16 +905,16 @@ export default function InboxPage() {
                     }
                     updateInboxSetting("browserNotifications", e.target.checked);
                   }} />
-                <span className="inbox-toggle-slider" />
+                <span className="toggle-switch-slider" />
               </label>
             </div>
 
             <div className="inbox-settings-row">
               <span className="inbox-settings-label">{t("inbox.settings.soundEnabled")}</span>
-              <label className="inbox-toggle">
+              <label className="toggle-switch">
                 <input type="checkbox" checked={inboxSettings.soundEnabled}
                   onChange={(e) => updateInboxSetting("soundEnabled", e.target.checked)} />
-                <span className="inbox-toggle-slider" />
+                <span className="toggle-switch-slider" />
               </label>
             </div>
 
@@ -858,7 +928,7 @@ export default function InboxPage() {
       {/* ============================== プロフィールモーダル ============================== */}
       {showProfileModal && leadDetail && (
         <div
-          className="inbox-profile-overlay"
+          className="modal-overlay"
           onClick={() => setShowProfileModal(false)}
           role="presentation"
         >
