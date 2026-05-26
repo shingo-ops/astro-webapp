@@ -1,0 +1,8 @@
+# hadolint 設定ファイル
+# Phase 1: error のみブロック（warning は後日対応予定）
+# DL3008: apt-get バージョン固定
+# DL3015: --no-install-recommends 未使用
+failure-threshold: error
+ignore:
+  - DL3008
+  - DL3015
