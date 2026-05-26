@@ -48,6 +48,22 @@ git rebase origin/develop
 - `git pull --rebase` の実行中に別ターミナルから `git push`
 - 2つのターミナルで同じ feature ブランチを同時編集
 - `InboxPage.css` / `schedule.css` / `tokens.css` / `index.css` への複数 PR 同時オープン
+- `.claude-pipeline/active-work.md` を確認せずに新しい作業を開始する
+
+### 4.5. 作業開始前の重複チェック（SSoT 確認・必須）
+
+**新しいターミナルで作業を始める前に `.claude-pipeline/active-work.md` を必ず確認すること。**
+
+このファイルが「誰が今何を担当しているか」の唯一の真実（SSoT）。
+
+```bash
+# 確認コマンド
+cat .claude-pipeline/active-work.md
+```
+
+重複が見つかった場合 → **STOP → しんごさんに確認してから開始する**
+
+`scripts/new-worktree.sh` を使えば自動で記入される（手動記入不要）。
 
 ### 5. AI エージェントを並行起動するとき（P5 対策・推奨）
 
