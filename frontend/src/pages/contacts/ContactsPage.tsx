@@ -136,6 +136,7 @@ export default function ContactsPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadContacts(); }, [search, companyFilter]);
   useEffect(() => { loadCompanies(); }, []);
 
@@ -275,6 +276,7 @@ export default function ContactsPage() {
   return (
     <PageLayout
       navKey="nav.contacts"
+      subtitleKey="contacts.subtitle"
       headerAction={
         <div className="page-header-actions">
           {pendingDedupCount > 0 && (

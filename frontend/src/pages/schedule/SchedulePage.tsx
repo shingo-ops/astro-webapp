@@ -456,6 +456,7 @@ export default function SchedulePage() {
   return (
     <PageLayout
       navKey="nav.schedule"
+      subtitleKey="schedule.subtitle"
       headerLeft={
         <div className="schedule-header-nav">
           <button className="gcal-nav__today" onClick={() => handleToolbarNavigate("TODAY")}>

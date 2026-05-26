@@ -296,14 +296,14 @@ export default function GoalSettingPage() {
 
   if (loading) {
     return (
-      <PageLayout navKey="nav.goalSettings">
+      <PageLayout navKey="nav.goalSettings" subtitleKey="goals.subtitle">
         <div className="loading">{t("common.loading")}</div>
       </PageLayout>
     );
   }
 
   return (
-    <PageLayout navKey="nav.goalSettings">
+    <PageLayout navKey="nav.goalSettings" subtitleKey="goals.subtitle">
       {error && <div className="error-message">{error}</div>}
 
       {/* 戻るボタン */}

@@ -110,6 +110,7 @@ export default function StaffPage() {
       setLoading(false);
     }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAll(); }, []);
 
   const toNull = (v: string) => (v ? v : null);
@@ -192,6 +193,7 @@ export default function StaffPage() {
   return (
     <PageLayout
       navKey="nav.staff"
+      subtitleKey="staff.subtitle"
       headerAction={hasPermission("staff.create") ? (
         <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
           {t("staff.newStaff")}

@@ -20,6 +20,7 @@ export default function NotificationsPage() {
     catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -38,6 +39,7 @@ export default function NotificationsPage() {
   return (
     <PageLayout
       navKey="nav.notifications"
+      subtitleKey="settings.subtitle"
       headerAction={
         hasPermission("notifications.manage") ? (
           <button className="btn-primary" onClick={() => setShowForm(true)}>{t("settings.addChannel")}</button>

@@ -29,6 +29,7 @@ export default function SuppliersPage() {
     catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -58,6 +59,7 @@ export default function SuppliersPage() {
   return (
     <PageLayout
       navKey="nav.suppliers"
+      subtitleKey="suppliers.subtitle"
       headerAction={hasPermission("suppliers.create") ? (
         <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("suppliers.newSupplier")}</button>
       ) : undefined}
