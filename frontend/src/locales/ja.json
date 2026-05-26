@@ -529,6 +529,7 @@
     "fetchError": "データの取得に失敗しました",
     "unreadBadge": "未読 {{count}} 件",
     "karteToggle": "顧客情報",
+    "moreActions": "その他の操作",
     "markUnread": "未読にする",
     "exclude": "対象外にする",
     "deleteLead": "削除",
