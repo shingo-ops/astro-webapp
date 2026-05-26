@@ -108,6 +108,7 @@ jobs:
               -e '/^METADATA_FERNET_KEY=/d' \
               -e '/^GEMINI_API_KEY=/d' \
               -e '/^ADMIN_NOTIFICATION_DISCORD_WEBHOOK=/d' \
+              -e '/^GOOGLE_CALENDAR_CLIENT_SECRET=/d' \
               .env
             rm -f .env.bak
             # YAML `|` ブロックの共通インデント (12 スペース) はパース時に自動除去される。
@@ -124,6 +125,7 @@ jobs:
             METADATA_FERNET_KEY=${{ secrets.METADATA_FERNET_KEY }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             ADMIN_NOTIFICATION_DISCORD_WEBHOOK=${{ secrets.ADMIN_NOTIFICATION_DISCORD_WEBHOOK }}
+            GOOGLE_CALENDAR_CLIENT_SECRET=${{ secrets.GOOGLE_CALENDAR_CLIENT_SECRET }}
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
@@ -529,6 +531,29 @@ jobs:
             docker exec -i astro-webapp-postgres-1 \
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/075_create_goals.sql
+
+            # Migration 076: Google Calendar テナント連携設定テーブル作成
+            #   - public.tenant_google_calendar_config（OAuth トークン暗号化保存）
+            #   - CREATE TABLE IF NOT EXISTS で idempotent
+            #   関連: PR #702 / Google Calendar 連携スケジュールページ
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/076_add_google_calendar_config.sql
+
+            # Migration 077: Google Calendar 同期モード + Webhook サブスクリプション管理
+            #   - tenant_google_calendar_config に sync_mode カラム追加
+            #   - public.google_webhook_subscriptions テーブル新設
+            #   - ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS で idempotent
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/077_calendar_sync_mode_and_webhook_subscriptions.sql
+
+            # Migration 078: calendar_events テーブル（全テナントスキーマ）
+            #   - PL/pgSQL で pg_namespace 走査 → 全テナントに calendar_events を作成
+            #   - CREATE TABLE IF NOT EXISTS で idempotent
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/078_create_calendar_events_tenant.sql
 
             # Migration 080: spec v1.3 Phase B 即時移行
             #   - public.tenant_settings.spreadsheet_phase default 'A' → 'B'
