@@ -86,7 +86,7 @@ export function InboxProfileModal({
             {cardForm.nickname || leadDetail.nickname || cardForm.customer_name || leadDetail.customer_name}
           </span>
           <button type="button" className="inbox-profile-modal-close" onClick={onClose} aria-label={t("common.close")}>
-            <NAV_ICONS.close size={ICON.md} weight="fill" aria-hidden="true" />
+            <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
           </button>
         </div>
 
@@ -138,7 +138,6 @@ export function InboxProfileModal({
           )}
           {profileModalTab === "deal" && (
             <div className="right-panel-section">
-              <div className="right-panel-group-heading">{t("inbox.sectionNextAction")}</div>
               <div className="right-panel-memo-label">{t("leads.nextAction")}</div>
               <textarea className="right-panel-field" rows={3} value={cardForm.next_action ?? ""}
                 onChange={(e) => handleCardFieldChange("next_action", e.target.value)}
@@ -162,7 +161,7 @@ export function InboxProfileModal({
               <textarea className="right-panel-field" rows={3} value={cardForm.challenge ?? ""}
                 onChange={(e) => handleCardFieldChange("challenge", e.target.value)}
                 onBlur={handleCardFieldBlur} placeholder={t("leads.challenge")} />
-              <div className="right-panel-group-heading">{t("inbox.sectionCustomer")}</div>
+              <hr className="right-panel-divider" />
               <div className="right-panel-row">
                 <span className="right-panel-label">{t("leads.nickname")}</span>
                 <input className="right-panel-field" type="text" value={cardForm.nickname ?? ""}
@@ -203,7 +202,7 @@ export function InboxProfileModal({
                   <option value="Cold">Cold</option>
                 </select>
               </div>
-              <div className="right-panel-group-heading">{t("inbox.sectionScale")}</div>
+              <hr className="right-panel-divider" />
               <div className="right-panel-row">
                 <span className="right-panel-label">{t("leads.estimatedScale")}</span>
                 <select className="right-panel-field" value={cardForm.estimated_scale ?? ""}
@@ -242,7 +241,7 @@ export function InboxProfileModal({
                   </span>
                 </label>
               </div>
-              <div className="right-panel-group-heading">{t("inbox.sectionMemo")}</div>
+              <hr className="right-panel-divider" />
               <div className="right-panel-memo-label">{t("leads.meetingMemo")}</div>
               <textarea className="right-panel-field" rows={3} value={cardForm.meeting_memo ?? ""}
                 onChange={(e) => handleCardFieldChange("meeting_memo", e.target.value)}
