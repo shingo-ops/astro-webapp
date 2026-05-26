@@ -206,5 +206,6 @@ export default [{
   ],
   rules: {
     'local/no-japanese-literal': 'off',
+    'no-restricted-syntax': 'off', // ストーリーはデモ用途のため寸法ハードコードを許容
   },
 }, ...storybook.configs["flat/recommended"]];

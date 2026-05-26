@@ -17,3 +17,10 @@ if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
   echo ""
   exit 1
 fi
+
+# PR所有権チェック（他エージェントの変更混入防止）
+# worktree外からの push / active-work.md 未登録ブランチ / develop 乖離 を検出して止める
+VALIDATION_SCRIPT="$(git rev-parse --show-toplevel)/scripts/validate-pr-ownership.sh"
+if [ -f "$VALIDATION_SCRIPT" ]; then
+  bash "$VALIDATION_SCRIPT" || exit 1
+fi

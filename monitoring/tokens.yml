@@ -64,6 +64,7 @@ thresholds:
   db_connection_warning:  80    # HighDbConnections: > 80
 
   # Nginx エラー（alert_rules.yml: application_alerts）
+  # HighErrorRate（全5xxエラー）とHigh502Rateは別アラートのため分離
   nginx_5xx_per_5m:       10    # HighErrorRate: increase(...[5m]) > 10
   nginx_502_per_2m:        5    # High502Rate:   increase(...[2m]) > 5
 
@@ -74,6 +75,8 @@ thresholds:
   db_error_per_5m:         5    # DatabaseError: > 5
 
 # --- アラート継続時間（for: の値）---
+# 対応ファイル: monitoring/prometheus/alert_rules.yml
+#              monitoring/loki/rules/jarvis/alerts.yml
 for_durations:
   resource_warning:  "5m"   # HighCpuUsage / HighMemoryUsage / HighDiskUsage / HighDbConnections
   service_down:      "2m"   # ServiceDown
