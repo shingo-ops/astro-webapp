@@ -114,7 +114,8 @@
     "switchToDark": "Dark mode",
     "switchToLight": "Light mode",
     "managementCenter": "Management Center",
-    "designSystem": "Design System"
+    "designSystem": "Design System",
+    "accountSettings": "Account Settings"
   },
   "managementCenter": {
     "sectionTeam":      "Team & HR",
@@ -1417,6 +1418,30 @@
     "operationNotAllowed": "This sign-in method is not currently available. Please contact support.",
     "expiredActionCode": "This link has expired. Please start over.",
     "invalidActionCode": "This link is invalid. Please use the latest email.",
+    "requiresRecentLogin": "For security, please sign out and sign in again before changing your password.",
     "default": "Sign-in failed. Please try again later. Contact support if the problem persists."
+  },
+  "accountSettings": {
+    "subtitle": "Manage your profile and security",
+    "sectionProfile": "Profile",
+    "sectionSecurity": "Security",
+    "surnameJp": "Last name (Japanese)",
+    "givenNameJp": "First name (Japanese)",
+    "surnameEn": "Last name (English)",
+    "givenNameEn": "First name (English)",
+    "emailLabel": "Email address",
+    "emailReadOnlyNote": "To change your email address, please contact support",
+    "phoneLabel": "Phone number",
+    "phoneComingSoon": "Phone number saving is coming soon",
+    "profileSaved": "Profile saved",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordMismatch": "New passwords do not match",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordChanged": "Password changed successfully",
+    "saving": "Saving...",
+    "changing": "Changing..."
   }
 }

@@ -65,6 +65,13 @@ const PATTERNS = [
     regex: /(?<![a-zA-Z-])(?:width|height|min-width|max-width|min-height|max-height)\s*:(?![^;]*(?:var|calc)\()[^;]*\b(?:[4-9]|\d{2,})\d*px/,
     message: '→ CSS変数を使ってください: var(--size-xxx) または var(--space-xxx)（ADR-067）',
   },
+  {
+    name: 'font-size-px',
+    // font-size に生px値（≥4px）を直書きした場合を検出（ADR-067 のギャップを閉じる）
+    // var()/calc() を含む値はスキップ
+    regex: /font-size\s*:(?![^;]*(?:var|calc)\()[^;]*\b(?:[4-9]|\d{2,})\d*px/,
+    message: '→ CSS変数を使ってください: var(--font-xxx) または var(--inbox-panel-xxx)（ADR-067）',
+  },
 ];
 
 function collectCssFiles(dir) {

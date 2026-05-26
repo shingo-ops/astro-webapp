@@ -23,18 +23,14 @@ on:
     branches:
       - develop
       - main
-    paths:
-      - "backend/app/routers/**"
-      - "scripts/lint_tenant_schema.py"
-      - ".github/workflows/lint-tenant-schema.yml"
   push:
     branches:
       - develop
       - main
-    paths:
-      - "backend/app/routers/**"
-      - "scripts/lint_tenant_schema.py"
-      - ".github/workflows/lint-tenant-schema.yml"
+# NOTE: paths フィルタ削除（e2e.yml #534 と同じデッドロック回避）。
+# Required check として Ruleset に登録されているため、paths フィルタがあると
+# 関係ないファイルしか変更しない PR で "Expected" のまま pending → merge 不可になる。
+# 対象ファイル非変更時は changes-check step で即 pass する。
 
 jobs:
   lint:
@@ -45,13 +41,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check relevant file changes
+        id: changes
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          if echo "$CHANGED" | grep -qE "^(backend/app/routers/|scripts/lint_tenant_schema\.py|\.github/workflows/lint-tenant-schema\.yml)"; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "対象ファイルの変更なし — チェックをスキップして即 pass"
+          fi
 
       - name: Setup Python
+        if: steps.changes.outputs.relevant == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Run ADR-072 linter (strict)
+        if: steps.changes.outputs.relevant == 'true'
         run: |
           python3 scripts/lint_tenant_schema.py --mode strict backend/app/routers/
         # mode=strict: 違反があれば exit 1 で CI fail。

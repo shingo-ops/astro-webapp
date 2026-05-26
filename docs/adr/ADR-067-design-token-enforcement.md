@@ -89,6 +89,7 @@ src/index.css      — カラートークン（:root ライト / :root.force-dar
 2. **@media ブレークポイント**: CSS 変数は @media 条件式で使用不可。`constants/breakpoints.ts` と `tokens.css` で値を同期管理
 3. **ComingSoonPage 64px アイコン**: 1箇所のみの特殊値。tokens.css コメントに記録済み
 4. **calc() 式**: `width: "calc(100% - var(--sidebar-width-expanded))"` — 文字列なので ESLint 対象外
+5. **opacity: 0 / opacity: 1**: 可視性の完全オン/オフ（アニメーション @keyframes、tooltip 表示制御、アクセシビリティ対応など）は `0` と `1` のみ直書き許可。`--opacity-*` トークンは中間値（0.5等）専用
 
 ---
 

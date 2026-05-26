@@ -14,28 +14,39 @@ name: Tenant Schema Integrity Check
 on:
   pull_request:
     branches: [main, develop]
-    # backend/** を絞り込み: テストコード変更（backend/tests/**）では不要。
-    # ORM定義（models.py）と実行スクリプト（scripts/db/**, scripts/setup_tenant.py）のみ対象。
-    paths:
-      - 'backend/app/models.py'
-      - 'migrations/**'
-      - 'scripts/migrate_*.py'
-      - 'scripts/db/**'
-      - 'scripts/setup_tenant.py'
-      - '.github/workflows/schema-check.yml'
   push:
     branches: [main, develop]
-    paths:
-      - 'backend/app/models.py'
-      - 'migrations/**'
-      - 'scripts/migrate_*.py'
-      - 'scripts/db/**'
-      - 'scripts/setup_tenant.py'
-      - '.github/workflows/schema-check.yml'
+# NOTE: paths フィルタ削除（e2e.yml #534 と同じデッドロック回避）。
+# Required check (テナントスキーマ整合性チェック) として Ruleset 登録済みのため、
+# paths フィルタがあると非 backend PR で pending のまま merge 不可になる。
+# detect-changes job で変更ファイルを判定し、不要時は schema-check をスキップ(neutral=pass)。
 
 jobs:
+  detect-changes:
+    name: スキーマ関連ファイル変更検出
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.check.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check relevant file changes
+        id: check
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          if echo "$CHANGED" | grep -qE "^(backend/app/models\.py|migrations/|scripts/migrate_|scripts/db/|scripts/setup_tenant\.py|\.github/workflows/schema-check\.yml)"; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+            echo "対象ファイルの変更なし — テナントスキーマチェックをスキップして即 pass"
+          fi
+
   schema-check:
     name: テナントスキーマ整合性チェック
+    needs: detect-changes
+    if: needs.detect-changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

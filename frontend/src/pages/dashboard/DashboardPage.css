@@ -98,6 +98,8 @@
 .db-section-icon {
   color: var(--accent);
   flex-shrink: 0;
+  width: var(--icon-base);
+  height: var(--icon-base);
 }
 
 /* ── 目標カード ── */

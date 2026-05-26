@@ -99,7 +99,7 @@
 }
 
 .gcal-day-header__name {
-  font-size: 11px;
+  font-size: var(--font-2xs);
   font-weight: var(--font-weight-medium);
   color: var(--text-muted);
   text-transform: uppercase;
@@ -108,7 +108,7 @@
 }
 
 .gcal-day-header__num {
-  font-size: 26px;
+  font-size: var(--schedule-day-num-size);
   font-weight: 400;
   color: var(--text-secondary);
   width: var(--schedule-mini-size);
@@ -304,17 +304,17 @@
   display: none;
 }
 
-/* 終日セル行の高さを最小化 */
+/* 終日エリア: 固定高（Google Calendar 準拠: 1行表示 + +N more） */
 .fc .fc-daygrid-body {
   width: 100% !important;
 }
 
 .fc .fc-timegrid-allday-table {
-  min-height: 0;
+  min-height: var(--schedule-allday-row-h);
 }
 
 .fc .fc-timegrid-allday .fc-daygrid-day-events {
-  min-height: 0;
+  min-height: var(--schedule-allday-row-h);
   padding: 0;
 }
 
@@ -414,7 +414,7 @@
   color: var(--text-muted);
   border-radius: var(--radius-full);
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--font-lg);
   transition: background var(--transition-fast);
 }
 

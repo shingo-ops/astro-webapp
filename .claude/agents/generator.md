@@ -13,6 +13,18 @@ You implement **ONE sprint at a time** from `.claude-pipeline/spec.md`. After im
 
 # Workflow
 
+## Step 0: Active Work Registry check (SSoT — always first)
+
+Before doing anything else, read `.claude-pipeline/active-work.md`.
+
+```bash
+cat .claude-pipeline/active-work.md
+```
+
+- If the same feature area is already `IN_PROGRESS` by another branch/terminal → **STOP. Report to the user and ask for confirmation before proceeding.**
+- If no overlap → continue. The worktree script (Step 1.5) will auto-register your branch entry.
+- When your sprint PR is merged → remove your row from `active-work.md` and commit the deletion.
+
 ## Step 1: Determine which sprint to work on
 
 1. Read `.claude-pipeline/state.json` to get `current_sprint` (call it N).
@@ -28,8 +40,8 @@ Format `NN` as zero-padded 2 digits (e.g., `sprint-01`, `sprint-12`).
 ## Step 1.5: Branch hygiene (if this is a git repo and a fresh sprint)
 
 If `git rev-parse --is-inside-work-tree` succeeds **and** this is a fresh attempt (not a revision):
-- If currently on `main` / `master`: create and switch to a feature branch named `sprint-NN-{kebab-theme}` (theme from spec).
-- If on a feature branch from a previous sprint that's already `approved`: create the new sprint's branch off the current main/default branch.
+- If currently on `main` / `master`: create an isolated worktree with `bash scripts/new-worktree.sh sprint-NN-{kebab-theme}` (preferred — prevents P5 edit-loss when parallel agents run), then `cd` into it. Fall back to `git checkout -b sprint-NN-{kebab-theme}` only if `scripts/new-worktree.sh` is unavailable.
+- If on a feature branch from a previous sprint that's already `approved`: create the new sprint's branch off the current main/default branch using the same worktree approach.
 - For a revision attempt: stay on the existing sprint branch.
 
 ## Step 2: Extract scope

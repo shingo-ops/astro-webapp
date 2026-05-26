@@ -142,21 +142,23 @@
   gap: var(--space-6px);
   padding: var(--space-6px) var(--space-3);
   border-radius: var(--radius-md);
-  border: none;
-  background: var(--accent);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
   font-size: var(--font-sm);
   font-weight: 600;
-  color: var(--on-accent);
+  color: var(--text-primary);
   cursor: pointer;
   font-family: inherit;
   transition: background var(--transition-micro);
   white-space: nowrap;
 }
-.inbox-manage-btn:hover { background: var(--accent-hover); }
+.inbox-manage-btn:hover { background: var(--bg-subtle); }
 .inbox-manage-btn.active {
-  background: var(--accent-hover);
+  background: var(--accent);
   color: var(--on-accent);
+  border-color: var(--accent);
 }
+.inbox-manage-btn.active:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
 /* 一括アクションバー */
 .inbox-bulk-bar {
@@ -185,17 +187,17 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-1) var(--space-2);
-  border: none;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--bg-surface);
+  color: var(--text-primary);
   cursor: pointer;
-  transition: background var(--transition-micro), opacity var(--transition-micro);
+  transition: background var(--transition-micro);
 }
-.inbox-bulk-action:hover:not(:disabled) { background: var(--accent-hover); }
+.inbox-bulk-action:hover:not(:disabled) { background: var(--bg-hover); }
 .inbox-bulk-action:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
-.inbox-bulk-delete { background: var(--danger); color: var(--on-accent); }
-.inbox-bulk-delete:hover:not(:disabled) { background: var(--danger); opacity: var(--opacity-hover); }
+.inbox-bulk-delete { color: var(--danger); border-color: var(--danger); }
+.inbox-bulk-delete:hover:not(:disabled) { background: var(--danger-bg); }
 
 /* conv-item 内チェックボックス（選択モード） */
 .conv-select-check {
@@ -449,24 +451,19 @@
   justify-content: center;
   padding: var(--space-2);
   border-radius: var(--radius-md);
-  border: none;
-  background: var(--accent);
-  color: var(--on-accent);
+  border: 1px solid var(--border-icon);
+  background: transparent;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background var(--transition-micro), opacity var(--transition-micro);
+  transition: background var(--transition-micro), color var(--transition-micro);
 }
 .inbox-header-action-btn:hover {
-  background: var(--accent-hover);
-  color: var(--on-accent);
-}
-.inbox-header-action-btn.danger {
-  background: var(--danger);
-  color: var(--on-accent);
+  background: var(--bg-subtle);
+  color: var(--text-primary);
 }
 .inbox-header-action-btn.danger:hover {
-  background: var(--danger);
-  color: var(--on-accent);
-  opacity: var(--opacity-hover);
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 .inbox-messages {
   flex: 1;
@@ -662,7 +659,7 @@
   border-bottom: 1px solid var(--bg-subtle);
 }
 .right-panel-label {
-  font-size: var(--font-2xs);
+  font-size: var(--inbox-panel-label-size);
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -747,7 +744,7 @@
   font-size: var(--font-md);
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 10px;
+  margin-bottom: var(--space-10px);
   padding-bottom: 0;
 }
 
@@ -818,14 +815,14 @@
   /* 「カルテ」トグルボタン: 会話ヘッダーに表示 */
   .karte-toggle-btn {
     display: flex; align-items: center; gap: var(--space-1);
-    background: var(--accent); border: none;
+    background: var(--link-active-bg); border: none;
     border-radius: var(--radius-xl);
     padding: var(--space-1) var(--space-10px);
-    font-size: var(--font-xs); color: var(--on-accent);
+    font-size: var(--font-xs); color: var(--accent);
     font-weight: var(--font-weight-semi); cursor: pointer; flex-shrink: 0;
-    transition: background var(--transition-micro), opacity var(--transition-micro);
+    transition: opacity var(--transition-micro);
   }
-  .karte-toggle-btn:hover { background: var(--accent-hover); }
+  .karte-toggle-btn:hover { opacity: var(--opacity-dim); }
 
   /* 右パネルをフルハイト固定オーバーレイに変換 */
   .inbox-right-panel {
@@ -865,12 +862,12 @@
   .karte-close-btn {
     position: relative;
     display: flex; align-items: center; justify-content: center;
-    background: var(--accent); border: none; cursor: pointer;
-    color: var(--on-accent); border-radius: var(--radius-sm);
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); border-radius: var(--radius-sm);
     padding: var(--space-1);
-    transition: background var(--transition-micro), opacity var(--transition-micro);
+    transition: color var(--transition-micro), background var(--transition-micro);
   }
-  .karte-close-btn:hover { background: var(--accent-hover); }
+  .karte-close-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
 }
 
 /* ====== モバイル（≤767px）: 縦積み + ボトムシート ====== */
@@ -957,7 +954,7 @@ textarea.right-panel-field { resize: vertical; min-height: var(--inbox-textarea-
 .right-panel-tab-content { flex: 1; overflow-y: auto; width: 100%; }
 .right-panel-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
 .right-panel-group-heading {
-  font-size: 10px;
+  font-size: var(--inbox-panel-group-heading-size);
   font-weight: var(--font-weight-bold);
   color: var(--text-muted);
   text-transform: uppercase;
@@ -1078,12 +1075,12 @@ textarea.right-panel-field { resize: vertical; min-height: var(--inbox-textarea-
   display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0;
 }
 .inbox-profile-modal-close {
-  margin-left: auto; background: var(--accent); border: none;
-  cursor: pointer; color: var(--on-accent); border-radius: var(--radius-sm);
-  padding: var(--space-1); transition: background var(--transition-micro), opacity var(--transition-micro);
+  margin-left: auto; background: transparent; border: none;
+  cursor: pointer; color: var(--text-muted); border-radius: var(--radius-sm);
+  padding: var(--space-1); transition: opacity var(--transition-micro);
   display: flex; align-items: center; justify-content: center;
 }
-.inbox-profile-modal-close:hover { background: var(--accent-hover); }
+.inbox-profile-modal-close:hover { opacity: var(--opacity-hover); }
 @media (max-width: 560px) {
   .inbox-profile-modal { min-width: unset; }
 }

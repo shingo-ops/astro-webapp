@@ -15,8 +15,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { NAV_ICONS, THEME_ICONS, GlobeIcon, LeadChatIcon } from "../constants/icons";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NAV_ICONS, THEME_ICONS, GlobeIcon, LeadChatIcon, ACCOUNT_ICONS } from "../constants/icons";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useLocale } from "../contexts/LocaleContext";
@@ -99,7 +99,8 @@ export default function Layout() {
   const { user, signOut } = useAuth();
   const { hasPermission, hasAny, loading: permsLoading } = usePermissions();
   const { isSuperAdmin } = useSuperAdmin();
-  const { prefs, loading: uiPrefsLoading } = useUiPrefs();
+  const { prefs, loading: uiPrefsLoading, staffName } = useUiPrefs();
+  const navigate = useNavigate();
   const navLoading = permsLoading || uiPrefsLoading;
 
   const location = useLocation();
@@ -356,6 +357,17 @@ export default function Layout() {
         </div>
         <div className="user-drawer-body">
           <div className="user-drawer-email">{user?.email}</div>
+          {staffName && <div className="user-drawer-name">{staffName}</div>}
+
+          <button
+            className="user-drawer-action"
+            onClick={() => { setDrawerOpen(false); navigate("/account/settings"); }}
+          >
+            <ACCOUNT_ICONS.profile size={ICON.md} aria-hidden="true" />
+            <span>{t("nav.accountSettings")}</span>
+          </button>
+
+          <hr className="user-drawer-sep" />
 
           <button
             className="user-drawer-action"

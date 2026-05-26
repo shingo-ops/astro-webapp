@@ -26,7 +26,7 @@ from app.auth.dependencies import (
 )
 from app.database import get_db
 from app.models import User
-from app.schemas.staff import StaffCreate, StaffEmailInput, StaffResponse, StaffUIPreferences, StaffUpdate
+from app.schemas.staff import StaffCreate, StaffEmailInput, StaffProfileUpdate, StaffResponse, StaffUIPreferences, StaffUpdate
 from app.services.audit import record_audit_log
 
 logger = logging.getLogger(__name__)
@@ -256,6 +256,80 @@ async def update_my_theme(
     )
     await db.commit()
     return {"theme": theme}
+
+
+_PROFILE_UPDATABLE = {
+    "surname_jp", "given_name_jp", "surname_kana", "given_name_kana",
+    "surname_en", "given_name_en",
+}
+
+
+@router.patch("/staff/me/profile", response_model=StaffResponse, status_code=200)
+async def update_my_profile(
+    data: StaffProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    現在ログイン中ユーザ自身の氏名を更新する。
+
+    管理者権限不要。メールアドレス・ロール・ステータス等は変更不可。
+    本人確認: get_current_user が返す current_user.email で staff を特定。
+    """
+    user_email = getattr(current_user, "email", None)
+    if not user_email:
+        raise HTTPException(status_code=401, detail="認証されていません")
+
+    result = await db.execute(
+        text(f"""
+            SELECT {_STAFF_COLS}
+            FROM staff s
+            LEFT JOIN roles r ON r.id = s.role_id
+            WHERE s.primary_email = :email
+            ORDER BY s.id ASC
+            LIMIT 1
+        """),
+        {"email": user_email},
+    )
+    row = result.mappings().first()
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="現在のユーザに紐づく staff レコードが見つかりません",
+        )
+
+    staff_id = row["id"]
+    update_data = {
+        k: v for k, v in data.model_dump(exclude_unset=True, mode="python").items()
+        if k in _PROFILE_UPDATABLE
+    }
+    if not update_data:
+        raise HTTPException(status_code=400, detail="更新するフィールドを少なくとも1つ指定してください")
+
+    set_sql = ", ".join(f"{k} = :{k}" for k in update_data)
+    await db.execute(
+        text(f"UPDATE staff SET {set_sql}, updated_at = NOW() WHERE id = :id"),
+        {**update_data, "id": staff_id},
+    )
+    await record_audit_log(
+        db=db, tenant_id=tenant_id, user_id=current_user.id,
+        action="update", table_name="staff", record_id=staff_id,
+        new_data=data.model_dump(exclude_unset=True, mode="json"),
+    )
+    await db.commit()
+    await reset_tenant_context(db, tenant_id)
+
+    fetched = await db.execute(
+        text(f"""
+            SELECT {_STAFF_COLS}
+            FROM staff s
+            LEFT JOIN roles r ON r.id = s.role_id
+            WHERE s.id = :id
+        """),
+        {"id": staff_id},
+    )
+    return await _compose(db, dict(fetched.mappings().first()))
 
 
 @router.get("/staff", response_model=list[StaffResponse],

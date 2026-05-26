@@ -1,0 +1,82 @@
+/* アカウント設定ページ — 既存デザイントークン使用 */
+
+.account-settings-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  max-width: var(--max-width-form);
+}
+
+.account-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.account-settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-semi);
+  color: var(--text-primary);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-2);
+}
+
+.account-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.account-settings-label {
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.account-settings-readonly {
+  font-size: var(--font-base);
+  color: var(--text-muted);
+  padding: var(--space-2) 0;
+}
+
+.account-settings-note {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+.account-settings-coming-soon {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  margin-top: var(--space-1);
+}
+
+.account-settings-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.account-settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-2);
+}
+
+.account-settings-success {
+  font-size: var(--font-sm);
+  color: var(--success);
+  padding: var(--space-2) 0;
+}

@@ -114,7 +114,8 @@
     "switchToDark": "ダークモード",
     "switchToLight": "ライトモード",
     "managementCenter": "管理センター",
-    "designSystem": "デザインシステム"
+    "designSystem": "デザインシステム",
+    "accountSettings": "アカウント設定"
   },
   "managementCenter": {
     "sectionTeam":      "チーム・人事",
@@ -1417,6 +1418,30 @@
     "operationNotAllowed": "このログイン方法は現在利用できません。サポートにお問い合わせください。",
     "expiredActionCode": "このリンクの有効期限が切れています。最初からやり直してください。",
     "invalidActionCode": "このリンクは無効です。最新のメールをご使用ください。",
+    "requiresRecentLogin": "セキュリティのため再ログインが必要です。一度サインアウトして再度ログインしてください。",
     "default": "ログインに失敗しました。しばらく後に再試行してください。問題が続く場合はサポートにお問い合わせください。"
+  },
+  "accountSettings": {
+    "subtitle": "プロフィールとセキュリティの管理",
+    "sectionProfile": "プロフィール",
+    "sectionSecurity": "セキュリティ",
+    "surnameJp": "姓（日本語）",
+    "givenNameJp": "名（日本語）",
+    "surnameEn": "姓（英語）",
+    "givenNameEn": "名（英語）",
+    "emailLabel": "メールアドレス",
+    "emailReadOnlyNote": "メールアドレスの変更はサポートにお問い合わせください",
+    "phoneLabel": "電話番号",
+    "phoneComingSoon": "電話番号の保存は近日対応予定です",
+    "profileSaved": "プロフィールを保存しました",
+    "changePassword": "パスワードを変更",
+    "currentPassword": "現在のパスワード",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "新しいパスワード（確認）",
+    "passwordMismatch": "新しいパスワードが一致しません",
+    "passwordTooShort": "パスワードは8文字以上で入力してください",
+    "passwordChanged": "パスワードを変更しました",
+    "saving": "保存中...",
+    "changing": "変更中..."
   }
 }

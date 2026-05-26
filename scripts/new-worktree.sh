@@ -65,6 +65,42 @@ else
 
   echo ""
   echo "✅ worktree を作成しました: ${WORKTREE_DIR}"
+
+  # Active Work Registry に自動登録（SSoT: .claude-pipeline/active-work.md）
+  ACTIVE_WORK_FILE="${REPO_ROOT}/.claude-pipeline/active-work.md"
+  if [ -f "${ACTIVE_WORK_FILE}" ]; then
+    STARTED_AT="$(date '+%Y-%m-%d %H:%M')"
+    # 既存のエントリを確認
+    if grep -q "${BRANCH}" "${ACTIVE_WORK_FILE}" 2>/dev/null; then
+      echo "ℹ️  active-work.md に既存エントリあり（重複登録をスキップ）"
+    else
+      python3 - "${ACTIVE_WORK_FILE}" "${BRANCH}" "${STARTED_AT}" <<'PYEOF'
+import sys, re
+
+filepath, branch, started = sys.argv[1], sys.argv[2], sys.argv[3]
+new_row = f"| {branch} | （記入してください） | {started} | IN_PROGRESS | |"
+
+with open(filepath, encoding="utf-8") as f:
+    content = f.read()
+
+# *(なし)* プレースホルダー行を置換（初回登録）
+if "*(なし)*" in content:
+    content = re.sub(r"\| \*\(なし\)\* \| — \| — \| — \| — \|", new_row, content)
+else:
+    # テーブルの最終行の直後に新行を挿入（"## 記入例" セクションの前）
+    content = re.sub(
+        r"(## 記入例)",
+        new_row + "\n\n## 記入例",
+        content,
+        count=1,
+    )
+
+with open(filepath, "w", encoding="utf-8") as f:
+    f.write(content)
+PYEOF
+      echo "📋 active-work.md に登録しました（担当機能エリアを記入してください）"
+    fi
+  fi
 fi
 
 echo ""

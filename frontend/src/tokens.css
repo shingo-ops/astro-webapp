@@ -248,9 +248,14 @@
   --max-width-modal-sm:      420px;  /* 確認モーダル・小型ダイアログ最大幅 */
   --modal-max-w:             500px;  /* 標準モーダル最大幅 */
   --modal-profile-min-w:     480px;  /* プロフィールモーダル最小幅 */
+  --max-width-form:          560px;  /* フォームレイアウト最大幅（アカウント設定等） */
   --modal-profile-max-w:     640px;  /* プロフィールモーダル最大幅 */
   --inbox-settings-min-w:    320px;  /* 受信箱設定モーダル最小幅 */
   --inbox-settings-max-w:    480px;  /* 受信箱設定モーダル最大幅 */
+
+  /* ---- Inbox typography roles (SSoT for label/heading font scale) ---- */
+  --inbox-panel-label-size:         var(--font-xs);   /* 12px ラベル（可読性改善: 11.2px→12px） */
+  --inbox-panel-group-heading-size: var(--font-2xs);  /* 11.2px グループ見出し（10px→token化） */
 
   /* ---- Inbox layout ---- */
   --inbox-left-panel-min-w:  220px;  /* 受信箱左パネル最小幅（タブレット） */
@@ -299,6 +304,8 @@
   --schedule-mini-col-min-w: 100px;  /* ミニカレンダーカラム最小幅 */
   --schedule-slot-h:         80px;   /* タイムグリッド1時間スロット高（30分×2） */
   --schedule-nav-btn-size:   32px;   /* カレンダーナビボタン幅・高さ */
+  --schedule-allday-row-h:   28px;   /* 終日エリア固定高（1イベント行 + 余白）*/
+  --schedule-day-num-size:   1.625rem; /* 26px — カレンダー日付数字（曜日ヘッダー） */
 
   /* ---- Field sizes ---- */
   --min-width-input-sm:   120px;  /* 小型入力フィールド最小幅 */
