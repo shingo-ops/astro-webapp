@@ -47,20 +47,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: ESLint — TSXインラインスタイルへのhex色禁止 / lucide-react直接import禁止
-        run: npm run lint
-
-      - name: CSS hex色チェック — App.css等への直書き禁止
-        run: npm run check:css-colors
-
-      - name: ダークモード変数パリティチェック — :root と :root.force-dark の一致確認
-        run: npm run check:dark-parity
-
-      - name: JSX絵文字チェック — 絵文字・記号文字の直書き禁止
-        run: npm run check:jsx-emoji
-
-      - name: CSS var フォールバックチェック — var(--x, #hex) 禁止
-        run: npm run check:css-var-fallbacks
+      - name: 全チェック統合 — ADR-067 デザイントークン・レイアウト・アイコン・ページ規約
+        run: npm run check:all
 
   # ─── E2E テスト ────────────────────────────────────────────────────────────
   playwright:
