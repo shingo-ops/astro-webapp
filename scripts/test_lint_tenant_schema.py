@@ -98,6 +98,41 @@ def test_endpoint_without_tenant_id_dep_is_skipped():
     assert lint_file(p) == []
 
 
+def test_endpoint_with_url_path_tenant_id_is_skipped():
+    """super_admin 系の URL path param `tenant_id: int` は対象外
+    (`Depends(get_current_tenant)` 経由ではないため、public スキーマ操作前提)。
+    """
+    p = _write_tmp("""
+        from sqlalchemy import text
+
+        @router.put("/super-admin/foo/{tenant_id}")
+        async def upsert_foo(
+            tenant_id: int,
+            db: AsyncSession = Depends(get_db),
+        ):
+            await db.execute(text("INSERT INTO public.foo (...) VALUES (...)"))
+            await db.commit()
+    """)
+    assert lint_file(p) == []
+
+
+def test_endpoint_with_query_param_tenant_id_is_skipped():
+    """Query param の `tenant_id` も対象外
+    (`Depends(get_current_tenant)` 経由ではない)。
+    """
+    p = _write_tmp("""
+        from sqlalchemy import text
+
+        @router.get("/super-admin/foo")
+        async def list_foo(
+            tenant_id: int = Query(...),
+            db: AsyncSession = Depends(get_db),
+        ):
+            await db.execute(text("SELECT 1"))
+    """)
+    assert lint_file(p) == []
+
+
 def test_non_router_function_is_skipped():
     """通常の async 関数 (内部 helper) は endpoint と認識しない。"""
     p = _write_tmp("""
