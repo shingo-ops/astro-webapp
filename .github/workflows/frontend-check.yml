@@ -30,6 +30,11 @@ jobs:
         run: npx tsc --noEmit
         working-directory: frontend
 
+      - name: Audit unused tokens (informational・非ブロック)
+        run: npm run audit:unused-tokens
+        working-directory: frontend
+        continue-on-error: true
+
       - name: Unit tests with coverage gate
         run: |
           # テストファイルが存在する場合のみカバレッジゲートを発動（Phase 0→1 移行保護）

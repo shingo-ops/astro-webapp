@@ -88,6 +88,10 @@ export default function InventoryOffersPage() {
   const [searchQ, setSearchQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<InventoryStatus | "">("");
   const [conditionFilter, setConditionFilter] = useState("");
+  // 入力値の debounce 反映先。テキスト入力は 250ms 待ってから API を叩く
+  // (F7 InventorySearchBar と同じ閾値)。select の statusFilter は即時。
+  const [debouncedSearchQ, setDebouncedSearchQ] = useState("");
+  const [debouncedConditionFilter, setDebouncedConditionFilter] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -101,6 +105,14 @@ export default function InventoryOffersPage() {
     [total, perPage],
   );
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQ(searchQ);
+      setDebouncedConditionFilter(conditionFilter);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQ, conditionFilter]);
+
   const load = useCallback(async () => {
     setError("");
     setLoading(true);
@@ -108,9 +120,10 @@ export default function InventoryOffersPage() {
       const params = new URLSearchParams();
       params.set("page", String(page));
       params.set("per_page", String(perPage));
-      if (searchQ.trim()) params.set("q", searchQ.trim());
+      if (debouncedSearchQ.trim()) params.set("q", debouncedSearchQ.trim());
       if (statusFilter) params.set("status", statusFilter);
-      if (conditionFilter.trim()) params.set("condition", conditionFilter.trim());
+      if (debouncedConditionFilter.trim())
+        params.set("condition", debouncedConditionFilter.trim());
 
       const d = await api.get<InventoryOffersListResponse>(
         `/super-admin/inventory-offers?${params.toString()}`,
@@ -122,7 +135,7 @@ export default function InventoryOffersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, perPage, searchQ, statusFilter, conditionFilter, t]);
+  }, [page, perPage, debouncedSearchQ, statusFilter, debouncedConditionFilter, t]);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
@@ -279,9 +292,25 @@ export default function InventoryOffersPage() {
         />
       </section>
 
-      {loading && <div className="loading-indicator">{t("common.loading")}</div>}
+      {/* レイアウトシフト防止: loading 中も DOM に残し、visibility だけ切り替える */}
+      <div
+        className="loading-indicator"
+        data-testid="offers-loading"
+        aria-live="polite"
+        aria-hidden={!loading}
+        style={{
+          minHeight: "1.5rem",
+          visibility: loading ? "visible" : "hidden",
+        }}
+      >
+        {t("common.loading")}
+      </div>
 
-      <table className="data-table" data-testid="offers-table">
+      <table
+        className="data-table"
+        data-testid="offers-table"
+        aria-busy={loading}
+      >
         <thead>
           <tr>
             <th>{t("superAdmin.inventoryOffers.col.supplier")}</th>

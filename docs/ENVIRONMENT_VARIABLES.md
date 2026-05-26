@@ -232,7 +232,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 **取得**: [Google Cloud Console](https://console.cloud.google.com/auth/clients?project=sales-ops-with-claude) > `salesanchor-calendar` クライアント。
 
 **運用注意**:
-- `GOOGLE_CALENDAR_CLIENT_SECRET` は Google Console で一度しか表示されない。**発行直後に Bitwarden へ保存必須**
+- `GOOGLE_CALENDAR_CLIENT_SECRET` は Google Console で一度しか表示されない。**発行直後に GitHub Secrets および安全なバックアップ保管場所へ保存必須**
 - `GOOGLE_CALENDAR_REDIRECT_URI` は `https://api.salesanchor.jp/api/v1/google-calendar/connect/callback` に固定
 - `METADATA_FERNET_KEY` は Meta Inbox と共用（既存設定を流用）
 - GitHub Secrets に `GOOGLE_CALENDAR_CLIENT_SECRET` を登録済み（deploy 時に自動注入）
