@@ -565,3 +565,72 @@
   min-height: var(--center-header-min-h);
   flex-shrink: 0;
 }
+
+/* --- Dropdown Menu (ADR-069: 汎用ドロップダウンメニュー) --- */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: var(--min-width-dropdown);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-dropdown);
+  z-index: var(--z-topbar);
+  overflow: hidden;
+}
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-10px) var(--space-14px);
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--transition-micro);
+}
+.dropdown-item:hover { background: var(--bg-subtle); }
+
+/* --- Empty State (ADR-069: 空状態プレースホルダー) --- */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: var(--font-base);
+  gap: var(--space-3);
+}
+.empty-state-icon svg { width: var(--icon-xl); height: var(--icon-xl); }
+
+/* --- Error Banner (ADR-069: エラー通知バナー) --- */
+.error-banner {
+  padding: var(--space-2) var(--space-3);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
+  margin: var(--space-2) var(--space-3);
+}
+
+/* --- Toggle Switch (ADR-069: トグルスイッチ) --- */
+.toggle-switch { position: relative; display: inline-flex; width: var(--toggle-width); height: var(--toggle-height); cursor: pointer; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-switch-slider {
+  position: absolute; inset: 0;
+  background: var(--border); border-radius: var(--radius-xl);
+  transition: background var(--transition-micro);
+}
+.toggle-switch-slider::before {
+  content: ""; position: absolute;
+  height: var(--toggle-thumb-size); width: var(--toggle-thumb-size); left: 3px; top: 3px;
+  background: var(--bg-surface); border-radius: 50%;
+  transition: transform var(--transition-micro);
+}
+.toggle-switch input:checked + .toggle-switch-slider { background: var(--accent); }
+.toggle-switch input:checked + .toggle-switch-slider::before { transform: translateX(18px); }

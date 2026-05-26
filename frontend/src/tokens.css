@@ -202,12 +202,18 @@
   --icon-xl:    48px;   /* 空状態アイコン（empty state）専用 — アバターには --size-avatar-lg を使用 */
   /* 注: ComingSoonPage の 64px アイコンは意図的に除外（一箇所のみの特殊値） */
 
+  /* ---- Checkbox sizes ---- */
+  --size-checkbox:    16px;  /* チェックボックス標準サイズ（conv-select-check） */
+  --size-checkbox-sm: 14px;  /* チェックボックス小サイズ（bulk-check-all） */
+  --size-check-mark-w: 5px;  /* チェックマーク幅（::after 擬似要素） */
+
   /* ---- Avatar sizes（アバター専用 — SSoT: icon sizes とは意味的に分離） ---- */
   --size-avatar-sm:  32px;   /* センドカード・コンパクトリスト */
   --size-avatar-md:  40px;   /* 右パネル・ポップオーバー */
   --size-avatar-lg:  48px;   /* 会話リスト（1カラム目）*/
 
   /* ---- Opacity ---- */
+  --opacity-full:      1;     /* 不透明（三項演算子の else 側で使用）*/
   --opacity-muted:     0.7;   /* タイムスタンプ・補足テキストの減光 */
   --opacity-dim:       0.8;   /* ラベル減光・メタ情報（KPIラベル・ロールメタ） */
   --opacity-soft:      0.9;   /* アクセントラベルの軽減光 */
