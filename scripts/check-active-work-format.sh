@@ -33,24 +33,41 @@ fi
 
 echo "🔍 active-work.md フォーマット検証: ${ACTIVE_WORK_FILE}"
 
-# テーブル行のみ抽出してチェック（ヘッダー・セパレータ・コードブロック内を除く）
-# 条件: | で始まる行 AND ---|--- のセパレータ行でない AND コードブロック内でない
+# 「現在進行中の作業」セクションのテーブル行のみチェック
+# 他セクション（ルール表・状態表・記入例）は列数が異なるため対象外
 IN_CODE=0
+IN_WORK_SECTION=0
 LINE_NUM=0
+# bash の [[ =~ ]] で | を直書きすると構文エラーになるため変数経由で渡す
+SEP_RE='^\|[-| ]+\|'
 while IFS= read -r line; do
   LINE_NUM=$((LINE_NUM + 1))
-  # コードブロックの開閉を追跡
+
+  # コードブロックの開閉を追跡（コードブロック内はスキップ）
   if [[ "$line" =~ ^\`\`\` ]]; then
     IN_CODE=$(( 1 - IN_CODE ))
     continue
   fi
   [ "$IN_CODE" -eq 1 ] && continue
 
+  # セクション見出し（##）でセクションを追跡
+  if [[ "$line" =~ ^## ]]; then
+    if [[ "$line" =~ 現在進行中 ]]; then
+      IN_WORK_SECTION=1
+    else
+      IN_WORK_SECTION=0
+    fi
+    continue
+  fi
+
+  # 「現在進行中の作業」セクション外の行はスキップ
+  [ "$IN_WORK_SECTION" -eq 0 ] && continue
+
   # テーブル行のみ対象（| で始まる行）
   [[ "$line" =~ ^\| ]] || continue
 
-  # セパレータ行（|---|---| 形式）はスキップ（bash 3.2 互換: grep -E で代替）
-  echo "$line" | grep -qE '^\|[-| ]+\|' && continue
+  # セパレータ行（|---|---| 形式）はスキップ
+  [[ "$line" =~ $SEP_RE ]] && continue
 
   # 列数をカウント（| で分割してフィールド数を数える）
   # 例: "| a | b | c |" → awk で 3フィールドと判定
