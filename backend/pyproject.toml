@@ -58,4 +58,3 @@ markers = [
 # coverage gate: 80% は将来目標。未テストルーター（invoices/quotes/roles/products 等）
 # のカバレッジ追加で段階的に引き上げる。60% → 70% → 80% と段階的引き上げ予定。
 addopts = "--cov=app --cov-report=term-missing --cov-fail-under=60"
-# CI push test 2026年 5月26日 火曜日 20時59分25秒 JST
