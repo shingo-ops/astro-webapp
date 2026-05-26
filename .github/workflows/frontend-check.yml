@@ -42,3 +42,7 @@ jobs:
             echo "    Add src/**/*.test.{ts,tsx} to activate the gate."
           fi
         working-directory: frontend
+
+      - name: Storybook build check (story files must compile without errors)
+        run: npm run build-storybook
+        working-directory: frontend

@@ -121,6 +121,8 @@
   /* Inbox 専用カラートークン（Meta Business Suite 準拠 / ADR-064） */
   --inbox-separator: #e4e6eb;
   --inbox-hover: #f2f3f5;
+  --inbox-action-icon-color: var(--text-secondary); /* ヘッダーアクションアイコン色（SSoT） */
+  --inbox-bulk-icon-color: var(--text-primary);     /* 一括操作アイコン色（SSoT） */
 
   /* accent背景上のテキスト（常に白） */
   --on-accent: #ffffff;
@@ -276,6 +278,8 @@
   /* Inbox 専用カラートークン（ダーク / ADR-064） */
   --inbox-separator: #374151;
   --inbox-hover: #243046;
+  --inbox-action-icon-color: var(--text-secondary); /* ヘッダーアクションアイコン色（SSoT） */
+  --inbox-bulk-icon-color: var(--text-primary);     /* 一括操作アイコン色（SSoT） */
 
   /* サイドバー（ダーク / ADR-067） */
   --sidebar-bg:                 #1e293b;

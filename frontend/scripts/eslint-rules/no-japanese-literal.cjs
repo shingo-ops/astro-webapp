@@ -57,6 +57,7 @@ module.exports = {
         // type Status = "承認済み" | "却下" など DB enum の型定義
         if (node.parent?.type === 'TSLiteralType') return;
 
+
         // <option value="DB値"> のみ除外（他の要素の value は対象）
         // node → parent (JSXAttribute) → parent (JSXOpeningElement) → name.name
         const jsxAttr = node.parent?.type === 'JSXAttribute' ? node.parent : null;
