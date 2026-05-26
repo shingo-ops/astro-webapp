@@ -43,7 +43,6 @@ for (const [, name, value] of cssText.matchAll(/--breakpoint-([\w-]+):\s*(\d+)px
 const tsText = readFileSync(resolve(root, "src/constants/breakpoints.ts"), "utf8");
 const tsTokens = {};
 for (const [, name, value] of tsText.matchAll(/(\w+):\s*(\d+),/g)) {
-  // Find the CSS key for this TS key
   for (const [cssKey, tsKey] of Object.entries(CSS_TO_TS)) {
     if (tsKey === name) {
       tsTokens[cssKey] = Number(value);
@@ -61,31 +60,21 @@ for (const key of allKeys) {
   const tsVal = tsTokens[key];
 
   if (cssVal === undefined) {
-    console.error(
-      `[breakpoint-sync] ❌ "${CSS_TO_TS[key] || key}" found in breakpoints.ts but MISSING in tokens.css`
-    );
+    console.error(`[breakpoint-sync] ❌ "${CSS_TO_TS[key] || key}" found in breakpoints.ts but MISSING in tokens.css`);
     errors++;
   } else if (tsVal === undefined) {
-    console.error(
-      `[breakpoint-sync] ❌ --breakpoint-${key} found in tokens.css but MISSING in breakpoints.ts`
-    );
+    console.error(`[breakpoint-sync] ❌ --breakpoint-${key} found in tokens.css but MISSING in breakpoints.ts`);
     errors++;
   } else if (cssVal !== tsVal) {
-    console.error(
-      `[breakpoint-sync] ❌ ${key}: tokens.css=${cssVal}px, breakpoints.ts[${CSS_TO_TS[key]}]=${tsVal} — VALUES DIFFER`
-    );
+    console.error(`[breakpoint-sync] ❌ ${key}: tokens.css=${cssVal}px, breakpoints.ts[${CSS_TO_TS[key]}]=${tsVal} — VALUES DIFFER`);
     errors++;
   }
 }
 
 if (errors === 0) {
-  console.log(
-    `[breakpoint-sync] ✅ All ${allKeys.size} breakpoints in sync (tokens.css ↔ breakpoints.ts)`
-  );
+  console.log(`[breakpoint-sync] ✅ All ${allKeys.size} breakpoints in sync (tokens.css ↔ breakpoints.ts)`);
   process.exit(0);
 } else {
-  console.error(
-    `[breakpoint-sync] ${errors} sync error(s). Update tokens.css or breakpoints.ts to match.`
-  );
+  console.error(`[breakpoint-sync] ${errors} sync error(s). Update tokens.css or breakpoints.ts to match.`);
   process.exit(1);
 }
