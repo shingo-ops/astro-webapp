@@ -1,16 +1,21 @@
 name: Migration SQL Test
 
-# 目的: マイグレーションSQL を本番適用前に実際の PostgreSQL で検証する
+# 目的: マイグレーション（Python スクリプト + 生 SQL）を本番適用前に実際の PostgreSQL で検証する
 #
 # 検証内容:
 #   1. 既存データが入った状態でマイグレーションを実行（本番を模擬）
 #   2. 同じマイグレーションをもう一度実行（冪等性チェック）
 #   3. 追加されたカラムに既存行の値が正しく入っているか確認
 #
+# 対象:
+#   - scripts/migrate_*.py  — Python マイグレーションスクリプト
+#   - migrations/[0-9]*.sql — 生 SQL マイグレーション（{schema} テンプレートは除外）
+#
 # これにより防げること:
 #   - SQL 構文エラー（デプロイ前に発覚）
 #   - DEFAULT 指定漏れ（既存行が NULL になるバグ）
 #   - ADD COLUMN IF NOT EXISTS 書き忘れ（再実行でエラーになるバグ）
+#   - PL/pgSQL DO ブロックのロジックエラー（冪等性破壊）
 
 on:
   pull_request:
@@ -111,6 +116,17 @@ jobs:
           VALUES (1, 'existing@example.com', '既存ユーザー') ON CONFLICT DO NOTHING;
           SQL
 
+          # テナントスキーマ（PL/pgSQL DO ブロック型 SQL 用）
+          psql -h localhost -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 <<'TENANT_SQL'
+          CREATE SCHEMA IF NOT EXISTS tenant_001;
+          -- role_permissions: 078 の DO ブロックがスキーマ判定に使用するテーブル
+          CREATE TABLE IF NOT EXISTS tenant_001.role_permissions (
+              id         SERIAL PRIMARY KEY,
+              role       VARCHAR(50) NOT NULL,
+              permission VARCHAR(100) NOT NULL
+          );
+          TENANT_SQL
+
       # ── Step 2: Sprint 1 を適用（Sprint 2 の前提条件）──────────────────────────
       - name: Sprint 1 マイグレーションを適用
         env:
@@ -130,6 +146,7 @@ jobs:
           BASE=${{ github.event.pull_request.base.sha }}
           HEAD=${{ github.event.pull_request.head.sha }}
 
+          # Python スクリプト
           CHANGED=$(git diff --name-only "$BASE" "$HEAD" \
             | grep '^scripts/migrate_' | sort || true)
 
@@ -144,6 +161,24 @@ jobs:
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
             echo "🔍 対象スクリプト:"
             echo "$CHANGED"
+          fi
+
+          # 生 SQL ファイル（{schema} テンプレートは psql 直接実行不可のため除外）
+          CHANGED_SQL=$(git diff --name-only "$BASE" "$HEAD" \
+            | grep '^migrations/[0-9][0-9][0-9].*\.sql$' \
+            | xargs grep -rL '{schema}' 2>/dev/null | sort || true)
+
+          echo "changed_sql<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGED_SQL" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+          if [ -z "$CHANGED_SQL" ]; then
+            echo "has_sql_changes=false" >> "$GITHUB_OUTPUT"
+            echo "ℹ️  生 SQL マイグレーションの変更なし"
+          else
+            echo "has_sql_changes=true" >> "$GITHUB_OUTPUT"
+            echo "🔍 対象 SQL ファイル:"
+            echo "$CHANGED_SQL"
           fi
 
       - name: 変更スクリプトを 1回目実行（既存データへの適用テスト）
@@ -199,3 +234,25 @@ jobs:
           fi
 
           echo "✅ 全検証パス"
+      # ── Step 5: PR で変更された生 SQL マイグレーションを実行 ─────────────────────
+      # {schema} プレースホルダ含む旧テンプレート（018, 019 等）は検出時に除外済み
+      - name: 変更 SQL を 1回目実行（実行可否・構文チェック）
+        if: steps.detect.outputs.has_sql_changes == 'true'
+        run: |
+          echo "${{ steps.detect.outputs.changed_sql }}" | while read sqlfile; do
+            [ -z "$sqlfile" ] && continue
+            echo "▶ $sqlfile を実行中..."
+            psql -h localhost -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 -f "$sqlfile"
+            echo "✅ $sqlfile 成功"
+          done
+
+      - name: 変更 SQL を 2回目実行（冪等性テスト）
+        if: steps.detect.outputs.has_sql_changes == 'true'
+        run: |
+          echo "🔄 SQL 冪等性チェック（同じファイルを再実行）"
+          echo "${{ steps.detect.outputs.changed_sql }}" | while read sqlfile; do
+            [ -z "$sqlfile" ] && continue
+            echo "▶ $sqlfile を再実行中..."
+            psql -h localhost -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 -f "$sqlfile"
+            echo "✅ $sqlfile 再実行成功（冪等性 OK）"
+          done
