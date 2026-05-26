@@ -1345,7 +1345,19 @@
           "deltaQty": "Delta Qty",
           "alias": "Supplier alias",
           "notes": "Notes",
-          "skip": "Skip"
+          "skip": "Skip",
+          "condition": "Condition",
+          "quantityOffered": "Qty on hand",
+          "quantityOfferedPlaceholder": "Offered qty",
+          "unitPrice": "Unit price (JPY)",
+          "unitPricePlaceholder": "Offered price"
+        },
+        "condition": {
+          "unspecified": "Unspecified",
+          "new": "New",
+          "usedA": "Used A",
+          "sealed": "Sealed",
+          "opened": "Opened"
         }
       }
     },

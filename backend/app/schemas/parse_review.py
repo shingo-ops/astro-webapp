@@ -22,6 +22,13 @@ class ReviewItemInput(BaseModel):
 
     `product_id` が `None` の行は inventory_movements への反映を skip して
     `parse_result_json.skipped[]` へフォールバック保存（product 名寄せ未完）。
+
+    Sprint 11 / F11 AC11.3:
+      condition / quantity_offered / unit_price は public.inventory への
+      UPSERT 用の任意フィールド。condition が指定 + 呼出側で supplier_id
+      が確定している場合のみ inventory_movements に加えて public.inventory
+      も更新される。condition が None なら inventory UPSERT は skip し
+      従来挙動 (inventory_movements + products.stock_quantity のみ反映)。
     """
 
     product_id: int | None = Field(
@@ -37,6 +44,33 @@ class ReviewItemInput(BaseModel):
     notes: str | None = Field(default=None, max_length=500)
     # parse_result_json.items[] の元 index（採用された行の追跡用、任意）
     original_index: int | None = Field(default=None, ge=0)
+
+    # Sprint 11 / F11 AC11.3 拡張 (任意・後方互換)
+    condition: str | None = Field(
+        default=None,
+        max_length=32,
+        description=(
+            "商品の状態 (例: 'new' / 'used_a' / 'sealed' / 'opened')。"
+            "public.inventory UNIQUE(supplier_id × product_id × condition) の"
+            "discriminator。None なら inventory UPSERT は skip。"
+        ),
+    )
+    quantity_offered: int | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "仕入元が今オファーしている在庫数量。public.inventory.quantity に"
+            "UPSERT される。None なら apply 側で after_qty で代替 (後方互換)。"
+        ),
+    )
+    unit_price: int | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "仕入元の提示単価 (円・税抜)。public.inventory.unit_price に"
+            "UPSERT される。None なら 0 で記録 (apply 側既定)。"
+        ),
+    )
 
 
 class ApproveRequest(BaseModel):

@@ -1345,7 +1345,19 @@
           "deltaQty": "差分数量",
           "alias": "仕入元呼称",
           "notes": "メモ",
-          "skip": "スキップ"
+          "skip": "スキップ",
+          "condition": "状態",
+          "quantityOffered": "在庫数",
+          "quantityOfferedPlaceholder": "提示数量",
+          "unitPrice": "単価 (円)",
+          "unitPricePlaceholder": "提示単価"
+        },
+        "condition": {
+          "unspecified": "未指定",
+          "new": "新品",
+          "usedA": "中古 A",
+          "sealed": "未開封",
+          "opened": "開封済"
         }
       }
     },
