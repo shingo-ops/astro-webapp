@@ -642,7 +642,7 @@ _pg_skip = pytest.mark.skipif(
 )
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def pg_engine_for_scopes():
     assert _PG_DSN
     eng = create_async_engine(_PG_DSN, echo=False, future=True)
@@ -650,7 +650,7 @@ async def pg_engine_for_scopes():
     await eng.dispose()
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def pg_setup_scopes_schema(pg_engine_for_scopes):
     """tenant_997 schema + tenant_meta_config + granted_scopes JSONB 列を作る。
 
@@ -679,7 +679,7 @@ async def pg_setup_scopes_schema(pg_engine_for_scopes):
         await conn.execute(text("DROP SCHEMA IF EXISTS tenant_997 CASCADE"))
 
 
-@pytest_asyncio.fixture()
+@pytest_asyncio.fixture(loop_scope="module")
 async def pg_conn_scopes(pg_engine_for_scopes, pg_setup_scopes_schema):
     """各テストごとに独立 AsyncConnection。テスト前に TRUNCATE。"""
     async with pg_engine_for_scopes.connect() as conn:
@@ -700,7 +700,7 @@ def _eval_requires_reauth(scopes_raw) -> tuple[Optional[list[str]], bool]:
 
 
 @_pg_skip
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="module")
 async def test_pg_requires_reauth_false_when_business_management_present(pg_conn_scopes):
     """[Postgres] granted_scopes JSONB に business_management 含む 7 scope → False。"""
     async with pg_conn_scopes.begin():
@@ -724,7 +724,7 @@ async def test_pg_requires_reauth_false_when_business_management_present(pg_conn
 
 
 @_pg_skip
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="module")
 async def test_pg_requires_reauth_true_when_business_management_missing(pg_conn_scopes):
     """[Postgres] granted_scopes JSONB が 6 scope (旧) → True。"""
     async with pg_conn_scopes.begin():
@@ -748,7 +748,7 @@ async def test_pg_requires_reauth_true_when_business_management_missing(pg_conn_
 
 
 @_pg_skip
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="module")
 async def test_pg_requires_reauth_false_when_granted_scopes_null(pg_conn_scopes):
     """[Postgres] granted_scopes JSONB が NULL → False (sql_no_scopes 経路相当)。"""
     async with pg_conn_scopes.begin():

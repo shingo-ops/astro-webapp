@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS {schema}.sample_table (
 """
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def pg_engine():
     assert _RLS_DB_URL, "RLS_TEST_DATABASE_URL が未設定"
     eng = create_async_engine(_RLS_DB_URL, echo=False, future=True)
@@ -81,7 +81,7 @@ async def pg_engine():
     await eng.dispose()
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def test_schemas(pg_engine):
     """テスト用スキーマを作成し、テスト後にドロップする。"""
     async with pg_engine.begin() as conn:
@@ -158,7 +158,7 @@ class TestComputeDiff:
 class TestSchemaInspection:
     """PostgreSQL 上での information_schema 取得テスト。"""
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="module")
     async def test_get_schema_columns_returns_tables(self, pg_engine, test_schemas):
         schema_a, _ = test_schemas
         async with pg_engine.connect() as conn:
@@ -168,7 +168,7 @@ class TestSchemaInspection:
         assert "name" in cols["sample_table"]
         assert "created_at" in cols["sample_table"]
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="module")
     async def test_identical_schemas_have_no_diff(self, pg_engine, test_schemas):
         schema_a, schema_b = test_schemas
         async with pg_engine.connect() as conn:
@@ -181,7 +181,7 @@ class TestSchemaInspection:
             f"missing_columns={[c.column_name for c in diff.missing_columns]}"
         )
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="module")
     async def test_detects_added_column_in_one_schema(self, pg_engine, test_schemas):
         """schema_a にカラムを追加した場合、schema_b との差分が検出される。"""
         schema_a, schema_b = test_schemas
@@ -199,21 +199,21 @@ class TestSchemaInspection:
         missing_names = [c.column_name for c in diff.missing_columns]
         assert "extra_col" in missing_names
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="module")
     async def test_get_trigger_count_returns_integer(self, pg_engine, test_schemas):
         schema_a, _ = test_schemas
         async with pg_engine.connect() as conn:
             count = await _get_trigger_count(conn, schema_a)
         assert isinstance(count, int) and count >= 0
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="module")
     async def test_get_rls_enabled_count_returns_integer(self, pg_engine, test_schemas):
         schema_a, _ = test_schemas
         async with pg_engine.connect() as conn:
             count = await _get_rls_enabled_count(conn, schema_a)
         assert isinstance(count, int) and count >= 0
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="module")
     async def test_get_role_permission_count_returns_minus_one_when_no_table(
         self, pg_engine, test_schemas
     ):
@@ -235,7 +235,7 @@ class TestRealTenantSchemas:
     public.tenants と tenant_004 スキーマが存在しない場合は自動スキップ。
     """
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio(loop_scope="module")
     async def test_active_tenants_have_consistent_schema(self, pg_engine):
         """全テナントのテーブル数・カラム数・RLS 有効数が tenant_004 と一致すること。"""
         async with pg_engine.connect() as conn:
