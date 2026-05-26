@@ -164,9 +164,11 @@ jobs:
           fi
 
           # 生 SQL ファイル（{schema} テンプレートは psql 直接実行不可のため除外）
+          # xargs -r: 入力が空なら grep を実行しない（GNU xargs）
+          # grep -L (not -rL): ディレクトリ再帰を行わない
           CHANGED_SQL=$(git diff --name-only "$BASE" "$HEAD" \
             | grep '^migrations/[0-9][0-9][0-9].*\.sql$' \
-            | xargs grep -rL '{schema}' 2>/dev/null | sort || true)
+            | xargs -r grep -L '{schema}' 2>/dev/null | sort || true)
 
           echo "changed_sql<<EOF" >> "$GITHUB_OUTPUT"
           echo "$CHANGED_SQL" >> "$GITHUB_OUTPUT"
