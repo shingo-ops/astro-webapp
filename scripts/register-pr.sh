@@ -77,7 +77,7 @@ for i, line in enumerate(lines):
     if f"| {branch} |" in line and not line.strip().startswith("|---"):
         parts = line.split("|")
         if len(parts) >= 7:  # 6列テーブル（| col1 | col2 | ... | col6 | で8要素）
-            parts[6] = f" {pr_num} "  # PR# 列（0-indexで6番目）
+            parts[5] = f" {pr_num} "  # PR# 列（0-indexで5番目: ''|branch|area|date|status|PR#|notes|''）
             lines[i] = "|".join(parts)
             updated = True
             break

@@ -66,9 +66,10 @@ fi
 # チェック2: active-work.md との整合確認
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # awk でテーブルの PR# 列（6列目）を取得（macOS/BSD 互換）
+# 注意: ブランチ名は完全一致（==）で比較する。~ はregex扱いになりメタ文字が誤マッチする。
 if [ -f "${ACTIVE_WORK_FILE}" ]; then
   ACTIVE_PR="$(awk -F'|' -v branch="${CURRENT_BRANCH}" \
-    '$0 ~ "\\| " branch " \\|" { gsub(/ /, "", $6); print $6 }' \
+    '{ gsub(/ /, "", $2); if ($2 == branch) { gsub(/ /, "", $6); print $6 } }' \
     "${ACTIVE_WORK_FILE}")"
   if [ -n "${ACTIVE_PR}" ] && [ "${ACTIVE_PR}" != "${OWNED_PR}" ]; then
     echo ""
@@ -82,6 +83,31 @@ if [ -f "${ACTIVE_WORK_FILE}" ]; then
     echo ""
     exit 1
   fi
+fi
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# チェック3: GitHub API でPRのブランチ名を確認（.pr-numberの不整合検出）
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ACTUAL_BRANCH="$(gh pr view "${OWNED_PR}" --json headRefName --jq '.headRefName' 2>/dev/null || true)"
+if [ -n "${ACTUAL_BRANCH}" ] && [ "${ACTUAL_BRANCH}" != "${CURRENT_BRANCH}" ]; then
+  echo ""
+  echo "🚫 マージを中断しました: .pr-number のPR#${OWNED_PR} は別ブランチのPRです。"
+  echo ""
+  echo "   .pr-number の PR#: ${OWNED_PR}"
+  echo "   GitHub上のブランチ: ${ACTUAL_BRANCH}"
+  echo "   現在のブランチ:     ${CURRENT_BRANCH}"
+  echo ""
+  echo "   register-pr.sh を再実行して正しいPR番号を登録してください。"
+  echo ""
+  exit 1
+fi
+
+PR_STATE="$(gh pr view "${OWNED_PR}" --json state --jq '.state' 2>/dev/null || true)"
+if [ "${PR_STATE}" = "MERGED" ] || [ "${PR_STATE}" = "CLOSED" ]; then
+  echo ""
+  echo "🚫 マージを中断しました: PR #${OWNED_PR} はすでに ${PR_STATE} です。"
+  echo ""
+  exit 1
 fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

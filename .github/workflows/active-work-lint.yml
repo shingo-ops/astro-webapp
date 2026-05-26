@@ -2,16 +2,24 @@ name: active-work lint
 
 on:
   push:
-    paths:
-      - '.claude-pipeline/active-work.md'
+    branches-ignore:
+      - 'main'
   pull_request:
-    paths:
-      - '.claude-pipeline/active-work.md'
 
 jobs:
   format-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Check active-work.md column format
-        run: bash scripts/check-active-work-format.sh
+        run: |
+          # active-work.md が変更されていない場合はスキップ（必須ステータスチェック対応）
+          if git diff --name-only "origin/${{ github.base_ref || 'develop' }}...HEAD" 2>/dev/null \
+              | grep -q '\.claude-pipeline/active-work\.md'; then
+            echo "active-work.md の変更を検出しました。フォーマット検証を実行します。"
+            bash scripts/check-active-work-format.sh
+          else
+            echo "active-work.md は変更されていません。スキップします。"
+          fi
