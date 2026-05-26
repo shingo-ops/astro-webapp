@@ -19,6 +19,7 @@
 | feature/morimoto/monitoring-tokens-sst | （記入してください） | 2026-05-26 23:45 | IN_PROGRESS | | |
 | feature/morimoto/agent-pr-ownership-enforcement | 開発ルール強化（PR混入防止） | 2026-05-27 00:06 | REVIEW | 881 | |
 | fix/morimoto/inbox-panel-split-dom | 受信箱 DOM構造修正 | 2026-05-27 17:10 | REVIEW | 839 | gitleaks CI再トリガー |
+| feature/morimoto/pr-base-guard | PR誤マージ防止（gh-pr-create-safe） | 2026-05-27 | IN_PROGRESS | | |
 
 | feature/morimoto/fix-active-work-format-check | （記入してください） | 2026-05-27 02:31 | IN_PROGRESS | | |
 | feature/morimoto/auto-register-pr | （記入してください） | 2026-05-27 02:36 | IN_PROGRESS | | |
