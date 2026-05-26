@@ -304,17 +304,17 @@
   display: none;
 }
 
-/* 終日セル行の高さを最小化 */
+/* 終日エリア: 固定高（Google Calendar 準拠: 1行表示 + +N more） */
 .fc .fc-daygrid-body {
   width: 100% !important;
 }
 
 .fc .fc-timegrid-allday-table {
-  min-height: 0;
+  min-height: var(--schedule-allday-row-h);
 }
 
 .fc .fc-timegrid-allday .fc-daygrid-day-events {
-  min-height: 0;
+  min-height: var(--schedule-allday-row-h);
   padding: 0;
 }
 
