@@ -80,7 +80,7 @@ ADR は What/Why/Scope のみ記述（実装手順 How は書かない）。`cla
 7. 全セッションで Claude が知る必要があるか？ → NO: **書かない**（ADRリンクか docs/ 参照で十分）
 8. 上記をすべて通過した場合のみ追加。既存セクションへの統合を最優先（新セクション追加は最後の手段）。
 
-**ファイル全体が 90 行を超えたら `frontend/scripts/check-claude-size.js` がコミットをブロックする。**
+**ファイル全体が 120 行を超えたら `frontend/scripts/check-claude-size.js` が CI / pre-commit でブロックする。**
 
 ---
 
