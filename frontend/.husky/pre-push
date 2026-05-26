@@ -24,3 +24,12 @@ VALIDATION_SCRIPT="$(git rev-parse --show-toplevel)/scripts/validate-pr-ownershi
 if [ -f "$VALIDATION_SCRIPT" ]; then
   bash "$VALIDATION_SCRIPT" || exit 1
 fi
+
+# active-work.md フォーマットチェック（push時に列数ズレを検出）
+CHANGED_FILES=$(git diff --name-only HEAD@{u} HEAD 2>/dev/null || git diff --name-only HEAD 2>/dev/null)
+if echo "$CHANGED_FILES" | grep -q "\.claude-pipeline/active-work\.md"; then
+  FORMAT_SCRIPT="$(git rev-parse --show-toplevel)/scripts/check-active-work-format.sh"
+  if [ -f "$FORMAT_SCRIPT" ]; then
+    bash "$FORMAT_SCRIPT" || exit 1
+  fi
+fi
