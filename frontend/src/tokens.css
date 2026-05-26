@@ -309,4 +309,32 @@
 
   /* ---- Field sizes ---- */
   --min-width-input-sm:   120px;  /* 小型入力フィールド最小幅 */
+
+  /* ---- Phase 5: 入力フィールド幅 (ADR-067) ---- */
+  --size-thread-avatar:    36px;   /* 受信箱スレッド送信者アバター */
+  --input-width-qty:       70px;   /* 数量入力フィールド */
+  --input-width-weight:    80px;   /* 重量入力フィールド */
+  --input-width-year:      90px;   /* 年・単価入力フィールド */
+  --input-width-month:     60px;   /* 月入力フィールド */
+
+  /* ---- Phase 5: テーブル構造 (ADR-067) ---- */
+  --table-min-width-base:  720px;  /* テーブル最小幅（見積もり等） */
+  --table-col-min-width:   280px;  /* テーブルカラム最小幅 */
+  --col-width-checkbox:     40px;  /* チェックボックス列幅 */
+  --col-width-medium:      200px;  /* 中幅カラム（エラーセル・検索フィールド） */
+  --col-width-wide:        240px;  /* 広めカラム（解析レビュー等） */
+  --col-width-url:         300px;  /* URL表示カラム */
+
+  /* ---- Phase 5: モーダル・パネル幅 (ADR-067) ---- */
+  --modal-wide-w:          880px;  /* 広めモーダル（詳細・配送パネル） */
+  --modal-commission-w:    760px;  /* 手数料パネル */
+  --modal-detail-max-w:    720px;  /* 売上情報パネル */
+  --dropdown-list-h:       280px;  /* マージモーダル候補リスト高さ */
+  --dropdown-results-max-h: 320px; /* 在庫検索候補リスト最大高 */
+  --textarea-min-h-lg:     120px;  /* 大テキストエリア最小高 */
+
+  /* ---- Phase 5: Storybook / デモ (ADR-067) ---- */
+  --ds-preview-width:      320px;  /* Storybookプレビューコンテナ幅 */
+  --ds-panel-size:         120px;  /* デザインシステムデモパネルサイズ */
+  --story-width-sm:        280px;  /* Storybookコンパクトプレビュー幅 */
 }

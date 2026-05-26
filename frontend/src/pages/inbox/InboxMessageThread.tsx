@@ -164,7 +164,7 @@ export function InboxMessageThread({
         )}
         <div className="send-card">
           <div className="send-top-row">
-            <div className="conv-avatar" style={{ width: 36, height: 36, fontSize: "var(--font-xs)", flexShrink: 0 }}>
+            <div className="conv-avatar" style={{ width: 'var(--size-thread-avatar)', height: 'var(--size-thread-avatar)', fontSize: "var(--font-xs)", flexShrink: 0 }}>
               Me
             </div>
             <div className="send-input-wrap">

@@ -76,7 +76,7 @@ export function OrdersFilterBar({
           placeholder={t("common.search")}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          style={{ flex: "1 1 240px", minWidth: 200 }}
+          style={{ flex: "1 1 240px", minWidth: 'var(--col-width-medium)' }}
           data-testid="orders-search-input"
         />
         <select

@@ -400,7 +400,7 @@ export default function ParseReviewPage() {
                     }
                   >
                     <td>{idx}</td>
-                    <td style={{ minWidth: 240 }}>
+                    <td style={{ minWidth: 'var(--col-width-wide)' }}>
                       {row.product_id === null ? (
                         <div data-testid={`review-row-${idx}-missing-product`}>
                           <em

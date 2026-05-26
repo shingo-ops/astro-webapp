@@ -26,7 +26,7 @@ type Story = StoryObj
 export const FieldRow: Story = {
   name: 'フィールド行（ラベル + 値）',
   render: () => (
-    <div style={{ width: 280 }}>
+    <div style={{ width: 'var(--story-width-sm)' }}>
       <div className="right-panel-row">
         <span className="right-panel-label">メールアドレス</span>
         <span className="right-panel-value">taro.yamada@example.com</span>
@@ -49,7 +49,7 @@ export const FieldRow: Story = {
 export const LabelOnly: Story = {
   name: 'ラベル単体（値なし状態）',
   render: () => (
-    <div style={{ width: 280 }}>
+    <div style={{ width: 'var(--story-width-sm)' }}>
       <div className="right-panel-row">
         <span className="right-panel-label">メールアドレス</span>
         <span className="right-panel-value" style={{ color: 'var(--text-muted)' }}>未設定</span>
@@ -68,7 +68,7 @@ export const LabelOnly: Story = {
 export const SectionWithGroups: Story = {
   name: 'セクション構造（グループ見出し付き）',
   render: () => (
-    <div style={{ width: 280 }}>
+    <div style={{ width: 'var(--story-width-sm)' }}>
       <p className="right-panel-section-title">連絡先情報</p>
 
       <p className="right-panel-group-heading">基本情報</p>
@@ -100,7 +100,7 @@ export const SectionWithGroups: Story = {
 export const TypographyScale: Story = {
   name: 'タイポグラフィスケール（トークン確認）',
   render: () => (
-    <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ width: 'var(--ds-preview-width)', display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
         <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>
           .right-panel-section-title → var(--font-md) = 16px

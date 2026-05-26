@@ -136,6 +136,7 @@ export default function OrderFinancialPanel({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   const buildPayload = (): Record<string, number | string | null> => {
@@ -204,7 +205,7 @@ export default function OrderFinancialPanel({
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 720 }}
+        style={{ maxWidth: 'var(--modal-detail-max-w)' }}
         role="dialog"
         aria-label={t("financial.revenue_amount")}
       >

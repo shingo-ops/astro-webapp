@@ -276,7 +276,7 @@ export default function CommissionSettingsPage() {
                   min={2000}
                   max={2999}
                   onChange={(e) => setYear(Number(e.target.value))}
-                  style={{ width: 90, marginLeft: "var(--space-2)" }}
+                  style={{ width: 'var(--input-width-year)', marginLeft: "var(--space-2)" }}
                   data-testid="monthly-year"
                 />
               </label>
@@ -288,7 +288,7 @@ export default function CommissionSettingsPage() {
                   min={1}
                   max={12}
                   onChange={(e) => setMonth(Number(e.target.value))}
-                  style={{ width: 60, marginLeft: "var(--space-2)" }}
+                  style={{ width: 'var(--input-width-month)', marginLeft: "var(--space-2)" }}
                   data-testid="monthly-month"
                 />
               </label>

@@ -90,12 +90,21 @@ jobs:
                       f"   理由: {check['reason']}"
                   )
               elif check["rule"] == "has_backend_in_paths":
-                  if paths is None:
-                      errors.append(
-                          f"❌ {check['file']}: paths: filter が削除されています\n"
-                          f"   理由: {check['reason']}"
-                      )
-                  elif "backend/**" not in paths:
+                  if paths is not None and "backend/**" in paths:
+                      pass  # 従来方式（PR #801）: pull_request.paths に backend/** 指定
+                  elif paths is None:
+                      # detect-changes 方式: paths 削除 + detect-changes ジョブで条件付き実行
+                      # （PO 承認済み: フロントのみ PR でも必須チェックを通過させるため）
+                      with open(check["file"]) as f2:
+                          d2 = yaml.safe_load(f2)
+                      jobs2 = d2.get("jobs", {})
+                      if "detect-changes" not in jobs2:
+                          errors.append(
+                              f"❌ {check['file']}: paths が削除されていますが "
+                              f"detect-changes ジョブが存在しません\n"
+                              f"   理由: {check['reason']}"
+                          )
+                  else:
                       errors.append(
                           f"❌ {check['file']}: paths に backend/** が含まれていません\n"
                           f"   現在の paths: {paths}\n"

@@ -103,6 +103,7 @@ export default function CommissionPanel({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   const staffOptions = useMemo(() => {
@@ -179,7 +180,7 @@ export default function CommissionPanel({
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 760, maxHeight: "90vh", overflowY: "auto" }}
+        style={{ maxWidth: 'var(--modal-commission-w)', maxHeight: "90vh", overflowY: "auto" }}
         role="dialog"
         aria-label={t("commission.assignedStaff")}
       >

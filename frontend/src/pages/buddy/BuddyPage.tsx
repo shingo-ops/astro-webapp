@@ -24,6 +24,7 @@ export default function BuddyPage() {
     } catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -42,6 +43,7 @@ export default function BuddyPage() {
   return (
     <PageLayout
       navKey="nav.buddy"
+      subtitleKey="buddy.subtitle"
       headerAction={hasPermission("buddy.manage") ? (
         <button className="btn-primary" onClick={() => setShowForm(true)}>{t("buddy.newPair")}</button>
       ) : undefined}
