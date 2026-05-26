@@ -15,8 +15,9 @@ import { execSync } from 'child_process';
 
 const repoRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf8' }).trim();
 
-// サブディレクトリの CLAUDE.md のみ対象（ルート CLAUDE.md は既存の大規模ファイルのため除外）
+// 各 CLAUDE.md の上限行数（超過すると CI / pre-commit がブロック）
 const LIMITS = [
+  { path: 'CLAUDE.md', limit: 120 },
   { path: 'frontend/CLAUDE.md', limit: 60 },
   { path: 'backend/CLAUDE.md', limit: 45 },
 ];
