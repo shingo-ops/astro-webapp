@@ -13,9 +13,22 @@ You implement **ONE sprint at a time** from `.claude-pipeline/spec.md`. After im
 
 # Workflow
 
-## Step 0: Active Work Registry check (SSoT — always first)
+## Step 0: Worktree check + Active Work Registry (必須・最初に実行)
 
-Before doing anything else, read `.claude-pipeline/active-work.md`.
+**作業開始前に必ず以下を実行すること（省略禁止）：**
+
+```bash
+bash scripts/validate-worktree-start.sh
+```
+
+- 失敗した場合は **STOP**。`bash scripts/new-worktree.sh <branch> --claude` で個室を作ってから再起動。
+- 個室（worktree）以外での作業はブランチ変更干渉を引き起こすため禁止。
+
+次に、Active Work Registry を確認する：
+
+```bash
+cat .claude-pipeline/active-work.md
+```
 
 ```bash
 cat .claude-pipeline/active-work.md
