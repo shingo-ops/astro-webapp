@@ -20,7 +20,7 @@
 }
 
 .gs-back-btn:hover {
-  background: var(--bg-hover, rgba(0, 0, 0, 0.05));
+  background: var(--bg-hover);
 }
 
 .gs-layout {
@@ -115,7 +115,7 @@
 
 .gs-input.gs-input-saved {
   border-color: var(--success);
-  background: rgba(72, 187, 120, 0.05);
+  background: var(--success-bg-subtle);
 }
 
 .gs-saved-mark {
