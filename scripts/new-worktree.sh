@@ -87,10 +87,13 @@ with open(filepath, encoding="utf-8") as f:
 if "*(なし)*" in content:
     content = re.sub(r"\| \*\(なし\)\* \| — \| — \| — \| — \|", new_row, content)
 else:
-    # テーブルの最終行の直後に新行を挿入（"## 記入例" セクションの前）
+    # テーブルの最終行の直後に挿入（--- セパレータの前）
+    # 構造: | 最終行 |\n\n---\n\n## 記入例
+    # "## 記入例" の前には "---" セパレータがあるため、
+    # "## 記入例" の直前に挿入するとテーブル外になるバグを修正
     content = re.sub(
-        r"(## 記入例)",
-        new_row + "\n\n## 記入例",
+        r"(\n---\n\n## 記入例)",
+        "\n" + new_row + r"\1",
         content,
         count=1,
     )
