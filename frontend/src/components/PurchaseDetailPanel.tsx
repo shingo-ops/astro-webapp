@@ -182,6 +182,7 @@ export default function PurchaseDetailPanel({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   const setField = (key: TextKey | NumberKey, value: string) => {
@@ -262,7 +263,7 @@ export default function PurchaseDetailPanel({
       <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 880, maxHeight: "90vh", overflowY: "auto" }}
+        style={{ maxWidth: 'var(--modal-wide-w)', maxHeight: "90vh", overflowY: "auto" }}
         role="dialog"
         aria-label={t("purchase.modalAriaLabel")}
       >

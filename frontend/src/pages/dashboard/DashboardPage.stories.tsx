@@ -25,7 +25,7 @@ type Story = StoryObj
 export const FollowupStatusColors: Story = {
   name: 'フォローアップ状態色（ADR-067 rgba トークン）',
   render: () => (
-    <div style={{ width: 320 }}>
+    <div style={{ width: 'var(--ds-preview-width)' }}>
       <div className="db-followup-item db-overdue" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-2)', borderRadius: 'var(--radius-md)' }}>
         <span style={{ fontSize: 'var(--font-sm)' }}>期限超過（--danger-bg-subtle）</span>
       </div>

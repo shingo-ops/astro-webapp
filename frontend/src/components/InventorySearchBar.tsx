@@ -296,7 +296,7 @@ export default function InventorySearchBar({
             top: "100%",
             left: 0,
             right: 0,
-            maxHeight: 320,
+            maxHeight: 'var(--dropdown-results-max-h)',
             overflowY: "auto",
             margin: "2px 0 0 0",
             padding: 0,

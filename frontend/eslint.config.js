@@ -62,6 +62,44 @@ export default [{
         message:
           "❌ インラインスタイルへの rgba()/rgb() 色直書き禁止（ADR-067）。CSS変数を使ってください: style={{ background: 'var(--overlay-bg)' }}",
       },
+      // ---- Phase 5: width/height/minWidth/maxWidth/minHeight/maxHeight 数値直書き禁止 (ADR-067) ----
+      // 0 は flexbox リセット用として許可。文字列値（"100%" 等）は許可。
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='width'][value.type='Literal'][value.raw=/^\\d+(\\.\\d+)?$/]",
+        message:
+          "❌ width 数値直書き禁止（ADR-067 Phase 5）→ style={{ width: 'var(--input-width-qty)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='height'][value.type='Literal'][value.raw=/^\\d+(\\.\\d+)?$/]",
+        message:
+          "❌ height 数値直書き禁止（ADR-067 Phase 5）→ style={{ height: 'var(--size-thread-avatar)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='minWidth'][value.type='Literal'][value.raw=/^[1-9]\\d*(\\.\\d+)?$/]",
+        message:
+          "❌ minWidth 数値直書き禁止（ADR-067 Phase 5）→ style={{ minWidth: 'var(--table-col-min-width)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='maxWidth'][value.type='Literal'][value.raw=/^[1-9]\\d*(\\.\\d+)?$/]",
+        message:
+          "❌ maxWidth 数値直書き禁止（ADR-067 Phase 5）→ style={{ maxWidth: 'var(--modal-wide-w)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='minHeight'][value.type='Literal'][value.raw=/^[1-9]\\d*(\\.\\d+)?$/]",
+        message:
+          "❌ minHeight 数値直書き禁止（ADR-067 Phase 5）→ style={{ minHeight: 'var(--textarea-min-h-lg)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='maxHeight'][value.type='Literal'][value.raw=/^[1-9]\\d*(\\.\\d+)?$/]",
+        message:
+          "❌ maxHeight 数値直書き禁止（ADR-067 Phase 5）→ style={{ maxHeight: 'var(--dropdown-results-max-h)' }}",
+      },
     ],
 
     // アイコン一元管理（ADR-067 拡張）:
@@ -97,6 +135,43 @@ export default [{
         selector: "JSXOpeningElement[name.name='h2']",
         message:
           '❌ raw <h2> 禁止（ADR-067）。<PageLayout navKey="nav.xxx"> を使ってください（frontend/CLAUDE.md 参照）',
+      },
+      // ---- Phase 5 (再掲: pages/ ブロックが上書きするため重複必要) ----
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='width'][value.type='Literal'][value.raw=/^\\d+(\\.\\d+)?$/]",
+        message:
+          "❌ width 数値直書き禁止（ADR-067 Phase 5）→ style={{ width: 'var(--input-width-qty)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='height'][value.type='Literal'][value.raw=/^\\d+(\\.\\d+)?$/]",
+        message:
+          "❌ height 数値直書き禁止（ADR-067 Phase 5）→ style={{ height: 'var(--size-thread-avatar)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='minWidth'][value.type='Literal'][value.raw=/^[1-9]\\d*(\\.\\d+)?$/]",
+        message:
+          "❌ minWidth 数値直書き禁止（ADR-067 Phase 5）→ style={{ minWidth: 'var(--table-col-min-width)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='maxWidth'][value.type='Literal'][value.raw=/^[1-9]\\d*(\\.\\d+)?$/]",
+        message:
+          "❌ maxWidth 数値直書き禁止（ADR-067 Phase 5）→ style={{ maxWidth: 'var(--modal-wide-w)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='minHeight'][value.type='Literal'][value.raw=/^[1-9]\\d*(\\.\\d+)?$/]",
+        message:
+          "❌ minHeight 数値直書き禁止（ADR-067 Phase 5）→ style={{ minHeight: 'var(--textarea-min-h-lg)' }}",
+      },
+      {
+        selector:
+          "JSXAttribute[name.name='style'] Property[key.name='maxHeight'][value.type='Literal'][value.raw=/^[1-9]\\d*(\\.\\d+)?$/]",
+        message:
+          "❌ maxHeight 数値直書き禁止（ADR-067 Phase 5）→ style={{ maxHeight: 'var(--dropdown-results-max-h)' }}",
       },
     ],
   },

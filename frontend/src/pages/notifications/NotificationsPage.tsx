@@ -69,7 +69,7 @@ export default function NotificationsPage() {
             {channels.map(ch => (
               <tr key={ch.id}>
                 <td>{ch.channel_name}</td>
-                <td className="mono" style={{ maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis" }}>{ch.webhook_url}</td>
+                <td className="mono" style={{ maxWidth: 'var(--col-width-url)', overflow: "hidden", textOverflow: "ellipsis" }}>{ch.webhook_url}</td>
                 <td><span className={`badge badge-${ch.is_active ? "won" : "lost"}`}>{ch.is_active ? t("common.active") : t("common.inactive")}</span></td>
                 <td className="actions">
                   {hasPermission("notifications.manage") && <button className="btn-sm btn-danger" onClick={() => handleDelete(ch.id)}>{t("common.delete")}</button>}
