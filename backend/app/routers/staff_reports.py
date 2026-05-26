@@ -111,7 +111,7 @@ async def create_report(
     prefix = {"daily": "DR", "weekly": "WR", "monthly": "MR"}.get(data.report_type.value, "SR")
 
     result = await db.execute(
-        text(f"""
+        text("""
             INSERT INTO staff_reports (tenant_id, report_type, user_id, period, review, goals, challenges, self_evaluation)
             VALUES (:tid, :rtype, :uid, :period, :review, :goals, :challenges, :self_eval)
             RETURNING id

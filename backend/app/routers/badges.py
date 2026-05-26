@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """バッジ・ゲーミフィケーションAPI。変更履歴: 2026-04-17 初版（Phase 5）"""
 
 from fastapi import APIRouter, Depends, HTTPException, status

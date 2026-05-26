@@ -25,8 +25,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import (
-    get_current_user,
     get_current_tenant,
+    get_current_user,
     require_permission,
     reset_tenant_context,
 )
@@ -503,8 +503,6 @@ async def create_customer(
             detail="顧客の登録に失敗しました（customer_code 重複または制約違反の可能性）",
         )
     await invalidate_dashboard_cache(tenant_id)
-    # commit 後の副テーブル SELECT 前に tenant コンテキスト再設定
-    await reset_tenant_context(db, tenant_id)
     return await _compose_response(db, dict(row))
 
 
@@ -636,8 +634,6 @@ async def update_customer(
     await db.commit()
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
-    # commit 後の副テーブル SELECT 前に tenant コンテキスト再設定
-    await reset_tenant_context(db, tenant_id)
 
     fetched = await db.execute(
         text(f"SELECT {_CUSTOMER_COLUMNS} FROM customers WHERE id = :id"),

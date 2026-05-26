@@ -19,6 +19,7 @@ export default function ERPPage() {
     catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const exportInvoices = async () => {
@@ -41,6 +42,7 @@ export default function ERPPage() {
   return (
     <PageLayout
       navKey="nav.dataManagement"
+      subtitleKey="erp.subtitle"
       headerAction={hasPermission("erp.sync") ? (
         <button className="btn-primary" onClick={exportInvoices} disabled={exporting}>
           {exporting ? t("erp.exporting") : t("erp.exportInvoices")}
@@ -61,7 +63,7 @@ export default function ERPPage() {
                 <td><span className={`badge badge-${l.status === "completed" ? "won" : l.status === "failed" ? "lost" : "pending"}`}>{l.status}</span></td>
                 <td>{new Date(l.started_at).toLocaleString()}</td>
                 <td>{l.completed_at ? new Date(l.completed_at).toLocaleString() : "-"}</td>
-                <td style={{ color: "var(--danger)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>{l.error_message || "-"}</td>
+                <td style={{ color: "var(--danger)", maxWidth: 'var(--col-width-medium)', overflow: "hidden", textOverflow: "ellipsis" }}>{l.error_message || "-"}</td>
               </tr>
             ))}
             {logs.length === 0 && <tr><td colSpan={7} className="empty">{t("erp.noLogs")}</td></tr>}

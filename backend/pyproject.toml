@@ -1,0 +1,60 @@
+[tool.ruff]
+# Python 3.12 / FastAPI プロジェクト向け基本設定（フロントエンドの eslint.config.js 相当）
+line-length = 120
+target-version = "py312"
+exclude = [
+    "tests",
+    "migrations",
+    ".venv",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+# Phase 1: 基本ルール (E/F/W/I) のみ。段階的に強化予定。
+# 既存 708 件の違反は全て auto-fixable（[*] マーク）。
+# `make fix-lint` で一括修正後、CI の --exit-zero を削除してブロック化する。
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes（未使用 import、未定義名 等）
+    "W",   # pycodestyle warnings
+    "I",   # isort（import 順序）
+]
+ignore = [
+    "E501",  # line too long（formatter に任せる）
+    "E402",  # module-import-not-at-top — FastAPI/dotenv パターンで意図的（dotenv.load_dotenv() 後の import 等）
+    "E702",  # multiple-statements-on-one-line — Phase 1 許容。Phase 2 でコード整形後に削除予定。
+    "E712",  # comparison-to-true — SQLAlchemy where(Column == True) は正当なパターン。is_() より可読性が高い。
+]
+
+[tool.mypy]
+# Phase 1: 許容モード（警告のみ）。型アノテーション整備後に strict 化予定。
+python_version = "3.12"
+ignore_missing_imports = true
+disallow_untyped_defs = false
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_optional = true
+# SQLAlchemy / FastAPI の型スタブが弱い箇所を許容
+follow_imports = "silent"
+
+[tool.bandit]
+# HIGH/CRITICAL のみ表示（CLI -lll 相当）。targets は Makefile/CI で指定。
+skips = []
+
+[tool.pytest.ini_options]
+# pytest.ini から移行 — pyproject.toml を Python ツール設定の SSoT とする
+# （フロントエンドの package.json devDependencies・lint-staged と同じ考え方）
+asyncio_mode = "auto"
+# asyncio_default_fixture_loop_scope = "function":
+#   pytest-asyncio 0.25.3 + asyncio_mode=auto 時に loop_scope を統一することで
+#   並列エージェント実行（pytest-xdist）でのイベントループ競合を防ぐ。
+#   "session" は並列失敗の原因になるため使わない。
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "bench: AC3.5 解析速度ベンチ（環境変数 SKIP_BENCH=1 で skip 可）",
+]
+# coverage gate: 80% は将来目標。未テストルーター（invoices/quotes/roles/products 等）
+# のカバレッジ追加で段階的に引き上げる。60% → 70% → 80% と段階的引き上げ予定。
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=60"

@@ -38,11 +38,11 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 # pytest-asyncio 0.25+ で event_loop fixture の上書きは deprecated。
-# pytest.ini の asyncio_default_fixture_loop_scope = session で
-# session-scoped fixture が同じイベントループを共有できるようにしている。
+# asyncio_default_fixture_loop_scope = "function" の場合、session-scoped fixture は
+# loop_scope="session" を明示することで専用のイベントループを確保する。
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def test_engine():
     """SQLiteインメモリエンジン"""
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
@@ -77,7 +77,7 @@ async def test_engine():
     await engine.dispose()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
 async def setup_test_db(test_engine):
     """テスト用テーブルをセットアップする"""
     async with test_engine.begin() as conn:

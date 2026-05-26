@@ -9,69 +9,74 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 _logger = logging.getLogger(__name__)
 
-from app.auth.dependencies import get_current_tenant, get_current_admin
-from app.cache import init_redis, close_redis
+from app.auth.dependencies import get_current_admin, get_current_tenant
+from app.cache import close_redis, init_redis
 from app.middleware.audit import AuditMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.session_guard import SessionGuardMiddleware
-from app.routers import health
-from app.routers import auth
-from app.routers import admin
-from app.routers import customers
-from app.routers import companies  # Phase 1-B-2 Step 5b-1
-from app.routers import contacts   # Phase 1-B-2 Step 5b-1
-from app.routers import deals
-from app.routers import orders
-from app.routers import order_financials  # ADR-021 Phase 2 / Sprint 2: 売上計算 MVP
-from app.routers import order_shipping_details  # ADR-021 Phase 3 / Sprint 3: 発送情報 MVP
-from app.routers import order_purchase_details  # ADR-021 Phase 4 / Sprint 4: 仕入情報 MVP
-from app.routers import order_commissions  # ADR-021 Phase 5 / Sprint 5: 報酬計算 MVP
-from app.routers import tenant_commission_settings  # ADR-021 Phase 5 / Sprint 5: 報酬計算 MVP
-from app.routers import dashboard
-from app.routers import reports
-from app.routers import leads
-from app.routers import teams
-from app.routers import roles
-from app.routers import meta, webhook
-from app.routers import meta_inbox  # Phase 1-D Sprint 2: OAuth 接続バックエンド
-from app.services import encryption as _encryption  # Phase 1-D Sprint 2: lifespan fail-fast
-from app.routers import products
-from app.routers import shipping
-from app.routers import quotes
-from app.routers import invoices
-from app.routers import suppliers
-from app.routers import purchase_orders
-from app.routers import tenant_profile  # Sprint 8 / F8: PO PDF / メール差出人情報
-from app.routers import duplicates
-from app.routers import analytics
-from app.routers import goals  # ダッシュボード強化: 目標管理
-from app.routers import notifications
-from app.routers import staff_reports
-from app.routers import archives
-from app.routers import shifts
-from app.routers import erp
-from app.routers import staff
-from app.routers import bots
-from app.routers import contact  # LP問い合わせフォーム受付
+
 # spec.md v1.1 F2 (Sprint 2): マスタ編集 UI（中央 admin + テナント admin の二層）
-from app.routers import super_admin_knowledge
-from app.routers import super_admin_aliases
-from app.routers import super_admin_tcg
-from app.routers import super_admin_dex
-from app.routers import super_admin_suppliers
 # spec.md v1.1 F4 (Sprint 4): LLM 予算管理 admin UI
-from app.routers import super_admin_llm_budget
 # spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧 admin UI
-from app.routers import super_admin_inbound
 # spec.md v1.1 F6 (Sprint 6): 解析結果レビュー UI + 在庫差分反映
-from app.routers import parse_review
-from app.routers import tenant_admin_inventory_visibility
 # spec.md v1.1 F7 (Sprint 7): 在庫検索 API (全 7 種横断 + AND/OR + visibility マスク)
-from app.routers import inventory_search
 # spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
-from app.routers import super_admin_phase_switch
-from app.routers import google_calendar  # Google Calendar OAuth 連携
+from app.routers import (
+    admin,
+    analytics,
+    archives,
+    auth,
+    bots,
+    companies,  # Phase 1-B-2 Step 5b-1
+    contact,  # LP問い合わせフォーム受付
+    contacts,  # Phase 1-B-2 Step 5b-1
+    customers,
+    dashboard,
+    deals,
+    duplicates,
+    erp,
+    goals,  # ダッシュボード強化: 目標管理
+    google_calendar,  # Google Calendar OAuth 連携
+    health,
+    inventory_offers,  # Sprint 11 / F11 AC11.5: 仕入元現在オファー admin CRUD
+    inventory_search,
+    invoices,
+    leads,
+    meta,
+    meta_inbox,  # Phase 1-D Sprint 2: OAuth 接続バックエンド
+    notifications,
+    order_commissions,  # ADR-021 Phase 5 / Sprint 5: 報酬計算 MVP
+    order_financials,  # ADR-021 Phase 2 / Sprint 2: 売上計算 MVP
+    order_purchase_details,  # ADR-021 Phase 4 / Sprint 4: 仕入情報 MVP
+    order_shipping_details,  # ADR-021 Phase 3 / Sprint 3: 発送情報 MVP
+    orders,
+    parse_review,
+    products,
+    purchase_orders,
+    quotes,
+    reports,
+    roles,
+    shifts,
+    shipping,
+    staff,
+    staff_reports,
+    super_admin_aliases,
+    super_admin_dex,
+    super_admin_inbound,
+    super_admin_knowledge,
+    super_admin_llm_budget,
+    super_admin_phase_switch,
+    super_admin_suppliers,
+    super_admin_tcg,
+    suppliers,
+    teams,
+    tenant_admin_inventory_visibility,
+    tenant_commission_settings,  # ADR-021 Phase 5 / Sprint 5: 報酬計算 MVP
+    tenant_profile,  # Sprint 8 / F8: PO PDF / メール差出人情報
+    webhook,
+)
 from app.routers import calendar as calendar_router  # アプリ内カレンダー CRUD
+from app.services import encryption as _encryption  # Phase 1-D Sprint 2: lifespan fail-fast
 
 # 本番環境では Swagger UI を無効化（API仕様の露出を防ぐ）
 is_production = os.getenv("ENVIRONMENT", "development") == "production"
@@ -370,6 +375,13 @@ app.include_router(
     inventory_search.router, prefix="/api/v1",
     tags=["inventory-search"],
     dependencies=[Depends(get_current_tenant)],
+)
+
+# spec.md v1.3 F11 AC11.5 (Sprint 11): 仕入元現在オファー admin CRUD
+# require_super_admin で保護 (router 内の各エンドポイントで明示)
+app.include_router(
+    inventory_offers.router, prefix="/api/v1",
+    tags=["super-admin"],
 )
 
 # spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin API

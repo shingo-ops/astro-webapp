@@ -20,7 +20,7 @@ import csv
 import io
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, UploadFile, File, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession

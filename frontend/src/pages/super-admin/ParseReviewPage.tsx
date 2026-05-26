@@ -26,6 +26,10 @@ interface ReviewItem {
   alias_text?: string | null;
   notes?: string | null;
   original_index?: number;
+  // Sprint 11 / F11 AC11.3: public.inventory UPSERT 用 (任意)
+  condition?: string | null;
+  quantity_offered?: number | null;
+  unit_price?: number | null;
 }
 
 interface ParseResultJson {
@@ -63,6 +67,10 @@ interface RowDraft {
   notes: string;
   original_index: number;
   skipped: boolean;
+  // Sprint 11 / F11 AC11.3: 空文字 = 未指定 (送信時 null に変換)
+  condition: string;
+  quantity_offered: string;  // 数値だが入力途中の空文字を許容するため string で保持
+  unit_price: string;
 }
 
 interface ApproveResponse {
@@ -99,6 +107,16 @@ function detailToDrafts(detail: ParseReviewDetail): RowDraft[] {
     notes: String(item.notes ?? ""),
     original_index: idx,
     skipped: existingSkipped.has(idx),
+    // Sprint 11 / F11 AC11.3: parse_result_json に値があれば prefill、無ければ空
+    condition: String(item.condition ?? ""),
+    quantity_offered:
+      item.quantity_offered === null || item.quantity_offered === undefined
+        ? ""
+        : String(item.quantity_offered),
+    unit_price:
+      item.unit_price === null || item.unit_price === undefined
+        ? ""
+        : String(item.unit_price),
   }));
 }
 
@@ -160,13 +178,21 @@ export default function ParseReviewPage() {
       // 採用行（skipped=false かつ product_id !== null かつ delta_qty !== 0）のみ送信
       const items = drafts
         .filter((r) => !r.skipped && r.product_id !== null && r.delta_qty !== 0)
-        .map((r) => ({
-          product_id: r.product_id,
-          delta_qty: r.delta_qty,
-          alias_text: r.alias_text || null,
-          notes: r.notes || null,
-          original_index: r.original_index,
-        }));
+        .map((r) => {
+          // Sprint 11 / F11 AC11.3: 数値項目は空文字を null に変換 + パース
+          const qOffered = r.quantity_offered.trim();
+          const uPrice = r.unit_price.trim();
+          return {
+            product_id: r.product_id,
+            delta_qty: r.delta_qty,
+            alias_text: r.alias_text || null,
+            notes: r.notes || null,
+            original_index: r.original_index,
+            condition: r.condition.trim() || null,
+            quantity_offered: qOffered ? Number.parseInt(qOffered, 10) : null,
+            unit_price: uPrice ? Number.parseInt(uPrice, 10) : null,
+          };
+        });
       const skipped_indices = drafts
         .filter((r) => r.skipped)
         .map((r) => r.original_index);
@@ -373,6 +399,9 @@ export default function ParseReviewPage() {
                 <th>#</th>
                 <th>{t("superAdmin.inbound.review.col.productId")}</th>
                 <th>{t("superAdmin.inbound.review.col.deltaQty")}</th>
+                <th>{t("superAdmin.inbound.review.col.condition")}</th>
+                <th>{t("superAdmin.inbound.review.col.quantityOffered")}</th>
+                <th>{t("superAdmin.inbound.review.col.unitPrice")}</th>
                 <th>{t("superAdmin.inbound.review.col.alias")}</th>
                 <th>{t("superAdmin.inbound.review.col.notes")}</th>
                 <th>{t("superAdmin.inbound.review.col.skip")}</th>
@@ -381,7 +410,7 @@ export default function ParseReviewPage() {
             <tbody>
               {drafts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} data-testid="review-empty">
+                  <td colSpan={9} data-testid="review-empty">
                     {t("superAdmin.inbound.review.noItems")}
                   </td>
                 </tr>
@@ -400,7 +429,7 @@ export default function ParseReviewPage() {
                     }
                   >
                     <td>{idx}</td>
-                    <td style={{ minWidth: 240 }}>
+                    <td style={{ minWidth: 'var(--col-width-wide)' }}>
                       {row.product_id === null ? (
                         <div data-testid={`review-row-${idx}-missing-product`}>
                           <em
@@ -436,6 +465,66 @@ export default function ParseReviewPage() {
                           })
                         }
                         style={{ width: "5rem" }}
+                      />
+                    </td>
+                    {/* Sprint 11 / F11 AC11.3: condition / quantity_offered / unit_price */}
+                    <td>
+                      <select
+                        data-testid={`review-row-${idx}-condition`}
+                        value={row.condition}
+                        disabled={row.skipped || isFinal}
+                        onChange={(e) =>
+                          updateDraft(idx, { condition: e.target.value })
+                        }
+                        style={{ width: "7rem" }}
+                      >
+                        <option value="">
+                          {t("superAdmin.inbound.review.condition.unspecified")}
+                        </option>
+                        <option value="new">
+                          {t("superAdmin.inbound.review.condition.new")}
+                        </option>
+                        <option value="used_a">
+                          {t("superAdmin.inbound.review.condition.usedA")}
+                        </option>
+                        <option value="sealed">
+                          {t("superAdmin.inbound.review.condition.sealed")}
+                        </option>
+                        <option value="opened">
+                          {t("superAdmin.inbound.review.condition.opened")}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        data-testid={`review-row-${idx}-quantity-offered`}
+                        value={row.quantity_offered}
+                        disabled={row.skipped || isFinal}
+                        placeholder={t(
+                          "superAdmin.inbound.review.col.quantityOfferedPlaceholder",
+                        )}
+                        onChange={(e) =>
+                          updateDraft(idx, { quantity_offered: e.target.value })
+                        }
+                        style={{ width: "5rem" }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        data-testid={`review-row-${idx}-unit-price`}
+                        value={row.unit_price}
+                        disabled={row.skipped || isFinal}
+                        placeholder={t(
+                          "superAdmin.inbound.review.col.unitPricePlaceholder",
+                        )}
+                        onChange={(e) =>
+                          updateDraft(idx, { unit_price: e.target.value })
+                        }
+                        style={{ width: "6rem" }}
                       />
                     </td>
                     <td>

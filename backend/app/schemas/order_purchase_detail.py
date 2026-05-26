@@ -31,7 +31,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-
 # 仕入ステータス Literal（DB の CHECK 制約と一致させる）。
 # 拡張時は CHECK と Literal の両方を更新すること。
 PurchaseStatusLiteral = Literal["", "confirmed"]

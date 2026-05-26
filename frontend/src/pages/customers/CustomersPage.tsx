@@ -17,6 +17,7 @@ const PHONE_RE = /^(\+?\d{10,15}|0\d{9,10})$/;
 const validatePhoneClient = (raw: string): string | null => {
   if (!raw) return null;
   const cleaned = raw.replace(/[\s\-()]/g, "");
+  // eslint-disable-next-line local/no-japanese-literal -- TODO: i18n対応（ADR-027 既知負債）
   return PHONE_RE.test(cleaned) ? null : "電話番号の形式が正しくありません（例: 03-1234-5678, 090-1234-5678）";
 };
 
@@ -208,6 +209,7 @@ export default function CustomersPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadCustomers(); }, [search]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -410,6 +412,7 @@ export default function CustomersPage() {
   return (
     <PageLayout
       navKey="nav.customers"
+      subtitleKey="customers.subtitle"
       headerAction={
         hasPermission("customers.create") ? (
           <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); setDiscordTouched(false); }}>

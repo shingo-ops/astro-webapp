@@ -905,7 +905,6 @@ async def _maybe_apply_llm_fallback(
     from app.services.inventory_parser_llm import (
         LLMConfigError,
         LLMParseError,
-        LLMParsedItem,
         parse_with_gemini,
     )
 

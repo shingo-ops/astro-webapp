@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react-vite'
+import '../src/i18n'
 import '../src/index.css'
 
 const preview: Preview = {

@@ -318,7 +318,7 @@ async def _fetch_actuals(
 
     # 売上（受注の total_amount）
     r = await db.execute(
-        text(f"""
+        text("""
             SELECT COALESCE(SUM(total_amount), 0) AS val
             FROM orders
             WHERE created_at >= :start AND created_at < :end

@@ -52,6 +52,7 @@ export default function NotificationsPage() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{t("settings.addDiscordWebhook")}</h3>
             <form onSubmit={handleSubmit}>
+              {/* eslint-disable-next-line local/no-japanese-literal -- TODO: placeholder を翻訳キーに統合（ADR-027 既知負債） */}
               <div className="form-group"><label>{t("settings.channelName")} *</label><input required value={form.channel_name} onChange={e => setForm({ ...form, channel_name: e.target.value })} placeholder="例: #crm-activity" /></div>
               <div className="form-group"><label>Webhook URL *</label><input required value={form.webhook_url} onChange={e => setForm({ ...form, webhook_url: e.target.value })} placeholder="https://discord.com/api/webhooks/..." /></div>
               <div className="form-actions">
@@ -69,7 +70,7 @@ export default function NotificationsPage() {
             {channels.map(ch => (
               <tr key={ch.id}>
                 <td>{ch.channel_name}</td>
-                <td className="mono" style={{ maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis" }}>{ch.webhook_url}</td>
+                <td className="mono" style={{ maxWidth: 'var(--col-width-url)', overflow: "hidden", textOverflow: "ellipsis" }}>{ch.webhook_url}</td>
                 <td><span className={`badge badge-${ch.is_active ? "won" : "lost"}`}>{ch.is_active ? t("common.active") : t("common.inactive")}</span></td>
                 <td className="actions">
                   {hasPermission("notifications.manage") && <button className="btn-sm btn-danger" onClick={() => handleDelete(ch.id)}>{t("common.delete")}</button>}

@@ -295,7 +295,6 @@ async def _refresh_if_needed(
 async def _get_service(db, tenant_id: int):
     """Calendar API サービスオブジェクトを返す（トークン自動更新込み）。"""
     from googleapiclient.discovery import build  # type: ignore[import]
-    from google.oauth2.credentials import Credentials  # type: ignore[import]
     from sqlalchemy import text
 
     row = await db.execute(

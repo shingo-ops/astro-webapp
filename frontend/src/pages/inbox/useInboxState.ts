@@ -635,6 +635,7 @@ export function useInboxState(): UseInboxStateReturn {
   const handleExclude = useCallback(async () => {
     if (!selectedLeadId) return;
     try {
+      // eslint-disable-next-line local/no-japanese-literal -- DB 定義のリードステータス値（API 送信値）
       await api.patch<void>(`/leads/${selectedLeadId}`, { status: "対象外" });
       setConversations((prev) => prev.filter((c) => c.lead_id !== selectedLeadId));
       setSelectedLeadId(null);
@@ -689,6 +690,7 @@ export function useInboxState(): UseInboxStateReturn {
 
   const handleBulkExclude = useCallback(async () => {
     const targets = [...selectedLeadIds];
+    // eslint-disable-next-line local/no-japanese-literal -- DB 定義のリードステータス値（API 送信値）
     await Promise.all(targets.map((id) => api.patch<void>(`/leads/${id}`, { status: "対象外" })));
     setConversations((prev) => prev.filter((c) => !selectedLeadIds.has(c.lead_id)));
     if (selectedLeadId !== null && selectedLeadIds.has(selectedLeadId)) setSelectedLeadId(null);

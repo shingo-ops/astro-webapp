@@ -70,6 +70,8 @@ export default function ManagementCenterPage() {
         { to: "super-admin/masters", labelKey: "nav.superAdminMasters",    visible: isSuperAdmin },
         { to: "super-admin/inbound", labelKey: "nav.superAdminInbound",    visible: isSuperAdmin },
         { to: "super-admin/phase",   labelKey: "nav.superAdminPhaseSwitch", visible: isSuperAdmin },
+        // spec v1.3 F11 AC11.5: 仕入元現在オファー管理 (中央 admin)
+        { to: "super-admin/inventory-offers", labelKey: "nav.superAdminInventoryOffers", visible: isSuperAdmin },
       ],
     },
   ];

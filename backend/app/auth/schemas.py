@@ -6,9 +6,9 @@ from __future__ import annotations
 """
 
 from app.schemas.auth import (  # noqa: F401
-    UserRegister,
-    UserLogin,
-    TokenResponse,
     TokenData,
+    TokenResponse,
+    UserLogin,
+    UserRegister,
     UserResponse,
 )

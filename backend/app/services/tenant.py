@@ -27,7 +27,6 @@ import re
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 # GAS版互換の既定ロール定義。テナント作成時に自動シードされる。
 #
 # 「permissions」キーの値:

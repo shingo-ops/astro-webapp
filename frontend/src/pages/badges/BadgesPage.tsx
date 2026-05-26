@@ -24,6 +24,7 @@ export default function BadgesPage() {
     } catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -37,6 +38,7 @@ export default function BadgesPage() {
   return (
     <PageLayout
       navKey="nav.badges"
+      subtitleKey="badges.subtitle"
       headerAction={hasPermission("badges.manage") ? (
         <button className="btn-primary" onClick={() => setShowForm(true)}>{t("badges.newBadge")}</button>
       ) : undefined}
@@ -47,10 +49,12 @@ export default function BadgesPage() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>{t("badges.newBadge")}</h3>
             <form onSubmit={handleSubmit}>
+              {/* eslint-disable local/no-japanese-literal -- TODO: placeholder を翻訳キーに統合（ADR-027 既知負債） */}
               <div className="form-group"><label>{t("badges.badgeName")} *</label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="例: 初成約" /></div>
               <div className="form-group"><label>{t("badges.icon")}</label><input value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="例: 🏆" /></div>
               <div className="form-group"><label>{t("common.description")}</label><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
               <div className="form-group"><label>{t("badges.criteria")}</label><input value={form.criteria} onChange={e => setForm({ ...form, criteria: e.target.value })} placeholder="例: 初めて案件を成約" /></div>
+              {/* eslint-enable local/no-japanese-literal */}
               <div className="form-group"><label>{t("badges.points")}</label><input type="number" min="0" value={form.points} onChange={e => setForm({ ...form, points: e.target.value })} /></div>
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>

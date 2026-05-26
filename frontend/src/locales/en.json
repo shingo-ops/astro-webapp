@@ -22,6 +22,8 @@
     "create": "Create",
     "add": "Add",
     "remove": "Remove",
+    "previous": "Previous",
+    "next": "Next",
     "actions": "Actions",
     "status": "Status",
     "name": "Name",
@@ -109,6 +111,7 @@
     "inventoryVisibility": "Inventory Visibility",
     "tenantProfile": "Issuer Profile",
     "superAdminPhaseSwitch": "Spreadsheet Phase",
+    "superAdminInventoryOffers": "Supplier Offers",
     "account": "Account",
     "openUserMenu": "Open user menu",
     "switchToDark": "Dark mode",
@@ -307,6 +310,7 @@
     "subtitle": "Manage leads and convert them into deals."
   },
   "customers": {
+    "subtitle": "Manage detailed customer information.",
     "title": "Customers",
     "newCustomer": "New Customer",
     "editCustomer": "Edit Customer",
@@ -525,6 +529,7 @@
     "fetchError": "Failed to load data",
     "unreadBadge": "{{count}} unread",
     "karteToggle": "Customer Info",
+    "moreActions": "More actions",
     "markUnread": "Mark as unread",
     "exclude": "Mark as excluded",
     "deleteLead": "Delete",
@@ -638,6 +643,9 @@
       "stockLabel": "Stock",
       "stockMaskedNote": "You do not have permission to view stock counts (shown as ***)",
       "zeroStockWarning": "\"{{name}}\" has 0 stock. Verify supplier and stock before quoting.",
+      "offersLabel": "{{count}} supplier offer(s)",
+      "offersMore": "+{{extra}} more",
+      "qtyShort": "{{qty}} pcs",
       "matchedVia": {
         "products_name_exact": "Name exact match",
         "products_name_en_exact": "English name exact match",
@@ -690,6 +698,7 @@
     "subtitle": "Create, send, and track quotes."
   },
   "invoices": {
+    "subtitle": "Create and manage invoices.",
     "title": "Invoices",
     "invoiceCode": "Invoice code",
     "dueDate": "Due date",
@@ -738,6 +747,7 @@
     "subtitle": "Manage financials, shipping, purchasing, and commissions."
   },
   "products": {
+    "subtitle": "Manage products and inventory.",
     "title": "Inventory",
     "newProduct": "New Product",
     "editProduct": "Edit Product",
@@ -955,6 +965,7 @@
     "subtitle": "Manage automation bots and API keys."
   },
   "reports": {
+    "subtitle": "View staff activity reports.",
     "title": "Reports"
   },
   "settings": {
@@ -967,6 +978,7 @@
     "subtitle": "Configure and manage Webhook notification channels."
   },
   "erp": {
+    "subtitle": "Sync inventory and sales data with external systems.",
     "title": "Data Management",
     "exportInvoices": "Export Invoices CSV",
     "exporting": "Exporting...",
@@ -1340,7 +1352,19 @@
           "deltaQty": "Delta Qty",
           "alias": "Supplier alias",
           "notes": "Notes",
-          "skip": "Skip"
+          "skip": "Skip",
+          "condition": "Condition",
+          "quantityOffered": "Qty on hand",
+          "quantityOfferedPlaceholder": "Offered qty",
+          "unitPrice": "Unit price (JPY)",
+          "unitPricePlaceholder": "Offered price"
+        },
+        "condition": {
+          "unspecified": "Unspecified",
+          "new": "New",
+          "usedA": "Used A",
+          "sealed": "Sealed",
+          "opened": "Opened"
         }
       }
     },
@@ -1366,6 +1390,41 @@
       "phaseAWarning": {
         "always": "Phase A (emergency rollback): stock counts are not updated. The standard operation is Phase B.",
         "afterApprove": "Approved, but products.stock_quantity was not updated due to Phase A (emergency rollback) ({{count}} movements recorded)."
+      }
+    },
+    "inventoryOffers": {
+      "subtitle": "Current offers per supplier × product × condition. UPSERTed on F6 approve, also editable manually.",
+      "searchPlaceholder": "Search by supplier / product / SKU",
+      "conditionPlaceholder": "Filter by condition",
+      "statusAny": "Any status",
+      "noResults": "No matching offers",
+      "updateSuccess": "Offer updated",
+      "deleteSuccess": "Offer deleted",
+      "deleteConfirm": "Delete the offer for \"{{name}}\"?",
+      "notFound": "Offer not found (may have been deleted)",
+      "pageOf": "Page {{page}} of {{total}} ({{count}} total)",
+      "col": {
+        "supplier": "Supplier",
+        "product": "Product",
+        "condition": "Condition",
+        "quantity": "Qty",
+        "unitPrice": "Unit price (JPY)",
+        "status": "Status",
+        "source": "Source",
+        "expiresAt": "Expires",
+        "actions": "Actions"
+      },
+      "status": {
+        "in_stock": "In stock",
+        "out_of_stock": "Out of stock",
+        "reserved": "Reserved",
+        "archived": "Archived"
+      },
+      "source": {
+        "manual": "Manual",
+        "discord_parsed": "Discord parsed",
+        "csv_import": "CSV import",
+        "f6_approved": "F6 approved"
       }
     }
   },
@@ -1464,5 +1523,11 @@
     "passwordChanged": "Password changed successfully",
     "saving": "Saving...",
     "changing": "Changing..."
+  },
+  "badges": {
+    "subtitle": "Manage badges and achievement conditions."
+  },
+  "buddy": {
+    "subtitle": "Manage buddy assignments and pairings."
   }
 }
