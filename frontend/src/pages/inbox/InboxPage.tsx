@@ -56,6 +56,10 @@ export default function InboxPage() {
     submitSend, handleKeyDown,
     // 管理ドロップダウン
     manageOpen, setManageOpen, manageRef, handleMarkAllRead, handleMarkUnread, handleExclude, handleDeleteLead,
+    // 一括選択
+    selectMode, selectedLeadIds, isAllSelected,
+    toggleSelectMode, toggleSelectConv, toggleSelectAll,
+    handleBulkMarkRead, handleBulkMarkUnread, handleBulkExclude, handleBulkDelete,
     // スクロール ref
     messageListRef,
   } = useInboxState();
@@ -136,14 +140,14 @@ export default function InboxPage() {
             <div className="inbox-manage-wrap" ref={manageRef}>
               <button
                 type="button"
-                className="inbox-manage-btn"
-                onClick={() => setManageOpen((v) => !v)}
-                aria-expanded={manageOpen}
+                className={`inbox-manage-btn${selectMode ? " active" : ""}`}
+                onClick={toggleSelectMode}
+                aria-pressed={selectMode}
               >
                 <NAV_ICONS.filter size={13} />
                 {t("inbox.manage")}
               </button>
-              {manageOpen && (
+              {!selectMode && manageOpen && (
                 <div className="dropdown-menu" role="menu">
                   <button
                     type="button"
@@ -157,6 +161,62 @@ export default function InboxPage() {
               )}
             </div>
           </div>
+
+          {/* 一括アクションバー（選択モード時） */}
+          {selectMode && (
+            <div className="inbox-bulk-bar">
+              <input
+                type="checkbox"
+                className="inbox-bulk-check-all"
+                checked={isAllSelected}
+                onChange={toggleSelectAll}
+                aria-label={t("inbox.selectAll")}
+              />
+              <span className="inbox-bulk-count">
+                {t("inbox.selectedCount", { count: selectedLeadIds.size })}
+              </span>
+              <button
+                type="button"
+                className="inbox-bulk-action"
+                onClick={handleBulkMarkRead}
+                disabled={selectedLeadIds.size === 0}
+                title={t("inbox.markAllRead")}
+                aria-label={t("inbox.markAllRead")}
+              >
+                <INBOX_ACTION_ICONS.markRead size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="inbox-bulk-action"
+                onClick={handleBulkMarkUnread}
+                disabled={selectedLeadIds.size === 0}
+                title={t("inbox.markUnread")}
+                aria-label={t("inbox.markUnread")}
+              >
+                <INBOX_ACTION_ICONS.markUnread size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="inbox-bulk-action"
+                onClick={handleBulkExclude}
+                disabled={selectedLeadIds.size === 0}
+                title={t("inbox.exclude")}
+                aria-label={t("inbox.exclude")}
+              >
+                <INBOX_ACTION_ICONS.exclude size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="inbox-bulk-action inbox-bulk-delete"
+                onClick={handleBulkDelete}
+                disabled={selectedLeadIds.size === 0}
+                title={t("inbox.deleteLead")}
+                aria-label={t("inbox.deleteLead")}
+              >
+                <INBOX_ACTION_ICONS.delete size={14} aria-hidden="true" />
+              </button>
+            </div>
+          )}
 
           {/* サブフィルターピル（未読 / フォローアップ / アーカイブ） */}
           <div className="inbox-sub-filter-bar">
@@ -224,13 +284,23 @@ export default function InboxPage() {
             ) : (
               filteredConversations.map((conv) => {
                 const isSelected = conv.lead_id === selectedLeadId;
+                const isBulkChecked = selectedLeadIds.has(conv.lead_id);
                 return (
                   <button
                     key={conv.lead_id}
                     type="button"
-                    className={`conv-item conversation-item${isSelected ? " selected" : ""}`}
-                    onClick={() => selectLead(conv.lead_id)}
+                    role={selectMode ? "checkbox" : undefined}
+                    aria-checked={selectMode ? isBulkChecked : undefined}
+                    className={`conv-item conversation-item${isSelected ? " selected" : ""}${selectMode && isBulkChecked ? " bulk-selected" : ""}`}
+                    onClick={() => selectMode ? toggleSelectConv(conv.lead_id) : selectLead(conv.lead_id)}
                   >
+                    {/* 選択モード: チェックボックス */}
+                    {selectMode && (
+                      <span
+                        aria-hidden="true"
+                        className={`conv-select-check${isBulkChecked ? " checked" : ""}`}
+                      />
+                    )}
                     {/* アバター */}
                     <div className="conv-avatar-wrap">
                       <div className="conv-avatar">
