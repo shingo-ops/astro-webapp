@@ -953,6 +953,21 @@ textarea.right-panel-field { resize: vertical; min-height: var(--inbox-textarea-
 .right-panel-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .right-panel-tab-content { flex: 1; overflow-y: auto; width: 100%; }
 .right-panel-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+.right-panel-group-heading {
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-top: 1px solid var(--border);
+  padding: var(--space-3) 0 var(--space-2);
+  margin-top: var(--space-2);
+}
+.right-panel-group-heading:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
 .right-panel-save-indicator {
   font-size: var(--font-xs); color: var(--text-muted);
   min-height: var(--toggle-thumb-size); text-align: right; padding: 0 var(--space-3);
