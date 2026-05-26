@@ -65,7 +65,7 @@ export default function OrdersPage() {
   ) : null;
 
   return (
-    <PageLayout navKey="nav.orders" headerAction={newOrderButton}>
+    <PageLayout navKey="nav.orders" subtitleKey="orders.subtitle" headerAction={newOrderButton}>
       <OrdersFilterBar
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}

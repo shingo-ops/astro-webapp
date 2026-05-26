@@ -89,6 +89,7 @@ export default function BotsPage() {
       setLoading(false);
     }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAll(); }, []);
 
   const toNull = (v: string) => (v ? v : null);
@@ -167,6 +168,7 @@ export default function BotsPage() {
   return (
     <PageLayout
       navKey="nav.bots"
+      subtitleKey="bots.subtitle"
       headerAction={hasPermission("bots.create") ? (
         <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
           {t("bots.newBot")}

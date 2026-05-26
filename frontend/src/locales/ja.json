@@ -118,11 +118,12 @@
     "accountSettings": "アカウント設定"
   },
   "managementCenter": {
-    "sectionTeam":      "チーム・人事",
-    "sectionSecurity":  "権限・セキュリティ",
-    "sectionBusiness":  "ビジネス設定",
-    "sectionData":      "データ管理",
-    "sectionSuperAdmin":"スーパー管理者"
+    "sectionTeam": "チーム・人事",
+    "sectionSecurity": "権限・セキュリティ",
+    "sectionBusiness": "ビジネス設定",
+    "sectionData": "データ管理",
+    "sectionSuperAdmin": "スーパー管理者",
+    "subtitle": "組織・データ・業務設定を一か所で管理します。"
   },
   "login": {
     "email": "メールアドレス",
@@ -213,7 +214,8 @@
     "sectionOrders": "受注・売上",
     "orderRevenue": "売上金額",
     "orderCount": "受注数",
-    "orderActive": "進行中"
+    "orderActive": "進行中",
+    "subtitle": "営業KPIと進捗を確認できます。"
   },
   "goals": {
     "individualTitle": "個人目標",
@@ -223,7 +225,8 @@
     "selectTeam": "チームを選択",
     "save": "保存する",
     "backToDashboard": "ダッシュボードに戻る",
-    "noEditPermission": "チームリーダー以上の権限が必要です"
+    "noEditPermission": "チームリーダー以上の権限が必要です",
+    "subtitle": "月次/週次目標を設定します。"
   },
   "leads": {
     "title": "リード管理",
@@ -300,7 +303,8 @@
     "status_existing_customer": "既存顧客",
     "status_follow_up_short": "追客（短期）",
     "status_follow_up_long": "追客（長期）",
-    "status_out_of_scope": "対象外"
+    "status_out_of_scope": "対象外",
+    "subtitle": "見込み客を管理して商談に案件化できます。"
   },
   "customers": {
     "title": "顧客管理",
@@ -426,7 +430,8 @@
     "pendingDedupCount": "重複確認待ち: {{count}} 件",
     "branchNameLabel": "支店名（複数拠点がある場合）",
     "countryCodeWithHint": "国コード（ISO 2文字）",
-    "deleteConfirmMessage": "「{{name}}」({{code}}) を削除しますか？ 関連する商談・注文・見積・請求書・担当者がある場合は削除できません。"
+    "deleteConfirmMessage": "「{{name}}」({{code}}) を削除しますか？ 関連する商談・注文・見積・請求書・担当者がある場合は削除できません。",
+    "subtitle": "クライアントの基本情報と住所を管理します。"
   },
   "contacts": {
     "title": "担当者管理",
@@ -456,7 +461,8 @@
     "dedupConfirmMessage": "「{{name}}」({{code}}) を別人として確定し、ステータスを active に変更しますか？\n\n（マージではなく、独立した担当者として承認します。この操作は audit_logs に記録されます）",
     "changeToActive": "active に変更",
     "deleteConfirmMessage": "「{{name}}」({{code}}) を削除しますか？ 関連する商談・注文・見積・請求書がある場合は削除できません。",
-    "companyRequired": "所属顧客情報を選択してください"
+    "companyRequired": "所属顧客情報を選択してください",
+    "subtitle": "クライアントごとの担当者を登録・管理できます。"
   },
   "inbox": {
     "title": "受信箱",
@@ -589,7 +595,8 @@
       "permission_denied": "チャンネルを接続する権限がありません。管理者にお問い合わせください。",
       "internal_error": "内部エラーが発生しました。サポートにお問い合わせください。",
       "unknown": "接続に失敗しました（理由: {{reason}}）。"
-    }
+    },
+    "subtitle": "FacebookとInstagramの受信連携を設定します。"
   },
   "deals": {
     "title": "案件管理",
@@ -617,7 +624,8 @@
     "stage_lost": "失注",
     "stage_on_hold": "保留",
     "deleteConfirmSuffix": "を削除します。",
-    "deleteConstraint": "関連する注文がある場合は削除できません（先に注文を削除してください）。"
+    "deleteConstraint": "関連する注文がある場合は削除できません（先に注文を削除してください）。",
+    "subtitle": "商談のステージと確度を管理します。"
   },
   "inventory": {
     "search": {
@@ -678,7 +686,8 @@
     "status_approved": "承認済",
     "status_rejected": "却下",
     "status_expired": "期限切れ",
-    "itemsRequired": "各明細行に商品名と単価を入力してください"
+    "itemsRequired": "各明細行に商品名と単価を入力してください",
+    "subtitle": "見積書を作成・送付・状況管理できます。"
   },
   "invoices": {
     "title": "請求書管理",
@@ -725,7 +734,8 @@
     "status_shipped": "配送中",
     "status_delivered": "完了",
     "status_returned": "トラブル",
-    "status_cancelled": "キャンセル"
+    "status_cancelled": "キャンセル",
+    "subtitle": "財務・配送・仕入・報酬を一元管理します。"
   },
   "products": {
     "title": "在庫管理",
@@ -755,7 +765,8 @@
     "address": "住所",
     "colContact": "担当者",
     "disableConfirmSuffix": "を無効化します。",
-    "disableLabel": "無効化"
+    "disableLabel": "無効化",
+    "subtitle": "仕入先の会社情報と連絡先を管理します。"
   },
   "purchaseOrders": {
     "title": "発注管理",
@@ -782,7 +793,8 @@
     "emailSent": "メール送信しました",
     "emailResent": "メールを再送しました",
     "emailSendFailed": "メール送信に失敗しました",
-    "pdfDownloadFailed": "PDFのダウンロードに失敗しました（HTTP {{status}}）"
+    "pdfDownloadFailed": "PDFのダウンロードに失敗しました（HTTP {{status}}）",
+    "subtitle": "発注書の作成から受取まで管理します。"
   },
   "tenantProfile": {
     "title": "発行者情報",
@@ -827,7 +839,8 @@
     "givenNameKana": "名前ふりがな",
     "status_pending": "保留",
     "fullName": "氏名",
-    "staffCodePlaceholder": "例: EMP-00001"
+    "staffCodePlaceholder": "例: EMP-00001",
+    "subtitle": "スタッフ情報とUI設定を管理します。"
   },
   "teams": {
     "title": "チーム管理",
@@ -845,7 +858,8 @@
     "colJoinedAt": "加入日",
     "noMembers": "メンバーがいません",
     "memberDeleteNote": "メンバー情報も同時に削除されます。",
-    "membersBtn": "メンバー"
+    "membersBtn": "メンバー",
+    "subtitle": "チーム編成とメンバーを管理します。"
   },
   "roles": {
     "title": "ロール・権限管理",
@@ -905,7 +919,8 @@
     "type_night": "夜勤",
     "type_off": "休日",
     "colStart": "開始",
-    "colEnd": "終了"
+    "colEnd": "終了",
+    "subtitle": "スタッフの勤務シフトを記録・管理します。"
   },
   "bots": {
     "title": "ボット管理",
@@ -936,7 +951,8 @@
     "apiKeyConfirm": "確認した・非表示にする",
     "displayName": "表示名",
     "botCodePlaceholder": "例: BOT-00001",
-    "deleteBot": "Bot を削除"
+    "deleteBot": "Bot を削除",
+    "subtitle": "自動化ボットとAPIキーを管理します。"
   },
   "reports": {
     "title": "レポート"
@@ -947,7 +963,8 @@
     "addChannel": "チャンネル追加",
     "addDiscordWebhook": "Discord Webhookチャンネル追加",
     "channelName": "チャンネル名",
-    "noChannels": "通知チャンネルが設定されていません"
+    "noChannels": "通知チャンネルが設定されていません",
+    "subtitle": "Webhook通知チャネルを設定・管理します。"
   },
   "erp": {
     "title": "データ管理",
@@ -987,7 +1004,8 @@
     "role_trouble": "トラブル",
     "rateFormula": "売上 × {{rate}}%",
     "fixedSuffix": "固定",
-    "lastUpdated": "最終更新"
+    "lastUpdated": "最終更新",
+    "subtitle": "役割別の報酬レートと月次実績を管理します。"
   },
   "faq": {
     "title": "FAQ",
@@ -1006,7 +1024,8 @@
     "sourceId": "元ID",
     "restoredAt": "復元日",
     "restore": "復元",
-    "restored": "復元済"
+    "restored": "復元済",
+    "subtitle": "削除済みデータを閲覧・復元できます。"
   },
   "oauth": {
     "processing": "処理中...",
@@ -1352,7 +1371,7 @@
   },
   "schedule": {
     "title": "スケジュール",
-    "subtitle": "Googleカレンダー連携",
+    "subtitle": "予定を管理しGoogleカレンダーと同期できます。",
     "notConnected": "Googleカレンダーが接続されていません",
     "notConnectedDesc": "管理者がGoogleアカウントを接続するとカレンダーが表示されます",
     "connect": "Googleカレンダーを接続する",

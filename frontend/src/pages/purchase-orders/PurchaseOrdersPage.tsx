@@ -130,7 +130,7 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
-    <PageLayout navKey="nav.purchaseOrders">
+    <PageLayout navKey="nav.purchaseOrders" subtitleKey="purchaseOrders.subtitle">
       <div className="filter-bar">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">{t("purchaseOrders.allStatuses")}</option>

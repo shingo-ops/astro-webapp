@@ -97,6 +97,7 @@ export default function DealsPage() {
     } catch { /* ignore */ }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadDeals(); }, [statusFilter]);
   useEffect(() => { loadCompanies(); }, []);
 
@@ -194,6 +195,7 @@ export default function DealsPage() {
   return (
     <PageLayout
       navKey="nav.deals"
+      subtitleKey="deals.subtitle"
       headerAction={hasPermission("deals.create") ? (
         <button
           className="btn-primary"

@@ -133,6 +133,7 @@ export default function ChannelsPage() {
     // URL を綺麗にする（query string を消す）
     url.search = "";
     window.history.replaceState({}, "", url.pathname);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ----- 一覧取得 -----
@@ -150,6 +151,7 @@ export default function ChannelsPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadChannels(); }, []);
 
   // ----- 接続開始 -----
@@ -222,6 +224,7 @@ export default function ChannelsPage() {
   return (
     <PageLayout
       navKey="nav.channels"
+      subtitleKey="channels.subtitle"
       headerAction={canManage ? (
         <button
           className="btn-primary"

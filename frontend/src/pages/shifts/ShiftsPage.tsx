@@ -20,6 +20,7 @@ export default function ShiftsPage() {
     catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -38,6 +39,7 @@ export default function ShiftsPage() {
   return (
     <PageLayout
       navKey="nav.shifts"
+      subtitleKey="shifts.subtitle"
       headerAction={hasPermission("shifts.manage") ? (
         <button className="btn-primary" onClick={() => setShowForm(true)}>{t("shifts.newShift")}</button>
       ) : undefined}

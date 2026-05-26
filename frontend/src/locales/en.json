@@ -118,11 +118,12 @@
     "accountSettings": "Account Settings"
   },
   "managementCenter": {
-    "sectionTeam":      "Team & HR",
-    "sectionSecurity":  "Permissions & Security",
-    "sectionBusiness":  "Business Settings",
-    "sectionData":      "Data Management",
-    "sectionSuperAdmin":"Super Admin"
+    "sectionTeam": "Team & HR",
+    "sectionSecurity": "Permissions & Security",
+    "sectionBusiness": "Business Settings",
+    "sectionData": "Data Management",
+    "sectionSuperAdmin": "Super Admin",
+    "subtitle": "Manage organization, data, and business settings in one place."
   },
   "login": {
     "email": "Email address",
@@ -213,7 +214,8 @@
     "sectionOrders": "Orders & Revenue",
     "orderRevenue": "Revenue",
     "orderCount": "Orders",
-    "orderActive": "Active"
+    "orderActive": "Active",
+    "subtitle": "View your sales KPIs and progress."
   },
   "goals": {
     "individualTitle": "Individual Goals",
@@ -223,7 +225,8 @@
     "selectTeam": "Select team",
     "save": "Save",
     "backToDashboard": "Back to dashboard",
-    "noEditPermission": "Team leader or higher permission required"
+    "noEditPermission": "Team leader or higher permission required",
+    "subtitle": "Set monthly and weekly targets."
   },
   "leads": {
     "title": "Lead Management",
@@ -300,7 +303,8 @@
     "status_existing_customer": "Existing Customer",
     "status_follow_up_short": "Follow-up (Short)",
     "status_follow_up_long": "Follow-up (Long)",
-    "status_out_of_scope": "Out of Scope"
+    "status_out_of_scope": "Out of Scope",
+    "subtitle": "Manage leads and convert them into deals."
   },
   "customers": {
     "title": "Customers",
@@ -426,7 +430,8 @@
     "pendingDedupCount": "Pending dedup review: {{count}}",
     "branchNameLabel": "Branch name (if multiple locations)",
     "countryCodeWithHint": "Country code (ISO 2-letter)",
-    "deleteConfirmMessage": "Delete \"{{name}}\" ({{code}})? Cannot delete if related deals, orders, quotes, invoices, or contacts exist."
+    "deleteConfirmMessage": "Delete \"{{name}}\" ({{code}})? Cannot delete if related deals, orders, quotes, invoices, or contacts exist.",
+    "subtitle": "Manage client information and addresses."
   },
   "contacts": {
     "title": "Contacts",
@@ -456,7 +461,8 @@
     "dedupConfirmMessage": "Confirm \"{{name}}\" ({{code}}) as a distinct contact and change status to active?\n\n(Not a merge, but approval as an independent contact. Recorded in audit_logs.)",
     "changeToActive": "Change to active",
     "deleteConfirmMessage": "Delete \"{{name}}\" ({{code}})? Cannot delete if related deals, orders, quotes, or invoices exist.",
-    "companyRequired": "Please select a client profile"
+    "companyRequired": "Please select a client profile",
+    "subtitle": "Register and manage contacts per client."
   },
   "inbox": {
     "title": "Inbox",
@@ -589,7 +595,8 @@
       "permission_denied": "You don't have permission to connect channels. Please contact your administrator.",
       "internal_error": "An internal error occurred. Please contact support.",
       "unknown": "Connection failed (reason: {{reason}})."
-    }
+    },
+    "subtitle": "Set up Facebook and Instagram message integrations."
   },
   "deals": {
     "title": "Deal Management",
@@ -617,7 +624,8 @@
     "stage_lost": "Lost",
     "stage_on_hold": "On hold",
     "deleteConfirmSuffix": "will be deleted.",
-    "deleteConstraint": "Cannot delete if there are associated orders (please delete those first)."
+    "deleteConstraint": "Cannot delete if there are associated orders (please delete those first).",
+    "subtitle": "Manage deal stages and probabilities."
   },
   "inventory": {
     "search": {
@@ -678,7 +686,8 @@
     "status_approved": "Approved",
     "status_rejected": "Rejected",
     "status_expired": "Expired",
-    "itemsRequired": "Please enter product name and unit price for each line item"
+    "itemsRequired": "Please enter product name and unit price for each line item",
+    "subtitle": "Create, send, and track quotes."
   },
   "invoices": {
     "title": "Invoices",
@@ -725,7 +734,8 @@
     "status_shipped": "In Transit",
     "status_delivered": "Completed",
     "status_returned": "Trouble",
-    "status_cancelled": "Cancelled"
+    "status_cancelled": "Cancelled",
+    "subtitle": "Manage financials, shipping, purchasing, and commissions."
   },
   "products": {
     "title": "Inventory",
@@ -755,7 +765,8 @@
     "address": "Address",
     "colContact": "Contact",
     "disableConfirmSuffix": " will be disabled.",
-    "disableLabel": "Disable"
+    "disableLabel": "Disable",
+    "subtitle": "Manage supplier information and contacts."
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
@@ -782,7 +793,8 @@
     "emailSent": "Email sent",
     "emailResent": "Email resent",
     "emailSendFailed": "Failed to send email",
-    "pdfDownloadFailed": "PDF download failed (HTTP {{status}})"
+    "pdfDownloadFailed": "PDF download failed (HTTP {{status}})",
+    "subtitle": "Manage purchase orders from creation to receipt."
   },
   "tenantProfile": {
     "title": "Issuer Profile",
@@ -827,7 +839,8 @@
     "givenNameKana": "Given name (Kana)",
     "status_pending": "Pending",
     "fullName": "Full Name",
-    "staffCodePlaceholder": "e.g., EMP-00001"
+    "staffCodePlaceholder": "e.g., EMP-00001",
+    "subtitle": "Manage staff accounts and UI preferences."
   },
   "teams": {
     "title": "Teams",
@@ -845,7 +858,8 @@
     "colJoinedAt": "Joined",
     "noMembers": "No members",
     "memberDeleteNote": "Member records will also be deleted.",
-    "membersBtn": "Members"
+    "membersBtn": "Members",
+    "subtitle": "Manage team structure and members."
   },
   "roles": {
     "title": "Roles & Permissions",
@@ -905,7 +919,8 @@
     "type_night": "Night",
     "type_off": "Day Off",
     "colStart": "Start",
-    "colEnd": "End"
+    "colEnd": "End",
+    "subtitle": "Record and manage staff work shifts."
   },
   "bots": {
     "title": "Bots",
@@ -936,7 +951,8 @@
     "apiKeyConfirm": "Got it — hide",
     "displayName": "Display Name",
     "botCodePlaceholder": "e.g., BOT-00001",
-    "deleteBot": "Delete Bot"
+    "deleteBot": "Delete Bot",
+    "subtitle": "Manage automation bots and API keys."
   },
   "reports": {
     "title": "Reports"
@@ -947,7 +963,8 @@
     "addChannel": "Add channel",
     "addDiscordWebhook": "Add Discord Webhook channel",
     "channelName": "Channel name",
-    "noChannels": "No notification channels configured"
+    "noChannels": "No notification channels configured",
+    "subtitle": "Configure and manage Webhook notification channels."
   },
   "erp": {
     "title": "Data Management",
@@ -987,7 +1004,8 @@
     "role_trouble": "Trouble",
     "rateFormula": "Revenue × {{rate}}%",
     "fixedSuffix": "fixed",
-    "lastUpdated": "Last Updated"
+    "lastUpdated": "Last Updated",
+    "subtitle": "Manage commission rates and monthly results by role."
   },
   "faq": {
     "title": "FAQ",
@@ -1006,7 +1024,8 @@
     "sourceId": "Source ID",
     "restoredAt": "Restored at",
     "restore": "Restore",
-    "restored": "Restored"
+    "restored": "Restored",
+    "subtitle": "View and restore deleted data."
   },
   "oauth": {
     "processing": "Processing...",
@@ -1352,7 +1371,7 @@
   },
   "schedule": {
     "title": "Schedule",
-    "subtitle": "Google Calendar Integration",
+    "subtitle": "Manage schedules and sync with Google Calendar.",
     "notConnected": "Google Calendar is not connected",
     "notConnectedDesc": "Once an admin connects a Google account, the calendar will appear here",
     "connect": "Connect Google Calendar",

@@ -18,6 +18,7 @@ export default function ArchivesPage() {
     catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const restore = async (id: number) => {
@@ -26,7 +27,7 @@ export default function ArchivesPage() {
   };
 
   return (
-    <PageLayout navKey="nav.archive">
+    <PageLayout navKey="nav.archive" subtitleKey="archives.subtitle">
       {error && <div className="error-message">{error}</div>}
       {loading ? <div className="loading">{t("common.loading")}</div> : (
         <table className="data-table">
