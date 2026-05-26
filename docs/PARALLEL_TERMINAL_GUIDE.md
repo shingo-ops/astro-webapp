@@ -12,6 +12,7 @@
 | P2: 同一ファイル並行編集 | 複数 feature branch が `InboxPage.css` / `schedule.css` などを同時編集 |
 | P3: 非同期 pull | Terminal A で PR merge → Terminal B が pull 前に commit/push |
 | P4: incomplete rebase | `git pull --rebase` 実行中に別ターミナルから push → abort |
+| P5: ブランチ切り替えによる編集消失 | 別ターミナルで `git checkout` → 未コミット編集が上書きされて消える |
 
 ---
 
@@ -48,6 +49,35 @@ git rebase origin/develop
 - 2つのターミナルで同じ feature ブランチを同時編集
 - `InboxPage.css` / `schedule.css` / `tokens.css` / `index.css` への複数 PR 同時オープン
 
+### 5. AI エージェントを並行起動するとき（P5 対策・推奨）
+
+**原則: 新しい並行作業は必ず Worktree で起動する**
+
+Worktree = エージェントごとに独立した作業ディレクトリを用意する仕組み。
+ブランチ切り替えが不要になり、P5（編集消失）が構造的に発生しなくなる。
+
+```bash
+# 標準スクリプトで起動（ブランチ名を指定するだけ）
+bash scripts/new-worktree.sh feature/morimoto/<トピック名>
+
+# Claude Code も同時起動したい場合
+bash scripts/new-worktree.sh feature/morimoto/<トピック名> --claude
+```
+
+**作業完了後のクリーンアップ（必須）**
+
+```bash
+git worktree remove ~/worktrees/salesanchor/<ブランチ名>
+git branch -d feature/morimoto/<トピック名>
+# 定期的に: git worktree prune
+```
+
+**注意: lockfile（package-lock.json）の Single-Writer Rule**
+
+複数の Worktree で同時に `npm install` を実行しない。
+lockfile が衝突して 5,000行 差分が発生する（レビュー不可能になる）。
+`npm install` は1つの Worktree（または main ディレクトリ）でのみ実行すること。
+
 ---
 
 ## 自動化された安全機構
@@ -58,6 +88,15 @@ git rebase origin/develop
 |--------|-----------|
 | `pre-push` | rebase 進行中の push を禁止（P4防止） |
 | `pre-commit` | lint + 設計ルール違反のコミットを禁止 |
+
+### Git Worktree（P5防止）
+
+| コマンド | 用途 |
+|---------|------|
+| `bash scripts/new-worktree.sh <ブランチ>` | 新しい独立作業ディレクトリを作成 |
+| `git worktree list` | 現在の worktree 一覧を確認 |
+| `git worktree remove <パス>` | 作業完了後のクリーンアップ |
+| `git worktree prune` | 不要な worktree を一括削除 |
 
 ### GitHub Actions（リモート）
 

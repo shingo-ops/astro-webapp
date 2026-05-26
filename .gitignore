@@ -67,10 +67,17 @@ sheets/
 # Claude Code: allowlist 戦略
 # - `.claude/*` を一括 ignore し、チーム共有したい資産だけ `!` で取り戻す
 # - 将来 Claude Code が `.claude/` 配下に追加する任意のファイル（cache/, sessions/, history.jsonl 等）も自動的に除外される
+# - `.claude/worktrees/` は `isolation: "worktree"` で自動生成される作業ディレクトリ（上記の一括 ignore に含まれる）
 .claude/*
 !.claude/agents/
 !.claude/settings.json
 CLAUDE.local.md
+
+# Claude Code エージェント作業artefact（worktree並行作業・Evaluator実行で生成）
+.playwright-mcp/
+.coverage
+/*.png
+/*.json
 
 # salesanchor.jp 静的サイト（独立プロジェクトのコンテンツ、VPS-local 管理）
 # nginx/docker-compose の設定だけ repo 管理、コンテンツは追跡しない
