@@ -180,4 +180,87 @@ test.describe("Sprint 11 / F11 AC11.3 — ParseReviewPage inventory fields wirin
     expect(items[0].quantity_offered).toBeNull();
     expect(items[0].unit_price).toBeNull();
   });
+
+  test("M5: 2 行 (1 行採用 + 1 行スキップ) で採用行のみに inventory フィールドが乗る", async ({
+    page,
+  }) => {
+    // M5 follow-up: F6 (skipped 切り替え) + F11 AC11.3 (inventory フィールド) の
+    // 複合シナリオ。row 0 採用 + row 1 スキップ + row 0 にのみ
+    // condition/quantity_offered/unit_price 入力 → POST items に row 0 のみ
+    // が含まれ、その row が inventory フィールドを保持していることを確認。
+    let approveBody: Record<string, unknown> | null = null;
+    const multiRowDetail = {
+      ...sampleDetail,
+      id: 902,
+      raw_content: "ピカチュウ AR Box 2セット @4500\nリザードン SAR 1セット @18000",
+      parse_result_json: {
+        items: [
+          { product_id: 701, delta_qty: 2, alias_text: "ピカチュウ AR Box" },
+          { product_id: 702, delta_qty: 1, alias_text: "リザードン SAR" },
+        ],
+        excludes: [],
+        unparsed: [],
+      },
+    };
+
+    await installAuthBypass(page);
+    await mockApi(page, {
+      ...baseMocks,
+      "GET /super-admin/parse-review/902": multiRowDetail,
+      "POST /super-admin/parse-review/902/approve": async (route) => {
+        approveBody = JSON.parse(route.request().postData() ?? "{}");
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            inbound_id: 902,
+            parse_status: "approved",
+            version: 1,
+            movements: [
+              {
+                movement_id: 21,
+                product_id: 701,
+                delta_qty: 2,
+                before_qty: 0,
+                after_qty: 2,
+              },
+            ],
+            skipped_count: 1,
+          }),
+        });
+      },
+    });
+
+    await page.goto("/super-admin/inbound/902/review");
+
+    // 2 行描画されるまで待つ
+    await expect(page.getByTestId("review-row-0-condition")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("review-row-1-condition")).toBeVisible();
+
+    // row 0 (採用) に inventory フィールド入力
+    await page.getByTestId("review-row-0-condition").selectOption("sealed");
+    await page.getByTestId("review-row-0-quantity-offered").fill("2");
+    await page.getByTestId("review-row-0-unit-price").fill("4500");
+
+    // row 1 をスキップにチェック
+    await page.getByTestId("review-row-1-skip").check();
+
+    // 承認
+    await page.getByTestId("review-approve-btn").click();
+
+    await expect.poll(() => approveBody).not.toBeNull();
+    const body = approveBody as Record<string, unknown>;
+    const items = body.items as Array<Record<string, unknown>>;
+    const skipped = body.skipped_indices as number[];
+
+    // row 1 はスキップなので items に含まれない (採用行 1 件のみ)
+    expect(items).toHaveLength(1);
+    expect(items[0].product_id).toBe(701);
+    expect(items[0].condition).toBe("sealed");
+    expect(items[0].quantity_offered).toBe(2);
+    expect(items[0].unit_price).toBe(4500);
+    expect(skipped).toEqual([1]);
+  });
 });

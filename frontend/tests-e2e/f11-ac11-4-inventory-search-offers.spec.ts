@@ -158,19 +158,18 @@ test.describe("Sprint 11 / F11 AC11.4 — InventorySearchBar offers display", ()
     const input = page.getByTestId("quote-inventory-search-0-input");
     await expect(input).toBeVisible({ timeout: 20_000 });
     await input.fill("リザードン");
-    // debounce 250ms
-    await page.waitForTimeout(400);
 
-    // 候補 0 (offers ブロック) 描画
+    // debounce (250ms) 経過後、最初の offer 行が描画されるまで直接待つ
+    // (Playwright anti-pattern を避けるため waitForTimeout を使用しない)
+    const offer0 = page.getByTestId("quote-inventory-search-0-result-0-offer-0");
+    await expect(offer0).toBeVisible({ timeout: 5_000 });
+
     const offersBlock = page.getByTestId(
       "quote-inventory-search-0-result-0-offers",
     );
     await expect(offersBlock).toBeVisible();
 
     // 最大 3 件まで個別 offer が描画 (4 件中)
-    await expect(
-      page.getByTestId("quote-inventory-search-0-result-0-offer-0"),
-    ).toBeVisible();
     await expect(
       page.getByTestId("quote-inventory-search-0-result-0-offer-1"),
     ).toBeVisible();
@@ -183,28 +182,37 @@ test.describe("Sprint 11 / F11 AC11.4 — InventorySearchBar offers display", ()
     ).toHaveCount(0);
 
     // 最初の仕入元名 + condition + qty + unit_price が表示
-    const offer0 = page.getByTestId("quote-inventory-search-0-result-0-offer-0");
     await expect(offer0).toContainText("AC11.4 仕入元 A");
     await expect(offer0).toContainText("sealed");
     await expect(offer0).toContainText("1,400");
 
-    // "他 1 件" の more 表示が出る (offersMore i18n)
-    await expect(offersBlock).toContainText("1");
+    // "他 1 件" の more 表示が出る (offersMore i18n: "他 {{extra}} 件")
+    // M1 follow-up: "1" だけだと unit_price 1,400 等にも match して assertion が弱いため、
+    // i18n 翻訳後の完全文字列で直接 assert する
+    await expect(offersBlock).toContainText("他 1 件");
   });
 
-  test("AC11.4 (masked): masked=true / quantity=null は *** 表示になる", async ({
+  test("AC11.4: inventory_offers[].quantity=null / unit_price=null は *** マスク表示", async ({
     page,
   }) => {
+    // M2 follow-up: 元の "masked=true" という test 名は誤解を招いていた。
+    // 実装 (InventorySearchBar.tsx:474-480) は response.masked フラグではなく、
+    // offer 個別の quantity=null / unit_price=null を *** に置換する。
+    // response.masked は別の masked-indicator バナー描画にのみ使われる。
     await setupMocks(page, RESPONSE_MASKED);
     await page.goto("/quotes/new");
 
     const input = page.getByTestId("quote-inventory-search-0-input");
     await expect(input).toBeVisible({ timeout: 20_000 });
     await input.fill("リザードン");
-    await page.waitForTimeout(400);
 
     const offer0 = page.getByTestId("quote-inventory-search-0-result-0-offer-0");
-    await expect(offer0).toBeVisible();
+    await expect(offer0).toBeVisible({ timeout: 5_000 });
     await expect(offer0).toContainText("***");
+
+    // M2: 加えて、response.masked=true で masked-indicator バナーも出る
+    await expect(
+      page.getByTestId("quote-inventory-search-0-masked-indicator"),
+    ).toBeVisible();
   });
 });
