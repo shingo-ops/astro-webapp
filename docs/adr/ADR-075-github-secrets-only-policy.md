@@ -1,4 +1,4 @@
-# ADR-074: GitHub Secrets 一元管理ポリシー
+# ADR-075: GitHub Secrets 一元管理ポリシー
 
 - **Status**: Accepted
 - **Date**: 2026-05-26
