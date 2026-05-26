@@ -605,7 +605,8 @@ async def delete_contact(
             old_data=old_data_payload,
         )
         await db.commit()
-        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
+        # [ADR-072 strict mode verification] reset を意図的に削除 → linter Rule B fail させる
+        # await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except IntegrityError:
         await db.rollback()
         raise HTTPException(
