@@ -42,10 +42,11 @@ interface SidebarAccordionProps {
   isExpanded: boolean;
   isOpen: boolean;
   onToggle: () => void;
+  onNavClick?: () => void;
 }
 
 function SidebarAccordion({
-  label, icon, items, activePaths, isExpanded, isOpen, onToggle,
+  label, icon, items, activePaths, isExpanded, isOpen, onToggle, onNavClick,
 }: SidebarAccordionProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
@@ -76,6 +77,7 @@ function SidebarAccordion({
               key={item.to}
               to={item.to}
               className={({ isActive: a }) => `sidebar-sub-item${a ? " active" : ""}`}
+              onClick={onNavClick}
             >
               {t(item.labelKey)}
             </NavLink>
@@ -133,6 +135,11 @@ export default function Layout() {
     setOpenAccordion(null);
   };
 
+  const handleNavClick = () => {
+    setSidebarExpanded(false);
+    setOpenAccordion(null);
+  };
+
   /* ---- permission-filtered sub-item lists ---- */
 
   const showCrmLink = hasPermission("leads.view") || hasPermission("customers.view");
@@ -183,6 +190,7 @@ export default function Layout() {
                   to="/"
                   end
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                  onClick={handleNavClick}
                 >
                   <span className="sidebar-icon"><NAV_ICONS.dashboard size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.dashboard")}</span>
@@ -193,6 +201,7 @@ export default function Layout() {
                 <NavLink
                   to="/lead-chat"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                  onClick={handleNavClick}
                 >
                   <span className="sidebar-icon">
                     <LeadChatIcon size={ICON.base} />
@@ -212,6 +221,7 @@ export default function Layout() {
               <NavLink
                 to="/schedule"
                 className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                onClick={handleNavClick}
               >
                 <span className="sidebar-icon"><NAV_ICONS.schedule size={ICON.base} /></span>
                 <span className="sidebar-label">{t("nav.schedule")}</span>
@@ -221,6 +231,7 @@ export default function Layout() {
                 <NavLink
                   to="/inventory"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                  onClick={handleNavClick}
                 >
                   <span className="sidebar-icon"><NAV_ICONS.inventory size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.inventory")}</span>
@@ -236,6 +247,7 @@ export default function Layout() {
                       location.pathname.startsWith("/invoices");
                     return `sidebar-item${on ? " active" : ""}`;
                   }}
+                  onClick={handleNavClick}
                 >
                   <span className="sidebar-icon"><NAV_ICONS.fileText size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.quotesInvoices")}</span>
@@ -251,6 +263,7 @@ export default function Layout() {
                       location.pathname.startsWith("/crm/");
                     return `sidebar-item${onCrm ? " active" : ""}`;
                   }}
+                  onClick={handleNavClick}
                 >
                   <span className="sidebar-icon"><NAV_ICONS.leads size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.leads")}</span>
@@ -261,6 +274,7 @@ export default function Layout() {
                 <NavLink
                   to="/orders"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                  onClick={handleNavClick}
                 >
                   <span className="sidebar-icon"><NAV_ICONS.orders size={ICON.base} aria-hidden="true" /></span>
                   <span className="sidebar-label">{t("nav.orders")}</span>
@@ -271,6 +285,7 @@ export default function Layout() {
                 <NavLink
                   to="/management-center"
                   className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
+                  onClick={handleNavClick}
                 >
                   <span className="sidebar-icon"><NAV_ICONS.admin size={ICON.base} /></span>
                   <span className="sidebar-label">{t("nav.managementCenter")}</span>
@@ -287,6 +302,7 @@ export default function Layout() {
                 isExpanded={sidebarExpanded}
                 isOpen={openAccordion === "more"}
                 onToggle={() => toggleAccordion("more")}
+                onNavClick={handleNavClick}
               />
             </>
           )}

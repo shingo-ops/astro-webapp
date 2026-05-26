@@ -75,7 +75,7 @@
 
 .fc .fc-col-header-cell {
   border-top: none;
-  border-bottom: 1px solid var(--calendar-grid-border);
+  border-bottom: none;
   border-left: none;
   border-right: 1px solid var(--calendar-grid-border);
   background: var(--bg-surface);
@@ -316,11 +316,18 @@
   padding: 0;
 }
 
-/* 終日エリアの二重線防止（ヘッダー下線との重複を除去） */
+/* 終日エリアの境界線制御 */
+/* - 上線: fc-col-header-cell の border-bottom を none にして除去 */
+/* - 下の2重線: divider の border-top + padding を除去し border-bottom のみ残す */
 .fc .fc-timegrid-allday td,
 .fc .fc-timegrid-allday th {
   border-top: none;
   border-bottom: none;
+}
+
+.fc .fc-timegrid-divider {
+  padding: 0;
+  border-top: none;
 }
 
 /* ============================================================
