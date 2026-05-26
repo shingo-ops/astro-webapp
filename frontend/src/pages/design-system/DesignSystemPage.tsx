@@ -28,6 +28,11 @@ const COLOR_TOKENS = [
   { name: "--danger-bg",       label: "Danger background" },
   { name: "--danger-text",     label: "Danger text" },
   { name: "--info-bg",         label: "Info background" },
+  // Inbox semantic tokens
+  { name: "--inbox-separator",         label: "Inbox separator" },
+  { name: "--inbox-hover",             label: "Inbox item hover" },
+  { name: "--inbox-action-icon-color", label: "Inbox action icon" },
+  { name: "--inbox-bulk-icon-color",   label: "Inbox bulk icon" },
 ];
 
 function ColorsSection() {

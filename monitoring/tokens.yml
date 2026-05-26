@@ -4,33 +4,38 @@
 #
 # 【このファイルの役割】
 #   監視設定の「唯一の正」として、全ての値をここに定義する。
-#   閾値を変更するときはこのファイルだけ修正すればよい。
+#   閾値・バージョンを変更するときはこのファイルだけ修正すればよい。
 #
 # 【スコープ】
-#   - バージョン（目標値 ※現状は:latestタグ。STEP5で固定予定）
+#   - バージョン（docker-compose.yml のイメージタグと一致させる）
 #   - スクレイプ間隔・データ保持期間
 #   - アラート閾値（Prometheus alert_rules.yml / Loki alerts.yml）
 #   - アラート継続時間（for: の値）
 #   ※ スクレイプ対象のポート番号・リソース制限はスコープ外
 #
-# 【自動反映について】
-#   現時点では各設定ファイルへの自動反映はしない。
-#   STEP6（monitoring-check.yml CI）で
-#   「このファイルと各設定ファイルのズレ」を自動検知する予定。
+# 【バージョン更新手順】
+#   1. このファイルの versions: を新しい値に変更
+#   2. docker-compose.yml の対応 image: タグを同じ値に変更
+#   3. VPS で docker compose pull && docker compose up -d を実行
+#   ロールバック: git revert でこのファイルを前のコミットに戻し、同手順を実行
 # ============================================================
 
-# --- バージョン固定（目標値）---
-# 注意: docker-compose.yml は現在 :latest タグで運用中。
-# STEP5 でこの値に固定する。固定後は「現在の状態」と一致する。
+# --- バージョン固定 ---
+# 対応ファイル: docker-compose.yml の各 image: タグ
+# 最終更新: 2026-05-27
 versions:
-  prometheus:        "v3.4.0"
-  grafana:           "12.0.1"
-  loki:              "3.5.1"
-  promtail:          "3.5.1"
-  node_exporter:     "v1.9.1"
-  postgres_exporter: "v0.16.0"
-  nginx_exporter:    "1.4.2"
-  uptime_kuma:       "2"
+  # インフラ
+  nginx:             "1.31.1"
+  certbot:           "v5.6.0"
+  # 監視スタック
+  prometheus:        "v3.11.3"
+  grafana:           "13.0.1"
+  loki:              "3.7.2"
+  promtail:          "3.6.11"
+  node_exporter:     "v1.11.1"
+  postgres_exporter: "v0.19.1"
+  nginx_exporter:    "1.5.1"
+  uptime_kuma:       "2.3.0"
 
 # --- スクレイプ・評価間隔 ---
 # 対応ファイル: monitoring/prometheus/prometheus.yml
