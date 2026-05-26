@@ -28,9 +28,10 @@
     "check:page-size": "node scripts/check-page-size.js",
     "check:stories": "node scripts/check-stories-count.js",
     "audit:unused-tokens": "node scripts/check-unused-tokens.js",
+    "check:color-token-sync": "node scripts/check-color-token-sync.js",
     "test:unit": "vitest run --project unit",
     "test:coverage": "vitest run --project unit --coverage",
-    "check:all": "npm run check:claude-size && npm run lint && npm run check:css-colors && npm run check:dark-parity && npm run check:jsx-emoji && npm run check:css-var-fallbacks && npm run check:css-values && npm run check:nav-sync && npm run check:page-layout && npm run check:page-folder && npm run check:icon-sync && npm run check:css-fixed-position && npm run check:breakpoint-sync && npm run check:page-size && npm run check:stories",
+    "check:all": "npm run check:claude-size && npm run lint && npm run check:css-colors && npm run check:dark-parity && npm run check:jsx-emoji && npm run check:css-var-fallbacks && npm run check:css-values && npm run check:nav-sync && npm run check:page-layout && npm run check:page-folder && npm run check:icon-sync && npm run check:css-fixed-position && npm run check:breakpoint-sync && npm run check:page-size && npm run check:stories && npm run check:color-token-sync",
     "prepare": "cd .. && husky frontend/.husky",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
