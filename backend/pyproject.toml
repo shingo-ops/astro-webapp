@@ -1,8 +1,18 @@
 [tool.ruff]
 # Python 3.12 / FastAPI プロジェクト向け基本設定（フロントエンドの eslint.config.js 相当）
-# Phase 1: 基本ルール (E/F/W/I) のみ。段階的に強化予定。
 line-length = 120
 target-version = "py312"
+exclude = [
+    "tests",
+    "migrations",
+    ".venv",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+# Phase 1: 基本ルール (E/F/W/I) のみ。段階的に強化予定。
+# 既存 708 件の違反は全て auto-fixable（[*] マーク）。
+# `make fix-lint` で一括修正後、CI の --exit-zero を削除してブロック化する。
 select = [
     "E",   # pycodestyle errors
     "F",   # pyflakes（未使用 import、未定義名 等）
@@ -11,12 +21,6 @@ select = [
 ]
 ignore = [
     "E501",  # line too long（formatter に任せる）
-]
-exclude = [
-    "tests",
-    "migrations",
-    ".venv",
-    "__pycache__",
 ]
 
 [tool.mypy]

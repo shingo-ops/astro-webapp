@@ -74,21 +74,24 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      # ── 静的解析（Phase 1: --exit-zero で警告表示のみ、ブロックなし）──────────
+      # ── 静的解析 ─────────────────────────────────────────────────────────────
       # 設定: backend/pyproject.toml（ruff/mypy/bandit/pytest の SSoT）
-      # ローカル確認: cd backend && make lint-ci（--exit-zero）/ make lint（strict）
-      # Phase 2 で ruff から順に --exit-zero を外してブロック化予定。
-      - name: Run ruff linting
+      # ローカル確認: cd backend && make lint（strict）/ make check（CI 相当）
+      #
+      # bandit: HIGH/CRITICAL 0件確認済み → ブロック（--exit-zero なし）
+      # ruff:   708件の auto-fixable 違反あり → `make fix-lint` 後にブロック化
+      # mypy:   型アノテーション整備中 → 警告のみ（|| true）
+      - name: Run ruff linting（警告のみ・auto-fixable 違反あり）
         working-directory: backend
         run: ruff check app/ --exit-zero
 
-      - name: Run bandit security scan
+      - name: Run bandit security scan（HIGH/CRITICAL 0件・ブロック）
         working-directory: backend
-        run: bandit -r app/ -lll --exit-zero
+        run: bandit -r app/ -lll
 
-      - name: Run mypy type checking
+      - name: Run mypy type checking（型アノテーション整備中・警告のみ）
         working-directory: backend
-        run: mypy app/ --no-error-summary --exit-zero
+        run: mypy app/ --no-error-summary || true
       # ──────────────────────────────────────────────────────────────────────
 
       - name: Generate Fernet key for tests

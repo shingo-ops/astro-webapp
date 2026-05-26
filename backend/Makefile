@@ -2,7 +2,7 @@
 # フロントエンドの npm run check:all に相当するバックエンド統合チェックコマンド。
 # 初回セットアップ: pip install -r requirements-dev.txt
 
-.PHONY: check lint lint-ci test
+.PHONY: check lint lint-ci fix-lint test
 
 ## CI 相当の全チェック（lint-ci + pytest）
 check: lint-ci test
@@ -13,12 +13,18 @@ lint:
 	bandit -r app/ -lll
 	mypy app/ --no-error-summary
 
-## CI 相当 lint — --exit-zero で警告表示のみ（段階導入中）
-## Phase 2 で ruff から順に --exit-zero を外してブロック化予定
+## CI 相当 lint（bandit はブロック、ruff/mypy は段階導入中）
 lint-ci:
 	ruff check app/ --exit-zero
-	bandit -r app/ -lll --exit-zero
-	mypy app/ --no-error-summary --exit-zero
+	bandit -r app/ -lll
+	mypy app/ --no-error-summary || true
+
+## ruff auto-fix — 既存 708 件の自動修正可能な違反を一括修正
+## 実行後 git diff で変更確認 → git add -p でレビューしてコミット
+## 完了後 lint-ci の ruff --exit-zero を削除してブロック化する
+fix-lint:
+	ruff check app/ --fix
+	ruff check app/
 
 ## pytest（DB サービス必須: docker compose up -d postgres redis）
 test:
