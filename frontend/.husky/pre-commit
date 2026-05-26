@@ -5,7 +5,11 @@
 #   2. CSS hex色チェック — App.css等のhex色禁止
 #   3. ダークモード変数パリティチェック — :root と :root.force-dark の変数一致
 
-cd "$(git rev-parse --show-toplevel)/frontend"
+# リポジトリルートを $0 から計算する（worktree + GIT_DIR 環境での
+# git rev-parse --show-toplevel 再呼び出し誤動作を回避）
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+
+cd "$REPO_ROOT/frontend"
 
 echo "🔍 ADR-067: ダークモード色規約チェック中..."
 
@@ -19,7 +23,7 @@ if git diff --cached --name-only | grep -q "frontend/src/index.css"; then
 fi
 
 echo "✅ ADR-067チェック完了"
-node "$(git rev-parse --show-toplevel)/frontend/scripts/check-claude-size.js"
+node "$REPO_ROOT/frontend/scripts/check-claude-size.js"
 
 # ── バックエンド Python 静的解析（ruff）────────────────────────────────────
 # backend/app/ 配下の .py ファイルが変更された場合のみ実行。
@@ -27,7 +31,7 @@ node "$(git rev-parse --show-toplevel)/frontend/scripts/check-claude-size.js"
 BACKEND_PY_CHANGES=$(git diff --cached --name-only | grep -E "^backend/app/.*\.py$" || true)
 if [ -n "$BACKEND_PY_CHANGES" ]; then
   echo "🐍 backend Python 変更検出 → ruff チェック..."
-  cd "$(git rev-parse --show-toplevel)/backend"
+  cd "$REPO_ROOT/backend"
   if command -v ruff >/dev/null 2>&1; then
     ruff check app/ --exit-zero
   else
@@ -35,5 +39,5 @@ if [ -n "$BACKEND_PY_CHANGES" ]; then
     echo "   backend/app/ の変更をコミットするには ruff が必要です。"
     exit 1
   fi
-  cd "$(git rev-parse --show-toplevel)/frontend"
+  cd "$REPO_ROOT/frontend"
 fi

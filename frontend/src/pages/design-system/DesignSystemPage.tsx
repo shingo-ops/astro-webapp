@@ -187,6 +187,189 @@ function ComponentsSection() {
   );
 }
 
+/* ---- Spacing Section ---- */
+const SPACE_TOKENS = [
+  { name: "--space-1",  px: "4px" },
+  { name: "--space-2",  px: "8px" },
+  { name: "--space-3",  px: "12px" },
+  { name: "--space-4",  px: "16px" },
+  { name: "--space-5",  px: "20px" },
+  { name: "--space-6",  px: "24px" },
+  { name: "--space-8",  px: "32px" },
+  { name: "--space-10", px: "40px" },
+  { name: "--space-12", px: "48px" },
+];
+
+function SpacingSection() {
+  return (
+    <section className="ds-section">
+      <h3 className="ds-section-title">Spacing Tokens</h3>
+      <div className="ds-spacing-list">
+        {SPACE_TOKENS.map((tok) => (
+          <div key={tok.name} className="ds-spacing-row">
+            <span className="ds-token-name ds-spacing-label-name">{tok.name}</span>
+            <div className="ds-spacing-bar-wrap">
+              <div className="ds-spacing-bar" style={{ width: `var(${tok.name})` }} />
+            </div>
+            <span className="ds-token-label ds-spacing-label-px">{tok.px}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ---- Shadow Section ---- */
+const SHADOW_TOKENS = [
+  { name: "--shadow-xs",           label: "xs" },
+  { name: "--shadow-sm",           label: "sm (card)" },
+  { name: "--shadow-md",           label: "md (dropdown)" },
+  { name: "--shadow-lg",           label: "lg (floating)" },
+  { name: "--shadow-xl",           label: "xl (popover)" },
+  { name: "--shadow-modal",        label: "modal" },
+  { name: "--shadow-dropdown",     label: "dropdown" },
+  { name: "--shadow-drop-sm",      label: "drop-sm" },
+  { name: "--shadow-accent-hover", label: "accent-hover" },
+];
+
+function ShadowSection() {
+  return (
+    <section className="ds-section">
+      <h3 className="ds-section-title">Shadow Tokens</h3>
+      <div className="ds-shadow-grid">
+        {SHADOW_TOKENS.map((tok) => (
+          <div key={tok.name} className="ds-shadow-card" style={{ boxShadow: `var(${tok.name})` }}>
+            <span className="ds-token-name">{tok.name}</span>
+            <span className="ds-token-label">{tok.label}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ---- Radius Section ---- */
+const RADIUS_TOKENS = [
+  { name: "--radius-xs",    label: "2px" },
+  { name: "--radius-2xs",   label: "3px" },
+  { name: "--radius-sm",    label: "4px" },
+  { name: "--radius-md",    label: "6px" },
+  { name: "--radius-lg",    label: "8px" },
+  { name: "--radius-xl",    label: "12px" },
+  { name: "--radius-badge", label: "10px (badge)" },
+  { name: "--radius-pill",  label: "20px (pill)" },
+  { name: "--radius-full",  label: "9999px" },
+];
+
+function RadiusSection() {
+  return (
+    <section className="ds-section">
+      <h3 className="ds-section-title">Border Radius Tokens</h3>
+      <div className="ds-radius-row">
+        {RADIUS_TOKENS.map((tok) => (
+          <div key={tok.name} className="ds-radius-item">
+            <div className="ds-radius-box" style={{ borderRadius: `var(${tok.name})` }} />
+            <span className="ds-token-name">{tok.name}</span>
+            <span className="ds-token-label">{tok.label}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ---- Z-index Section ---- */
+const Z_TOKENS = [
+  { name: "--z-base",            value: "10",  label: "base content" },
+  { name: "--z-dropdown",        value: "50",  label: "dropdown" },
+  { name: "--z-topbar",          value: "100", label: "topbar" },
+  { name: "--z-sidebar",         value: "200", label: "sidebar" },
+  { name: "--z-sidebar-overlay", value: "210", label: "sidebar overlay" },
+  { name: "--z-backdrop",        value: "298", label: "backdrop" },
+  { name: "--z-drawer",          value: "299", label: "drawer" },
+  { name: "--z-avatar",          value: "300", label: "avatar button" },
+  { name: "--z-modal",           value: "400", label: "modal" },
+  { name: "--z-toast",           value: "500", label: "toast" },
+];
+
+function ZIndexSection() {
+  return (
+    <section className="ds-section">
+      <h3 className="ds-section-title">Z-Index Tokens</h3>
+      <table className="ds-type-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Value</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Z_TOKENS.map((tok) => (
+            <tr key={tok.name}>
+              <td className="ds-token-name">{tok.name}</td>
+              <td className="ds-token-label">{tok.value}</td>
+              <td style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)" }}>{tok.label}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+/* ---- Motion Section ---- */
+const TRANSITION_TOKENS = [
+  { name: "--transition-micro",   label: "100ms ease — button press" },
+  { name: "--transition-fast",    label: "150ms ease — hover / color" },
+  { name: "--transition-base",    label: "200ms ease — fade in/out" },
+  { name: "--transition-sidebar", label: "250ms ease — sidebar" },
+  { name: "--transition-slow",    label: "280ms cubic-bezier — drawer" },
+];
+
+const EASING_TOKENS = [
+  { name: "--ease-standard", label: "standard (Material/Meta)" },
+  { name: "--ease-enter",    label: "enter — element entering" },
+  { name: "--ease-exit",     label: "exit — element leaving" },
+];
+
+function MotionSection() {
+  return (
+    <section className="ds-section">
+      <h3 className="ds-section-title">Motion Tokens</h3>
+      <p className="ds-section-desc">Hover each card to preview the transition</p>
+      <div className="ds-motion-grid">
+        {TRANSITION_TOKENS.map((tok) => (
+          <div
+            key={tok.name}
+            className="ds-motion-demo"
+            style={{ transition: `transform var(${tok.name}), box-shadow var(${tok.name})` }}
+          >
+            <span className="ds-token-name">{tok.name}</span>
+            <span className="ds-token-label">{tok.label}</span>
+          </div>
+        ))}
+      </div>
+      <table className="ds-type-table" style={{ marginTop: "var(--space-5)" }}>
+        <thead>
+          <tr>
+            <th>Easing Token</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          {EASING_TOKENS.map((tok) => (
+            <tr key={tok.name}>
+              <td className="ds-token-name">{tok.name}</td>
+              <td style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)" }}>{tok.label}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 /* ---- Main Page ---- */
 export default function DesignSystemPage() {
   const { t } = useTranslation();
@@ -201,6 +384,11 @@ export default function DesignSystemPage() {
       <div className="ds-page">
         <ColorsSection />
         <TypographySection />
+        <SpacingSection />
+        <ShadowSection />
+        <RadiusSection />
+        <ZIndexSection />
+        <MotionSection />
         <ComponentsSection />
       </div>
     </PageLayout>

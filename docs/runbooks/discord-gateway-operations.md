@@ -79,7 +79,7 @@ sudo journalctl -u sales-anchor-discord-gateway -f
 
 ### LoginFailure (致命的)
 - Bot Token が失効または不正
-- Discord Developer Portal で Token を再発行 → Bitwarden を更新 → env を再ロード
+- Discord Developer Portal で Token を再発行 → GitHub Secrets を更新 → env を再ロード
 
 ### 連続再起動 (最大 10 回で停止)
 - `_MAX_RECONNECT_ATTEMPTS = 10` 超過で停止し、`RuntimeError` を投げる

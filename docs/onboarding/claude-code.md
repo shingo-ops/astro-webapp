@@ -16,7 +16,7 @@ Claude Code の設定は 3 層に分かれている。**チーム共通のもの
 
 ### やってはいけないこと
 - 個人の好み（口調・通知・コマンド改行ルール等）を `<repo>/CLAUDE.md` に書かない
-- VPS パスワード・API token・SSH鍵 を `CLAUDE.md` や `.claude/` に書かない（**1Password / Bitwarden 等の Vault に置く**）
+- VPS パスワード・API token・SSH鍵 を `CLAUDE.md` や `.claude/` に書かない（**GitHub Secrets 等の安全な場所に置く**）
 - auto-memory ディレクトリ（`~/.claude/projects/...`）の中身をリポにコピーしない（個人の試行錯誤履歴）
 
 ---

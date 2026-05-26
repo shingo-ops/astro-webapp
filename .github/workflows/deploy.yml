@@ -96,8 +96,8 @@ jobs:
             #     Secret 値をそのまま literal text として書き込む。
             #     `${{ secrets.X }}` 自体は GitHub Actions が SSH 送信前に展開する。
             #   - Phase 1-D Sprint 1: METADATA_FERNET_KEY 紛失は DB token を永久に
-            #     復号不能化するリスクが極めて高い。GitHub Secrets と Bitwarden の
-            #     二重保管必須。ローテーション手順は
+            #     復号不能化するリスクが極めて高い。GitHub Secrets と別の安全な
+            #     バックアップの二重保管必須。ローテーション手順は
             #     docs/operations/meta_encryption_key_rotation.md 参照。
             touch .env
             sed -i.bak \
