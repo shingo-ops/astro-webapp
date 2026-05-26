@@ -3,3 +3,13 @@
 ruff==0.9.10
 bandit==1.8.3
 mypy==1.13.0
+
+# テスト用パッケージ
+pytest==8.3.5
+pytest-asyncio==0.25.3
+pytest-cov==6.1.1
+aiosqlite==0.21.0
+# Sprint 8 (F8) テスト: PDF テキスト抽出 (alias_text が PDF に含まれることを assert)
+pdfminer.six>=20231228
+# Sprint 8 (F8) テスト: ローカル SMTP capture (メール送信内容 assert)
+aiosmtpd>=1.4.5

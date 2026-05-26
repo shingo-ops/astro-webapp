@@ -32,12 +32,3 @@ reportlab>=4.0.0,<5.0.0
 google-api-python-client>=2.100.0,<3.0.0
 google-auth-oauthlib>=1.2.0,<2.0.0
 google-auth-httplib2>=0.2.0,<1.0.0
-# テスト用
-pytest==8.3.5
-pytest-asyncio==0.25.3
-pytest-cov==6.1.1
-aiosqlite==0.21.0
-# Sprint 8 (F8) テスト: PDF テキスト抽出 (alias_text が PDF に含まれることを assert)
-pdfminer.six>=20231228
-# Sprint 8 (F8) テスト: ローカル SMTP capture (メール送信内容 assert)
-aiosmtpd>=1.4.5

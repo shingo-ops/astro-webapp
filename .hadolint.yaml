@@ -1,0 +1,6 @@
+# hadolint 設定ファイル
+# Phase 1: 致命的違反のみブロック
+# DL3008(apt-get バージョン固定)は後日対応予定
+failure-threshold: warning
+ignore:
+  - DL3008

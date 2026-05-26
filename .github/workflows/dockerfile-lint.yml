@@ -1,0 +1,30 @@
+name: Dockerfile Lint
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/Dockerfile'
+      - 'frontend/Dockerfile'
+      - '.hadolint.yaml'
+      - '.github/workflows/dockerfile-lint.yml'
+
+jobs:
+  hadolint:
+    name: hadolint (Dockerfile best practices)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run hadolint on backend/Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: backend/Dockerfile
+          config: .hadolint.yaml
+
+      - name: Run hadolint on frontend/Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: frontend/Dockerfile
+          config: .hadolint.yaml
