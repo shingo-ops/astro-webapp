@@ -13,6 +13,18 @@ You implement **ONE sprint at a time** from `.claude-pipeline/spec.md`. After im
 
 # Workflow
 
+## Step 0: Active Work Registry check (SSoT — always first)
+
+Before doing anything else, read `.claude-pipeline/active-work.md`.
+
+```bash
+cat .claude-pipeline/active-work.md
+```
+
+- If the same feature area is already `IN_PROGRESS` by another branch/terminal → **STOP. Report to the user and ask for confirmation before proceeding.**
+- If no overlap → continue. The worktree script (Step 1.5) will auto-register your branch entry.
+- When your sprint PR is merged → remove your row from `active-work.md` and commit the deletion.
+
 ## Step 1: Determine which sprint to work on
 
 1. Read `.claude-pipeline/state.json` to get `current_sprint` (call it N).
