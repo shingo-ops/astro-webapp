@@ -25,6 +25,7 @@ export function usePermissions() {
       const data = await api.get<PermissionsResponse>("/me/permissions");
       setPermissions(new Set(data.permissions));
     } catch (e) {
+      // eslint-disable-next-line local/no-japanese-literal -- TODO: i18n対応（ADR-027 既知負債）
       setError(e instanceof Error ? e.message : "権限情報の取得に失敗しました");
     } finally {
       setLoading(false);

@@ -42,6 +42,7 @@ interface Permission {
 }
 
 // カテゴリ表示順とアイコン（constants/icons.tsx で一元管理）
+/* eslint-disable local/no-japanese-literal -- DB 定義のカテゴリキー（backend permission prefix と一致・変更不可） */
 const CATEGORY_META: Record<string, { icon: LucideIcon; order: number }> = {
   "レポート": { icon: CATEGORY_ICONS["レポート"], order: 1  },
   "顧客":     { icon: CATEGORY_ICONS["顧客"],     order: 2  },
@@ -65,6 +66,7 @@ const MENU_VIEW_KEY: Record<string, string[]> = {
   "レポート": ["dashboard.view", "reports.view"],
   "システム": ["system.audit_view"],
 };
+/* eslint-enable local/no-japanese-literal */
 
 // ロール表示色の選択肢（12色、視覚的に明確に区別できるよう Tailwind 500系で統一）
 // 正方形スウォッチで表示、ラジオボタン選択
