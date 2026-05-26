@@ -307,6 +307,7 @@
     "subtitle": "見込み客を管理して商談に案件化できます。"
   },
   "customers": {
+    "subtitle": "顧客企業の詳細情報を管理します。",
     "title": "顧客管理",
     "newCustomer": "新規登録",
     "editCustomer": "顧客編集",
@@ -690,6 +691,7 @@
     "subtitle": "見積書を作成・送付・状況管理できます。"
   },
   "invoices": {
+    "subtitle": "請求書の作成と管理ができます。",
     "title": "請求書管理",
     "invoiceCode": "請求書コード",
     "dueDate": "支払期限",
@@ -738,6 +740,7 @@
     "subtitle": "財務・配送・仕入・報酬を一元管理します。"
   },
   "products": {
+    "subtitle": "商品と在庫情報を管理します。",
     "title": "在庫管理",
     "newProduct": "新規登録",
     "editProduct": "商品編集",
@@ -955,6 +958,7 @@
     "subtitle": "自動化ボットとAPIキーを管理します。"
   },
   "reports": {
+    "subtitle": "スタッフの活動レポートを確認できます。",
     "title": "レポート"
   },
   "settings": {
@@ -967,6 +971,7 @@
     "subtitle": "Webhook通知チャネルを設定・管理します。"
   },
   "erp": {
+    "subtitle": "在庫・販売データを外部システムと同期します。",
     "title": "データ管理",
     "exportInvoices": "請求書CSVエクスポート",
     "exporting": "エクスポート中...",
@@ -1464,5 +1469,11 @@
     "passwordChanged": "パスワードを変更しました",
     "saving": "保存中...",
     "changing": "変更中..."
+  },
+  "badges": {
+    "subtitle": "バッジと達成条件を管理します。"
+  },
+  "buddy": {
+    "subtitle": "バディ設定とペアリングを管理します。"
   }
 }

@@ -116,6 +116,7 @@ export default function ProductsPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [search, showArchived]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -226,6 +227,7 @@ export default function ProductsPage() {
   return (
     <PageLayout
       navKey="nav.inventory"
+      subtitleKey="products.subtitle"
       headerAction={hasPermission("products.create") ? (
         <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("products.newProduct")}</button>
       ) : undefined}

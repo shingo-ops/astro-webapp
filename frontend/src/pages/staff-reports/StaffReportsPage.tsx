@@ -29,6 +29,7 @@ export default function StaffReportsPage() {
     catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
     finally { setLoading(false); }
   };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [typeFilter]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -45,6 +46,7 @@ export default function StaffReportsPage() {
   return (
     <PageLayout
       navKey="nav.reports"
+      subtitleKey="reports.subtitle"
       headerAction={hasPermission("staff_reports.create") ? (
         <button className="btn-primary" onClick={() => setShowForm(true)}>{t("common.add")}</button>
       ) : undefined}
