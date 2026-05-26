@@ -202,12 +202,7 @@
   border-top: none !important;
 }
 
-/* 時間ラベルをグリッド線に揃える（Google Calendar 準拠: テキスト下端 = 線の位置） */
-/* FC は border-top で線を描画するため、ラベルは線の上に出るよう translateY(-100%) を使用 */
-<<<<<<< HEAD
-=======
-/* border-top: none でラベル列に線を出さない（線はグリッド側のみ表示） */
->>>>>>> origin/develop
+/* 時間ラベル列の横線を非表示（グリッド列のみ横線を表示） */
 .fc .fc-timegrid-slot-label {
   font-size: var(--font-xs);
   color: var(--text-muted);
@@ -218,7 +213,6 @@
 .fc .fc-timegrid-slot-label-cushion {
   display: inline-block;
   padding-right: var(--space-2);
-  transform: translateY(-100%);
 }
 
 /* 現在時刻インジケーター（赤線 + 赤ドット） */
