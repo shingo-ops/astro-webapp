@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-05-26 / ADR 総数: 60 件
+最終更新: 2026-05-26 / ADR 総数: 61 件
 
 ## 一覧
 
@@ -68,6 +68,7 @@
 | [ADR-070](./ADR-070-grafana-monitoring-integration.md) | ADR-070: Grafana ドメイン移行 + Uptime Kuma→Prometheus 統合 | — | — |
 | [ADR-071](./ADR-071-orders-nav-placement.md) | ADR-071: 受注管理ナビゲーション導線の追加 | — | — |
 | [ADR-072](./ADR-072-tenant-schema-prefix-enforcement.md) | ADR-072: tenant schema 修飾の戦略統一（schema prefix と reset_tenant_context のハイブリッド） | Proposed | — |
+| [ADR-074](./ADR-074-worktree-agent-enforcement.md) | ADR-074: Worktree強制によるエージェントPR混入防止 | — | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例
