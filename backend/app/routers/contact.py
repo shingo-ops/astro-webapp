@@ -17,6 +17,7 @@ from email.mime.text import MIMEText
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, field_validator
+
 from app.schemas.base import validate_email_loose
 
 router = APIRouter()

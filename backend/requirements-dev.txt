@@ -1,0 +1,5 @@
+# 開発・CI 用ツール（本番環境には不要）
+# インストール: pip install -r requirements.txt && pip install -r requirements-dev.txt
+ruff==0.9.10
+bandit==1.8.3
+mypy==1.13.0

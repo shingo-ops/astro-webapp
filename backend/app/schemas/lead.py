@@ -18,7 +18,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.schemas.base import validate_phone, validate_email_loose
+from app.schemas.base import validate_email_loose, validate_phone
 
 
 class LeadStatus(str, Enum):

@@ -24,7 +24,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-
 # 入力可能な数値カラム（Pydantic では default 0 で受け取る）
 _INPUT_FIELDS: tuple[str, ...] = (
     "revenue_amount",

@@ -23,8 +23,8 @@ import time
 from typing import Callable
 
 from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.database import AsyncSessionLocal
 
@@ -80,8 +80,9 @@ async def _check_and_record_bulk_export(user_email: str | None) -> bool:
         return False
 
     try:
-        from app.cache import get_redis
         import hashlib
+
+        from app.cache import get_redis
         r = get_redis()
         if not r:
             return False
