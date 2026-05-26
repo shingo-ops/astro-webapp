@@ -144,10 +144,10 @@ export default function InboxPage() {
                 {t("inbox.manage")}
               </button>
               {manageOpen && (
-                <div className="inbox-manage-dropdown" role="menu">
+                <div className="dropdown-menu" role="menu">
                   <button
                     type="button"
-                    className="inbox-manage-item"
+                    className="dropdown-item"
                     role="menuitem"
                     onClick={handleMarkAllRead}
                   >
@@ -196,7 +196,7 @@ export default function InboxPage() {
           {/* 会話リスト */}
           <div className="inbox-conversation-list">
             {convError && (
-              <div className="inbox-error-banner">
+              <div className="error-banner">
                 {t("inbox.fetchError")}
                 <button
                   type="button"
@@ -283,8 +283,8 @@ export default function InboxPage() {
         {/* ============================== 中央パネル ============================== */}
         <main className="inbox-center">
           {selectedLeadId === null ? (
-            <div className="inbox-empty-center">
-              <div className="inbox-empty-icon" aria-hidden="true">
+            <div className="empty-state">
+              <div className="empty-state-icon" aria-hidden="true">
                 <PAGE_ICONS.inboxEmpty size={ICON.xl} />
               </div>
               <p>{t("inbox.selectConversation")}</p>
@@ -366,7 +366,7 @@ export default function InboxPage() {
                   </div>
                 )}
                 {msgError && (
-                  <div className="inbox-error-banner">{msgError}</div>
+                  <div className="error-banner">{msgError}</div>
                 )}
                 {messagesData && messagesData.messages.length === 0 && !msgError && (
                   <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: "var(--space-8)" }}>
@@ -779,7 +779,7 @@ export default function InboxPage() {
 
       {/* ============================== 受信箱設定モーダル ============================== */}
       {showSettings && (
-        <div className="inbox-settings-overlay" onClick={() => setShowSettings(false)}>
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="inbox-settings-modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="inbox-settings-modal-title">{t("inbox.settings.title")}</h3>
 
@@ -787,10 +787,10 @@ export default function InboxPage() {
 
             <div className="inbox-settings-row">
               <span className="inbox-settings-label">{t("inbox.settings.showRightPanel")}</span>
-              <label className="inbox-toggle">
+              <label className="toggle-switch">
                 <input type="checkbox" checked={inboxSettings.showRightPanel}
                   onChange={(e) => updateInboxSetting("showRightPanel", e.target.checked)} />
-                <span className="inbox-toggle-slider" />
+                <span className="toggle-switch-slider" />
               </label>
             </div>
 
@@ -810,10 +810,10 @@ export default function InboxPage() {
 
             <div className="inbox-settings-row">
               <span className="inbox-settings-label">{t("inbox.settings.defaultUnreadOnly")}</span>
-              <label className="inbox-toggle">
+              <label className="toggle-switch">
                 <input type="checkbox" checked={inboxSettings.defaultUnreadOnly}
                   onChange={(e) => updateInboxSetting("defaultUnreadOnly", e.target.checked)} />
-                <span className="inbox-toggle-slider" />
+                <span className="toggle-switch-slider" />
               </label>
             </div>
 
@@ -823,7 +823,7 @@ export default function InboxPage() {
 
             <div className="inbox-settings-row">
               <span className="inbox-settings-label">{t("inbox.settings.browserNotifications")}</span>
-              <label className="inbox-toggle">
+              <label className="toggle-switch">
                 <input type="checkbox" checked={inboxSettings.browserNotifications}
                   onChange={async (e) => {
                     if (e.target.checked) {
@@ -835,16 +835,16 @@ export default function InboxPage() {
                     }
                     updateInboxSetting("browserNotifications", e.target.checked);
                   }} />
-                <span className="inbox-toggle-slider" />
+                <span className="toggle-switch-slider" />
               </label>
             </div>
 
             <div className="inbox-settings-row">
               <span className="inbox-settings-label">{t("inbox.settings.soundEnabled")}</span>
-              <label className="inbox-toggle">
+              <label className="toggle-switch">
                 <input type="checkbox" checked={inboxSettings.soundEnabled}
                   onChange={(e) => updateInboxSetting("soundEnabled", e.target.checked)} />
-                <span className="inbox-toggle-slider" />
+                <span className="toggle-switch-slider" />
               </label>
             </div>
 
@@ -858,7 +858,7 @@ export default function InboxPage() {
       {/* ============================== プロフィールモーダル ============================== */}
       {showProfileModal && leadDetail && (
         <div
-          className="inbox-profile-overlay"
+          className="modal-overlay"
           onClick={() => setShowProfileModal(false)}
           role="presentation"
         >
