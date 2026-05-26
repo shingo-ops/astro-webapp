@@ -21,6 +21,8 @@ on:
         type: string
   pull_request:
     types: [synchronize]
+    paths:
+      - 'docs/adr/**'  # TEST VIOLATION
 
 permissions:
   contents: write
