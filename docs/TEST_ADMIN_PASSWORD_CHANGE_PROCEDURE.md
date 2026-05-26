@@ -162,7 +162,7 @@ exit
 
 | 推奨度 | 保管場所 |
 |--------|---------|
-| 🥇 | パスワードマネージャ（Bitwarden 導入予定） |
+| 🥇 | パスワードマネージャ（1Password 等）または GitHub Secrets |
 | 🥈 | Mac の Keychain |
 | 🥉 | 紙にメモして金庫 |
 | ❌ | テキストファイル平文、メール、Slack、Claude Code |

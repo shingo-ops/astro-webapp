@@ -132,7 +132,7 @@ export default function RolesPage() {
       })
       .catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   // 選択ロール変更時、権限を読み込む
   useEffect(() => {
@@ -144,7 +144,7 @@ export default function RolesPage() {
         setEditedPermIds(new Set(ids));
       })
       .catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")));
-  }, [selectedRoleId]);
+  }, [selectedRoleId, t]);
 
   // カテゴリ別に権限をグループ化
   const grouped = useMemo(() => {

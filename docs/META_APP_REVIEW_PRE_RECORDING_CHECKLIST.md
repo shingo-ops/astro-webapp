@@ -43,7 +43,7 @@
 ### A-1. App 基本設定
 
 - [ ] App ID: `META_APP_ID` を VPS 設定値と一致させて控える
-- [ ] App Secret: `META_APP_SECRET` を Bitwarden に保管（撮影中に絶対画面に映さない）
+- [ ] App Secret: `META_APP_SECRET` を GitHub Secrets に保管（撮影中に絶対画面に映さない）
 - [ ] App Mode: **Test Mode** で進める（撮影は Test Mode で OK、本番モードは審査通過後）
 - [ ] App Domain: `salesanchor.jp`, `app.salesanchor.jp`
 - [ ] Privacy Policy URL: `https://salesanchor.jp/privacy`（Phase 5 で稼働中）
@@ -106,7 +106,7 @@
 
 ### B-1. .env 設定値（VPS `/home/ubuntu/salesanchor/.env`）
 
-- [ ] `METADATA_FERNET_KEY=<32 bytes urlsafe base64>` 注入済（Bitwarden に同値あり）
+- [ ] `METADATA_FERNET_KEY=<32 bytes urlsafe base64>` 注入済（GitHub Secrets に同値あり）
 - [ ] `META_APP_ID=<App ID>` 注入済
 - [ ] `META_APP_SECRET=<App Secret>` 注入済
 - [ ] `META_OAUTH_REDIRECT_URI=https://app.salesanchor.jp/channels/oauth/callback` 注入済
@@ -188,7 +188,7 @@ docker compose logs backend | grep -i "webhook" | tail -20
   -- 既存 staff の場合は確認のみ
   SELECT id, email, role_id FROM tenant_006.staff WHERE email = 'review@salesanchor.jp';
   ```
-- [ ] パスワードを Bitwarden に保管（**注意**: 過去 setup ではコンテナ `/tmp` 保存で再起動消失リスクあり。今後の setup は Bitwarden 永続保管必須）
+- [ ] パスワードを安全な場所に保管（**注意**: 過去 setup ではコンテナ `/tmp` 保存で再起動消失リスクあり。今後の setup は永続保管必須）
 - [ ] Firebase Auth で同 Email を 1 アカウント作成 + 当該 `tenant_006.staff.id` と紐付け済
 - [ ] tenant_006 ログイン後の URL 末尾が `?tenant_code=tenant-review` 等で識別できることを確認
 
@@ -231,7 +231,7 @@ ORDER BY id DESC LIMIT 1;
 ### C-4. Data Deletion テストペイロード（シーン 8 用）
 
 - [ ] Meta Developer Portal の `Data Deletion Callback` 設定が正しい
-- [ ] curl テスト用の signed_request サンプルを Bitwarden に保管
+- [ ] curl テスト用の signed_request サンプルを安全な場所に保管
 - [ ] テスト送信 → Status Page が `https://salesanchor.jp/deletion-status?code=<confirmation_code>` で開けるか事前確認（confirmation_code は `DEL-YYYYMMDD-xxxx` 形式、レスポンスの `confirmation_code` フィールドをそのまま利用）
 - [ ] SMTP 設定済（任意）。設定済なら完了メールも撮影に含められる
 
