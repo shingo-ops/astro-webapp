@@ -529,6 +529,7 @@
     "fetchError": "Failed to load data",
     "unreadBadge": "{{count}} unread",
     "karteToggle": "Customer Info",
+    "moreActions": "More actions",
     "markUnread": "Mark as unread",
     "exclude": "Mark as excluded",
     "deleteLead": "Delete",
