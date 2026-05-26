@@ -72,6 +72,11 @@ jobs:
                   "rule": "no_paths",
                   "reason": "ADR自動起動CI: paths追加でADR実装ループが停止する",
               },
+              {
+                  "file": ".github/workflows/dockerfile-lint.yml",
+                  "rule": "has_pull_request_blocking",
+                  "reason": "PR #918 hadolint追加: pull_requestトリガー削除・continue-on-error追加でDockerfileチェックが無効化される",
+              },
           ]
 
           errors = []
@@ -117,6 +122,29 @@ jobs:
                           f"❌ {check['file']}: pull_request トリガーが追加されています\n"
                           f"   理由: {check['reason']}"
                       )
+              elif check["rule"] == "has_pull_request_blocking":
+                  pr_trigger = on_section.get("pull_request", None)
+                  if pr_trigger is None:
+                      errors.append(
+                          f"❌ {check['file']}: pull_request トリガーが削除されています\n"
+                          f"   理由: {check['reason']}"
+                      )
+                  else:
+                      # continue-on-error: true が全ステップにないことを確認
+                      jobs_section = data.get("jobs", {})
+                      skippable = []
+                      for job_name, job_data in jobs_section.items():
+                          if not isinstance(job_data, dict):
+                              continue
+                          for step in job_data.get("steps", []):
+                              if step.get("continue-on-error") is True:
+                                  skippable.append(f"{job_name}/{step.get('name', '(無名)')}")
+                      if skippable:
+                          errors.append(
+                              f"❌ {check['file']}: 以下のステップに continue-on-error: true があります（非ブロッキング化）\n"
+                              f"   対象: {skippable}\n"
+                              f"   理由: {check['reason']}"
+                          )
 
           if errors:
               print("=" * 60)
