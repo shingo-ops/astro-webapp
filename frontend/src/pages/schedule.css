@@ -295,6 +295,7 @@
    ============================================================ */
 
 .fc .fc-timegrid-axis.fc-scrollgrid-shrink {
+  border-top: none;
   border-right: none;
 }
 

@@ -101,7 +101,6 @@ export function UiPrefsProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       // 404（staff 未紐づけ）や 5xx の場合はデフォルト値で動作。
       // ログには残すが UI は止めない。
-      // eslint-disable-next-line no-console
       console.warn("[UiPrefs] /staff/me 取得失敗、デフォルト値で動作:", e);
       setPrefsState(DEFAULT_UI_PREFS);
       setSelfStaffId(null);
