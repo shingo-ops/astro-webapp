@@ -360,7 +360,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
       - GF_SERVER_ROOT_URL=https://app.salesanchor.jp/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
-      - GF_SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+      - GF_DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
