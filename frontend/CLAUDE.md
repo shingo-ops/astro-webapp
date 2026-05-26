@@ -42,6 +42,8 @@ DB 由来の値（ステータスコード・カテゴリキー等）は `// esl
 寸法・サイズ・スペーシング等の非色トークンは `tokens.css` の `:root` のみに追加（`force-dark` 不要）。
 詳細: `docs/adr/ADR-067-design-token-enforcement.md`。ローカル確認: `cd frontend && npm run check:all`
 
+**初めて触る場合**: `docs/onboarding/design-system.md`（5分）を先に読む。
+
 ---
 
 ## アイコン管理
