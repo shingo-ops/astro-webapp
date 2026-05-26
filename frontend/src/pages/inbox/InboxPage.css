@@ -659,7 +659,7 @@
   border-bottom: 1px solid var(--bg-subtle);
 }
 .right-panel-label {
-  font-size: var(--font-2xs);
+  font-size: var(--inbox-panel-label-size);
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -744,7 +744,7 @@
   font-size: var(--font-md);
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 10px;
+  margin-bottom: var(--space-10px);
   padding-bottom: 0;
 }
 
@@ -954,7 +954,7 @@ textarea.right-panel-field { resize: vertical; min-height: var(--inbox-textarea-
 .right-panel-tab-content { flex: 1; overflow-y: auto; width: 100%; }
 .right-panel-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
 .right-panel-group-heading {
-  font-size: 10px;
+  font-size: var(--inbox-panel-group-heading-size);
   font-weight: var(--font-weight-bold);
   color: var(--text-muted);
   text-transform: uppercase;
