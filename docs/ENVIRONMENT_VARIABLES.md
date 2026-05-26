@@ -235,7 +235,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 - `GOOGLE_CALENDAR_CLIENT_SECRET` は Google Console で一度しか表示されない。**発行直後に GitHub Secrets および安全なバックアップ保管場所へ保存必須**
 - `GOOGLE_CALENDAR_REDIRECT_URI` は `https://api.salesanchor.jp/api/v1/google-calendar/connect/callback` に固定
 - `METADATA_FERNET_KEY` は Meta Inbox と共用（既存設定を流用）
-- GitHub Secrets に `GOOGLE_CALENDAR_CLIENT_SECRET` を登録済み（deploy 時に自動注入）
+- GitHub Secrets に 3 変数すべて登録済み（deploy 時に自動注入）: `GOOGLE_CALENDAR_CLIENT_ID` / `GOOGLE_CALENDAR_CLIENT_SECRET` / `GOOGLE_CALENDAR_REDIRECT_URI`
 
 ---
 
@@ -265,7 +265,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | Firebase | Meta Developer Portal > Facebook Login > Valid OAuth Redirect URIs に `https://auth.salesanchor.jp/__/auth/handler` と旧 `https://sales-ops-with-claude.firebaseapp.com/__/auth/handler` の両方が残置されている |
 | Redis | パスワード設定済 |
 | Meta | METADATA_FERNET_KEY、META_APP_ID、META_APP_SECRET、META_OAUTH_REDIRECT_URI すべて注入済 |
-| Google Calendar | GOOGLE_CALENDAR_CLIENT_SECRET が GitHub Secrets に登録済み |
+| Google Calendar | GOOGLE_CALENDAR_CLIENT_ID / CLIENT_SECRET / REDIRECT_URI の 3 変数が GitHub Secrets に登録済み |
 | Meta | META_OAUTH_REDIRECT_URI と Meta Developer Portal の Valid OAuth Redirect URIs が一致 |
 | Meta | META_GRAPH_API_VERSION が運用版に合致（v19.0 等） |
 | Webhook | META_VERIFY_TOKEN が Meta Developer Portal と一致 |
