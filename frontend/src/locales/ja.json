@@ -109,6 +109,7 @@
     "inventoryVisibility": "在庫表示権限",
     "tenantProfile": "発行者情報",
     "superAdminPhaseSwitch": "スプレッドシート Phase",
+    "superAdminInventoryOffers": "仕入元現在オファー",
     "account": "アカウント",
     "openUserMenu": "ユーザーメニューを開く",
     "switchToDark": "ダークモード",
@@ -1371,6 +1372,41 @@
       "phaseAWarning": {
         "always": "Phase A (緊急戻し中): 在庫数は更新されません。CRM 標準運用は Phase B です。",
         "afterApprove": "承認しましたが、Phase A (緊急戻し) 中のため products.stock_quantity は更新されませんでした（{{count}} 件は inventory_movements に記録済）。"
+      }
+    },
+    "inventoryOffers": {
+      "subtitle": "仕入元 × 商品 × 状態 単位の現在オファー。F6 承認で UPSERT、手動編集も可能。",
+      "searchPlaceholder": "仕入元名 / 商品名 / 商品コードで検索",
+      "conditionPlaceholder": "状態でフィルタ",
+      "statusAny": "状態すべて",
+      "noResults": "該当オファーがありません",
+      "updateSuccess": "オファーを更新しました",
+      "deleteSuccess": "オファーを削除しました",
+      "deleteConfirm": "「{{name}}」のオファーを削除しますか？",
+      "notFound": "オファーが見つかりません (既に削除されている可能性)",
+      "pageOf": "{{page}} / {{total}} 頁 (全 {{count}} 件)",
+      "col": {
+        "supplier": "仕入元",
+        "product": "商品",
+        "condition": "状態",
+        "quantity": "在庫数",
+        "unitPrice": "単価 (円)",
+        "status": "ステータス",
+        "source": "経路",
+        "expiresAt": "期限",
+        "actions": "操作"
+      },
+      "status": {
+        "in_stock": "在庫あり",
+        "out_of_stock": "在庫切れ",
+        "reserved": "予約済",
+        "archived": "アーカイブ"
+      },
+      "source": {
+        "manual": "手動",
+        "discord_parsed": "Discord 解析",
+        "csv_import": "CSV 取込",
+        "f6_approved": "F6 承認"
       }
     }
   },
