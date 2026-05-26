@@ -154,7 +154,10 @@ test.describe("Sprint 11 / F11 AC11.5 — /super-admin/inventory-offers admin CR
     expect((patchBody as Record<string, unknown>).unit_price).toBe(2000);
     expect((patchBody as Record<string, unknown>).status).toBe("reserved");
 
-    // 保存後の reload が走る (list が 2 回以上呼ばれる)
+    // M4 follow-up: 保存後の自動 reload を検証する。
+    // InventoryOffersPage.submitEdit() の最後で `await load()` が呼ばれ、
+    // 編集結果を画面に即時反映する UX 仕様。listCount は初期描画 1 + 保存後 reload 1
+    // で >= 2 になる (poll で eventual consistency 確認)。
     await expect.poll(() => listCount).toBeGreaterThanOrEqual(2);
   });
 
