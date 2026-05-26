@@ -138,7 +138,6 @@ async def create_po(
     await db.commit()
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
-    await reset_tenant_context(db, tenant_id)
 
     fetched = await db.execute(text(f"SELECT {_PO_COLS} FROM purchase_orders WHERE id = :id"), {"id": po_id})
     row = fetched.mappings().first()

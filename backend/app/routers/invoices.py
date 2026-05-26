@@ -219,7 +219,6 @@ async def create_invoice_from_quote(
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
-    await reset_tenant_context(db, tenant_id)
     fetched = await db.execute(text(f"SELECT {_INVOICE_COLUMNS} FROM invoices WHERE id = :id"), {"id": invoice_id})
     row = fetched.mappings().first()
     items = await _get_invoice_items(db, invoice_id)
@@ -320,7 +319,6 @@ async def create_invoice(
     await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
-    await reset_tenant_context(db, tenant_id)
     fetched = await db.execute(text(f"SELECT {_INVOICE_COLUMNS} FROM invoices WHERE id = :id"), {"id": invoice_id})
     row = fetched.mappings().first()
     items = await _get_invoice_items(db, invoice_id)
