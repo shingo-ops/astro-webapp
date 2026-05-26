@@ -153,33 +153,6 @@
   white-space: nowrap;
 }
 .inbox-manage-btn:hover { background: var(--bg-subtle); }
-.inbox-manage-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: var(--min-width-dropdown);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-dropdown);
-  z-index: var(--z-topbar);
-  overflow: hidden;
-}
-.inbox-manage-item {
-  display: block;
-  width: 100%;
-  padding: var(--space-10px) var(--space-14px);
-  border: none;
-  background: transparent;
-  text-align: left;
-  font-size: var(--font-sm);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-family: inherit;
-  transition: background var(--transition-micro);
-}
-.inbox-manage-item:hover { background: var(--bg-subtle); }
-
 /* サブフィルターピル（Meta実測: 未読/フォローアップ） */
 .inbox-sub-filter-bar {
   display: flex;
@@ -534,19 +507,6 @@
   cursor: not-allowed;
 }
 
-/* 空状態 */
-.inbox-empty-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  font-size: var(--font-base);
-  gap: var(--space-3);
-}
-.inbox-empty-icon svg { width: var(--icon-xl); height: var(--icon-xl); }
-
 /* ---- 右パネル ---- */
 .inbox-right-panel {
   width: var(--drawer-width);
@@ -738,15 +698,6 @@
 }
 
 /* エラー・ローディング */
-.inbox-error-banner {
-  padding: var(--space-2) var(--space-3);
-  background: var(--danger-bg);
-  color: var(--danger-text);
-  border: 1px solid var(--danger);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-sm);
-  margin: 8px 12px;
-}
 .inbox-send-error {
   padding: 6px 10px;
   border-radius: var(--radius-lg);
@@ -961,11 +912,6 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 .inbox-settings-btn:hover { background: var(--color-hover-overlay); }
 
 /* ====== 受信箱設定モーダル ====== */
-.inbox-settings-overlay {
-  position: fixed; inset: 0; z-index: var(--z-modal); /* fixed-ok: settings-modal-overlay */
-  background: rgba(0,0,0,var(--opacity-overlay));
-  display: flex; align-items: center; justify-content: center;
-}
 .inbox-settings-modal {
   background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: var(--space-6);
@@ -1001,30 +947,7 @@ textarea.right-panel-field { resize: vertical; min-height: 60px; }
 }
 .inbox-settings-close-btn:hover { opacity: var(--opacity-dim); }
 
-/* ====== トグルスイッチ ====== */
-.inbox-toggle { position: relative; display: inline-flex; width: 40px; height: 22px; cursor: pointer; }
-.inbox-toggle input { opacity: 0; width: 0; height: 0; }
-.inbox-toggle-slider {
-  position: absolute; inset: 0;
-  background: var(--border); border-radius: 11px;
-  transition: background var(--transition-micro);
-}
-.inbox-toggle-slider::before {
-  content: ""; position: absolute;
-  height: 16px; width: 16px; left: 3px; top: 3px;
-  background: var(--bg-surface); border-radius: 50%;
-  transition: transform var(--transition-micro);
-}
-.inbox-toggle input:checked + .inbox-toggle-slider { background: var(--accent); }
-.inbox-toggle input:checked + .inbox-toggle-slider::before { transform: translateX(18px); }
-
 /* ====== プロフィールモーダル ====== */
-.inbox-profile-overlay {
-  position: fixed; inset: 0; z-index: var(--z-modal); /* fixed-ok: profile-modal-overlay */
-  background: rgba(0,0,0,var(--opacity-overlay));
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--space-4);
-}
 .inbox-profile-modal {
   background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: var(--space-6);
