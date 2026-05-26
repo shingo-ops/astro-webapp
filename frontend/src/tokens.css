@@ -300,6 +300,7 @@
   --schedule-mini-col-min-w: 100px;  /* ミニカレンダーカラム最小幅 */
   --schedule-slot-h:         80px;   /* タイムグリッド1時間スロット高（30分×2） */
   --schedule-nav-btn-size:   32px;   /* カレンダーナビボタン幅・高さ */
+  --schedule-allday-row-h:   28px;   /* 終日エリア固定高（1イベント行 + 余白）*/
 
   /* ---- Field sizes ---- */
   --min-width-input-sm:   120px;  /* 小型入力フィールド最小幅 */

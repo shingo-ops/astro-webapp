@@ -556,6 +556,7 @@ export default function SchedulePage() {
           height="100%"
           nowIndicator
           allDaySlot
+          dayMaxEventRows={1}
           slotMinTime="00:00:00"
           slotMaxTime="24:00:00"
           slotDuration="00:30:00"
