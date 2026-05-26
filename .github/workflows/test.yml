@@ -47,6 +47,50 @@ jobs:
               - 'docker-compose.test.yml'
               - '.github/workflows/test.yml'
 
+  # 静的解析（ruff/bandit/mypy）— pytest-run と並列実行
+  # 設定: backend/pyproject.toml（ruff/mypy/bandit/pytest の SSoT）
+  # ローカル確認: cd backend && make lint（strict）/ make check（CI 相当）
+  #
+  # bandit: HIGH/CRITICAL 0件確認済み → ブロック（--exit-zero なし）
+  # ruff:   708件の auto-fixable 違反あり → `make fix-lint` 後にブロック化
+  # mypy:   型アノテーション整備中 → 警告のみ（|| true）
+  lint-backend:
+    name: lint-backend-internal
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+
+      - name: Install lint dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run ruff linting（ブロック）
+        working-directory: backend
+        run: ruff check app/
+
+      - name: Run bandit security scan（HIGH/CRITICAL 0件・ブロック）
+        working-directory: backend
+        run: bandit -r app/ -lll
+
+      - name: Run mypy type checking（型アノテーション整備中・警告のみ）
+        working-directory: backend
+        run: mypy app/ --no-error-summary || true
+
   # 実テスト。backend 変更がある場合のみ services を使って実行する。
   pytest-run:
     name: pytest-run-internal
@@ -99,26 +143,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-
-      # ── 静的解析 ─────────────────────────────────────────────────────────────
-      # 設定: backend/pyproject.toml（ruff/mypy/bandit/pytest の SSoT）
-      # ローカル確認: cd backend && make lint（strict）/ make check（CI 相当）
-      #
-      # bandit: HIGH/CRITICAL 0件確認済み → ブロック（--exit-zero なし）
-      # ruff:   708件の auto-fixable 違反あり → `make fix-lint` 後にブロック化
-      # mypy:   型アノテーション整備中 → 警告のみ（|| true）
-      - name: Run ruff linting（ブロック）
-        working-directory: backend
-        run: ruff check app/
-
-      - name: Run bandit security scan（HIGH/CRITICAL 0件・ブロック）
-        working-directory: backend
-        run: bandit -r app/ -lll
-
-      - name: Run mypy type checking（型アノテーション整備中・警告のみ）
-        working-directory: backend
-        run: mypy app/ --no-error-summary || true
-      # ──────────────────────────────────────────────────────────────────────
 
       - name: Generate Fernet key for tests
         id: fernet
@@ -199,22 +223,24 @@ jobs:
       # 現在は SQLite skip で skip 件数 3 件のまま。
 
   # ルールセット必須 Check の名前と一致させる。always() で常に実行し、
-  # - backend 変更あり: pytest-run の結果をそのまま伝播
-  # - backend 変更なし（frontend-only）: pytest-run が skipped → 成功として報告
+  # - backend 変更あり: pytest-run と lint-backend 両方の結果を集約
+  # - backend 変更なし（frontend-only）: 両ジョブが skipped → 成功として報告
   pytest:
     name: pytest (SQLite + PostgreSQL RLS)
-    needs: [detect-changes, pytest-run]
+    needs: [detect-changes, pytest-run, lint-backend]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Report pytest result
+      - name: Report results
         run: |
-          result="${{ needs.pytest-run.result }}"
-          echo "pytest-run result: $result"
-          if [[ "$result" == "success" || "$result" == "skipped" ]]; then
-            echo "OK: tests passed or backend not changed"
+          pr="${{ needs.pytest-run.result }}"
+          lint="${{ needs.lint-backend.result }}"
+          echo "pytest-run: $pr / lint-backend: $lint"
+          if [[ ("$pr" == "success" || "$pr" == "skipped") && \
+                ("$lint" == "success" || "$lint" == "skipped") ]]; then
+            echo "OK: all checks passed or backend not changed"
             exit 0
           else
-            echo "FAIL: pytest-run reported: $result"
+            echo "FAIL: pytest-run=$pr lint-backend=$lint"
             exit 1
           fi
