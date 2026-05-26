@@ -1,6 +1,6 @@
 name: ADR-072 Lint (Tenant Schema)
 
-# ADR-072 Phase 3 PoC: tenant schema 修飾の lint job。
+# ADR-072 Phase 4: tenant schema 修飾の lint job (**strict mode**)。
 #
 # 検出ルール:
 #   Rule A — tenant スキーマ内テーブル名が `text("... FROM <bare-table> ...")`
@@ -9,9 +9,12 @@ name: ADR-072 Lint (Tenant Schema)
 #   Rule B — write 系 endpoint で `await db.commit()` を呼ぶが、後続に
 #            `reset_tenant_context()` の呼び出しが対称的に来ない。
 #
-# Phase 3 (本 workflow) は **mode=warning で exit 0**。違反を stderr 出力する
-# だけで CI は fail させない。Phase 4 で `mode=strict` に切り替えて required
-# check 昇格する。
+# Phase 3 (warning mode) で 75 violations を検出 → Phase 2.5 (PR #800) で 73 件、
+# Phase 3.5 (PR #818) で残 2 件 (false positive) を解消し、0 violations 達成。
+# 本 Phase 4 で **mode=strict** に切り替えて CI fail 可能化、新規違反の混入を物理 block する。
+#
+# 別途 GitHub Branch Protection Rules で本 job を required check に追加すること
+# (Phase 4 完了 = workflow strict 化 + required check 設定)。
 #
 # 参照: docs/adr/ADR-072-tenant-schema-prefix-enforcement.md §4 / §5
 
@@ -31,10 +34,11 @@ on:
     paths:
       - "backend/app/routers/**"
       - "scripts/lint_tenant_schema.py"
+      - ".github/workflows/lint-tenant-schema.yml"
 
 jobs:
   lint:
-    name: ADR-072 tenant schema lint (warning mode)
+    name: ADR-072 tenant schema lint (strict mode)
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -47,8 +51,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Run ADR-072 linter
+      - name: Run ADR-072 linter (strict)
         run: |
-          python3 scripts/lint_tenant_schema.py --mode warning backend/app/routers/
-        # mode=warning なので exit 0、違反は stderr に表示される。
-        # GitHub Actions の log に違反一覧が出力される想定。
+          python3 scripts/lint_tenant_schema.py --mode strict backend/app/routers/
+        # mode=strict: 違反があれば exit 1 で CI fail。
+        # 違反が新規 PR で発生したら本 step で stop → 修正必須。

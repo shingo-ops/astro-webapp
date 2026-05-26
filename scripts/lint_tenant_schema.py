@@ -120,11 +120,42 @@ def _is_router_endpoint(node: ast.AsyncFunctionDef) -> tuple[bool, bool]:
 def _has_tenant_id_dep(node: ast.AsyncFunctionDef) -> bool:
     """関数引数に `tenant_id: int = Depends(get_current_tenant)` があるか。
 
-    super_admin_*.py 等の public スキーマ専用 endpoint は tenant_id 依存を
-    持たないため、本判定で除外する (false positive 防止)。
+    super_admin_*.py 等の **URL path param で tenant_id を受ける** endpoint は
+    本来 public スキーマ操作で reset_tenant_context 不要なため、本判定で
+    `Depends(get_current_tenant)` 経由のみを対象として扱う (false positive
+    防止)。`URL path param の tenant_id` や `Query param の tenant_id` は
+    除外する。
+
+    判定: `tenant_id` 名の引数があり、かつ **default 値が
+    `Depends(get_current_tenant)` の Call ノードである場合のみ True**。
     """
-    for arg in node.args.args + node.args.kwonlyargs:
-        if arg.arg == "tenant_id":
+    # positional args / keyword-only args いずれも対象
+    all_args = list(node.args.args) + list(node.args.kwonlyargs)
+    # default 値は positional args の末尾と kwonlyargs それぞれにマッピング
+    # ast.arguments.defaults は positional args 末尾の引数に対応する
+    # ast.arguments.kw_defaults は kwonlyargs に 1:1 対応 (None の場合あり)
+    pos_defaults: list[ast.expr | None] = list(node.args.defaults)
+    pos_default_offset = len(node.args.args) - len(pos_defaults)
+    defaults_by_arg: dict[str, ast.expr | None] = {}
+    for i, a in enumerate(node.args.args):
+        if i >= pos_default_offset:
+            defaults_by_arg[a.arg] = pos_defaults[i - pos_default_offset]
+    for a, d in zip(node.args.kwonlyargs, node.args.kw_defaults):
+        defaults_by_arg[a.arg] = d
+
+    for arg in all_args:
+        if arg.arg != "tenant_id":
+            continue
+        default = defaults_by_arg.get("tenant_id")
+        # default 値が `Depends(get_current_tenant)` の場合のみ依存とみなす
+        if (
+            isinstance(default, ast.Call)
+            and isinstance(default.func, ast.Name)
+            and default.func.id == "Depends"
+            and len(default.args) == 1
+            and isinstance(default.args[0], ast.Name)
+            and default.args[0].id == "get_current_tenant"
+        ):
             return True
     return False
 
