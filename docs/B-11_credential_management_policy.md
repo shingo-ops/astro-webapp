@@ -48,6 +48,7 @@
 | Grafana管理者パスワード | GitHub Secrets + 開発 `.env` | PO から直接受け取る |
 | AWS IAMキー（S3バックアップ用） | GitHub Secrets + VPS環境変数 | PO から直接受け取る |
 | METADATA_FERNET_KEY | GitHub Secrets + **別の安全なバックアップ保管場所** | PO から直接受け取る |
+| Google Calendar OAuth シークレット（`GOOGLE_CALENDAR_CLIENT_SECRET`） | Bitwarden + GitHub Secrets | Bitwarden 共有フォルダ |
 
 > **METADATA_FERNET_KEY の二重保管について**: この鍵を紛失すると全テナントの暗号化データが復号不能になる。
 > GitHub Secrets 以外にも安全なバックアップ保管場所（暗号化ファイル、オフライン vault 等）に保管すること。
@@ -67,6 +68,7 @@
 | GitHub Deploy Key | 6ヶ月ごと |
 | AWS IAMキー | 90日ごと |
 | Grafana管理者パスワード | 90日ごと |
+| Google Calendar OAuth シークレット | 漏洩時のみ（Google Console で「+ Add secret」→ GitHub Secrets・Bitwarden・VPS `.env` を更新） |
 
 ---
 
