@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import get_current_tenant, get_current_user, require_permission
 from app.cache import get_redis
 from app.models import User
 

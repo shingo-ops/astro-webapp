@@ -22,32 +22,23 @@
 
 ---
 
-## i18n ハードコード検出（セルフチェック）
+## i18n ハードコード検出（ESLint 自動強制）
 
-フロントエンドのコードを変更した後、以下を実行してヒット 0 行であること:
+JSX / TS(X) 内の日本語ハードコードは ESLint ルール `local/no-japanese-literal`（ADR-027）が自動検出。
+`lint-staged` により **コミット前に自動ブロック**（`--max-warnings=0`）。
 
 ```bash
-git diff --name-only develop...HEAD -- 'frontend/src/**/*.tsx' 'frontend/src/**/*.ts' \
-  | grep -v 'locales/' \
-  | xargs -I{} grep -nE '[ぁ-んァ-ヶ一-龯]' {} 2>/dev/null
+cd frontend && npm run lint   # 新規違反が 0 件であること
 ```
 
 コメント内の日本語は OK。JSX / 文字列リテラル内は必ず `t()` 経由にすること。
+DB 由来の値（ステータスコード・カテゴリキー等）は `// eslint-disable-next-line local/no-japanese-literal -- DB value` でコメント付き除外可。
 
 ---
 
 ## CSS 変数 / ダークモード
 
-詳細ルールは ESLint と `npm run check:all` が自動強制する。
-新規 CSS 変数を追加した場合は **必ず** `:root` と `:root.force-dark` の両方に追加すること。
-
-```css
-/* ✅ 正しい */
-:root { --new-color: #xxx; }
-:root.force-dark { --new-color: #yyy; }
-```
-
-ローカル確認: `cd frontend && npm run check:all`
+新規 CSS 変数は必ず `:root` と `:root.force-dark` の両方に追加（片方のみ禁止）。詳細: `docs/adr/ADR-067-design-token-enforcement.md`。ローカル確認: `cd frontend && npm run check:all`
 
 ---
 

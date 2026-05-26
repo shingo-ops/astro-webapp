@@ -1,4 +1,4 @@
-"""inventory_movements 反映ロジック（Sprint 6 F6 承認経路 + Sprint 9 F9 Phase A 並走）。
+"""inventory_movements + inventory 反映ロジック（Sprint 6 F6 + Sprint 9 F9 + Sprint 11 F11）。
 
 spec.md v1.1 F6 AC6.1 / AC6.6:
   - approve 操作で `public.inventory_movements` に append-only INSERT +
@@ -10,11 +10,16 @@ spec.md v1.1 F6 AC6.1 / AC6.6:
     inventory_movements.tenant_id = 0 = sentinel で記録、warning log 出力）
   - source_type='discord_inbound_review' で固定（migration 062 の CHECK 列挙に同梱済）
 
-spec.md v1.2 F9 AC9.1 (Sprint 9):
-  - Phase A: inventory_movements には記録、products.stock_quantity は **更新しない**
-    （スプレッドシート側が真値）。ApplyResult.stock_quantity_skipped=True を返し
-    呼び出し側 (parse_review.py) が UI に warning toast を出せるようにする。
-  - Phase B/C: 従来挙動（stock_quantity も更新）。
+spec.md v1.3 F9 AC9.1 (Sprint 9 revised、v1.2 Phase A 並走方針を撤回):
+  - Phase A (緊急戻し時のみ): inventory_movements 記録、stock_quantity は更新しない。
+    ApplyResult.stock_quantity_skipped=True を返し呼出側で warning toast 表示。
+  - Phase B/C (標準運用): 従来挙動 (stock_quantity も更新) + F11 inventory UPSERT。
+
+spec.md v1.3 F11 AC11.3 (Sprint 11、本 module で実装):
+  - Phase B/C + supplier_id 指定 + items.condition 指定 の場合のみ、
+    `public.inventory` を UPSERT (UNIQUE: supplier_id × product_id × condition)。
+  - items.condition が無い場合は UPSERT skip (backward compat、既存テスト不変)。
+  - items.quantity_offered / items.unit_price も任意で受け取り反映。
 
 呼び出し元: backend/app/routers/parse_review.py の approve エンドポイント
 """
@@ -22,7 +27,7 @@ spec.md v1.2 F9 AC9.1 (Sprint 9):
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -219,6 +224,41 @@ async def apply_inbound_items(
                 {"new_qty": after_qty, "pid": product_id},
             )
             stock_updates_applied += 1
+
+            # 4. (F11 AC11.3) public.inventory に UPSERT — 仕入元 × 商品 × 状態 の現在オファー
+            #    条件: Phase B/C + supplier_id 指定 + items.condition 指定
+            #    backward compat: items.condition が無い場合は UPSERT skip (既存テスト不変)
+            condition_raw = item.get("condition")
+            if supplier_id is not None and condition_raw:
+                offered_qty = item.get("quantity_offered")
+                if offered_qty is None:
+                    # 後方互換: quantity_offered 未指定なら after_qty で代替
+                    offered_qty = after_qty
+                offered_price = int(item.get("unit_price") or 0)
+                await db.execute(
+                    text(
+                        """
+                        INSERT INTO public.inventory
+                            (supplier_id, product_id, condition, quantity, unit_price,
+                             status, source)
+                        VALUES (:sid, :pid, :cond, :qty, :up, 'in_stock', 'f6_approved')
+                        ON CONFLICT (supplier_id, product_id, condition) DO UPDATE SET
+                            quantity = EXCLUDED.quantity,
+                            unit_price = EXCLUDED.unit_price,
+                            status = EXCLUDED.status,
+                            source = 'f6_approved',
+                            offered_at = NOW(),
+                            updated_at = NOW()
+                        """
+                    ),
+                    {
+                        "sid": supplier_id,
+                        "pid": product_id,
+                        "cond": str(condition_raw),
+                        "qty": int(offered_qty),
+                        "up": offered_price,
+                    },
+                )
 
         movements.append(
             MovementResult(

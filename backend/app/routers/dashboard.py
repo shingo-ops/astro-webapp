@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_user, get_current_tenant, require_permission
+from app.auth.dependencies import get_current_tenant, get_current_user, require_permission
 from app.cache import get_redis
 from app.database import get_db
 from app.models import User

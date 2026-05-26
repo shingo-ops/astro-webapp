@@ -164,7 +164,7 @@ async def update_event(
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="イベントが見つかりません")
 
-    created_by, calendar_type = record[0], record[1]
+    created_by, _ = record[0], record[1]
     if created_by != user.id and getattr(user, "role", None) != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="編集権限がありません")
 

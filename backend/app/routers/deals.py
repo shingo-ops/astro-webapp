@@ -26,7 +26,7 @@ from app.auth.dependencies import (
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
 from app.models import User
-from app.schemas.deal import DealCreate, DealUpdate, DealResponse
+from app.schemas.deal import DealCreate, DealResponse, DealUpdate
 from app.services.audit import record_audit_log
 
 router = APIRouter()

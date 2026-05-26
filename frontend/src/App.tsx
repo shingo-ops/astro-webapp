@@ -51,6 +51,7 @@ import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
 // spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin UI
 import PhaseSwitchPage from "./pages/super-admin/PhaseSwitchPage";
+import InventoryOffersPage from "./pages/super-admin/InventoryOffersPage";
 import ManagementCenterPage from "./pages/management-center/ManagementCenterPage";
 import AccountSettingsPage from "./pages/account-settings/AccountSettingsPage";
 import CustomerHubPage from "./pages/crm/CustomerHubPage";
@@ -206,6 +207,11 @@ function App() {
                     path="/super-admin/phase-switch"
                     element={<PhaseSwitchPage />}
                   />
+                  {/* spec.md v1.3 F11 (Sprint 11) AC11.5: 仕入元現在オファー admin 一覧 (is_super_admin 限定) */}
+                  <Route
+                    path="/super-admin/inventory-offers"
+                    element={<InventoryOffersPage />}
+                  />
                   {/* テナント admin（tenant.inventory_visibility.edit 権限が必要、Page 内で 403 ガード） */}
                   <Route
                     path="/admin/inventory-visibility"
@@ -243,6 +249,7 @@ function App() {
                     <Route path="super-admin/masters" element={<SuperAdminMastersPage />} />
                     <Route path="super-admin/inbound" element={<DiscordInboundPage />} />
                     <Route path="super-admin/phase"   element={<PhaseSwitchPage />} />
+                    <Route path="super-admin/inventory-offers" element={<InventoryOffersPage />} />
                   </Route>
                 </Route>
               </Routes>

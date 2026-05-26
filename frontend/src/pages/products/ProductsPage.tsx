@@ -116,6 +116,7 @@ export default function ProductsPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [search, showArchived]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -226,6 +227,7 @@ export default function ProductsPage() {
   return (
     <PageLayout
       navKey="nav.inventory"
+      subtitleKey="products.subtitle"
       headerAction={hasPermission("products.create") ? (
         <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("products.newProduct")}</button>
       ) : undefined}
@@ -349,7 +351,7 @@ export default function ProductsPage() {
             {products.map((p) => (
               <tr key={p.id} style={p.is_archived ? { opacity: "var(--opacity-archived)" } : undefined}>
                 <td>
-                  {p.image_url && <img src={p.image_url} alt="" style={{ width: 24, height: 24, marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: "var(--radius-xs)" }} />}
+                  {p.image_url && <img src={p.image_url} alt="" style={{ width: 'var(--icon-lg)', height: 'var(--icon-lg)', marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: "var(--radius-xs)" }} />}
                   {p.name_ja}
                   {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: "var(--space-6px)" }}>{t("products.status_discontinued")}</span>}
                 </td>

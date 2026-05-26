@@ -5,9 +5,15 @@ on:
     branches:
       - main
       - develop
-    # バックエンド関連ファイルが変更された場合のみ実行。
-    # フロントエンドのみの変更ではスキップしてボトルネックを解消する。
-    # push には paths を設定しない（develop/main への merge 後は常時実行でフォールセーフ）。
+    # paths フィルタを PR トリガーに置かない。
+    # ルールセットが "pytest (SQLite + PostgreSQL RLS)" を必須 Check としているため、
+    # ワークフロー未実行（skipped）は「未通過」扱いになり frontend-only PR がブロックされる。
+    # 代わりに detect-changes ジョブで変更範囲を判定し、
+    # backend 変更がない場合は pytest ジョブを即時成功終了させる。
+  push:
+    branches:
+      - develop
+      - main
     paths:
       - 'backend/**'
       - 'migrations/**'
@@ -16,14 +22,36 @@ on:
       - 'docker-compose.yml'
       - 'docker-compose.test.yml'
       - '.github/workflows/test.yml'
-  push:
-    branches:
-      - develop
-      - main
+      - 'backend/pyproject.toml'
+      - 'backend/Makefile'
 
 jobs:
-  pytest:
-    name: pytest (SQLite + PostgreSQL RLS)
+  # backend 変更有無を判定して後続ジョブに伝える
+  detect-changes:
+    name: Detect backend changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'migrations/**'
+              - 'scripts/**'
+              - 'pyproject.toml'
+              - 'docker-compose.yml'
+              - 'docker-compose.test.yml'
+              - '.github/workflows/test.yml'
+
+  # 実テスト。backend 変更がある場合のみ services を使って実行する。
+  pytest-run:
+    name: pytest-run-internal
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -61,13 +89,36 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
 
       - name: Install dependencies
         working-directory: backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      # ── 静的解析 ─────────────────────────────────────────────────────────────
+      # 設定: backend/pyproject.toml（ruff/mypy/bandit/pytest の SSoT）
+      # ローカル確認: cd backend && make lint（strict）/ make check（CI 相当）
+      #
+      # bandit: HIGH/CRITICAL 0件確認済み → ブロック（--exit-zero なし）
+      # ruff:   708件の auto-fixable 違反あり → `make fix-lint` 後にブロック化
+      # mypy:   型アノテーション整備中 → 警告のみ（|| true）
+      - name: Run ruff linting（ブロック）
+        working-directory: backend
+        run: ruff check app/
+
+      - name: Run bandit security scan（HIGH/CRITICAL 0件・ブロック）
+        working-directory: backend
+        run: bandit -r app/ -lll
+
+      - name: Run mypy type checking（型アノテーション整備中・警告のみ）
+        working-directory: backend
+        run: mypy app/ --no-error-summary || true
+      # ──────────────────────────────────────────────────────────────────────
 
       - name: Generate Fernet key for tests
         id: fernet
@@ -97,7 +148,11 @@ jobs:
           PGPASSWORD: testpass
         run: |
           psql -h localhost -U jarvis -d jarvis_test_db -v ON_ERROR_STOP=1 <<'SQL'
-          CREATE ROLE IF NOT EXISTS jarvis_app WITH LOGIN PASSWORD 'apppass' NOSUPERUSER CREATEDB;
+          DO $$ BEGIN
+            CREATE ROLE jarvis_app WITH LOGIN PASSWORD 'apppass' NOSUPERUSER CREATEDB;
+          EXCEPTION WHEN duplicate_object THEN
+            RAISE NOTICE 'role jarvis_app already exists, skipping';
+          END $$;
           GRANT ALL PRIVILEGES ON DATABASE jarvis_test_db TO jarvis_app;
           GRANT ALL ON SCHEMA public TO jarvis_app;
           ALTER DATABASE jarvis_test_db OWNER TO jarvis_app;
@@ -142,3 +197,24 @@ jobs:
       # Phase 1-E F3-S2 v2 で test_rls_tenant_meta_config.py の fixture を修正後、
       # RLS テストを有効化する（services.postgres は workflow に既に組み込み済）。
       # 現在は SQLite skip で skip 件数 3 件のまま。
+
+  # ルールセット必須 Check の名前と一致させる。always() で常に実行し、
+  # - backend 変更あり: pytest-run の結果をそのまま伝播
+  # - backend 変更なし（frontend-only）: pytest-run が skipped → 成功として報告
+  pytest:
+    name: pytest (SQLite + PostgreSQL RLS)
+    needs: [detect-changes, pytest-run]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report pytest result
+        run: |
+          result="${{ needs.pytest-run.result }}"
+          echo "pytest-run result: $result"
+          if [[ "$result" == "success" || "$result" == "skipped" ]]; then
+            echo "OK: tests passed or backend not changed"
+            exit 0
+          else
+            echo "FAIL: pytest-run reported: $result"
+            exit 1
+          fi

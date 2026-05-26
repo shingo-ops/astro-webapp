@@ -5,15 +5,15 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import get_current_user
+from app.auth.schemas import UserRegister, UserResponse
+from app.auth.utils import hash_password, set_tenant_claim
 from app.cache import (
     blacklist_token,
     invalidate_user_permissions,
 )
 from app.database import get_db
-from app.models import User, Tenant
-from app.auth.utils import hash_password, set_tenant_claim
-from app.auth.schemas import UserRegister, UserResponse
-from app.auth.dependencies import get_current_user
+from app.models import Tenant, User
 from app.services.audit import record_audit_log
 
 router = APIRouter()

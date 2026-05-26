@@ -163,8 +163,8 @@ function ComponentsSection() {
         {/* Panel Shell demo */}
         <div className="ds-component-block ds-component-block--wide">
           <p className="ds-component-label">.panel-shell / .panel-left / .panel-center</p>
-          <div className="panel-shell" style={{ height: 120, border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
-            <div className="panel-left" style={{ width: 120 }}>
+          <div className="panel-shell" style={{ height: 'var(--ds-panel-size)', border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
+            <div className="panel-left" style={{ width: 'var(--ds-panel-size)' }}>
               <div className="panel-header" style={{ minHeight: "auto", padding: "var(--space-2) var(--space-3)" }}>
                 <span style={{ fontSize: "var(--font-xs)", color: "var(--text-muted)" }}>Left panel</span>
               </div>

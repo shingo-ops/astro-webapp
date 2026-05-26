@@ -36,7 +36,6 @@ from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 
-
 _ENV_KEY = "METADATA_FERNET_KEY"
 
 

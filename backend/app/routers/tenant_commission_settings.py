@@ -22,7 +22,7 @@ ADR-021 Phase 5 / Sprint 5: 担当者報酬計算 MVP
 
 import json
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 

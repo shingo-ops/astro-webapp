@@ -1,0 +1,84 @@
+# monitoring/tokens.yml
+# ============================================================
+# 監視スタック Design Tokens — Single Source of Truth
+#
+# 【このファイルの役割】
+#   監視設定の「唯一の正」として、全ての値をここに定義する。
+#   閾値を変更するときはこのファイルだけ修正すればよい。
+#
+# 【スコープ】
+#   - バージョン（目標値 ※現状は:latestタグ。STEP5で固定予定）
+#   - スクレイプ間隔・データ保持期間
+#   - アラート閾値（Prometheus alert_rules.yml / Loki alerts.yml）
+#   - アラート継続時間（for: の値）
+#   ※ スクレイプ対象のポート番号・リソース制限はスコープ外
+#
+# 【自動反映について】
+#   現時点では各設定ファイルへの自動反映はしない。
+#   STEP6（monitoring-check.yml CI）で
+#   「このファイルと各設定ファイルのズレ」を自動検知する予定。
+# ============================================================
+
+# --- バージョン固定（目標値）---
+# 注意: docker-compose.yml は現在 :latest タグで運用中。
+# STEP5 でこの値に固定する。固定後は「現在の状態」と一致する。
+versions:
+  prometheus:        "v3.4.0"
+  grafana:           "12.0.1"
+  loki:              "3.5.1"
+  promtail:          "3.5.1"
+  node_exporter:     "v1.9.1"
+  postgres_exporter: "v0.16.0"
+  nginx_exporter:    "1.4.2"
+  uptime_kuma:       "2"
+
+# --- スクレイプ・評価間隔 ---
+# 対応ファイル: monitoring/prometheus/prometheus.yml
+intervals:
+  scrape:     "15s"
+  evaluation: "15s"
+
+# --- データ保持期間 ---
+# 対応ファイル:
+#   prometheus: docker-compose.yml --storage.tsdb.retention.time
+#   loki:       monitoring/loki/loki-config.yaml retention_period
+retention:
+  prometheus: "30d"
+  loki:       "30d"
+
+# --- アラート閾値 ---
+# 対応ファイル: monitoring/prometheus/alert_rules.yml
+#              monitoring/loki/rules/jarvis/alerts.yml
+thresholds:
+  # システムリソース（alert_rules.yml: system_alerts）
+  cpu_warning_pct:        80    # HighCpuUsage: > 80 (5分間平均)
+  memory_warning_pct:     85    # HighMemoryUsage: > 85
+  disk_warning_pct:       80    # HighDiskUsage: > 80
+
+  # データベース（alert_rules.yml: application_alerts）
+  db_connection_warning:  80    # HighDbConnections: > 80
+
+  # Nginx エラー（alert_rules.yml: application_alerts）
+  # HighErrorRate（全5xxエラー）とHigh502Rateは別アラートのため分離
+  nginx_5xx_per_5m:       10    # HighErrorRate: increase(...[5m]) > 10
+  nginx_502_per_2m:        5    # High502Rate:   increase(...[2m]) > 5
+
+  # ログ異常検知（loki/rules/jarvis/alerts.yml）
+  brute_force_per_5m:     20    # BruteForceAttempt: > 20
+  auth_failure_per_1h:    50    # SustainedAuthFailure: > 50
+  backend_error_per_5m:   30    # BackendErrorSpike: > 30
+  db_error_per_5m:         5    # DatabaseError: > 5
+
+# --- アラート継続時間（for: の値）---
+# 対応ファイル: monitoring/prometheus/alert_rules.yml
+#              monitoring/loki/rules/jarvis/alerts.yml
+for_durations:
+  resource_warning:  "5m"   # HighCpuUsage / HighMemoryUsage / HighDiskUsage / HighDbConnections
+  service_down:      "2m"   # ServiceDown
+  db_down:           "1m"   # PostgresDown
+  nginx_5xx:         "2m"   # HighErrorRate
+  nginx_502:         "1m"   # High502Rate
+  brute_force:       "1m"   # BruteForceAttempt
+  auth_failure:      "5m"   # SustainedAuthFailure
+  backend_error:     "2m"   # BackendErrorSpike
+  db_log_error:      "1m"   # DatabaseError

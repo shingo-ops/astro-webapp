@@ -48,6 +48,7 @@ export default function InvoicesPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [statusFilter]);
 
   const fmt = (n: number | null, ccy: string) => {
@@ -57,7 +58,7 @@ export default function InvoicesPage() {
   };
 
   return (
-    <PageLayout navKey="nav.quotesInvoices">
+    <PageLayout navKey="nav.quotesInvoices" subtitleKey="invoices.subtitle">
       <nav className="tab-nav">
         <button onClick={() => navigate("/quotes")}>{t("nav.quoteHistory")}</button>
         <button className="tab-active">{t("nav.invoices")}</button>
