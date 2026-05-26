@@ -86,7 +86,7 @@ export function InboxProfileModal({
             {cardForm.nickname || leadDetail.nickname || cardForm.customer_name || leadDetail.customer_name}
           </span>
           <button type="button" className="inbox-profile-modal-close" onClick={onClose} aria-label={t("common.close")}>
-            <NAV_ICONS.close size={ICON.md} aria-hidden="true" />
+            <NAV_ICONS.close size={ICON.md} weight="fill" aria-hidden="true" />
           </button>
         </div>
 
