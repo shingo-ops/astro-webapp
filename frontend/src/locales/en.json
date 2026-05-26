@@ -639,6 +639,9 @@
       "stockLabel": "Stock",
       "stockMaskedNote": "You do not have permission to view stock counts (shown as ***)",
       "zeroStockWarning": "\"{{name}}\" has 0 stock. Verify supplier and stock before quoting.",
+      "offersLabel": "{{count}} supplier offer(s)",
+      "offersMore": "+{{extra}} more",
+      "qtyShort": "{{qty}} pcs",
       "matchedVia": {
         "products_name_exact": "Name exact match",
         "products_name_en_exact": "English name exact match",

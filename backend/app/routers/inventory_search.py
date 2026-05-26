@@ -36,6 +36,7 @@ from app.auth.dependencies import (
 from app.database import get_db
 from app.models import User
 from app.schemas.inventory_search import (
+    InventoryOfferSummary,
     InventorySearchCandidate,
     InventorySearchResponse,
 )
@@ -118,6 +119,18 @@ async def search_inventory_endpoint(
             image_url=c.image_url,
             matched_via=c.matched_via,
             score=c.score,
+            # spec v1.3 F11 AC11.4: 仕入元現在オファー一覧
+            inventory_offers=[
+                InventoryOfferSummary(
+                    supplier_id=o.supplier_id,
+                    supplier_name=o.supplier_name,
+                    condition=o.condition,
+                    quantity=o.quantity,
+                    unit_price=o.unit_price,
+                    status=o.status,
+                )
+                for o in c.inventory_offers
+            ],
         )
         for c in candidates
     ]

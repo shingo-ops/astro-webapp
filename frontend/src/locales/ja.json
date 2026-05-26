@@ -639,6 +639,9 @@
       "stockLabel": "在庫",
       "stockMaskedNote": "在庫数の閲覧権限がありません（***表示）",
       "zeroStockWarning": "「{{name}}」は在庫が 0 です。仕入元と在庫を確認してください。",
+      "offersLabel": "仕入元オファー {{count}} 件",
+      "offersMore": "他 {{extra}} 件",
+      "qtyShort": "{{qty}} 個",
       "matchedVia": {
         "products_name_exact": "商品名一致",
         "products_name_en_exact": "英名一致",
