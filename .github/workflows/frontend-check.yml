@@ -29,3 +29,16 @@ jobs:
       - name: TypeScript type check (navKey template literal enforcement)
         run: npx tsc --noEmit
         working-directory: frontend
+
+      - name: Unit tests with coverage gate
+        run: |
+          # テストファイルが存在する場合のみカバレッジゲートを発動（Phase 0→1 移行保護）
+          TEST_COUNT=$(find src -name "*.test.ts" -o -name "*.test.tsx" 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$TEST_COUNT" -gt "0" ]; then
+            echo "▶ ${TEST_COUNT} test file(s) found. Running coverage gate..."
+            npm run test:coverage
+          else
+            echo "⚠️  No unit test files found. Coverage gate skipped (Phase 0)."
+            echo "    Add src/**/*.test.{ts,tsx} to activate the gate."
+          fi
+        working-directory: frontend

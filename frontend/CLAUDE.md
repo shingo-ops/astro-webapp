@@ -38,16 +38,7 @@ git diff --name-only develop...HEAD -- 'frontend/src/**/*.tsx' 'frontend/src/**/
 
 ## CSS 変数 / ダークモード
 
-詳細ルールは ESLint と `npm run check:all` が自動強制する。
-新規 CSS 変数を追加した場合は **必ず** `:root` と `:root.force-dark` の両方に追加すること。
-
-```css
-/* ✅ 正しい */
-:root { --new-color: #xxx; }
-:root.force-dark { --new-color: #yyy; }
-```
-
-ローカル確認: `cd frontend && npm run check:all`
+新規 CSS 変数は必ず `:root` と `:root.force-dark` の両方に追加（片方のみ禁止）。詳細: `docs/adr/ADR-067-design-token-enforcement.md`。ローカル確認: `cd frontend && npm run check:all`
 
 ---
 
