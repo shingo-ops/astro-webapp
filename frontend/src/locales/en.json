@@ -22,6 +22,8 @@
     "create": "Create",
     "add": "Add",
     "remove": "Remove",
+    "previous": "Previous",
+    "next": "Next",
     "actions": "Actions",
     "status": "Status",
     "name": "Name",

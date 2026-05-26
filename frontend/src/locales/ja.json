@@ -22,6 +22,8 @@
     "create": "作成",
     "add": "追加",
     "remove": "削除",
+    "previous": "前へ",
+    "next": "次へ",
     "actions": "操作",
     "status": "ステータス",
     "name": "名前",
