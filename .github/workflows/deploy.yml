@@ -108,7 +108,9 @@ jobs:
               -e '/^METADATA_FERNET_KEY=/d' \
               -e '/^GEMINI_API_KEY=/d' \
               -e '/^ADMIN_NOTIFICATION_DISCORD_WEBHOOK=/d' \
+              -e '/^GOOGLE_CALENDAR_CLIENT_ID=/d' \
               -e '/^GOOGLE_CALENDAR_CLIENT_SECRET=/d' \
+              -e '/^GOOGLE_CALENDAR_REDIRECT_URI=/d' \
               .env
             rm -f .env.bak
             # YAML `|` ブロックの共通インデント (12 スペース) はパース時に自動除去される。
@@ -125,7 +127,9 @@ jobs:
             METADATA_FERNET_KEY=${{ secrets.METADATA_FERNET_KEY }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             ADMIN_NOTIFICATION_DISCORD_WEBHOOK=${{ secrets.ADMIN_NOTIFICATION_DISCORD_WEBHOOK }}
+            GOOGLE_CALENDAR_CLIENT_ID=${{ secrets.GOOGLE_CALENDAR_CLIENT_ID }}
             GOOGLE_CALENDAR_CLIENT_SECRET=${{ secrets.GOOGLE_CALENDAR_CLIENT_SECRET }}
+            GOOGLE_CALENDAR_REDIRECT_URI=${{ secrets.GOOGLE_CALENDAR_REDIRECT_URI }}
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
