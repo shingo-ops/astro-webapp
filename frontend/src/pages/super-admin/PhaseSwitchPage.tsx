@@ -1,12 +1,12 @@
 /**
- * /super-admin/phase-switch — スプレッドシート並走 Phase 表示・切替画面 (Sprint 9 / F9 v1.2)。
+ * /super-admin/phase-switch — スプレッドシート並走 Phase 表示・切替画面 (Sprint 9 / F9 v1.3)。
  *
- * spec.md v1.2 F9 / AC9.3 / AC9.5:
+ * spec.md v1.3 F9 / AC9.3 / AC9.5:
  *   - is_super_admin=true のみアクセス可（false なら 403 メッセージ + 二重ガード）
  *   - 現在 Phase（A / B / C）を表示
- *   - v1.2 では 'A' 固定運用、'B' / 'C' ボタンは disabled + ツールチップで
- *     「別 ADR で検討中（spec v1.2）」を表示
- *   - 'A' クリックは冪等な再設定（audit_log のみ記録）
+ *   - v1.3 では 'B' 標準運用、'A' (緊急戻し) も技術的に許可、'C' ボタンのみ
+ *     disabled + ツールチップで「別 ADR で検討中（spec v1.3）」を表示
+ *   - 'A' / 'B' クリックは冪等な再設定（audit_log のみ記録）
  *
  * 設計判断:
  *   - 単一テナント運用 + 中央 admin の前提なので、URL パラメータでテナント ID を
@@ -129,22 +129,24 @@ export default function PhaseSwitchPage() {
   return (
     <PageLayout navKey="nav.superAdminPhaseSwitch" subtitleKey="superAdmin.phaseSwitch.subtitle">
 
-      {/* 常時表示の Phase A 警告バナー（spec v1.2 の運用注意喚起） */}
-      <div
-        className="info-banner"
-        role="status"
-        data-testid="phase-a-banner"
-        style={{
-          backgroundColor: "var(--warning-bg)",
-          color: "var(--warning-text)",
-          border: "1px solid var(--border-strong)",
-          padding: "0.75rem 1rem",
-          borderRadius: "var(--radius-sm)",
-          marginBottom: "var(--space-4)",
-        }}
-      >
-        {t("superAdmin.phaseSwitch.phaseABanner")}
-      </div>
+      {/* spec v1.3: Phase A は緊急戻し状態のみ。Phase A 時のみ警告バナー表示 */}
+      {data?.phase === "A" && (
+        <div
+          className="info-banner"
+          role="status"
+          data-testid="phase-a-banner"
+          style={{
+            backgroundColor: "var(--warning-bg)",
+            color: "var(--warning-text)",
+            border: "1px solid var(--border-strong)",
+            padding: "0.75rem 1rem",
+            borderRadius: "var(--radius-sm)",
+            marginBottom: "var(--space-4)",
+          }}
+        >
+          {t("superAdmin.phaseSwitch.phaseABanner")}
+        </div>
+      )}
 
       {error && (
         <div className="error-message" role="alert" data-testid="phase-switch-error">
@@ -169,6 +171,11 @@ export default function PhaseSwitchPage() {
             {data.phase === "A" && (
               <span style={{ marginLeft: "var(--space-2)", color: "var(--warning-text)" }}>
                 ({t("superAdmin.phaseSwitch.phaseADesc")})
+              </span>
+            )}
+            {data.phase === "B" && (
+              <span style={{ marginLeft: "var(--space-2)", color: "var(--text-muted)" }}>
+                ({t("superAdmin.phaseSwitch.phaseBDesc")})
               </span>
             )}
           </div>
@@ -207,8 +214,9 @@ export default function PhaseSwitchPage() {
 
           <div className="phase-help" style={{ marginTop: "var(--space-6)", fontSize: "var(--font-sm)" }}>
             <ul>
+              <li>{t("superAdmin.phaseSwitch.helpPhaseB")}</li>
               <li>{t("superAdmin.phaseSwitch.helpPhaseA")}</li>
-              <li>{t("superAdmin.phaseSwitch.helpPhaseBC")}</li>
+              <li>{t("superAdmin.phaseSwitch.helpPhaseC")}</li>
             </ul>
           </div>
         </>

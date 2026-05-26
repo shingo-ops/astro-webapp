@@ -530,6 +530,31 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/075_create_goals.sql
 
+            # Migration 080: spec v1.3 Phase B 即時移行
+            #   - public.tenant_settings.spreadsheet_phase default 'A' → 'B'
+            #   - 既存 'A' レコードを 'B' に一括 UPDATE
+            #   - ALTER COLUMN SET DEFAULT は冪等、UPDATE は WHERE 'A' のみで idempotent
+            #   関連: docs/specs/inventory-management/spec.md v1.3
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/080_phase_b_migration.sql
+
+            # Migration 081: spec v1.3 F11 仕入元現在オファー entity
+            #   - public.inventory テーブル新規作成
+            #   - UNIQUE (supplier_id, product_id, condition) で 1 行集約
+            #   - CREATE TABLE IF NOT EXISTS / CREATE INDEX IF NOT EXISTS / DO $$ で idempotent
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/081_create_inventory.sql
+
+            # Migration 082: spec v1.3 F1 拡張 — public.products に Box 商品属性 9 列追加
+            #   - category / boxes_per_case / packs_per_box / box_weight_kg /
+            #     case_weight_kg / release_date / moq / hs_code / material
+            #   - ADD COLUMN IF NOT EXISTS で idempotent
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/082_extend_products_box_attributes.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

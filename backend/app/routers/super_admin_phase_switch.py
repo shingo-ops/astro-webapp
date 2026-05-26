@@ -1,11 +1,11 @@
-"""中央 admin 用 スプレッドシート並走 Phase 切替 API (Sprint 9 / F9 v1.2)。
+"""中央 admin 用 スプレッドシート並走 Phase 切替 API (Sprint 9 / F9 v1.3)。
 
-spec.md v1.2 F9 / AC9.3 / AC9.4:
+spec.md v1.3 F9 / AC9.3 / AC9.4:
   - require_super_admin で保護 (is_super_admin=true のみ)
   - GET: 現在 Phase を返す
   - PUT: Phase 切替を実行する
-      - v1.2 では 'A' のみ実機能、'B' / 'C' へは 400 + 「Out-of-scope、別 ADR」
-        エラーメッセージを返す
+      - v1.3 では 'B' 標準運用、'A' (緊急戻し) も技術的に許可
+      - 'C' へは 400 + 「Out-of-scope、別 ADR」エラーメッセージを返す
       - 切替成功時は audit_log に action='phase.switch' を記録 (AC9.4)
 
 API:
@@ -27,7 +27,7 @@ from app.models import User
 from app.services.audit import record_audit_log
 from app.services.phase_gate import (
     ALLOWED_PHASES,
-    SCOPED_PHASES_V1_2,
+    SCOPED_PHASES,
     Phase,
     get_phase,
     set_phase,
@@ -48,8 +48,8 @@ class PhaseResponse(BaseModel):
         description="技術的に許可されている Phase の集合（DB CHECK 制約）",
     )
     scoped_phases: list[str] = Field(
-        default_factory=lambda: list(SCOPED_PHASES_V1_2),
-        description="spec v1.2 で運用許可されている Phase（'A' のみ）",
+        default_factory=lambda: list(SCOPED_PHASES),
+        description="spec v1.3 で運用許可されている Phase（'A' (緊急戻し) + 'B' (標準)、'C' は別 ADR）",
     )
 
 
@@ -74,7 +74,7 @@ async def get_phase_endpoint(
         tenant_id=tenant_id,
         phase=phase,
         allowed_phases=list(ALLOWED_PHASES),
-        scoped_phases=list(SCOPED_PHASES_V1_2),
+        scoped_phases=list(SCOPED_PHASES),
     )
 
 
@@ -90,10 +90,10 @@ async def switch_phase_endpoint(
 ):
     """Phase 切替を実行する (AC9.3 / AC9.4)。
 
-    v1.2 制約:
-      - 'A' 固定運用、'B' / 'C' への切替は Out-of-scope (別 ADR)。
-      - 'B' / 'C' を指定された場合は 400 + i18n 用の error key を含めて返す。
-      - 'A' へは何度切替えても成功（冪等、audit_log は記録される）。
+    v1.3 制約:
+      - 'B' 標準運用、'A' (緊急戻し) も技術的に許可、'C' のみ Out-of-scope (別 ADR)。
+      - 'C' を指定された場合は 400 + i18n 用の error key を含めて返す。
+      - 'A' / 'B' へは何度切替えても成功（冪等、audit_log は記録される）。
 
     audit_log:
       - 切替成功時に {tenant_id}.audit_logs に
@@ -108,17 +108,17 @@ async def switch_phase_endpoint(
                 f"phase={new_phase!r} は許可された Phase ('A' / 'B' / 'C') ではありません。"
             ),
         )
-    if new_phase not in SCOPED_PHASES_V1_2:
-        # spec v1.2: 'B' / 'C' は Out-of-scope (別 ADR)
+    if new_phase not in SCOPED_PHASES:
+        # spec v1.3: 'C' のみ Out-of-scope (別 ADR、本格データ移行込み)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
                 "error": "phase_out_of_scope",
                 "message": (
-                    f"Phase '{new_phase}' への切替は spec v1.2 では Out-of-scope です。"
+                    f"Phase '{new_phase}' への切替は spec v1.3 では Out-of-scope です。"
                     "別 ADR で時期判断中。"
                 ),
-                "scoped_phases": list(SCOPED_PHASES_V1_2),
+                "scoped_phases": list(SCOPED_PHASES),
             },
         )
 
@@ -156,5 +156,5 @@ async def switch_phase_endpoint(
         tenant_id=tenant_id,
         phase=applied,
         allowed_phases=list(ALLOWED_PHASES),
-        scoped_phases=list(SCOPED_PHASES_V1_2),
+        scoped_phases=list(SCOPED_PHASES),
     )
