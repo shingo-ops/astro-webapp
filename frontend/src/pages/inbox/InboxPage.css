@@ -195,7 +195,7 @@
   transition: background var(--transition-micro);
 }
 .inbox-bulk-action:hover:not(:disabled) { background: var(--bg-hover); }
-.inbox-bulk-action:disabled { opacity: 0.4; cursor: not-allowed; }
+.inbox-bulk-action:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 .inbox-bulk-delete { color: var(--danger); border-color: var(--danger); }
 .inbox-bulk-delete:hover:not(:disabled) { background: var(--danger-bg); }
 
@@ -205,7 +205,7 @@
   width: 16px;
   height: 16px;
   border: 1.5px solid var(--border-strong);
-  border-radius: 3px;
+  border-radius: var(--radius-2xs);
   background: var(--bg-surface);
   position: relative;
   transition: background var(--transition-micro), border-color var(--transition-micro);
