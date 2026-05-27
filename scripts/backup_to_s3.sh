@@ -44,7 +44,7 @@ export TZ=Asia/Tokyo
 trap 'if [ -n "${DISCORD_WEBHOOK_OPS:-}" ]; then
   curl -s -X POST "$DISCORD_WEBHOOK_OPS" \
     -H "Content-Type: application/json" \
-    -d "{\"content\":\"⚠️ [ALERT] S3バックアップ失敗: $(date +\"%Y-%m-%d %H:%M\")\"}"
+    -d "{\"content\":\"⚠️ [ALERT] S3バックアップ失敗: $(date +%Y-%m-%dT%H:%M)\"}"
 fi' ERR
 
 # --- 設定 ---
