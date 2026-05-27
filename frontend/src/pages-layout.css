@@ -63,6 +63,9 @@
   align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--page-header-mb);
+  /* headerAction (btn-primary) の有無で行高が変動 → タブ切替で余白揺れ。
+     btn-min-height-md (40px) を最小値として確保し、揺れを防ぐ。 */
+  min-height: var(--btn-min-height-md);
 }
 
 .page-layout-title-row--has-subtitle {

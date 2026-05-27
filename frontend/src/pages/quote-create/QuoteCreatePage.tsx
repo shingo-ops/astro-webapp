@@ -180,8 +180,8 @@ export default function QuoteCreatePage() {
                       </div>
                     )}
                   </td>
-                  <td>
-                    <input value={item.product_name} onChange={(e) => updateItem(i, "product_name", e.target.value)} style={{ minWidth: 'var(--min-width-input-sm)', maxWidth: "100%" }} data-testid={`quote-item-row-${i}-name`} />
+                  <td style={{ minWidth: 'var(--table-col-product-name-min-w)' }}>
+                    <input value={item.product_name} onChange={(e) => updateItem(i, "product_name", e.target.value)} style={{ width: "100%", minWidth: 'var(--input-width-product-name)' }} data-testid={`quote-item-row-${i}-name`} />
                   </td>
                   <td>
                     <input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(i, "quantity", Number(e.target.value))} style={{ width: 'var(--input-width-qty)' }} />
