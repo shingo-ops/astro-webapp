@@ -1,8 +1,8 @@
 """
-B-1: GET /api/v1/staff/me のスモークテスト。
+B-1: GET /api/v1/staff/me および PATCH /api/v1/staff/me/profile のスモークテスト。
 
 users.email == staff.primary_email でフォールバック検索する経路と、
-staff レコード未紐づけの場合の 404 を検証する。
+staff レコード未紐づけの場合の 404、電話番号更新を検証する。
 """
 
 import pytest
@@ -115,3 +115,63 @@ async def test_get_my_staff_no_ui_preferences_returns_null(client, db_session):
     data = res.json()
     assert data["id"] == 600
     assert data["ui_preferences"] is None
+
+
+@pytest.mark.asyncio
+async def test_patch_my_profile_phone(client, db_session):
+    """PATCH /staff/me/profile で phone を登録・更新できる"""
+    await db_session.execute(text("""
+        INSERT INTO roles (id, tenant_id, name, color, priority, is_system)
+        VALUES (4, 999, 'member', '#aaaaaa', 0, FALSE)
+    """))
+    await db_session.execute(text("""
+        INSERT INTO staff (
+            id, tenant_id, staff_code, surname_jp, given_name_jp,
+            primary_email, role_id, status
+        ) VALUES (
+            800, 999, 'EMP-PHONE01', '田中', '三郎',
+            'test@example.com', 4, 'active'
+        )
+    """))
+    await db_session.commit()
+
+    # 電話番号を登録
+    res = await client.patch(
+        "/api/v1/staff/me/profile",
+        json={"phone": "09012345678"},
+    )
+    assert res.status_code == 200, res.text
+    assert res.json()["phone"] == "09012345678"
+
+    # phone=null でクリア可能
+    res = await client.patch(
+        "/api/v1/staff/me/profile",
+        json={"phone": None},
+    )
+    assert res.status_code == 200, res.text
+    assert res.json()["phone"] is None
+
+
+@pytest.mark.asyncio
+async def test_patch_my_profile_phone_invalid(client, db_session):
+    """不正な phone 値は 422 を返す"""
+    await db_session.execute(text("""
+        INSERT INTO roles (id, tenant_id, name, color, priority, is_system)
+        VALUES (5, 999, 'member2', '#bbbbbb', 0, FALSE)
+    """))
+    await db_session.execute(text("""
+        INSERT INTO staff (
+            id, tenant_id, staff_code, surname_jp, given_name_jp,
+            primary_email, role_id, status
+        ) VALUES (
+            900, 999, 'EMP-PHONE02', '高橋', '四郎',
+            'test@example.com', 5, 'active'
+        )
+    """))
+    await db_session.commit()
+
+    res = await client.patch(
+        "/api/v1/staff/me/profile",
+        json={"phone": "不正な値abc"},
+    )
+    assert res.status_code == 422
