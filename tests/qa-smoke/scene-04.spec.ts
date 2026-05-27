@@ -25,7 +25,7 @@ import {
   psqlRows,
 } from "./utils/db-assert";
 
-test.describe("Scene 04: Inbox & Channels (real backend)", () => {
+test.describe("Scene 04: Inbox & Channels (real backend)", { tag: ['@scene-04'] }, () => {
   test("ADR-026 regression guard: meta_messages.message_id 列が TEXT 型", () => {
     assertMessageIdIsText("tenant_006");
   });

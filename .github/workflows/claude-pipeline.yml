@@ -54,9 +54,9 @@ jobs:
       pr_head_ref: ${{ steps.resolve.outputs.pr_head_ref }}
       adr_files: ${{ steps.resolve.outputs.adr_files }}
       retry_count: ${{ steps.resolve.outputs.retry_count }}
-      has_ui_changes: ${{ steps.ui-changes.outputs.has_ui_changes }}
       has_adr_changes: ${{ steps.detect-adr.outputs.has_adr_changes }}
       adr_changed_files: ${{ steps.detect-adr.outputs.adr_changed_files }}
+      has_ui_changes: ${{ steps.ui-changes.outputs.has_ui_changes }}
     steps:
       - name: Resolve PR / ADR context
         id: resolve
@@ -159,6 +159,27 @@ jobs:
           else
             echo "has_adr_changes=false" >> "$GITHUB_OUTPUT"
             echo "adr_changed_files=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect UI file changes
+        id: ui-changes
+        env:
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "0" ]; then
+            # PRなし（workflow_dispatch等）は安全側に倒してUIあり扱い
+            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # PR変更ファイル一覧を取得
+          CHANGED_FILES=$(gh pr view "$PR_NUMBER" --json files --jq '[.files[].path]' 2>/dev/null || echo "[]")
+          # frontend/ 配下のファイルが1件以上あればUIあり
+          UI_COUNT=$(echo "$CHANGED_FILES" | jq '[.[] | select(startswith("frontend/"))] | length')
+          if [ "$UI_COUNT" -gt 0 ]; then
+            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_ui_changes=false" >> $GITHUB_OUTPUT
           fi
 
   # ADR変更時にResearcherを自動起動: 設計前の抜け漏れを調査で補完する
