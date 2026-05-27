@@ -28,7 +28,7 @@ import {
   HardHat, Chat, ChatCircle, ClipboardText,
   SquaresFour, FileText, Question, ShieldCheck,
   DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
-  Trash, EnvelopeSimpleOpen,
+  Trash, EnvelopeSimple,
   CalendarBlank,
   TrendUp, Bell, CalendarCheck, ArrowRight, Flag,
   Receipt,
@@ -197,7 +197,7 @@ const TrayFilled = forwardRef<SVGSVGElement, IconProps>(
       className={className}
       style={style}
     >
-      <path d="M32,48A16,16,0,0,1,48,32H208A16,16,0,0,1,224,48V208A16,16,0,0,1,208,224H188L168,160H88L68,224H48A16,16,0,0,1,32,208V48Z" />
+      <path d="M32,48A16,16,0,0,1,48,32H208A16,16,0,0,1,224,48V208A16,16,0,0,1,208,224H188V160H88V224H48A16,16,0,0,1,32,208V48Z" />
     </svg>
   )
 );
@@ -206,7 +206,7 @@ TrayFilled.displayName = "TrayFilled";
 // 受信箱ヘッダーアクションアイコン（既読 / 未読にする / 対象外 / 削除）
 export const INBOX_ACTION_ICONS = {
   markRead:   Envelope,
-  markUnread: EnvelopeSimpleOpen,
+  markUnread: EnvelopeSimple,
   exclude:    TrayFilled,
   delete:     Trash,
 } satisfies Record<string, Icon>;
