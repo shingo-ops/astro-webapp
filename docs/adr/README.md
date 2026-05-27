@@ -36,7 +36,7 @@
 | [ADR-035](./ADR-035-external-state-verification.md) | ADR-035: External State Verification — 6 system × 5-layer defense | Proposed | — |
 | [ADR-036](./ADR-036-tenant-schema-integrity.md) | ADR-036: テナントスキーマ整合性保証 | — | — |
 | [ADR-037](./ADR-037-meta-page-connection-investigation.md) | ADR-037: Meta（Facebook/Instagram）ページ接続経路の現状調査 | Draft - 調査フェーズ | — |
-| [ADR-038](./ADR-038-qa-smoke-suite.md) | ADR-038: QA Smoke Suite — Cross-feature UI verification against real backend | Proposed | — |
+| [ADR-038](./ADR-038-qa-smoke-suite.md) | ADR-038: QA Smoke Suite — Cross-feature UI verification against real backend | Accepted | — |
 | [ADR-039](./ADR-039-generator-codebase-reconnaissance.md) | ADR-039: Generator Codebase Reconnaissance — ADR 概念と frontend/backend 実体の機械的突き合わせ | Proposed | — |
 | [ADR-040](./ADR-040-claude-code-guardrail-investigation.md) | ADR-040: Claude Code 運用ガードレールの存在性調査 | Draft - 調査フェーズ | — |
 | [ADR-041](./ADR-041-meta-page-connection-fallback-implementation.md) | ADR-041: Meta（Facebook）ページ接続フォールバック実装 | ## 背景 | — |
