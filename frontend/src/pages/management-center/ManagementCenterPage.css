@@ -10,7 +10,10 @@
   overflow: hidden;
 }
 
-/* ── 左サブナビ ── */
+/* ── 左サブナビ ──
+   QA 2026-05-27: ひとしさん要望「左サブナビをスクロールで動かしたくない」→ sticky 化。
+   align-self: flex-start で flex item の伸縮を解除し、max-height: 100vh で
+   viewport を超えたら subnav 内スクロールに移行。 */
 .mc-subnav {
   width: var(--mc-subnav-width);
   flex-shrink: 0;
@@ -18,6 +21,10 @@
   overflow-y: auto;
   padding: var(--space-2) 0 var(--space-6);
   background: transparent;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  max-height: 100vh;
 }
 
 .mc-subnav-section {
