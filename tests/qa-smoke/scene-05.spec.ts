@@ -15,7 +15,7 @@ import { psqlCount, psqlRows } from "./utils/db-assert";
 
 const EXPECTED_TOTAL = 15000 + 32500 + 8900;
 
-test.describe("Scene 05: Leads & Orders (real backend)", () => {
+test.describe("Scene 05: Leads & Orders (real backend)", { tag: ['@scene-05'] }, () => {
   test("seed leads 5 件、status が 5 種類分かれている", () => {
     expect(
       psqlCount(`SELECT COUNT(*) FROM tenant_006.leads WHERE lead_code LIKE 'QA-LD-%'`),

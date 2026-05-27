@@ -101,3 +101,4 @@ ADR は What/Why/Scope のみ記述（実装手順 How は書かない）。`cla
 | Dockerfile lint | `.hadolint.yaml` | `dockerfile-lint.yml` / `workflow-lint.yml` |
 | CLAUDE.md サイズ上限 | `check-claude-size.js`（ルート120行・他は各上限） | pre-commit / `check:all` |
 | check:all 並列実行 | `frontend/package.json` | `check-concurrently-usage.js` / `frontend-check.yml` |
+| qa-smoke 実行ポリシー | `~/.claude/agents/evaluator.md` §qa-smoke 実行ポリシー + ADR-038 | evaluator（ADR-056） |

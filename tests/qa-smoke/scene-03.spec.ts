@@ -13,7 +13,7 @@ import { expect, test } from "@playwright/test";
 import { login } from "./utils/real-backend";
 import { psqlCount } from "./utils/db-assert";
 
-test.describe("Scene 03: Customers (real backend)", () => {
+test.describe("Scene 03: Customers (real backend)", { tag: ['@scene-03'] }, () => {
   test.beforeEach(async ({ page }) => {
     await login(page, "admin");
   });
