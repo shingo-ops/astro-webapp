@@ -54,7 +54,7 @@ jobs:
   playwright:
     name: Playwright E2E (chromium)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
     needs: lint  # lint が通らないと E2E も動かない
 
     defaults:

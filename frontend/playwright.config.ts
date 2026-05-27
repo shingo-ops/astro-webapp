@@ -57,7 +57,7 @@ export default defineConfig({
         command: "npm run dev -- --port " + PORT,
         url: BASE_URL,
         reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
+        timeout: 60_000,
         env: {
           // Firebase 実機 IDP に飛ばないようダミー値を設定（mock により無視される）
           VITE_FIREBASE_API_KEY: "AIzaSyE2E-dummy-api-key",
