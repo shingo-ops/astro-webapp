@@ -123,21 +123,41 @@ add_monitor \
   60 \
   '"port": 6379'
 
-# 6. Meta（Facebook）API
+# 6. Meta Graph API（外部サービス）
+# 認証なしでアクセスすると 400 が返るため、200/400 どちらも正常とみなす
 add_monitor \
-  "Meta API" \
+  "Meta Graph API" \
   "http" \
   "https://graph.facebook.com/" \
   300 \
-  '"method": "GET", "expectedStatusCodes": [200, 400]'
+  '"method": "GET", "expectedStatusCodes": [200, 400], "maxretries": 3'
 
-# 7. Firebase
+# 7. Firebase Auth（認証基盤）
+# auth.salesanchor.jp は Firebase Auth のカスタムドメイン
 add_monitor \
-  "Firebase" \
+  "Firebase Auth" \
   "http" \
-  "https://firebaseio.com/" \
+  "https://auth.salesanchor.jp" \
+  120 \
+  '"method": "GET", "expectedStatusCodes": [200, 302, 404], "maxretries": 3'
+
+# 8. Google Calendar API（外部サービス）
+# ドメイン到達確認のみ（実APIは叩かない — コスト発生防止）
+add_monitor \
+  "Google Calendar API" \
+  "http" \
+  "https://www.googleapis.com/" \
   300 \
-  '"method": "GET", "expectedStatusCodes": [200]'
+  '"method": "GET", "expectedStatusCodes": [200, 404], "maxretries": 2'
+
+# 9. Gemini AI（外部サービス）
+# ドメイン到達確認のみ（実APIは叩かない — コスト発生防止）
+add_monitor \
+  "Gemini AI" \
+  "http" \
+  "https://generativelanguage.googleapis.com/" \
+  300 \
+  '"method": "GET", "expectedStatusCodes": [200, 404], "maxretries": 2'
 
 echo ""
 echo "=== 設定完了 ==="
