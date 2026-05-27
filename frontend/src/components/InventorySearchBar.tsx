@@ -240,6 +240,12 @@ export default function InventorySearchBar({
     return String(c.stock_quantity);
   };
 
+  // QA r6 I-03: 1 単語の検索では AND/OR どちらも同じ動作になるため
+  // (whitespace 分割で tokens.length === 1)、トグルは disable し、
+  // 「2 語以上で違いが出る」旨のヒントを下に表示する。
+  const tokenCount = query.trim().split(/\s+/).filter(Boolean).length;
+  const opToggleDisabled = disabled || tokenCount <= 1;
+
   return (
     <div
       className="inventory-search-bar"
@@ -266,13 +272,20 @@ export default function InventorySearchBar({
         <div
           role="radiogroup"
           aria-label={t("inventory.search.opGroupLabel")}
-          style={{ display: "inline-flex", gap: 0, border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)" }}
+          title={opToggleDisabled && tokenCount <= 1 ? t("inventory.search.opNeedsMultipleTokens") : undefined}
+          style={{
+            display: "inline-flex",
+            gap: 0,
+            border: "1px solid var(--border-color)",
+            borderRadius: "var(--radius-sm)",
+            opacity: opToggleDisabled ? "var(--opacity-disabled)" : 1,
+          }}
           data-testid={`${testIdPrefix}-op-toggle`}
         >
           <button
             type="button"
             onClick={() => setOp("and")}
-            disabled={disabled}
+            disabled={opToggleDisabled}
             aria-pressed={op === "and"}
             data-testid={`${testIdPrefix}-op-and`}
             style={{
@@ -280,7 +293,7 @@ export default function InventorySearchBar({
               border: "none",
               background: op === "and" ? "var(--accent-bg)" : "transparent",
               color: op === "and" ? "var(--on-accent)" : "inherit",
-              cursor: disabled ? "not-allowed" : "pointer",
+              cursor: opToggleDisabled ? "not-allowed" : "pointer",
             }}
           >
             {t("inventory.search.opAnd")}
@@ -288,7 +301,7 @@ export default function InventorySearchBar({
           <button
             type="button"
             onClick={() => setOp("or")}
-            disabled={disabled}
+            disabled={opToggleDisabled}
             aria-pressed={op === "or"}
             data-testid={`${testIdPrefix}-op-or`}
             style={{
@@ -296,13 +309,22 @@ export default function InventorySearchBar({
               border: "none",
               background: op === "or" ? "var(--accent-bg)" : "transparent",
               color: op === "or" ? "var(--on-accent)" : "inherit",
-              cursor: disabled ? "not-allowed" : "pointer",
+              cursor: opToggleDisabled ? "not-allowed" : "pointer",
             }}
           >
             {t("inventory.search.opOr")}
           </button>
         </div>
       </div>
+
+      {tokenCount === 1 && (
+        <div
+          data-testid={`${testIdPrefix}-op-hint`}
+          style={{ marginTop: "var(--space-1)", fontSize: "var(--font-xs)", color: "var(--text-muted)" }}
+        >
+          {t("inventory.search.opHintSingleToken")}
+        </div>
+      )}
 
       {error && (
         <div

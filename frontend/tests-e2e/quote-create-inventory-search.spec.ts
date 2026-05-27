@@ -105,11 +105,18 @@ test.describe("Sprint 7 / F7 — QuoteCreatePage InventorySearchBar UI smoke", (
     await setupQuoteCreatePageMocks(page);
     await page.goto("/quotes/new");
 
+    const input = page.getByTestId("quote-inventory-search-0-input");
     const orBtn = page.getByTestId("quote-inventory-search-0-op-or");
     const andBtn = page.getByTestId("quote-inventory-search-0-op-and");
     await expect(orBtn).toBeVisible({ timeout: 20_000 });
     await expect(andBtn).toBeVisible();
     await expect(orBtn).toHaveAttribute("aria-pressed", "true");
+
+    // QA r6 PR-3: 1 単語入力では AND/OR トグルは disable される (1 単語では
+    // tokens.length === 1 で AND/OR どちらも同じ結果になるため UX 改善)。
+    // 2 単語以上のときに切替できることを検証する。
+    await input.fill("リザードン ex");
+
     await andBtn.click();
     await expect(andBtn).toHaveAttribute("aria-pressed", "true");
     await expect(orBtn).toHaveAttribute("aria-pressed", "false");
