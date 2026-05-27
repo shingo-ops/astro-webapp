@@ -37,6 +37,31 @@ Secret 登録後、次回以降の PR 作成・レビュー・マージで自動
 
 ---
 
+## discord-ci-notify.yml
+
+PR の全 check (CI) 完了時に Discord に結果を通知する。`check_suite` イベントを使うため
+PR ごとに 1〜2 通知に集約される (個別 workflow ごとに飛ばさない)。
+
+### 通知対象イベント
+
+| 結果 | 通知タイトル | 色 |
+|---|---|---|
+| 全 check pass (success) | 🟢 PR #N — All checks passed | 緑 |
+| 1 件以上 fail (failure / timed_out) | 🔴 PR #N — Some checks failed (失敗 check 一覧付き) | 赤 |
+| キャンセル / skip | 通知しない (rerun 中のノイズ防止) | — |
+
+### 通知内容
+
+- PR 番号 / タイトル / 作成者 / ブランチ (head → base)
+- PR URL + checks タブ URL
+- failure 時は失敗した check の名前と URL を最大 10 件 (embed の各 fields)
+
+### 必要な Secrets
+
+`DISCORD_WEBHOOK_PR` を再利用 (PR 通知と同じ channel)。
+
+---
+
 ## deploy.yml
 
 `main` ブランチへの push 時に VPS（jarvis-claude.uk）へ自動デプロイする。
