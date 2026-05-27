@@ -5,6 +5,9 @@
 # 使い方:
 #   手動実行: bash /home/ubuntu/salesanchor/scripts/backup.sh
 #   リストア: bash /home/ubuntu/salesanchor/scripts/restore.sh <バックアップファイル>
+#
+# 本番環境:
+#   DB_USER=jarvis, DB_NAME=jarvis_db (.envから読み込み)
 
 set -euo pipefail
 
@@ -14,10 +17,11 @@ COMPOSE_FILE="/home/ubuntu/salesanchor/docker-compose.yml"
 DB_USER="${POSTGRES_USER:-jarvis}"
 DB_NAME="${POSTGRES_DB:-jarvis_db}"
 RETENTION_DAYS=30
+BACKUP_PREFIX="salesanchor_db"
 
 mkdir -p "${BACKUP_DIR}"
 
-BACKUP_FILE="${BACKUP_DIR}/jarvis_db_${DATE}.sql.gz"
+BACKUP_FILE="${BACKUP_DIR}/${BACKUP_PREFIX}_${DATE}.sql.gz"
 
 # PostgreSQLのフルバックアップ（圧縮）
 docker compose -f "${COMPOSE_FILE}" exec -T postgres \
@@ -28,9 +32,11 @@ docker compose -f "${COMPOSE_FILE}" exec -T postgres \
 chmod 600 "${BACKUP_FILE}"
 
 # 保持期間を超えたバックアップを自動削除
+# 注: 旧名 jarvis_db_* と新名 salesanchor_db_* の両方を対象にする（移行期間中）
+find "${BACKUP_DIR}" -name 'salesanchor_db_*.sql.gz' -mtime +${RETENTION_DAYS} -delete
 find "${BACKUP_DIR}" -name 'jarvis_db_*.sql.gz' -mtime +${RETENTION_DAYS} -delete
 
 # ログに記録
 FILESIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
-echo "[$(date)] Backup completed: jarvis_db_${DATE}.sql.gz (${FILESIZE})" \
+echo "[$(date)] Backup completed: ${BACKUP_PREFIX}_${DATE}.sql.gz (${FILESIZE})" \
   >> "${BACKUP_DIR}/backup.log"
