@@ -15,10 +15,10 @@ on:
     branches:
       - main
       - develop
-  push:
-    branches:
-      - develop
-      - main
+# NOTE: push トリガーを削除（2026-05-27）。PR 時点で E2E が通っていれば
+# squash merge 後の push で再実行する意味はなく、デプロイ待ち時間を
+# 10 分以上短縮できる。main/develop への直 push は Branch Protection で禁止済み。
+#
 # NOTE (2026-05-22): paths フィルタ削除。Required check 設定 (Lint & Dark Mode
 # Check ADR-067) が paths にマッチしない PR で "Expected — Waiting for status
 # to be reported" のまま pending → merge blocked デッドロックが PR #534 で発生。

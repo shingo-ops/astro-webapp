@@ -22,12 +22,13 @@ const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./tests-e2e",
-  // Sprint 7 撮影台本に対応する 8 spec を一括実行する想定
-  fullyParallel: false,
+  // spec ファイル間は並列実行。各 spec 内のテストは順序依存があるため直列のまま。
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  // CI / local どちらも単一 worker。webServer 共有の race を避ける
-  workers: 1,
+  // CI: 4 workers で並列実行（GitHub Actions ubuntu-latest は 4 vCPU）
+  // local: CPU コア数に応じて自動調整（undefined = Playwright デフォルト）
+  workers: process.env.CI ? 4 : undefined,
   reporter: process.env.CI
     ? [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]]
     : [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
