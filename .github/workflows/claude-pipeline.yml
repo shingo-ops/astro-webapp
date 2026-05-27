@@ -657,16 +657,85 @@ jobs:
           fi
 
           # ADR-056 §2-3: 同一指摘の繰り返し検出
-          # 直近 2 件の Reviewer/Evaluator 判定コメントを比較し、本文の冒頭 1000 文字が完全一致なら halt
-          if [ "$HALT" = "false" ] && [ "$CURRENT_RETRY" -ge 1 ]; then
-            COMMENTS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
-              --jq '[.comments[] | select(.body | test("^## (Reviewer|Evaluator) 判定:"))] | sort_by(.createdAt) | reverse')
-            LATEST=$(echo "$COMMENTS" | jq -r '.[0].body // ""' | head -c 1000)
-            PREVIOUS=$(echo "$COMMENTS" | jq -r '.[1].body // ""' | head -c 1000)
-            if [ -n "$LATEST" ] && [ "$LATEST" = "$PREVIOUS" ]; then
-              HALT="true"
-              REASON="same-feedback-repeated"
+          # 直近 2 件の同種（Reviewer 同士 or Evaluator 同士）判定コメントを比較
+          # キーワード抽出 + Jaccard 係数 (60% 以上) で「実質同一指摘」を検出し halt
+          #
+          # 改善前: 冒頭 1000 文字の完全一致のみ → 文言が少し違うだけで新指摘と誤認しループ
+          # 改善後: ファイルパス・関数名・エラーメッセージ等のキーワードを抽出し類似度で判定
+
+          # キーワード抽出関数: ファイルパス・識別子・日本語名詞(4文字以上)を抽出し正規化
+          # ASCII 識別子は grep -oE で確実に抽出、日本語は grep -oP (Perl互換) で抽出
+          extract_keywords() {
+            local text="$1"
+            {
+              # ASCII: ファイルパス・関数名・変数名・エラーコード等 (4文字以上)
+              echo "$text" | grep -oE '[a-zA-Z_/][a-zA-Z0-9_/.-]{3,}'
+              # 日本語: 4文字以上の連続 (grep -P が利用可能な場合のみ)
+              echo "$text" | grep -oP '[\p{Hiragana}\p{Katakana}\p{Han}]{4,}' 2>/dev/null || true
+            } | sort -u | tr '\n' ' '
+          }
+
+          # Jaccard 係数計算関数: 2 つのキーワードセット間の一致率 (0-100)
+          jaccard_similarity() {
+            local kw1="$1"
+            local kw2="$2"
+
+            local set1
+            local set2
+            set1=$(echo "$kw1" | tr ' ' '\n' | grep -v '^$' | sort -u)
+            set2=$(echo "$kw2" | tr ' ' '\n' | grep -v '^$' | sort -u)
+
+            if [ -z "$set1" ] && [ -z "$set2" ]; then
+              echo "0"
+              return
             fi
+
+            local intersection
+            local union
+            intersection=$(comm -12 <(echo "$set1") <(echo "$set2") | wc -l | tr -d ' ')
+            union=$(cat <(echo "$set1") <(echo "$set2") | grep -v '^$' | sort -u | wc -l | tr -d ' ')
+
+            if [ "$union" -eq 0 ]; then
+              echo "0"
+            else
+              echo $((intersection * 100 / union))
+            fi
+          }
+
+          if [ "$HALT" = "false" ] && [ "$CURRENT_RETRY" -ge 1 ]; then
+            # 同種の判定コメント（Reviewer / Evaluator）を取得し、それぞれの直近 2 件を比較
+            for JUDGE_TYPE in "Reviewer" "Evaluator"; do
+              COMMENTS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+                --jq "[.comments[] | select(.body | test(\"^## ${JUDGE_TYPE} 判定:\"))] | sort_by(.createdAt) | reverse")
+              COMMENT_COUNT=$(echo "$COMMENTS" | jq 'length')
+
+              if [ "$COMMENT_COUNT" -ge 2 ]; then
+                LATEST=$(echo "$COMMENTS" | jq -r '.[0].body // ""')
+                PREVIOUS=$(echo "$COMMENTS" | jq -r '.[1].body // ""')
+
+                # まず完全一致チェック（高速パス）
+                LATEST_HEAD=$(echo "$LATEST" | head -c 1000)
+                PREVIOUS_HEAD=$(echo "$PREVIOUS" | head -c 1000)
+                if [ -n "$LATEST_HEAD" ] && [ "$LATEST_HEAD" = "$PREVIOUS_HEAD" ]; then
+                  HALT="true"
+                  REASON="same-feedback-repeated (${JUDGE_TYPE}: exact match)"
+                  break
+                fi
+
+                # キーワード抽出 + Jaccard 係数による類似度判定
+                CURRENT_KW=$(extract_keywords "$LATEST")
+                PREV_KW=$(extract_keywords "$PREVIOUS")
+                SIMILARITY=$(jaccard_similarity "$CURRENT_KW" "$PREV_KW")
+
+                echo "${JUDGE_TYPE}: keyword similarity = ${SIMILARITY}%"
+
+                if [ "$SIMILARITY" -ge 60 ]; then
+                  HALT="true"
+                  REASON="same-feedback-repeated (${JUDGE_TYPE}: similarity ${SIMILARITY}%)"
+                  break
+                fi
+              fi
+            done
           fi
 
           {
