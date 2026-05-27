@@ -49,6 +49,7 @@ jobs:
       pr_head_ref: ${{ steps.resolve.outputs.pr_head_ref }}
       adr_files: ${{ steps.resolve.outputs.adr_files }}
       retry_count: ${{ steps.resolve.outputs.retry_count }}
+      has_ui_changes: ${{ steps.ui-changes.outputs.has_ui_changes }}
     steps:
       - name: Resolve PR / ADR context
         id: resolve
@@ -105,6 +106,27 @@ jobs:
             echo "halt_reason=$REASON"
           } >> "$GITHUB_OUTPUT"
           echo "proceed=$PROCEED reason=$REASON"
+
+      - name: Detect UI file changes
+        id: ui-changes
+        env:
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "0" ]; then
+            # PRなし（workflow_dispatch等）は安全側に倒してUIあり扱い
+            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # PR変更ファイル一覧を取得
+          CHANGED_FILES=$(gh pr view "$PR_NUMBER" --json files --jq '[.files[].path]' 2>/dev/null || echo "[]")
+          # frontend/ 配下のファイルが1件以上あればUIあり
+          UI_COUNT=$(echo "$CHANGED_FILES" | jq '[.[] | select(startswith("frontend/"))] | length')
+          if [ "$UI_COUNT" -gt 0 ]; then
+            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_ui_changes=false" >> $GITHUB_OUTPUT
+          fi
 
   claude-worker:
     needs: context
@@ -360,13 +382,29 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          HAS_UI_CHANGES: ${{ needs.context.outputs.has_ui_changes }}
         run: |
           PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq '.body' 2>/dev/null || echo "")
           if echo "$PR_BODY" | grep -qF '- [x] Skip'; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [ "$HAS_UI_CHANGES" = "false" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "auto_skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Auto-skip (no UI changes detected)
+        if: steps.check-method.outputs.auto_skip == 'true'
+        env:
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$REPO" \
+            --body "## Evaluator 判定: APPROVED (Auto-skip)
+
+          UIに関係するファイルの変更が検出されませんでした。Evaluatorを自動スキップします。"
 
       # ADR-055: Playwright MCP セットアップ確認 (Layer 1 が使えない場合は早期に気付く)
       - name: Verify Playwright MCP available
@@ -385,7 +423,7 @@ jobs:
               || echo "Playwright MCP module (@playwright/mcp): NOT FOUND (run: npm install -g @playwright/mcp)")
 
       - name: Auto-approve (Evaluator Skip declared)
-        if: steps.check-method.outputs.skip == 'true'
+        if: steps.check-method.outputs.skip == 'true' && steps.check-method.outputs.auto_skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
