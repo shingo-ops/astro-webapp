@@ -92,9 +92,14 @@ async def list_products(
     params: dict = {"limit": per_page, "offset": offset}
 
     if search:
+        # QA r6 I-02: 「タイプ」列 (category) もユーザーから見える列のため部分一致対象に含める。
+        # 例: 「TCG」検索で category="TCG" / "Pokemon TCG" の双方をヒットさせる。
+        # language / rarity / expansion_code も検索可能列として一般的なため同時に追加。
         conditions.append(
             "(name_ja ILIKE :search OR name_en ILIKE :search OR product_code ILIKE :search "
-            "OR mark ILIKE :search OR jan_code ILIKE :search OR card_number ILIKE :search)"
+            "OR mark ILIKE :search OR jan_code ILIKE :search OR card_number ILIKE :search "
+            "OR category ILIKE :search OR rarity ILIKE :search OR expansion_code ILIKE :search "
+            "OR language ILIKE :search)"
         )
         params["search"] = f"%{search}%"
     if category:
