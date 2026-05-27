@@ -310,6 +310,7 @@ async def setup_test_db(test_engine):
                 status VARCHAR(20) NOT NULL DEFAULT 'active',
                 firebase_uid VARCHAR(128) UNIQUE,
                 is_employee BOOLEAN NOT NULL DEFAULT 0,
+                phone VARCHAR(20),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (tenant_id, staff_code)
