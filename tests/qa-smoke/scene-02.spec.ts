@@ -12,7 +12,7 @@ import { expect, test } from "@playwright/test";
 import { login } from "./utils/real-backend";
 import { collectConsoleErrors } from "./utils/real-backend";
 
-test.describe("Scene 02: Dashboard (real backend)", () => {
+test.describe("Scene 02: Dashboard (real backend)", { tag: ['@scene-02'] }, () => {
   test("Dashboard KPI が描画され、console.error が 0 件", async ({ page }) => {
     const { errors } = collectConsoleErrors(page);
 

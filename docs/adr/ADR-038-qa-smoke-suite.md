@@ -2,7 +2,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| ステータス | Proposed |
+| ステータス | Accepted |
 | 作成日 | 2026-05-15 |
 | 起案 | ひとし（森本） |
 | 関連 ADR | ADR-026（IG message_id TEXT 化）/ ADR-027（i18n）/ ADR-034（テナント migration 自動化、merged 2026-05-14）/ ADR-036（テナントスキーマ整合性、PR #372 で実装中） |
@@ -112,3 +112,20 @@ seed 内容:
 - 既存 setup スクリプト: `scripts/setup_tenant.py` / `scripts/setup_review_tenant.py`（ADR-036 で完全版に置き換え済）
 - 既存 mock e2e: `frontend/tests-e2e/scene1-dashboard.spec.ts` 〜 `scene8-data-deletion.spec.ts`（Meta App Review 撮影シナリオ）
 - ADR-036 follow-up Issue: #375（schema-check.yml が後発 migration の catch-up 漏れを検出できない件）
+
+## Amendment: 実行ポリシー変更（2026-05-27）
+
+### 変更内容
+毎ADR実装PRでqa-smoke全件実行（80〜90分）→ PRのdiffに応じた選択実行（10〜20分）
+
+### 理由
+- 実態調査により、qa-smokeを実行するself-hosted runner（salesanchor-vps）が未登録で全件実行が機能していないことが判明
+- 毎PR全件実行は過剰設計と判断
+
+### 新ポリシー
+- 毎ADR実装PR: EvaluatorがPR diffを読み関係シーンのみ実行
+- 週次（月曜03:00 JST）: 全8シーン（qa-smoke.yml既存設定）
+- develop→main PR: qa-smoke実行なし
+
+### シーン選択ルール
+evaluator.md「qa-smoke 実行ポリシー」セクション参照

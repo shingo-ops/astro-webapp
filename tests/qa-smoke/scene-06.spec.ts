@@ -28,7 +28,7 @@ function getStaffRoleName(email: string): string {
   return rows[0][0];
 }
 
-test.describe("Scene 06: Staff & Permissions (real backend)", () => {
+test.describe("Scene 06: Staff & Permissions (real backend)", { tag: ['@scene-06'] }, () => {
   test("seed staff の role が seed 表通り (admin=オーナー / staff=営業 / viewer=CS)", () => {
     expect(getStaffRoleName("qa-admin@salesanchor.jp")).toBe("オーナー");
     expect(getStaffRoleName("qa-staff@salesanchor.jp")).toBe("営業");

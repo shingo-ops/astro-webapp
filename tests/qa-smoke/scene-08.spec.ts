@@ -15,7 +15,7 @@ import { expect, test } from "@playwright/test";
 import { login } from "./utils/real-backend";
 import { psqlCount, psqlRows } from "./utils/db-assert";
 
-test.describe("Scene 08: Data Lifecycle (real backend)", () => {
+test.describe("Scene 08: Data Lifecycle (real backend)", { tag: ['@scene-08'] }, () => {
   test("顧客 → channel → mock webhook → lead → order → KPI の通し", async ({ page }) => {
     // === 0. 起点: seed company A が存在 ===
     expect(

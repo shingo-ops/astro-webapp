@@ -25,16 +25,8 @@ FROM nginx:alpine
 # ビルド成果物をNginxの公開ディレクトリにコピー
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# カスタムNginx設定（非rootユーザー用にポート8080でlisten）
-RUN echo 'server { \
-    listen 8080; \
-    server_name localhost; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# カスタムNginx設定（キャッシュヘッダー付き・非rootユーザー用ポート8080）
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # 非rootユーザーの作成とファイル権限設定
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup \
