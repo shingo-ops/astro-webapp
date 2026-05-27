@@ -27,6 +27,8 @@ on:
     branches:
       - develop
       - main
+  schedule:
+    - cron: '0 19 * * 1'  # 毎週火曜 04:00 JST (19:00 UTC Monday) — 全件フルスキャン
 # NOTE: paths フィルタ削除（e2e.yml #534 と同じデッドロック回避）。
 # Required check として Ruleset に登録されているため、paths フィルタがあると
 # 関係ないファイルしか変更しない PR で "Expected" のまま pending → merge 不可になる。
@@ -57,13 +59,13 @@ jobs:
           fi
 
       - name: Setup Python
-        if: steps.changes.outputs.relevant == 'true'
+        if: steps.changes.outputs.relevant == 'true' || github.event_name == 'schedule'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Run ADR-072 linter (strict)
-        if: steps.changes.outputs.relevant == 'true'
+        if: steps.changes.outputs.relevant == 'true' || github.event_name == 'schedule'
         run: |
           python3 scripts/lint_tenant_schema.py --mode strict backend/app/routers/
         # mode=strict: 違反があれば exit 1 で CI fail。
