@@ -61,7 +61,6 @@ add_monitor() {
     \"url\": \"${url}\",
     \"interval\": ${interval},
     \"retryInterval\": 30,
-    \"maxretries\": 3,
     \"active\": true
     ${extra:+,$extra}
   }"
@@ -89,7 +88,7 @@ add_monitor \
   "http" \
   "https://app.salesanchor.jp/" \
   30 \
-  '"method": "GET", "expectedStatusCodes": [200]'
+  '"method": "GET", "expectedStatusCodes": [200], "maxretries": 3'
 
 # 2. API ヘルスチェック（最重要）
 add_monitor \
@@ -97,7 +96,7 @@ add_monitor \
   "http" \
   "https://api.salesanchor.jp/api/health" \
   30 \
-  '"method": "GET", "expectedStatusCodes": [200]'
+  '"method": "GET", "expectedStatusCodes": [200], "maxretries": 3'
 
 # 3. LP（ランディングページ）
 add_monitor \
@@ -105,7 +104,7 @@ add_monitor \
   "http" \
   "https://salesanchor.jp/" \
   60 \
-  '"method": "GET", "expectedStatusCodes": [200]'
+  '"method": "GET", "expectedStatusCodes": [200], "maxretries": 3'
 
 # 4. PostgreSQL（TCP死活）
 add_monitor \
@@ -113,7 +112,7 @@ add_monitor \
   "port" \
   "localhost" \
   60 \
-  '"port": 5432'
+  '"port": 5432, "maxretries": 3'
 
 # 5. Redis（TCP死活）
 add_monitor \
@@ -121,7 +120,7 @@ add_monitor \
   "port" \
   "localhost" \
   60 \
-  '"port": 6379'
+  '"port": 6379, "maxretries": 3'
 
 # 6. Meta Graph API（外部サービス）
 # 認証なしでアクセスすると 400 が返るため、200/400 どちらも正常とみなす
