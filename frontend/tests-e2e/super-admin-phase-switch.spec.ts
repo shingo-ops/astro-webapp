@@ -58,7 +58,9 @@ test.describe("Sprint 9 / F9 v1.2 — /super-admin/phase-switch", () => {
 
     // 常時表示の warning banner があること
     await expect(page.getByTestId("phase-a-banner")).toBeVisible();
-    await expect(page.getByTestId("phase-a-banner")).toContainText(/Phase A|並走|GS|spreadsheet/i);
+    // QA r6 PR-1: Phase A 警告は専門用語を排除し「緊急戻し」「在庫数は更新されません」を含む
+    // 平易化文言に変更された。"Phase A" / "Phase B" 表記も locale で残しているため引き続き OR で許可。
+    await expect(page.getByTestId("phase-a-banner")).toContainText(/緊急戻し|在庫数は更新されません|Phase A|emergency|not updated/i);
 
     // Phase A ボタンは current なので disabled
     const btnA = page.getByTestId("phase-btn-A");

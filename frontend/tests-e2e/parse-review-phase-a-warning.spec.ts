@@ -90,7 +90,9 @@ test.describe("Sprint 9 / F9 v1.2 — ParseReviewPage Phase A warning", () => {
     // 常時表示の Phase A warning banner
     const banner = page.getByTestId("phase-a-warning-banner");
     await expect(banner).toBeVisible();
-    await expect(banner).toContainText(/Phase A|GS|spreadsheet|並走/i);
+    // QA r6 PR-1: Phase A 警告は専門用語を排除し「緊急戻し」「在庫数は更新されません」を含む
+    // 平易化文言に変更された。"Phase A" 表記も locale で残しているため引き続き OR で許可。
+    await expect(banner).toContainText(/緊急戻し|在庫数は更新されません|Phase A|emergency|not updated/i);
   });
 
   test("AC9.6: approve 後に skipped_stock_update=true の toast 警告が表示される", async ({ page }) => {
