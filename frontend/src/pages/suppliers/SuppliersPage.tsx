@@ -88,8 +88,22 @@ export default function SuppliersPage() {
         <table className="data-table">
           <thead><tr><th>{t("common.code")}</th><th>{t("suppliers.supplierName")}</th><th>{t("suppliers.colContact")}</th><th>{t("common.email")}</th><th>{t("common.phone")}</th><th>{t("common.actions")}</th></tr></thead>
           <tbody>
-            {suppliers.map(s => (
-              <tr key={s.id}>
+            {suppliers.map(s => {
+              const clickable = hasPermission("suppliers.update");
+              const onRowClick = clickable
+                ? (e: React.MouseEvent<HTMLTableRowElement>) => {
+                    if ((e.target as HTMLElement).closest("button")) return;
+                    handleEdit(s);
+                  }
+                : undefined;
+              return (
+              <tr
+                key={s.id}
+                onClick={onRowClick}
+                style={clickable ? { cursor: "pointer" } : undefined}
+                data-testid={`supplier-row-${s.id}`}
+                title={clickable ? t("suppliers.openDetail") : undefined}
+              >
                 <td className="mono">{s.supplier_code || "-"}</td><td>{s.name}</td><td>{s.contact_name || "-"}</td>
                 <td>{s.email || "-"}</td><td>{s.phone || "-"}</td>
                 <td className="actions">
@@ -97,7 +111,8 @@ export default function SuppliersPage() {
                   {hasPermission("suppliers.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(s)}>{t("suppliers.deleteSupplier")}</button>}
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {suppliers.length === 0 && <tr><td colSpan={6} className="empty">{t("suppliers.noSuppliers")}</td></tr>}
           </tbody>
         </table>
