@@ -32,12 +32,15 @@
 }
 
 /* ページサブタイトル — 全ページ共通スタイル
-   文言は各ページの i18n キーで個別定義、色・表示は統一 */
+   文言は各ページの i18n キーで個別定義、色・表示は統一
+   min-height: タブ切替などで subtitle 文字数が変わった際の余白揺れを防ぐ
+   (line-height 1.4 × 1em = 1.4em で 1 行分の高さを担保) */
 .page-subtitle {
   font-size: var(--font-sm);
   color: var(--text-primary);
   margin: 0 0 var(--space-3);  /* 下 12px — タブバー・コンテンツとの間隔（単一ソース）; top: title-row側で制御 */
   line-height: 1.4;
+  min-height: 1.4em;
 }
 
 /* ============================================================

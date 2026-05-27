@@ -12,7 +12,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.schemas.base import validate_email_loose
+from app.schemas.base import validate_email_loose, validate_phone
 
 
 class StaffStatus(str, Enum):
@@ -103,13 +103,19 @@ class StaffUpdate(BaseModel):
 
 
 class StaffProfileUpdate(BaseModel):
-    """本人専用プロフィール更新スキーマ（氏名のみ）。権限不要。"""
+    """本人専用プロフィール更新スキーマ（氏名・電話番号）。権限不要。"""
     surname_jp: str | None = Field(default=None, min_length=1, max_length=50)
     given_name_jp: str | None = Field(default=None, min_length=1, max_length=50)
     surname_kana: str | None = Field(default=None, max_length=100)
     given_name_kana: str | None = Field(default=None, max_length=100)
     surname_en: str | None = Field(default=None, max_length=100)
     given_name_en: str | None = Field(default=None, max_length=100)
+    phone: str | None = Field(default=None, max_length=20)
+
+    @field_validator("phone")
+    @classmethod
+    def _check_phone(cls, v: str | None) -> str | None:
+        return validate_phone(v)
 
 
 class StaffResponse(BaseModel):
@@ -133,6 +139,7 @@ class StaffResponse(BaseModel):
         default=False,
         description="社員/役員フラグ。True の場合は ADR-021 Phase 5 報酬計算で全ロール 0 円扱い。",
     )
+    phone: str | None = None
     emails: list[str] = Field(default_factory=list)
     ui_preferences: StaffUIPreferences | None = None
     locale: str = "ja"

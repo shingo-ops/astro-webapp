@@ -7,6 +7,7 @@ export interface StaffProfilePayload {
   given_name_kana?: string;
   surname_en?: string;
   given_name_en?: string;
+  phone?: string | null;
 }
 
 export async function patchMyProfile(payload: StaffProfilePayload): Promise<void> {

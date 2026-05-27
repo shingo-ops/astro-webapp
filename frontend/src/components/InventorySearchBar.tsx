@@ -19,7 +19,8 @@
  * AC 対応:
  *   AC7.1〜7.5, 7.7, 7.8, 7.9
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 
@@ -105,6 +106,35 @@ export default function InventorySearchBar({
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastQueryRef = useRef<string>("");
+
+  // Portal 用: input の DOM 座標をトラッキング (overflow:hidden の親に切られない)
+  // QA で発覚: QuoteCreatePage は `<div style={{overflowX:"auto"}}>` 配下のテーブルセル内に
+  // InventorySearchBar が配置されており、`position:absolute; top:100%` のドロップダウンが
+  // 親 div で clip されて見えなくなる。createPortal で document.body 直下にマウントし、
+  // 座標は getBoundingClientRect() で動的計算する。
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number }>(
+    { top: 0, left: 0, width: 0 },
+  );
+
+  const recalcDropdownPosition = useCallback(() => {
+    if (!inputRef.current) return;
+    const r = inputRef.current.getBoundingClientRect();
+    setDropdownRect({ top: r.bottom + 2, left: r.left, width: r.width });
+  }, []);
+
+  // open 時 + scroll/resize で位置再計算
+  useLayoutEffect(() => {
+    if (!open) return;
+    recalcDropdownPosition();
+    const handler = () => recalcDropdownPosition();
+    window.addEventListener("scroll", handler, true); // capture: 親のスクロールも拾う
+    window.addEventListener("resize", handler);
+    return () => {
+      window.removeEventListener("scroll", handler, true);
+      window.removeEventListener("resize", handler);
+    };
+  }, [open, recalcDropdownPosition]);
 
   const doSearch = useCallback(
     async (q: string, currentOp: "and" | "or") => {
@@ -218,6 +248,7 @@ export default function InventorySearchBar({
     >
       <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => {
@@ -298,19 +329,19 @@ export default function InventorySearchBar({
         </div>
       )}
 
-      {open && query.trim().length > 0 && (
+      {open && query.trim().length > 0 && createPortal(
         <ul
           role="listbox"
           aria-label={t("inventory.search.candidatesLabel")}
           data-testid={`${testIdPrefix}-results`}
           style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
+            position: "fixed",
+            top: `${dropdownRect.top}px`,
+            left: `${dropdownRect.left}px`,
+            width: `${dropdownRect.width}px`,
             maxHeight: 'var(--dropdown-results-max-h)',
             overflowY: "auto",
-            margin: "2px 0 0 0",
+            margin: 0,
             padding: 0,
             listStyle: "none",
             background: "var(--bg-surface)",
@@ -493,7 +524,8 @@ export default function InventorySearchBar({
                 </li>
               );
             })}
-        </ul>
+        </ul>,
+        document.body,
       )}
 
       {masked && (

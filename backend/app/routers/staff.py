@@ -43,7 +43,7 @@ _STAFF_COLS = """
     s.id, s.tenant_id, s.user_id, s.staff_code, s.surname_jp, s.given_name_jp,
     s.surname_kana, s.given_name_kana, s.surname_en, s.given_name_en,
     s.primary_email, s.discord_user_id, s.role_id, s.status, s.firebase_uid,
-    s.is_employee,
+    s.is_employee, s.phone,
     s.created_at, s.updated_at,
     r.name AS role_name
 """
@@ -268,6 +268,7 @@ async def update_my_theme(
 _PROFILE_UPDATABLE = {
     "surname_jp", "given_name_jp", "surname_kana", "given_name_kana",
     "surname_en", "given_name_en",
+    "phone",
 }
 
 

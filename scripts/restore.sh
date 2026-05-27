@@ -3,7 +3,10 @@
 # 障害時にバックアップからデータベースを復元する
 #
 # 使い方:
-#   bash /home/ubuntu/salesanchor/scripts/restore.sh /home/ubuntu/backups/postgres/jarvis_db_20260410_030000.sql.gz
+#   bash /home/ubuntu/salesanchor/scripts/restore.sh /home/ubuntu/backups/postgres/salesanchor_db_20260410_030000.sql.gz
+#
+# 本番環境:
+#   DB_USER=jarvis, DB_NAME=jarvis_db (.envから読み込み)
 
 set -euo pipefail
 
@@ -13,10 +16,10 @@ DB_NAME="${POSTGRES_DB:-jarvis_db}"
 
 if [ $# -ne 1 ]; then
   echo "使い方: $0 <バックアップファイルのパス>"
-  echo "例:     $0 /home/ubuntu/backups/postgres/jarvis_db_20260410_030000.sql.gz"
+  echo "例:     $0 /home/ubuntu/backups/postgres/salesanchor_db_20260410_030000.sql.gz"
   echo ""
   echo "利用可能なバックアップ一覧:"
-  ls -lh /home/ubuntu/backups/postgres/jarvis_db_*.sql.gz 2>/dev/null || echo "  バックアップが見つかりません"
+  ls -lh /home/ubuntu/backups/postgres/salesanchor_db_*.sql.gz /home/ubuntu/backups/postgres/jarvis_db_*.sql.gz 2>/dev/null || echo "  バックアップが見つかりません"
   exit 1
 fi
 
@@ -50,4 +53,4 @@ gunzip < "${BACKUP_FILE}" \
 
 echo ""
 echo "リストアが完了しました。"
-echo "動作確認: curl https://jarvis-claude.uk/api/health"
+echo "動作確認: curl https://api.salesanchor.jp/api/health"
