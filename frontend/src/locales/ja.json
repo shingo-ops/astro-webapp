@@ -639,6 +639,8 @@
       "opGroupLabel": "複数キーワードの結合方法",
       "opAnd": "AND（全部一致）",
       "opOr": "OR（いずれか一致）",
+      "opHintSingleToken": "※2 単語以上をスペースで区切って入力すると AND / OR の違いが出ます",
+      "opNeedsMultipleTokens": "2 単語以上のときに有効",
       "candidatesLabel": "検索候補",
       "noResults": "該当する商品がありません",
       "stockLabel": "在庫",
@@ -763,7 +765,8 @@
     "deleteProduct": "商品を削除",
     "status_active": "有効",
     "status_inactive": "無効",
-    "status_discontinued": "廃番"
+    "status_discontinued": "廃番",
+    "outOfStockTooltip": "在庫切れ — 仕入元の発注または在庫補充が必要です"
   },
   "suppliers": {
     "title": "仕入先管理",

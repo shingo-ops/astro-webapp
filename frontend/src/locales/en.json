@@ -639,6 +639,8 @@
       "opGroupLabel": "Multi-keyword join mode",
       "opAnd": "AND (all match)",
       "opOr": "OR (any match)",
+      "opHintSingleToken": "Enter two or more words separated by spaces to see AND / OR differences",
+      "opNeedsMultipleTokens": "Available with 2+ keywords",
       "candidatesLabel": "Search candidates",
       "noResults": "No matching products",
       "stockLabel": "Stock",
@@ -763,7 +765,8 @@
     "deleteProduct": "Delete Product",
     "status_active": "Active",
     "status_inactive": "Inactive",
-    "status_discontinued": "Discontinued"
+    "status_discontinued": "Discontinued",
+    "outOfStockTooltip": "Out of stock — requires reorder or replenishment"
   },
   "suppliers": {
     "title": "Suppliers",
