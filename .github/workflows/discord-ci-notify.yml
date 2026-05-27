@@ -39,7 +39,7 @@ jobs:
           HEAD_SHA: ${{ github.event.check_suite.head_sha }}
           REPO: ${{ github.repository }}
         run: |
-          set -eu
+          set -euo pipefail
 
           # check_suite の conclusion: success / failure / neutral / cancelled / skipped / timed_out / action_required / stale
           case "$CONCLUSION" in
@@ -79,7 +79,7 @@ jobs:
           PR_NUMBER: ${{ github.event.check_suite.pull_requests[0].number }}
           REPO: ${{ github.repository }}
         run: |
-          set -eu
+          set -euo pipefail
           # PR の title / author / branch / base を 1 コールで取得
           gh api "repos/${REPO}/pulls/${PR_NUMBER}" \
             --jq '{title: .title, author: .user.login, head: .head.ref, base: .base.ref, url: .html_url}' \
@@ -111,7 +111,7 @@ jobs:
           ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           CHECKS_URL: ${{ steps.pr.outputs.url }}/checks
         run: |
-          set -eu
+          set -euo pipefail
 
           # FAILED_CHECKS は JSON エンコード済の文字列 (jq -Rs で囲った) なので、jq --argjson で渡す。
           # 空文字なら fields からは省略する。
