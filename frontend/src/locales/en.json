@@ -776,7 +776,8 @@
     "colContact": "Contact",
     "disableConfirmSuffix": " will be disabled.",
     "disableLabel": "Disable",
-    "subtitle": "Manage supplier information and contacts."
+    "subtitle": "Manage supplier information and contacts.",
+    "openDetail": "Click to view or edit"
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
@@ -804,7 +805,11 @@
     "emailResent": "Email resent",
     "emailSendFailed": "Failed to send email",
     "pdfDownloadFailed": "PDF download failed (HTTP {{status}})",
-    "subtitle": "Manage purchase orders from creation to receipt."
+    "subtitle": "Manage purchase orders from creation to receipt.",
+    "supplier": "Supplier",
+    "supplierRequired": "Please select a supplier",
+    "itemsRequired": "All line items must have product and quantity",
+    "createdInfo": "Purchase order created"
   },
   "tenantProfile": {
     "title": "Issuer Profile",

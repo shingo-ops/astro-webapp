@@ -776,7 +776,8 @@
     "colContact": "担当者",
     "disableConfirmSuffix": "を無効化します。",
     "disableLabel": "無効化",
-    "subtitle": "仕入先の会社情報と連絡先を管理します。"
+    "subtitle": "仕入先の会社情報と連絡先を管理します。",
+    "openDetail": "クリックで詳細・編集"
   },
   "purchaseOrders": {
     "title": "発注管理",
@@ -804,7 +805,11 @@
     "emailResent": "メールを再送しました",
     "emailSendFailed": "メール送信に失敗しました",
     "pdfDownloadFailed": "PDFのダウンロードに失敗しました（HTTP {{status}}）",
-    "subtitle": "発注書の作成から受取まで管理します。"
+    "subtitle": "発注書の作成から受取まで管理します。",
+    "supplier": "仕入先",
+    "supplierRequired": "仕入先を選択してください",
+    "itemsRequired": "明細はすべて商品と数量を入力してください",
+    "createdInfo": "発注を新規登録しました"
   },
   "tenantProfile": {
     "title": "発行者情報",

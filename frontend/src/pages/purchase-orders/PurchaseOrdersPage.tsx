@@ -4,6 +4,7 @@ import { api } from "../../lib/api";
 import { auth } from "../../lib/firebase";
 import { usePermissions } from "../../hooks/usePermissions";
 import { PageLayout } from "../../components/PageLayout";
+import PurchaseOrdersFormModal from "./PurchaseOrdersFormModal";
 
 interface PO {
   id: number;
@@ -24,6 +25,7 @@ export default function PurchaseOrdersPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showNewModal, setShowNewModal] = useState(false);
 
   const STATUS_LABELS: Record<string, string> = {
     draft: t("purchaseOrders.status_draft"),
@@ -130,7 +132,20 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
-    <PageLayout navKey="nav.purchaseOrders" subtitleKey="purchaseOrders.subtitle">
+    <PageLayout
+      navKey="nav.purchaseOrders"
+      subtitleKey="purchaseOrders.subtitle"
+      headerAction={hasPermission("purchase_orders.create") ? (
+        <button className="btn-primary" data-testid="po-new-btn" onClick={() => setShowNewModal(true)}>
+          {t("purchaseOrders.newPO")}
+        </button>
+      ) : undefined}
+    >
+      <PurchaseOrdersFormModal
+        open={showNewModal}
+        onClose={() => setShowNewModal(false)}
+        onCreated={() => { setInfo(t("purchaseOrders.createdInfo")); load(); }}
+      />
       <div className="filter-bar">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="">{t("purchaseOrders.allStatuses")}</option>
