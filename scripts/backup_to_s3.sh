@@ -40,6 +40,13 @@
 set -euo pipefail
 export TZ=Asia/Tokyo
 
+# 失敗時にDiscord通知（DISCORD_WEBHOOK_OPS が設定されている場合のみ）
+trap 'if [ -n "${DISCORD_WEBHOOK_OPS:-}" ]; then
+  curl -s -X POST "$DISCORD_WEBHOOK_OPS" \
+    -H "Content-Type: application/json" \
+    -d "{\"content\":\"⚠️ [ALERT] S3バックアップ失敗: $(date +\"%Y-%m-%d %H:%M\")\"}"
+fi' ERR
+
 # --- 設定 ---
 S3_BUCKET="${S3_BACKUP_BUCKET:-salesanchor-backups}"
 S3_PREFIX="postgres-backups"
