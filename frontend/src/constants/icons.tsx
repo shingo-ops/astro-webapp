@@ -11,7 +11,8 @@
  */
 
 import "./platform-icon.css";
-import type { Icon } from "@phosphor-icons/react";
+import { forwardRef } from "react";
+import type { Icon, IconProps } from "@phosphor-icons/react";
 import { Envelope } from "@phosphor-icons/react";
 
 // Icon 型を再エクスポート（他ファイルが @phosphor-icons/react を直接 import しなくて済む）
@@ -27,7 +28,7 @@ import {
   HardHat, Chat, ChatCircle, ClipboardText,
   SquaresFour, FileText, Question, ShieldCheck,
   DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
-  Trash, Archive, EnvelopeOpen,
+  Trash, EnvelopeSimpleOpen,
   CalendarBlank,
   TrendUp, Bell, CalendarCheck, ArrowRight, Flag,
   Receipt,
@@ -179,11 +180,34 @@ export const ACCOUNT_ICONS = {
   phone:    Phone,
 } satisfies Record<string, Icon>;
 
+/**
+ * Phosphor の Archive/Tray fill weight は内側サブパスが反時計回りで穴になるため
+ * 完全ソリッドの自作 SVG コンポーネントで代替する。
+ * パス: 角丸矩形 + 下端中央 U字スロット（単一サブパス Z×1）
+ */
+const TrayFilled = forwardRef<SVGSVGElement, IconProps>(
+  ({ size = 24, color, className, style }, ref) => (
+    <svg
+      ref={ref}
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 256 256"
+      fill={color ?? "currentColor"}
+      className={className}
+      style={style}
+    >
+      <path d="M32,48A16,16,0,0,1,48,32H208A16,16,0,0,1,224,48V208A16,16,0,0,1,208,224H188L168,160H88L68,224H48A16,16,0,0,1,32,208V48Z" />
+    </svg>
+  )
+);
+TrayFilled.displayName = "TrayFilled";
+
 // 受信箱ヘッダーアクションアイコン（既読 / 未読にする / 対象外 / 削除）
 export const INBOX_ACTION_ICONS = {
   markRead:   Envelope,
-  markUnread: EnvelopeOpen,
-  exclude:    Archive,
+  markUnread: EnvelopeSimpleOpen,
+  exclude:    TrayFilled,
   delete:     Trash,
 } satisfies Record<string, Icon>;
 
