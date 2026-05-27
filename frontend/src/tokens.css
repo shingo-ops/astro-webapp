@@ -313,6 +313,8 @@
   /* ---- Phase 5: 入力フィールド幅 (ADR-067) ---- */
   --size-thread-avatar:    36px;   /* 受信箱スレッド送信者アバター */
   --input-width-qty:       70px;   /* 数量入力フィールド */
+  --input-width-product-name: 280px; /* 商品名入力フィールド (見積/明細) */
+  --table-col-product-name-min-w: 320px; /* 明細テーブル商品名カラム最小幅 */
   --input-width-weight:    80px;   /* 重量入力フィールド */
   --input-width-year:      90px;   /* 年・単価入力フィールド */
   --input-width-month:     60px;   /* 月入力フィールド */
@@ -331,6 +333,7 @@
   --modal-detail-max-w:    720px;  /* 売上情報パネル */
   --dropdown-list-h:       280px;  /* マージモーダル候補リスト高さ */
   --dropdown-results-max-h: 320px; /* 在庫検索候補リスト最大高 */
+  --dropdown-min-width:    400px;  /* 在庫検索候補リスト最小幅 (商品名 + 仕入元オファー表示) */
   --textarea-min-h-lg:     120px;  /* 大テキストエリア最小高 */
 
   /* ---- Phase 5: Storybook / デモ (ADR-067) ---- */
