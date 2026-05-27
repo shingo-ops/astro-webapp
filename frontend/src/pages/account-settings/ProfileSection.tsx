@@ -14,6 +14,7 @@ interface StaffMe {
   surname_en: string | null;
   given_name_en: string | null;
   primary_email: string;
+  phone: string | null;
 }
 
 export default function ProfileSection() {
@@ -23,6 +24,7 @@ export default function ProfileSection() {
     surname_jp: "", given_name_jp: "",
     surname_kana: "", given_name_kana: "",
     surname_en: "", given_name_en: "",
+    phone: "",
   });
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -39,6 +41,7 @@ export default function ProfileSection() {
         given_name_kana: me.given_name_kana ?? "",
         surname_en: me.surname_en ?? "",
         given_name_en: me.given_name_en ?? "",
+        phone: me.phone ?? "",
       });
     }).catch(() => {});
   }, []);
@@ -47,7 +50,7 @@ export default function ProfileSection() {
     e.preventDefault();
     setSaving(true); setSuccess(false); setError("");
     try {
-      await patchMyProfile(form);
+      await patchMyProfile({ ...form, phone: form.phone === "" ? null : form.phone });
       await refresh();
       setSuccess(true);
     } catch {
@@ -73,12 +76,12 @@ export default function ProfileSection() {
         <span className="account-settings-note">{t("accountSettings.emailReadOnlyNote")}</span>
       </div>
 
-      <div className="account-settings-field">
-        <span className="account-settings-label">{t("accountSettings.phoneLabel")}</span>
-        <span className="account-settings-coming-soon">{t("accountSettings.phoneComingSoon")}</span>
-      </div>
-
       <form onSubmit={handleSubmit}>
+        <div className="account-settings-field">
+          <label htmlFor="phone" className="account-settings-label">{t("accountSettings.phoneLabel")}</label>
+          <input id="phone" type="tel" value={form.phone} onChange={set("phone")} />
+        </div>
+
         <div className="account-settings-row">
           <div className="form-group">
             <label htmlFor="surname_jp">{t("accountSettings.surnameJp")}</label>
