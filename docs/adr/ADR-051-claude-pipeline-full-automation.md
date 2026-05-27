@@ -1,7 +1,7 @@
 # ADR-051: claude-pipeline Full Automation — Reviewer / Evaluator Auto-Trigger
 
 - **日付**: 2026-05-20
-- **ステータス**: Proposed
+- **ステータス**: Accepted
 - **起案者**: Web Claude (外部補助 Planner) via Shingo
 - **対象範囲**: `.github/workflows/claude-pipeline.yml` / `docs/proposals/agents-role-clarification-prompt.md`
 - **関連 ADR**: ADR-042 (4 エージェント体制), ADR-048 (Web Claude 位置づけ), ADR-050 (Release PR workflow)

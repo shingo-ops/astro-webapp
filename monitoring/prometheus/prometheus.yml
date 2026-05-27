@@ -31,8 +31,11 @@ scrape_configs:
       - targets: ["nginx-exporter:9113"]
 
   # Uptime Kuma（死活監視メトリクス）
-  # 注意: Dockerの内部ネットワーク(backnet)経由のみでアクセスするため認証不要
+  # v2.x は Basic 認証が必要。パスワードはコンテナ内シークレットファイルで管理
   - job_name: "uptime-kuma"
     static_configs:
       - targets: ["uptime-kuma:3001"]
     metrics_path: /metrics
+    basic_auth:
+      username: "shingo@treasureislandjp.com"
+      password_file: /etc/prometheus/secrets/uptime-kuma.passwd
