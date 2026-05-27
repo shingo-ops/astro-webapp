@@ -5,7 +5,7 @@
  * 全コンポーネントはここからインポートすること。
  *
  * - Phosphor → Heroicons 移行済み（weight="fill" で完全ソリッド表示）
- * - size prop は adaptHeroicon ラッパーで width/height に変換
+ * - size prop は hi() ラッパーで width/height に変換
  * - weight prop は受け取るが無視（solid 固定）
  * - lp/（Astro）はスコープ外
  * - BadgesPage の icon フィールドはユーザー入力値のためスコープ外
@@ -13,12 +13,24 @@
 
 import "./platform-icon.css";
 import { forwardRef } from "react";
-import type { ComponentType, SVGProps } from "react";
-// Phosphor の型定義のみ継続使用（satisfies Record<string, Icon> 互換性維持）
-import type { Icon, IconProps } from "@phosphor-icons/react";
+import type { CSSProperties, ComponentType, SVGProps, ForwardRefExoticComponent, RefAttributes } from "react";
 
-// Icon 型を再エクスポート（他ファイルが @phosphor-icons/react を直接 import しなくて済む）
-export type { Icon };
+// ============================================================
+// アイコン型定義（@phosphor-icons/react 依存を排除した独自定義）
+// ============================================================
+
+/** アイコンコンポーネントが受け取る props */
+export type IconProps = {
+  size?: number | string;
+  color?: string;
+  weight?: string;  // Heroicons では無視（solid 固定）
+  className?: string;
+  style?: CSSProperties;
+};
+
+/** アイコンコンポーネント型 — 全 ICON_* 定数の値型 */
+export type Icon = ForwardRefExoticComponent<IconProps & RefAttributes<SVGSVGElement>>;
+
 // 後方互換エイリアス（RolesPage.tsx 等が LucideIcon 型を参照しているため）
 export type LucideIcon = Icon;
 
@@ -39,7 +51,7 @@ import {
 } from "@heroicons/react/24/solid";
 
 /**
- * Heroicons コンポーネントを Phosphor の Icon API（size/weight/color props）に変換するアダプター。
+ * Heroicons コンポーネントを Icon API（size/weight/color props）に変換するアダプター。
  * weight は受け取るが無視（solid 固定）。
  */
 function hi(HeroIcon: ComponentType<SVGProps<SVGSVGElement>>): Icon {
@@ -248,57 +260,7 @@ export const ACCOUNT_ICONS = {
   phone:    Phone,
 } satisfies Record<string, Icon>;
 
-/**
- * Phosphor の Envelope 系 fill weight は内側サブパスが逆巻きで「穴」になるため
- * 完全ソリッドの自作 SVG コンポーネントで代替する。
- * パス: 角丸矩形（単一サブパス） + V字フラップ三角形（同方向巻き → 重複塗りで穴なし）
- */
-const EnvelopeFilled = forwardRef<SVGSVGElement, IconProps>(
-  ({ size = 24, color, className, style }, ref) => (
-    <svg
-      ref={ref}
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 256 256"
-      fill={color ?? "currentColor"}
-      className={className}
-      style={style}
-    >
-      {/* 外枠（角丸矩形・時計回り） */}
-      <path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Z" />
-      {/* V字フラップ（時計回り・同方向巻きで穴なし） */}
-      <path d="M24,64L232,64L128,152Z" />
-    </svg>
-  )
-);
-EnvelopeFilled.displayName = "EnvelopeFilled";
-
-/**
- * Phosphor の Archive/Tray fill weight は内側サブパスが反時計回りで穴になるため
- * 完全ソリッドの自作 SVG コンポーネントで代替する。
- * パス: 角丸矩形 + 下端中央 U字スロット（単一サブパス Z×1）
- */
-const TrayFilled = forwardRef<SVGSVGElement, IconProps>(
-  ({ size = 24, color, className, style }, ref) => (
-    <svg
-      ref={ref}
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 256 256"
-      fill={color ?? "currentColor"}
-      className={className}
-      style={style}
-    >
-      <path d="M32,48A16,16,0,0,1,48,32H208A16,16,0,0,1,224,48V208A16,16,0,0,1,208,224H188V160H88V224H48A16,16,0,0,1,32,208V48Z" />
-    </svg>
-  )
-);
-TrayFilled.displayName = "TrayFilled";
-
 // 受信箱ヘッダーアクションアイコン（既読 / 未読にする / 対象外 / 削除）
-// Heroicons solid は内側サブパス問題なし → 完全ソリッド表示
 export const INBOX_ACTION_ICONS = {
   markRead:   Envelope,        // EnvelopeOpenIcon  — 開封済み封筒
   markUnread: EnvelopeClosed,  // EnvelopeIcon      — 未開封封筒（完全ソリッド）
