@@ -476,6 +476,7 @@ export default function InventoryOffersPage() {
         className="offers-pagination"
         style={{
           marginTop: "var(--space-4)",
+          marginBottom: "var(--space-6)",
           display: "flex",
           gap: "var(--space-2)",
           alignItems: "center",
