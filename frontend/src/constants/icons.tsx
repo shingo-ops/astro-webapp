@@ -1,19 +1,21 @@
 /**
  * アイコン一元管理モジュール
  *
- * @phosphor-icons/react アイコンと絵文字の代替 SVG を集約する。
+ * @heroicons/react/24/solid アイコンを集約する。
  * 全コンポーネントはここからインポートすること。
  *
- * - パスエイリアス未設定のため相対パスで import すること
- * - weight のデフォルトは App.tsx の IconContext.Provider で "light" に統一
+ * - Phosphor → Heroicons 移行済み（weight="fill" で完全ソリッド表示）
+ * - size prop は adaptHeroicon ラッパーで width/height に変換
+ * - weight prop は受け取るが無視（solid 固定）
  * - lp/（Astro）はスコープ外
  * - BadgesPage の icon フィールドはユーザー入力値のためスコープ外
  */
 
 import "./platform-icon.css";
 import { forwardRef } from "react";
+import type { ComponentType, SVGProps } from "react";
+// Phosphor の型定義のみ継続使用（satisfies Record<string, Icon> 互換性維持）
 import type { Icon, IconProps } from "@phosphor-icons/react";
-import { Envelope } from "@phosphor-icons/react";
 
 // Icon 型を再エクスポート（他ファイルが @phosphor-icons/react を直接 import しなくて済む）
 export type { Icon };
@@ -21,19 +23,84 @@ export type { Icon };
 export type LucideIcon = Icon;
 
 import {
-  Moon, Sun, Globe,
-  Check, Warning, X,
-  ChartBar, User, Target, Briefcase, Package,
-  Users, Key, GearSix, Folder,
-  HardHat, Chat, ChatCircle, ClipboardText,
-  SquaresFour, FileText, Question, ShieldCheck,
-  DotsThree, CaretDown, SignOut, SlidersHorizontal, MagnifyingGlass,
-  Trash,
-  CalendarBlank,
-  TrendUp, Bell, CalendarCheck, ArrowRight, Flag,
-  Receipt,
-  UserCircle, Lock, Phone,
-} from "@phosphor-icons/react";
+  MoonIcon, SunIcon, GlobeAltIcon,
+  CheckIcon, ExclamationTriangleIcon, XMarkIcon,
+  ChartBarIcon, UserIcon, SignalIcon, BriefcaseIcon, CubeIcon,
+  UsersIcon, KeyIcon, Cog6ToothIcon, FolderIcon,
+  WrenchScrewdriverIcon, ChatBubbleLeftIcon, ChatBubbleOvalLeftIcon, ClipboardDocumentListIcon,
+  Squares2X2Icon, DocumentTextIcon, QuestionMarkCircleIcon, ShieldCheckIcon,
+  EllipsisHorizontalIcon, ChevronDownIcon, ArrowRightOnRectangleIcon, AdjustmentsHorizontalIcon, MagnifyingGlassIcon,
+  TrashIcon, EnvelopeIcon, EnvelopeOpenIcon,
+  CalendarIcon,
+  ArrowTrendingUpIcon, BellIcon, CalendarDaysIcon, ArrowRightIcon, FlagIcon,
+  ReceiptPercentIcon,
+  UserCircleIcon, LockClosedIcon, PhoneIcon,
+  ArchiveBoxIcon,
+} from "@heroicons/react/24/solid";
+
+/**
+ * Heroicons コンポーネントを Phosphor の Icon API（size/weight/color props）に変換するアダプター。
+ * weight は受け取るが無視（solid 固定）。
+ */
+function hi(HeroIcon: ComponentType<SVGProps<SVGSVGElement>>): Icon {
+  const Wrapped = forwardRef<SVGSVGElement, IconProps>(
+    ({ size = 24, color, className, style }, ref) => (
+      <HeroIcon
+        ref={ref}
+        width={size}
+        height={size}
+        color={color}
+        className={className}
+        style={style}
+      />
+    )
+  );
+  return Wrapped as unknown as Icon;
+}
+
+// Heroicons wrapped icons
+const Moon      = hi(MoonIcon);
+const Sun       = hi(SunIcon);
+const Globe     = hi(GlobeAltIcon);
+const Check     = hi(CheckIcon);
+const Warning   = hi(ExclamationTriangleIcon);
+const X         = hi(XMarkIcon);
+const ChartBar  = hi(ChartBarIcon);
+const User      = hi(UserIcon);
+const Target    = hi(SignalIcon);
+const Briefcase = hi(BriefcaseIcon);
+const Package   = hi(CubeIcon);
+const Users     = hi(UsersIcon);
+const Key       = hi(KeyIcon);
+const GearSix   = hi(Cog6ToothIcon);
+const Folder    = hi(FolderIcon);
+const HardHat   = hi(WrenchScrewdriverIcon);
+const Chat      = hi(ChatBubbleLeftIcon);
+const ChatCircle      = hi(ChatBubbleOvalLeftIcon);
+const ClipboardText   = hi(ClipboardDocumentListIcon);
+const SquaresFour     = hi(Squares2X2Icon);
+const FileText        = hi(DocumentTextIcon);
+const Question        = hi(QuestionMarkCircleIcon);
+const ShieldCheck     = hi(ShieldCheckIcon);
+const DotsThree       = hi(EllipsisHorizontalIcon);
+const CaretDown       = hi(ChevronDownIcon);
+const SignOut         = hi(ArrowRightOnRectangleIcon);
+const SlidersHorizontal = hi(AdjustmentsHorizontalIcon);
+const MagnifyingGlass = hi(MagnifyingGlassIcon);
+const Trash           = hi(TrashIcon);
+const Envelope        = hi(EnvelopeOpenIcon);   // markRead = 開封済み封筒
+const EnvelopeClosed  = hi(EnvelopeIcon);        // markUnread = 未開封封筒（完全ソリッド）
+const CalendarBlank   = hi(CalendarIcon);
+const TrendUp         = hi(ArrowTrendingUpIcon);
+const Bell            = hi(BellIcon);
+const CalendarCheck   = hi(CalendarDaysIcon);
+const ArrowRight      = hi(ArrowRightIcon);
+const Flag            = hi(FlagIcon);
+const Receipt         = hi(ReceiptPercentIcon);
+const UserCircle      = hi(UserCircleIcon);
+const Lock            = hi(LockClosedIcon);
+const Phone           = hi(PhoneIcon);
+const ArchiveBox      = hi(ArchiveBoxIcon);
 
 // ステータス（✓ ⚠ ✕ の代替）
 export const STATUS_ICONS = {
@@ -141,9 +208,10 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
 
   // Mail / Email
   if (platform === "mail" || platform === "email") {
+    const iconSize = Math.round(size * 0.7);
     return (
       <span className="platform-icon-wrap platform-icon-wrap--mail" style={{ width: size, height: size }}>
-        <Envelope size={Math.round(size * 0.7)} color="white" aria-hidden="true" />
+        <EnvelopeIcon width={iconSize} height={iconSize} color="white" aria-hidden="true" />
       </span>
     );
   }
@@ -180,64 +248,16 @@ export const ACCOUNT_ICONS = {
   phone:    Phone,
 } satisfies Record<string, Icon>;
 
-/**
- * Phosphor の Envelope 系 fill weight は内側サブパスが逆巻きで「穴」になるため
- * 完全ソリッドの自作 SVG コンポーネントで代替する。
- * パス: 角丸矩形（単一サブパス） + V字フラップ三角形（同方向巻き → 重複塗りで穴なし）
- */
-const EnvelopeFilled = forwardRef<SVGSVGElement, IconProps>(
-  ({ size = 24, color, className, style }, ref) => (
-    <svg
-      ref={ref}
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 256 256"
-      fill={color ?? "currentColor"}
-      className={className}
-      style={style}
-    >
-      {/* 外枠（角丸矩形・時計回り） */}
-      <path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Z" />
-      {/* V字フラップ（時計回り・同方向巻きで穴なし） */}
-      <path d="M24,64L232,64L128,152Z" />
-    </svg>
-  )
-);
-EnvelopeFilled.displayName = "EnvelopeFilled";
-
-/**
- * Phosphor の Archive/Tray fill weight は内側サブパスが反時計回りで穴になるため
- * 完全ソリッドの自作 SVG コンポーネントで代替する。
- * パス: 角丸矩形 + 下端中央 U字スロット（単一サブパス Z×1）
- */
-const TrayFilled = forwardRef<SVGSVGElement, IconProps>(
-  ({ size = 24, color, className, style }, ref) => (
-    <svg
-      ref={ref}
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 256 256"
-      fill={color ?? "currentColor"}
-      className={className}
-      style={style}
-    >
-      <path d="M32,48A16,16,0,0,1,48,32H208A16,16,0,0,1,224,48V208A16,16,0,0,1,208,224H188V160H88V224H48A16,16,0,0,1,32,208V48Z" />
-    </svg>
-  )
-);
-TrayFilled.displayName = "TrayFilled";
-
 // 受信箱ヘッダーアクションアイコン（既読 / 未読にする / 対象外 / 削除）
+// Heroicons solid は内側サブパス問題なし → 完全ソリッド表示
 export const INBOX_ACTION_ICONS = {
-  markRead:   Envelope,
-  markUnread: EnvelopeFilled,
-  exclude:    TrayFilled,
-  delete:     Trash,
+  markRead:   Envelope,        // EnvelopeOpenIcon  — 開封済み封筒
+  markUnread: EnvelopeClosed,  // EnvelopeIcon      — 未開封封筒（完全ソリッド）
+  exclude:    ArchiveBox,      // ArchiveBoxIcon    — アーカイブ
+  delete:     Trash,           // TrashIcon         — 削除
 } satisfies Record<string, Icon>;
 
 // Layout.tsx の /lead-chat ナビアイテム用
 export function LeadChatIcon({ size = 20, className }: { size?: number; className?: string }) {
-  return <ChatCircle size={size} className={className} aria-hidden="true" />;
+  return <ChatBubbleOvalLeftIcon width={size} height={size} className={className} aria-hidden="true" />;
 }
