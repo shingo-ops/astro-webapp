@@ -348,10 +348,23 @@ export default function ProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
-              <tr key={p.id} style={p.is_archived ? { opacity: "var(--opacity-archived)" } : undefined}>
+            {products.map((p) => {
+              const isOutOfStock = p.quantity <= 0;
+              const rowStyle: React.CSSProperties = {};
+              if (p.is_archived) rowStyle.opacity = "var(--opacity-archived)";
+              if (isOutOfStock && !p.is_archived) {
+                rowStyle.opacity = "var(--opacity-skipped)";
+                rowStyle.background = "var(--bg-disabled)";
+              }
+              return (
+              <tr key={p.id} style={rowStyle} data-zero-stock={isOutOfStock ? "true" : "false"}>
                 <td>
                   {p.image_url && <img src={p.image_url} alt="" style={{ width: 'var(--icon-lg)', height: 'var(--icon-lg)', marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: "var(--radius-xs)" }} />}
+                  {isOutOfStock && !p.is_archived && (
+                    <span title={t("products.outOfStockTooltip")} aria-label={t("products.outOfStockTooltip")} style={{ marginRight: "var(--space-6px)", color: "var(--color-warning)", fontWeight: "var(--font-weight-semi)" }}>
+                      &#9888;
+                    </span>
+                  )}
                   {p.name_ja}
                   {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: "var(--space-6px)" }}>{t("products.status_discontinued")}</span>}
                 </td>
@@ -384,7 +397,8 @@ export default function ProductsPage() {
                   {hasPermission("products.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(p)}>{t("common.delete")}</button>}
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {products.length === 0 && <tr><td colSpan={8} className="empty">{t("products.noProducts")}</td></tr>}
           </tbody>
         </table>
