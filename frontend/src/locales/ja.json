@@ -137,9 +137,10 @@
   "language": {
     "label": "言語",
     "ja": "日本語",
-    "en": "English",
+    "en": "英語",
     "switchTo": "言語を切り替え",
-    "zh": "中文"
+    "kr": "韓国語",
+    "zh": "中国語"
   },
   "dashboard": {
     "title": "ダッシュボード",
@@ -638,6 +639,8 @@
       "opGroupLabel": "複数キーワードの結合方法",
       "opAnd": "AND（全部一致）",
       "opOr": "OR（いずれか一致）",
+      "opHintSingleToken": "※2 単語以上をスペースで区切って入力すると AND / OR の違いが出ます",
+      "opNeedsMultipleTokens": "2 単語以上のときに有効",
       "candidatesLabel": "検索候補",
       "noResults": "該当する商品がありません",
       "stockLabel": "在庫",
@@ -762,7 +765,8 @@
     "deleteProduct": "商品を削除",
     "status_active": "有効",
     "status_inactive": "無効",
-    "status_discontinued": "廃番"
+    "status_discontinued": "廃番",
+    "outOfStockTooltip": "在庫切れ — 仕入元の発注または在庫補充が必要です"
   },
   "suppliers": {
     "title": "仕入先管理",
@@ -774,9 +778,10 @@
     "contactName": "担当者名",
     "address": "住所",
     "colContact": "担当者",
-    "disableConfirmSuffix": "を無効化します。",
-    "disableLabel": "無効化",
-    "subtitle": "仕入先の会社情報と連絡先を管理します。"
+    "disableConfirmSuffix": "を削除します。",
+    "disableLabel": "削除",
+    "subtitle": "仕入先の会社情報と連絡先を管理します。",
+    "openDetail": "クリックで詳細・編集"
   },
   "purchaseOrders": {
     "title": "発注管理",
@@ -804,7 +809,11 @@
     "emailResent": "メールを再送しました",
     "emailSendFailed": "メール送信に失敗しました",
     "pdfDownloadFailed": "PDFのダウンロードに失敗しました（HTTP {{status}}）",
-    "subtitle": "発注書の作成から受取まで管理します。"
+    "subtitle": "発注書の作成から受取まで管理します。",
+    "supplier": "仕入先",
+    "supplierRequired": "仕入先を選択してください",
+    "itemsRequired": "明細はすべて商品と数量を入力してください",
+    "createdInfo": "発注を新規登録しました"
   },
   "tenantProfile": {
     "title": "発行者情報",
@@ -1370,30 +1379,30 @@
     },
     "phaseSwitch": {
       "title": "スプレッドシート並走 Phase",
-      "subtitle": "本機能の Phase（A / B / C）切替を行います。spec v1.3 では Phase B 標準運用、Phase A は緊急戻し用です。",
+      "subtitle": "Discord 取り込みの動作モード (A / B / C) を切替えます。通常運用は Phase B、Phase A は緊急時の戻し用です。",
       "currentLabel": "現在の Phase",
-      "phaseADesc": "緊急戻し状態。products.stock_quantity は更新されません。",
-      "phaseBDesc": "CRM 正本化運用 (標準)",
-      "phaseABanner": "Phase A (緊急戻し中): products.stock_quantity は更新されません。spec v1.3 の標準は Phase B です。早めに Phase B に戻してください。",
-      "outOfScope": "Phase {{phase}} への切替は Out-of-scope です（spec v1.3、別 ADR で検討中）",
+      "phaseADesc": "緊急戻し: 受信履歴のみ記録、商品の在庫数は更新されません",
+      "phaseBDesc": "通常運用: CRM 側で在庫数を実更新",
+      "phaseABanner": "現在「緊急戻し」モード中です。承認しても商品の在庫数は更新されません。早めに通常運用 (Phase B) に戻してください。",
+      "outOfScope": "Phase {{phase}} への切替は現在対応していません (将来検討予定)",
       "outOfScopeBadge": "別 ADR で検討中",
-      "outOfScopeTooltip": "Phase C への切替は spec v1.3 では Out-of-scope。スプレッドシート完全閉鎖 + 本格データ移行は別 ADR で時期判断します",
+      "outOfScopeTooltip": "Phase C はスプレッドシート完全閉鎖 + 本格データ移行が必要で、別の設計判断 (ADR) で時期検討中",
       "currentTooltip": "現在の Phase です",
       "switchTo": "Phase {{phase}} に切替",
       "switchSuccess": "Phase {{phase}} に切り替えました",
       "tenantIdMissing": "テナント ID を取得できませんでした。再ログインしてください",
-      "helpPhaseA": "Phase A (緊急戻し): CRM 側は受信・解析・記録のみ。products.stock_quantity は更新されません。標準ではありません。",
-      "helpPhaseB": "Phase B (標準運用): CRM 側で products.stock_quantity を実更新。スプレッドシートのデータをテストデータとして活用。",
-      "helpPhaseC": "Phase C: スプレッドシート完全閉鎖 + 本格データ移行。別 ADR で時期判断中。"
+      "helpPhaseA": "Phase A (緊急戻し): 受信履歴のみ記録、商品の在庫数は更新されません。通常運用ではありません。",
+      "helpPhaseB": "Phase B (通常運用): 承認時に商品の在庫数を実更新。スプレッドシートのデータは参考データとして活用。",
+      "helpPhaseC": "Phase C: スプレッドシート完全閉鎖 + 本格データ移行。現在は切替不可、別 ADR で時期検討中。"
     },
     "parseReview": {
       "phaseAWarning": {
-        "always": "Phase A (緊急戻し中): 在庫数は更新されません。CRM 標準運用は Phase B です。",
-        "afterApprove": "承認しましたが、Phase A (緊急戻し) 中のため products.stock_quantity は更新されませんでした（{{count}} 件は inventory_movements に記録済）。"
+        "always": "現在「緊急戻し」モード中です。承認しても商品の在庫数は更新されません (受信履歴は記録されます)。通常運用に戻すには管理センター → スーパー管理者 → Phase Switch から切り替えてください。",
+        "afterApprove": "承認は完了しましたが、現在「緊急戻し」モード中のため、商品の在庫数は更新されませんでした。受信履歴には {{count}} 件記録されています。"
       }
     },
     "inventoryOffers": {
-      "subtitle": "仕入元 × 商品 × 状態 単位の現在オファー。F6 承認で UPSERT、手動編集も可能。",
+      "subtitle": "仕入元ごとの「現在仕入れ可能な商品・在庫数・単価」を一覧で管理します。Discord 解析レビューで承認すると自動保存、ここで手動編集も可能です。",
       "searchPlaceholder": "仕入元名 / 商品名 / 商品コードで検索",
       "conditionPlaceholder": "状態でフィルタ",
       "statusAny": "状態すべて",
@@ -1424,7 +1433,7 @@
         "manual": "手動",
         "discord_parsed": "Discord 解析",
         "csv_import": "CSV 取込",
-        "f6_approved": "F6 承認"
+        "f6_approved": "解析承認"
       }
     }
   },

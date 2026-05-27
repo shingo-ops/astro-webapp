@@ -3,10 +3,15 @@
    SSoT準拠: 全値は CSS 変数から参照。ハードコード禁止。
    ─────────────────────────────────────────────────────────── */
 
-/* シェル: 左サブナビ + 右コンテンツの2カラム */
+/* シェル: 左サブナビ + 右コンテンツの2カラム
+   2026-05-28 (QA r6 SM-2): サブナビ「固定されていない」NG 再発を受け、subnav 側ではなく
+   mc-content 側を独自スクロールコンテナに切り出す方針へ変更。
+   subnav は flex item として高さ自動、mc-content は overflow-y:auto + min-height:0 で
+   スクロールを内包させる。これで subnav は親 flex の中で物理的に動かない。 */
 .mc-shell {
   display: flex;
   height: 100%;
+  align-items: stretch;
   overflow: hidden;
 }
 
@@ -18,13 +23,11 @@
   width: var(--mc-subnav-width);
   flex-shrink: 0;
   border-right: 1px solid var(--border);
+  /* subnav 自体は高さ 100% で flex に張り付き、長い場合は内部スクロール */
+  height: 100%;
   overflow-y: auto;
   padding: var(--space-2) 0 var(--space-6);
-  background: transparent;
-  position: sticky;
-  top: 0;
-  align-self: flex-start;
-  max-height: 100vh;
+  background: var(--bg-surface);
 }
 
 .mc-subnav-section {
@@ -72,11 +75,14 @@
   margin-top: var(--space-2);
 }
 
-/* ── 右コンテンツ ── */
+/* ── 右コンテンツ ──
+   2026-05-28: 子ページの PageLayout がスクロールを管理するため hidden、ただし
+   子ページ自体が PageLayout を持たない場合に備えて min-height:0 で flex-shrink 許可。 */
 .mc-content {
   flex: 1;
   min-width: 0;
-  overflow: hidden; /* 子ページの PageLayout がスクロールを管理する */
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ── レスポンシブ: スマートフォン ── */

@@ -1,0 +1,148 @@
+name: Discord CI Status Notification
+
+# PR の全 check 完了時に Discord に結果を投稿する。
+#
+# トリガー: check_suite.types: [completed]
+#   GitHub Actions の workflow run 群を 1 まとまり (check_suite) として扱い、
+#   そのまとまりが完了した瞬間に 1 回だけ fire する。PR ごとに 1〜2 通知に収まる。
+#
+# 通知内容:
+#   - success (全 check pass): 🟢 緑 embed、PR 番号 + author + branch
+#   - failure (1 件でも fail): 🔴 赤 embed、PR 番号 + 失敗 check 一覧 + Actions URL
+#   - その他 (cancelled / timed_out): ⚪ グレー embed、原因
+#
+# 既存 PR/Issue 通知と同じ channel に投稿 (DISCORD_WEBHOOK_PR)。
+
+on:
+  check_suite:
+    types: [completed]
+
+jobs:
+  notify:
+    # check_suite に PR が紐づいていない (push to non-PR branch 等) ものはスキップ。
+    # fork からの PR でも secrets にアクセスできないためスキップ。
+    if: |
+      github.event.check_suite.pull_requests[0] != null &&
+      github.event.check_suite.head_branch != ''
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+      pull-requests: read
+      actions: read
+    steps:
+      - name: 通知判定 + 失敗 check 取得
+        id: status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONCLUSION: ${{ github.event.check_suite.conclusion }}
+          PR_NUMBER: ${{ github.event.check_suite.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.check_suite.head_sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # check_suite の conclusion: success / failure / neutral / cancelled / skipped / timed_out / action_required / stale
+          case "$CONCLUSION" in
+            success)
+              echo "should_notify=true" >> "$GITHUB_OUTPUT"
+              echo "emoji=🟢" >> "$GITHUB_OUTPUT"
+              echo "color=3066993" >> "$GITHUB_OUTPUT"
+              echo "title_status=All checks passed" >> "$GITHUB_OUTPUT"
+              echo "failed_checks=" >> "$GITHUB_OUTPUT"
+              ;;
+            failure|timed_out|action_required)
+              echo "should_notify=true" >> "$GITHUB_OUTPUT"
+              echo "emoji=🔴" >> "$GITHUB_OUTPUT"
+              echo "color=15158332" >> "$GITHUB_OUTPUT"
+              echo "title_status=Some checks failed" >> "$GITHUB_OUTPUT"
+              # 失敗 check を取得 (最大 10 件)
+              # check_runs API で head_sha に紐づく全 check_run を取得し conclusion で絞る
+              failed=$(gh api -X GET "repos/${REPO}/commits/${HEAD_SHA}/check-runs?per_page=100" \
+                --jq '.check_runs[] | select(.conclusion == "failure" or .conclusion == "timed_out" or .conclusion == "action_required") | "• [\(.name)](\(.html_url))"' \
+                | head -n 10 | jq -Rs .)
+              echo "failed_checks=${failed}" >> "$GITHUB_OUTPUT"
+              ;;
+            cancelled|skipped|neutral|stale)
+              # cancelled は通知しない (rerun 中・手動キャンセル時のノイズ防止)
+              echo "should_notify=false" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "should_notify=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: PR メタ情報取得
+        id: pr
+        if: steps.status.outputs.should_notify == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.check_suite.pull_requests[0].number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # PR の title / author / branch / base を 1 コールで取得
+          gh api "repos/${REPO}/pulls/${PR_NUMBER}" \
+            --jq '{title: .title, author: .user.login, head: .head.ref, base: .base.ref, url: .html_url}' \
+            > /tmp/pr.json
+          {
+            echo "title<<EOF"
+            jq -r .title /tmp/pr.json
+            echo "EOF"
+            echo "author=$(jq -r .author /tmp/pr.json)"
+            echo "head=$(jq -r .head /tmp/pr.json)"
+            echo "base=$(jq -r .base /tmp/pr.json)"
+            echo "url=$(jq -r .url /tmp/pr.json)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Discord 通知
+        if: steps.status.outputs.should_notify == 'true'
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          PR_NUMBER: ${{ github.event.check_suite.pull_requests[0].number }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          PR_AUTHOR: ${{ steps.pr.outputs.author }}
+          PR_HEAD: ${{ steps.pr.outputs.head }}
+          PR_BASE: ${{ steps.pr.outputs.base }}
+          EMOJI: ${{ steps.status.outputs.emoji }}
+          COLOR: ${{ steps.status.outputs.color }}
+          TITLE_STATUS: ${{ steps.status.outputs.title_status }}
+          FAILED_CHECKS: ${{ steps.status.outputs.failed_checks }}
+          ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CHECKS_URL: ${{ steps.pr.outputs.url }}/checks
+        run: |
+          set -euo pipefail
+
+          # FAILED_CHECKS は JSON エンコード済の文字列 (jq -Rs で囲った) なので、jq --argjson で渡す。
+          # 空文字なら fields からは省略する。
+          if [ -n "$FAILED_CHECKS" ] && [ "$FAILED_CHECKS" != '""' ]; then
+            failed_field=$(jq -n --argjson value "$FAILED_CHECKS" \
+              '{name: "失敗した check", value: ($value // "—"), inline: false}')
+          else
+            failed_field='null'
+          fi
+
+          jq -n \
+            --arg title "${EMOJI} PR #${PR_NUMBER} — ${TITLE_STATUS}" \
+            --arg desc "$PR_TITLE" \
+            --arg url "$CHECKS_URL" \
+            --arg author "$PR_AUTHOR" \
+            --arg branch "$PR_HEAD → $PR_BASE" \
+            --arg pr_url "$PR_URL" \
+            --argjson color "$COLOR" \
+            --argjson failed_field "$failed_field" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $desc,
+                url: $url,
+                color: $color,
+                fields: ([
+                  {name: "PR 作成者", value: $author, inline: true},
+                  {name: "ブランチ", value: $branch, inline: true},
+                  {name: "PR URL", value: $pr_url, inline: false}
+                ] + (if $failed_field == null then [] else [$failed_field] end)),
+                timestamp: (now | todate)
+              }]
+            }' | curl -sS -H "Content-Type: application/json" \
+                  -d @- "$WEBHOOK_URL"

@@ -100,7 +100,6 @@ export default function InventorySearchBar({
   const [masked, setMasked] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const [zeroStockWarning, setZeroStockWarning] = useState<string>("");
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [open, setOpen] = useState<boolean>(false);
 
@@ -190,14 +189,9 @@ export default function InventorySearchBar({
 
   const handleSelect = useCallback(
     (c: InventorySearchCandidate) => {
-      if (c.stock_quantity !== null && c.stock_quantity <= 0) {
-        // 在庫 0 警告 (AC7.5)
-        setZeroStockWarning(
-          t("inventory.search.zeroStockWarning", { name: c.name }),
-        );
-      } else {
-        setZeroStockWarning("");
-      }
+      // 在庫 0 警告 (AC7.5) は呼び出し側 (QuoteCreatePage) が
+      // item.zero_stock_warning フラグ経由で表示するため、
+      // ここでは内部表示しない (二重表示防止)。
       onSelect(c);
       // 候補確定後は listbox を閉じ、入力欄もリセットして次の検索に備える。
       // (Major F3 fix) query を残したまま閉じると、同一キーワードで再検索した時に
@@ -209,7 +203,7 @@ export default function InventorySearchBar({
       setActiveIndex(-1);
       lastQueryRef.current = "";
     },
-    [onSelect, t],
+    [onSelect],
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -240,6 +234,12 @@ export default function InventorySearchBar({
     return String(c.stock_quantity);
   };
 
+  // QA r6 I-03: 1 単語の検索では AND/OR どちらも同じ動作になるため
+  // (whitespace 分割で tokens.length === 1)、トグルは disable し、
+  // 「2 語以上で違いが出る」旨のヒントを下に表示する。
+  const tokenCount = query.trim().split(/\s+/).filter(Boolean).length;
+  const opToggleDisabled = disabled || tokenCount <= 1;
+
   return (
     <div
       className="inventory-search-bar"
@@ -266,13 +266,20 @@ export default function InventorySearchBar({
         <div
           role="radiogroup"
           aria-label={t("inventory.search.opGroupLabel")}
-          style={{ display: "inline-flex", gap: 0, border: "1px solid var(--border-color)", borderRadius: "var(--radius-sm)" }}
+          title={opToggleDisabled && tokenCount <= 1 ? t("inventory.search.opNeedsMultipleTokens") : undefined}
+          style={{
+            display: "inline-flex",
+            gap: 0,
+            border: "1px solid var(--border-color)",
+            borderRadius: "var(--radius-sm)",
+            opacity: opToggleDisabled ? "var(--opacity-disabled)" : 1,
+          }}
           data-testid={`${testIdPrefix}-op-toggle`}
         >
           <button
             type="button"
             onClick={() => setOp("and")}
-            disabled={disabled}
+            disabled={opToggleDisabled}
             aria-pressed={op === "and"}
             data-testid={`${testIdPrefix}-op-and`}
             style={{
@@ -280,7 +287,7 @@ export default function InventorySearchBar({
               border: "none",
               background: op === "and" ? "var(--accent-bg)" : "transparent",
               color: op === "and" ? "var(--on-accent)" : "inherit",
-              cursor: disabled ? "not-allowed" : "pointer",
+              cursor: opToggleDisabled ? "not-allowed" : "pointer",
             }}
           >
             {t("inventory.search.opAnd")}
@@ -288,7 +295,7 @@ export default function InventorySearchBar({
           <button
             type="button"
             onClick={() => setOp("or")}
-            disabled={disabled}
+            disabled={opToggleDisabled}
             aria-pressed={op === "or"}
             data-testid={`${testIdPrefix}-op-or`}
             style={{
@@ -296,13 +303,22 @@ export default function InventorySearchBar({
               border: "none",
               background: op === "or" ? "var(--accent-bg)" : "transparent",
               color: op === "or" ? "var(--on-accent)" : "inherit",
-              cursor: disabled ? "not-allowed" : "pointer",
+              cursor: opToggleDisabled ? "not-allowed" : "pointer",
             }}
           >
             {t("inventory.search.opOr")}
           </button>
         </div>
       </div>
+
+      {tokenCount === 1 && (
+        <div
+          data-testid={`${testIdPrefix}-op-hint`}
+          style={{ marginTop: "var(--space-1)", fontSize: "var(--font-xs)", color: "var(--text-muted)" }}
+        >
+          {t("inventory.search.opHintSingleToken")}
+        </div>
+      )}
 
       {error && (
         <div
@@ -314,21 +330,6 @@ export default function InventorySearchBar({
           {error}
         </div>
       )}
-      {zeroStockWarning && (
-        <div
-          className="warning-message"
-          role="status"
-          data-testid={`${testIdPrefix}-zero-stock`}
-          style={{
-            marginTop: "var(--space-1)",
-            color: "var(--color-warning)",
-            fontSize: "var(--font-base)",
-          }}
-        >
-          {zeroStockWarning}
-        </div>
-      )}
-
       {open && query.trim().length > 0 && createPortal(
         <ul
           role="listbox"
@@ -338,7 +339,11 @@ export default function InventorySearchBar({
             position: "fixed",
             top: `${dropdownRect.top}px`,
             left: `${dropdownRect.left}px`,
-            width: `${dropdownRect.width}px`,
+            // QA r6 SM-3: 検索窓と同じ幅だと商品名 + 仕入元オファーが省略されて
+            // 「商品名が途中で切れて判別がつかない」状態になる。
+            // 親 input 幅と viewport 残幅 (right margin 16px) の大きい方を採用。
+            width: `${Math.max(dropdownRect.width, Math.min(720, Math.max(0, window.innerWidth - dropdownRect.left - 16)))}px`,
+            minWidth: 'var(--dropdown-min-width)',
             maxHeight: 'var(--dropdown-results-max-h)',
             overflowY: "auto",
             margin: 0,
