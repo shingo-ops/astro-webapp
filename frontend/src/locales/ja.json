@@ -1393,7 +1393,7 @@
       }
     },
     "inventoryOffers": {
-      "subtitle": "仕入元 × 商品 × 状態 単位の現在オファー。F6 承認で UPSERT、手動編集も可能。",
+      "subtitle": "仕入元ごとの現在オファー一覧。Discord 解析の承認時に自動で反映され、手動でも編集できます。",
       "searchPlaceholder": "仕入元名 / 商品名 / 商品コードで検索",
       "conditionPlaceholder": "状態でフィルタ",
       "statusAny": "状態すべて",
@@ -1424,7 +1424,7 @@
         "manual": "手動",
         "discord_parsed": "Discord 解析",
         "csv_import": "CSV 取込",
-        "f6_approved": "F6 承認"
+        "f6_approved": "解析承認"
       }
     }
   },

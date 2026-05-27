@@ -1393,7 +1393,7 @@
       }
     },
     "inventoryOffers": {
-      "subtitle": "Current offers per supplier × product × condition. UPSERTed on F6 approve, also editable manually.",
+      "subtitle": "Current offers per supplier. Automatically updated on Discord parse approval, also editable manually.",
       "searchPlaceholder": "Search by supplier / product / SKU",
       "conditionPlaceholder": "Filter by condition",
       "statusAny": "Any status",
@@ -1424,7 +1424,7 @@
         "manual": "Manual",
         "discord_parsed": "Discord parsed",
         "csv_import": "CSV import",
-        "f6_approved": "F6 approved"
+        "f6_approved": "Parse approval"
       }
     }
   },
