@@ -72,9 +72,11 @@ test.describe("Sprint 9 / F9 v1.2 — /super-admin/phase-switch", () => {
     await expect(btnB).toBeDisabled();
     await expect(btnB).toHaveAttribute("data-scoped", "false");
     // Tooltip 内容（title 属性）
+    // locale "outOfScopeTooltip" は「別の設計判断 (ADR) で時期検討中」のため、
+    // "ADR" / "別の設計判断" / "別 ADR" / "Out-of-scope" / "separate ADR" を OR で許容。
     await expect(btnB).toHaveAttribute(
       "title",
-      /Out-of-scope|別 ADR|separate ADR/i,
+      /Out-of-scope|別 ADR|別の設計判断|ADR|separate ADR/i,
     );
 
     const btnC = page.getByTestId("phase-btn-C");
