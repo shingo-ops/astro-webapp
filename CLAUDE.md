@@ -97,3 +97,7 @@ ADR は What/Why/Scope のみ記述（実装手順 How は書かない）。`cla
 | アイコン管理 | `frontend/CLAUDE.md` §アイコン | ESLint |
 | テナントスキーマ | `backend/CLAUDE.md` + ADR-072 | `lint-tenant-schema.yml` |
 | CSS 変数/ダークモード | ADR-067 | `check:css-*` / ESLint |
+| requirements 分離 | `backend/requirements*.txt` | `requirements-lint.yml` |
+| Dockerfile lint | `.hadolint.yaml` | `dockerfile-lint.yml` / `workflow-lint.yml` |
+| CLAUDE.md サイズ上限 | `check-claude-size.js`（ルート120行・他は各上限） | pre-commit / `check:all` |
+| check:all 並列実行 | `frontend/package.json` | `check-concurrently-usage.js` / `frontend-check.yml` |

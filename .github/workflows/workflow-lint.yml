@@ -77,6 +77,11 @@ jobs:
                   "rule": "has_pull_request_blocking",
                   "reason": "PR #918 hadolint追加: pull_requestトリガー削除・continue-on-error追加でDockerfileチェックが無効化される",
               },
+              {
+                  "file": ".github/workflows/requirements-lint.yml",
+                  "rule": "has_pull_request_blocking",
+                  "reason": "PR #934 requirements分離: pull_requestトリガー削除・continue-on-error追加でテストパッケージ混入チェックが無効化される",
+              },
           ]
 
           errors = []
