@@ -16,6 +16,8 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
+  schedule:
+    - cron: '0 20 * * 1'  # 毎週火曜 05:00 JST (20:00 UTC Monday) — 全件フルスキャン
 # NOTE: paths フィルタ削除（e2e.yml #534 と同じデッドロック回避）。
 # Required check (テナントスキーマ整合性チェック) として Ruleset 登録済みのため、
 # paths フィルタがあると非 backend PR で pending のまま merge 不可になる。
@@ -46,7 +48,7 @@ jobs:
   schema-check:
     name: テナントスキーマ整合性チェック
     needs: detect-changes
-    if: needs.detect-changes.outputs.relevant == 'true'
+    if: needs.detect-changes.outputs.relevant == 'true' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
