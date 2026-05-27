@@ -13,7 +13,7 @@ import { expect, test } from "@playwright/test";
 import { login, logout } from "./utils/real-backend";
 import { QA_USERS } from "./fixtures/qa-tenant-creds";
 
-test.describe("Scene 01: Auth & Roles (real backend)", () => {
+test.describe("Scene 01: Auth & Roles (real backend)", { tag: ['@scene-01'] }, () => {
   for (const role of ["admin", "staff", "viewer"] as const) {
     test(`${role} が login して Dashboard を見られる`, async ({ page }) => {
       await login(page, role);
