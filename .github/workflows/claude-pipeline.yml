@@ -120,6 +120,11 @@ jobs:
           PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          # shingo-ops 以外は自動スキップ機能を無効化（常にUIあり扱い）
+          if [ "${{ github.actor }}" != "shingo-ops" ]; then
+            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
           if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "0" ]; then
             # PRなし（workflow_dispatch等）は安全側に倒してUIあり扱い
             echo "has_ui_changes=true" >> $GITHUB_OUTPUT
@@ -167,6 +172,11 @@ jobs:
           PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          # shingo-ops 以外は自動スキップ機能を無効化（常にUIあり扱い）
+          if [ "${{ github.actor }}" != "shingo-ops" ]; then
+            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
           if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "0" ]; then
             # PRなし（workflow_dispatch等）は安全側に倒してUIあり扱い
             echo "has_ui_changes=true" >> $GITHUB_OUTPUT
@@ -189,10 +199,10 @@ jobs:
     runs-on: self-hosted
     if: |
       always() &&
-      needs.context.result == 'success' &&
-      needs.context.outputs.proceed == 'true' &&
+      github.actor == 'shingo-ops' &&
+      github.event_name == 'pull_request' &&
       needs.context.outputs.has_adr_changes == 'true' &&
-      github.event_name == 'pull_request'
+      needs.context.result == 'success'
     outputs:
       completed: ${{ steps.run-researcher.outputs.completed }}
     steps:
@@ -639,6 +649,7 @@ jobs:
     needs: [context, claude-worker, reviewer, evaluator]
     if: |
       always() &&
+      github.actor == 'shingo-ops' &&
       needs.context.outputs.proceed == 'true' &&
       needs.evaluator.result != 'skipped' &&
       needs.evaluator.outputs.decision == 'APPROVED'
@@ -716,7 +727,7 @@ jobs:
       needs.context.outputs.proceed == 'true' &&
       needs.reviewer.outputs.decision == 'APPROVED' &&
       needs.evaluator.outputs.decision == 'APPROVED' &&
-      needs.governance.outputs.verdict != 'BLOCK'
+      (needs.governance.result == 'skipped' || needs.governance.outputs.verdict != 'BLOCK')
     steps:
       - name: Auto-merge to develop
         env:
