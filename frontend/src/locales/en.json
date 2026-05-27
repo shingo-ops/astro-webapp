@@ -136,9 +136,10 @@
   },
   "language": {
     "label": "Language",
-    "ja": "日本語",
+    "ja": "Japanese",
     "en": "English",
     "switchTo": "Switch language",
+    "kr": "Korean",
     "zh": "Chinese"
   },
   "dashboard": {
@@ -774,8 +775,8 @@
     "contactName": "Contact Name",
     "address": "Address",
     "colContact": "Contact",
-    "disableConfirmSuffix": " will be disabled.",
-    "disableLabel": "Disable",
+    "disableConfirmSuffix": " will be deleted.",
+    "disableLabel": "Delete",
     "subtitle": "Manage supplier information and contacts."
   },
   "purchaseOrders": {
@@ -1370,30 +1371,30 @@
     },
     "phaseSwitch": {
       "title": "Spreadsheet parallel-run Phase",
-      "subtitle": "Switch the inventory parallel-run Phase (A / B / C). spec v1.3 standardizes Phase B; Phase A is for emergency rollback only.",
+      "subtitle": "Switch the Discord-ingestion operation mode (A / B / C). Phase B is the normal mode; Phase A is for emergency rollback only.",
       "currentLabel": "Current Phase",
-      "phaseADesc": "Emergency rollback. products.stock_quantity is not updated.",
-      "phaseBDesc": "CRM source-of-truth operation (standard)",
-      "phaseABanner": "Phase A (emergency rollback): products.stock_quantity is not updated. The spec v1.3 standard is Phase B. Please switch back to Phase B as soon as possible.",
-      "outOfScope": "Switching to Phase {{phase}} is out of scope (spec v1.3, planned for a separate ADR)",
+      "phaseADesc": "Emergency rollback: only receive history is recorded, stock counts are not updated",
+      "phaseBDesc": "Normal operation: CRM updates stock counts directly",
+      "phaseABanner": "Currently in \"emergency rollback\" mode. Approvals will not update stock counts. Please return to normal operation (Phase B) as soon as possible.",
+      "outOfScope": "Switching to Phase {{phase}} is not yet available (planned for a future release)",
       "outOfScopeBadge": "separate ADR pending",
-      "outOfScopeTooltip": "Phase C is out of scope in spec v1.3. Full spreadsheet closure and bulk data migration will be decided in a separate ADR.",
+      "outOfScopeTooltip": "Phase C requires full spreadsheet closure + bulk data migration, decided in a separate ADR.",
       "currentTooltip": "This is the current Phase",
       "switchTo": "Switch to Phase {{phase}}",
       "switchSuccess": "Switched to Phase {{phase}}",
       "tenantIdMissing": "Failed to resolve tenant ID. Please log in again.",
-      "helpPhaseA": "Phase A (emergency rollback): CRM only receives/parses/records. products.stock_quantity is not updated. Not standard.",
-      "helpPhaseB": "Phase B (standard): CRM updates products.stock_quantity in real time. Uses spreadsheet data as test data.",
-      "helpPhaseC": "Phase C: Full spreadsheet closure + bulk data migration. Pending separate ADR."
+      "helpPhaseA": "Phase A (emergency rollback): only receive history is recorded, stock counts are not updated. Not the normal mode.",
+      "helpPhaseB": "Phase B (normal): stock counts are updated on approval. Spreadsheet data is used as reference data.",
+      "helpPhaseC": "Phase C: full spreadsheet closure + bulk data migration. Currently disabled, separate ADR pending."
     },
     "parseReview": {
       "phaseAWarning": {
-        "always": "Phase A (emergency rollback): stock counts are not updated. The standard operation is Phase B.",
-        "afterApprove": "Approved, but products.stock_quantity was not updated due to Phase A (emergency rollback) ({{count}} movements recorded)."
+        "always": "Currently in \"emergency rollback\" mode. Approvals will not update stock counts (receive history is still recorded). To return to normal operation, go to Management Center → Super Admin → Phase Switch.",
+        "afterApprove": "Approved successfully, but stock counts were not updated due to \"emergency rollback\" mode. {{count}} receive history entries were recorded."
       }
     },
     "inventoryOffers": {
-      "subtitle": "Current offers per supplier × product × condition. UPSERTed on F6 approve, also editable manually.",
+      "subtitle": "Manage the \"currently available products / stock / unit price\" per supplier. Saved automatically when Discord parse review is approved, and editable manually here.",
       "searchPlaceholder": "Search by supplier / product / SKU",
       "conditionPlaceholder": "Filter by condition",
       "statusAny": "Any status",
