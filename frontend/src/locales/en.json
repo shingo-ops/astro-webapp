@@ -1433,7 +1433,7 @@
         "manual": "Manual",
         "discord_parsed": "Discord parsed",
         "csv_import": "CSV import",
-        "f6_approved": "F6 approved"
+        "f6_approved": "Parse approval"
       }
     }
   },

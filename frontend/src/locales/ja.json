@@ -1433,7 +1433,7 @@
         "manual": "手動",
         "discord_parsed": "Discord 解析",
         "csv_import": "CSV 取込",
-        "f6_approved": "F6 承認"
+        "f6_approved": "解析承認"
       }
     }
   },
