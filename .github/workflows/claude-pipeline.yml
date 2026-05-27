@@ -6,6 +6,11 @@ name: Claude Max Auto-Pipeline (Partner Subscription)
 #   - workflow_dispatch: ADR 着手 (claude-worker → reviewer → evaluator → automerge or regenerate)
 #   - pull_request (synchronize): regenerate が PR ブランチに push した後、reviewer 以降を自動再起動
 #
+# Researcher 自動起動:
+#   - pull_request で docs/adr/ADR-*.md が変更された場合、context 後に researcher ジョブが起動
+#   - researcher は読み取り専用で調査結果を PR コメントに投稿する（後続 Generator が参照可能）
+#   - researcher の失敗・スキップは後続ジョブをブロックしない
+#
 # 安全装置:
 #   - pause-automation label PR は automerge / regenerate を停止
 #   - auto-retry-1..3 label で最大 3 回までリトライ、超過で needs-human-intervention label を付与し停止
@@ -49,6 +54,8 @@ jobs:
       pr_head_ref: ${{ steps.resolve.outputs.pr_head_ref }}
       adr_files: ${{ steps.resolve.outputs.adr_files }}
       retry_count: ${{ steps.resolve.outputs.retry_count }}
+      has_adr_changes: ${{ steps.detect-adr.outputs.has_adr_changes }}
+      adr_changed_files: ${{ steps.detect-adr.outputs.adr_changed_files }}
     steps:
       - name: Resolve PR / ADR context
         id: resolve
@@ -106,10 +113,102 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "proceed=$PROCEED reason=$REASON"
 
-  claude-worker:
-    needs: context
+      - name: Detect ADR file changes in PR
+        id: detect-adr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
+        run: |
+          set -e
+          if [ -n "$PR_NUMBER" ]; then
+            ADR_FILES_JSON=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json files \
+              --jq '[.files[].path | select(startswith("docs/adr/ADR-"))]' 2>/dev/null || echo "[]")
+            ADR_COUNT=$(echo "$ADR_FILES_JSON" | jq 'length')
+            if [ "$ADR_COUNT" -gt 0 ]; then
+              echo "has_adr_changes=true" >> "$GITHUB_OUTPUT"
+              # スペース区切りで全ADRファイルを渡す
+              ADR_LIST=$(echo "$ADR_FILES_JSON" | jq -r '.[]' | tr '\n' ' ' | sed 's/ *$//')
+              echo "adr_changed_files=${ADR_LIST}" >> "$GITHUB_OUTPUT"
+            else
+              echo "has_adr_changes=false" >> "$GITHUB_OUTPUT"
+              echo "adr_changed_files=" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "has_adr_changes=false" >> "$GITHUB_OUTPUT"
+            echo "adr_changed_files=" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ADR変更時にResearcherを自動起動: 設計前の抜け漏れを調査で補完する
+  researcher:
+    name: Researcher (ADR調査)
+    needs: [context]
     runs-on: self-hosted
     if: |
+      always() &&
+      needs.context.result == 'success' &&
+      needs.context.outputs.proceed == 'true' &&
+      needs.context.outputs.has_adr_changes == 'true' &&
+      github.event_name == 'pull_request'
+    outputs:
+      completed: ${{ steps.run-researcher.outputs.completed }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code as Researcher
+        id: run-researcher
+        env:
+          PR_NUMBER: ${{ needs.context.outputs.pr_number }}
+          ADR_CHANGED_FILES: ${{ needs.context.outputs.adr_changed_files }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+          claude -p \
+            --disallowedTools "Write Edit" \
+            --allowedTools "Read Grep Glob \
+              Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) \
+              Bash(git log:*) Bash(git diff:*) Bash(git show:*) \
+              Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr comment:*) \
+              mcp__context7__resolve-library-id mcp__context7__get-library-docs \
+              WebSearch WebFetch" \
+            --permission-mode bypassPermissions \
+            "まず ~/.claude/agents/researcher.md を Read ツールで読み込んで researcher エージェントとして動作してください。
+
+          #指示1:調査モード
+
+          調査対象ADRファイル: ${ADR_CHANGED_FILES}
+          PR番号: #${PR_NUMBER}
+          リポジトリ: ${REPO}
+
+          【手順】
+          1. 調査対象ADRファイルをすべて Read で読み込み、設計内容を把握してください
+          2. researcher.md のフェーズ1〜4の手順に従い調査を実施してください:
+             - フェーズ1: 外部事例調査（5W2H + 数値化）
+             - フェーズ2: 開発ルール整合チェック（CLAUDE.md / 既存ADR / CI）
+             - フェーズ3: 設計案レビュー（Reviewer視点での査定）
+             - フェーズ4: しんごさんへの実現可否サマリー
+          3. 調査結果を PR コメントとして投稿してください:
+             gh pr comment ${PR_NUMBER} --repo ${REPO} --body '<調査結果>'
+
+          【注意事項】
+          - コードの変更（Write/Edit）は行わない（読み取り専用）
+          - PR の作成・push・マージは行わない
+          - 調査結果は必ず PR コメントに投稿すること（後続の Generator が参照できるように）
+          " || true
+
+          echo "completed=true" >> "$GITHUB_OUTPUT"
+
+  claude-worker:
+    needs: [context, researcher]
+    runs-on: self-hosted
+    if: |
+      always() &&
+      needs.context.result == 'success' &&
+      needs.researcher.result != 'failure' &&
       github.event_name == 'workflow_dispatch' &&
       needs.context.outputs.proceed == 'true' &&
       (github.actor == 'shingo-ops' || github.actor == 'Hikky-dev')
