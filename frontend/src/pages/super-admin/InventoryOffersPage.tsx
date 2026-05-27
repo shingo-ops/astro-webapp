@@ -251,6 +251,12 @@ export default function InventoryOffersPage() {
           gap: "var(--space-2)",
           flexWrap: "wrap",
           marginBottom: "var(--space-4)",
+          position: "sticky",
+          top: 0,
+          background: "var(--bg-base)",
+          paddingTop: "var(--space-2)",
+          paddingBottom: "var(--space-2)",
+          zIndex: 1,
         }}
       >
         <input
@@ -307,21 +313,21 @@ export default function InventoryOffersPage() {
       </div>
 
       <table
-        className="data-table"
+        className="data-table offers-table-styled"
         data-testid="offers-table"
         aria-busy={loading}
       >
         <thead>
           <tr>
-            <th>{t("superAdmin.inventoryOffers.col.supplier")}</th>
-            <th>{t("superAdmin.inventoryOffers.col.product")}</th>
-            <th>{t("superAdmin.inventoryOffers.col.condition")}</th>
-            <th>{t("superAdmin.inventoryOffers.col.quantity")}</th>
-            <th>{t("superAdmin.inventoryOffers.col.unitPrice")}</th>
-            <th>{t("superAdmin.inventoryOffers.col.status")}</th>
-            <th>{t("superAdmin.inventoryOffers.col.source")}</th>
-            <th>{t("superAdmin.inventoryOffers.col.expiresAt")}</th>
-            <th>{t("superAdmin.inventoryOffers.col.actions")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.supplier")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.product")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.condition")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.quantity")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.unitPrice")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.status")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.source")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.expiresAt")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.actions")}</th>
           </tr>
         </thead>
         <tbody>
