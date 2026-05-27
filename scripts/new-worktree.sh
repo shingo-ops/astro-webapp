@@ -66,6 +66,24 @@ else
   echo ""
   echo "✅ worktree を作成しました: ${WORKTREE_DIR}"
 
+  # ── UUID ライフサイクル管理（.worktree-id を発行）────────────────────────────
+  WORKTREE_UUID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
+  CREATED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  python3 - "${WORKTREE_DIR}/.worktree-id" "${WORKTREE_UUID}" "${BRANCH}" "${CREATED_AT}" "${WORKTREE_DIR}" <<'PYEOF'
+import sys, json
+out_file, uuid_val, branch, created_at, worktree_path = \
+    sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+worktree_id = {
+    "uuid": uuid_val,
+    "branch": branch,
+    "created_at": created_at,
+    "worktree_path": worktree_path,
+}
+with open(out_file, "w", encoding="utf-8") as f:
+    json.dump(worktree_id, f, ensure_ascii=False, indent=2)
+print(f"🔑 UUID発行: {uuid_val}")
+PYEOF
+
   # Active Work Registry に自動登録（SSoT: .claude-pipeline/active-work.md）
   ACTIVE_WORK_FILE="${REPO_ROOT}/.claude-pipeline/active-work.md"
   if [ -f "${ACTIVE_WORK_FILE}" ]; then

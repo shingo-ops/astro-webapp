@@ -103,3 +103,6 @@ storybook-static
 
 # PR所有権管理（各worktreeローカル — コミット対象外）
 .pr-number
+
+# Worktree UUID識別子（各worktreeローカル — コミット対象外）
+.worktree-id

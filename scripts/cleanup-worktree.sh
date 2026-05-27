@@ -31,6 +31,14 @@ echo "   ブランチ: ${BRANCH}"
 echo "   パス    : ${WORKTREE_DIR}"
 echo ""
 
+# ── .worktree-id を削除（UUID解放）─────────────────────────────────────────
+WORKTREE_ID_FILE="${WORKTREE_DIR}/.worktree-id"
+if [ -f "${WORKTREE_ID_FILE}" ]; then
+  UUID_VAL="$(python3 -c "import json; d=json.load(open('${WORKTREE_ID_FILE}')); print(d.get('uuid','unknown'))" 2>/dev/null || echo 'unknown')"
+  echo "🔓 UUID解放: ${UUID_VAL}"
+  rm -f "${WORKTREE_ID_FILE}"
+fi
+
 # ── worktree 削除（メインリポジトリから実行）─────────────────────────────────
 git -C "${MAIN_REPO_ROOT}" worktree remove --force "${WORKTREE_DIR}" 2>/dev/null && \
   echo "✅ worktree削除完了: ${WORKTREE_DIR}" || \
