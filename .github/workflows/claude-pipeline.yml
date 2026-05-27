@@ -224,6 +224,17 @@ jobs:
 
           echo "completed=true" >> "$GITHUB_OUTPUT"
 
+      - name: Notify Discord (Researcher failure)
+        if: failure()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.context.outputs.pr_number }}
+          PR_URL: ${{ needs.context.outputs.pr_url }}
+        run: |
+          MSG="❌ **Researcher 失敗** PR #${PR_NUMBER}\n${PR_URL}\nGitHub Actions ログを確認してください。"
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+
   claude-worker:
     needs: [context, researcher]
     runs-on: self-hosted
@@ -603,34 +614,40 @@ jobs:
   # Governance Check — evaluator APPROVED 後、automerge 前に定着化検証を実施
   governance:
     name: Governance Check
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: self-hosted
     needs: [context, claude-worker, reviewer, evaluator]
     if: |
       always() &&
+      needs.context.outputs.proceed == 'true' &&
       needs.evaluator.result != 'skipped' &&
       needs.evaluator.outputs.decision == 'APPROVED'
     outputs:
       verdict: ${{ steps.run-governance.outputs.verdict }}
       pr_number: ${{ needs.reviewer.outputs.pr_number }}
-
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.PIPELINE_PAT }}
           fetch-depth: 0
 
       - name: Run Claude Code as Governance
         id: run-governance
         env:
           PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          set -e
           rm -f /tmp/governance_verdict.txt
-
-          claude --dangerously-skip-permissions -p "
-          まず ~/.claude/agents/governance.md を Read ツールで読み込んで governance エージェントとして動作してください。
+          claude -p \
+            --disallowedTools "WebFetch WebSearch" \
+            --allowedTools "Read Grep Glob \
+              Bash(gh pr view:*) Bash(gh pr diff:*) Bash(gh pr comment:*) \
+              Bash(git log:*) Bash(git diff:*) Bash(git show:*) \
+              Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(echo:*) Bash(tee:*)" \
+            --permission-mode bypassPermissions \
+            "まず ~/.claude/agents/governance.md を Read ツールで読み込んで governance エージェントとして動作してください。
 
           PR番号: ${PR_NUMBER}
           リポジトリ: ${REPO}
@@ -639,13 +656,17 @@ jobs:
           2. 判定結果（CERTIFIED / MONITOR / BLOCK）を /tmp/governance_verdict.txt に書き込んでください
              フォーマット: 1行目に判定結果のみ（例: CERTIFIED）
           3. gh pr comment ${PR_NUMBER} --repo ${REPO} にガバナンスレポートを投稿してください
-          " || true
+
+          【禁止事項】
+          - コードの変更 (Edit/Write) は行わない
+          - PR の作成・push・マージは行わない
+          - gh pr review --approve / --request-changes は呼ばない" || true
 
           if [ -f /tmp/governance_verdict.txt ]; then
             VERDICT=$(head -1 /tmp/governance_verdict.txt | tr -d '[:space:]' | cut -c1-20)
-            echo "verdict=${VERDICT}" >> $GITHUB_OUTPUT
+            echo "verdict=${VERDICT}" >> "$GITHUB_OUTPUT"
           else
-            echo "verdict=MONITOR" >> $GITHUB_OUTPUT
+            echo "verdict=MONITOR" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Block on BLOCK verdict
@@ -653,6 +674,17 @@ jobs:
         run: |
           echo "Governance returned BLOCK. Merge is not allowed until critical gaps are resolved."
           exit 1
+
+      - name: Notify Discord (Governance failure)
+        if: failure()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          PR_URL: ${{ needs.reviewer.outputs.pr_url }}
+        run: |
+          MSG="❌ **Governance Check 失敗** PR #${PR_NUMBER}\n${PR_URL}\nGitHub Actions ログを確認してください。"
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
 
   # ADR-056 §2-5: 両 APPROVE 時に develop へ自動 merge
   automerge:
