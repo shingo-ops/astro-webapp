@@ -16,7 +16,7 @@ import { login } from "./utils/real-backend";
 
 const PAGES = ["/", "/customers", "/leads", "/orders", "/channels"];
 
-test.describe("Scene 07: i18n & Settings (real backend)", () => {
+test.describe("Scene 07: i18n & Settings (real backend)", { tag: ['@scene-07'] }, () => {
   test("admin が ja → en 切替できる (Settings 画面)", async ({ page }) => {
     await login(page, "admin");
     await page.goto("/settings", { waitUntil: "domcontentloaded" });

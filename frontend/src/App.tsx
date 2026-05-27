@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { IconContext } from "@phosphor-icons/react";
 import { AuthProvider } from "./contexts/AuthContext";
 import { UiPrefsProvider } from "./contexts/UiPrefsContext";
 import { LocaleProvider } from "./contexts/LocaleContext";
@@ -75,7 +74,6 @@ function App() {
   //   - useNavigate などの react-router フックを将来 prefs フックから使えるようにする
   //   - インデント階層が PR diff として読みやすくなる
   return (
-    <IconContext.Provider value={{ weight: "light" }}>
     <AuthProvider>
       <BrowserRouter>
         <UiPrefsProvider>
@@ -258,7 +256,6 @@ function App() {
         </UiPrefsProvider>
       </BrowserRouter>
     </AuthProvider>
-    </IconContext.Provider>
   );
 }
 
