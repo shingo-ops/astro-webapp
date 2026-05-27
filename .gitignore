@@ -106,3 +106,6 @@ storybook-static
 
 # Worktree UUID識別子（各worktreeローカル — コミット対象外）
 .worktree-id
+
+# Prometheus secrets（VPS上のみ存在・gitに含めない）
+monitoring/prometheus/secrets/
