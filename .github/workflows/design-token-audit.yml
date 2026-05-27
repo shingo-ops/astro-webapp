@@ -1,0 +1,77 @@
+name: デザイントークン週次監査
+
+on:
+  schedule:
+    # 毎週月曜 09:00 JST（UTC 00:00）
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  audit-unused-tokens:
+    name: 未使用トークン監査
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 依存関係インストール
+        run: npm ci --prefer-offline
+
+      - name: 未使用トークン監査
+        id: audit
+        run: |
+          OUTPUT=$(npm run audit:unused-tokens 2>&1)
+          echo "$OUTPUT"
+          echo "result<<EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Issue 自動作成（未使用トークンあり）
+        if: contains(steps.audit.outputs.result, '未使用トークンが見つかりました')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `${{ steps.audit.outputs.result }}`;
+            const today = new Date().toISOString().slice(0, 10);
+
+            // 既存の同タイトルIssueがあればスキップ
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'design-token-audit',
+            });
+            if (existing.data.length > 0) {
+              console.log('未クローズのaudit Issueが既にあるためスキップ');
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[自動] 未使用デザイントークン監査 ${today}`,
+              body: [
+                '## 週次監査レポート',
+                '',
+                '以下の CSS 変数がトークンファイルに定義されていますが、どこからも参照されていません。',
+                '',
+                '```',
+                output,
+                '```',
+                '',
+                '## 対応方法',
+                '- **削除する**: 不要なトークンは `tokens.css` / `index.css` から削除してください',
+                '- **保留する**: 将来使用予定のトークンは理由をコメントで記載してください',
+                '',
+                '> このIssueは `.github/workflows/design-token-audit.yml` により自動作成されました',
+              ].join('\n'),
+              labels: ['design-token-audit'],
+            });
