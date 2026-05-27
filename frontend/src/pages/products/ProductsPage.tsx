@@ -356,10 +356,10 @@ export default function ProductsPage() {
                   {p.is_archived && <span className="badge badge-lost" style={{ marginLeft: "var(--space-6px)" }}>{t("products.status_discontinued")}</span>}
                 </td>
                 <td>{p.rarity || "-"}</td>
-                <td>{p.language || "-"}</td>
+                <td>{p.language ? t(`language.${p.language}`, { defaultValue: p.language }) : "-"}</td>
                 <td>{p.category || "-"}</td>
                 <td>
-                  {p.unit_price != null ? `¥${p.unit_price.toLocaleString()}` : "-"}
+                  {p.unit_price != null ? `¥${Math.round(p.unit_price).toLocaleString()}` : "-"}
                   {(p.unit_price_usd != null || p.unit_price_eur != null) && (
                     <span style={{ display: "block", fontSize: "var(--font-xs)", color: "var(--text-secondary)" }}>
                       {p.unit_price_usd != null ? `$${p.unit_price_usd}` : ""}
