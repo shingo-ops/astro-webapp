@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -33,6 +35,13 @@ jobs:
       - name: TypeScript type check (navKey template literal enforcement)
         run: npx tsc --noEmit
         working-directory: frontend
+
+      - name: 新規トークン追加の承認確認
+        run: npm run check:new-tokens
+        working-directory: frontend
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
 
       - name: Audit unused tokens (informational・非ブロック)
         run: npm run audit:unused-tokens
