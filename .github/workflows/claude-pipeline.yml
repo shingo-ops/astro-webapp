@@ -501,15 +501,70 @@ jobs:
             echo "decision=${RUN_DECISION}" >> "$GITHUB_OUTPUT"
           fi
 
+  # Governance Check — evaluator APPROVED 後、automerge 前に定着化検証を実施
+  governance:
+    name: Governance Check
+    runs-on: [self-hosted, Linux, X64]
+    needs: [context, claude-worker, reviewer, evaluator]
+    if: |
+      always() &&
+      needs.evaluator.result != 'skipped' &&
+      needs.evaluator.outputs.decision == 'APPROVED'
+    outputs:
+      verdict: ${{ steps.run-governance.outputs.verdict }}
+      pr_number: ${{ needs.reviewer.outputs.pr_number }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code as Governance
+        id: run-governance
+        env:
+          PR_NUMBER: ${{ needs.reviewer.outputs.pr_number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          rm -f /tmp/governance_verdict.txt
+
+          claude --dangerously-skip-permissions -p "
+          まず ~/.claude/agents/governance.md を Read ツールで読み込んで governance エージェントとして動作してください。
+
+          PR番号: ${PR_NUMBER}
+          リポジトリ: ${REPO}
+
+          1. governance.md の手順に従い、定着化検証を実施してください
+          2. 判定結果（CERTIFIED / MONITOR / BLOCK）を /tmp/governance_verdict.txt に書き込んでください
+             フォーマット: 1行目に判定結果のみ（例: CERTIFIED）
+          3. gh pr comment ${PR_NUMBER} --repo ${REPO} にガバナンスレポートを投稿してください
+          " || true
+
+          if [ -f /tmp/governance_verdict.txt ]; then
+            VERDICT=$(head -1 /tmp/governance_verdict.txt | tr -d '[:space:]' | cut -c1-20)
+            echo "verdict=${VERDICT}" >> $GITHUB_OUTPUT
+          else
+            echo "verdict=MONITOR" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Block on BLOCK verdict
+        if: steps.run-governance.outputs.verdict == 'BLOCK'
+        run: |
+          echo "Governance returned BLOCK. Merge is not allowed until critical gaps are resolved."
+          exit 1
+
   # ADR-056 §2-5: 両 APPROVE 時に develop へ自動 merge
   automerge:
-    needs: [context, claude-worker, reviewer, evaluator]
+    needs: [context, claude-worker, reviewer, evaluator, governance]
     runs-on: self-hosted
     if: |
       always() &&
       needs.context.outputs.proceed == 'true' &&
       needs.reviewer.outputs.decision == 'APPROVED' &&
-      needs.evaluator.outputs.decision == 'APPROVED'
+      needs.evaluator.outputs.decision == 'APPROVED' &&
+      needs.governance.outputs.verdict != 'BLOCK'
     steps:
       - name: Auto-merge to develop
         env:
