@@ -1,0 +1,1302 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sales Anchor QA チェックシート — 2026-05-27</title>
+<style>
+  :root {
+    --c-bg: #f6f7f9;
+    --c-card: #ffffff;
+    --c-border: #d8dde3;
+    --c-text: #1f2937;
+    --c-muted: #6b7280;
+    --c-accent: #2563eb;
+    --c-ok: #16a34a;
+    --c-ng: #dc2626;
+    --c-na: #6b7280;
+    --c-smoke: #ea580c;
+    --c-smoke-bg: #fff7ed;
+    --c-partial: #d97706;
+    --r-card: 8px;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  header.app-header {
+    position: sticky; top: 0; z-index: 10;
+    background: #fff;
+    border-bottom: 1px solid var(--c-border);
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+  }
+  .header-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; max-width: 1100px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 18px; flex: 1; min-width: 200px; }
+  .progress-pill {
+    font-size: 12px;
+    background: #eef2ff;
+    color: var(--c-accent);
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .btn {
+    border: 1px solid var(--c-border);
+    background: #fff;
+    color: var(--c-text);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #f3f4f6; }
+  .btn-primary { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-danger { color: var(--c-ng); border-color: #fecaca; }
+  .btn-danger:hover { background: #fef2f2; }
+
+  .tabs { display: flex; gap: 8px; margin: 16px 0 12px; flex-wrap: wrap; }
+  .tab-btn {
+    background: #fff;
+    border: 1px solid var(--c-border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .tab-btn.active {
+    background: var(--c-accent);
+    color: #fff;
+    border-color: var(--c-accent);
+  }
+  .tab-count { font-size: 11px; opacity: 0.8; margin-left: 4px; }
+
+  .filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn {
+    background: #fff;
+    border: 1px solid var(--c-border);
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .filter-btn.active {
+    background: var(--c-text);
+    color: #fff;
+    border-color: var(--c-text);
+  }
+
+  .section { margin-bottom: 24px; }
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    padding: 8px 0;
+    margin: 0 0 8px;
+    border-bottom: 2px solid var(--c-border);
+  }
+  .section-subtitle { font-size: 12px; color: var(--c-muted); margin-top: -4px; margin-bottom: 8px; }
+
+  .card {
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-card);
+    padding: 12px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+  }
+  .card.smoke {
+    border-color: var(--c-smoke);
+    background: var(--c-smoke-bg);
+  }
+  .card.hidden { display: none; }
+
+  .card-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .card-id {
+    display: inline-block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    background: #eef2ff;
+    color: var(--c-accent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .card-id.smoke { background: var(--c-smoke); color: #fff; }
+  .card-category {
+    display: inline-block;
+    font-size: 11px;
+    background: #f3f4f6;
+    color: var(--c-muted);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .card-sys {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin-left: auto;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .card-sys .sys-label {
+    font-size: 10px;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card-sys.ok { background: #dcfce7; color: var(--c-ok); border-color: #86efac; }
+  .card-sys.partial { background: #fef3c7; color: var(--c-partial); border-color: #fcd34d; }
+  .card-sys.none { background: #fee2e2; color: var(--c-ng); border-color: #fca5a5; }
+  .sys-reason {
+    margin: 4px 0 0;
+    padding: 6px 10px;
+    background: #fff7ed;
+    border-left: 3px solid var(--c-partial);
+    font-size: 11px;
+    color: #92400e;
+    border-radius: 0 4px 4px 0;
+  }
+  .sys-reason.none-reason {
+    background: #fef2f2;
+    border-left-color: var(--c-ng);
+    color: #991b1b;
+  }
+  .card-scenario { font-size: 15px; font-weight: 600; margin: 4px 0 6px; line-height: 1.4; }
+
+  details { margin: 6px 0; }
+  details > summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--c-muted);
+    padding: 2px 0;
+    user-select: none;
+  }
+  details > summary:hover { color: var(--c-accent); }
+  details > div.detail-body {
+    background: #f9fafb;
+    border-left: 3px solid var(--c-border);
+    padding: 8px 12px;
+    margin-top: 4px;
+    font-size: 13px;
+    white-space: pre-wrap;
+    border-radius: 0 4px 4px 0;
+  }
+  details > div.detail-body code {
+    background: #fff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  /* テスト 1〜3 回目のラッパー */
+  .trials-wrap { margin-top: 10px; }
+  .trial-block {
+    padding: 8px 10px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background: #fafbfc;
+  }
+  .trial-block + .trial-block { margin-top: 6px; }
+  .trial-header {
+    font-size: 11px;
+    color: var(--c-muted);
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .trial-num {
+    display: inline-block;
+    background: var(--c-accent);
+    color: #fff;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .status-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .status-btn {
+    border: 1px solid var(--c-border);
+    background: #fff;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    flex: 1;
+    min-width: 64px;
+  }
+  .status-btn.pending.active { background: #f3f4f6; border-color: var(--c-muted); }
+  .status-btn.ok.active { background: #dcfce7; border-color: var(--c-ok); color: var(--c-ok); font-weight: 600; }
+  .status-btn.ng.active { background: #fee2e2; border-color: var(--c-ng); color: var(--c-ng); font-weight: 600; }
+  .status-btn.na.active { background: #dbeafe; border-color: var(--c-accent); color: var(--c-accent); font-weight: 600; }
+
+  .memo {
+    width: 100%;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-family: inherit;
+    font-size: 12px;
+    resize: vertical;
+    min-height: 36px;
+    margin-top: 5px;
+    background: #fff;
+  }
+  .memo:focus { outline: 2px solid var(--c-accent); outline-offset: -2px; }
+
+  .footer-note {
+    margin: 24px 0;
+    padding: 12px;
+    background: #fff;
+    border: 1px dashed var(--c-border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--c-muted);
+  }
+
+  .receipt-table {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    border-collapse: collapse;
+    margin-top: 12px;
+  }
+  .receipt-table th, .receipt-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--c-border);
+    font-size: 13px;
+  }
+  .receipt-table th { background: #f9fafb; font-weight: 600; }
+  .receipt-table tr:last-child td { border-bottom: none; }
+
+  @media (max-width: 768px) {
+    h1 { font-size: 16px; }
+    .card-scenario { font-size: 14px; }
+    .status-btn { min-width: 64px; padding: 6px 8px; font-size: 12px; }
+  }
+
+  /* TOP に戻るボタン (右下固定) */
+  .btn-top {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--c-accent);
+    color: #fff;
+    border: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    font-size: 20px;
+    font-weight: 600;
+    display: none;
+    z-index: 100;
+    transition: all 0.2s;
+  }
+  .btn-top.visible { display: block; }
+  .btn-top:hover { background: #1d4ed8; transform: translateY(-2px); }
+
+  /* シナリオテスト用の特別スタイル */
+  .scn-step-num {
+    display: inline-block;
+    background: #1e40af;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  /* 検証ページへのリンク */
+  .target-link-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 6px 0;
+  }
+  .target-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #eef2ff;
+    color: var(--c-accent);
+    border: 1px solid #c7d2fe;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .target-link:hover {
+    background: var(--c-accent);
+    color: #fff;
+    border-color: var(--c-accent);
+  }
+  .target-link code {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+  .target-link:hover code {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
+
+  /* base URL 設定 */
+  .base-url-row {
+    background: #fff;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .base-url-row label { color: var(--c-muted); white-space: nowrap; }
+  .base-url-row input {
+    flex: 1;
+    min-width: 200px;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+  }
+  .base-url-row .base-url-preset {
+    background: #f3f4f6;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .base-url-row .base-url-preset:hover { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="header-row">
+    <h1>Sales Anchor QA チェックシート — 2026-05-27</h1>
+    <span class="progress-pill" id="progress-pill">📊 進捗: 0 / 0</span>
+    <button class="btn btn-primary" id="export-btn">💾 書き出し (JSON)</button>
+    <button class="btn btn-danger" id="reset-btn" title="LocalStorage を全消去">🗑 リセット</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs" id="tabs"></div>
+  <div class="filter-row" id="filters"></div>
+
+  <div class="base-url-row">
+    <label for="base-url-input">🌐 検証先 URL:</label>
+    <input id="base-url-input" type="url" placeholder="https://app.salesanchor.jp" />
+    <button class="base-url-preset" data-url="https://app.salesanchor.jp">本番</button>
+    <button class="base-url-preset" data-url="http://localhost:5173">ローカル</button>
+  </div>
+
+  <div id="sheet-content"></div>
+
+  <div class="footer-note">
+    <strong>運用フロー</strong><br>
+    1. 各カードでチェック (⬜ ✅ ❌ 🟦) + 必要に応じてメモ → ブラウザ閉じても LocalStorage に自動保存<br>
+    2. すべて完了後「💾 書き出し」 → <code>qa_results_YYYY-MM-DD.json</code> がダウンロードされる<br>
+    3. しんごさんに JSON を送付 / リポにコミット → 次回 Claude セッションで読み取り、改善 PR へ繋げる<br>
+    4. 新規 QA を開始するとき: 「🗑 リセット」で LocalStorage をクリア (確認ダイアログあり)
+  </div>
+
+  <h2 style="font-size: 16px; margin-top: 32px;">受領サイン</h2>
+  <table class="receipt-table">
+    <tr>
+      <th>役割</th><th>名前</th><th>受領日</th><th>備考</th>
+    </tr>
+    <tr>
+      <td>担当者 (QA 実施)</td>
+      <td>ひとしさん</td>
+      <td><input type="text" placeholder="YYYY-MM-DD" id="sign-hitoshi-date" style="border:1px solid #ccc; padding:4px; border-radius:4px;" /></td>
+      <td><input type="text" placeholder="サイン" id="sign-hitoshi-name" style="border:1px solid #ccc; padding:4px; border-radius:4px;" /></td>
+    </tr>
+    <tr>
+      <td>最終承認 (PO)</td>
+      <td>しんごさん</td>
+      <td><input type="text" placeholder="YYYY-MM-DD" id="sign-shingo-date" style="border:1px solid #ccc; padding:4px; border-radius:4px;" /></td>
+      <td><input type="text" placeholder="サイン" id="sign-shingo-name" style="border:1px solid #ccc; padding:4px; border-radius:4px;" /></td>
+    </tr>
+  </table>
+</div>
+
+<script>
+// =================================================================
+// DATA
+// =================================================================
+const SHEETS = {
+  inventory: {
+    id: "inventory",
+    title: "在庫管理 QA",
+    date: "2026-05-27",
+    sections: [
+      {
+        id: "smoke",
+        title: "🔥 重要動作確認セット (Smoke Pack)",
+        subtitle: "リリース後・障害復旧後にまず通す最小確認セット",
+        items: [
+          { id:"SM-1", category:"在庫一覧", scenario:"在庫表のページが表示される", expected:"商品の一覧表が表示され、エラーが出ない", steps:"サイドバー「在庫表」をクリック → 商品の表が画面に出る", sys:"ok", test_evidence:"ProductsPage 経路 + Claude実機 2026-05-16 navigate OK", notes:"—", smoke:true, urls:["/inventory"] },
+          { id:"SM-2", category:"仕入元オファー一覧", scenario:"「仕入元現在オファー」画面が開き、一覧表と件数が出る", expected:"仕入元 × 商品 × 状態 単位の表が描画される", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「仕入元現在オファー」をクリック\n3) 表 + 下部に「N 件中 1〜M 件目を表示」が見える", sys:"ok", test_evidence:"f11-ac11-5-super-admin-inventory-offers.spec.ts (4 ケース)", notes:"スーパー管理者権限が必要。表示されない場合は権限を確認", smoke:true, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"SM-3", category:"検索結果に仕入元オファー", scenario:"商品検索の候補に各仕入元のオファーが出る", expected:"候補行の右端に「仕入元オファー N 件」と最大 3 件の (仕入元名 / 状態 / 数量 / 単価) が表示される。4 件以上は「他 N 件」表示", steps:"1) サイドバー「請求書作成」をクリック → 見積一覧ページ\n2) ページ右上の「+ 新規見積」ボタンを押す\n3) 商品検索ボックスに「リザードン」など複数オファーがある商品名を入力\n4) 候補ドロップダウンに各仕入元のオファーが compact 表示", sys:"ok", test_evidence:"f11-ac11-4-inventory-search-offers.spec.ts (2 ケース)", notes:"—", smoke:true, urls:["/quotes/new"] },
+          { id:"SM-4", category:"Discord 取り込み + 承認", scenario:"Discord メッセージの解析結果に状態/数量/単価を入力し、承認できる", expected:"「承認」ボタンを押すと完了メッセージが出て、public.inventory に在庫データが反映される", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビの「スーパー管理者」セクション内「Discord 受信一覧」\n3) 受信メッセージ行の「レビュー」ボタンを押す\n4) 行ごとに 状態 (プルダウン) / 提示数量 / 単価 を入力\n5) 画面下「承認」ボタンを押す → 「承認しました」のメッセージが出る", sys:"ok", test_evidence:"f11-ac11-3-parse-review-inventory-fields.spec.ts (4 ケース)", notes:"スーパー管理者権限が必要", smoke:true, urls:["/management-center/super-admin/inbound"] },
+          { id:"SM-5", category:"仕入先一覧", scenario:"仕入先の一覧表と新規登録ボタンが見える", expected:"仕入先のテーブルが表示され、右上に「+ 新規登録」ボタンが見える", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビの「データ管理」セクション内「仕入先」をクリック\n3) 仕入先テーブル + 右上「+ 新規登録」ボタンを確認", sys:"partial", test_evidence:"API テストのみ、画面の自動テストなし", notes:"仕入先閲覧権限が必要", smoke:true, urls:["/management-center/suppliers"] }
+        ]
+      },
+      {
+        id: "A",
+        title: "A. 在庫メインページ (/inventory)",
+        items: [
+          { id:"I-01", category:"在庫一覧", scenario:"在庫表のページが表示される", expected:"商品の一覧表が画面に出る (エラーは出ない)", steps:"サイドバー「在庫表」をクリック → 商品の表が表示される", sys:"ok", test_evidence:"ProductsPage 経路", notes:"🔥 SM-1", smoke:false, urls:["/inventory"] },
+          { id:"I-02", category:"検索", scenario:"商品名や JAN コードで部分一致検索ができる", expected:"入力した文字を含む商品だけが表に残る", steps:"1) サイドバー「在庫表」\n2) 検索ボックスに商品名 (例「リザードン」) や JAN コードを入力\n3) 表が絞り込まれて表示されることを確認", sys:"ok", test_evidence:"test_inventory_search.py + test_inventory_search_logic.py", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"I-03", category:"AND/OR 切替", scenario:"「AND」「OR」の切替ボタンが動く", expected:"ボタンの押下状態が切り替わり、検索結果も更新される", steps:"1) サイドバー「在庫表」\n2) 検索ボックス右側の「AND」「OR」切替ボタンをクリック\n3) ボタンの押された見た目が変わり、検索結果も再取得されることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.7/7.8", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"I-04", category:"在庫切れ表示", scenario:"在庫数 0 の商品は灰色 + 警告マークで表示される", expected:"在庫 0 の行が他より暗く、警告マークが付く", steps:"1) サイドバー「在庫表」\n2) 検索ボックスに在庫数 0 の商品名を入力\n3) 該当行が灰色になり、警告マークが付くことを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.5", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"I-05", category:"マスク表示", scenario:"他テナントの商品の在庫数は伏字 (***) で表示される", expected:"在庫列が *** に置き換わる", steps:"1) tenant_004 アカウントでログイン\n2) サイドバー「在庫表」\n3) 他テナント所有の商品を検索\n4) 在庫列が *** 表示になることを確認", sys:"ok", test_evidence:"test_inventory_visibility_permissions.py", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"I-06", category:"パフォーマンス", scenario:"検索結果が体感速く出る (500ms 以内)", expected:"入力後に待ち時間を感じない", steps:"1) サイドバー「在庫表」\n2) 検索ボックスに件数の多い語 (例「ポケモン」「Box」) を入力\n3) 結果が体感的に遅延なく出ることを確認", sys:"ok", test_evidence:"test_inventory_search_perf.py", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"I-07", category:"テナント越境ガード", scenario:"他テナントの在庫 ID を URL に直接入れても見られない", expected:"アクセスがブロックされる (画面に内容が漏れない)", steps:"1) ブラウザのアドレスバーに他テナントの在庫 ID URL (例 /inventory/12345) を直接入力\n2) ブロックされることを確認", sys:"ok", test_evidence:"test_rls_tenant_meta_config.py 類似", notes:"—", smoke:false, urls:["/inventory"] }
+        ]
+      },
+      {
+        id: "B",
+        title: "B. 商品マスタ (/management-center/super-admin/masters 商品タブ)",
+        items: [
+          { id:"M-01", category:"一覧表示", scenario:"商品マスタの一覧が表示される", expected:"商品の表が描画される", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「マスタ管理（中央）」をクリック\n3) 商品タブを選択 → 商品マスタの表が描画されることを確認", sys:"ok", test_evidence:"super-admin-masters.spec.ts", notes:"スーパー管理者権限が必要", smoke:false, urls:["/management-center/super-admin/masters"] },
+          { id:"M-02", category:"新規登録", scenario:"商品を新規登録できる", expected:"一覧に新しい商品が追加される", steps:"1) M-01 の画面 → 商品タブ\n2) 右上「+ 新規登録」ボタン\n3) モーダルに必須項目を入力 → 「Register」 → 一覧に追加されることを確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
+          { id:"M-03", category:"編集", scenario:"商品を編集できる", expected:"値の変更が一覧に反映される", steps:"1) M-01 の画面 → 商品タブ\n2) 編集したい商品行の「Edit」ボタン\n3) モーダルで値を変更 → 「Update」 → 一覧反映を確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
+          { id:"M-04", category:"削除", scenario:"商品を削除できる", expected:"削除した商品が一覧から消える", steps:"1) M-01 の画面 → 商品タブ\n2) 商品行の「Delete」ボタン → 確認モーダル → 「Delete」\n3) 一覧から消えることを確認", sys:"partial", test_evidence:"API テスト", notes:"削除操作 (テストデータのみで実施)", smoke:false, urls:["/management-center/super-admin/masters"] },
+          { id:"M-05", category:"ポケモン辞書連動", scenario:"編集モーダルで expansion_code のオートコンプリートが効く", expected:"入力時に候補が表示される", steps:"1) M-01 → 商品タブ → 「Edit」モーダル\n2) expansion_code 欄を入力 → 候補が表示されることを確認", sys:"partial", test_evidence:"test_seed_pokemon_dex.py + 手動", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
+          { id:"M-06", category:"テナント越境ガード", scenario:"他テナントの商品 ID にアクセスできない", expected:"アクセスがブロックされる", steps:"アドレスバーに他テナントの商品 ID URL を直接入力 → ブロックされることを確認", sys:"ok", test_evidence:"test_inventory_visibility_permissions.py", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] }
+        ]
+      },
+      {
+        id: "C",
+        title: "C. 仕入先 (/management-center/suppliers)",
+        items: [
+          { id:"S-01", category:"一覧表示", scenario:"仕入先の一覧表 + 新規登録ボタンが見える", expected:"テーブル + 右上「+ 新規登録」ボタン", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「データ管理」セクション内「仕入先」をクリック\n3) 仕入先テーブル + 右上「+ 新規登録」ボタンを確認", sys:"partial", test_evidence:"API テスト", notes:"🔥 SM-5", smoke:false, urls:["/management-center/suppliers"] },
+          { id:"S-02", category:"新規登録", scenario:"仕入先を新規登録できる", expected:"一覧に追加される", steps:"1) S-01 の画面\n2) 右上「+ 新規登録」ボタン\n3) モーダルに名前 / Discord ID 等を入力 → 「Register」 → 一覧反映", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/suppliers"] },
+          { id:"S-03", category:"編集", scenario:"仕入先の情報を編集できる", expected:"変更が一覧に反映される", steps:"1) S-01 の画面\n2) 行の「Edit」ボタン → モーダルで Discord ID / 名前を変更 → 「Save」 → 一覧反映", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/suppliers"] },
+          { id:"S-04", category:"別名 (エイリアス) 登録", scenario:"仕入先ごとに商品名の別名を登録できる", expected:"別名登録後、商品名の表記揺れを吸収できる", steps:"1) S-01 の画面\n2) 仕入先行をクリック → 詳細画面\n3) 「エイリアス」タブを選択 → 「+ 新規登録」 → 別名を入力して登録", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/suppliers"] },
+          { id:"S-05", category:"Discord 連携", scenario:"Discord channel と紐付いた仕入先のメッセージが受信一覧に出る", expected:"紐付けた仕入先からの受信メッセージが表示される", steps:"1) サイドバー「管理センター」\n2) 左サブナビ「スーパー管理者」セクション内「Discord 受信一覧」\n3) 紐付けた仕入先のメッセージが表示されることを確認", sys:"ok", test_evidence:"super-admin-discord-inbound.spec.ts", notes:"KL-DISCORD-CHANS", smoke:false, urls:["/management-center/super-admin/inbound"] }
+        ]
+      },
+      {
+        id: "D",
+        title: "D. 仕入発注 (/management-center/purchase-orders)",
+        items: [
+          { id:"PO-01", category:"一覧表示", scenario:"発注一覧 + ステータス絞り込みが表示される", expected:"表 + ステータスフィルタ (待ち / 仕入中 / 配送中 / 完了 等)", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「データ管理」セクション内「発注」をクリック\n3) 発注テーブル + ステータスフィルタが描画されることを確認", sys:"ok", test_evidence:"order-purchase.spec.ts + test_order_purchase_details.py", notes:"—", smoke:false, urls:["/management-center/purchase-orders"] },
+          { id:"PO-02", category:"新規登録", scenario:"発注を新規登録できる", expected:"一覧に追加される", steps:"1) PO-01 の画面\n2) 右上「+ 新規登録」ボタン\n3) モーダルに仕入先 / 商品 / 数量 / 単価を入力 → 「Register」 → 一覧反映", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/purchase-orders"] },
+          { id:"PO-03", category:"PDF 出力", scenario:"発注書 PDF をダウンロードできる", expected:"PDF ファイルが生成・ダウンロードされる", steps:"1) PO-01 の画面\n2) 発注行の「PDF」ボタンを押す\n3) PDF がダウンロード / 表示されることを確認", sys:"ok", test_evidence:"po-pdf-mail.spec.ts", notes:"—", smoke:false, urls:["/management-center/purchase-orders"] },
+          { id:"PO-04", category:"メール送信", scenario:"発注書 PDF をメール送信できる", expected:"送信成功の通知が出る", steps:"1) PO-01 の画面\n2) 発注行の「メール送信」ボタン\n3) 確認モーダル → 宛先確認 → 「Send」 → 送信成功通知を確認", sys:"partial", test_evidence:"po-pdf-mail.spec.ts mock", notes:"—", smoke:false, urls:["/management-center/purchase-orders"] },
+          { id:"PO-05", category:"入荷確認", scenario:"入荷を確定すると履歴に追加される", expected:"在庫履歴 (inventory_movements) に新規行が追加される", steps:"1) PO-01 の画面\n2) 発注行の「入荷確認」ボタン\n3) 数量入力 → 「Confirm」 → 履歴 + ステータス更新を確認", sys:"ok", test_evidence:"test_inventory_movements_invariant.py", notes:"—", smoke:false, urls:["/management-center/purchase-orders"] }
+        ]
+      },
+      {
+        id: "E",
+        title: "E. Discord 取り込み + 解析レビュー (F6)",
+        items: [
+          { id:"F6-01", category:"受信一覧", scenario:"Discord から取り込んだメッセージの一覧が表示される", expected:"受信メッセージの表 + 各行の処理状態ラベル (解析中 / ルール解析済 / 承認済 等)", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「Discord 受信一覧」をクリック\n3) 受信メッセージの表と処理状態ラベルが描画されることを確認", sys:"ok", test_evidence:"super-admin-discord-inbound.spec.ts", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-02", category:"解析レビュー", scenario:"解析結果の各行を採用 / スキップ選択して承認できる", expected:"承認時にバックエンドへ正しい内容が送信される", steps:"1) F6-01 の画面\n2) 受信メッセージ行の「レビュー」ボタン\n3) 各行のチェックボックスで採用 / スキップを選択\n4) 画面下「承認」ボタン → 完了メッセージ表示", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.1", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-03", category:"F11 入力欄 (状態/数量/単価)", scenario:"レビュー画面で状態 / 提示数量 / 単価を入力して承認できる", expected:"送信内容に 3 項目が乗ることを確認", steps:"1) F6-02 の画面に到達\n2) 行の 状態 (プルダウン) / 提示数量 / 単価 を入力\n3) 「承認」 → 送信内容に値が反映されることを確認", sys:"ok", test_evidence:"f11-ac11-3-parse-review-inventory-fields.spec.ts (4 ケース)", notes:"🔥 SM-4", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-04", category:"F11 在庫データ反映", scenario:"承認後、public.inventory テーブルに在庫データが書き込まれる", expected:"既存行は更新、無ければ新規追加", steps:"1) F6-03 で承認実行\n2) VPS 側 psql で SELECT * FROM public.inventory WHERE supplier_id=X AND product_id=Y AND condition='Z' を確認\n3) 既存行があれば更新、なければ新規追加されていることを確認", sys:"ok", test_evidence:"test_f11_inventory_upsert.py (5 PG ケース)", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-05", category:"同時編集時の挙動", scenario:"他の人が先に承認した場合、自分の操作はエラーになる", expected:"エラーメッセージ表示 + 画面の自動再読み込み", steps:"1) 2 つのブラウザタブで同じレビュー画面 (/super-admin/inbound/:id/review) を開く\n2) タブ A で「承認」 → 成功\n3) タブ B で「承認」 → エラーメッセージ + 自動再読み込みを確認", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.5", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-06", category:"差戻し", scenario:"差戻し時に理由欄が必須", expected:"理由空欄ならエラー、入力すれば差戻し成功", steps:"1) F6-02 の画面\n2) 「差戻し」ボタン → 理由入力モーダル\n3) 理由を空のまま「Confirm」 → エラー表示\n4) 続いて理由を入力 → 「Confirm」 → 差戻し成功を確認", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.4", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-07", category:"権限ガード", scenario:"スーパー管理者以外はレビュー画面に入れない", expected:"403 アラート表示 + レビューテーブル非表示", steps:"1) スーパー管理者でない一般ユーザーでログイン\n2) アドレスバーに /super-admin/inbound/:id/review を直接入力\n3) 403 アラートが表示され、レビューテーブルが描画されないことを確認", sys:"ok", test_evidence:"test_parse_review_rbac.py + super-admin-parse-review.spec.ts AC6.8", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-08", category:"LLM 解析", scenario:"自動解析 (ルール + LLM) の結果が反映される", expected:"処理状態が「解析中」→「ルール解析済」or「LLM 解析済」へ遷移", steps:"1) F6-01 の画面\n2) 処理状態が「解析中」の受信行を発見し、数秒待つ\n3) 状態が確定し、解析内容がリストアップされることを確認", sys:"partial", test_evidence:"test_inventory_parser_llm_real_api.py (実 API)", notes:"KL-LLM-DRYRUN", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-09", category:"Phase A 警告表示", scenario:"Phase A 中の承認では警告が出る", expected:"「Phase A」の警告メッセージ表示", steps:"A) サイドバー「管理センター」 → 「スーパー管理者」 → 「Phase Switch」で一時的に Phase A に切替\nB) F6-02 で承認実行\nC) 「Phase A」警告メッセージが表示されることを確認\nD) 確認後、Phase B に戻す", sys:"ok", test_evidence:"parse-review-phase-a-warning.spec.ts", notes:"KL-PHASE-B", smoke:false, urls:["/management-center/super-admin/phase","/management-center/super-admin/inbound"] }
+        ]
+      },
+      {
+        id: "F",
+        title: "F. 在庫検索 (見積新規画面の商品検索ボックス)",
+        items: [
+          { id:"F7-01", category:"検索バー表示", scenario:"見積新規画面に商品検索ボックスが出る", expected:"検索ボックスが表示され、プレースホルダーも翻訳済み", steps:"1) サイドバー「請求書作成」をクリック\n2) ページ右上「+ 新規見積」ボタン\n3) 見積行の検索ボックスのプレースホルダーが日本語 / 英語切替で正しく出ることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts", notes:"—", smoke:false, urls:["/quotes/new"] },
+          { id:"F7-02", category:"候補選択", scenario:"候補をクリックすると見積行に標準名と単価が入る", expected:"商品名と単価が自動入力される", steps:"1) F7-01 の画面\n2) 検索ボックスに商品名を入力\n3) 候補ドロップダウンの行をクリック\n4) 見積行の商品名と単価が自動入力されることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.4", notes:"—", smoke:false, urls:["/quotes/new"] },
+          { id:"F7-03", category:"仕入元オファー表示", scenario:"候補に各仕入元のオファーが小さく表示される", expected:"各候補行に「仕入元オファー N 件」+ 最大 3 件のオファー詳細 (仕入元名 / 状態 / 数量 / 単価)", steps:"1) F7-01 の画面\n2) 検索ボックスに複数仕入元が出る商品名 (例「リザードン」) を入力\n3) 候補リストに各仕入元のオファーが小さく表示されることを確認", sys:"ok", test_evidence:"f11-ac11-4-inventory-search-offers.spec.ts (2 ケース)", notes:"🔥 SM-3", smoke:false, urls:["/quotes/new"] },
+          { id:"F7-04", category:"「他 N 件」表示", scenario:"仕入元オファーが 4 件以上ある場合に「他 N 件」が表示される", expected:"翻訳済みで日英両方の表記が出る", steps:"1) F7-03 の画面\n2) 4 件以上のオファーがある商品で「他 N 件」表示を確認 (日本語 / 英語両方)", sys:"ok", test_evidence:"同上 (f11-ac11-4)", notes:"—", smoke:false, urls:["/quotes/new"] },
+          { id:"F7-05", category:"マスク表示 (オファー)", scenario:"他テナントのオファーは数量 / 単価が伏字 (***)", expected:"数量 / 単価列が ***", steps:"1) F7-01 の画面\n2) 他テナント所有商品で検索\n3) 候補のオファーの数量 / 単価列が *** 表示になることを確認", sys:"ok", test_evidence:"同上 (f11-ac11-4)", notes:"—", smoke:false, urls:["/quotes/new"] },
+          { id:"F7-06", category:"在庫切れ警告", scenario:"在庫 0 商品を見積行に追加すると警告が出る", expected:"該当行に警告メッセージ", steps:"1) F7-01 の画面\n2) 在庫 0 の商品を検索 → 候補をクリックして見積行に追加\n3) 該当行に警告メッセージが表示されることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.5", notes:"—", smoke:false, urls:["/quotes/new"] }
+        ]
+      },
+      {
+        id: "G",
+        title: "G. 仕入元別現在オファー (/management-center/super-admin/inventory-offers)",
+        items: [
+          { id:"F11-01", category:"権限ガード", scenario:"スーパー管理者以外はブロックされる", expected:"403 アラート表示 + テーブル非表示", steps:"1) スーパー管理者でない一般ユーザーでログイン\n2) アドレスバーに /management-center/super-admin/inventory-offers を直接入力\n3) 403 アラートが表示され、テーブルが描画されないことを確認", sys:"ok", test_evidence:"f11-ac11-5-super-admin-inventory-offers.spec.ts (権限ガード)", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-02", category:"一覧表示", scenario:"仕入元別オファーの一覧 + 件数表示", expected:"表 + 「N 件中 1〜M 件目を表示」", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「仕入元現在オファー」をクリック\n3) テーブル + 下部に件数表示があることを確認", sys:"ok", test_evidence:"同上 (f11-ac11-5)", notes:"🔥 SM-2", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-03", category:"検索", scenario:"仕入元名 / 商品名 / 商品コードで検索ができる", expected:"入力 250ms 後にフィルタされる (カクつき無し)", steps:"1) F11-02 の画面\n2) 上部の検索ボックスに仕入元名 or 商品名 or コードの部分文字列を入力\n3) フィルタされた結果が表示されることを確認 (カクつき無し)", sys:"ok", test_evidence:"同上 (検索テスト)", notes:"PR #914 でカクつき修正済", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-04", category:"絞り込みフィルタ", scenario:"状態 / コンディションで絞り込める", expected:"結果がフィルタされる", steps:"1) F11-02 の画面\n2) 状態プルダウン (在庫あり / 在庫切れ / 予約済 / アーカイブ) で選択、もしくはコンディション欄に入力\n3) 結果が絞り込まれることを確認", sys:"ok", test_evidence:"API 経路確認", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-05", category:"編集 (行内編集)", scenario:"行内で 数量 / 単価 / 状態 / メモ / 期限 を編集できる", expected:"「Save」で更新成功メッセージ + 反映", steps:"1) F11-02 の画面\n2) 編集したい行の「Edit」ボタン\n3) 数量 / 単価 / 状態 / メモ / 期限 を変更 → 「Save」\n4) 「オファーを更新しました」メッセージ + テーブル反映を確認", sys:"ok", test_evidence:"同上 (PATCH テスト)", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-06", category:"削除", scenario:"オファーを削除できる (確認モーダル付き)", expected:"削除成功メッセージ + 一覧から消える", steps:"1) F11-02 の画面\n2) 行の「Delete」ボタン → 確認モーダル「『商品名』のオファーを削除しますか？」\n3) 「OK」 → 「オファーを削除しました」メッセージ + 一覧から消えることを確認", sys:"partial", test_evidence:"API テストのみ", notes:"削除操作 (テストデータのみで実施)", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-07", category:"経路 (source) 表示", scenario:"オファーの登録経路がわかりやすく表示される", expected:"「手動 / F6 承認 / CSV 取込 / Discord 解析」が翻訳済みで表示", steps:"1) F11-02 の画面のテーブル「経路」列で各 source が日本語で表示されることを確認\n2) ヘッダーの言語切替で英語に変更 → 同じ列が英語表記になることを確認", sys:"partial", test_evidence:"翻訳キー存在確認のみ", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-08", category:"重複登録チェック", scenario:"同じ (仕入元 / 商品 / 状態) で 2 回登録すると 409 エラー", expected:"2 回目はエラーで拒否される", steps:"1) curl / Postman で POST /api/v1/super-admin/inventory-offers を同じ (supplier_id, product_id, condition) で 2 回送信\n2) 2 回目が 409 エラーで拒否されることを確認", sys:"ok", test_evidence:"test_inventory_offers_rbac.py", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-09", category:"権限ガード (API)", scenario:"API レベルでも一般ユーザーは弾かれる", expected:"GET / POST / PATCH / DELETE すべて 403", steps:"curl で各 API (GET / POST / PATCH / DELETE) をスーパー管理者と一般ユーザーで叩き、一般ユーザーがすべて 403 で弾かれることを確認", sys:"ok", test_evidence:"test_inventory_offers_rbac.py (7 ケース)", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] }
+        ]
+      },
+      {
+        id: "H",
+        title: "H. 在庫履歴 (inventory_movements)",
+        items: [
+          { id:"H-01", category:"履歴記録", scenario:"入庫 / 出庫があると履歴行が追加される", expected:"履歴は追加のみ (編集不可)、経路と数量が記録される", steps:"A) F6-02 (Discord 解析レビュー承認) を 1 件実行、または D-PO-05 (発注入荷確認) を実行\nB) VPS 側 psql で SELECT * FROM tenant_NNN.inventory_movements ORDER BY created_at DESC LIMIT 5\nC) 新規行が経路 + 数量付きで追加されていることを確認", sys:"ok", test_evidence:"test_inventory_movements_invariant.py", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound","/management-center/purchase-orders"] },
+          { id:"H-02", category:"整合性チェック", scenario:"履歴の合計 = 現在の在庫数になる", expected:"DB の整合性が保たれている", steps:"VPS 側 psql で任意の商品 X について以下を比較\nSELECT SUM(delta_qty) FROM tenant_NNN.inventory_movements WHERE product_id=X\nSELECT stock_quantity FROM tenant_NNN.products WHERE id=X\n両者が一致することを確認 (Phase B 切替後のみ)", sys:"ok", test_evidence:"同上 (test_inventory_movements_invariant.py)", notes:"Phase B 中のみ実際の在庫数を反映", smoke:false, urls:["/management-center/super-admin/inbound","/management-center/purchase-orders"] }
+        ]
+      },
+      {
+        id: "I",
+        title: "I. テナント可視性 (/admin/inventory-visibility)",
+        items: [
+          { id:"V-01", category:"可視性設定", scenario:"テナント別に在庫の公開設定ができる", expected:"設定 UI が表示される", steps:"1) 「在庫可視性編集」権限ありのテナント管理者でログイン\n2) サイドバー「管理センター」 → 左サブナビ「ビジネス設定」セクション内「在庫可視性」 (もしくはアドレスバーに /admin/inventory-visibility 直入力)\n3) 可視性設定の UI が描画されることを確認", sys:"ok", test_evidence:"tenant-inventory-visibility.spec.ts + test_inventory_visibility_permissions.py", notes:"—", smoke:false, urls:["/admin/inventory-visibility"] },
+          { id:"V-02", category:"権限ガード", scenario:"権限なしユーザーはアクセスできない", expected:"403 アラート表示", steps:"1) 「在庫可視性編集」権限なしのユーザーでログイン\n2) アドレスバーに /admin/inventory-visibility を直接入力\n3) 403 アラートが表示されることを確認", sys:"ok", test_evidence:"同上", notes:"—", smoke:false, urls:["/admin/inventory-visibility"] },
+          { id:"V-03", category:"マスク反映", scenario:"設定変更後、検索結果のマスク状態が変わる", expected:"該当商品の在庫列が *** 表示になる", steps:"1) V-01 の画面で特定の商品 / テナント組み合わせを「マスクする」に設定\n2) サイドバー「在庫表」または「請求書作成」→「+ 新規見積」 → 検索\n3) 該当商品の在庫列が *** 表示になることを確認", sys:"ok", test_evidence:"同上", notes:"—", smoke:false, urls:["/admin/inventory-visibility"] }
+        ]
+      },
+      {
+        id: "J",
+        title: "J. Phase B 切替 (/management-center/super-admin/phase)",
+        items: [
+          { id:"PB-01", category:"現在 Phase 表示", scenario:"現在の Phase が表示される", expected:"「現在 Phase: B」ラベル (英語表示時は「Current Phase: B」)", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「Phase Switch」をクリック\n3) 「現在 Phase: B」のラベルが表示されることを確認", sys:"ok", test_evidence:"super-admin-phase-switch.spec.ts AC9.5", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] },
+          { id:"PB-02", category:"Phase C 無効化", scenario:"Phase C 切替ボタンは押せない", expected:"ボタンが押せず、ツールチップで「別 ADR で検討中」表示", steps:"1) PB-01 の画面\n2) Phase C ボタンにマウスホバー\n3) ボタンが押せず、ツールチップで「別 ADR で検討中」が表示されることを確認", sys:"ok", test_evidence:"同上", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] },
+          { id:"PB-03", category:"切替権限", scenario:"権限なしユーザーはアクセスできない", expected:"403 アラート表示", steps:"1) 「Phase 切替」権限なしのユーザーでログイン\n2) アドレスバーに /management-center/super-admin/phase を直接入力\n3) 403 アラートが表示されることを確認", sys:"ok", test_evidence:"同上 AC9.3", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] },
+          { id:"PB-04", category:"切替履歴", scenario:"Phase 切替時に履歴が記録される", expected:"履歴に行が追加される", steps:"1) PB-01 の画面で Phase B → Phase A → Phase B などを実際に切替\n2) VPS 側 psql で SELECT * FROM public.audit_log WHERE action='phase.switch' ORDER BY created_at DESC LIMIT 5\n3) 切替操作が記録されていることを確認", sys:"partial", test_evidence:"API テストのみ", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] },
+          { id:"PB-05", category:"警告非表示確認", scenario:"Phase B 中は Phase A 警告が出ない", expected:"警告メッセージが表示されない", steps:"A) PB-01 で Phase B 設定を確認\nB) F6-02 (Discord 解析レビュー承認) を 1 件実行\nC) 「Phase A」警告メッセージが表示されないことを確認", sys:"ok", test_evidence:"parse-review-phase-a-warning.spec.ts AC9.6", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] }
+        ]
+      },
+      {
+        id: "K",
+        title: "K. 知識ルール (knowledge_rules)",
+        items: [
+          { id:"K-01", category:"一覧表示", scenario:"知識ルールの一覧が表示される", expected:"テーブル描画", steps:"(現状の画面パスは未確定)\n1) サイドバー「管理センター」をクリック\n2) 左サブナビで「ナレッジルール」もしくは「Knowledge Rules」項目を探す → 該当があればクリック\n3) 該当 UI が無い場合は API 経由 (GET /api/v1/knowledge-rules) で確認", sys:"partial", test_evidence:"API テストのみ", notes:"—", smoke:false, urls:["/management-center"] },
+          { id:"K-02", category:"ルール適用", scenario:"解析時にルールが補助として使われる", expected:"解析結果に「ルール解析済」ステータスが反映される", steps:"1) F6-01 (Discord 受信一覧) の画面\n2) 処理状態「ルール解析済」の行を観察\n3) ルール経由でパース成功 → 商品 ID が解決されていることを確認", sys:"partial", test_evidence:"test_inventory_parser_rule.py", notes:"—", smoke:false, urls:["/management-center"] }
+        ]
+      }
+    ]
+  },
+  orders: {
+    id: "orders",
+    title: "受注管理 QA",
+    date: "2026-05-27",
+    sections: [
+      {
+        id: "smoke",
+        title: "🔥 重要動作確認セット (Smoke Pack)",
+        subtitle: "リリース後・障害復旧後にまず通す最小確認セット",
+        items: [
+          { id:"SM-O-1", category:"受注一覧", scenario:"受注一覧ページが表示される", expected:"テーブル + ステータスタブ (全件 / 待ち / 仕入中 / 配送中 / 完了 / トラブル / キャンセル) が描画され、エラーが出ない", steps:"サイドバー「受注一覧」をクリック → 受注テーブルとステータス絞り込みタブが表示される", sys:"ok", test_evidence:"orders-list.spec.ts + test_orders.py + ADR-021 AC-5.1", notes:"🔥", smoke:true, urls:["/orders"] },
+          { id:"SM-O-2", category:"受注詳細 (4 モーダル)", scenario:"受注の売上 / 発送 / 仕入 / 報酬 タブが開く", expected:"4 種類のモーダルがそれぞれ正しい内容で表示される", steps:"1) サイドバー「受注一覧」\n2) 任意の受注行をクリック または 行の「詳細」ボタン\n3) 売上 / 発送 / 仕入 / 報酬 の各タブ (モーダル) を順に開く → 各内容が表示されることを確認", sys:"ok", test_evidence:"order-financial.spec.ts / order-shipping.spec.ts / order-purchase.spec.ts / order-commission.spec.ts", notes:"KL-F1 N+1 体感は除外", smoke:true, urls:["/orders"] },
+          { id:"SM-O-3", category:"ステータス変更", scenario:"受注のステータスを変更できる", expected:"ステータスタブの件数 + 一覧表示が更新される", steps:"1) サイドバー「受注一覧」\n2) 行の「編集」ボタン or ステータスメニュー\n3) ステータスを 待ち → 仕入中 等に変更 → 保存\n4) タブの件数 + 一覧が更新されることを確認", sys:"ok", test_evidence:"orders-list.spec.ts + test_orders.py ステータス遷移 + J1 fix", notes:"J1 で confirmed 削除済 (5 値化)", smoke:true, urls:["/orders"] },
+          { id:"SM-O-4", category:"5 ロール報酬計算", scenario:"受注の報酬タブで 5 ロール (スーパー管理者 / 管理者 / マネージャー / 営業 / 紹介者) の取り分が表示される", expected:"ロールごとの金額が正しく計算され、合計が受注額と一致する", steps:"1) サイドバー「受注一覧」\n2) 受注行クリック → 「報酬」タブを開く\n3) 5 ロール別の金額表示と合計を確認", sys:"ok", test_evidence:"order-commission.spec.ts + ADR-021 AC-5.11", notes:"—", smoke:true, urls:["/orders"] },
+          { id:"SM-O-5", category:"ダッシュボード KPI", scenario:"ダッシュボードに受注金額 / 件数の月次集計が表示される", expected:"KPI カードが表示され、JST 基準の月次集計が見える", steps:"1) サイドバー「ダッシュボード」(or ホームアイコン) をクリック\n2) 受注金額 / 件数 KPI カードを確認\n3) 月次集計が JST 基準で正しいことを確認 (J2 fix 反映済)", sys:"ok", test_evidence:"test_dashboard_kpi*.py + J2 fix (PR #339)", notes:"—", smoke:true, urls:["/orders"] }
+        ]
+      },
+      {
+        id: "A",
+        title: "A. 受注一覧 (/orders)",
+        items: [
+          { id:"O-01", category:"一覧表示", scenario:"受注一覧ページが表示される", expected:"受注テーブル + ステータスタブが描画される", steps:"サイドバー「受注一覧」をクリック → 一覧表が表示される", sys:"ok", test_evidence:"orders-list.spec.ts + test_orders.py AC-5.1", notes:"🔥 SM-O-1", smoke:false, urls:["/orders"] },
+          { id:"O-02", category:"ステータスタブ", scenario:"ステータス別にタブが分かれ、件数が表示される", expected:"全件 / 待ち / 仕入中 / 配送中 / 完了 / トラブル / キャンセル の各タブに件数表示", steps:"O-01 の画面の上部タブを確認", sys:"ok", test_evidence:"test_orders.py (group-counts) + J1 fix", notes:"J1 で confirmed 削除済 (5 値化)", smoke:false, urls:["/orders"] },
+          { id:"O-03", category:"検索", scenario:"顧客名 / 受注番号 / 商品名 で検索ができる", expected:"入力した文字を含む受注だけが表に残る", steps:"1) O-01 の画面\n2) 上部の検索ボックスに文字列を入力\n3) 表が絞り込まれることを確認", sys:"ok", test_evidence:"orders-list.spec.ts 検索 + test_orders.py AC-5.2", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"O-04", category:"ステータスフィルタ", scenario:"ステータスタブのクリックで絞り込める", expected:"クリックしたステータスの受注だけが表に残る", steps:"1) O-01 の画面\n2) 上部タブ (例: 「仕入中」) をクリック\n3) 該当ステータスの受注のみ表示されることを確認", sys:"ok", test_evidence:"同上 (orders-list.spec.ts)", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"O-05", category:"並び替え", scenario:"カラムヘッダで並び替えができる", expected:"受注日 / 金額 / 顧客名 等で昇順 / 降順に並び替わる", steps:"1) O-01 の画面\n2) テーブルのカラムヘッダをクリック\n3) 並び替わることを確認 (もう一度クリックで逆順)", sys:"ok", test_evidence:"ADR-021 AC-5.2", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"O-06", category:"新規登録", scenario:"受注を新規登録できる", expected:"一覧に追加される", steps:"1) O-01 の画面\n2) 右上「+ 新規登録」ボタン\n3) モーダルに顧客 / 商品 / 数量 / 金額を入力 → 「Register」 → 一覧反映", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"O-07", category:"編集", scenario:"受注の情報を編集できる", expected:"変更が一覧に反映される", steps:"1) O-01 の画面\n2) 行の「Edit」ボタン → モーダルで値変更 → 「Update」 → 反映確認", sys:"partial", test_evidence:"test_orders.py PATCH", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"O-08", category:"削除", scenario:"受注を削除できる", expected:"削除した受注が一覧から消える", steps:"1) O-01 の画面\n2) 行の「Delete」ボタン → 確認モーダル → 「Delete」 → 消えたことを確認", sys:"partial", test_evidence:"test_orders.py DELETE", notes:"削除操作 (テストデータのみで実施)", smoke:false, urls:["/orders"] },
+          { id:"O-09", category:"ページネーション", scenario:"ページ送りが動く", expected:"次ページ / 前ページに切り替わる", steps:"1) O-01 の画面\n2) テーブル下部「次へ」「前へ」ボタン\n3) 別ページの受注が表示されることを確認", sys:"ok", test_evidence:"orders-list.spec.ts", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"O-10", category:"テナント越境ガード", scenario:"他テナントの受注 ID にアクセスできない", expected:"アクセスがブロックされる", steps:"アドレスバーに他テナントの受注 ID URL を直接入力 → ブロックされることを確認", sys:"ok", test_evidence:"test_orders.py RLS + test_security.py", notes:"—", smoke:false, urls:["/orders"] }
+        ]
+      },
+      {
+        id: "B",
+        title: "B. 受注詳細 - 売上タブ (financial)",
+        items: [
+          { id:"F-01", category:"売上タブ表示", scenario:"売上タブのモーダルが開く", expected:"受注金額 / 通貨 / 入金状況 等が表示される", steps:"1) サイドバー「受注一覧」\n2) 受注行クリック または 「詳細」ボタン\n3) 「売上」タブを選択 → モーダル表示", sys:"ok", test_evidence:"order-financial.spec.ts + test_order_financial*.py", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"F-02", category:"売上金額編集", scenario:"売上金額 / 入金日 等を編集できる", expected:"「Save」で更新成功 + 反映", steps:"1) F-01 のモーダル\n2) 売上金額 / 入金日 等を入力 → 「Save」 → 反映確認", sys:"ok", test_evidence:"同上 (order-financial.spec.ts)", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"F-03", category:"通貨表示", scenario:"通貨単位 (JPY 等) が正しく表示される", expected:"「¥」マーク + 三桁区切り", steps:"1) F-01 のモーダル\n2) 金額表示の通貨フォーマットを確認", sys:"partial", test_evidence:"UI 目視", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"F-04", category:"入金ステータス", scenario:"入金状況 (未入金 / 一部入金 / 完了) が表示される", expected:"ステータスバッジが正しい色 + 文言で表示される", steps:"1) F-01 のモーダル\n2) 入金ステータスバッジを確認", sys:"partial", test_evidence:"UI 目視", notes:"—", smoke:false, urls:["/orders"] }
+        ]
+      },
+      {
+        id: "C",
+        title: "C. 受注詳細 - 発送タブ (shipping)",
+        items: [
+          { id:"SH-01", category:"発送タブ表示", scenario:"発送タブのモーダルが開く", expected:"発送先 / 配送業者 / 追跡番号 / 配送料 等が表示される", steps:"1) サイドバー「受注一覧」\n2) 受注行クリック または 「詳細」ボタン\n3) 「発送」タブを選択 → モーダル表示", sys:"ok", test_evidence:"order-shipping.spec.ts + test_order_shipping*.py", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"SH-02", category:"発送情報編集", scenario:"発送先 / 配送業者 / 追跡番号 を編集できる", expected:"「Save」で更新成功 + 反映", steps:"1) SH-01 のモーダル\n2) 発送情報を入力 → 「Save」 → 反映確認", sys:"ok", test_evidence:"同上 (order-shipping.spec.ts)", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"SH-03", category:"発送日 / 到着日", scenario:"発送日 / 到着日 を入力できる", expected:"日付ピッカーで入力 + 保存可", steps:"1) SH-01 のモーダル\n2) 発送日 / 到着日 を入力 → 「Save」", sys:"ok", test_evidence:"同上 (order-shipping.spec.ts)", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"SH-04", category:"追跡番号リンク", scenario:"追跡番号がクリックでヤマト等の追跡ページに遷移", expected:"外部リンクが開く", steps:"1) SH-01 のモーダル\n2) 追跡番号リンクをクリック → 外部ページ遷移", sys:"partial", test_evidence:"UI 目視", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"SH-05", category:"配送料計算", scenario:"配送先 + 配送業者で配送料が自動計算される", expected:"配送料が表示される", steps:"1) SH-01 のモーダル\n2) 配送先 / 配送業者を選択 → 配送料表示確認", sys:"partial", test_evidence:"test_order_shipping*.py (shipping_rates 連動)", notes:"KL-MIG005 (本番 tenant_004 で shipping_zones / shipping_rates テーブル未作成のため動かない可能性)", smoke:false, urls:["/orders"] }
+        ]
+      },
+      {
+        id: "D",
+        title: "D. 受注詳細 - 仕入タブ (purchase)",
+        items: [
+          { id:"P-01", category:"仕入タブ表示", scenario:"仕入タブのモーダルが開く", expected:"仕入先 / 仕入価格 / 仕入日 等が表示される", steps:"1) サイドバー「受注一覧」\n2) 受注行クリック または 「詳細」ボタン\n3) 「仕入」タブを選択 → モーダル表示", sys:"ok", test_evidence:"order-purchase.spec.ts + test_order_purchase_details.py", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"P-02", category:"仕入情報編集", scenario:"仕入先 / 仕入価格 / 仕入日 を編集できる", expected:"「Save」で更新成功 + 反映", steps:"1) P-01 のモーダル\n2) 仕入情報を入力 → 「Save」 → 反映確認", sys:"ok", test_evidence:"同上 (order-purchase.spec.ts)", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"P-03", category:"仕入式の計算", scenario:"仕入価格 + 仕入手数料 から原価が計算される", expected:"原価表示が正しい", steps:"1) P-01 のモーダル\n2) 仕入価格を入力 → 原価が自動表示されることを確認", sys:"ok", test_evidence:"ADR-021 仕入式テスト", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"P-04", category:"仕入発注連動", scenario:"関連する仕入発注 PO とリンクされる", expected:"仕入発注 ID がリンクで表示される", steps:"1) P-01 のモーダル\n2) 仕入発注 PO ID リンク → 仕入発注画面に遷移", sys:"partial", test_evidence:"UI 目視", notes:"—", smoke:false, urls:["/orders"] }
+        ]
+      },
+      {
+        id: "E",
+        title: "E. 受注詳細 - 報酬タブ (commission) — ADR-021 5 ロール式",
+        items: [
+          { id:"CM-01", category:"報酬タブ表示", scenario:"報酬タブのモーダルが開く", expected:"5 ロール (スーパー管理者 / 管理者 / マネージャー / 営業 / 紹介者) の取り分一覧が表示される", steps:"1) サイドバー「受注一覧」\n2) 受注行クリック または 「詳細」ボタン\n3) 「報酬」タブを選択 → モーダル表示", sys:"ok", test_evidence:"order-commission.spec.ts + ADR-021 AC-5.11", notes:"🔥 SM-O-4", smoke:false, urls:["/orders"] },
+          { id:"CM-02", category:"5 ロール取り分計算", scenario:"5 ロールの取り分が正しく計算される", expected:"各ロールの金額 + 合計が受注金額と一致 (社員フラグありは除外)", steps:"1) CM-01 のモーダル\n2) 各ロール (スーパー管理者 / 管理者 / マネージャー / 営業 / 紹介者) の金額を確認\n3) 合計が受注額と一致することを確認", sys:"ok", test_evidence:"5 ロール × 4 シナリオ Evaluator 独立検証済 (ADR-021_completion_report.md)", notes:"社員フラグ除外仕様", smoke:false, urls:["/orders"] },
+          { id:"CM-03", category:"担当者設定", scenario:"各ロールの担当者を編集できる", expected:"担当者を変更 → 取り分計算が再計算される", steps:"1) CM-01 のモーダル\n2) 営業 or 紹介者の担当者プルダウンで別の人を選択 → 「Save」 → 取り分が再計算される", sys:"ok", test_evidence:"同上 (order-commission.spec.ts)", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"CM-04", category:"取り分レート編集", scenario:"各ロールの取り分レート (%) を編集できる", expected:"レート変更 → 取り分計算が再計算される", steps:"1) CM-01 のモーダル\n2) レート入力欄で % を変更 → 「Save」 → 取り分が再計算される", sys:"ok", test_evidence:"同上", notes:"KL-F4 (過去レートでの遡及再計算は不可)", smoke:false, urls:["/orders"] },
+          { id:"CM-05", category:"報酬計算式の整合性", scenario:"OrderFlow Spreadsheet の現行式と一致する", expected:"4 シナリオすべてで一致", steps:"1) CM-01 のモーダルの計算結果を Spreadsheet と比較\n2) 4 シナリオ (異なる受注金額 / ロール構成) で照合", sys:"ok", test_evidence:"Spreadsheet 共有完了 + Evaluator 独立検証済", notes:"—", smoke:false, urls:["/orders"] }
+        ]
+      },
+      {
+        id: "F",
+        title: "F. ダッシュボード KPI / 月次集計",
+        items: [
+          { id:"K-01", category:"KPI 表示", scenario:"ダッシュボードに受注 KPI カードが表示される", expected:"受注金額 / 件数 / 平均単価 等のカード表示", steps:"1) サイドバー「ダッシュボード」(or 左上ホームアイコン)\n2) KPI カードが描画されることを確認", sys:"ok", test_evidence:"scene1-dashboard.spec.ts + test_dashboard_kpi*.py", notes:"🔥 SM-O-5", smoke:false, urls:["/management-center"] },
+          { id:"K-02", category:"月次集計 (JST)", scenario:"月次集計が JST 基準で表示される", expected:"月の境界が JST 0:00 で切り替わる (UTC 15h ずれは無し)", steps:"1) K-01 の画面\n2) 月次グラフ / 集計の月境界が JST 基準であることを確認 (J2 fix 反映済)", sys:"ok", test_evidence:"J2 fix (PR #339) + test_dashboard_kpi*.py", notes:"KL-F2 解消済 (J2 で JST 化)", smoke:false, urls:["/management-center"] },
+          { id:"K-03", category:"期間フィルタ", scenario:"期間 (今月 / 先月 / 任意) でフィルタできる", expected:"期間を変更すると KPI / グラフが更新される", steps:"1) K-01 の画面\n2) 期間セレクト (今月 / 先月 / カスタム) を変更 → 更新確認", sys:"ok", test_evidence:"同上", notes:"—", smoke:false, urls:["/management-center"] },
+          { id:"K-04", category:"ダッシュボードキャッシュ無効化", scenario:"受注変更後にダッシュボードが古いデータを表示しない", expected:"受注新規 / 編集 / 削除後にダッシュボードリロードで最新数字", steps:"A) O-06 で受注新規登録\nB) K-01 のダッシュボードを再表示\nC) KPI に新規受注が反映されることを確認", sys:"ok", test_evidence:"PR #9 dashboard cache invalidation", notes:"—", smoke:false, urls:["/management-center"] }
+        ]
+      },
+      {
+        id: "G",
+        title: "G. レポート (期間別売上)",
+        items: [
+          { id:"R-01", category:"レポートページ表示", scenario:"レポートページが表示される", expected:"期間別売上 / グラフ / ダウンロードボタン", steps:"1) サイドバー「管理センター」\n2) 左サブナビ「データ管理」セクション内「レポート」もしくは「分析」項目をクリック\n3) レポート画面が描画されることを確認", sys:"partial", test_evidence:"UI 目視", notes:"—", smoke:false, urls:["/management-center"] },
+          { id:"R-02", category:"期間別売上集計", scenario:"期間別の受注金額が表示される", expected:"月別 / 週別の集計テーブル + グラフ", steps:"1) R-01 の画面\n2) 期間別売上テーブル / グラフを確認", sys:"partial", test_evidence:"UI 目視", notes:"KL-C2 (過去 634 件未移行)", smoke:false, urls:["/management-center"] },
+          { id:"R-03", category:"CSV ダウンロード", scenario:"レポートを CSV でダウンロードできる", expected:"CSV ファイルが生成・ダウンロードされる", steps:"1) R-01 の画面\n2) 「CSV ダウンロード」ボタン\n3) ファイルがダウンロードされ、Excel で開いて文字化けしないことを確認", sys:"partial", test_evidence:"UI 目視", notes:"—", smoke:false, urls:["/management-center"] }
+        ]
+      },
+      {
+        id: "H",
+        title: "H. 権限 (RBAC)",
+        items: [
+          { id:"RB-01", category:"閲覧権限", scenario:"orders.view 権限がないと受注一覧にアクセスできない", expected:"サイドバーに「受注一覧」が出ない、または直リンクで 403", steps:"1) orders.view 権限なしユーザーでログイン\n2) サイドバーに「受注一覧」が表示されないことを確認\n3) アドレスバーに /orders 直入力 → 403 確認", sys:"ok", test_evidence:"test_orders.py RBAC", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"RB-02", category:"編集権限", scenario:"orders.update 権限がないと編集ボタンが押せない", expected:"編集 / 削除ボタンが disabled もしくは非表示", steps:"1) orders.view のみあり、orders.update なしのユーザーでログイン\n2) サイドバー「受注一覧」 → 行の編集 / 削除ボタンが操作不可であることを確認", sys:"partial", test_evidence:"UI 目視 + API テスト", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"RB-03", category:"報酬閲覧権限", scenario:"自分以外の取り分は見えない (社員フラグ除外)", expected:"自分が担当のロール以外の金額は伏字 / 非表示", steps:"1) sales ロール (営業) のユーザーでログイン\n2) サイドバー「受注一覧」 → 受注詳細 → 報酬タブ\n3) 自分の取り分のみ表示、他ロールは伏字 / 非表示を確認", sys:"ok", test_evidence:"test_order_commission*.py 権限フィルタ", notes:"社員フラグ除外仕様", smoke:false, urls:["/orders"] }
+        ]
+      }
+    ]
+  },
+  scenarios: {
+    id: "scenarios",
+    title: "シナリオテスト (E2E)",
+    date: "2026-05-27",
+    sections: [
+      {
+        id: "scn-a",
+        title: "🔗 SCN-A. Discord 取り込み → 在庫反映 (フル E2E)",
+        subtitle: "仕入先登録 → Discord channel 紐付け → 受信 → 解析 → 承認 → 在庫反映 → 検索表示 まで一気通貫",
+        items: [
+          { id:"SCN-A-01", category:"準備 1/9", scenario:"テスト用の仕入先を新規登録する", expected:"仕入先一覧に新規行が表示される", steps:"1) サイドバー「管理センター」→ サブナビ「データ管理」→「仕入先」\n2) 右上「+ 新規登録」\n3) 名前「テスト仕入先 (QA)」+ 必要項目を入力 → 「Register」\n4) 一覧に追加されたことを確認", sys:"partial", test_evidence:"API テストのみ", notes:"これ以降のステップで使う仕入先 ID をメモ", smoke:false, urls:["/management-center/suppliers"] },
+          { id:"SCN-A-02", category:"準備 2/9", scenario:"仕入先に Discord channel ID を紐付ける", expected:"仕入先詳細に channel ID が保存される", steps:"1) SCN-A-01 で作った仕入先の行をクリック → 詳細画面\n2) Discord channel ID 入力欄に紐付けたい channel の ID を入力\n3) 「Save」 → 反映確認", sys:"partial", test_evidence:"API テストのみ", notes:"channel ID は Discord 開発者モードで右クリック→「ID をコピー」", smoke:false, urls:["/management-center/suppliers"] },
+          { id:"SCN-A-03", category:"取り込み 3/9", scenario:"Discord 側で該当 channel にメッセージ送信 → 受信一覧に表示される", expected:"受信一覧に新しい行が追加され、処理状態が「解析中」", steps:"1) Discord の該当 channel で「ピカチュウ AR Box 2セット @4500」のようなメッセージを送信\n2) サイドバー「管理センター」→ サブナビ「スーパー管理者」→「Discord 受信一覧」を開く\n3) 数秒以内に新規行が追加され、処理状態ラベルが「解析中」になることを確認", sys:"partial", test_evidence:"webhook + rule parser テスト、実 Discord はモック化されている", notes:"KL-DISCORD-CHANS: 該当 channel に Bot が参加済か事前確認", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-A-04", category:"解析 4/9", scenario:"数秒待つと処理状態が「ルール解析済」または「LLM 解析済」に遷移", expected:"処理状態が確定し、商品名・数量・単価がパースされる", steps:"1) SCN-A-03 の受信行を観察\n2) 30 秒以内に処理状態が「ルール解析済」(parsed_rule_only) または「LLM 解析済」(parsed_llm) に遷移\n3) 行をクリックして詳細を見ると、items[] に商品名・数量・単価が入っていることを確認", sys:"partial", test_evidence:"test_inventory_parser_rule.py + test_inventory_parser_llm_real_api.py", notes:"KL-LLM-DRYRUN: 本番 LLM は実 API なのでコスト発生", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-A-05", category:"レビュー 5/9", scenario:"レビュー画面で状態 / 数量 / 単価 を入力する", expected:"3 項目すべてに値が入る", steps:"1) SCN-A-04 の受信行の「レビュー」ボタンを押す\n2) パースされた各行の状態 (プルダウン)、提示数量、単価 を入力\n3) 入力したい行のみ採用、ノイズ行はスキップにチェック", sys:"ok", test_evidence:"f11-ac11-3-parse-review-inventory-fields.spec.ts", notes:"🔥 SM-4 と同じ手順", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-A-06", category:"承認 6/9", scenario:"承認ボタンを押すと完了メッセージが出る", expected:"「承認しました」「N 件追加されました」のメッセージ", steps:"1) SCN-A-05 の入力完了後、画面下「承認」ボタンを押す\n2) 完了メッセージが表示される\n3) 受信一覧に戻ると、該当行の状態が「承認済」に変わっている", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.1", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-A-07", category:"反映確認 7/9", scenario:"public.inventory に在庫データが書き込まれた", expected:"DB に該当行 (supplier × product × condition) が存在", steps:"1) Mac 側で `ssh ubuntu@49.212.137.46`\n2) VPS 側で `cd /home/ubuntu/salesanchor && docker compose exec -T postgres bash -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB -c \"SELECT * FROM public.inventory WHERE supplier_id=X AND product_id=Y AND condition='\\''sealed'\\''\"'`\n3) 行が存在し、quantity / unit_price が SCN-A-05 で入力した値と一致することを確認", sys:"ok", test_evidence:"test_f11_inventory_upsert.py (5 PG ケース)", notes:"X = SCN-A-01 の仕入先 ID, Y = 解析された商品 ID", smoke:false, urls:[] },
+          { id:"SCN-A-08", category:"検索表示 8/9", scenario:"在庫検索 (見積画面) に新オファーが表示される", expected:"候補リストに該当商品が出て、右端に SCN-A-01 の仕入先名 + 数量 + 単価が compact 表示", steps:"1) サイドバー「請求書作成」→ 右上「+ 新規見積」\n2) 検索ボックスに該当商品名を入力\n3) 候補ドロップダウンに該当商品が出て、右端に「仕入元オファー N 件」+ 仕入先名 / 状態 / 数量 / 単価 が表示されることを確認", sys:"ok", test_evidence:"f11-ac11-4-inventory-search-offers.spec.ts", notes:"🔥 SM-3 と同じ", smoke:false, urls:["/quotes/new"] },
+          { id:"SCN-A-09", category:"管理画面 9/9", scenario:"仕入元別オファー画面に該当行があり、編集できる", expected:"該当オファーが一覧に表示され、Edit ボタンで数量/単価/状態を変更可", steps:"1) サイドバー「管理センター」→ サブナビ「スーパー管理者」→「仕入元現在オファー」\n2) 検索ボックスに SCN-A-01 の仕入先名を入力 → 該当行を絞り込み\n3) 行の「Edit」ボタン → 数量や状態を変更 → 「Save」 → 更新成功メッセージを確認", sys:"ok", test_evidence:"f11-ac11-5-super-admin-inventory-offers.spec.ts", notes:"🔥 SM-2 と同じ", smoke:false, urls:["/management-center/super-admin/inventory-offers"] }
+        ]
+      },
+      {
+        id: "scn-b",
+        title: "🤖 SCN-B. Gemini LLM 解析の動作確認",
+        subtitle: "LLM パーサー (Gemini 2.5 Flash) の実動作 + 異常系 + コスト確認",
+        items: [
+          { id:"SCN-B-01", category:"準備 1/6", scenario:"Discord 受信一覧画面を開いて新規メッセージを待つ", expected:"画面に最新の受信行が表示される", steps:"1) サイドバー「管理センター」→ サブナビ「スーパー管理者」→「Discord 受信一覧」\n2) 画面を開いて新規メッセージを待つ (or テスト用に自分で送信)", sys:"ok", test_evidence:"super-admin-discord-inbound.spec.ts", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-B-02", category:"処理状態遷移 2/6", scenario:"処理状態が「解析中」→「ルール解析済」or「LLM 解析済」に遷移する", expected:"30 秒以内に状態が確定する", steps:"1) SCN-B-01 の画面で新規行の処理状態を観察\n2) 「解析中」状態が表示される\n3) 30 秒以内に「ルール解析済」(parsed_rule_only) or 「LLM 解析済」(parsed_llm) に遷移", sys:"partial", test_evidence:"test_inventory_parser_llm.py + test_inventory_parser_llm_real_api.py", notes:"30 秒以上かかる場合は VPS log を確認", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-B-03", category:"ルール優先 3/6", scenario:"ルール (rule_v1) が解決可能な行は LLM を呼ばずに完結する", expected:"処理状態が「ルール解析済」になり、LLM コストが発生しない", steps:"1) SCN-B-02 でメッセージが定型 (「商品名 N個 @価格」) の場合、状態が「ルール解析済」になる\n2) VPS 側で `docker compose logs --tail=50 backend | grep llm` を実行 → LLM 呼び出しが無いことを確認", sys:"partial", test_evidence:"test_inventory_parser_rule.py", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-B-04", category:"LLM 解析 4/6", scenario:"ルールで解決できない複雑な行で LLM が呼ばれ、items に商品 ID が解決される", expected:"処理状態が「LLM 解析済」、items[] に商品 ID と数量・単価が入る", steps:"1) Discord で複雑なメッセージ (「リザードン SAR の最後の 3 枚を @18000 でいかがでしょう」など) を送信\n2) SCN-B-01 の画面で該当行を観察\n3) 状態が「LLM 解析済」になる\n4) 行をクリック → 詳細で items[] が解決されていることを確認", sys:"partial", test_evidence:"test_inventory_parser_llm_real_api.py (実 API)", notes:"KL-LLM-DRYRUN: 本番 LLM の実 API コストが発生", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-B-05", category:"異常系 5/6", scenario:"パースできない行は「unparsed」or「excludes」に振り分けられる", expected:"items に入らず、unparsed / excludes 配列に分類される", steps:"1) Discord で意味不明なメッセージ (「こんにちは」「絵文字のみ」) を送信\n2) SCN-B-01 の画面で該当行を観察\n3) 状態が「ルール解析済」or「LLM 解析済」になる\n4) 行をクリック → items[] は空、unparsed[] or excludes[] に該当テキストが入っていることを確認", sys:"partial", test_evidence:"test_inventory_parser_rule.py 異常系 + test_inventory_parser_llm.py", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-B-06", category:"コスト確認 6/6", scenario:"VPS log で LLM 呼び出しのコストを確認", expected:"1 メッセージあたりのコスト (USD) が log に出力", steps:"1) VPS 側で `ssh ubuntu@49.212.137.46`\n2) `cd /home/ubuntu/salesanchor && docker compose logs --tail=100 backend | grep -E 'llm|gemini|cost'`\n3) Gemini 2.5 Flash の呼び出しごとに cost_usd が出力されることを確認", sys:"partial", test_evidence:"test_inventory_parser_llm_real_api.py", notes:"許容コスト: 1 メッセージあたり $0.001 以下が目安", smoke:false, urls:["/management-center/super-admin/inbound"] }
+        ]
+      },
+      {
+        id: "scn-c",
+        title: "💼 SCN-C. 受注ライフサイクル (見積 → 受注 → 出荷 → 入金)",
+        subtitle: "見積作成 → 受注変換 → ステータス遷移 → 売上反映 → ダッシュボード KPI 確認",
+        items: [
+          { id:"SCN-C-01", category:"見積作成 1/8", scenario:"見積を新規作成し、商品を追加する", expected:"見積一覧に新規見積が表示される", steps:"1) サイドバー「請求書作成」→ 右上「+ 新規見積」\n2) 顧客 / 商品 (検索から) / 数量 / 単価 を入力\n3) 「保存」 → 見積一覧に追加されることを確認", sys:"partial", test_evidence:"API テスト + UI 目視", notes:"—", smoke:false, urls:["/quotes/new"] },
+          { id:"SCN-C-02", category:"受注変換 2/8", scenario:"見積を受注に変換する", expected:"受注一覧に新規受注 (待ち状態) が表示される", steps:"1) SCN-C-01 の見積詳細画面\n2) 「受注に変換」ボタン\n3) 確認モーダル → 実行\n4) サイドバー「受注一覧」で新規受注が「待ち」状態で表示されることを確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"SCN-C-03", category:"受注詳細 3/8", scenario:"受注詳細の 4 モーダル (売上 / 発送 / 仕入 / 報酬) が開く", expected:"4 種類とも正しい内容で表示される", steps:"1) SCN-C-02 の受注行をクリック\n2) 売上タブ → 受注金額・通貨・入金状況が表示\n3) 発送タブ → 発送先・配送業者・追跡番号欄が表示\n4) 仕入タブ → 仕入先・仕入価格・原価が表示\n5) 報酬タブ → 5 ロールの取り分が表示", sys:"ok", test_evidence:"order-financial.spec.ts / order-shipping.spec.ts / order-purchase.spec.ts / order-commission.spec.ts", notes:"🔥 SM-O-2 と同じ", smoke:false, urls:["/orders"] },
+          { id:"SCN-C-04", category:"5 ロール報酬 4/8", scenario:"報酬タブで 5 ロールの取り分が正しく計算される", expected:"スーパー管理者 / 管理者 / マネージャー / 営業 / 紹介者 の金額合計 = 受注額", steps:"1) SCN-C-03 の報酬タブ\n2) 各ロールの金額を確認\n3) 合計が受注額と一致することを確認 (社員フラグ除外仕様)", sys:"ok", test_evidence:"ADR-021 AC-5.11 + 5 ロール × 4 シナリオ Evaluator 独立検証済", notes:"🔥 SM-O-4 と同じ", smoke:false, urls:["/orders"] },
+          { id:"SCN-C-05", category:"ステータス遷移 5/8", scenario:"受注ステータスを 待ち → 仕入中 → 配送中 → 完了 に遷移", expected:"各ステータスタブの件数が変化する", steps:"1) サイドバー「受注一覧」で SCN-C-02 の受注行を選択\n2) ステータスを「待ち」→「仕入中」→「配送中」→「完了」と順に変更\n3) 各遷移後、上部ステータスタブの件数が更新されることを確認", sys:"ok", test_evidence:"orders-list.spec.ts + test_orders.py + J1 fix (5 値化)", notes:"J1 で confirmed 削除済", smoke:false, urls:["/orders"] },
+          { id:"SCN-C-06", category:"入金登録 6/8", scenario:"売上タブで入金日を登録 → 入金ステータスが「完了」に", expected:"入金ステータスバッジが緑色「完了」になる", steps:"1) SCN-C-03 の売上タブ\n2) 入金日を入力 → 「Save」\n3) 入金ステータスが「完了」になることを確認", sys:"ok", test_evidence:"order-financial.spec.ts", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"SCN-C-07", category:"ダッシュボード 7/8", scenario:"ダッシュボード KPI に新規受注が反映される", expected:"受注金額・件数 KPI に SCN-C の受注が加算されている", steps:"1) サイドバー「ダッシュボード」(or ホームアイコン)\n2) KPI カード (受注金額・件数) の数値が SCN-C の受注分加算されていることを確認\n3) 月次グラフでも反映確認 (JST 基準)", sys:"ok", test_evidence:"test_dashboard_kpi*.py + J2 fix (JST 化)", notes:"🔥 SM-O-5 と同じ", smoke:false, urls:["/"] },
+          { id:"SCN-C-08", category:"レポート 8/8", scenario:"レポート画面で期間別売上に反映 + CSV ダウンロードできる", expected:"期間別売上テーブルに新規受注が反映、CSV DL 可", steps:"1) サイドバー「管理センター」→ 左サブナビ「データ管理」→「レポート」\n2) 該当月の売上額に新規受注が含まれていることを確認\n3) 「CSV ダウンロード」 → ファイルがダウンロードされ、Excel で開いて文字化けなしを確認", sys:"partial", test_evidence:"UI 目視", notes:"—", smoke:false, urls:["/management-center"] }
+        ]
+      },
+      {
+        id: "scn-d",
+        title: "📦 SCN-D. 仕入発注ライフサイクル (発注 → 入荷 → 在庫反映)",
+        subtitle: "仕入発注 → PDF → メール送信 → 入荷確認 → 在庫履歴 反映",
+        items: [
+          { id:"SCN-D-01", category:"発注新規 1/5", scenario:"仕入発注を新規登録する", expected:"発注一覧に新規行 (待ち状態) が表示される", steps:"1) サイドバー「管理センター」→ サブナビ「データ管理」→「発注」\n2) 右上「+ 新規登録」\n3) 仕入先 / 商品 / 数量 / 単価 を入力 → 「Register」\n4) 一覧に追加され、ステータス「待ち」を確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/purchase-orders"] },
+          { id:"SCN-D-02", category:"PDF 出力 2/5", scenario:"発注書 PDF をダウンロードする", expected:"PDF ファイルがダウンロード、内容が正しい", steps:"1) SCN-D-01 の発注行の「PDF」ボタンを押す\n2) PDF がダウンロードされる\n3) PDF を開いて仕入先名 / 商品 / 数量 / 単価 / テナント発行者情報が正しく印字されていることを確認", sys:"ok", test_evidence:"po-pdf-mail.spec.ts", notes:"—", smoke:false, urls:["/management-center/purchase-orders"] },
+          { id:"SCN-D-03", category:"メール送信 3/5", scenario:"発注書 PDF をメール送信する", expected:"送信成功通知が出る", steps:"1) SCN-D-01 の発注行の「メール送信」ボタン\n2) 確認モーダル → 宛先 (仕入先の email) を確認\n3) 「Send」 → 送信成功通知\n4) 仕入先側で実際にメールが届くことを確認 (test mode 推奨)", sys:"partial", test_evidence:"po-pdf-mail.spec.ts (mock)", notes:"本番 SES で実送信になる、要 test mode 切替", smoke:false, urls:["/management-center/purchase-orders"] },
+          { id:"SCN-D-04", category:"入荷確認 4/5", scenario:"商品が届いたら入荷確認を実行", expected:"在庫履歴 (inventory_movements) に新規行が追加される", steps:"1) SCN-D-01 の発注行の「入荷確認」ボタン\n2) 実際に届いた数量を入力 → 「Confirm」\n3) ステータスが「完了」に変わることを確認", sys:"ok", test_evidence:"test_inventory_movements_invariant.py", notes:"—", smoke:false, urls:["/management-center/purchase-orders"] },
+          { id:"SCN-D-05", category:"履歴反映 5/5", scenario:"在庫履歴の整合性を確認する", expected:"履歴の合計 = 現在の在庫数", steps:"1) VPS 側 psql で `SELECT * FROM tenant_NNN.inventory_movements ORDER BY created_at DESC LIMIT 5` → 新規行が delta_qty + source 付きで追加されていることを確認\n2) `SELECT SUM(delta_qty) FROM tenant_NNN.inventory_movements WHERE product_id=X` と `SELECT stock_quantity FROM tenant_NNN.products WHERE id=X` を比較 → 一致確認", sys:"ok", test_evidence:"test_inventory_movements_invariant.py", notes:"Phase B 切替時のみ products.stock_quantity 実更新", smoke:false, urls:[] }
+        ]
+      },
+      {
+        id: "scn-e",
+        title: "🔐 SCN-E. 権限別の見え方 (RBAC 横断)",
+        subtitle: "スーパー管理者 / 一般ユーザー / 各種権限ありなし で見え方が変わることを確認",
+        items: [
+          { id:"SCN-E-01", category:"スーパー管理者 1/5", scenario:"スーパー管理者でログイン → 全機能アクセス可能", expected:"管理センター内「スーパー管理者」セクションが見え、全項目アクセス可", steps:"1) is_super_admin=true のアカウントでログイン\n2) サイドバー「管理センター」→ 左サブナビに「スーパー管理者」セクション (マスタ管理 / Discord 受信一覧 / Phase Switch / 仕入元現在オファー) が表示される\n3) 各項目クリック → 全画面アクセスできることを確認", sys:"ok", test_evidence:"useSuperAdmin.ts + 各 super-admin-*.spec.ts", notes:"—", smoke:false, urls:["/management-center"] },
+          { id:"SCN-E-02", category:"一般ユーザー 2/5", scenario:"一般ユーザーでログイン → スーパー管理者メニュー非表示", expected:"「スーパー管理者」セクションが見えない、直叩きで 403", steps:"1) is_super_admin=false のアカウントでログイン\n2) サイドバー「管理センター」→「スーパー管理者」セクションが表示されないことを確認\n3) アドレスバーに `/management-center/super-admin/inventory-offers` を直接入力 → 403 アラートを確認", sys:"ok", test_evidence:"f11-ac11-5-super-admin-inventory-offers.spec.ts (権限ガード)", notes:"🔥 SM-2 の補強", smoke:false, urls:["/management-center"] },
+          { id:"SCN-E-03", category:"受注閲覧権限なし 3/5", scenario:"orders.view 権限なしのユーザーで受注一覧にアクセスできない", expected:"サイドバーに「受注一覧」が出ない、または直リンクで 403", steps:"1) orders.view 権限なしユーザーでログイン\n2) サイドバーに「受注一覧」が表示されないことを確認\n3) アドレスバーに `/orders` を直接入力 → 403 アラートを確認", sys:"ok", test_evidence:"test_orders.py RBAC", notes:"—", smoke:false, urls:["/orders"] },
+          { id:"SCN-E-04", category:"報酬閲覧権限 4/5", scenario:"営業 (sales) ロールでログイン → 報酬タブで自分の取り分のみ見える", expected:"5 ロールのうち自分以外は伏字 / 非表示 (社員フラグ除外仕様)", steps:"1) 営業 (sales) ロールのユーザーでログイン\n2) サイドバー「受注一覧」→ 任意の受注詳細 → 報酬タブ\n3) 5 ロールのうち、自分が担当のロールの金額のみ表示、他は伏字 / 非表示を確認", sys:"ok", test_evidence:"test_order_commission*.py 権限フィルタ", notes:"社員フラグ除外仕様", smoke:false, urls:["/orders"] },
+          { id:"SCN-E-05", category:"テナント越境 5/5", scenario:"別テナントのリソース URL を直接叩いてもアクセスできない", expected:"403 / 404 でガードされる (RLS テナント分離)", steps:"1) tenant_004 でログイン\n2) アドレスバーに別テナントのリソース URL (例: `/orders/99999` で別テナントの受注 ID) を直接入力\n3) 403 / 404 でアクセスがブロックされることを確認", sys:"ok", test_evidence:"test_rls_tenant_meta_config.py + test_security.py", notes:"—", smoke:false, urls:["/orders"] }
+        ]
+      }
+    ]
+  }
+};
+
+// =================================================================
+// STATE
+// =================================================================
+const STORAGE_KEY = "qa-checksheet-v2"; // v2: 3 trials per item
+const STORAGE_KEY_V1 = "qa-checksheet-v1"; // 旧 (1 trial) からの migration 用
+const FILTER_KEY = "qa-checksheet-filter";
+const BASE_URL_KEY = "qa-checksheet-base-url";
+const DEFAULT_BASE_URL = "https://app.salesanchor.jp";
+const TRIAL_COUNT = 3;
+
+function loadState() {
+  try {
+    // v2 (3 trial) を優先
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      return Object.assign({ statuses: {}, memos: {}, sign: {} }, JSON.parse(raw));
+    }
+    // v1 (1 trial) から自動 migration
+    const rawV1 = localStorage.getItem(STORAGE_KEY_V1);
+    if (rawV1) {
+      const v1 = JSON.parse(rawV1);
+      const statuses = {};
+      const memos = {};
+      // 旧 status / memos を trial 1 (index 0) に移行
+      Object.keys(v1.status || {}).forEach(k => {
+        statuses[k] = [v1.status[k], "pending", "pending"];
+      });
+      Object.keys(v1.memos || {}).forEach(k => {
+        memos[k] = [v1.memos[k], "", ""];
+      });
+      const migrated = { statuses, memos, sign: v1.sign || {}, last_modified: v1.last_modified };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
+    return { statuses: {}, memos: {}, sign: {} };
+  } catch { return { statuses: {}, memos: {}, sign: {} }; }
+}
+function saveState(state) {
+  state.last_modified = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+let STATE = loadState();
+let CURRENT_TAB = "inventory";
+let CURRENT_FILTER = localStorage.getItem(FILTER_KEY) || "all";
+
+// =================================================================
+// HELPERS
+// =================================================================
+function uniqKey(sheetId, itemId) { return `${sheetId}::${itemId}`; }
+
+// 3 trial 配列を取得 (未設定なら ["pending","pending","pending"])
+function getStatuses(sheetId, itemId) {
+  const arr = STATE.statuses[uniqKey(sheetId, itemId)];
+  if (Array.isArray(arr) && arr.length === TRIAL_COUNT) return arr;
+  return Array(TRIAL_COUNT).fill("pending");
+}
+function setTrialStatus(sheetId, itemId, trialIdx, value) {
+  const cur = getStatuses(sheetId, itemId).slice();
+  cur[trialIdx] = value;
+  STATE.statuses[uniqKey(sheetId, itemId)] = cur;
+  saveState(STATE);
+  updateProgress();
+  applyFilter();
+}
+function getMemos(sheetId, itemId) {
+  const arr = STATE.memos[uniqKey(sheetId, itemId)];
+  if (Array.isArray(arr) && arr.length === TRIAL_COUNT) return arr;
+  return Array(TRIAL_COUNT).fill("");
+}
+function setTrialMemo(sheetId, itemId, trialIdx, value) {
+  const cur = getMemos(sheetId, itemId).slice();
+  cur[trialIdx] = value;
+  STATE.memos[uniqKey(sheetId, itemId)] = cur;
+  saveState(STATE);
+}
+
+// 進捗カウント用: 「最新の non-pending」を採用 (3 回目 > 2 回目 > 1 回目)
+function effectiveStatus(sheetId, itemId) {
+  const arr = getStatuses(sheetId, itemId);
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i] && arr[i] !== "pending") return arr[i];
+  }
+  return "pending";
+}
+function sysIcon(s) { return s === "ok" ? "✅ 完全" : s === "partial" ? "🟡 部分" : "❌ なし"; }
+
+function getBaseUrl() {
+  return (localStorage.getItem(BASE_URL_KEY) || DEFAULT_BASE_URL).replace(/\/$/, "");
+}
+
+// 操作手順テキストから検証ページの URL パスを抽出 (重複除外、テンプレート除外)
+function extractUrls(item) {
+  const text = (item.steps || "") + " " + (item.scenario || "") + " " + (item.expected || "");
+  const matches = text.match(/\/[a-z0-9][a-z0-9\-_\/]*[a-z0-9_\-]/gi) || [];
+  const seen = new Set();
+  const results = [];
+  matches.forEach(p => {
+    // テンプレート (:id 等) や数字の直叩き例 (/orders/12345) は除外
+    if (/[:;]/.test(p)) return;
+    if (/\/\d+(\/|$)/.test(p)) return;
+    // パス終端の余計な記号を除去
+    const clean = p.replace(/[\.\,。、)）]+$/, "");
+    // 短すぎ (/ のみ) や URL じゃないもの除外
+    if (clean.length < 4 || clean.startsWith("//")) return;
+    // 拡張子っぽいもの除外 (.py / .ts / .yml 等)
+    if (/\.(py|ts|tsx|yml|sql|json|md|html|js)$/i.test(clean)) return;
+    // 重複除外
+    if (seen.has(clean)) return;
+    seen.add(clean);
+    results.push(clean);
+  });
+  return results.slice(0, 3); // 最大 3 件
+}
+function sysReason(item) {
+  if (item.sys === "ok") return "";
+  if (item.sys === "none") return "未検証 (人が必ず手動で確認する項目)";
+  // partial の場合: test_evidence の文言から自動分類
+  const ev = item.test_evidence || "";
+  if (/UI 目視/.test(ev)) return "未検証部分: 自動テストが無く、画面の見た目を人の目で確認する";
+  if (/mock|Mock/.test(ev)) return "未検証部分: Mock テストのみ、実 API / 実外部サービスの挙動は未検証";
+  if (/翻訳キー存在確認/.test(ev)) return "未検証部分: 翻訳キーの存在のみ確認済、実画面での翻訳表示は人が確認";
+  if (/手動/.test(ev)) return "未検証部分: 自動テストはあるが、画面遷移の一部は手動確認が必要";
+  if (/実 API/.test(ev)) return "未検証部分: 実 API のテストはあるが、画面操作の自動検証はない";
+  if (/API テスト/.test(ev)) return "未検証部分: API レベルのテストはあるが、画面操作までの自動検証はない";
+  return "未検証部分: 画面までの自動検証は部分的 (詳細は「自動テスト根拠」を参照)";
+}
+
+function countSheet(sheetId) {
+  const sheet = SHEETS[sheetId];
+  let total = 0, ok = 0, ng = 0, na = 0, pending = 0;
+  sheet.sections.forEach(sec => sec.items.forEach(it => {
+    total++;
+    const s = effectiveStatus(sheetId, it.id);
+    if (s === "ok") ok++;
+    else if (s === "ng") ng++;
+    else if (s === "na") na++;
+    else pending++;
+  }));
+  return { total, ok, ng, na, pending };
+}
+
+function updateProgress() {
+  const c = countSheet(CURRENT_TAB);
+  document.getElementById("progress-pill").textContent =
+    `📊 進捗: ${c.ok + c.ng + c.na} / ${c.total} (OK ${c.ok} / NG ${c.ng} / N/A ${c.na} / 未 ${c.pending})`;
+
+  // タブ件数も更新
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    const sheetId = btn.dataset.sheet;
+    const sc = countSheet(sheetId);
+    const span = btn.querySelector(".tab-count");
+    if (span) span.textContent = `(${sc.ok + sc.ng + sc.na} / ${sc.total})`;
+  });
+}
+
+// =================================================================
+// RENDER
+// =================================================================
+function renderTabs() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  Object.values(SHEETS).forEach(sheet => {
+    const c = countSheet(sheet.id);
+    const btn = document.createElement("button");
+    btn.className = "tab-btn" + (sheet.id === CURRENT_TAB ? " active" : "");
+    btn.dataset.sheet = sheet.id;
+    btn.innerHTML = `${sheet.title}<span class="tab-count">(${c.ok + c.ng + c.na} / ${c.total})</span>`;
+    btn.addEventListener("click", () => {
+      CURRENT_TAB = sheet.id;
+      renderTabs();
+      renderSheet();
+      updateProgress();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+    tabs.appendChild(btn);
+  });
+}
+
+function renderFilters() {
+  const wrap = document.getElementById("filters");
+  wrap.innerHTML = "";
+  const filters = [
+    { id: "all", label: "🔍 全て" },
+    { id: "pending", label: "⬜ 未実施のみ" },
+    { id: "ok", label: "✅ OK のみ" },
+    { id: "ng", label: "❌ NG のみ" },
+    { id: "na", label: "🟦 対象外のみ" }
+  ];
+  filters.forEach(f => {
+    const btn = document.createElement("button");
+    btn.className = "filter-btn" + (CURRENT_FILTER === f.id ? " active" : "");
+    btn.textContent = f.label;
+    btn.addEventListener("click", () => {
+      CURRENT_FILTER = f.id;
+      localStorage.setItem(FILTER_KEY, f.id);
+      renderFilters();
+      applyFilter();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function renderSheet() {
+  const sheet = SHEETS[CURRENT_TAB];
+  const root = document.getElementById("sheet-content");
+  root.innerHTML = "";
+  sheet.sections.forEach(sec => {
+    const secEl = document.createElement("section");
+    secEl.className = "section";
+    secEl.dataset.sectionId = sec.id;
+
+    const h = document.createElement("h2");
+    h.className = "section-title";
+    h.textContent = sec.title;
+    secEl.appendChild(h);
+
+    if (sec.subtitle) {
+      const sub = document.createElement("p");
+      sub.className = "section-subtitle";
+      sub.textContent = sec.subtitle;
+      secEl.appendChild(sub);
+    }
+
+    sec.items.forEach(item => {
+      secEl.appendChild(renderCard(sheet.id, item));
+    });
+    root.appendChild(secEl);
+  });
+  applyFilter();
+}
+
+function renderCard(sheetId, item) {
+  const card = document.createElement("article");
+  card.className = "card" + (item.smoke ? " smoke" : "");
+  card.dataset.itemId = item.id;
+  card.dataset.sheet = sheetId;
+
+  // Head
+  const head = document.createElement("div");
+  head.className = "card-head";
+  head.innerHTML = `
+    <span class="card-id ${item.smoke ? "smoke" : ""}">${item.smoke ? "🔥 " : ""}${item.id}</span>
+    <span class="card-category">${item.category}</span>
+    <span class="card-sys ${item.sys}" title="自動テスト or 実機検証でどこまでカバー済みか">
+      <span class="sys-label">システム検証</span>
+      <span>${sysIcon(item.sys)}</span>
+    </span>
+  `;
+  card.appendChild(head);
+
+  // Sys reason (partial / none の場合に表示)
+  if (item.sys !== "ok") {
+    const reason = document.createElement("div");
+    reason.className = "sys-reason" + (item.sys === "none" ? " none-reason" : "");
+    reason.textContent = sysReason(item);
+    card.appendChild(reason);
+  }
+
+  // Scenario (確認項目)
+  const scenario = document.createElement("div");
+  scenario.className = "card-scenario";
+  scenario.textContent = item.scenario;
+  card.appendChild(scenario);
+
+  // 検証ページへのリンク (各カードに明示的に設定された urls を使用)
+  const urls = Array.isArray(item.urls) ? item.urls : [];
+  if (urls.length > 0) {
+    const linkRow = document.createElement("div");
+    linkRow.className = "target-link-row";
+    linkRow.dataset.role = "target-links";
+    urls.forEach(path => {
+      const a = document.createElement("a");
+      a.className = "target-link";
+      a.href = getBaseUrl() + path;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.title = `${getBaseUrl()}${path} を新規タブで開く`;
+      a.innerHTML = `🔗 ページを開く <code>${escapeHtml(path)}</code>`;
+      a.dataset.path = path;
+      linkRow.appendChild(a);
+    });
+    card.appendChild(linkRow);
+  }
+
+  // Expected (常に open)
+  const expected = document.createElement("details");
+  expected.open = true;
+  expected.innerHTML = `<summary>▼ こうなれば OK (期待結果)</summary><div class="detail-body">${escapeHtml(item.expected)}</div>`;
+  card.appendChild(expected);
+
+  // Steps (常に open)
+  const steps = document.createElement("details");
+  steps.open = true;
+  steps.innerHTML = `<summary>▼ 操作手順 (どのメニュー → どのボタン)</summary><div class="detail-body">${escapeHtml(item.steps)}</div>`;
+  card.appendChild(steps);
+
+  // Test evidence
+  const evidence = document.createElement("details");
+  evidence.innerHTML = `<summary>▼ 自動テスト根拠 / 備考</summary><div class="detail-body">テスト: ${escapeHtml(item.test_evidence)}\n備考: ${escapeHtml(item.notes)}</div>`;
+  card.appendChild(evidence);
+
+  // テスト 1 / 2 / 3 回目のステータス + メモ
+  const trialsWrap = document.createElement("div");
+  trialsWrap.className = "trials-wrap";
+  const statuses = [
+    { id: "pending", label: "⬜ 未" },
+    { id: "ok", label: "✅ OK" },
+    { id: "ng", label: "❌ NG" },
+    { id: "na", label: "🟦 対象外" }
+  ];
+  for (let t = 0; t < TRIAL_COUNT; t++) {
+    const block = document.createElement("div");
+    block.className = "trial-block";
+
+    const header = document.createElement("div");
+    header.className = "trial-header";
+    header.innerHTML = `<span class="trial-num">${t + 1} 回目</span><span>テスト結果 + メモ</span>`;
+    block.appendChild(header);
+
+    const statusRow = document.createElement("div");
+    statusRow.className = "status-row";
+    const currentStatus = getStatuses(sheetId, item.id)[t];
+    statuses.forEach(s => {
+      const btn = document.createElement("button");
+      btn.className = "status-btn " + s.id + (currentStatus === s.id ? " active" : "");
+      btn.textContent = s.label;
+      btn.dataset.status = s.id;
+      btn.addEventListener("click", () => {
+        setTrialStatus(sheetId, item.id, t, s.id);
+        statusRow.querySelectorAll(".status-btn").forEach(b => {
+          b.classList.toggle("active", b.dataset.status === s.id);
+        });
+      });
+      statusRow.appendChild(btn);
+    });
+    block.appendChild(statusRow);
+
+    const memo = document.createElement("textarea");
+    memo.className = "memo";
+    memo.rows = 2;
+    memo.placeholder = `${t + 1} 回目のメモ (NG なら再現手順 / 期待 / 実測)...`;
+    memo.value = getMemos(sheetId, item.id)[t];
+    let memoTimer = null;
+    memo.addEventListener("input", (e) => {
+      clearTimeout(memoTimer);
+      memoTimer = setTimeout(() => setTrialMemo(sheetId, item.id, t, e.target.value), 300);
+    });
+    block.appendChild(memo);
+
+    trialsWrap.appendChild(block);
+  }
+  card.appendChild(trialsWrap);
+
+  return card;
+}
+
+function applyFilter() {
+  document.querySelectorAll(".card").forEach(card => {
+    const sheetId = card.dataset.sheet;
+    const itemId = card.dataset.itemId;
+    const status = effectiveStatus(sheetId, itemId);
+    let show = true;
+    if (CURRENT_FILTER === "pending") show = (status === "pending");
+    else if (CURRENT_FILTER === "ok") show = (status === "ok");
+    else if (CURRENT_FILTER === "ng") show = (status === "ng");
+    else if (CURRENT_FILTER === "na") show = (status === "na");
+    card.classList.toggle("hidden", !show);
+  });
+  // セクションが空なら非表示
+  document.querySelectorAll(".section").forEach(sec => {
+    const visible = sec.querySelectorAll(".card:not(.hidden)").length > 0;
+    sec.style.display = visible ? "" : "none";
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+  })[m]);
+}
+
+// =================================================================
+// EXPORT / RESET
+// =================================================================
+function exportJson() {
+  const out = {
+    exported_at: new Date().toISOString(),
+    tool_version: "qa-checksheet-v1",
+    sheets: {}
+  };
+  Object.values(SHEETS).forEach(sheet => {
+    const c = countSheet(sheet.id);
+    const items = [];
+    sheet.sections.forEach(sec => sec.items.forEach(it => {
+      const statuses = getStatuses(sheet.id, it.id);
+      const memos = getMemos(sheet.id, it.id);
+      items.push({
+        section: sec.title,
+        id: it.id,
+        category: it.category,
+        scenario: it.scenario,
+        expected: it.expected,
+        sys: it.sys,
+        smoke: !!it.smoke,
+        effective_status: effectiveStatus(sheet.id, it.id),
+        trials: [
+          { trial: 1, status: statuses[0], memo: memos[0] || null },
+          { trial: 2, status: statuses[1], memo: memos[1] || null },
+          { trial: 3, status: statuses[2], memo: memos[2] || null }
+        ],
+        timestamp: STATE.last_modified || null
+      });
+    }));
+    out.sheets[sheet.id] = {
+      title: sheet.title,
+      date: sheet.date,
+      summary: c,
+      items: items
+    };
+  });
+  out.signatures = {
+    hitoshi: {
+      date: document.getElementById("sign-hitoshi-date").value || null,
+      name: document.getElementById("sign-hitoshi-name").value || null
+    },
+    shingo: {
+      date: document.getElementById("sign-shingo-date").value || null,
+      name: document.getElementById("sign-shingo-name").value || null
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const yyyy = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `qa_results_${yyyy}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function resetState() {
+  if (!confirm("LocalStorage の全状態 (3 回分のチェック・メモ・サイン) をリセットします。書き出し済 JSON は影響を受けません。続行しますか？")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_KEY_V1);
+  STATE = loadState();
+  document.getElementById("sign-hitoshi-date").value = "";
+  document.getElementById("sign-hitoshi-name").value = "";
+  document.getElementById("sign-shingo-date").value = "";
+  document.getElementById("sign-shingo-name").value = "";
+  renderSheet();
+  updateProgress();
+}
+
+// =================================================================
+// INIT
+// =================================================================
+document.addEventListener("DOMContentLoaded", () => {
+  // sign フィールドを LocalStorage と同期
+  const signFields = ["sign-hitoshi-date", "sign-hitoshi-name", "sign-shingo-date", "sign-shingo-name"];
+  signFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = STATE.sign?.[id] || "";
+    el.addEventListener("input", (e) => {
+      STATE.sign = STATE.sign || {};
+      STATE.sign[id] = e.target.value;
+      saveState(STATE);
+    });
+  });
+
+  document.getElementById("export-btn").addEventListener("click", exportJson);
+  document.getElementById("reset-btn").addEventListener("click", resetState);
+
+  // 検証先 URL の設定
+  const baseUrlInput = document.getElementById("base-url-input");
+  baseUrlInput.value = getBaseUrl();
+  const refreshLinks = () => {
+    document.querySelectorAll(".target-link").forEach(a => {
+      const path = a.dataset.path;
+      if (path) {
+        a.href = getBaseUrl() + path;
+        a.title = `${getBaseUrl()}${path} を新規タブで開く`;
+      }
+    });
+  };
+  baseUrlInput.addEventListener("input", (e) => {
+    localStorage.setItem(BASE_URL_KEY, e.target.value.replace(/\/$/, ""));
+    refreshLinks();
+  });
+  document.querySelectorAll(".base-url-preset").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const url = btn.dataset.url;
+      baseUrlInput.value = url;
+      localStorage.setItem(BASE_URL_KEY, url);
+      refreshLinks();
+    });
+  });
+
+  // TOP に戻るボタン
+  const topBtn = document.createElement("button");
+  topBtn.className = "btn-top";
+  topBtn.title = "TOP に戻る";
+  topBtn.setAttribute("aria-label", "TOP に戻る");
+  topBtn.textContent = "↑";
+  topBtn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  document.body.appendChild(topBtn);
+  window.addEventListener("scroll", () => {
+    topBtn.classList.toggle("visible", window.scrollY > 300);
+  });
+
+  renderTabs();
+  renderFilters();
+  renderSheet();
+  updateProgress();
+});
+</script>
+</body>
+</html>
