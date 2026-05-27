@@ -326,6 +326,7 @@ services:
     image: prom/prometheus:v3.11.3
     volumes:
       - ./monitoring/prometheus:/etc/prometheus:ro
+      - /home/ubuntu/salesanchor/monitoring/prometheus/secrets:/etc/prometheus/secrets:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -361,6 +362,10 @@ services:
       - GF_SERVER_ROOT_URL=https://app.salesanchor.jp/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+      - GF_DATE_FORMATS_USE_BROWSER_LOCALE=true
+      - GF_DATE_FORMATS_FULL_DATE=YYYY/MM/DD HH:mm:ss
+      - GF_DATE_FORMATS_INTERVAL_DAY=MM/DD
+      - GF_DATE_FORMATS_INTERVAL_MONTH=YYYY/MM
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
