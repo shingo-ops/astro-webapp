@@ -149,7 +149,7 @@ bash scripts/backup_to_s3.sh
 成功すると以下のような出力:
 ```
 === S3バックアップ転送開始: ... ===
-  転送対象: jarvis_db_2026-04-XX_03-00-00.sql.gz
+  転送対象: salesanchor_db_20260410_030000.sql.gz
   S3にアップロード中...
   OK: サイズ一致（XXX bytes）
   古いバックアップを削除中（90日以上前）...
@@ -162,12 +162,19 @@ bash scripts/backup_to_s3.sh
 crontab -e
 ```
 
-以下を追加:
+以下を追加（既存のエントリがある場合は置き換え）:
 ```cron
 # Sales Anchor 日次バックアップ
-0 3 * * * /home/ubuntu/salesanchor/scripts/backup.sh >> /var/log/jarvis_backup.log 2>&1
-30 3 * * * /home/ubuntu/salesanchor/scripts/backup_to_s3.sh >> /var/log/s3_backup.log 2>&1
+0 3 * * * /home/ubuntu/salesanchor/scripts/backup.sh >> /home/ubuntu/backups/cron.log 2>&1
+30 3 * * * /home/ubuntu/salesanchor/scripts/backup_to_s3.sh >> /home/ubuntu/backups/s3_backup.log 2>&1
 ```
+
+> **注意**: 旧crontabエントリ（下記）が残っている場合は削除すること:
+> ```
+> 0 3 * * * /home/ubuntu/astro-webapp/scripts/backup.sh >> /home/ubuntu/backups/cron.log 2>&1
+> ```
+> パスが `/home/ubuntu/astro-webapp/` になっている場合、スクリプトが見つからず
+> バックアップが実行されない（cron.logが途絶える原因）。
 
 実行スケジュール:
 - **3:00 AM**: ローカルバックアップ作成
@@ -177,8 +184,8 @@ crontab -e
 
 翌日の朝、ログを確認:
 ```bash
-tail -50 /var/log/jarvis_backup.log
-tail -50 /var/log/s3_backup.log
+tail -50 /home/ubuntu/backups/cron.log
+tail -50 /home/ubuntu/backups/s3_backup.log
 ```
 
 S3コンソールでも確認:
