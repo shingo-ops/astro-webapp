@@ -30,7 +30,7 @@
 | [ADR-027](./ADR-027-ui-internationalization.md) | ADR-027: Sales Anchor UI の i18n 対応（日本語/英語切り替え） | Proposed | — |
 | [ADR-028](./ADR-028-screencast-tenant-isolation.md) | ADR-028: Meta App Review 撮影用テナント分離 | Proposed | — |
 | [ADR-029](./ADR-029-self-hosted-runner-fleet.md) | ADR-029: Self-hosted runner fleet — 2 台 Mac 体制と labels 戦略の正式化 | Proposed | — |
-| [ADR-032](./ADR-032.md) | ADR-032: Firebase Authentication カスタム認証ドメイン | Proposed | — |
+| [ADR-032](./ADR-032.md) | ADR-032: Firebase Authentication カスタム認証ドメイン | Accepted | — |
 | [ADR-033](./ADR-033-app-theme-switching.md) | ADR-033: アプリ内テーマ切り替え（ライト / ダーク） | Proposed | — |
 | [ADR-034](./ADR-034-tenant-migration-automation.md) | ADR-034: 新規テナント migration 自動化 + 既存テナント整合化 | Proposed | — |
 | [ADR-035](./ADR-035-external-state-verification.md) | ADR-035: External State Verification — 6 system × 5-layer defense | Proposed | — |
