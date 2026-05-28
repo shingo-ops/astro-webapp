@@ -461,10 +461,11 @@ services:
       - backnet
 
   # cAdvisor（コンテナ別 CPU・メモリ・ネットワーク）ADR-079
-  # v0.47.2 + privileged: Docker socket アクセスに必要。non-privileged では docker stats が見えない。
+  # v0.47.2 + cgroup: host: VPS cgroup 名前空間共有。これがないと Docker コンテナ cgroup が見えない。
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.2
     privileged: true
+    cgroup: host
     volumes:
       - /:/rootfs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
