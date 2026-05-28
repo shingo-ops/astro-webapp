@@ -52,7 +52,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # 検索 API を叩くために最低限必要な権限のいずれか (OR 条件)。
-# inventory.visibility.full を持つ user は stock マスクなし、その他は stock=None マスク。
+# QA r7 (2026-05-28 しんごさん確定): 在庫は全テナント共通で見える。
+# テナント/権限による在庫数マスクは撤廃 (mask_stock 常に False)。
+# 検索 UI のアクセス制御として ALLOWED_PERMISSIONS チェックのみ残す。
 ALLOWED_PERMISSIONS: frozenset[str] = frozenset(
     {
         "products.view",
@@ -61,7 +63,6 @@ ALLOWED_PERMISSIONS: frozenset[str] = frozenset(
         "inventory.visibility.viewer",
     }
 )
-FULL_VISIBILITY_PERMISSION = "inventory.visibility.full"
 
 
 @router.get(
@@ -82,9 +83,9 @@ async def search_inventory_endpoint(
 
     - lang は応答 schema に影響しない (検索は ja/en 両方の列を横断する)。
     - 空クエリは {candidates: [], total: 0} を即返す。
-    - inventory.visibility.full を持たないユーザーは stock_quantity を None でマスク。
+    - QA r7 (2026-05-28): 在庫は全テナント共通で見えるため stock_quantity マスクは撤廃。
     """
-    # --- 権限チェック ---
+    # --- 権限チェック (検索 UI のアクセス制御。在庫数の可視性とは別軸) ---
     perms = await load_user_permissions(db, tenant_id, current_user.id)
     if not (perms & ALLOWED_PERMISSIONS):
         raise HTTPException(
@@ -92,7 +93,8 @@ async def search_inventory_endpoint(
             detail="在庫検索を実行する権限がありません (inventory.visibility.* または products.view が必要)。",
         )
 
-    mask_stock = FULL_VISIBILITY_PERMISSION not in perms
+    # QA r7 確定: 在庫は全テナント共通で見える → マスクなし
+    mask_stock = False
 
     # --- 検索実行 ---
     candidates = await search_inventory(
