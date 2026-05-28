@@ -1,0 +1,216 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "title": "GitHub Actions CI メトリクス",
+  "description": "ワークフロー・ジョブ・ステップの実行時間と成否（ADR-077）",
+  "tags": ["ci", "github-actions"],
+  "timezone": "Asia/Tokyo",
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "panels": [
+    {
+      "title": "ワークフロー成功数（7日間）",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "green" },
+          "unit": "short",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background", "graphMode": "none" },
+      "targets": [
+        {
+          "expr": "sum(increase(gha_workflow_run_count{conclusion=\"success\"}[7d]))",
+          "legendFormat": "成功",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "ワークフロー失敗数（7日間）",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "unit": "short",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background", "graphMode": "none" },
+      "targets": [
+        {
+          "expr": "sum(increase(gha_workflow_run_count{conclusion=\"failure\"}[7d]))",
+          "legendFormat": "失敗",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "ワークフロー成功率（7日間）",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "green", "value": 95 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [
+        {
+          "expr": "100 * sum(increase(gha_workflow_run_count{conclusion=\"success\"}[7d])) / (sum(increase(gha_workflow_run_count{conclusion=\"success\"}[7d])) + sum(increase(gha_workflow_run_count{conclusion=\"failure\"}[7d])) + 0.001)",
+          "legendFormat": "成功率",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "平均ワークフロー経過時間（秒）",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 300 },
+              { "color": "red", "value": 600 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background", "graphMode": "none" },
+      "targets": [
+        {
+          "expr": "sum(increase(gha_workflow_elapsed_seconds[7d])) / (sum(increase(gha_workflow_run_count[7d])) + 0.001)",
+          "legendFormat": "平均経過時間",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "ワークフロー経過時間（推移）",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "fillOpacity": 10, "lineWidth": 2, "showPoints": "auto" }
+        },
+        "overrides": []
+      },
+      "options": { "tooltip": { "mode": "multi", "sort": "desc" }, "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } },
+      "targets": [
+        {
+          "expr": "rate(gha_workflow_elapsed_seconds[30m]) / (rate(gha_workflow_run_count[30m]) + 0.001)",
+          "legendFormat": "{{workflow}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "ジョブ実行時間 Top 10（平均・秒）",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80 }
+        },
+        "overrides": []
+      },
+      "options": { "orientation": "horizontal", "barRadius": 0.1, "groupWidth": 0.7, "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "topk(10, sum by(workflow, job) (increase(gha_job_runner_seconds[7d])) / (sum by(workflow, job) (increase(gha_job_run_count[7d])) + 0.001))",
+          "legendFormat": "{{workflow}} / {{job}}",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "ワークフロー成否（7日間）",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "success" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "failure" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "cancelled" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] }
+        ]
+      },
+      "options": { "orientation": "vertical", "barRadius": 0.1, "groupWidth": 0.7, "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum by(workflow, conclusion) (increase(gha_workflow_run_count[7d]))",
+          "legendFormat": "{{workflow}} ({{conclusion}})",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "title": "ステップ実行時間 Top 10（平均・秒）",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "displayMode": "color-background-solid", "filterable": true }
+        },
+        "overrides": []
+      },
+      "options": { "sortBy": [{ "desc": true, "displayName": "Value" }], "footer": { "show": false } },
+      "targets": [
+        {
+          "expr": "topk(10, sum by(workflow, job, step) (increase(gha_step_runner_seconds[7d])) / (sum by(workflow, job, step) (increase(gha_step_run_count[7d])) + 0.001))",
+          "legendFormat": "{{workflow}} / {{job}} / {{step}}",
+          "refId": "A",
+          "instant": true,
+          "format": "table"
+        }
+      ]
+    }
+  ],
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "version": 1
+}

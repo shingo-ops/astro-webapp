@@ -37,6 +37,12 @@ MONITORING_IMAGES = {
     "uptime_kuma":       "louislam/uptime-kuma",
 }
 
+# build: 方式のサービス: tokens.yml の versions キー → Dockerfile パス
+# docker-compose image: タグではなく Dockerfile ARG で バージョンを管理
+DOCKERFILE_VERSIONS = {
+    "gha_exporter": "monitoring/gha-exporter/Dockerfile",
+}
+
 # healthcheck 確認対象の監視サービス
 MONITORING_SERVICES = ["prometheus", "grafana", "loki", "promtail", "uptime-kuma"]
 
@@ -170,6 +176,32 @@ for svc in MONITORING_SERVICES:
         )
     else:
         print(f"  ✅ {svc}: healthcheck 設定済み")
+
+
+# ── CHECK 5: Dockerfile バージョン整合性（build: 方式サービス）─
+
+header("CHECK 5: Dockerfile バージョン整合性（build: 方式サービス）")
+
+for token_key, dockerfile_path in DOCKERFILE_VERSIONS.items():
+    expected_ver = versions.get(token_key)
+    if not expected_ver:
+        warnings.append(f"tokens.yml に versions.{token_key} の定義がありません")
+        continue
+    try:
+        with open(dockerfile_path) as f:
+            dockerfile_text = f.read()
+    except FileNotFoundError:
+        errors.append(f"Dockerfile が見つかりません: {dockerfile_path}")
+        continue
+    # ARG GHA_EXPORTER_VERSION=v0.0.15 形式を検索
+    arg_pattern = rf"ARG\s+\w+VERSION\s*=\s*{re.escape(expected_ver)}"
+    if re.search(arg_pattern, dockerfile_text):
+        print(f"  ✅ {token_key}: Dockerfile ARG = {expected_ver}")
+    else:
+        errors.append(
+            f"SSoT 不一致 [{token_key}]: "
+            f"tokens.yml={expected_ver} が {dockerfile_path} の ARG に見つかりません"
+        )
 
 
 # ── 結果サマリー ──────────────────────────────────────────────
