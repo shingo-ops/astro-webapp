@@ -367,6 +367,7 @@ services:
       - GF_DATE_FORMATS_INTERVAL_DAY=MM/DD
       - GF_DATE_FORMATS_INTERVAL_MONTH=YYYY/MM
       - GF_PANELS_DISABLE_SANITIZE_HTML=true
+      - GF_USERS_DEFAULT_LANGUAGE=ja-JP
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
