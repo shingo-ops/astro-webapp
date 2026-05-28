@@ -30,12 +30,6 @@
   --avatar-bg: #f1f4f7;          /* アバター背景（会話リスト等） */
   --indicator: #1877F2;          /* 選択中インジケーター（会話リスト等） */
 
-  /* ナビゲーション（サイドバー時は使用しないが互換維持） */
-  --nav-brand-bg: #1a365d;
-  --nav-brand-text: #ffffff;
-  --nav-brand-accent: #1877F2;
-  --nav-search-bg: #2c5282;
-
   /* サイドバー */
   --sidebar-bg: #ffffff;
   --sidebar-border: #E4E4E7;
@@ -103,9 +97,6 @@
   --rank-bg: #FFF3E0;
   --rank-text: #E65100;
 
-  /* リンクアクティブ hover */
-  --link-active-bg-hover: #d0e8ff;
-
   /* info バッジ（水色系） */
   --info-bg: #bee3f8;
   --info-text: #2b6cb0;
@@ -113,10 +104,6 @@
   /* purple バッジ（保留・発送済み） */
   --purple-bg: #e9d8fd;
   --purple-text: #553c9a;
-
-  /* Instagram ブランド */
-  --instagram-bg: #FCE3F0;
-  --instagram-text: #C13584;
 
   /* Inbox 専用カラートークン（Meta Business Suite 準拠 / ADR-064） */
   --inbox-separator: #e4e6eb;
@@ -203,11 +190,6 @@
   --avatar-bg: #334155;          /* アバター背景（ダーク） */
   --indicator: #818cf8;          /* 選択中インジケーター（ダーク） */
 
-  --nav-brand-bg: #0b1c33;
-  --nav-brand-text: #f1f5f9;
-  --nav-brand-accent: #f59e0b;
-  --nav-search-bg: #1e3a5f;
-
   --danger: #f87171;
   --danger-bg: #4c1d1d;
   --danger-text: #fecaca;
@@ -260,9 +242,6 @@
   --rank-bg: #3d2200;
   --rank-text: #fb923c;
 
-  /* リンクアクティブ hover（ダーク） */
-  --link-active-bg-hover: #1e3a8a;
-
   /* info バッジ（ダーク） */
   --info-bg: #1e3a5f;
   --info-text: #93c5fd;
@@ -270,10 +249,6 @@
   /* purple バッジ（ダーク） */
   --purple-bg: #3b1f6e;
   --purple-text: #d8b4fe;
-
-  /* Instagram ブランド（ダーク） */
-  --instagram-bg: #3d1028;
-  --instagram-text: #e879b9;
 
   /* Inbox 専用カラートークン（ダーク / ADR-064） */
   --inbox-separator: #374151;

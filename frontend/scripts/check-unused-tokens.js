@@ -27,7 +27,24 @@ const TOKEN_FILES = [
 const SEARCH_EXTS = new Set(['.css', '.tsx', '.ts']);
 
 // デザインシステム専用トークン（DesignSystemPage のデモ用）は除外
-const EXEMPT_PREFIXES = ['--ds-'];
+const EXEMPT_PREFIXES = [
+  '--ds-',
+  '--breakpoint-', // JS mirror: constants/breakpoints.ts（CSS @media では変数使用不可のため）
+];
+
+// 個別除外トークン
+// - JS mirror: CSS変数の値をJS定数がミラーしており var() では参照されない
+// - cataloged: DesignSystemPage で展示中の「将来実装予定」トークン
+const EXEMPT_NAMES = new Set([
+  '--icon-sm',           // JS mirror: constants/iconSizes.ts
+  '--icon-md',           // JS mirror: constants/iconSizes.ts
+  '--z-sidebar-overlay', // cataloged: sidebar overlay 実装時に使用予定
+  '--z-toast',           // cataloged: toast 通知実装時に使用予定
+  '--ease-standard',     // cataloged: Motion catalog 展示中
+  '--ease-enter',        // cataloged: Motion catalog 展示中
+  '--ease-exit',         // cataloged: Motion catalog 展示中
+  '--inbox-hover',       // cataloged: Colors catalog 展示中
+]);
 
 function extractTokenNames(content) {
   const names = [];
@@ -81,6 +98,7 @@ for (const file of allFiles) {
 const unused = [];
 for (const [name, source] of allTokens) {
   if (EXEMPT_PREFIXES.some((p) => name.startsWith(p))) continue;
+  if (EXEMPT_NAMES.has(name)) continue;
   if (!usedTokens.has(name)) {
     unused.push({ name, source });
   }
