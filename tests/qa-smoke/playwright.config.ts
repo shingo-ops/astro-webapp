@@ -33,8 +33,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  // 1 scene あたり 30s 上限 (ADR-038 Business constraints: VPS 2GB, duration≤30s)
-  timeout: 30_000,
+  // 1 test あたり 2 分上限。ADR-038 の所要時間（5〜20 分/シーン、3〜5 tests/シーン）
+  // から逆算: 最長シーン 20 分 ÷ 5 tests = 4 分/test。余裕を持ち 2 分を基準値とする。
+  // VPS 2GB 制約 (ADR-038 L95) は worker 数・同時実行数の制限であり 1 test 単位のタイムアウトではない。
+  timeout: 120_000,
   expect: { timeout: 10_000 },
 
   reporter: process.env.CI

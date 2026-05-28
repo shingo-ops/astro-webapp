@@ -63,14 +63,18 @@ export default function QuoteCreatePage() {
    */
   const onPickProduct = (index: number, c: InventorySearchCandidate) => {
     const newItems = [...items];
+    // QA r7 SM-3 trial3: 在庫 0 商品を選択した時、数量を 1 で入れると
+    // 「在庫 0 警告が出ているのに数量 1」という矛盾表示になっていた。
+    // 誤発注防止のため、在庫 0 商品は数量 0 で line に入れて、
+    // ユーザーが意図的に数量を入力するまでは送信できない状態にする。
+    const isOutOfStock = c.stock_quantity !== null && c.stock_quantity <= 0;
     newItems[index] = {
       product_id: c.product_id,
       product_name: c.name, // AC7.4: 標準名 (public.products.name)
-      quantity: 1,
+      quantity: isOutOfStock ? 0 : 1,
       unit_price: c.unit_price ?? 0,
       weight: null,
-      zero_stock_warning:
-        c.stock_quantity !== null && c.stock_quantity <= 0,
+      zero_stock_warning: isOutOfStock,
     };
     setItems(newItems);
   };
@@ -85,7 +89,9 @@ export default function QuoteCreatePage() {
     setError("");
     setSelectorError("");
     if (contactId === null) { setSelectorError(t("companyContactSelector.contactRequired")); return; }
-    if (items.some((i) => !i.product_name || i.unit_price <= 0)) {
+    // QA r7 SM-3: 在庫 0 商品を選択した行は quantity=0 で入るため、
+    // 送信前にユーザーが意図的に数量を入力したか検証する。
+    if (items.some((i) => !i.product_name || i.unit_price <= 0 || i.quantity <= 0)) {
       setError(t("quotes.itemsRequired"));
       return;
     }
