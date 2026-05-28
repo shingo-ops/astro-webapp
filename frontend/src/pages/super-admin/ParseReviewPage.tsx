@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../../lib/api";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
 import InventorySearchBar, { InventorySearchCandidate } from "../../components/InventorySearchBar";
+import "./ParseReviewPage.css";
 
 interface ReviewItem {
   product_id: number | null;

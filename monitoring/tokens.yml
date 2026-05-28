@@ -40,7 +40,7 @@ versions:
   # 対応ファイル: monitoring/gha-exporter/Dockerfile ARG GHA_EXPORTER_VERSION
   gha_exporter:      "v0.0.15"
   # ドリルダウン監視（ADR-079）
-  cadvisor:          "v0.49.1"
+  cadvisor:          "v0.47.2"
   redis_exporter:    "v1.67.0"
 
 # --- スクレイプ・評価間隔 ---
