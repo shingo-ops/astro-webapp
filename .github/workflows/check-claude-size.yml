@@ -1,10 +1,11 @@
 name: CLAUDE.md Size Guard
 
+# paths / paths-ignore を使わず常時実行し、内部でファイル変更を判定する。
+# これにより 0-file-change な back-merge PR でも required check が必ず通過する。
+
 on:
   pull_request:
     branches: [main, develop]
-    paths:
-      - '**/CLAUDE.md'
 
 jobs:
   check:
@@ -12,9 +13,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: CLAUDE.md が変更されているか判定
+        id: changed
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          CHANGED=$(git diff --name-only "${BASE_SHA}...HEAD" -- '**/CLAUDE.md' 2>/dev/null || echo "")
+          if [ -n "$CHANGED" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "✅ CLAUDE.md に変更あり — サイズチェックを実行します"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "✅ CLAUDE.md に変更なし — サイズチェックをスキップします"
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.changed.outputs.changed == 'true'
         with:
           node-version: '20'
+
       - name: Check CLAUDE.md sizes
+        if: steps.changed.outputs.changed == 'true'
         working-directory: frontend
         run: node scripts/check-claude-size.js
