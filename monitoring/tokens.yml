@@ -36,6 +36,9 @@ versions:
   postgres_exporter: "v0.19.1"
   nginx_exporter:    "1.5.1"
   uptime_kuma:       "2.3.0"
+  # gha-exporter は build: 方式のため image タグではなく GitHub Releases バージョンを記録
+  # 対応ファイル: monitoring/gha-exporter/Dockerfile ARG GHA_EXPORTER_VERSION
+  gha_exporter:      "v0.0.15"
 
 # --- スクレイプ・評価間隔 ---
 # 対応ファイル: monitoring/prometheus/prometheus.yml
