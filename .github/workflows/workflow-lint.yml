@@ -46,12 +46,8 @@ jobs:
           import yaml, sys
 
           # 対策E: deploy.yml / claude-pipeline.yml を追加
+          # check-claude-size.yml は常時実行（内部で git diff 判定）のため paths チェック不要
           checks = [
-              {
-                  "file": ".github/workflows/check-claude-size.yml",
-                  "rule": "has_claude_md_in_paths",
-                  "reason": "ADR-076 CLAUDE.md サイズ管理: paths に CLAUDE.md パターンが必須。削除するとサイズチェックが走らなくなる",
-              },
               {
                   "file": ".github/workflows/migration-guard.yml",
                   "rule": "no_paths",
