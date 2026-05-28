@@ -199,7 +199,15 @@
           "refId": "A"
         }
       ],
-      "id": 1
+      "id": 1,
+      "links": [
+        {
+          "title": "システム概要で詳細を確認 →",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "システム概要で詳細を確認 →"
+        }
+      ]
     },
     {
       "title": "メモリ使用率",
@@ -256,7 +264,15 @@
           "refId": "A"
         }
       ],
-      "id": 2
+      "id": 2,
+      "links": [
+        {
+          "title": "システム概要で詳細を確認 →",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "システム概要で詳細を確認 →"
+        }
+      ]
     },
     {
       "title": "ディスク使用率",
@@ -313,7 +329,15 @@
           "refId": "A"
         }
       ],
-      "id": 3
+      "id": 3,
+      "links": [
+        {
+          "title": "システム概要で詳細を確認 →",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "システム概要で詳細を確認 →"
+        }
+      ]
     },
     {
       "title": "稼働中サービス数",
@@ -369,7 +393,15 @@
           "refId": "A"
         }
       ],
-      "id": 4
+      "id": 4,
+      "links": [
+        {
+          "title": "サービス稼働監視で詳細を確認 →",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "サービス稼働監視で詳細を確認 →"
+        }
+      ]
     },
     {
       "title": "CI / GitHub Actions",
@@ -439,7 +471,15 @@
           "refId": "A"
         }
       ],
-      "id": 5
+      "id": 5,
+      "links": [
+        {
+          "title": "CI/GitHub Actions で詳細を確認 →",
+          "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206",
+          "targetBlank": false,
+          "tooltip": "CI/GitHub Actions で詳細を確認 →"
+        }
+      ]
     },
     {
       "title": "CI 失敗（24時間）",
@@ -499,7 +539,15 @@
           "refId": "A"
         }
       ],
-      "id": 6
+      "id": 6,
+      "links": [
+        {
+          "title": "CI/GitHub Actions で詳細を確認 →",
+          "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206",
+          "targetBlank": false,
+          "tooltip": "CI/GitHub Actions で詳細を確認 →"
+        }
+      ]
     },
     {
       "title": "直近 CI 実行時間（平均・秒）",
@@ -559,7 +607,15 @@
           "refId": "A"
         }
       ],
-      "id": 7
+      "id": 7,
+      "links": [
+        {
+          "title": "CI/GitHub Actions で詳細を確認 →",
+          "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206",
+          "targetBlank": false,
+          "tooltip": "CI/GitHub Actions で詳細を確認 →"
+        }
+      ]
     },
     {
       "title": "エラーログ",
@@ -632,7 +688,15 @@
           "refId": "A"
         }
       ],
-      "id": 8
+      "id": 8,
+      "links": [
+        {
+          "title": "エラーログで詳細を確認 →",
+          "url": "/grafana/d/loki-error-logs",
+          "targetBlank": false,
+          "tooltip": "エラーログで詳細を確認 →"
+        }
+      ]
     },
     {
       "title": "リソース推移（1時間）",
@@ -694,7 +758,15 @@
           "refId": "B"
         }
       ],
-      "id": 9
+      "id": 9,
+      "links": [
+        {
+          "title": "システム概要で詳細を確認 →",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "システム概要で詳細を確認 →"
+        }
+      ]
     }
   ],
   "time": {
