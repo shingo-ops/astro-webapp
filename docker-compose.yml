@@ -458,6 +458,54 @@ services:
       - frontnet
       - backnet
 
+  # cAdvisor（コンテナ別 CPU・メモリ・ネットワーク）ADR-079
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    volumes:
+      - /:/rootfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    command:
+      - --docker-only
+      - --housekeeping_interval=30s
+      - --disable_root_cgroup_stats=true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    networks:
+      - backnet
+
+  # Redis Exporter（Redisキャッシュメトリクス）ADR-079
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.67.0
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+    depends_on:
+      - redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          cpus: "0.10"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
   # GitHub Actions Exporter（CI実行メトリクス）ADR-077
   # ジョブ/ステップ単位の実行時間・成否を Prometheus に送信する。
   # 秘密鍵は GHA_APP_KEY_PATH のファイルをマウントして使用（.env には書かない）。

@@ -39,6 +39,9 @@ versions:
   # gha-exporter は build: 方式のため image タグではなく GitHub Releases バージョンを記録
   # 対応ファイル: monitoring/gha-exporter/Dockerfile ARG GHA_EXPORTER_VERSION
   gha_exporter:      "v0.0.15"
+  # ドリルダウン監視（ADR-079）
+  cadvisor:          "v0.49.1"
+  redis_exporter:    "v1.67.0"
 
 # --- スクレイプ・評価間隔 ---
 # 対応ファイル: monitoring/prometheus/prometheus.yml
