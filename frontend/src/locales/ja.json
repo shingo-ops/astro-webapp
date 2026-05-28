@@ -784,7 +784,8 @@
     "disableConfirmSuffix": "を削除します。",
     "disableLabel": "削除",
     "subtitle": "仕入先の会社情報と連絡先を管理します。",
-    "openDetail": "クリックで詳細・編集"
+    "openDetail": "クリックで詳細・編集",
+    "pageLabel": "{{page}} ページ目 ({{count}} 件表示中)"
   },
   "purchaseOrders": {
     "title": "発注管理",

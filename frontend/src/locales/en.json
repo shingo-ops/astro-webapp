@@ -784,7 +784,8 @@
     "disableConfirmSuffix": " will be deleted.",
     "disableLabel": "Delete",
     "subtitle": "Manage supplier information and contacts.",
-    "openDetail": "Click to view or edit"
+    "openDetail": "Click to view or edit",
+    "pageLabel": "Page {{page}} ({{count}} items)"
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
