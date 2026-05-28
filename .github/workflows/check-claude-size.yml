@@ -3,8 +3,6 @@ name: CLAUDE.md Size Guard
 on:
   pull_request:
     branches: [main, develop]
-    paths:
-      - '**/CLAUDE.md'
 
 jobs:
   check:
@@ -12,9 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if any CLAUDE.md was changed
+        id: changed
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          if git diff --name-only "$BASE" "$HEAD" | grep -q 'CLAUDE\.md'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "CLAUDE.md に変更なし — サイズチェックをスキップ ✅"
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.changed.outputs.changed == 'true'
         with:
           node-version: '20'
+
       - name: Check CLAUDE.md sizes
+        if: steps.changed.outputs.changed == 'true'
         working-directory: frontend
         run: node scripts/check-claude-size.js
