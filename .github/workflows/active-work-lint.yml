@@ -24,6 +24,23 @@ jobs:
             echo "active-work.md は変更されていません。スキップします。"
           fi
 
+  placeholder-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect unfilled placeholder entries
+        run: |
+          PLACEHOLDER_COUNT=$(grep -c '（記入してください）' .claude-pipeline/active-work.md 2>/dev/null || echo 0)
+          if [ "$PLACEHOLDER_COUNT" -gt 0 ]; then
+            echo "::warning::担当機能エリア未記入が ${PLACEHOLDER_COUNT} 件あります。"
+            grep -n '（記入してください）' .claude-pipeline/active-work.md | while IFS= read -r line; do
+              echo "::warning::  $line"
+            done
+            echo "worktree 作成後に active-work.md の「担当機能エリア」を記入してください。"
+          else
+            echo "✅ プレースホルダーなし"
+          fi
+
   zombie-check:
     runs-on: ubuntu-latest
     steps:
