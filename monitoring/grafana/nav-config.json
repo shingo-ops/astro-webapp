@@ -1,5 +1,6 @@
 {
   "_comment": "ナビゲーションタブの SSoT。このファイルだけ編集し generate-nav.js を実行すれば全ダッシュボードに反映される。",
+  "_folder_structure": "大カテゴリ(folder)→中カテゴリ(Row パネル)→小カテゴリ(ドリルダウンリンク)",
   "links": [
     { "title": "メイン",         "url": "/grafana/d/monitoring-main" },
     { "title": "システム",       "url": "/grafana/d/jarvis-system-overview" },
@@ -12,6 +13,7 @@
   ],
   "dashboards": {
     "monitoring-main": {
+      "folder": "概要",
       "description": "全システムの主要指標を 1 画面で確認できるメインダッシュボード。異常があればここに現れます。",
       "header": {
         "title": "監視メイン",
@@ -19,6 +21,7 @@
       }
     },
     "jarvis-system-overview": {
+      "folder": "インフラ",
       "description": "サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。",
       "header": {
         "title": "システム概要",
@@ -26,6 +29,7 @@
       }
     },
     "ea99fc9c-32f6-4678-9f45-ab1421a94206": {
+      "folder": "インフラ",
       "description": "GitHub Actions の CI/CD パイプラインの実行時間・成功率・失敗数を分析します。",
       "header": {
         "title": "CI / GitHub Actions",
@@ -33,6 +37,7 @@
       }
     },
     "loki-error-logs": {
+      "folder": "アプリケーション",
       "description": "アプリケーションのエラーログをリアルタイムで監視・検索します。",
       "header": {
         "title": "エラーログ監視",
@@ -40,6 +45,7 @@
       }
     },
     "uptime-kuma-monitors": {
+      "folder": "アプリケーション",
       "description": "外部サービス・API エンドポイントの稼働状態とレスポンスタイムを監視します。",
       "header": {
         "title": "サービス稼働監視",
@@ -47,6 +53,7 @@
       }
     },
     "backend-api-metrics": {
+      "folder": "アプリケーション",
       "description": "バックエンドサービスの HTTP レスポンスタイム・エラー率・スループットを監視します。",
       "header": {
         "title": "バックエンド API メトリクス",
@@ -54,6 +61,7 @@
       }
     },
     "container-detail": {
+      "folder": "インフラ",
       "description": "コンテナ別の CPU・メモリ・ネットワーク使用量を詳細に確認します。コンテナを選択してドリルダウンできます。",
       "header": {
         "title": "コンテナリソース詳細",
@@ -61,6 +69,7 @@
       }
     },
     "db-connection-detail": {
+      "folder": "インフラ",
       "description": "DB接続数の状態別内訳・トランザクション数・タプル操作量を詳細に確認します。",
       "header": {
         "title": "DB接続詳細",
