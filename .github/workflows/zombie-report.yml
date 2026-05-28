@@ -19,6 +19,7 @@ jobs:
       - name: Detect zombie entries and create GitHub Issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_OWNER_PING }}
         run: |
           # ラベルが存在しない場合は自動作成（冪等）
           gh label create zombie-branch \
@@ -66,7 +67,7 @@ jobs:
           done
 
           # GitHub Issue 作成
-          gh issue create \
+          ISSUE_URL=$(gh issue create \
             --title "[自動] ゾンビエントリ検出 ${TODAY}" \
             --label "zombie-branch" \
             --body "## ゾンビエントリ検出
@@ -89,4 +90,14 @@ ${ZOMBIE_LIST}
 - ADR-074: worktree-agent-enforcement
 
 ---
-*このIssueは毎週月曜 09:00 JST に自動生成されます。対応完了後はクローズしてください。*"
+*このIssueは毎週月曜 09:00 JST に自動生成されます。対応完了後はクローズしてください。*")
+
+          echo "✅ Issue 作成: ${ISSUE_URL}"
+
+          # Discord #owner-ping に通知
+          DISCORD_MSG="🧟 **ゾンビエントリ ${#ZOMBIE_BRANCHES[@]} 件検出**
+${ZOMBIE_LIST}
+
+対応が必要です → ${ISSUE_URL}"
+
+          bash scripts/notify/discord-owner-ping.sh "$DISCORD_MSG"
