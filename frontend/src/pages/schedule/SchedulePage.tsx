@@ -480,9 +480,9 @@ export default function SchedulePage() {
         </div>
       }
       headerAction={
-        <div className="schedule-header-actions">
+        <div className="page-header-actions">
           <select
-            className="schedule-view-select"
+            className="page-header-select"
             value={calView}
             onChange={(e) => handleToolbarView(e.target.value)}
             aria-label={t("schedule.viewSelect")}

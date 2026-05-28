@@ -93,18 +93,18 @@ export function InboxMessageThread({
             || selectedConversation?.customer_name
             || `Lead #${selectedLeadId}`}
         </h3>
-        <div className="inbox-header-actions">
-          <button type="button" className="inbox-header-action-btn"
+        <div className="inbox-thread-actions">
+          <button type="button" className="inbox-thread-action-btn"
             onClick={handleMarkUnread}
             aria-label={t("inbox.markUnread")} data-tooltip={t("inbox.markUnread")}>
             <INBOX_ACTION_ICONS.markUnread size={ICON.base} weight="fill" aria-hidden="true" />
           </button>
-          <button type="button" className="inbox-header-action-btn"
+          <button type="button" className="inbox-thread-action-btn"
             onClick={handleExclude}
             aria-label={t("inbox.exclude")} data-tooltip={t("inbox.exclude")}>
             <INBOX_ACTION_ICONS.exclude size={ICON.base} weight="fill" aria-hidden="true" />
           </button>
-          <button type="button" className="inbox-header-action-btn danger"
+          <button type="button" className="inbox-thread-action-btn danger"
             onClick={handleDeleteLead}
             aria-label={t("inbox.deleteLead")} data-tooltip={t("inbox.deleteLead")}>
             <INBOX_ACTION_ICONS.delete size={ICON.base} weight="fill" aria-hidden="true" />
