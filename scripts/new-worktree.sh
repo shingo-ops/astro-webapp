@@ -66,6 +66,11 @@ else
   echo ""
   echo "✅ worktree を作成しました: ${WORKTREE_DIR}"
 
+  # ── pre-push フックを worktree で有効化 ──────────────────────────────────────
+  # husky の prepare スクリプトが core.hooksPath を frontend/.husky/_ に上書きするため、
+  # worktree 固有の設定で frontend/.husky を直接指定する（npm install の影響を受けない）
+  git -C "${WORKTREE_DIR}" config core.hooksPath frontend/.husky
+
   # ── UUID ライフサイクル管理（.worktree-id を発行）────────────────────────────
   WORKTREE_UUID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
   CREATED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
