@@ -420,8 +420,8 @@ export default function ProductsPage() {
         </table>
       )}
 
-      {/* QA r7: 件数表示は常時、前/次 button は pagination 必要時のみ */}
-      {!loading && products.length > 0 && (
+      {/* QA r7: 190 件全件閲覧のため pagination 追加 */}
+      {(page > 1 || hasNext) && (
         <div
           className="pagination"
           style={{
@@ -434,29 +434,25 @@ export default function ProductsPage() {
           }}
           data-testid="products-pagination"
         >
-          {(page > 1 || hasNext) && (
-            <button
-              className="btn-sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              data-testid="products-page-prev"
-            >
-              {t("common.prevPage")}
-            </button>
-          )}
+          <button
+            className="btn-sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            data-testid="products-page-prev"
+          >
+            {t("common.prevPage")}
+          </button>
           <span style={{ color: "var(--text-secondary)" }} data-testid="products-page-info">
             {t("products.pageLabel", { page, count: products.length })}
           </span>
-          {(page > 1 || hasNext) && (
-            <button
-              className="btn-sm"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!hasNext}
-              data-testid="products-page-next"
-            >
-              {t("common.nextPage")}
-            </button>
-          )}
+          <button
+            className="btn-sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasNext}
+            data-testid="products-page-next"
+          >
+            {t("common.nextPage")}
+          </button>
         </div>
       )}
 

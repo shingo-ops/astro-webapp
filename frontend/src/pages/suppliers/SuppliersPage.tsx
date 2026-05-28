@@ -128,8 +128,8 @@ export default function SuppliersPage() {
         </table>
       )}
 
-      {/* QA r7: 件数表示は常時、前/次 button は pagination 必要時のみ */}
-      {!loading && suppliers.length > 0 && (
+      {/* QA r7: 47 件全件閲覧のため pagination 追加 */}
+      {(page > 1 || hasNext) && (
         <div
           className="pagination"
           style={{
@@ -142,29 +142,25 @@ export default function SuppliersPage() {
           }}
           data-testid="suppliers-pagination"
         >
-          {(page > 1 || hasNext) && (
-            <button
-              className="btn-sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              data-testid="suppliers-page-prev"
-            >
-              {t("common.prevPage")}
-            </button>
-          )}
+          <button
+            className="btn-sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            data-testid="suppliers-page-prev"
+          >
+            {t("common.prevPage")}
+          </button>
           <span style={{ color: "var(--text-secondary)" }} data-testid="suppliers-page-info">
             {t("suppliers.pageLabel", { page, count: suppliers.length })}
           </span>
-          {(page > 1 || hasNext) && (
-            <button
-              className="btn-sm"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!hasNext}
-              data-testid="suppliers-page-next"
-            >
-              {t("common.nextPage")}
-            </button>
-          )}
+          <button
+            className="btn-sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasNext}
+            data-testid="suppliers-page-next"
+          >
+            {t("common.nextPage")}
+          </button>
         </div>
       )}
 
