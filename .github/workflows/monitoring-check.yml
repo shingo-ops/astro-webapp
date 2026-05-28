@@ -51,3 +51,7 @@ jobs:
       - name: SSoT整合性・バージョン固定・healthcheckチェック
         if: steps.changes.outputs.relevant == 'true'
         run: python3 monitoring/scripts/validate_tokens.py
+
+      - name: Grafana ナビゲーション同期チェック（nav-config.json SSoT）
+        if: steps.changes.outputs.relevant == 'true'
+        run: node monitoring/grafana/generate-nav.js --check
