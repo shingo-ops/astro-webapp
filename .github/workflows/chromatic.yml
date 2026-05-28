@@ -1,0 +1,33 @@
+name: Chromatic Visual Testing
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+
+jobs:
+  chromatic:
+    name: Chromatic Snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # TurboSnap のために全履歴が必要
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Publish to Chromatic
+        uses: chromaui/action@latest
+        with:
+          workingDir: frontend
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+          exitZeroOnChanges: true  # 差分があっても CI は green のまま（レビューは Chromatic UI で実施）
+          onlyChanged: true        # TurboSnap: 変更コンポーネントのみスナップショット（70-90% コスト削減）
