@@ -14,7 +14,6 @@ set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 SPEC_FILE="$REPO_ROOT/.claude-pipeline/spec.md"
-ACTIVE_WORK_FILE="$REPO_ROOT/.claude-pipeline/active-work.md"
 CODEX_BIN="${HOME}/.npm-global/bin/codex"
 
 # ────────────────────────────────────────────────────────────────────────────
