@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-05-28 / ADR 総数: 68 件
+最終更新: 2026-05-28 / ADR 総数: 69 件
 
 ## 一覧
 
@@ -76,7 +76,7 @@
 | [ADR-077](./ADR-077-github-actions-metrics.md) | ADR-077: GitHub Actions CI メトリクスの Prometheus/Grafana 可視化 | — | — |
 | [ADR-078](./ADR-078-vps-runner-registration.md) | ADR-078: VPS runner 登録計画 — さくらVPS への salesanchor-vps ラベル付き self-hosted runner 登録 | Accepted | — |
 | [ADR-079](./ADR-079-claude-code-monitoring-access.md) | ADR-079: Claude Code 専用 VPS 読み取り専用監視アクセス | Accepted | — |
-| [ADR-080](./ADR-080-monitoring-vps-separation.md) | ADR-080: 監視スタックの管理室VPS分離 | Proposed | — |
+| [ADR-080](./ADR-080-monitoring-vps-separation.md) | ADR-080: 監視スタックの管理室VPS分離 — RAM危機の根本解決とCIランナー統合 | Proposed | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例
