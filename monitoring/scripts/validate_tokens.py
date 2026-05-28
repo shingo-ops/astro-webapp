@@ -35,6 +35,9 @@ MONITORING_IMAGES = {
     "postgres_exporter": "prometheuscommunity/postgres-exporter",
     "nginx_exporter":    "nginx/nginx-prometheus-exporter",
     "uptime_kuma":       "louislam/uptime-kuma",
+    # ドリルダウン監視（ADR-079）
+    "cadvisor":          "gcr.io/cadvisor/cadvisor",
+    "redis_exporter":    "oliver006/redis_exporter",
 }
 
 # build: 方式のサービス: tokens.yml の versions キー → Dockerfile パス

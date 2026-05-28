@@ -88,6 +88,30 @@
       "tooltip": "",
       "type": "link",
       "url": "/grafana/d/backend-api-metrics"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "コンテナ詳細",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/container-detail"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "DB詳細",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/db-connection-detail"
     }
   ],
   "panels": [
