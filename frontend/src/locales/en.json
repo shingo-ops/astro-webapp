@@ -1384,7 +1384,7 @@
     "phaseSwitch": {
       "title": "Spreadsheet parallel-run Phase",
       "subtitle": "Switch the Discord-ingestion operation mode (A / B / C). Phase B is the normal mode; Phase A is for emergency rollback only.",
-      "currentLabel": "Current Phase",
+      "currentLabel": "Current",
       "phaseADesc": "Emergency rollback: only receive history is recorded, stock counts are not updated",
       "phaseBDesc": "Normal operation: CRM updates stock counts directly",
       "phaseABanner": "Currently in \"emergency rollback\" mode. Approvals will not update stock counts. Please return to normal operation (Phase B) as soon as possible.",

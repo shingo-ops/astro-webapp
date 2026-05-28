@@ -1384,7 +1384,7 @@
     "phaseSwitch": {
       "title": "スプレッドシート並走 Phase",
       "subtitle": "Discord 取り込みの動作モード (A / B / C) を切替えます。通常運用は Phase B、Phase A は緊急時の戻し用です。",
-      "currentLabel": "現在の Phase",
+      "currentLabel": "現在",
       "phaseADesc": "緊急戻し: 受信履歴のみ記録、商品の在庫数は更新されません",
       "phaseBDesc": "通常運用: CRM 側で在庫数を実更新",
       "phaseABanner": "現在「緊急戻し」モード中です。承認しても商品の在庫数は更新されません。早めに通常運用 (Phase B) に戻してください。",
