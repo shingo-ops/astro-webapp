@@ -438,13 +438,13 @@
   color: var(--text-primary);
   margin: 0;
 }
-.inbox-header-actions {
+.inbox-thread-actions {
   display: flex;
   align-items: center;
   gap: var(--space-1);
   flex-shrink: 0;
 }
-.inbox-header-action-btn {
+.inbox-thread-action-btn {
   position: relative;
   display: flex;
   align-items: center;
@@ -457,11 +457,11 @@
   cursor: pointer;
   transition: background var(--transition-micro), color var(--transition-micro);
 }
-.inbox-header-action-btn:hover {
+.inbox-thread-action-btn:hover {
   background: var(--bg-subtle);
   color: var(--text-primary);
 }
-.inbox-header-action-btn.danger:hover {
+.inbox-thread-action-btn.danger:hover {
   background: var(--danger-bg);
   color: var(--danger);
 }
@@ -874,7 +874,7 @@
   .karte-close-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
 
   /* 三点メニュー: アクションボタン群を非表示にして三点ボタンを表示 */
-  .inbox-header-actions { display: none; }
+  .inbox-thread-actions { display: none; }
 
   .inbox-header-menu-btn {
     display: flex;
@@ -1030,11 +1030,6 @@ textarea.right-panel-field { resize: vertical; min-height: var(--inbox-textarea-
 .right-panel-save-indicator .error  { color: var(--danger-bg); }
 
 /* ====== 受信箱設定ボタン ====== */
-.inbox-header-btns {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-}
 .inbox-faq-btn {
   height: var(--space-10);
   padding: 0 var(--space-3);

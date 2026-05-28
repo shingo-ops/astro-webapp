@@ -98,7 +98,7 @@ test.describe("Scene 1: Dashboard Overview", () => {
     await expect(page.getByRole("button", { name: "個人" })).toBeVisible();
 
     // 期間プルダウンが描画される
-    const periodSelect = page.locator(".db-period-select");
+    const periodSelect = page.locator(".page-header-select");
     await expect(periodSelect).toBeVisible();
 
     // 期間連動エリア: リード / 商談 / 受注 セクション見出しが描画される

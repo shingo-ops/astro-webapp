@@ -42,7 +42,7 @@ test.describe("Inbox ヘッダー三点メニュー", () => {
     await expect(page.locator(".inbox-header-menu-btn")).toBeVisible();
 
     // インラインアクションボタン群は非表示
-    await expect(page.locator(".inbox-header-actions")).toBeHidden();
+    await expect(page.locator(".inbox-thread-actions")).toBeHidden();
   });
 
   test("≤1279px: 三点ボタンクリックでドロップダウンが開く", async ({ page }) => {
@@ -86,7 +86,7 @@ test.describe("Inbox ヘッダー三点メニュー", () => {
     await setupInboxWithConversation(page);
 
     // インラインボタン群が表示される
-    await expect(page.locator(".inbox-header-actions")).toBeVisible();
+    await expect(page.locator(".inbox-thread-actions")).toBeVisible();
 
     // 三点ボタンは非表示
     await expect(page.locator(".inbox-header-menu-btn")).toBeHidden();
