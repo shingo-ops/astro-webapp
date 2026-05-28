@@ -30,6 +30,8 @@ cat ~/.ssh/authorized_keys
 - [ ] 退職・契約終了したメンバーの鍵が残っていないか
 - [ ] 不明な鍵がないか
 - [ ] rootユーザーのauthorized_keysが空であること
+- [ ] **AI エージェント専用鍵**（`claude-monitor` ユーザーの `authorized_keys`）が1件のみか（ADR-079）
+- [ ] `last claude-monitor` で直近90日以内にアクセスがあるか（なければ鍵を見直す）
 
 ### 2. DBユーザーの確認
 

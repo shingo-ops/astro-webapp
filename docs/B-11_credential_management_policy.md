@@ -67,6 +67,8 @@
 | GitHub Deploy Key | 6ヶ月ごと |
 | AWS IAMキー | 90日ごと |
 | Grafana管理者パスワード | 90日ごと |
+| **Claude Code 専用 SSH 鍵**（`salesanchor-claude`） | **90日ごと**（ADR-079） |
+| **Grafana Service Account Token**（`claude-code-reader`） | **90日ごと**（ADR-079） |
 
 ---
 
