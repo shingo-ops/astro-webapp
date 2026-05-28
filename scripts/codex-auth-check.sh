@@ -17,6 +17,10 @@ WARN_DAYS=3
 CODEX_BIN="${HOME}/.npm-global/bin/codex"
 
 if [[ "${1:-}" == "--warn-days" && -n "${2:-}" ]]; then
+  if [[ ! "${2}" =~ ^[0-9]+$ ]]; then
+    echo "❌ --warn-days には整数を指定してください（例: --warn-days 5）"
+    exit 1
+  fi
   WARN_DAYS="$2"
 fi
 
@@ -69,6 +73,8 @@ try:
     payload += "=" * (4 - len(payload) % 4)
     claims = json.loads(base64.urlsafe_b64decode(payload))
     exp = claims.get("exp")
+    if exp is None:
+        raise ValueError("exp claim not found")
 except Exception:
     print("⚠️  トークンのデコードに失敗しました。codex doctor で確認してください。")
     sys.exit(0)  # デコード失敗は致命的ではないので続行
