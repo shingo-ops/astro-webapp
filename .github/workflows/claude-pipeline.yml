@@ -26,6 +26,10 @@ on:
         type: string
   pull_request:
     types: [synchronize]
+  push:
+    branches:
+      - develop
+      - 'claude-impl/**'
 
 permissions:
   contents: write
@@ -36,6 +40,13 @@ env:
   MAX_AUTO_RETRIES: 3
 
 jobs:
+  skip-push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Skip on direct push
+        run: echo "Direct push detected. Claude pipeline only runs on workflow_dispatch or pull_request:synchronize from claude-impl/* branches. Skipping."
+
   # ADR-056: 全ジョブで共有する context (event 種別 / PR / ADR files / pause-automation 判定)
   context:
     runs-on: self-hosted
