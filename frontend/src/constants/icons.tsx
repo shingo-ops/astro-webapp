@@ -68,6 +68,7 @@ import {
   AdjustmentsHorizontalIcon,
   MagnifyingGlassIcon,
   XMarkIcon as XMarkOutlineIcon,
+  ChatBubbleOvalLeftIcon as ChatBubbleOvalLeftOutlineIcon,
 } from "@heroicons/react/24/outline";
 
 /**
@@ -299,7 +300,7 @@ export const INBOX_ACTION_ICONS = {
   delete:     Trash,           // TrashIcon         — 削除
 } satisfies Record<string, Icon>;
 
-// Layout.tsx の /lead-chat ナビアイテム用
+// Layout.tsx の /lead-chat ナビアイテム用（outline バリアント — サイドバー統一仕様）
 export function LeadChatIcon({ size = 20, className }: { size?: number; className?: string }) {
-  return <ChatBubbleOvalLeftIcon width={size} height={size} className={className} aria-hidden="true" />;
+  return <ChatBubbleOvalLeftOutlineIcon width={size} height={size} className={className} aria-hidden="true" />;
 }
