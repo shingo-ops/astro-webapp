@@ -66,39 +66,45 @@ jobs:
             ZOMBIE_LIST="${ZOMBIE_LIST}"$'\n'"- \`${B}\`"
           done
 
+          # Issue 本文をファイルに書き出し（YAML の run: | ブロック内での multiline --body 問題を回避）
+          cat > /tmp/issue-body.md << ISSUE_BODY
+          ## ゾンビエントリ検出
+
+          active-work.md に \`IN_PROGRESS\` と記録されているが、リモートブランチが存在しないエントリが **${#ZOMBIE_BRANCHES[@]} 件** 検出されました。
+
+          ### 対象ブランチ
+
+          ${ZOMBIE_LIST}
+
+          ### 対応方法
+
+          各ブランチについて、以下のどちらかを実施してください：
+
+          1. **作業が終わっている場合** → \`bash scripts/cleanup-worktree.sh <ブランチ名>\` を実行して active-work.md から削除
+          2. **まだ作業中の場合** → \`git push\` でリモートに再作成してください
+
+          ### 参考リンク
+
+          - [active-work.md](./.claude-pipeline/active-work.md)
+          - ADR-074: worktree-agent-enforcement
+
+          ---
+          *このIssueは毎週月曜 09:00 JST に自動生成されます。対応完了後はクローズしてください。*
+          ISSUE_BODY
+
           # GitHub Issue 作成
           ISSUE_URL=$(gh issue create \
             --title "[自動] ゾンビエントリ検出 ${TODAY}" \
             --label "zombie-branch" \
-            --body "## ゾンビエントリ検出
-
-active-work.md に \`IN_PROGRESS\` と記録されているが、リモートブランチが存在しないエントリが **${#ZOMBIE_BRANCHES[@]} 件** 検出されました。
-
-### 対象ブランチ
-${ZOMBIE_LIST}
-
-### 対応方法
-
-各ブランチについて、以下のどちらかを実施してください：
-
-1. **作業が終わっている場合** → \`bash scripts/cleanup-worktree.sh <ブランチ名>\` を実行して active-work.md から削除
-2. **まだ作業中の場合** → \`git push\` でリモートに再作成してください
-
-### 参考リンク
-
-- [active-work.md](./.claude-pipeline/active-work.md)
-- ADR-074: worktree-agent-enforcement
-
----
-*このIssueは毎週月曜 09:00 JST に自動生成されます。対応完了後はクローズしてください。*")
+            --body-file /tmp/issue-body.md)
 
           echo "✅ Issue 作成: ${ISSUE_URL}"
 
-          # Discord #owner-ping に通知
+          # Discord #scheduled-report に通知
           DISCORD_MSG="🧟 **ゾンビエントリ ${#ZOMBIE_BRANCHES[@]} 件検出**
-${ZOMBIE_LIST}
+          ${ZOMBIE_LIST}
 
-対応が必要です → ${ISSUE_URL}"
+          対応が必要です → ${ISSUE_URL}"
 
           DISCORD_WEBHOOK_OWNER_PING="$DISCORD_WEBHOOK_SCHEDULED_REPORT" \
             bash scripts/notify/discord-owner-ping.sh "$DISCORD_MSG"
