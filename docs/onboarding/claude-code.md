@@ -104,7 +104,28 @@ git config user.email "<あなたのメール>"
 
 ---
 
-## 6. 困った時
+## 6. デザインシステム
+
+フロントエンドの UI を触る前に必ず確認すること。
+
+| ドキュメント | 内容 |
+|------------|------|
+| `docs/onboarding/design-system.md` | **入門（5分）** — デザイントークン・CSS 変数・Storybook の使い方 |
+| `docs/design-system/storybook-i18n-policy.md` | Storybook stories での i18n の書き方 |
+| `docs/adr/ADR-067-design-token-enforcement.md` | CI 強制ルールの詳細 |
+| `docs/adr/ADR-073-design-system-kgi-rubric.md` | KGI ルーブリック（完成基準） |
+
+```bash
+# ローカルで全デザインシステムチェックを一括実行
+cd frontend && npm run check:all
+
+# 未使用トークン監査（CI ブロックなし・定期確認用）
+cd frontend && npm run audit:unused-tokens
+```
+
+---
+
+## 7. 困った時
 
 - Claude Code 機能の質問: `/help`、または公式ドキュメント https://docs.claude.com/claude-code
 - 仕様の判断に迷ったら: PO（しんごさん）に質問してから着手
