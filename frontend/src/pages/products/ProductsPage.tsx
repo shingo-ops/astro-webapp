@@ -420,8 +420,9 @@ export default function ProductsPage() {
         </table>
       )}
 
-      {/* QA r7: 190 件全件閲覧のため pagination 追加 */}
-      {(page > 1 || hasNext) && (
+      {/* QA r7: 件数表示は常時、前/次 button は pagination 必要時のみ。
+          管理センター内 (二重 PageLayout) でも見切れないよう sticky bottom。 */}
+      {!loading && products.length > 0 && (
         <div
           className="pagination"
           style={{
@@ -429,30 +430,38 @@ export default function ProductsPage() {
             justifyContent: "center",
             alignItems: "center",
             gap: "var(--space-3)",
-            marginTop: "var(--space-4)",
-            marginBottom: "var(--space-4)",
+            padding: "var(--space-3) 0",
+            position: "sticky",
+            bottom: 0,
+            background: "var(--bg-surface)",
+            borderTop: "1px solid var(--border-color)",
+            zIndex: 1,
           }}
           data-testid="products-pagination"
         >
-          <button
-            className="btn-sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            data-testid="products-page-prev"
-          >
-            {t("common.prevPage")}
-          </button>
+          {(page > 1 || hasNext) && (
+            <button
+              className="btn-sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              data-testid="products-page-prev"
+            >
+              {t("common.prevPage")}
+            </button>
+          )}
           <span style={{ color: "var(--text-secondary)" }} data-testid="products-page-info">
             {t("products.pageLabel", { page, count: products.length })}
           </span>
-          <button
-            className="btn-sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!hasNext}
-            data-testid="products-page-next"
-          >
-            {t("common.nextPage")}
-          </button>
+          {(page > 1 || hasNext) && (
+            <button
+              className="btn-sm"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasNext}
+              data-testid="products-page-next"
+            >
+              {t("common.nextPage")}
+            </button>
+          )}
         </div>
       )}
 
