@@ -2,7 +2,6 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { usePermissions } from "./usePermissions";
 
-// api モジュールをモック
 vi.mock("../lib/api", () => ({
   api: {
     get: vi.fn(),
@@ -17,7 +16,7 @@ afterEach(() => {
 });
 
 describe("usePermissions", () => {
-  it("初期状態: loading=true、permissions は空、error は null", () => {
+  it("initial state: loading=true, empty permissions, error=null", () => {
     mockGet.mockResolvedValueOnce({ permissions: [] });
     const { result } = renderHook(() => usePermissions());
 
@@ -26,7 +25,7 @@ describe("usePermissions", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("API 成功時: permissions が Set に格納され loading=false になる", async () => {
+  it("on API success: permissions are stored in a Set and loading becomes false", async () => {
     mockGet.mockResolvedValueOnce({
       permissions: ["read:customers", "write:orders"],
     });
@@ -40,7 +39,7 @@ describe("usePermissions", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("API 失敗時: error が設定され loading=false になる", async () => {
+  it("on API failure: error is set and loading becomes false", async () => {
     mockGet.mockRejectedValueOnce(new Error("Network error"));
 
     const { result } = renderHook(() => usePermissions());
@@ -51,7 +50,7 @@ describe("usePermissions", () => {
     expect(result.current.permissions.size).toBe(0);
   });
 
-  it("hasPermission: 持っている権限は true を返す", async () => {
+  it("hasPermission returns true for a held permission", async () => {
     mockGet.mockResolvedValueOnce({
       permissions: ["read:customers", "write:orders"],
     });
@@ -63,7 +62,7 @@ describe("usePermissions", () => {
     expect(result.current.hasPermission("write:orders")).toBe(true);
   });
 
-  it("hasPermission: 持っていない権限は false を返す", async () => {
+  it("hasPermission returns false for a permission not held", async () => {
     mockGet.mockResolvedValueOnce({ permissions: ["read:customers"] });
 
     const { result } = renderHook(() => usePermissions());
@@ -72,7 +71,7 @@ describe("usePermissions", () => {
     expect(result.current.hasPermission("admin:superadmin")).toBe(false);
   });
 
-  it("hasAny: 少なくとも1つ持っていれば true を返す", async () => {
+  it("hasAny returns true when at least one permission is held", async () => {
     mockGet.mockResolvedValueOnce({ permissions: ["write:orders"] });
 
     const { result } = renderHook(() => usePermissions());
@@ -83,7 +82,7 @@ describe("usePermissions", () => {
     ).toBe(true);
   });
 
-  it("hasAny: 1つも持っていなければ false を返す", async () => {
+  it("hasAny returns false when none of the permissions are held", async () => {
     mockGet.mockResolvedValueOnce({ permissions: ["write:orders"] });
 
     const { result } = renderHook(() => usePermissions());
@@ -94,7 +93,7 @@ describe("usePermissions", () => {
     ).toBe(false);
   });
 
-  it("reload: 再度 API を呼び出し permissions を更新する", async () => {
+  it("reload triggers a second API call and updates permissions", async () => {
     mockGet
       .mockResolvedValueOnce({ permissions: ["read:customers"] })
       .mockResolvedValueOnce({ permissions: ["read:customers", "write:orders"] });
@@ -110,7 +109,7 @@ describe("usePermissions", () => {
     expect(result.current.permissions.has("write:orders")).toBe(true);
   });
 
-  it("/me/permissions エンドポイントを呼び出す", async () => {
+  it("calls the /me/permissions endpoint", async () => {
     mockGet.mockResolvedValueOnce({ permissions: [] });
 
     renderHook(() => usePermissions());

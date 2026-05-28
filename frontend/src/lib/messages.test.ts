@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { inferPlatform, platformLabel } from "./messages";
 
 describe("inferPlatform", () => {
-  it("lead.platform を最優先で返す", () => {
+  it("prioritises lead.platform over conversation.platform", () => {
     const result = inferPlatform(
       { platform: "messenger" },
       { platform: "instagram" },
@@ -10,7 +10,7 @@ describe("inferPlatform", () => {
     expect(result).toBe("messenger");
   });
 
-  it("lead.platform が null のとき conversation.platform にフォールバックする", () => {
+  it("falls back to conversation.platform when lead.platform is null", () => {
     const result = inferPlatform(
       { platform: null },
       { platform: "instagram" },
@@ -18,48 +18,48 @@ describe("inferPlatform", () => {
     expect(result).toBe("instagram");
   });
 
-  it("lead が null のとき conversation.platform にフォールバックする", () => {
+  it("falls back to conversation.platform when lead is null", () => {
     const result = inferPlatform(null, { platform: "messenger" });
     expect(result).toBe("messenger");
   });
 
-  it("lead が undefined のとき conversation.platform にフォールバックする", () => {
+  it("falls back to conversation.platform when lead is undefined", () => {
     const result = inferPlatform(undefined, { platform: "instagram" });
     expect(result).toBe("instagram");
   });
 
-  it("両方 null のとき null を返す", () => {
+  it("returns null when both are null", () => {
     expect(inferPlatform({ platform: null }, { platform: null })).toBeNull();
   });
 
-  it("両方 null/undefined のとき null を返す", () => {
+  it("returns null when both lead and conversation are null/undefined", () => {
     expect(inferPlatform(null, null)).toBeNull();
     expect(inferPlatform(undefined, undefined)).toBeNull();
   });
 
-  it("lead.platform が instagram でも正しく返す", () => {
+  it("returns instagram when lead.platform is instagram", () => {
     expect(inferPlatform({ platform: "instagram" }, null)).toBe("instagram");
   });
 });
 
 describe("platformLabel", () => {
-  it('"messenger" → "Messenger"', () => {
+  it('returns "Messenger" for "messenger"', () => {
     expect(platformLabel("messenger")).toBe("Messenger");
   });
 
-  it('"instagram" → "Instagram"', () => {
+  it('returns "Instagram" for "instagram"', () => {
     expect(platformLabel("instagram")).toBe("Instagram");
   });
 
-  it("未知の文字列はそのまま返す", () => {
+  it("returns the original string for unknown platforms", () => {
     expect(platformLabel("line")).toBe("line");
   });
 
-  it('null → "—"', () => {
+  it('returns "—" for null', () => {
     expect(platformLabel(null)).toBe("—");
   });
 
-  it('空文字 → "—"', () => {
+  it('returns "—" for empty string', () => {
     expect(platformLabel("")).toBe("—");
   });
 });
