@@ -107,8 +107,7 @@ async def app_no_perm(monkeypatch):
 @pytest.mark.asyncio
 async def test_connect_start_no_auth_returns_401(app_no_auth):
     res = await app_no_auth.post("/api/v1/meta/connect/start")
-    # FastAPI HTTPBearer は認証ヘッダー未送信時に 403 を返す（auto_error=True デフォルト）
-    assert res.status_code == 403, f"expected 403 (no auth), got {res.status_code}"
+    assert res.status_code == 401, f"expected 401 (no auth), got {res.status_code}"
 
 
 @pytest.mark.asyncio
@@ -121,7 +120,7 @@ async def test_connect_start_no_perm_returns_403(app_no_perm):
 @pytest.mark.asyncio
 async def test_connect_callback_no_auth_returns_401(app_no_auth):
     res = await app_no_auth.get("/api/v1/meta/connect/callback?code=x&state=y")
-    assert res.status_code == 403, f"expected 403 (no auth), got {res.status_code}"
+    assert res.status_code == 401, f"expected 401 (no auth), got {res.status_code}"
 
 
 @pytest.mark.asyncio
@@ -134,7 +133,7 @@ async def test_connect_callback_no_perm_returns_403(app_no_perm):
 @pytest.mark.asyncio
 async def test_connect_delete_no_auth_returns_401(app_no_auth):
     res = await app_no_auth.delete("/api/v1/meta/connect/123456")
-    assert res.status_code == 403, f"expected 403 (no auth), got {res.status_code}"
+    assert res.status_code == 401, f"expected 401 (no auth), got {res.status_code}"
 
 
 @pytest.mark.asyncio
@@ -147,7 +146,7 @@ async def test_connect_delete_no_perm_returns_403(app_no_perm):
 @pytest.mark.asyncio
 async def test_channels_list_no_auth_returns_401(app_no_auth):
     res = await app_no_auth.get("/api/v1/meta/channels")
-    assert res.status_code == 403, f"expected 403 (no auth), got {res.status_code}"
+    assert res.status_code == 401, f"expected 401 (no auth), got {res.status_code}"
 
 
 @pytest.mark.asyncio
