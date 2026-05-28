@@ -65,8 +65,8 @@ const applyHeader = (panels, header) => {
     title:   '',
     gridPos: { h: HEADER_HEIGHT, w: 24, x: 0, y: 0 },
     options: {
-      mode:    'markdown',
-      content: `# ${header.title}\n${header.subtitle}`,
+      mode:    'html',
+      content: `<div style="padding:4px 8px"><p style="margin:0;font-size:20px;font-weight:600;line-height:1.3">${header.title}</p><p style="margin:2px 0 0;font-size:10px;opacity:0.75">${header.subtitle}</p></div>`,
     },
     transparent: false,
   };
