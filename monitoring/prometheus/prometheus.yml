@@ -30,6 +30,11 @@ scrape_configs:
     static_configs:
       - targets: ["nginx-exporter:9113"]
 
+  # FastAPI バックエンド（HTTPリクエスト数・レスポンスタイム・エラーレート）
+  - job_name: "backend"
+    static_configs:
+      - targets: ["backend:8000"]
+
   # Uptime Kuma（死活監視メトリクス）
   # v2.x は Basic 認証が必要。パスワードはコンテナ内シークレットファイルで管理
   - job_name: "uptime-kuma"

@@ -32,3 +32,6 @@ reportlab>=4.0.0,<5.0.0
 google-api-python-client>=2.100.0,<3.0.0
 google-auth-oauthlib>=1.2.0,<2.0.0
 google-auth-httplib2>=0.2.0,<1.0.0
+# Sprint 3 (monitoring): FastAPI メトリクスを /metrics エンドポイントで Prometheus に公開
+# Pydantic v2 / FastAPI 0.115.x 対応済み。rate_limit.py / audit.py の _SKIP_PATHS で除外済み
+prometheus-fastapi-instrumentator==0.22.0
