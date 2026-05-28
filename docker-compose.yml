@@ -460,19 +460,19 @@ services:
       - backnet
 
   # cAdvisor（コンテナ別 CPU・メモリ・ネットワーク）ADR-079
+  # v0.47.2: VPS cgroup v1/v2 互換性が最も高い安定版。v0.49.x は VPS 環境でクラッシュ多発のため降格。
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
     volumes:
       - /:/rootfs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-    privileged: true
     command:
-      - --docker-only
+      - --docker_only=true
       - --housekeeping_interval=30s
-      - --disable_root_cgroup_stats
       - --disable_metrics=tcp,udp,disk,diskIO,process,hugetlb,referenced_memory
+      - --store_container_labels=false
     restart: unless-stopped
     deploy:
       resources:
