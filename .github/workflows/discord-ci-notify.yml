@@ -97,7 +97,7 @@ jobs:
       - name: Discord 通知
         if: steps.status.outputs.should_notify == 'true'
         env:
-          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_PR }}
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_CI }}
           PR_NUMBER: ${{ github.event.check_suite.pull_requests[0].number }}
           PR_TITLE: ${{ steps.pr.outputs.title }}
           PR_URL: ${{ steps.pr.outputs.url }}
