@@ -4,6 +4,11 @@ on:
   pull_request:
     paths:
       - 'frontend/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
 
 jobs:
   chromatic:
@@ -31,3 +36,4 @@ jobs:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           exitZeroOnChanges: true  # 差分があっても CI は green のまま（レビューは Chromatic UI で実施）
           onlyChanged: true        # TurboSnap: 変更コンポーネントのみスナップショット（70-90% コスト削減）
+          autoAcceptChanges: "main"  # main マージ後に baseline を自動更新（feature PR での視覚回帰検知は維持）
