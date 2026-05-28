@@ -3,9 +3,9 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
-from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 _logger = logging.getLogger(__name__)
