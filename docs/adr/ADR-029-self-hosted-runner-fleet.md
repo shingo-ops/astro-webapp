@@ -184,6 +184,38 @@ GitHub Actions の公式仕様（[Choosing the runner for a job](https://docs.gi
 
 ---
 
+## Amendment — 2026-05-28: salesanchor-vps ラベル付き VPS runner の正式追加
+
+### 変更内容
+
+ADR-078 の Accepted により、さくらVPS（Ubuntu、IP: 49.212.137.46）に第 3 ランナーとして `salesanchor-vps` ラベル付き self-hosted runner を追加することが正式決定した。
+
+| 項目 | 値 |
+|------|----|
+| ホスト | さくらVPS / Ubuntu（IP: 49.212.137.46） |
+| runner name | `salesanchor-vps` |
+| labels | `self-hosted`, `Linux`, `X64`, `salesanchor-vps` |
+| 管理方式 | systemd service（自動起動） |
+| 目的 | `qa-smoke.yml` / `external-state-snapshot.yml` 専用（本番 DB に直アクセスが必要）|
+
+### §実態調査結果 更新
+
+| Workflow file | `runs-on` 設定 | 備考 |
+|---------------|----------------|------|
+| `.github/workflows/qa-smoke.yml:59` | `[self-hosted, salesanchor-vps]` | **VPS runner（ADR-078）で稼働予定** |
+| `.github/workflows/external-state-snapshot.yml:50` | `[self-hosted, salesanchor-vps]` | 同上 |
+
+### 登録手順・ロールバック
+
+詳細は ADR-078 および `docs/runbooks/vps-runner-setup.md` を参照。  
+自動化スクリプト: `scripts/setup-vps-runner.sh`
+
+### メモリ不足時の方針
+
+VPS の空きメモリが不足して OOM が発生した場合は、スワップ増設ではなく**別サーバーを追加契約**して runner を移行する（しんごさん決定 2026-05-28）。
+
+---
+
 ## 関連メモリ・ドキュメント
 
 - `~/.claude/projects/-Users-hitoshi-Documents---------------CRM----/memory/project_adr029_runner.md` (本 ADR 起案根拠、2 台体制記録)
