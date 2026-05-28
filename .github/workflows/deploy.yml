@@ -600,6 +600,24 @@ jobs:
             echo "Step 7: Checking container status..."
             docker compose ps
 
+            echo "Step 7b: Monitoring stack health check..."
+            # prometheus が起動しているか確認
+            if docker ps --format '{{.Names}}' | grep -q 'prometheus'; then
+              echo "  ✅ Prometheus container running"
+              # backend /metrics エンドポイントが有効か（コンテナ内から確認）
+              docker exec astro-webapp-backend-1 python -c \
+                "import urllib.request; r=urllib.request.urlopen('http://localhost:8000/metrics'); print('  ✅ /metrics status:', r.status)" \
+                || echo "  ⚠️  /metrics not yet available (will be scraped after first request)"
+            else
+              echo "  ℹ️  Prometheus not running in this stack (monitoring stack may be separate)"
+            fi
+            # grafana が起動しているか確認
+            if docker ps --format '{{.Names}}' | grep -q 'grafana'; then
+              echo "  ✅ Grafana container running"
+            else
+              echo "  ℹ️  Grafana not running in this stack"
+            fi
+
             echo "Step 8: Cleaning up old Docker images..."
             docker image prune -f
 
