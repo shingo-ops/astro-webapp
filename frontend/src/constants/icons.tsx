@@ -1,12 +1,12 @@
 /**
  * アイコン一元管理モジュール
  *
- * @heroicons/react/24/solid アイコンを集約する。
  * 全コンポーネントはここからインポートすること。
  *
- * - Phosphor → Heroicons 移行済み（weight="fill" で完全ソリッド表示）
+ * - solid  (@heroicons/react/24/solid)  : ダッシュボード・ステータス・アクション等
+ * - outline(@heroicons/react/24/outline): サイドバーナビゲーション（NAV_ICONS）
  * - size prop は hi() ラッパーで width/height に変換
- * - weight prop は受け取るが無視（solid 固定）
+ * - weight prop は受け取るが無視（バリアントは import 元で固定）
  * - lp/（Astro）はスコープ外
  * - BadgesPage の icon フィールドはユーザー入力値のためスコープ外
  */
@@ -34,21 +34,41 @@ export type Icon = ForwardRefExoticComponent<IconProps & RefAttributes<SVGSVGEle
 // 後方互換エイリアス（RolesPage.tsx 等が LucideIcon 型を参照しているため）
 export type LucideIcon = Icon;
 
+// ── solid: ダッシュボード・ステータス・アクション・カテゴリ等 ──────────────
 import {
   MoonIcon, SunIcon, GlobeAltIcon,
   CheckIcon, ExclamationTriangleIcon, XMarkIcon,
   ChartBarIcon, UserIcon, SignalIcon, BriefcaseIcon, CubeIcon,
   UsersIcon, KeyIcon, Cog6ToothIcon, FolderIcon,
   WrenchScrewdriverIcon, ChatBubbleLeftIcon, ChatBubbleOvalLeftIcon, ClipboardDocumentListIcon,
-  Squares2X2Icon, DocumentTextIcon, QuestionMarkCircleIcon, ShieldCheckIcon,
-  EllipsisHorizontalIcon, ChevronDownIcon, ArrowRightOnRectangleIcon, AdjustmentsHorizontalIcon, MagnifyingGlassIcon,
+  DocumentTextIcon,
+  EllipsisHorizontalIcon,
   TrashIcon, EnvelopeIcon, EnvelopeOpenIcon,
-  CalendarIcon,
   ArrowTrendingUpIcon, BellIcon, CalendarDaysIcon, ArrowRightIcon, FlagIcon,
   ReceiptPercentIcon,
   UserCircleIcon, LockClosedIcon, PhoneIcon,
   ArchiveBoxIcon,
 } from "@heroicons/react/24/solid";
+
+// ── outline: サイドバーナビゲーション専用 ────────────────────────────────
+import {
+  Squares2X2Icon,
+  UsersIcon as UsersOutlineIcon,
+  CubeIcon as CubeOutlineIcon,
+  DocumentTextIcon as DocumentTextOutlineIcon,
+  ReceiptPercentIcon as ReceiptPercentOutlineIcon,
+  ChartBarIcon as ChartBarOutlineIcon,
+  CalendarIcon,
+  QuestionMarkCircleIcon,
+  ShieldCheckIcon,
+  Cog6ToothIcon as Cog6ToothOutlineIcon,
+  EllipsisHorizontalIcon as EllipsisHorizontalOutlineIcon,
+  ChevronDownIcon,
+  ArrowRightOnRectangleIcon,
+  AdjustmentsHorizontalIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon as XMarkOutlineIcon,
+} from "@heroicons/react/24/outline";
 
 /**
  * Heroicons コンポーネントを Icon API（size/weight/color props）に変換するアダプター。
@@ -70,7 +90,7 @@ function hi(HeroIcon: ComponentType<SVGProps<SVGSVGElement>>): Icon {
   return Wrapped as unknown as Icon;
 }
 
-// Heroicons wrapped icons
+// ── solid wrapped（ダッシュボード・ステータス・アクション等）────────────
 const Moon      = hi(MoonIcon);
 const Sun       = hi(SunIcon);
 const Globe     = hi(GlobeAltIcon);
@@ -88,31 +108,41 @@ const GearSix   = hi(Cog6ToothIcon);
 const Folder    = hi(FolderIcon);
 const HardHat   = hi(WrenchScrewdriverIcon);
 const Chat      = hi(ChatBubbleLeftIcon);
-const ChatCircle      = hi(ChatBubbleOvalLeftIcon);
-const ClipboardText   = hi(ClipboardDocumentListIcon);
-const SquaresFour     = hi(Squares2X2Icon);
-const FileText        = hi(DocumentTextIcon);
-const Question        = hi(QuestionMarkCircleIcon);
-const ShieldCheck     = hi(ShieldCheckIcon);
-const DotsThree       = hi(EllipsisHorizontalIcon);
-const CaretDown       = hi(ChevronDownIcon);
-const SignOut         = hi(ArrowRightOnRectangleIcon);
+const ChatCircle    = hi(ChatBubbleOvalLeftIcon);
+const ClipboardText = hi(ClipboardDocumentListIcon);
+const FileText      = hi(DocumentTextIcon);
+const DotsThree     = hi(EllipsisHorizontalIcon);
+const Trash         = hi(TrashIcon);
+const Envelope      = hi(EnvelopeOpenIcon);  // markRead = 開封済み封筒
+const EnvelopeClosed = hi(EnvelopeIcon);     // markUnread = 未開封封筒（完全ソリッド）
+const TrendUp       = hi(ArrowTrendingUpIcon);
+const Bell          = hi(BellIcon);
+const CalendarCheck = hi(CalendarDaysIcon);
+const ArrowRight    = hi(ArrowRightIcon);
+const Flag          = hi(FlagIcon);
+const Receipt       = hi(ReceiptPercentIcon);
+const UserCircle    = hi(UserCircleIcon);
+const Lock          = hi(LockClosedIcon);
+const Phone         = hi(PhoneIcon);
+const ArchiveBox    = hi(ArchiveBoxIcon);
+
+// ── outline wrapped（サイドバーナビゲーション専用）────────────────────────
+const SquaresFour       = hi(Squares2X2Icon);
+const UsersOutline      = hi(UsersOutlineIcon);
+const PackageOutline    = hi(CubeOutlineIcon);
+const FileTextOutline   = hi(DocumentTextOutlineIcon);
+const ReceiptOutline    = hi(ReceiptPercentOutlineIcon);
+const ChartBarOutline   = hi(ChartBarOutlineIcon);
+const CalendarBlank     = hi(CalendarIcon);
+const QuestionOutline   = hi(QuestionMarkCircleIcon);
+const ShieldCheckOutline = hi(ShieldCheckIcon);
+const GearSixOutline    = hi(Cog6ToothOutlineIcon);
+const DotsThreeOutline  = hi(EllipsisHorizontalOutlineIcon);
+const CaretDown         = hi(ChevronDownIcon);
+const SignOut           = hi(ArrowRightOnRectangleIcon);
 const SlidersHorizontal = hi(AdjustmentsHorizontalIcon);
-const MagnifyingGlass = hi(MagnifyingGlassIcon);
-const Trash           = hi(TrashIcon);
-const Envelope        = hi(EnvelopeOpenIcon);   // markRead = 開封済み封筒
-const EnvelopeClosed  = hi(EnvelopeIcon);        // markUnread = 未開封封筒（完全ソリッド）
-const CalendarBlank   = hi(CalendarIcon);
-const TrendUp         = hi(ArrowTrendingUpIcon);
-const Bell            = hi(BellIcon);
-const CalendarCheck   = hi(CalendarDaysIcon);
-const ArrowRight      = hi(ArrowRightIcon);
-const Flag            = hi(FlagIcon);
-const Receipt         = hi(ReceiptPercentIcon);
-const UserCircle      = hi(UserCircleIcon);
-const Lock            = hi(LockClosedIcon);
-const Phone           = hi(PhoneIcon);
-const ArchiveBox      = hi(ArchiveBoxIcon);
+const MagnifyingGlass   = hi(MagnifyingGlassIcon);
+const XOutline          = hi(XMarkOutlineIcon);
 
 // ステータス（✓ ⚠ ✕ の代替）
 export const STATUS_ICONS = {
@@ -159,23 +189,24 @@ export const THEME_ICONS = {
 export const GlobeIcon: Icon = Globe;
 
 // ナビゲーション（Layout.tsx サイドバー・トップバー）
+// outline バリアント使用（塗りつぶしなし・サイドバーデザイン要件）
 export const NAV_ICONS = {
-  dashboard:   SquaresFour,
-  leads:       Users,
-  inventory:   Package,
-  fileText:    FileText,
-  orders:      Receipt,
-  report:      ChartBar,
-  schedule:    CalendarBlank,
-  help:        Question,
-  admin:       ShieldCheck,
-  settings:    GearSix,
-  more:        DotsThree,
-  chevronDown: CaretDown,
-  logout:      SignOut,
-  filter:      SlidersHorizontal,
-  search:      MagnifyingGlass,
-  close:       X,
+  dashboard:   SquaresFour,        // outline
+  leads:       UsersOutline,       // outline
+  inventory:   PackageOutline,     // outline
+  fileText:    FileTextOutline,    // outline
+  orders:      ReceiptOutline,     // outline
+  report:      ChartBarOutline,    // outline
+  schedule:    CalendarBlank,      // outline
+  help:        QuestionOutline,    // outline
+  admin:       ShieldCheckOutline, // outline
+  settings:    GearSixOutline,     // outline
+  more:        DotsThreeOutline,   // outline
+  chevronDown: CaretDown,          // outline
+  logout:      SignOut,            // outline
+  filter:      SlidersHorizontal,  // outline
+  search:      MagnifyingGlass,    // outline
+  close:       XOutline,           // outline
 } satisfies Record<string, Icon>;
 
 // ダッシュボード強化用
