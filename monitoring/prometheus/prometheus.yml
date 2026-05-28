@@ -42,10 +42,10 @@ scrape_configs:
       - targets: ["gha-exporter:8080"]
     scrape_interval: 60s
 
-  # cAdvisor（コンテナ別 CPU・メモリ・ネットワーク使用量）ADR-079
-  - job_name: "cadvisor"
-    static_configs:
-      - targets: ["cadvisor:8080"]
+  # cAdvisor: 無効化済み（VPS cgroup 名前空間制限により取得不可 ADR-079）
+  # - job_name: "cadvisor"
+  #   static_configs:
+  #     - targets: ["cadvisor:8080"]
 
   # Redis Exporter（Redisキャッシュメトリクス）ADR-079
   - job_name: "redis"

@@ -36,7 +36,7 @@ MONITORING_IMAGES = {
     "nginx_exporter":    "nginx/nginx-prometheus-exporter",
     "uptime_kuma":       "louislam/uptime-kuma",
     # ドリルダウン監視（ADR-079）
-    "cadvisor":          "gcr.io/cadvisor/cadvisor",
+    # cadvisor: VPS cgroup 名前空間制限により無効化済み
     "redis_exporter":    "oliver006/redis_exporter",
 }
 

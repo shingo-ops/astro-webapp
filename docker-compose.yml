@@ -460,35 +460,11 @@ services:
       - frontnet
       - backnet
 
-  # cAdvisor（コンテナ別 CPU・メモリ・ネットワーク）ADR-079
-  # v0.47.2 + cgroup: host: VPS cgroup 名前空間共有。これがないと Docker コンテナ cgroup が見えない。
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.47.2
-    privileged: true
-    cgroup: host
-    volumes:
-      - /:/rootfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    command:
-      - --docker_only=true
-      - --housekeeping_interval=30s
-      - --disable_metrics=tcp,udp,disk,diskIO,process,hugetlb,referenced_memory
-      - --store_container_labels=false
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: "0.25"
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "2"
-    networks:
-      - backnet
+  # cAdvisor（無効化済み）ADR-079
+  # さくらVPS の cgroup 名前空間制限により個別コンテナ cgroup への
+  # アクセスが不可能なため無効化（v0.47.2〜v0.49.1 いずれも不可）。
+  # ホスト全体のメトリクスは node-exporter で代替。
+  # cadvisor:  # disabled
 
   # Redis Exporter（Redisキャッシュメトリクス）ADR-079
   redis-exporter:
