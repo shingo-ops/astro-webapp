@@ -1029,35 +1029,6 @@ textarea.right-panel-field { resize: vertical; min-height: var(--inbox-textarea-
 .right-panel-save-indicator .saved { color: var(--success-bg); }
 .right-panel-save-indicator .error  { color: var(--danger-bg); }
 
-/* ====== 受信箱設定ボタン ====== */
-.inbox-faq-btn {
-  height: var(--space-10);
-  padding: 0 var(--space-3);
-  display: flex; align-items: center; justify-content: center;
-  background: transparent;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--text-primary);
-  font-size: var(--font-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  box-shadow: var(--shadow-md);
-  transition: background var(--transition-micro);
-}
-.inbox-faq-btn:hover { background: var(--color-hover-overlay); }
-.inbox-settings-btn {
-  width: var(--space-10);
-  height: var(--space-10);
-  display: flex; align-items: center; justify-content: center;
-  background: transparent;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--text-primary);
-  box-shadow: var(--shadow-md);
-  transition: background var(--transition-micro);
-}
-.inbox-settings-btn:hover { background: var(--color-hover-overlay); }
-
 /* ====== 受信箱設定モーダル ====== */
 .inbox-settings-modal {
   background: var(--bg-surface); border: 1px solid var(--border);
