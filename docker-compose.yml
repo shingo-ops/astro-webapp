@@ -467,12 +467,12 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
     privileged: true
     command:
       - --docker-only
       - --housekeeping_interval=30s
-      - --disable_root_cgroup_stats=true
+      - --disable_root_cgroup_stats
+      - --disable_metrics=tcp,udp,disk,diskIO,process,hugetlb,referenced_memory
     restart: unless-stopped
     deploy:
       resources:
