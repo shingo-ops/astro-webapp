@@ -132,13 +132,26 @@
       "transparent": true
     },
     {
+      "id": 201,
+      "type": "row",
+      "title": "サマリー",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "panels": []
+    },
+    {
       "title": "ワークフロー成功数（7日間）",
       "type": "stat",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 3
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -189,7 +202,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 3
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -240,7 +253,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 3
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -295,7 +308,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 3
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -347,13 +360,26 @@
       ]
     },
     {
+      "id": 202,
+      "type": "row",
+      "title": "トレンド分析",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "panels": []
+    },
+    {
       "title": "ワークフロー経過時間（推移）",
       "type": "timeseries",
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 9
       },
       "datasource": {
         "type": "prometheus",
@@ -399,7 +425,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 17
       },
       "datasource": {
         "type": "prometheus",
@@ -445,7 +471,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 17
       },
       "datasource": {
         "type": "prometheus",
@@ -531,13 +557,26 @@
       ]
     },
     {
+      "id": 203,
+      "type": "row",
+      "title": "詳細データ",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "panels": []
+    },
+    {
       "title": "ステップ実行時間 Top 10（平均・秒）",
       "type": "table",
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 26
       },
       "datasource": {
         "type": "prometheus",

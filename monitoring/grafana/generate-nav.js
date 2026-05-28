@@ -10,6 +10,8 @@
  *   node monitoring/grafana/generate-nav.js --check  # CI 整合性チェック（差分があれば exit 1）
  *
  * タブの追加・変更は nav-config.json だけ編集してこのスクリプトを実行する。
+ * フォルダ構成（大カテゴリ）は nav-config.json の dashboards[uid].folder と
+ * provisioning/dashboards/dashboards.yml で管理する。
  */
 
 const fs   = require('fs');
@@ -24,7 +26,22 @@ const HEADER_PANEL_ID = 9999;
 const HEADER_HEIGHT   = 3;
 
 const navConfig = JSON.parse(fs.readFileSync(NAV_CONFIG, 'utf8'));
-const files     = fs.readdirSync(DASHBOARDS_DIR).filter(f => f.endsWith('.json'));
+
+/** DASHBOARDS_DIR 以下を再帰的に走査して *.json を返す */
+const collectJsonFiles = (dir) => {
+  const results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...collectJsonFiles(fullPath));
+    } else if (entry.isFile() && entry.name.endsWith('.json')) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+};
+
+const files = collectJsonFiles(DASHBOARDS_DIR);
 
 const buildLinks = () =>
   navConfig.links.map(link => ({
@@ -75,8 +92,8 @@ const applyHeader = (panels, header) => {
 
 let hasError = false;
 
-files.forEach(file => {
-  const filePath  = path.join(DASHBOARDS_DIR, file);
+files.forEach(filePath => {
+  const file      = path.basename(filePath);
   const dashboard = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const uid       = dashboard.uid || '';
   const config    = navConfig.dashboards[uid];

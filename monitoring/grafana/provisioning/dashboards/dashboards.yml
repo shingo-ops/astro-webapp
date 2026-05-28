@@ -1,16 +1,40 @@
 # Grafana ダッシュボード自動プロビジョニング
-# 起動時にJSONファイルからダッシュボードを自動登録
+# 大カテゴリ = フォルダ（3分類）
+# 中カテゴリ = ダッシュボード内の Row パネル
+# 小カテゴリ = ドリルダウンリンク（nav-config.json で管理）
 
 apiVersion: 1
 
 providers:
-  - name: 'Sales Anchor'
+  - name: '概要'
     orgId: 1
-    folder: 'Sales Anchor'
+    folder: '概要'
     type: file
     disableDeletion: false
     updateIntervalSeconds: 30
     allowUiUpdates: true
     options:
-      path: /etc/grafana/provisioning/dashboards/json
+      path: /etc/grafana/provisioning/dashboards/json/overview
+      foldersFromFilesStructure: false
+
+  - name: 'アプリケーション'
+    orgId: 1
+    folder: 'アプリケーション'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json/application
+      foldersFromFilesStructure: false
+
+  - name: 'インフラ'
+    orgId: 1
+    folder: 'インフラ'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json/infrastructure
       foldersFromFilesStructure: false
