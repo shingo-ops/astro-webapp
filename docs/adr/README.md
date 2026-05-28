@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-05-28 / ADR 総数: 64 件
+最終更新: 2026-05-28 / ADR 総数: 66 件
 
 ## 一覧
 
@@ -72,6 +72,8 @@
 | [ADR-074](./ADR-074-worktree-agent-enforcement.md) | ADR-074: Worktree強制によるエージェントPR混入防止 | — | — |
 | [ADR-075](./ADR-075-github-secrets-only-policy.md) | ADR-075: GitHub Secrets 一元管理ポリシー | — | — |
 | [ADR-076](./ADR-076-pipeline-efficiency-improvements.md) | ADR-076: パイプライン効率化（Evaluator自動スキップ・Governance自動化・重複検出改善・Researcher自動起動） | — | — |
+| [ADR-077](./ADR-077-github-actions-metrics.md) | ADR-077: GitHub Actions CI メトリクスの Prometheus/Grafana 可視化 | — | — |
+| [ADR-078](./ADR-078-vps-runner-registration.md) | ADR-078: VPS runner 登録計画 — さくらVPS への salesanchor-vps ラベル付き self-hosted runner 登録 | Proposed | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例
