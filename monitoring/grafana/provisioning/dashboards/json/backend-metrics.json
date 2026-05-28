@@ -98,7 +98,7 @@
         "mode": "html",
         "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">バックエンド API メトリクス</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">バックエンドサービスの HTTP レスポンスタイム・エラー率・スループットを監視します。</p></div>"
       },
-      "transparent": false
+      "transparent": true
     },
     {
       "collapsed": false,
