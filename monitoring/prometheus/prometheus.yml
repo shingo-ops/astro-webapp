@@ -30,6 +30,11 @@ scrape_configs:
     static_configs:
       - targets: ["nginx-exporter:9113"]
 
+  # FastAPI バックエンド（HTTPリクエスト数・レスポンスタイム・エラーレート）
+  - job_name: "backend"
+    static_configs:
+      - targets: ["backend:8000"]
+
   # GitHub Actions Exporter（CI実行メトリクス: ワークフロー/ジョブ/ステップ実行時間・成否）
   # rate limit 考慮: gha-exporter 側がデフォルト1分間隔でポーリング。Prometheus は 60s で収集。
   - job_name: "gha-exporter"

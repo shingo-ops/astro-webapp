@@ -71,6 +71,11 @@ thresholds:
   nginx_5xx_per_5m:       10    # HighErrorRate: increase(...[5m]) > 10
   nginx_502_per_2m:        5    # High502Rate:   increase(...[2m]) > 5
 
+  # FastAPI バックエンド API（alert_rules.yml: backend_alerts）
+  # prometheus-fastapi-instrumentator が出力する http_requests_total を使用
+  backend_5xx_per_1m:      5    # BackendHighErrorRate: rate(...[1m]) > 5 (5xx)
+  backend_p99_latency_sec: 2.0  # BackendHighLatency: histogram_quantile(0.99) > 2.0s
+
   # ログ異常検知（loki/rules/jarvis/alerts.yml）
   brute_force_per_5m:     20    # BruteForceAttempt: > 20
   auth_failure_per_1h:    50    # SustainedAuthFailure: > 50

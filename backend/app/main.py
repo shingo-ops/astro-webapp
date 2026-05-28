@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 _logger = logging.getLogger(__name__)
@@ -158,6 +159,10 @@ app.add_middleware(AuditMiddleware)
 app.add_middleware(RateLimitMiddleware)
 # セッションハイジャック検知（物理的に不可能な移動のみ強制再認証）
 app.add_middleware(SessionGuardMiddleware)
+
+# Prometheus メトリクス（/metrics エンドポイント）
+# rate_limit / audit ミドルウェアの _SKIP_PATHS に "/metrics" が含まれるため除外済み
+Instrumentator().instrument(app).expose(app)
 
 # --- 認証不要なルーター（明示的に除外） ---
 # /api/health はバージョンなし（監視ツールが固定URLを使うため）
