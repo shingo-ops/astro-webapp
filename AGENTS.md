@@ -30,9 +30,14 @@ npm run test:unit  # ユニットテスト（vitest）
 ### Backend
 ```bash
 cd backend && pip install -r requirements-dev.txt
-make lint   # ruff / bandit / mypy
-make check  # lint + pytest
+make lint-ci   # ruff / bandit / mypy（Docker 不要）
+
+# pytest を含む全チェック（postgres + redis の Docker 起動が必要）
+docker compose up -d postgres redis
+make check     # lint-ci + pytest（カバレッジ 60% 以上）
 ```
+
+> **重要**: `make test`（pytest）は Docker が必須。Docker なし環境では `make lint-ci` のみ実行すること。
 
 ---
 
