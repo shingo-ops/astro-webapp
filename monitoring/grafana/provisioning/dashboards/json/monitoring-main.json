@@ -80,6 +80,22 @@
   ],
   "panels": [
     {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "# 監視メイン\n全システムの主要指標を 1 画面で確認できるメインダッシュボード。異常があればここに現れます。"
+      },
+      "transparent": false
+    },
+    {
       "title": "サーバーリソース",
       "type": "row",
       "collapsed": false,
@@ -87,7 +103,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 3
       },
       "id": 100,
       "panels": []
@@ -99,7 +115,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 1
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -156,7 +172,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 1
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -213,7 +229,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 1
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -270,7 +286,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 1
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -327,7 +343,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 9
       },
       "id": 101,
       "panels": []
@@ -339,7 +355,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 7
+        "y": 10
       },
       "datasource": {
         "type": "prometheus",
@@ -396,7 +412,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 7
+        "y": 10
       },
       "datasource": {
         "type": "prometheus",
@@ -456,7 +472,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 7
+        "y": 10
       },
       "datasource": {
         "type": "prometheus",
@@ -517,7 +533,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 15
       },
       "id": 102,
       "panels": []
@@ -529,7 +545,7 @@
         "h": 5,
         "w": 8,
         "x": 0,
-        "y": 13
+        "y": 16
       },
       "datasource": {
         "type": "loki",
@@ -590,7 +606,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 21
       },
       "id": 103,
       "panels": []
@@ -602,7 +618,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",

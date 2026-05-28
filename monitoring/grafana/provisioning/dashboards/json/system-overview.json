@@ -70,13 +70,29 @@
   ],
   "panels": [
     {
+      "id": 9999,
+      "type": "text",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "# システム概要\nサーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。"
+      },
+      "transparent": false
+    },
+    {
       "title": "CPU使用率",
       "type": "timeseries",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 3
       },
       "datasource": {
         "type": "prometheus",
@@ -126,7 +142,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 3
       },
       "datasource": {
         "type": "prometheus",
@@ -176,7 +192,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 11
       },
       "datasource": {
         "type": "prometheus",
@@ -226,7 +242,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 11
       },
       "datasource": {
         "type": "prometheus",
@@ -275,7 +291,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 19
       },
       "datasource": {
         "type": "prometheus",
@@ -306,7 +322,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 19
       },
       "datasource": {
         "type": "prometheus",
@@ -350,7 +366,7 @@
         "h": 4,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 27
       },
       "datasource": {
         "type": "prometheus",

@@ -3,7 +3,7 @@
  * monitoring/grafana/generate-nav.js
  * ===================================
  * nav-config.json を SSoT として全ダッシュボード JSON に
- * ナビゲーションリンクと description を一括配布するスクリプト。
+ * ナビゲーションリンク・description・ヘッダーテキストパネルを一括配布するスクリプト。
  *
  * 使い方:
  *   node monitoring/grafana/generate-nav.js          # 全ダッシュボードを更新
@@ -15,12 +15,16 @@
 const fs   = require('fs');
 const path = require('path');
 
-const CHECK_MODE    = process.argv.includes('--check');
-const NAV_CONFIG    = 'monitoring/grafana/nav-config.json';
+const CHECK_MODE     = process.argv.includes('--check');
+const NAV_CONFIG     = 'monitoring/grafana/nav-config.json';
 const DASHBOARDS_DIR = 'monitoring/grafana/provisioning/dashboards/json';
 
-const navConfig  = JSON.parse(fs.readFileSync(NAV_CONFIG, 'utf8'));
-const files      = fs.readdirSync(DASHBOARDS_DIR).filter(f => f.endsWith('.json'));
+// ヘッダーテキストパネルの識別 ID（全ダッシュボード共通の予約 ID）
+const HEADER_PANEL_ID = 9999;
+const HEADER_HEIGHT   = 3;
+
+const navConfig = JSON.parse(fs.readFileSync(NAV_CONFIG, 'utf8'));
+const files     = fs.readdirSync(DASHBOARDS_DIR).filter(f => f.endsWith('.json'));
 
 const buildLinks = () =>
   navConfig.links.map(link => ({
@@ -36,19 +40,60 @@ const buildLinks = () =>
     url:         link.url,
   }));
 
+/** パネル配列内の全パネルの y 座標を dy だけずらす（ネスト対応）*/
+const shiftPanelsBy = (panels, dy) =>
+  panels.map(p => ({
+    ...p,
+    gridPos: { ...p.gridPos, y: p.gridPos.y + dy },
+    ...(p.panels && p.panels.length > 0
+      ? { panels: shiftPanelsBy(p.panels, dy) }
+      : {}),
+  }));
+
+/** 既存のヘッダーパネル（id=HEADER_PANEL_ID）を除去してから y を元に戻す */
+const stripHeader = (panels) => {
+  if (panels.length === 0 || panels[0].id !== HEADER_PANEL_ID) return panels;
+  const headerHeight = panels[0].gridPos.h;
+  return shiftPanelsBy(panels.slice(1), -headerHeight);
+};
+
+/** ヘッダーテキストパネルを生成して先頭に追加、既存パネルを HEADER_HEIGHT 分押し下げる */
+const applyHeader = (panels, header) => {
+  const headerPanel = {
+    id:      HEADER_PANEL_ID,
+    type:    'text',
+    title:   '',
+    gridPos: { h: HEADER_HEIGHT, w: 24, x: 0, y: 0 },
+    options: {
+      mode:    'markdown',
+      content: `# ${header.title}\n${header.subtitle}`,
+    },
+    transparent: false,
+  };
+  return [headerPanel, ...shiftPanelsBy(panels, HEADER_HEIGHT)];
+};
+
 let hasError = false;
 
 files.forEach(file => {
   const filePath  = path.join(DASHBOARDS_DIR, file);
   const dashboard = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   const uid       = dashboard.uid || '';
+  const config    = navConfig.dashboards[uid];
+
+  // 既存ヘッダーを除去した素の panels
+  const basePanels = stripHeader(dashboard.panels || []);
+
+  // ヘッダー設定がある場合は注入、ない場合はそのまま
+  const newPanels = config && config.header
+    ? applyHeader(basePanels, config.header)
+    : basePanels;
 
   const updated = {
     ...dashboard,
-    links: buildLinks(),
-    ...(navConfig.dashboards[uid]
-      ? { description: navConfig.dashboards[uid].description }
-      : {}),
+    links:  buildLinks(),
+    panels: newPanels,
+    ...(config ? { description: config.description } : {}),
   };
 
   const newContent = JSON.stringify(updated, null, 2) + '\n';
