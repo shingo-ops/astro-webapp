@@ -1,7 +1,7 @@
 # ADR-050: Release PR Workflow Standardization — Pattern A Codification + Branch Protection
 
 - **日付**: 2026-05-20
-- **ステータス**: Proposed
+- **ステータス**: Accepted（一部修正あり — §2-2 の develop→main コマンドを変更済み。下記 変更履歴 参照）
 - **起案者**: Web Claude (外部補助 Planner) via Shingo
 - **対象範囲**: `docs/proposals/agents-role-clarification-prompt.md` / GitHub Ruleset (develop, main)
 - **関連 ADR**: ADR-010 (main ブランチ保護), ADR-042 (4 エージェント体制), ADR-048 (Web Claude 外部補助)
@@ -52,7 +52,7 @@ PR のマージコマンドを提案する際、PR の base ブランチで `--d
 | PR base | PR head | コマンド | --delete-branch |
 |---|---|---|---|
 | develop | feature/* or claude-impl/* | gh pr merge --squash --delete-branch | ✅ 付ける |
-| main | develop | gh pr merge --squash | ❌ **絶対に付けない** |
+| main | develop | gh pr merge --merge | ❌ **絶対に付けない**（※squash 禁止 — 2026-05-28 変更） |
 | main | hotfix/* | gh pr merge --squash --delete-branch | ✅ 付ける |
 | その他常設ブランチ | — | gh pr merge --squash | ❌ 付けない |
 
@@ -184,3 +184,4 @@ grep -c "develop.*常設" ~/.claude/agents/generator.md
 ## 変更履歴
 
 - 2026-05-20: 初版起案（Web Claude via Shingo）
+- 2026-05-28: develop→main のマージ方法を `--squash` → `--merge`（merge commit）に変更。squash merge は back-merge PR の永続発生を引き起こす構造バグのため禁止。GitHub Ruleset（ID: 15777895）で main への squash/rebase を無効化し merge commit のみに機械的強制済み（PR #1085）。
