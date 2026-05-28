@@ -23,14 +23,24 @@ export default function SuppliersPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null);
+  // QA r7: 47 件全件閲覧のため pagination 追加。backend per_page max=100
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 100;
+  const [hasNext, setHasNext] = useState(false);
 
   const load = async () => {
-    try { setSuppliers(await api.get<Supplier[]>("/suppliers")); }
-    catch (e) { setError(e instanceof Error ? e.message : t("common.fetchError")); }
-    finally { setLoading(false); }
+    try {
+      const data = await api.get<Supplier[]>(`/suppliers?page=${page}&per_page=${PER_PAGE}`);
+      setSuppliers(data);
+      setHasNext(data.length === PER_PAGE);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
+    } finally {
+      setLoading(false);
+    }
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [page]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault(); setError("");
@@ -117,6 +127,43 @@ export default function SuppliersPage() {
           </tbody>
         </table>
       )}
+
+      {/* QA r7: 47 件全件閲覧のため pagination 追加 */}
+      {(page > 1 || hasNext) && (
+        <div
+          className="pagination"
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "var(--space-3)",
+            marginTop: "var(--space-4)",
+            marginBottom: "var(--space-4)",
+          }}
+          data-testid="suppliers-pagination"
+        >
+          <button
+            className="btn-sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            data-testid="suppliers-page-prev"
+          >
+            {t("common.prevPage")}
+          </button>
+          <span style={{ color: "var(--text-secondary)" }} data-testid="suppliers-page-info">
+            {t("suppliers.pageLabel", { page, count: suppliers.length })}
+          </span>
+          <button
+            className="btn-sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasNext}
+            data-testid="suppliers-page-next"
+          >
+            {t("common.nextPage")}
+          </button>
+        </div>
+      )}
+
       <ConfirmModal open={!!deleteTarget} title={t("suppliers.deleteSupplier")} message={<><strong>{deleteTarget?.name}</strong>{t("suppliers.disableConfirmSuffix")}</>} confirmLabel={t("suppliers.disableLabel")} danger onConfirm={performDelete} onCancel={() => setDeleteTarget(null)} />
     </PageLayout>
   );
