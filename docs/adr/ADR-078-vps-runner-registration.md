@@ -1,4 +1,4 @@
-# ADR-077: VPS runner 登録計画 — さくらVPS への salesanchor-vps ラベル付き self-hosted runner 登録
+# ADR-078: VPS runner 登録計画 — さくらVPS への salesanchor-vps ラベル付き self-hosted runner 登録
 
 | 項目 | 内容 |
 |------|------|

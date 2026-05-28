@@ -1,8 +1,8 @@
-# VPS runner セットアップ Runbook (ADR-077)
+# VPS runner セットアップ Runbook (ADR-078)
 
 さくらVPS（Ubuntu、IP: `49.212.137.46`）に GitHub Actions self-hosted runner を登録し、`salesanchor-vps` ラベルを付与する手順書。
 
-**対象 ADR**: ADR-077  
+**対象 ADR**: ADR-078  
 **対象 workflow**: `qa-smoke.yml`, `external-state-snapshot.yml`  
 **所要時間目安**: 1.5〜2 時間  
 **実施予定日**: 2026-06-15 前後
@@ -221,19 +221,19 @@ gh run view $RUN_ID --repo shingo-ops/salesanchor --log | head -50
 
 ---
 
-## Step 8: ADR-077 ステータス更新
+## Step 8: ADR-078 ステータス更新
 
-動作確認が取れたら ADR-077 のステータスを `Accepted` に更新して PR を作成する。
+動作確認が取れたら ADR-078 のステータスを `Accepted` に更新して PR を作成する。
 
 ```bash
 # ローカルで実行
 sed -i '' 's/| ステータス | Proposed |/| ステータス | Accepted |/' \
-  docs/adr/ADR-077-vps-runner-registration.md
+  docs/adr/ADR-078-vps-runner-registration.md
 
 node scripts/generate-adr-index.js
-git add docs/adr/ADR-077-vps-runner-registration.md docs/adr/README.md
-git commit -m "docs(adr): ADR-077 ステータスを Accepted に更新（VPS runner 登録完了）"
-gh pr create --base develop --title "docs(adr): ADR-077 VPS runner 登録完了" --body "ADR-077 を Proposed → Accepted に更新。salesanchor-vps runner が Online になり、qa-smoke の動作確認完了。"
+git add docs/adr/ADR-078-vps-runner-registration.md docs/adr/README.md
+git commit -m "docs(adr): ADR-078 ステータスを Accepted に更新（VPS runner 登録完了）"
+gh pr create --base develop --title "docs(adr): ADR-078 VPS runner 登録完了" --body "ADR-078 を Proposed → Accepted に更新。salesanchor-vps runner が Online になり、qa-smoke の動作確認完了。"
 ```
 
 ---
@@ -344,7 +344,7 @@ gh api --method POST /repos/shingo-ops/salesanchor/actions/runners/remove-token 
 
 ## 参照ドキュメント
 
-- ADR-077: `docs/adr/ADR-077-vps-runner-registration.md`（本作業の ADR）
+- ADR-078: `docs/adr/ADR-078-vps-runner-registration.md`（本作業の ADR）
 - ADR-038: `docs/adr/ADR-038-qa-smoke-suite.md`（qa-smoke suite 設計）
 - ADR-035: `docs/adr/ADR-035-external-state-verification.md`
 - ADR-029: `docs/adr/ADR-029-self-hosted-runner-fleet.md`

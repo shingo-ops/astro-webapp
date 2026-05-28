@@ -73,7 +73,7 @@
 | [ADR-075](./ADR-075-github-secrets-only-policy.md) | ADR-075: GitHub Secrets 一元管理ポリシー | — | — |
 | [ADR-076](./ADR-076-pipeline-efficiency-improvements.md) | ADR-076: パイプライン効率化（Evaluator自動スキップ・Governance自動化・重複検出改善・Researcher自動起動） | — | — |
 | [ADR-077](./ADR-077-github-actions-metrics.md) | ADR-077: GitHub Actions CI メトリクスの Prometheus/Grafana 可視化 | — | — |
-| [ADR-077](./ADR-077-vps-runner-registration.md) | ADR-077: VPS runner 登録計画 — さくらVPS への salesanchor-vps ラベル付き self-hosted runner 登録 | Proposed | — |
+| [ADR-078](./ADR-078-vps-runner-registration.md) | ADR-078: VPS runner 登録計画 — さくらVPS への salesanchor-vps ラベル付き self-hosted runner 登録 | Proposed | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例
