@@ -34,6 +34,16 @@ docker exec -e TENANT_CODE=highlife-jpn ...
 
 ---
 
+## Migration は additive-only（追加専用）
+
+**カラム削除・テーブル削除・型変更を含む migration は原則禁止。**
+理由: `downgrade` 関数が未整備のため、本番適用後に問題が起きても自動ロールバック不能（ADR-045:90 参照）。
+
+- ✅ 許可: カラム追加、インデックス追加、テーブル追加、制約追加
+- ❌ 要PO確認: カラム削除・リネーム、テーブル削除、型変更、データ移行を伴う変更
+
+destructive な変更が必要な場合は必ずしんごさん（PO）に確認してから ADR を起案すること。
+
 ## Migration 適用経路
 
 新規 migration を追加した場合:

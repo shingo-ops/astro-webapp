@@ -128,8 +128,9 @@ export default function SuppliersPage() {
         </table>
       )}
 
-      {/* QA r7: 47 件全件閲覧のため pagination 追加 */}
-      {(page > 1 || hasNext) && (
+      {/* QA r7: 件数表示は常時、前/次 button は pagination 必要時のみ。
+          管理センター内 (二重 PageLayout) でも見切れないよう sticky bottom。 */}
+      {!loading && suppliers.length > 0 && (
         <div
           className="pagination"
           style={{
@@ -137,30 +138,38 @@ export default function SuppliersPage() {
             justifyContent: "center",
             alignItems: "center",
             gap: "var(--space-3)",
-            marginTop: "var(--space-4)",
-            marginBottom: "var(--space-4)",
+            padding: "var(--space-3) 0",
+            position: "sticky",
+            bottom: 0,
+            background: "var(--bg-surface)",
+            borderTop: "1px solid var(--border-color)",
+            zIndex: 1,
           }}
           data-testid="suppliers-pagination"
         >
-          <button
-            className="btn-sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            data-testid="suppliers-page-prev"
-          >
-            {t("common.prevPage")}
-          </button>
+          {(page > 1 || hasNext) && (
+            <button
+              className="btn-sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              data-testid="suppliers-page-prev"
+            >
+              {t("common.prevPage")}
+            </button>
+          )}
           <span style={{ color: "var(--text-secondary)" }} data-testid="suppliers-page-info">
             {t("suppliers.pageLabel", { page, count: suppliers.length })}
           </span>
-          <button
-            className="btn-sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!hasNext}
-            data-testid="suppliers-page-next"
-          >
-            {t("common.nextPage")}
-          </button>
+          {(page > 1 || hasNext) && (
+            <button
+              className="btn-sm"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasNext}
+              data-testid="suppliers-page-next"
+            >
+              {t("common.nextPage")}
+            </button>
+          )}
         </div>
       )}
 

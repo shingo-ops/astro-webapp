@@ -4,9 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
     paths:
-      - 'CLAUDE.md'
-      - 'frontend/CLAUDE.md'
-      - 'backend/CLAUDE.md'
+      - '**/CLAUDE.md'
 
 jobs:
   check:

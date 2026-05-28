@@ -117,16 +117,17 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">システム概要</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。</p></div>"
+        "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">DB接続詳細</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">DB接続数の状態別内訳・トランザクション数・タプル操作量を詳細に確認します。</p></div>"
       },
       "transparent": true
     },
     {
-      "title": "CPU使用率",
+      "id": 1,
+      "title": "DB接続数（状態別内訳）",
       "type": "timeseries",
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 24,
         "x": 0,
         "y": 3
       },
@@ -136,294 +137,51 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          },
-          "links": [
-            {
-              "title": "コンテナ別 CPU 詳細を見る →",
-              "url": "/grafana/d/container-detail?orgId=1&from=${__from}&to=${__to}",
-              "targetBlank": false
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-          "legendFormat": "CPU使用率",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "title": "メモリ使用率",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 3
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 85
-              }
-            ]
-          },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          },
-          "links": [
-            {
-              "title": "コンテナ別メモリ詳細を見る →",
-              "url": "/grafana/d/container-detail?orgId=1&from=${__from}&to=${__to}",
-              "targetBlank": false
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
-          "legendFormat": "メモリ使用率",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "title": "ディスク使用率",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 11
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100",
-          "legendFormat": "ディスク使用率",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "title": "DB接続数",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 11
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
           "unit": "short",
           "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
           "custom": {
             "fillOpacity": 20,
-            "lineWidth": 2
-          },
-          "links": [
-            {
-              "title": "DB接続の詳細内訳を見る →",
-              "url": "/grafana/d/db-connection-detail?orgId=1&from=${__from}&to=${__to}",
-              "targetBlank": false
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
             }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
           ]
-        },
-        "overrides": []
+        }
       },
       "targets": [
         {
-          "expr": "pg_stat_activity_count",
-          "legendFormat": "DB接続数",
+          "expr": "pg_stat_activity_count{state!=\"\"}",
+          "legendFormat": "{{state}}",
           "refId": "A"
         }
       ]
     },
     {
-      "title": "Nginxリクエスト数 (per sec)",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 19
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "expr": "rate(nginx_http_requests_total[5m])",
-          "legendFormat": "リクエスト/秒",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "title": "Nginx 5xxエラー率",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 19
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "expr": "rate(nginx_http_requests_total{status=~\"5..\"}[5m]) or vector(0)",
-          "legendFormat": "5xxエラー/秒",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "title": "サービスステータス",
+      "id": 2,
+      "title": "DB接続数 合計（現在）",
       "type": "stat",
       "gridPos": {
         "h": 4,
-        "w": 24,
+        "w": 6,
         "x": 0,
-        "y": 27
+        "y": 11
       },
       "datasource": {
         "type": "prometheus",
@@ -431,30 +189,179 @@
       },
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "text": "DOWN",
-                  "color": "red"
-                },
-                "1": {
-                  "text": "UP",
-                  "color": "green"
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
               },
               {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "sum(pg_stat_activity_count)",
+          "legendFormat": "接続数合計",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "アクティブ接続数（現在）",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 11
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
                 "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 20
+              },
+              {
+                "color": "red",
+                "value": 40
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "pg_stat_activity_count{state=\"active\"}",
+          "legendFormat": "active",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "アイドル接続数（現在）",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 11
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 30
+              },
+              {
+                "color": "red",
+                "value": 60
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
+      "targets": [
+        {
+          "expr": "pg_stat_activity_count{state=\"idle\"}",
+          "legendFormat": "idle",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "待機中接続数（現在）",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 11
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
                 "value": 1
               }
             ]
@@ -462,21 +369,134 @@
         },
         "overrides": []
       },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background"
+      },
       "targets": [
         {
-          "expr": "pg_up",
-          "legendFormat": "PostgreSQL",
+          "expr": "pg_stat_activity_count{state=\"idle in transaction\"}",
+          "legendFormat": "idle in transaction",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "トランザクション数（コミット vs ロールバック）",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 15,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_xact_commit{datname!=\"\"}[5m])",
+          "legendFormat": "コミット ({{datname}})",
           "refId": "A"
         },
         {
-          "expr": "up{job=\"nginx-exporter\"}",
-          "legendFormat": "Nginx",
+          "expr": "rate(pg_stat_database_xact_rollback{datname!=\"\"}[5m])",
+          "legendFormat": "ロールバック ({{datname}})",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "タプル操作量（Fetch/Insert/Update/Delete）",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_tup_fetched{datname!=\"\"}[5m])",
+          "legendFormat": "Fetch ({{datname}})",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(pg_stat_database_tup_inserted{datname!=\"\"}[5m])",
+          "legendFormat": "Insert",
           "refId": "B"
         },
         {
-          "expr": "up{job=\"node-exporter\"}",
-          "legendFormat": "Node",
+          "expr": "rate(pg_stat_database_tup_updated{datname!=\"\"}[5m])",
+          "legendFormat": "Update",
           "refId": "C"
+        },
+        {
+          "expr": "rate(pg_stat_database_tup_deleted{datname!=\"\"}[5m])",
+          "legendFormat": "Delete",
+          "refId": "D"
         }
       ]
     }
@@ -484,19 +504,20 @@
   "schemaVersion": 39,
   "tags": [
     "salesanchor",
-    "system"
+    "database",
+    "drilldown"
   ],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "Asia/Tokyo",
-  "title": "Sales Anchor - システム概要",
-  "uid": "jarvis-system-overview",
+  "title": "Sales Anchor - DB接続詳細",
+  "uid": "db-connection-detail",
   "version": 1,
-  "description": "サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。"
+  "description": "DB接続数の状態別内訳・トランザクション数・タプル操作量を詳細に確認します。"
 }

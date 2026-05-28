@@ -36,6 +36,22 @@ scrape_configs:
       - labels:
           level:
 
+  # SSH 接続ログ（ADR-079: Claude Code 監視アクセスの監査ログ）
+  # /var/log はdocker-compose.yml で :ro マウント済み
+  - job_name: ssh_auth
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: sshd
+          log_type: auth
+          __path__: /var/log/auth.log
+    pipeline_stages:
+      - regex:
+          expression: '(?P<level>error|warning|info|Failed|Accepted|Invalid)'
+      - labels:
+          level:
+
   # docker compose のコンテナラベルからログを取得
   - job_name: containers
     static_configs:

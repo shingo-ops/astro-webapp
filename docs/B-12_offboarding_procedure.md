@@ -65,6 +65,7 @@ gh api repos/shingo-ops/salesanchor/collaborators --jq '.[].login'
 - [ ] VPS管理パスワード
 - [ ] PostgreSQLパス��ード（.env更新 + docker compose再起動）
 - [ ] Grafana管理者パスワード
+- [ ] **Grafana Service Account Token**（`claude-code-reader`）の revoke: Grafana UI → Administration → Service accounts → claude-code-reader → Delete token（または `curl -X DELETE -H "Authorization: Bearer <管理者トークン>" https://app.salesanchor.jp/grafana/api/serviceaccounts/<id>/tokens/<token_id>`）
 - [ ] その他、対象者が知っていた認証情報
 
 ```bash

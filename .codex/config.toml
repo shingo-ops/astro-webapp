@@ -1,0 +1,6 @@
+# salesanchor プロジェクト Codex CLI 設定
+# グローバル設定 (~/.codex/config.toml) の sandbox_mode = "workspace-write" が前提。
+# このファイルはリポジトリにコミットされ、全開発者・エージェントに適用される。
+
+# プロジェクト内全ファイルの読み取りアクセス（lint・型チェックに必要）
+sandbox_permissions = ["disk-full-read-access"]

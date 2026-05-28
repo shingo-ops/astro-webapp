@@ -1,0 +1,55 @@
+name: weekly stale PR check
+
+on:
+  schedule:
+    - cron: '0 4 * * 4'  # 毎週木曜 13:00 JST
+  workflow_dispatch:
+
+jobs:
+  stale-pr-check:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect open PRs with no activity for 7+ days
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_SCHEDULED_REPORT }}
+        run: |
+          TODAY_S=$(date -u +%s)
+          STALE_LIST=""
+          STALE_COUNT=0
+
+          # draft PR を除外、更新日時で判定
+          while IFS= read -r LINE; do
+            NUMBER=$(echo "$LINE" | jq -r '.number')
+            TITLE=$(echo "$LINE"  | jq -r '.title')
+            UPDATED=$(echo "$LINE" | jq -r '.updatedAt')
+            IS_DRAFT=$(echo "$LINE" | jq -r '.isDraft')
+
+            [ "$IS_DRAFT" = "true" ] && continue
+
+            UPDATED_S=$(date -d "$UPDATED" +%s 2>/dev/null) || continue
+            DIFF_DAYS=$(( (TODAY_S - UPDATED_S) / 86400 ))
+
+            if [ "$DIFF_DAYS" -ge 7 ]; then
+              STALE_LIST="${STALE_LIST}"$'\n'"- #${NUMBER} ${TITLE} (${DIFF_DAYS}日更新なし)"
+              STALE_COUNT=$((STALE_COUNT + 1))
+            fi
+          done < <(gh pr list --state open --json number,title,updatedAt,isDraft | jq -c '.[]')
+
+          if [ "$STALE_COUNT" -eq 0 ]; then
+            echo "✅ 放置 PR なし"
+            exit 0
+          fi
+
+          echo "📭 放置 PR ${STALE_COUNT} 件検出"
+
+          MSG="📭 **7日以上更新のない open PR が ${STALE_COUNT} 件あります**
+          ${STALE_LIST}
+
+          マージ・クローズ・更新のいずれかで対応してください。"
+
+          bash scripts/notify/discord-owner-ping.sh "$MSG"
