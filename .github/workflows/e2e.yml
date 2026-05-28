@@ -25,6 +25,11 @@ on:
 # Issue #523 ② で migration-guard と同じく「paths 条件なし常時実行 + 不要時即
 # pass」パターンに統一。frontend 未変更時は各 step 内で対象ファイル 0 件 → 即 pass。
 
+# 同一 PR への再プッシュ時に古い実行をキャンセルして無駄な消費を防ぐ。
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ─── ADR-067: ダークモード色規約チェック ───────────────────────────────────
   lint:
@@ -55,7 +60,9 @@ jobs:
     name: Playwright E2E (chromium)
     runs-on: ubuntu-latest
     timeout-minutes: 12
-    needs: lint  # lint が通らないと E2E も動かない
+    # NOTE: needs: lint を削除し lint と並列実行（2026-05-28）。
+    # lint と playwright は完全独立（DB共有なし・API mock済み）のため並列化可能。
+    # lint 失敗時も playwright は走るが、lint ジョブ自体が Required Check のため PR はブロックされる。
 
     defaults:
       run:

@@ -16,8 +16,7 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
-  schedule:
-    - cron: '0 20 * * 1'  # 毎週火曜 05:00 JST (20:00 UTC Monday) — 全件フルスキャン
+  # schedule 削除（2026-05-28）: PR + push トリガーで十分にカバーされるため冗長。
 # NOTE: paths フィルタ削除（e2e.yml #534 と同じデッドロック回避）。
 # Required check (テナントスキーマ整合性チェック) として Ruleset 登録済みのため、
 # paths フィルタがあると非 backend PR で pending のまま merge 不可になる。
@@ -48,7 +47,7 @@ jobs:
   schema-check-run:
     name: テナントスキーマ整合性チェック（実行）
     needs: detect-changes
-    if: needs.detect-changes.outputs.relevant == 'true' || github.event_name == 'schedule'
+    if: needs.detect-changes.outputs.relevant == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -93,19 +92,8 @@ jobs:
           KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
           echo "key=$KEY" >> "$GITHUB_OUTPUT"
 
-      - name: Wait for PostgreSQL
-        env:
-          PGPASSWORD: testpass
-        run: |
-          for i in $(seq 1 10); do
-            if pg_isready -h localhost -U jarvis -d jarvis_schema_check_db; then
-              echo "PostgreSQL ready"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "PostgreSQL did not become ready in time"
-          exit 1
+      # NOTE: "Wait for PostgreSQL" 手動ループ削除（2026-05-28）。
+      # services の health-check が通過した時点で PostgreSQL は確実に起動済み。
 
       # setup_tenant.py が必要とする最小限の公開スキーマを作成する。
       # public.tenants, public.users, public.permissions の 3 テーブルがあれば
