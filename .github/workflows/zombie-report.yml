@@ -19,7 +19,7 @@ jobs:
       - name: Detect zombie entries and create GitHub Issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_OWNER_PING }}
+          DISCORD_WEBHOOK_SCHEDULED_REPORT: ${{ secrets.DISCORD_WEBHOOK_SCHEDULED_REPORT }}
         run: |
           # ラベルが存在しない場合は自動作成（冪等）
           gh label create zombie-branch \
@@ -100,4 +100,5 @@ ${ZOMBIE_LIST}
 
 対応が必要です → ${ISSUE_URL}"
 
-          bash scripts/notify/discord-owner-ping.sh "$DISCORD_MSG"
+          DISCORD_WEBHOOK_OWNER_PING="$DISCORD_WEBHOOK_SCHEDULED_REPORT" \
+            bash scripts/notify/discord-owner-ping.sh "$DISCORD_MSG"
