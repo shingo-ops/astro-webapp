@@ -16,19 +16,7 @@
 
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
-| feature/morimoto/monitoring-tokens-sst | （記入してください） | 2026-05-26 23:45 | IN_PROGRESS | | |
-| feature/morimoto/agent-pr-ownership-enforcement | 開発ルール強化（PR混入防止） | 2026-05-27 00:06 | REVIEW | 881 | |
-| fix/morimoto/inbox-panel-split-dom | 受信箱 DOM構造修正 | 2026-05-27 17:10 | REVIEW | 839 | gitleaks CI再トリガー |
-| feature/morimoto/pr-base-guard | PR誤マージ防止（gh-pr-create-safe） | 2026-05-27 | IN_PROGRESS | | |
-
-| feature/morimoto/fix-pipeline-push-skip | CI pipeline push skip | 2026-05-27 | REVIEW | 1015 | |
-| feature/morimoto/fix-active-work-format-check | （記入してください） | 2026-05-27 02:31 | IN_PROGRESS | | |
-| feature/morimoto/auto-register-pr | （記入してください） | 2026-05-27 02:36 | IN_PROGRESS | | |
-| feature/morimoto/fix-format-check-regex | （記入してください） | 2026-05-27 02:39 | IN_PROGRESS | | |
-| feature/morimoto/fix-format-check-to-develop | （記入してください） | 2026-05-27 02:43 | IN_PROGRESS | | |
-| release/develop-to-main-fix | リリース develop→main コンフリクト解消 | 2026-05-27 17:50 | IN_PROGRESS | | |
-| feature/morimoto/fix-adr-index | （記入してください） | 2026-05-28 11:54 | IN_PROGRESS | | |
-| feature/morimoto/page-title-spacing | ページタイトル余白・サイズ調整 | 2026-05-28 12:00 | IN_PROGRESS | | |
+| feature/morimoto/sprint-a-governance | ガバナンス Sprint A（active-work整理・DB additive-only） | 2026-05-28 12:00 | IN_PROGRESS | | |
 ---
 
 ## 記入例
