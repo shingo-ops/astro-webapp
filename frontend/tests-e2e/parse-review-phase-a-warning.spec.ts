@@ -10,12 +10,21 @@ import { mockApi, type MockMap } from "./utils/api-mock";
 
 const INBOUND_ID = 12345;
 
-function baseMocks(opts: { skipped_stock_update: boolean }): MockMap {
+function baseMocks(opts: { skipped_stock_update: boolean; phase?: "A" | "B" | "C" }): MockMap {
+  // QA r7 SM-4: ParseReviewPage が phase-switch API を呼ぶようになったため、
+  // mock 追加。デフォルトは Phase A (banner 表示) を維持。
+  const phase = opts.phase ?? "A";
   return {
     "GET /me/permissions": {
       permissions: ["dashboard.view"],
       is_super_admin: true,
       tenant_id: 6,
+    },
+    "GET /super-admin/phase-switch/6": {
+      tenant_id: 6,
+      phase,
+      allowed_phases: ["A", "B"],
+      scoped_phases: ["A", "B"],
     },
     "GET /staff/me": {
       id: 1,
@@ -122,5 +131,15 @@ test.describe("Sprint 9 / F9 v1.2 — ParseReviewPage Phase A warning", () => {
 
     // skipped_stock_update=false の場合 toast は表示されない
     await expect(page.getByTestId("phase-a-warning-toast")).toHaveCount(0);
+  });
+
+  // QA r7 SM-4 追加: Phase B では banner が表示されないことを検証
+  test("QA r7 SM-4: Phase B 時は warning banner が表示されない", async ({ page }) => {
+    await installAuthBypass(page);
+    await mockApi(page, baseMocks({ skipped_stock_update: false, phase: "B" }));
+    await page.goto(`/super-admin/inbound/${INBOUND_ID}/review`);
+
+    // banner は出ない (Phase B 通常運用)
+    await expect(page.getByTestId("phase-a-warning-banner")).toHaveCount(0);
   });
 });

@@ -135,6 +135,10 @@ export default function ParseReviewPage() {
   const [info, setInfo] = useState("");
   // Sprint 9 / F9 v1.2: Phase A 並走時の warning toast
   const [phaseWarning, setPhaseWarning] = useState("");
+  // QA r7 SM-4 trial2: 現在の Phase を取得し、Phase A のときだけ banner を表示する。
+  // 旧実装は無条件で「緊急戻し」banner を出していたため、本番 Phase B 状態でも
+  // 警告が出続けていた。
+  const [currentPhase, setCurrentPhase] = useState<"A" | "B" | "C" | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -162,6 +166,24 @@ export default function ParseReviewPage() {
     if (!isSuperAdmin) return;
     void load();
   }, [isSuperAdmin, load]);
+
+  // QA r7 SM-4: 現在の Phase を取得 (Phase A の時だけ banner 表示)
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    (async () => {
+      try {
+        const me = await api.get<{ tenant_id: number }>("/me/permissions");
+        if (!me.tenant_id) return;
+        const phaseResp = await api.get<{ phase: "A" | "B" | "C" }>(
+          `/super-admin/phase-switch/${me.tenant_id}`,
+        );
+        setCurrentPhase(phaseResp.phase);
+      } catch {
+        // Phase 取得失敗時は banner を出さない (安全側)
+        setCurrentPhase(null);
+      }
+    })();
+  }, [isSuperAdmin]);
 
   const updateDraft = (idx: number, patch: Partial<RowDraft>) => {
     setDrafts((prev) =>
@@ -312,22 +334,24 @@ export default function ParseReviewPage() {
       </div>
 
       {/* Sprint 9 / F9 v1.2 AC9.6: Phase A 並走中の常時表示 warning banner。
-          スプレッドシートが在庫数の真値であることをレビュアーに常時知らせる */}
-      <div
-        className="warning-banner"
-        role="status"
-        data-testid="phase-a-warning-banner"
-        style={{
-          backgroundColor: "var(--warning-bg)",
-          color: "var(--warning-text)",
-          border: "1px solid var(--border-strong)",
-          padding: "0.75rem 1rem",
-          borderRadius: "var(--radius-sm)",
-          marginBottom: "var(--space-4)",
-        }}
-      >
-        {t("superAdmin.parseReview.phaseAWarning.always")}
-      </div>
+          QA r7 SM-4: Phase A のときのみ表示。Phase B (通常運用) では非表示。 */}
+      {currentPhase === "A" && (
+        <div
+          className="warning-banner"
+          role="status"
+          data-testid="phase-a-warning-banner"
+          style={{
+            backgroundColor: "var(--warning-bg)",
+            color: "var(--warning-text)",
+            border: "1px solid var(--border-strong)",
+            padding: "0.75rem 1rem",
+            borderRadius: "var(--radius-sm)",
+            marginBottom: "var(--space-4)",
+          }}
+        >
+          {t("superAdmin.parseReview.phaseAWarning.always")}
+        </div>
+      )}
 
       {error && (
         <div className="error-message" role="alert" data-testid="review-error">
