@@ -10,8 +10,7 @@
  *   node monitoring/grafana/generate-nav.js --check  # CI 整合性チェック（差分があれば exit 1）
  *
  * タブの追加・変更は nav-config.json だけ編集してこのスクリプトを実行する。
- * フォルダ構成（大カテゴリ）は nav-config.json の dashboards[uid].folder と
- * provisioning/dashboards/dashboards.yml で管理する。
+ * UX 階層（大→中→小）はパネルの links[] で定義。フォルダは管理用のみ。
  */
 
 const fs   = require('fs');

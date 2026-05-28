@@ -278,6 +278,14 @@
           "legendFormat": "5xx/s",
           "refId": "A"
         }
+      ],
+      "links": [
+        {
+          "title": "エラーログで詳細を確認 →",
+          "url": "/grafana/d/loki-error-logs",
+          "targetBlank": false,
+          "tooltip": "エラーログで詳細を確認 →"
+        }
       ]
     },
     {
