@@ -5,13 +5,13 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 _logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import get_current_admin, get_current_tenant
 from app.cache import close_redis, init_redis
+from app.metrics import register_metrics
 from app.middleware.audit import AuditMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.session_guard import SessionGuardMiddleware
@@ -162,7 +162,7 @@ app.add_middleware(SessionGuardMiddleware)
 
 # Prometheus メトリクス（/metrics エンドポイント）
 # rate_limit / audit ミドルウェアの _SKIP_PATHS に "/metrics" が含まれるため除外済み
-Instrumentator().instrument(app).expose(app)
+register_metrics(app)
 
 # --- 認証不要なルーター（明示的に除外） ---
 # /api/health はバージョンなし（監視ツールが固定URLを使うため）
