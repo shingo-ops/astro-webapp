@@ -37,6 +37,7 @@ docker exec -e TENANT_CODE=highlife-jpn ...
 ## Migration 適用経路
 
 新規 migration を追加した場合:
+- **additive-only 原則**: カラム削除・テーブル削除・型変更は禁止（downgrade未整備、ADR-045:90）。destructive変更はPO確認＆ADR起案必須
 - 既存全テナント + 新規作成テナント両方への適用経路を PR body に明記する
 - PostgreSQL実機で `information_schema.columns` により全テナントschema整合を確認（SQLite不可）
 
