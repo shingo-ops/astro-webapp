@@ -66,6 +66,18 @@
       "tooltip": "",
       "type": "link",
       "url": "/grafana/d/uptime-kuma-monitors"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "バックエンド",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/backend-api-metrics"
     }
   ],
   "panels": [
