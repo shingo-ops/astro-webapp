@@ -240,6 +240,16 @@ jobs:
           - [ADR-068](../docs/adr/ADR-068-platform-brand-asset-policy.md)" \
             --label "auto-generated"
 
+      - name: Discord #定期レポート 通知（PR 作成完了）
+        env:
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_SCHEDULED_REPORT }}
+        run: |
+          MSG="🎨 **ブランドアセット自動更新 PR を作成しました**
+          ブランチ: \`${{ steps.push.outputs.branch }}\`
+          simple-icons: \`${{ needs.detect.outputs.simple_icons_baseline }}\` → \`${{ needs.detect.outputs.simple_icons_latest }}\`
+          マージ前に Files changed でアイコン外観を視覚確認してください。"
+          bash scripts/notify/discord-owner-ping.sh "$MSG"
+
   # ───────────────────────────────────────────────────────────────────────
   # Job 3: Meta CI ブロック時のフォールバック Issue 起票
   # ───────────────────────────────────────────────────────────────────────
@@ -273,3 +283,12 @@ jobs:
           3. 自動 PR ブランチ（\`${{ needs.update-pr.outputs.branch }}\`）に push
           4. PR をマージ" \
             --label "auto-generated"
+
+      - name: Discord #定期レポート 通知（Meta ブロック Issue 作成）
+        env:
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_SCHEDULED_REPORT }}
+        run: |
+          MSG="⚠️ **ブランドアセット手動更新が必要です（Meta CI ブロック検知）**
+          Meta の CI IP ブロックにより自動更新ができませんでした。
+          GitHub Issue を確認して手動更新してください。"
+          bash scripts/notify/discord-owner-ping.sh "$MSG"

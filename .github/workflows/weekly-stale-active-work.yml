@@ -1,0 +1,54 @@
+name: weekly stale active-work check
+
+on:
+  schedule:
+    - cron: '0 2 * * 2'  # 毎週火曜 11:00 JST
+  workflow_dispatch:
+
+jobs:
+  stale-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect IN_PROGRESS entries older than 14 days
+        env:
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_SCHEDULED_REPORT }}
+        run: |
+          TODAY_S=$(date -u +%s)
+          STALE_LIST=""
+          STALE_COUNT=0
+
+          while IFS= read -r LINE; do
+            # ブランチ名と日付を抽出（例: | feature/xxx | 説明 | 2026-05-01 10:00 | IN_PROGRESS |）
+            BRANCH=$(echo "$LINE" | awk -F'|' '{gsub(/^ +| +$/, "", $2); print $2}')
+            DATE_STR=$(echo "$LINE" | awk -F'|' '{gsub(/^ +| +$/, "", $4); print $4}')
+
+            [ -z "$BRANCH" ] && continue
+            [ -z "$DATE_STR" ] && continue
+
+            # 日付パース（YYYY-MM-DD HH:MM 形式）
+            ENTRY_S=$(date -d "$DATE_STR" +%s 2>/dev/null) || continue
+
+            DIFF_DAYS=$(( (TODAY_S - ENTRY_S) / 86400 ))
+            if [ "$DIFF_DAYS" -ge 14 ]; then
+              STALE_LIST="${STALE_LIST}"$'\n'"- \`${BRANCH}\` (${DIFF_DAYS}日経過)"
+              STALE_COUNT=$((STALE_COUNT + 1))
+            fi
+          done < <(grep -E '^\|\s*\S+\s*\|.*\|\s*IN_PROGRESS\s*\|' .claude-pipeline/active-work.md 2>/dev/null)
+
+          if [ "$STALE_COUNT" -eq 0 ]; then
+            echo "✅ 長期放置エントリなし"
+            exit 0
+          fi
+
+          echo "⏰ 長期放置エントリ ${STALE_COUNT} 件検出"
+
+          MSG="⏰ **active-work.md に長期放置エントリが ${STALE_COUNT} 件あります（14日以上 IN_PROGRESS）**
+          ${STALE_LIST}
+
+          作業中なら git push でリモートを更新、完了済みなら cleanup-worktree.sh を実行してください。"
+
+          bash scripts/notify/discord-owner-ping.sh "$MSG"
