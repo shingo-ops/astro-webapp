@@ -21,6 +21,7 @@
 | fix/morimoto/inbox-panel-split-dom | 受信箱 DOM構造修正 | 2026-05-27 17:10 | REVIEW | 839 | gitleaks CI再トリガー |
 | feature/morimoto/pr-base-guard | PR誤マージ防止（gh-pr-create-safe） | 2026-05-27 | IN_PROGRESS | | |
 
+| feature/morimoto/fix-pipeline-push-skip | CI pipeline push skip | 2026-05-27 | REVIEW | 1015 | |
 | feature/morimoto/fix-active-work-format-check | （記入してください） | 2026-05-27 02:31 | IN_PROGRESS | | |
 | feature/morimoto/auto-register-pr | （記入してください） | 2026-05-27 02:36 | IN_PROGRESS | | |
 | feature/morimoto/fix-format-check-regex | （記入してください） | 2026-05-27 02:39 | IN_PROGRESS | | |
