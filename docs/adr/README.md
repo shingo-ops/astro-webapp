@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-05-27 / ADR 総数: 64 件
+最終更新: 2026-05-28 / ADR 総数: 64 件
 
 ## 一覧
 
@@ -29,7 +29,7 @@
 | [ADR-026](./ADR-026_meta_messages_message_id_text.md) | ADR-026: meta_messages.message_id の TEXT 化（Instagram mid 受信対応） | — | — |
 | [ADR-027](./ADR-027-ui-internationalization.md) | ADR-027: Sales Anchor UI の i18n 対応（日本語/英語切り替え） | Proposed | — |
 | [ADR-028](./ADR-028-screencast-tenant-isolation.md) | ADR-028: Meta App Review 撮影用テナント分離 | Proposed | — |
-| [ADR-029](./ADR-029-self-hosted-runner-fleet.md) | ADR-029: Self-hosted runner fleet — 2 台 Mac 体制と labels 戦略の正式化 | Proposed | — |
+| [ADR-029](./ADR-029-self-hosted-runner-fleet.md) | ADR-029: Self-hosted runner fleet — 2 台 Mac 体制と labels 戦略の正式化 | Accepted | — |
 | [ADR-032](./ADR-032.md) | ADR-032: Firebase Authentication カスタム認証ドメイン | Accepted | — |
 | [ADR-033](./ADR-033-app-theme-switching.md) | ADR-033: アプリ内テーマ切り替え（ライト / ダーク） | Proposed | — |
 | [ADR-034](./ADR-034-tenant-migration-automation.md) | ADR-034: 新規テナント migration 自動化 + 既存テナント整合化 | Proposed | — |
