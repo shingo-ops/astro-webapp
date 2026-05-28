@@ -1,0 +1,57 @@
+name: Runner Label Lint
+
+# claude-pipeline.yml が `runs-on: self-hosted`（macOSラベルなし）で
+# 誤って定義されていないことを検証する。
+#
+# 背景（ADR-029 amendment 2026-05-28）:
+#   VPSランナー（Linux）追加時に self-hosted のみでは誤ってLinuxで実行される。
+#   [self-hosted, macOS] で Mac に絞り込む必要がある。
+#   大文字・小文字も検証する（`macos` は別ラベルとして扱われるため）。
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - '.github/workflows/claude-pipeline.yml'
+  push:
+    branches: [main, develop]
+    paths:
+      - '.github/workflows/claude-pipeline.yml'
+
+jobs:
+  check-runner-labels:
+    name: claude-pipeline runs-on ラベル検証
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: runs-on self-hosted のみ（macOSなし）を検出
+        run: |
+          # claude-pipeline.yml 内に `runs-on: self-hosted` の bare 指定があればエラー
+          # 許可: `runs-on: [self-hosted, macOS]` (AND絞り込み)
+          # 禁止: `runs-on: self-hosted` (ラベルなし、将来のVPSランナーを誤って拾う)
+          BARE=$(grep -n "^\s*runs-on: self-hosted\s*$" .github/workflows/claude-pipeline.yml || true)
+          if [ -n "$BARE" ]; then
+            echo "::error file=.github/workflows/claude-pipeline.yml::runs-on: self-hosted（macOSラベルなし）が検出されました。"
+            echo "runs-on: [self-hosted, macOS] に変更してください。"
+            echo ""
+            echo "検出箇所:"
+            echo "$BARE"
+            exit 1
+          fi
+          echo "✅ runs-on ラベル検証: OK（bare self-hosted なし）"
+
+      - name: macOSラベルの大文字・小文字を検証
+        run: |
+          # `macos`（小文字）はGitHubが自動付与するラベル名と異なる
+          # 正しいラベル名は `macOS`（M大文字・OS大文字）
+          WRONG_CASE=$(grep -n "runs-on.*\bmacos\b" .github/workflows/claude-pipeline.yml | grep -v "macOS" || true)
+          if [ -n "$WRONG_CASE" ]; then
+            echo "::error file=.github/workflows/claude-pipeline.yml::runs-on に小文字の 'macos' が使われています。正しくは 'macOS'（M大文字・OS大文字）です。"
+            echo ""
+            echo "検出箇所:"
+            echo "$WRONG_CASE"
+            exit 1
+          fi
+          echo "✅ macOS ラベル大文字・小文字: OK"
