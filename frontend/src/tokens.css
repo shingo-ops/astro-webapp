@@ -22,7 +22,6 @@
 
   /* 意味的例外（スケールに収まらない役割固有値） */
   --font-sidebar-brand: 1.6rem;    /* サイドバーブランドロゴ文字 */
-  --font-heading-lg:    1.4rem;    /* セクション大見出し */
   --font-display:       1.6rem;    /* ダッシュボード大数値 */
 
   /* ---- Typography: font-weight ---- */
@@ -34,7 +33,6 @@
   /* ---- Typography: line-height ---- */
   --line-height-tight:  1.25;
   --line-height-base:   1.5;
-  --line-height-loose:  1.75;
 
   /* ---- Typography roles（Shopify Polaris / Meta 準拠の2層設計）
      primitive token を組み合わせて「役割」として定義する。
@@ -143,15 +141,9 @@
   --ease-enter:    cubic-bezier(0, 0, 0.2, 1);    /* 要素が画面に入る */
   --ease-exit:     cubic-bezier(0.4, 0, 1, 1);    /* 要素が画面から出る */
 
-  /* ---- Focus ring（寸法のみ — 色は index.css で定義） ---- */
-  --focus-ring-width:  3px;
-  --focus-ring-offset: 2px;
-
   /* ---- Component sizes ---- */
   /* btn-min-height: 現行ボタンはpadding主体のため最小高として定義（height固定ではない） */
-  --btn-min-height-sm:  32px;   /* 小ボタン — shadcn/ui sm 準拠 */
   --btn-min-height-md:  40px;   /* 標準ボタン — industry consensus */
-  --input-min-height:   40px;   /* テキスト入力・セレクト最小高 */
   --textarea-min-h:     80px;   /* テキストエリア最小高 */
   --topbar-height:      56px;   /* トップバー・ブランドバー高さ */
   --drawer-width:      300px;   /* ユーザードロワー幅 */
@@ -222,7 +214,6 @@
   --opacity-disabled:  0.6;   /* disabled 状態の入力・ボタン */
   --opacity-skipped:   0.55;  /* スキップ行・除外コンテンツ */
   --opacity-archived:  0.5;   /* アーカイブ行・非アクティブコンテンツ */
-  --opacity-overlay:   0.5;   /* モーダル・ドロワー背景の半透明オーバーレイ */
 
   /* ---- Inbox component sizes (Meta実測値) ---- */
   --height-tab-bar:        54px;   /* 受信箱タブバー高さ（36px × 1.5） */
