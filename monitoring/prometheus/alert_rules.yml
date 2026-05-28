@@ -85,3 +85,24 @@ groups:
         annotations:
           summary: "{{ $labels.job }}がダウンしています"
           description: "Exporterからの応答がありません。即時確認してください。"
+
+      # FastAPI バックエンド 5xxエラーレート（tokens.yml: backend_5xx_per_1m=5）
+      # prometheus-fastapi-instrumentator が出力する http_requests_total を使用
+      - alert: BackendHighErrorRate
+        expr: sum(rate(http_requests_total{job="backend", status=~"5.."}[1m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "バックエンド 5xxエラーが急増しています"
+          description: "5xxエラーが 1分間で {{ $value | printf \"%.1f\" }} req/s を超えています（閾値: 5 req/s）"
+
+      # FastAPI バックエンド P99 レイテンシ（tokens.yml: backend_p99_latency_sec=2.0）
+      - alert: BackendHighLatency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="backend"}[5m])) by (le)) > 2.0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "バックエンド P99 レイテンシが高い"
+          description: "P99 レスポンスタイムが {{ $value | printf \"%.2f\" }}s を超えています（閾値: 2.0s）"
