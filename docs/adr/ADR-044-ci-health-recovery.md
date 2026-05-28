@@ -1,7 +1,7 @@
 # ADR-044: develop ブランチ CI 健全性の回復
 
 ## ステータス
-Proposed
+Accepted
 
 ## 背景
 
