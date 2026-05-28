@@ -57,4 +57,7 @@ markers = [
 ]
 # coverage gate: 80% は将来目標。未テストルーター（invoices/quotes/roles/products 等）
 # のカバレッジ追加で段階的に引き上げる。60% → 70% → 80% と段階的引き上げ予定。
-addopts = "--cov=app --cov-report=term-missing --cov-fail-under=60"
+# -n auto: CPU コア数に応じてワーカー数を自動決定（GitHub Actions ubuntu-latest = 2 vCPU）
+# --dist=loadfile: 同一ファイルのテストを同一ワーカーで実行（db_session の teardown 順序を保護）
+# ローカル検証済み（2026-05-28）: -n 2 で 1057通過・67.65%カバレッジ確認
+addopts = "-n auto --dist=loadfile --cov=app --cov-report=term-missing --cov-fail-under=60"
