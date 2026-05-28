@@ -9,19 +9,46 @@
   ],
   "dashboards": {
     "monitoring-main": {
-      "description": "全システムの主要指標を 1 画面で確認できるメインダッシュボード。異常があればここに現れます。"
+      "description": "全システムの主要指標を 1 画面で確認できるメインダッシュボード。異常があればここに現れます。",
+      "header": {
+        "title": "監視メイン",
+        "subtitle": "全システムの主要指標を 1 画面で確認できるメインダッシュボード。異常があればここに現れます。"
+      }
     },
     "jarvis-system-overview": {
-      "description": "サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。"
+      "description": "サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。",
+      "header": {
+        "title": "システム概要",
+        "subtitle": "サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。"
+      }
     },
     "ea99fc9c-32f6-4678-9f45-ab1421a94206": {
-      "description": "GitHub Actions の CI/CD パイプラインの実行時間・成功率・失敗数を分析します。"
+      "description": "GitHub Actions の CI/CD パイプラインの実行時間・成功率・失敗数を分析します。",
+      "header": {
+        "title": "CI / GitHub Actions",
+        "subtitle": "GitHub Actions の CI/CD パイプラインの実行時間・成功率・失敗数を分析します。"
+      }
     },
     "loki-error-logs": {
-      "description": "アプリケーションのエラーログをリアルタイムで監視・検索します。"
+      "description": "アプリケーションのエラーログをリアルタイムで監視・検索します。",
+      "header": {
+        "title": "エラーログ監視",
+        "subtitle": "アプリケーションのエラーログをリアルタイムで監視・検索します。"
+      }
     },
     "uptime-kuma-monitors": {
-      "description": "外部サービス・API エンドポイントの稼働状態とレスポンスタイムを監視します。"
+      "description": "外部サービス・API エンドポイントの稼働状態とレスポンスタイムを監視します。",
+      "header": {
+        "title": "サービス稼働監視",
+        "subtitle": "外部サービス・API エンドポイントの稼働状態とレスポンスタイムを監視します。"
+      }
+    },
+    "backend-api-metrics": {
+      "description": "バックエンドサービスの HTTP レスポンスタイム・エラー率・スループットを監視します。",
+      "header": {
+        "title": "バックエンド API メトリクス",
+        "subtitle": "バックエンドサービスの HTTP レスポンスタイム・エラー率・スループットを監視します。"
+      }
     }
   }
 }
