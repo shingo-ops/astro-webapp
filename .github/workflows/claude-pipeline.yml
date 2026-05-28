@@ -125,32 +125,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "proceed=$PROCEED reason=$REASON"
 
-      - name: Detect UI file changes
-        id: ui-changes
-        env:
-          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # shingo-ops 以外は自動スキップ機能を無効化（常にUIあり扱い）
-          if [ "${{ github.actor }}" != "shingo-ops" ]; then
-            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "0" ]; then
-            # PRなし（workflow_dispatch等）は安全側に倒してUIあり扱い
-            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          # PR変更ファイル一覧を取得
-          CHANGED_FILES=$(gh pr view "$PR_NUMBER" --json files --jq '[.files[].path]' 2>/dev/null || echo "[]")
-          # frontend/ 配下のファイルが1件以上あればUIあり
-          UI_COUNT=$(echo "$CHANGED_FILES" | jq '[.[] | select(startswith("frontend/"))] | length')
-          if [ "$UI_COUNT" -gt 0 ]; then
-            echo "has_ui_changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_ui_changes=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Detect ADR file changes in PR
         id: detect-adr
         env:
