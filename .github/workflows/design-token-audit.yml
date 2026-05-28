@@ -75,3 +75,13 @@ jobs:
               ].join('\n'),
               labels: ['design-token-audit'],
             });
+
+      - name: Discord #定期レポート 通知（未使用トークンあり）
+        if: contains(steps.audit.outputs.result, '未使用トークンが見つかりました')
+        env:
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_SCHEDULED_REPORT }}
+        run: |
+          COUNT=$(echo "${{ steps.audit.outputs.result }}" | grep -oP '\d+(?= 件の未使用トークン)' || echo "複数")
+          MSG="🎨 **未使用デザイントークン ${COUNT} 件検出（週次監査）**
+          GitHub Issue を確認して不要なトークンを削除してください。"
+          bash scripts/notify/discord-owner-ping.sh "$MSG"

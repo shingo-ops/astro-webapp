@@ -48,6 +48,11 @@ jobs:
           # 対策E: deploy.yml / claude-pipeline.yml を追加
           checks = [
               {
+                  "file": ".github/workflows/check-claude-size.yml",
+                  "rule": "has_claude_md_in_paths",
+                  "reason": "ADR-076 CLAUDE.md サイズ管理: paths に CLAUDE.md パターンが必須。削除するとサイズチェックが走らなくなる",
+              },
+              {
                   "file": ".github/workflows/migration-guard.yml",
                   "rule": "no_paths",
                   "reason": "ADR-036 DBポカよけ: 常時実行必須。paths追加で検出漏れが発生する",
@@ -99,7 +104,14 @@ jobs:
               pr_section = on_section.get("pull_request", {})
               paths = pr_section.get("paths", None) if isinstance(pr_section, dict) else None
 
-              if check["rule"] == "no_paths" and paths is not None:
+              if check["rule"] == "has_claude_md_in_paths":
+                  if paths is None or not any("CLAUDE.md" in p for p in paths):
+                      errors.append(
+                          f"❌ {check['file']}: paths に CLAUDE.md パターンが含まれていません\n"
+                          f"   現在の paths: {paths}\n"
+                          f"   理由: {check['reason']}"
+                      )
+              elif check["rule"] == "no_paths" and paths is not None:
                   errors.append(
                       f"❌ {check['file']}: paths: filter が追加されています\n"
                       f"   理由: {check['reason']}"

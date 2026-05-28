@@ -4,7 +4,8 @@
 
 **対象 ADR**: ADR-078  
 **対象 workflow**: `qa-smoke.yml`, `external-state-snapshot.yml`  
-**所要時間目安**: 1.5〜2 時間  
+**自動化スクリプト**: `scripts/setup-vps-runner.sh`（Step 3〜5 を自動実行）  
+**所要時間目安**: 30〜60 分  
 **実施予定日**: 2026-06-15 前後
 
 ---
@@ -17,7 +18,7 @@
 - [ ] GitHub リポジトリの **Admin 権限**を持つしんごさんアカウントで `gh` CLI 認証済み（`gh auth status`）
 - [ ] VPS 側で `curl` が使用可能（VPS 上で `curl --version`）
 - [ ] VPS のディスク空き容量が 2GB 以上ある（VPS 上で `df -h /`）
-- [ ] VPS のメモリ空きが 500MB 以上ある（VPS 上で `free -h`）
+- [ ] VPS のメモリ空きが 1GB 以上ある（VPS 上で `free -h`）。不足する場合は **別サーバーを用意する**（下記「メモリ不足時の対処」参照）
 - [ ] VPS の OS が Ubuntu であること（VPS 上で `lsb_release -a`）
 
 ---
@@ -43,28 +44,37 @@ curl -s https://api.github.com | python3 -c "import sys,json; d=json.load(sys.st
 
 ---
 
-## Step 2: スワップ増設（メモリ不足対策）
+## Step 2: メモリ確認
 
 > Playwright headless Chromium は約 706MB のメモリを消費する。
-> 現在の VPS 空きメモリが 700MB 前後の場合、スワップを先に増設する。
+> **メモリ不足の場合はスワップ増設ではなく、別サーバーを用意する方針**（しんごさん決定 2026-05-28）。
 
 ```bash
 # VPS 上で実行
-# 現在のスワップ確認
-swapon --show
-
-# スワップが少ない場合（2GB 未満）は増設
-sudo fallocate -l 2G /swapfile2
-sudo chmod 600 /swapfile2
-sudo mkswap /swapfile2
-sudo swapon /swapfile2
-
-# 再起動後も維持（/etc/fstab に追記）
-echo '/swapfile2 none swap sw 0 0' | sudo tee -a /etc/fstab
-
-# 確認
 free -h
+# → "available" が 1GB 以上あれば続行
 ```
+
+**メモリ不足時の対処**: さくらVPS コントロールパネルから追加サーバー（1GB RAM 以上）を契約し、そちらに runner を登録する。IP アドレスが変わった場合は本 runbook の `49.212.137.46` を置き換えること。
+
+---
+
+## Step 3〜5 の自動実行（推奨）
+
+Step 3〜5（バイナリ取得 → config.sh → systemd サービス化）は `setup-vps-runner.sh` で一括実行できる。
+
+```bash
+# 1. ローカルでトークン取得
+RUNNER_TOKEN=$(gh api --method POST \
+  /repos/shingo-ops/salesanchor/actions/runners/registration-token --jq '.token')
+
+# 2. トークンを VPS にセキュアに渡してスクリプト実行
+#    ※ トークンは環境変数で渡す（CLIオプションは ps aux で見えるため禁止）
+ssh <VPS_USER>@49.212.137.46 "RUNNER_TOKEN='${RUNNER_TOKEN}' bash -s" \
+  < scripts/setup-vps-runner.sh
+```
+
+手動で実行したい場合は以下 Step 3〜5 を参照。
 
 ---
 
@@ -310,16 +320,9 @@ dmesg | grep -i "oom\|killed" | tail -20
 ```
 
 **対処**:
-1. Step 2 のスワップ増設を実施（未実施の場合）
-2. `tests/qa-smoke/playwright.config.ts` に以下を追加:
-```typescript
-use: {
-  launchOptions: {
-    args: ['--disable-dev-shm-usage', '--no-sandbox', '--disable-gpu'],
-  },
-},
-```
-3. 追加後は PR を作成して develop にマージしてから再実行
+1. **別サーバーを用意する**（しんごさん決定 2026-05-28）。さくらVPS コントロールパネルから RAM 2GB 以上のプランを追加契約し、新サーバーに runner を移行する。
+2. 移行後は本 runbook の IP `49.212.137.46` を新サーバー IP に更新し、ADR-078 §登録するランナーの仕様 も更新する。
+3. 旧サーバーの runner は削除トークン取得 → `./config.sh remove --token <token>` でクリーンアップ。
 
 ---
 

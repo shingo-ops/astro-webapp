@@ -45,8 +45,8 @@ jobs:
             echo "対象ファイルの変更なし — テナントスキーマチェックをスキップして即 pass"
           fi
 
-  schema-check:
-    name: テナントスキーマ整合性チェック
+  schema-check-run:
+    name: テナントスキーマ整合性チェック（実行）
     needs: detect-changes
     if: needs.detect-changes.outputs.relevant == 'true' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
@@ -215,3 +215,24 @@ jobs:
           cd backend
           DATABASE_URL="${{ env.DATABASE_URL }}" \
           python ../scripts/db/sync_tenant_schema.py --dry-run
+
+  # test.yml の pytest アグリゲータと同パターン。
+  # schema-check-run が skipped（スキーマ変更なし）でも success でも通過とみなし、
+  # Required Status Check「テナントスキーマ整合性チェック」を常に報告する。
+  schema-check:
+    name: テナントスキーマ整合性チェック
+    needs: [detect-changes, schema-check-run]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report results
+        run: |
+          result="${{ needs.schema-check-run.result }}"
+          echo "schema-check-run: $result"
+          if [[ "$result" == "success" || "$result" == "skipped" ]]; then
+            echo "✅ テナントスキーマチェック通過（skipped = スキーマ変更なし）"
+            exit 0
+          else
+            echo "❌ テナントスキーマチェック失敗"
+            exit 1
+          fi
