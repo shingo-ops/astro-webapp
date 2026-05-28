@@ -69,7 +69,7 @@
 }
 
 .page-layout-title-row--has-subtitle {
-  margin-bottom: 0;  /* half-leading のみ (~2.5px) で title に密着 */
+  margin-bottom: -3px;  /* lh=1.25 × 24px の half-leading(3px) を相殺してサブタイトルと 0px に */
 }
 
 /* headerAction ラッパー: 右端に押し付ける */
@@ -77,6 +77,7 @@
   margin-left: auto;
   display: flex;
   align-items: center;
+  gap: var(--space-3);
 }
 
 .page-layout-content {

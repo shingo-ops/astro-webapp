@@ -214,8 +214,8 @@ export default function PhaseSwitchPage() {
 
           <div className="phase-help" style={{ marginTop: "var(--space-6)", fontSize: "var(--font-sm)" }}>
             <ul>
-              <li>{t("superAdmin.phaseSwitch.helpPhaseB")}</li>
               <li>{t("superAdmin.phaseSwitch.helpPhaseA")}</li>
+              <li>{t("superAdmin.phaseSwitch.helpPhaseB")}</li>
               <li>{t("superAdmin.phaseSwitch.helpPhaseC")}</li>
             </ul>
           </div>

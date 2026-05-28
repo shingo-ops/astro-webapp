@@ -30,6 +30,18 @@ scrape_configs:
     static_configs:
       - targets: ["nginx-exporter:9113"]
 
+  # FastAPI バックエンド（HTTPリクエスト数・レスポンスタイム・エラーレート）
+  - job_name: "backend"
+    static_configs:
+      - targets: ["backend:8000"]
+
+  # GitHub Actions Exporter（CI実行メトリクス: ワークフロー/ジョブ/ステップ実行時間・成否）
+  # rate limit 考慮: gha-exporter 側がデフォルト1分間隔でポーリング。Prometheus は 60s で収集。
+  - job_name: "gha-exporter"
+    static_configs:
+      - targets: ["gha-exporter:8080"]
+    scrape_interval: 60s
+
   # Uptime Kuma（死活監視メトリクス）
   # v2.x は Basic 認証が必要。パスワードはコンテナ内シークレットファイルで管理
   - job_name: "uptime-kuma"

@@ -1,0 +1,27 @@
+{
+  "_comment": "ナビゲーションタブの SSoT。このファイルだけ編集し generate-nav.js を実行すれば全ダッシュボードに反映される。",
+  "links": [
+    { "title": "メイン",         "url": "/grafana/d/monitoring-main" },
+    { "title": "システム",       "url": "/grafana/d/jarvis-system-overview" },
+    { "title": "CI / GitHub",  "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206" },
+    { "title": "エラーログ",     "url": "/grafana/d/loki-error-logs" },
+    { "title": "サービス稼働",   "url": "/grafana/d/uptime-kuma-monitors" }
+  ],
+  "dashboards": {
+    "monitoring-main": {
+      "description": "全システムの主要指標を 1 画面で確認できるメインダッシュボード。異常があればここに現れます。"
+    },
+    "jarvis-system-overview": {
+      "description": "サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。"
+    },
+    "ea99fc9c-32f6-4678-9f45-ab1421a94206": {
+      "description": "GitHub Actions の CI/CD パイプラインの実行時間・成功率・失敗数を分析します。"
+    },
+    "loki-error-logs": {
+      "description": "アプリケーションのエラーログをリアルタイムで監視・検索します。"
+    },
+    "uptime-kuma-monitors": {
+      "description": "外部サービス・API エンドポイントの稼働状態とレスポンスタイムを監視します。"
+    }
+  }
+}

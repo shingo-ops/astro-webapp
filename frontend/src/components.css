@@ -76,6 +76,21 @@
 
 .btn-secondary:hover { background: var(--bg-subtle); }
 
+/* --- Ghost Button (text-only, transparent bg) --- */
+.btn-ghost {
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+.btn-ghost:hover { background: var(--bg-subtle); }
+
 .btn-sm {
   padding: var(--space-1) var(--space-10px);
   font-size: var(--font-xs);
@@ -445,11 +460,37 @@
    ============================================================ */
 
 /* --- Page Header Actions --- */
+/* サイドバー以外の全ページのヘッダー右端ボタン/セレクト群のラッパー (SSoT: ここのみ定義) */
 .page-header-actions {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   flex-shrink: 0;
+}
+
+/* --- Page Header Select --- */
+/* ヘッダーアクションエリア内のドロップダウン共通スタイル (SSoT: ここのみ定義) */
+.page-header-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: var(--space-1) var(--space-5) var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right var(--space-2) center;
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+  white-space: nowrap;
+}
+.page-header-select:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+.page-header-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring-shadow);
 }
 
 /* --- Icon Button --- */

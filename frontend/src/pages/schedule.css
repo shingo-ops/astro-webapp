@@ -423,41 +423,6 @@
   color: var(--text-primary);
 }
 
-/* ビュー切替プルダウン */
-.schedule-view-select {
-  appearance: none;
-  -webkit-appearance: none;
-  padding: var(--space-1) var(--space-5) var(--space-1) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right var(--space-2) center;
-  color: var(--text-primary);
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-medium);
-  min-height: var(--schedule-nav-btn-size);
-  cursor: pointer;
-  transition: border-color var(--transition-fast), background-color var(--transition-fast);
-  white-space: nowrap;
-}
-
-.schedule-view-select:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--border-strong);
-}
-
-.schedule-view-select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: var(--focus-ring-shadow);
-}
-
-/* ヘッダー右側アクション（ビュー切替 + 連携ボタン） */
-.schedule-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 /* Google Calendar 連携ボタン — 状態別スタイル */
 .gcal-connect-btn {
   padding: var(--space-1) var(--space-3);

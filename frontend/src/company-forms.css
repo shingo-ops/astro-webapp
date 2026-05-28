@@ -36,13 +36,6 @@
   color: var(--text-muted);
 }
 
-.page-container .page-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-shrink: 0;
-}
-
 /* タブナビゲーション (CompanyDetailPage の 4 タブ用) */
 .tabs {
   display: flex;

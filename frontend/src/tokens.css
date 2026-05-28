@@ -39,7 +39,7 @@
      コンポーネントはこの role 変数を参照し、直接 font-size を書かない。  ---- */
 
   /* ページタイトル（ダッシュボード・受信箱など左上の主見出し） */
-  --role-page-title-size:   var(--font-xl);
+  --role-page-title-size:   var(--font-2xl);
   --role-page-title-weight: var(--font-weight-semi);
   --role-page-title-color:  var(--text-primary);
   --role-page-title-lh:     var(--line-height-tight);
@@ -162,7 +162,7 @@
 
   /* ---- Page layout spacing（全ページ共通余白） ---- */
   --page-padding-x:  var(--space-6);  /* 24px — 左右余白 */
-  --page-padding-y:  var(--space-4);  /* 16px — 上下余白 */
+  --page-padding-y:  10px;            /* 10px — 上下余白 */
   --page-header-mb:  var(--space-5);  /* 20px — 見出し下余白 */
   /* ---- Avatar Zone（固定アバターの占有座標 — Single Source of Truth）
      .avatar-btn の position:fixed 座標をここで一元定義する。
