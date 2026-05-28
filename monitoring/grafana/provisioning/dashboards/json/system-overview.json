@@ -66,6 +66,18 @@
       "tooltip": "",
       "type": "link",
       "url": "/grafana/d/uptime-kuma-monitors"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "バックエンド",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/backend-api-metrics"
     }
   ],
   "panels": [
@@ -83,7 +95,7 @@
         "mode": "html",
         "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">システム概要</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。</p></div>"
       },
-      "transparent": false
+      "transparent": true
     },
     {
       "title": "CPU使用率",
