@@ -19,16 +19,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: 依存関係インストール
-        run: npm ci --prefer-offline
 
       - name: 未使用トークン監査
         id: audit
         run: |
-          OUTPUT=$(npm run audit:unused-tokens 2>&1)
+          OUTPUT=$(node scripts/check-unused-tokens.js 2>&1)
           echo "$OUTPUT"
           echo "result<<EOF" >> $GITHUB_OUTPUT
           echo "$OUTPUT" >> $GITHUB_OUTPUT
