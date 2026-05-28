@@ -24,8 +24,8 @@ on:
       - '.github/workflows/test.yml'
       - 'backend/pyproject.toml'
       - 'backend/Makefile'
-  schedule:
-    - cron: '0 20 * * 1'  # 毎週火曜 05:00 JST (20:00 UTC Monday) — 全件フルスキャン
+  # schedule 削除（2026-05-28）: PR + push トリガーで十分にカバーされるため冗長。
+  # 依存パッケージの週次フルスキャンが必要な場合は workflow_dispatch で手動実行。
 
 jobs:
   # backend 変更有無を判定して後続ジョブに伝える
@@ -59,7 +59,7 @@ jobs:
   lint-backend:
     name: lint-backend-internal
     needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true' || github.event_name == 'schedule'
+    if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -97,7 +97,7 @@ jobs:
   pytest-run:
     name: pytest-run-internal
     needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true' || github.event_name == 'schedule'
+    if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -152,19 +152,9 @@ jobs:
           KEY=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
           echo "key=$KEY" >> "$GITHUB_OUTPUT"
 
-      - name: Wait for PostgreSQL
-        run: |
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            if pg_isready -h localhost -U jarvis -d jarvis_test_db; then
-              echo "PostgreSQL ready"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "PostgreSQL did not become ready in time"
-          exit 1
-        env:
-          PGPASSWORD: testpass
+      # NOTE: "Wait for PostgreSQL" 手動ループ削除（2026-05-28）。
+      # services の health-check（--health-cmd "pg_isready"）が通過した時点で
+      # PostgreSQL は確実に起動済み。二重確認は冗長。
 
       # Phase 1-E F3-S2 v2: 非 SUPERUSER ロールを作成（RLS テスト用）。
       # PostgreSQL の RLS は SUPERUSER に対して FORCE でもバイパスされるため、

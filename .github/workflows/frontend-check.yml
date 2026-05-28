@@ -4,8 +4,7 @@ on:
   pull_request:
     paths:
       - 'frontend/**'
-  schedule:
-    - cron: '0 19 * * 1'  # 毎週火曜 04:00 JST (19:00 UTC Monday) — 全件フルスキャン
+  # schedule 削除（2026-05-28）: PR の paths フィルタで十分にカバーされるため冗長。
 
 jobs:
   check:
