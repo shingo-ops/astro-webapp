@@ -74,6 +74,15 @@ jobs:
               });
             }
 
+      - name: Discord #定期レポート 通知（npm HIGH+ 脆弱性検出）
+        if: steps.npm_audit.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_SCHEDULED_REPORT }}
+        run: |
+          MSG="🔴 **npm HIGH+ 脆弱性を検出しました（週次スキャン）**
+          GitHub Issue を確認して依存パッケージを更新してください。"
+          bash scripts/notify/discord-owner-ping.sh "$MSG" || true
+
       - name: Fail job if vulnerabilities found
         if: steps.npm_audit.outcome == 'failure'
         run: exit 1
@@ -130,6 +139,15 @@ jobs:
                 labels: ['security', 'pip-audit']
               });
             }
+
+      - name: Discord #定期レポート 通知（pip 脆弱性検出）
+        if: steps.pip_audit.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK_OWNER_PING: ${{ secrets.DISCORD_WEBHOOK_SCHEDULED_REPORT }}
+        run: |
+          MSG="🔴 **Python 依存パッケージに脆弱性を検出しました（週次スキャン）**
+          GitHub Issue を確認して requirements.txt を更新してください。"
+          bash scripts/notify/discord-owner-ping.sh "$MSG" || true
 
       - name: Fail job if vulnerabilities found
         if: steps.pip_audit.outcome == 'failure'
