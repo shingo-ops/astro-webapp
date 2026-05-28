@@ -41,7 +41,7 @@ export default function InboxPage() {
   const navigate = useNavigate();
 
   const headerActions = (
-    <div className="inbox-header-btns">
+    <div className="page-header-actions">
       <button
         type="button"
         className="inbox-faq-btn icon-frame"
