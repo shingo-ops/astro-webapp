@@ -59,6 +59,8 @@
     "notDone": "Not Done",
     "submitting": "Submitting...",
     "deleteConfirmSuffix": " will be deleted.",
+    "prevPage": "← Prev",
+    "nextPage": "Next →",
     "saved": "Saved",
     "requestFailed": "Request failed",
     "blobFetchFailed": "Failed to fetch file",
@@ -766,7 +768,8 @@
     "status_active": "Active",
     "status_inactive": "Inactive",
     "status_discontinued": "Discontinued",
-    "outOfStockTooltip": "Out of stock — requires reorder or replenishment"
+    "outOfStockTooltip": "Out of stock — requires reorder or replenishment",
+    "pageLabel": "Page {{page}} ({{count}} items)"
   },
   "suppliers": {
     "title": "Suppliers",

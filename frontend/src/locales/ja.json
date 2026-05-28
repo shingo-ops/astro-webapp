@@ -59,6 +59,8 @@
     "notDone": "未",
     "submitting": "送信中...",
     "deleteConfirmSuffix": "を削除します。",
+    "prevPage": "← 前へ",
+    "nextPage": "次へ →",
     "saved": "保存しました",
     "requestFailed": "リクエストに失敗しました",
     "blobFetchFailed": "ファイルの取得に失敗しました",
@@ -766,7 +768,8 @@
     "status_active": "有効",
     "status_inactive": "無効",
     "status_discontinued": "廃番",
-    "outOfStockTooltip": "在庫切れ — 仕入元の発注または在庫補充が必要です"
+    "outOfStockTooltip": "在庫切れ — 仕入元の発注または在庫補充が必要です",
+    "pageLabel": "{{page}} ページ目 ({{count}} 件表示中)"
   },
   "suppliers": {
     "title": "仕入先管理",

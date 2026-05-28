@@ -93,6 +93,13 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  // QA r7: 190 件全件閲覧のため pagination 追加。backend per_page max=100
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 100;
+  // 100 件以上ある場合、次ページが存在することを判定するために 101 件取りに行く
+  // (backend は max 100 なので、別 fetch で簡易判定する代わりに、
+  //  返ってきた件数が PER_PAGE ちょうどなら「次がある可能性あり」とする)
+  const [hasNext, setHasNext] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -106,9 +113,13 @@ export default function ProductsPage() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (showArchived) params.set("archived", "true");
-      const qs = params.toString() ? `?${params.toString()}` : "";
+      params.set("page", String(page));
+      params.set("per_page", String(PER_PAGE));
+      const qs = `?${params.toString()}`;
       const data = await api.get<Product[]>(`/products${qs}`);
       setProducts(data);
+      // 返ってきた件数が PER_PAGE と同じなら、次ページ存在の可能性あり
+      setHasNext(data.length === PER_PAGE);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
@@ -116,8 +127,13 @@ export default function ProductsPage() {
     }
   };
 
+  // search/archived 変更時は page を 1 に戻す
+  useEffect(() => {
+    setPage(1);
+  }, [search, showArchived]);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [search, showArchived]);
+  useEffect(() => { load(); }, [search, showArchived, page]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -402,6 +418,42 @@ export default function ProductsPage() {
             {products.length === 0 && <tr><td colSpan={8} className="empty">{t("products.noProducts")}</td></tr>}
           </tbody>
         </table>
+      )}
+
+      {/* QA r7: 190 件全件閲覧のため pagination 追加 */}
+      {(page > 1 || hasNext) && (
+        <div
+          className="pagination"
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "var(--space-3)",
+            marginTop: "var(--space-4)",
+            marginBottom: "var(--space-4)",
+          }}
+          data-testid="products-pagination"
+        >
+          <button
+            className="btn-sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            data-testid="products-page-prev"
+          >
+            {t("common.prevPage")}
+          </button>
+          <span style={{ color: "var(--text-secondary)" }} data-testid="products-page-info">
+            {t("products.pageLabel", { page, count: products.length })}
+          </span>
+          <button
+            className="btn-sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!hasNext}
+            data-testid="products-page-next"
+          >
+            {t("common.nextPage")}
+          </button>
+        </div>
       )}
 
       <ConfirmModal
