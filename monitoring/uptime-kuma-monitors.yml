@@ -1,0 +1,51 @@
+# Uptime Kuma 監視項目定義 — SSoT（Single Source of Truth）
+#
+# 目的: VPS 再構築時に「何を監視していたか」をコードで再現できるようにする
+# 参照: docs/adr/ADR-069-uptime-kuma-activation.md
+# 注意: Uptime Kuma UI での登録は手動操作が必要（API自動投入は別途ADR起案予定）
+#       このファイルを見ながら Uptime Kuma の Settings > Monitors で設定すること
+
+monitors:
+  - name: "App 本番"
+    url: "https://app.salesanchor.jp/"
+    type: http
+    interval: 30
+    description: "Sales Anchor アプリ本番フロントエンド"
+
+  - name: "API ヘルスチェック"
+    url: "https://api.salesanchor.jp/api/health"
+    type: http
+    interval: 30
+    description: "FastAPI バックエンド ヘルスエンドポイント"
+
+  - name: "LP（ランディングページ）"
+    url: "https://salesanchor.jp/"
+    type: http
+    interval: 60
+    description: "Sales Anchor LP（Astro）"
+
+  - name: "PostgreSQL"
+    host: "localhost"
+    port: 5432
+    type: tcp
+    interval: 60
+    description: "PostgreSQL 16 データベース（VPS内部）"
+
+  - name: "Redis"
+    host: "localhost"
+    port: 6379
+    type: tcp
+    interval: 60
+    description: "Redis キャッシュ（VPS内部）"
+
+  - name: "Meta Graph API"
+    url: "https://graph.facebook.com/"
+    type: http
+    interval: 300
+    description: "Meta API 外形監視（外部依存サービス）"
+
+  - name: "Firebase"
+    url: "https://firebaseio.com/"
+    type: http
+    interval: 300
+    description: "Firebase 外形監視（認証基盤）"

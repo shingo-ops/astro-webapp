@@ -1,7 +1,7 @@
 # ADR-066: ダークモード時サイドバーロゴ白反転
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-05-21
