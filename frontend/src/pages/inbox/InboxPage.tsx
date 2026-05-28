@@ -44,7 +44,7 @@ export default function InboxPage() {
     <div className="page-header-actions">
       <button
         type="button"
-        className="inbox-faq-btn icon-frame"
+        className="btn-ghost"
         onClick={() => navigate("/faq")}
         aria-label={t("faq.title")}
         data-tooltip={t("faq.title")}
@@ -53,7 +53,7 @@ export default function InboxPage() {
       </button>
       <button
         type="button"
-        className="inbox-settings-btn icon-frame"
+        className="icon-btn"
         onClick={() => setShowSettings(true)}
         aria-label={t("inbox.settings.title")}
         data-tooltip={t("inbox.settings.tooltip")}

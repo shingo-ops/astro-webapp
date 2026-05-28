@@ -10,6 +10,9 @@
  *     ページ固有のラッパークラスを定義してはならない
  *   - pages/ 以下の CSS に *-period-select / *-view-select という
  *     ページ固有のプルダウンクラスを定義してはならない
+ *   - pages/ 以下の CSS に *-faq-btn / *-settings-btn という
+ *     ページ固有ヘッダーボタンクラスを定義してはならない
+ *     （代わりに .btn-ghost / .icon-btn を使用すること）
  *
  * 理由: ヘッダーアクションの見た目を全ページで統一するため、
  *       デザイントークンの変更を1ヶ所（components.css）で完結させる。
@@ -79,6 +82,8 @@ const pageCSS = collectCSS(pagesDir);
 const WRAPPER_PATTERN = /\.\w+-header-(btns|actions)\s*\{/g;
 // 検出パターン: .xxx-period-select / .xxx-view-select
 const SELECT_PATTERN = /\.\w+-(period|view)-select[\s:{]/g;
+// 検出パターン: ページ固有ヘッダーボタン (.xxx-faq-btn / .xxx-settings-btn 等)
+const HEADER_BTN_PATTERN = /\.\w+-(faq|settings)-btn[\s:{]/g;
 
 for (const file of pageCSS) {
   const src = readFileSync(file, "utf8");
@@ -103,6 +108,16 @@ for (const file of pageCSS) {
       `[page-header-actions] ❌ ${rel}: ` +
       `ページ固有プルダウン "${match}" が定義されています。` +
       `代わりに .page-header-select を使用してください。`
+    );
+    errors++;
+  }
+
+  const headerBtnMatches = [...src.matchAll(HEADER_BTN_PATTERN)].map((m) => m[0].trim());
+  for (const match of headerBtnMatches) {
+    console.error(
+      `[page-header-actions] ❌ ${rel}: ` +
+      `ページ固有ヘッダーボタン "${match}" が定義されています。` +
+      `代わりに .btn-ghost または .icon-btn を使用してください。`
     );
     errors++;
   }

@@ -76,6 +76,21 @@
 
 .btn-secondary:hover { background: var(--bg-subtle); }
 
+/* --- Ghost Button (text-only, transparent bg) --- */
+.btn-ghost {
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+.btn-ghost:hover { background: var(--bg-subtle); }
+
 .btn-sm {
   padding: var(--space-1) var(--space-10px);
   font-size: var(--font-xs);
