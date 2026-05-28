@@ -189,6 +189,14 @@
           "legendFormat": "CPU使用率",
           "refId": "A"
         }
+      ],
+      "links": [
+        {
+          "title": "コンテナ別リソース詳細を確認 →",
+          "url": "/grafana/d/container-detail",
+          "targetBlank": false,
+          "tooltip": "コンテナ別リソース詳細を確認 →"
+        }
       ]
     },
     {
@@ -245,6 +253,14 @@
           "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
           "legendFormat": "メモリ使用率",
           "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "コンテナ別リソース詳細を確認 →",
+          "url": "/grafana/d/container-detail",
+          "targetBlank": false,
+          "tooltip": "コンテナ別リソース詳細を確認 →"
         }
       ]
     },
@@ -309,6 +325,14 @@
           "legendFormat": "ディスク使用率",
           "refId": "A"
         }
+      ],
+      "links": [
+        {
+          "title": "コンテナ別リソース詳細を確認 →",
+          "url": "/grafana/d/container-detail",
+          "targetBlank": false,
+          "tooltip": "コンテナ別リソース詳細を確認 →"
+        }
       ]
     },
     {
@@ -365,6 +389,14 @@
           "legendFormat": "DB接続数",
           "refId": "A"
         }
+      ],
+      "links": [
+        {
+          "title": "DB接続詳細を確認 →",
+          "url": "/grafana/d/db-connection-detail",
+          "targetBlank": false,
+          "tooltip": "DB接続詳細を確認 →"
+        }
       ]
     },
     {
@@ -409,6 +441,14 @@
           "legendFormat": "リクエスト/秒",
           "refId": "A"
         }
+      ],
+      "links": [
+        {
+          "title": "バックエンドAPIメトリクスを確認 →",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "バックエンドAPIメトリクスを確認 →"
+        }
       ]
     },
     {
@@ -452,6 +492,14 @@
           "expr": "rate(nginx_http_requests_total{status=~\"5..\"}[5m]) or vector(0)",
           "legendFormat": "5xxエラー/秒",
           "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "エラーログを確認 →",
+          "url": "/grafana/d/loki-error-logs",
+          "targetBlank": false,
+          "tooltip": "エラーログを確認 →"
         }
       ]
     },
@@ -529,6 +577,14 @@
           "expr": "up{job=\"node-exporter\"}",
           "legendFormat": "Node",
           "refId": "C"
+        }
+      ],
+      "links": [
+        {
+          "title": "サービス稼働監視を確認 →",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "サービス稼働監視を確認 →"
         }
       ]
     }
