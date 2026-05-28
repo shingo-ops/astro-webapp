@@ -27,6 +27,8 @@
 | feature/morimoto/fix-format-check-regex | （記入してください） | 2026-05-27 02:39 | IN_PROGRESS | | |
 | feature/morimoto/fix-format-check-to-develop | （記入してください） | 2026-05-27 02:43 | IN_PROGRESS | | |
 | release/develop-to-main-fix | リリース develop→main コンフリクト解消 | 2026-05-27 17:50 | IN_PROGRESS | | |
+| feature/morimoto/fix-adr-index | （記入してください） | 2026-05-28 11:54 | IN_PROGRESS | | |
+| feature/morimoto/page-title-spacing | ページタイトル余白・サイズ調整 | 2026-05-28 12:00 | IN_PROGRESS | | |
 ---
 
 ## 記入例
