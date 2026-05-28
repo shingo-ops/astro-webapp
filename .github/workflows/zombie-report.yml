@@ -1,0 +1,92 @@
+name: zombie branch report
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # 毎週月曜 00:00 UTC = 09:00 JST
+  workflow_dispatch:      # 手動実行（テスト用）
+
+jobs:
+  zombie-report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect zombie entries and create GitHub Issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # ラベルが存在しない場合は自動作成（冪等）
+          gh label create zombie-branch \
+            --description "ゾンビエントリ自動検出" \
+            --color "FBCA04" \
+            --force 2>/dev/null || true
+
+          git fetch origin --prune 2>/dev/null || true
+          TODAY=$(date -u +"%Y-%m-%d")
+
+          # ゾンビブランチ検出（active-work-lint.yml の zombie-check と同ロジック）
+          ZOMBIE_BRANCHES=()
+          while IFS= read -r BRANCH; do
+            [ -z "$BRANCH" ] && continue
+            if ! git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null 2>&1; then
+              ZOMBIE_BRANCHES+=("$BRANCH")
+            fi
+          done < <(python3 -c "
+          import re
+          content = open('.claude-pipeline/active-work.md', encoding='utf-8').read()
+          for line in content.splitlines():
+              m = re.match(r'\|\s*(\S+)\s*\|.*\|\s*IN_PROGRESS\s*\|', line)
+              if m:
+                  print(m.group(1))
+          " 2>/dev/null)
+
+          if [ "${#ZOMBIE_BRANCHES[@]}" -eq 0 ]; then
+            echo "✅ ゾンビエントリなし"
+            exit 0
+          fi
+
+          echo "🧟 ゾンビエントリ ${#ZOMBIE_BRANCHES[@]} 件検出"
+
+          # 重複起票防止（design-token-audit.yml と同パターン）
+          EXISTING=$(gh issue list --label "zombie-branch" --state open --json number --jq length)
+          if [ "$EXISTING" -gt 0 ]; then
+            echo "既存のゾンビ報告 Issue が open のためスキップ（クローズ後に次回報告）"
+            exit 0
+          fi
+
+          # ブランチ一覧を Markdown リスト形式で組み立て
+          ZOMBIE_LIST=""
+          for B in "${ZOMBIE_BRANCHES[@]}"; do
+            ZOMBIE_LIST="${ZOMBIE_LIST}"$'\n'"- \`${B}\`"
+          done
+
+          # GitHub Issue 作成
+          gh issue create \
+            --title "[自動] ゾンビエントリ検出 ${TODAY}" \
+            --label "zombie-branch" \
+            --body "## ゾンビエントリ検出
+
+active-work.md に \`IN_PROGRESS\` と記録されているが、リモートブランチが存在しないエントリが **${#ZOMBIE_BRANCHES[@]} 件** 検出されました。
+
+### 対象ブランチ
+${ZOMBIE_LIST}
+
+### 対応方法
+
+各ブランチについて、以下のどちらかを実施してください：
+
+1. **作業が終わっている場合** → \`bash scripts/cleanup-worktree.sh <ブランチ名>\` を実行して active-work.md から削除
+2. **まだ作業中の場合** → \`git push\` でリモートに再作成してください
+
+### 参考リンク
+
+- [active-work.md](./.claude-pipeline/active-work.md)
+- ADR-074: worktree-agent-enforcement
+
+---
+*このIssueは毎週月曜 09:00 JST に自動生成されます。対応完了後はクローズしてください。*"
