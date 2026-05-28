@@ -1,16 +1,87 @@
 {
-  "annotations": { "list": [] },
+  "annotations": {
+    "list": []
+  },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "メイン",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/monitoring-main"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "システム",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/jarvis-system-overview"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "CI / GitHub",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "エラーログ",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/loki-error-logs"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "サービス稼働",
+      "tooltip": "",
+      "type": "link",
+      "url": "/grafana/d/uptime-kuma-monitors"
+    }
+  ],
   "panels": [
     {
       "title": "CPU使用率",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -19,12 +90,24 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 60 },
-              { "color": "red", "value": 80 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
-          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -39,8 +122,16 @@
     {
       "title": "メモリ使用率",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -49,12 +140,24 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 70 },
-              { "color": "red", "value": 85 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
             ]
           },
-          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -69,8 +172,16 @@
     {
       "title": "ディスク使用率",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -79,12 +190,24 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 60 },
-              { "color": "red", "value": 80 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
-          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -99,8 +222,16 @@
     {
       "title": "DB接続数",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "short",
@@ -108,12 +239,24 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 60 },
-              { "color": "red", "value": 80 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
             ]
           },
-          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -128,12 +271,23 @@
     {
       "title": "Nginxリクエスト数 (per sec)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "reqps",
-          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -148,19 +302,36 @@
     {
       "title": "Nginx 5xxエラー率",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "short",
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 1 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
             ]
           },
-          "custom": { "fillOpacity": 20, "lineWidth": 2 }
+          "custom": {
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
         },
         "overrides": []
       },
@@ -175,37 +346,84 @@
     {
       "title": "サービスステータス",
       "type": "stat",
-      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 24 },
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
         "defaults": {
           "mappings": [
-            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }
+            {
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              },
+              "type": "value"
+            }
           ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "red", "value": null },
-              { "color": "green", "value": 1 }
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
             ]
           }
         },
         "overrides": []
       },
       "targets": [
-        { "expr": "pg_up", "legendFormat": "PostgreSQL", "refId": "A" },
-        { "expr": "up{job=\"nginx-exporter\"}", "legendFormat": "Nginx", "refId": "B" },
-        { "expr": "up{job=\"node-exporter\"}", "legendFormat": "Node", "refId": "C" }
+        {
+          "expr": "pg_up",
+          "legendFormat": "PostgreSQL",
+          "refId": "A"
+        },
+        {
+          "expr": "up{job=\"nginx-exporter\"}",
+          "legendFormat": "Nginx",
+          "refId": "B"
+        },
+        {
+          "expr": "up{job=\"node-exporter\"}",
+          "legendFormat": "Node",
+          "refId": "C"
+        }
       ]
     }
   ],
   "schemaVersion": 39,
-  "tags": ["salesanchor", "system"],
-  "templating": { "list": [] },
-  "time": { "from": "now-6h", "to": "now" },
+  "tags": [
+    "salesanchor",
+    "system"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "Asia/Tokyo",
   "title": "Sales Anchor - システム概要",
   "uid": "jarvis-system-overview",
-  "version": 1
+  "version": 1,
+  "description": "サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。"
 }
