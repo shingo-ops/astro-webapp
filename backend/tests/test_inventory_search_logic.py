@@ -173,9 +173,9 @@ class TestEndpointSmoke:
         data = resp.json()
         assert data["total"] == 0
         assert data["candidates"] == []
-        # conftest の bypass_permissions で ALL_TEST_PERMISSIONS が付与され、
-        # inventory.visibility.full は含まれないので mask 期待。
-        assert data["masked"] is True
+        # QA r7 (2026-05-28 しんごさん確定): 在庫は全テナント共通で見える。
+        # マスク機能は撤廃され、masked は権限に関わらず常に False。
+        assert data["masked"] is False
 
     @pytest.mark.asyncio
     async def test_op_validation(self, client):
