@@ -17,6 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/sprint-a-governance | ガバナンス Sprint A（active-work整理・DB additive-only） | 2026-05-28 12:00 | IN_PROGRESS | | |
+| feature/morimoto/pytest-xdist | pytest 並列化（pytest-xdist -n auto --dist=loadfile） | 2026-05-28 19:00 | IN_PROGRESS | | |
 ---
 
 ## 記入例
