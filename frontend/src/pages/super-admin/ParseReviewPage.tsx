@@ -18,7 +18,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../../lib/api";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
-import InventorySearchBar, { InventorySearchCandidate } from "../../components/InventorySearchBar";
+import InventoryPicker, { PickedProduct } from "../../components/InventoryPicker";
 import "./ParseReviewPage.css";
 
 interface ReviewItem {
@@ -492,10 +492,10 @@ export default function ParseReviewPage() {
                           </em>
                           {!isFinal && (
                             <div style={{ marginTop: "var(--space-1)" }}>
-                              <InventorySearchBar
+                              <InventoryPicker
                                 disabled={row.skipped}
                                 testIdPrefix={`review-row-${idx}-inv-search`}
-                                onSelect={(c: InventorySearchCandidate) =>
+                                onSelect={(c: PickedProduct) =>
                                   updateDraft(idx, { product_id: c.product_id })
                                 }
                               />

@@ -11,7 +11,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
-import InventorySearchBar, { InventorySearchCandidate } from "../../components/InventorySearchBar";
+import InventoryPicker, { PickedProduct } from "../../components/InventoryPicker";
 
 interface Supplier {
   id: number;
@@ -56,7 +56,7 @@ export default function PurchaseOrdersFormModal({ open, onClose, onCreated }: Pr
 
   if (!open) return null;
 
-  const onPickProduct = (index: number, c: InventorySearchCandidate) => {
+  const onPickProduct = (index: number, c: PickedProduct) => {
     setItems((prev) => {
       const next = [...prev];
       next[index] = {
@@ -149,7 +149,7 @@ export default function PurchaseOrdersFormModal({ open, onClose, onCreated }: Pr
                 {items.map((item, i) => (
                   <tr key={i} data-testid={`po-item-row-${i}`}>
                     <td style={{ minWidth: "var(--table-col-min-width)" }}>
-                      <InventorySearchBar
+                      <InventoryPicker
                         onSelect={(c) => onPickProduct(i, c)}
                         testIdPrefix={`po-inventory-search-${i}`}
                       />
