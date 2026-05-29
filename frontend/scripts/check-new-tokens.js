@@ -22,6 +22,18 @@ if (!BASE_REF) {
   process.exit(0);
 }
 
+// release PR (develop → main) はスキップする。
+// 新規トークンは feature → develop PR の時点で本チェック済みであり、
+// develop → main の release PR は Bot 自動生成で本文（チェックリスト）を
+// 編集できず、同じトークンを二重にゲートしても新たな確認価値がないため。
+// feature ブランチは develop を base にするので、base=main = release PR と判定できる。
+if (BASE_REF === 'main') {
+  console.log(
+    'ℹ️ release PR (base=main) のため新規トークンチェックをスキップ（feature→develop PR で確認済み）。',
+  );
+  process.exit(0);
+}
+
 const TOKEN_FILES = ['src/tokens.css', 'src/index.css'];
 
 let addedTokens = [];
