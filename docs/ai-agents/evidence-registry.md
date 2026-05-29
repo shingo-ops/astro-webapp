@@ -23,6 +23,34 @@ follow_up:
 ## Current Entries
 
 ```text
+id: EV-20260530-001
+date: 2026-05-30
+agent: Claude Code (orchestrator)
+task: Codex の役割を Research・Planning に拡張し、非対話 exec ラッパーを整備
+scope: AGENTS.md, memory/project_codex_adoption.md, scripts/codex-research.sh
+evidence:
+  - type: command
+    reference: codex --help
+    summary: codex exec サブコマンドが実装済みであることを確認（v0.134.0）
+  - type: command
+    reference: ls scripts/
+    summary: codex-generator.sh（TUI対話型）は存在するが codex exec 用の非対話ラッパーは存在しなかった
+  - type: file
+    reference: scripts/codex-generator.sh
+    summary: 既存ラッパーは Generator（対話型TUI）専用であり Research/Planning 用の exec ラッパーは未作成
+  - type: file
+    reference: .claude/agents/research.md
+    summary: develop ブランチでは既に存在していた（ギャップ③は既解消）
+  - type: file
+    reference: AGENTS.md
+    summary: 役割分担テーブル（Codex: Research/Planning/Generator、Claude Code: Review）を追加済み
+confidence: high
+tradeoff: codex exec はサンドボックス制限あり（sandbox_permissions = disk-full-read-access）。書き込みが必要なタスクは codex-generator.sh（対話型）を使い続ける必要がある
+decision: scripts/codex-research.sh を新設。--plan フラグで Planner モード切替可能。既存の codex-generator.sh は Generator 専用として温存
+follow_up: 実運用 30 日後に Research/Planning exec モードの採用率を Governance が確認する
+```
+
+```text
 id: EV-20260529-004
 date: 2026-05-29
 agent: Codex
