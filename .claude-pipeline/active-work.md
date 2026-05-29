@@ -17,7 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
-| feature/morimoto/inventory-offer-lifecycle | 在庫オファー lifecycle | 2026-05-30 | REVIEW | | 単位(unit)永続化 migration084 + 18時間自動失効(Celery purge) |
+| feature/morimoto/qa-checksheet-inventory-spec | QAチェックシート | 2026-05-30 | REVIEW | | 在庫新仕様反映(Option Z/18h失効/単位/承認メッセージ/Phase A警告/履歴) docs-only |
 ---
 
 ## 記入例
