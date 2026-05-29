@@ -86,7 +86,10 @@ services:
       - "-config.file=/etc/promtail/config.yml"
       - "-config.expand-env=true"
     environment:
-      - PROMTAIL_LOKI_URL=http://${MGMT_PUBLIC_IP:-49.212.160.98}:3100/loki/api/v1/push
+      # SSH逆トンネル経由でLokiへ送信（mgmt VPS port 3100 → app VPS 0.0.0.0:13100 にフォワード）
+      - PROMTAIL_LOKI_URL=http://host-gateway:13100/loki/api/v1/push
+    extra_hosts:
+      - "host-gateway:host-gateway"
     restart: unless-stopped
     healthcheck:
       disable: true

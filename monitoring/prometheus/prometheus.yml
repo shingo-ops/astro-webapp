@@ -22,21 +22,21 @@ scrape_configs:
       - targets: ["node-exporter:9100"]
         labels:
           instance: "mgmt-vps"
-      - targets: ["49.212.137.46:9100"]
+      - targets: ["host-gateway:19100"]
         labels:
           instance: "app-vps"
 
   # PostgreSQL Exporter（DB接続数・クエリ統計）
   - job_name: "postgres-exporter"
     static_configs:
-      - targets: ["49.212.137.46:9187"]
+      - targets: ["host-gateway:19187"]
         labels:
           instance: "app-vps"
 
   # Nginx Exporter（リクエスト数・ステータスコード）
   - job_name: "nginx-exporter"
     static_configs:
-      - targets: ["49.212.137.46:9113"]
+      - targets: ["host-gateway:19113"]
         labels:
           instance: "app-vps"
 
@@ -67,7 +67,7 @@ scrape_configs:
   # Redis Exporter（Redisキャッシュメトリクス）ADR-079
   - job_name: "redis-exporter"
     static_configs:
-      - targets: ["49.212.137.46:9121"]
+      - targets: ["host-gateway:19121"]
         labels:
           instance: "app-vps"
 
