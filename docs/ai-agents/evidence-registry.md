@@ -480,6 +480,28 @@ follow_up: 新しい AEON 変更はまず operation guide と evidence-registry 
 ```
 
 ```text
+id: EV-20260530-015
+date: 2026-05-30
+agent: Agent
+task: develop sync back-merge after release
+scope: PR #1185, gh pr checks 1185, gh pr merge 1185 --merge --delete-branch, tasks/todo.md, docs/ai-agents/evidence-registry.md
+evidence:
+  - type: command
+    reference: gh pr checks 1185
+    summary: base-branch-guard, Playwright E2E (chromium), マイグレーションSQL 実行テスト（実DB）などの必須チェックが pass した
+  - type: command
+    reference: gh pr merge 1185 --merge --delete-branch
+    summary: GitHub 上で PR #1185 が MERGED になり、merge commit 63d64346215a9b9bdbf6d426331933d84b429826 が生成された
+  - type: command
+    reference: gh pr view 1185 --json state,mergedAt,mergeCommit,url,mergeStateStatus
+    summary: state=MERGED, mergedAt=2026-05-29T23:06:51Z, mergeCommit=63d64346215a9b9bdbf6d426331933d84b429826 を確認した
+confidence: high
+tradeoff: local `gh pr merge` は worktree の branch checkout 制約で delete-branch に失敗したが、GitHub 側の merge 自体は完了した
+decision: release 後の develop sync back-merge は PR #1185 で完了したとみなし、以後は main / develop の divergence は release merge commit 起因として扱う
+follow_up: 必要に応じて `main...develop` compare の監視を継続し、release PR の反復を防止する
+```
+
+```text
 id: EV-20260530-014
 date: 2026-05-30
 agent: Agent

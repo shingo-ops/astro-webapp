@@ -22,6 +22,7 @@
 
 | タスク | 完了日 | PR |
 |------|------|---|
+| develop sync back-merge after release | 2026-05-30 | #1185 |
 | release develop → main（AEON operation guide / ADR index sync / main back-merge 反映） | 2026-05-30 | #1178 |
 | 在庫オファー lifecycle（単位 unit 永続化 migration084 + 18時間自動失効 Celery purge） | 2026-05-30 | #1179 |
 | 解析レビュー表 QA修正（メモ来歴削除/単価整数/差分数量列削除/単位列追加/列幅+承認Option Z） | 2026-05-30 | #1177 |
