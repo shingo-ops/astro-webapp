@@ -20,7 +20,7 @@
 | タスク | 完了日 | PR |
 |------|------|---|
 | 監視VPS移行 M1〜M7（ADR-080） | 2026-05-29 | #1146 #1148 #1150 |
-| Agent pipeline redefinition / runtime sync | 2026-05-29 | - |
+| Agent pipeline redefinition / runtime sync | 2026-05-29 | #1158 |
 | stale active-work クリーンアップ | 2026-05-29 | #1134 |
 | Discord Webhook 分離 | 2026-05-29 | #1132 |
 | PR固有 smoke テスト削除 | 2026-05-29 | #1133 |
