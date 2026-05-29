@@ -31,10 +31,11 @@ interface ReviewItem {
   condition?: string | null;
   quantity_offered?: number | null;
   unit_price?: number | null;
-  // パーサ (inventory_parser ParsedItem) が出力するキー。LLM が抽出した商品名・数量。
+  // パーサ (inventory_parser ParsedItem) が出力するキー。LLM が抽出した商品名・数量・単位。
   // 旧 UI はこれらを読まず delta_qty/alias_text を見ていたため、抽出済みでも画面に出ていなかった。
   product_name?: string | null;
   quantity?: number | null;
+  unit?: string | null;  // parser 正規化値: box / carton / pack / piece / set
 }
 
 interface ParseResultJson {
@@ -76,9 +77,11 @@ interface RowDraft {
   condition: string;
   quantity_offered: string;  // 数値だが入力途中の空文字を許容するため string で保持
   unit_price: string;
-  // 表示専用 (送信しない): LLM が抽出した商品名 と、メモから分離した来歴 (source=llm_v1; confidence=…)
+  // 単位 (QA 2026-05-30): Box / Case / Pack / Set / Peace。空文字 = 未指定。
+  // parser の unit (box/carton/pack/piece/set) を UI 値にマップして prefill する。
+  unit: string;
+  // 表示専用 (送信しない): LLM が抽出した商品名
   product_name: string;
-  provenance: string;
 }
 
 interface ApproveResponse {
@@ -93,6 +96,8 @@ interface ApproveResponse {
     after_qty: number;
   }>;
   skipped_count: number;
+  // QA 2026-05-30 (Option Z): 在庫を動かさず public.inventory に記録した仕入元オファー件数
+  offers_recorded?: number;
   // Sprint 9 / F9 v1.2: Phase A 並走時に products.stock_quantity 更新を skip したか
   skipped_stock_update?: boolean;
   phase?: "A" | "B" | "C";
@@ -105,12 +110,37 @@ interface RejectResponse {
   exclude_reason: string;
 }
 
+// 単位列 (QA 2026-05-30) の選択肢。値は UI 表示そのまま (Box / Case / Pack / Set / Peace)。
+const UNIT_OPTIONS = ["Box", "Case", "Pack", "Set", "Peace"] as const;
+// parser 正規化値 (box/carton/pack/piece/set) → UI 単位値 へのマップ。
+const PARSER_UNIT_TO_UI: Record<string, string> = {
+  box: "Box",
+  carton: "Case",
+  case: "Case",
+  pack: "Pack",
+  set: "Set",
+  piece: "Peace",
+  peace: "Peace",
+};
+
+function mapParserUnit(raw: string | null | undefined): string {
+  if (!raw) return "";
+  return PARSER_UNIT_TO_UI[String(raw).trim().toLowerCase()] ?? "";
+}
+
+// 単価を整数文字列に正規化（LLM は 190000.0 のような float を返すため小数を落とす）。
+function toIntPriceString(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  const n = Number(value);
+  return Number.isFinite(n) ? String(Math.round(n)) : "";
+}
+
 function detailToDrafts(detail: ParseReviewDetail): RowDraft[] {
   const items = detail.parse_result_json?.items ?? [];
   const existingSkipped = new Set(detail.parse_result_json?.skipped ?? []);
   return items.map((item, idx) => {
-    // メモから来歴 (source=llm_v1; confidence=…) を分離。来歴はメモ入力欄に出さず表示専用に回し、
-    // メモ欄はオペレータ入力用に空ける。来歴でない (人間が書いた) メモはそのまま残す。
+    // メモから来歴 (source=llm_v1; confidence=…) を除去。来歴は表示せず、メモ欄は
+    // オペレータ入力用に空ける。来歴でない (人間が書いた) メモはそのまま残す。
     const rawNotes = String(item.notes ?? "");
     const isProvenance = /(^|;\s*)source=/.test(rawNotes);
     // 提示数量: パーサの quantity を prefill（旧 UI は quantity を読まず常に空だった）
@@ -130,13 +160,10 @@ function detailToDrafts(detail: ParseReviewDetail): RowDraft[] {
       // Sprint 11 / F11 AC11.3: parse_result_json に値があれば prefill、無ければ空
       condition: String(item.condition ?? ""),
       quantity_offered: offered,
-      unit_price:
-        item.unit_price === null || item.unit_price === undefined
-          ? ""
-          : String(item.unit_price),
-      // 表示専用: LLM 抽出の商品名 と、分離した来歴
+      unit_price: toIntPriceString(item.unit_price),
+      unit: mapParserUnit(item.unit),
+      // 表示専用: LLM 抽出の商品名
       product_name: String(item.product_name ?? ""),
-      provenance: isProvenance ? rawNotes : "",
     };
   });
 }
@@ -218,22 +245,26 @@ export default function ParseReviewPage() {
     setInfo("");
     setSubmitting(true);
     try {
-      // 採用行（skipped=false かつ product_id !== null かつ delta_qty !== 0）のみ送信
+      // 採用行（skipped=false かつ product_id !== null）を送信。
+      // QA 2026-05-30: 差分数量列を撤去。在庫数は「目安」で中央在庫を増減させないため
+      // delta_qty=0 で送る → backend は在庫を動かさず public.inventory のオファーのみ記録する
+      // (condition 指定行が対象。Option Z / inventory_movements.apply_inbound_items)。
       const items = drafts
-        .filter((r) => !r.skipped && r.product_id !== null && r.delta_qty !== 0)
+        .filter((r) => !r.skipped && r.product_id !== null)
         .map((r) => {
           // Sprint 11 / F11 AC11.3: 数値項目は空文字を null に変換 + パース
           const qOffered = r.quantity_offered.trim();
           const uPrice = r.unit_price.trim();
           return {
             product_id: r.product_id,
-            delta_qty: r.delta_qty,
+            delta_qty: 0,
             alias_text: r.alias_text || null,
             notes: r.notes || null,
             original_index: r.original_index,
             condition: r.condition.trim() || null,
             quantity_offered: qOffered ? Number.parseInt(qOffered, 10) : null,
             unit_price: uPrice ? Number.parseInt(uPrice, 10) : null,
+            unit: r.unit || null,
           };
         });
       const skipped_indices = drafts
@@ -251,7 +282,7 @@ export default function ParseReviewPage() {
       );
       setInfo(
         t("superAdmin.inbound.review.approveSuccess", {
-          count: resp.movements.length,
+          offers: resp.offers_recorded ?? 0,
           skipped: resp.skipped_count,
         }),
       );
@@ -443,13 +474,15 @@ export default function ParseReviewPage() {
               <tr>
                 <th>#</th>
                 <th>{t("superAdmin.inbound.review.col.productId")}</th>
-                <th>{t("superAdmin.inbound.review.col.deltaQty")}</th>
                 <th>{t("superAdmin.inbound.review.col.condition")}</th>
                 <th>{t("superAdmin.inbound.review.col.quantityOffered")}</th>
+                <th>{t("superAdmin.inbound.review.col.unit")}</th>
                 <th>{t("superAdmin.inbound.review.col.unitPrice")}</th>
                 <th>{t("superAdmin.inbound.review.col.alias")}</th>
                 <th>{t("superAdmin.inbound.review.col.notes")}</th>
-                <th>{t("superAdmin.inbound.review.col.skip")}</th>
+                <th className="review-col-skip">
+                  {t("superAdmin.inbound.review.col.skip")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -506,21 +539,8 @@ export default function ParseReviewPage() {
                         <code data-testid={`review-row-${idx}-product-id`}>{row.product_id}</code>
                       )}
                     </td>
-                    <td>
-                      <input
-                        type="number"
-                        data-testid={`review-row-${idx}-delta`}
-                        value={row.delta_qty}
-                        disabled={row.skipped || isFinal}
-                        onChange={(e) =>
-                          updateDraft(idx, {
-                            delta_qty: Number.parseInt(e.target.value, 10) || 0,
-                          })
-                        }
-                        style={{ width: "5rem" }}
-                      />
-                    </td>
-                    {/* Sprint 11 / F11 AC11.3: condition / quantity_offered / unit_price */}
+                    {/* Sprint 11 / F11 AC11.3: condition / quantity_offered / unit / unit_price
+                        QA 2026-05-30: 差分数量列は撤去（在庫は目安・増減不要） */}
                     <td>
                       <select
                         data-testid={`review-row-${idx}-condition`}
@@ -565,9 +585,30 @@ export default function ParseReviewPage() {
                       />
                     </td>
                     <td>
+                      <select
+                        data-testid={`review-row-${idx}-unit`}
+                        value={row.unit}
+                        disabled={row.skipped || isFinal}
+                        onChange={(e) =>
+                          updateDraft(idx, { unit: e.target.value })
+                        }
+                        style={{ width: "6rem" }}
+                      >
+                        <option value="">
+                          {t("superAdmin.inbound.review.condition.unspecified")}
+                        </option>
+                        {UNIT_OPTIONS.map((u) => (
+                          <option key={u} value={u}>
+                            {u}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
                       <input
                         type="number"
                         min="0"
+                        step="1"
                         data-testid={`review-row-${idx}-unit-price`}
                         value={row.unit_price}
                         disabled={row.skipped || isFinal}
@@ -593,18 +634,6 @@ export default function ParseReviewPage() {
                       />
                     </td>
                     <td>
-                      {row.provenance && (
-                        <div
-                          data-testid={`review-row-${idx}-provenance`}
-                          style={{
-                            fontSize: "0.8em",
-                            color: "var(--text-muted)",
-                            marginBottom: "var(--space-1)",
-                          }}
-                        >
-                          {row.provenance}
-                        </div>
-                      )}
                       <input
                         type="text"
                         data-testid={`review-row-${idx}-notes`}
@@ -616,7 +645,7 @@ export default function ParseReviewPage() {
                         style={{ width: "10rem" }}
                       />
                     </td>
-                    <td>
+                    <td className="review-col-skip">
                       <input
                         type="checkbox"
                         data-testid={`review-row-${idx}-skip`}

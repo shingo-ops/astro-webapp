@@ -1359,7 +1359,7 @@
         "rejectReasonLabel": "exclude_reason（必須）",
         "rejectConfirmBtn": "差し戻しを確定",
         "rejectReasonRequired": "差し戻し理由を入力してください",
-        "approveSuccess": "{{count}} 件を承認し、{{skipped}} 件をスキップしました。",
+        "approveSuccess": "{{offers}} 件のオファーを記録し、{{skipped}} 件をスキップしました。",
         "rejectSuccess": "差し戻しました。",
         "versionConflict": "他のレビュアーが先に更新しました。最新版を再読み込みしたので再操作してください。",
         "col": {
@@ -1371,6 +1371,7 @@
           "condition": "状態",
           "quantityOffered": "在庫数",
           "quantityOfferedPlaceholder": "提示数量",
+          "unit": "単位",
           "unitPrice": "単価 (円)",
           "unitPricePlaceholder": "提示単価"
         },
