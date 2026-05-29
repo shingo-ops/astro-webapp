@@ -120,6 +120,25 @@
     background: var(--c-smoke-bg);
   }
   .card.hidden { display: none; }
+  /* collapse: OK 等を「畳んで表示」（消去ではない）。head + scenario のみ残しスクロール削減 */
+  .card.collapsed > *:not(.card-head):not(.card-scenario) { display: none; }
+  .card.collapsed .card-scenario { margin-bottom: 0; opacity: 0.7; }
+  .collapse-toggle {
+    margin-left: auto; cursor: pointer; border: 1px solid var(--c-border);
+    background: transparent; border-radius: 6px; padding: 2px 9px; font-size: 12px; color: var(--c-muted); white-space: nowrap;
+  }
+  .collapse-toggle:hover { color: var(--c-accent); border-color: var(--c-accent); }
+  .card-result { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+  .card-result.ok { background: #dcfce7; color: var(--c-ok); }
+  .card-result.ng { background: #fee2e2; color: var(--c-ng); }
+  .card-result.na { background: #dbeafe; color: var(--c-accent); }
+  .card-result.pending { background: #f3f4f6; color: var(--c-muted); }
+  .collapse-controls { display: inline-flex; gap: 6px; margin-left: 8px; flex-wrap: wrap; }
+  .collapse-controls button {
+    cursor: pointer; border: 1px solid var(--c-border); background: #fff;
+    border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--c-text);
+  }
+  .collapse-controls button:hover { border-color: var(--c-accent); color: var(--c-accent); }
 
   .card-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
   .card-id {
@@ -813,6 +832,8 @@ function saveState(state) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 let STATE = loadState();
+// collapse: 各項目の畳み状態の明示オーバーライド (uniqKey -> bool)。未設定なら OK 項目を既定で畳む。
+if (!STATE.collapsed || typeof STATE.collapsed !== "object") STATE.collapsed = {};
 let CURRENT_TAB = "inventory";
 let CURRENT_FILTER = localStorage.getItem(FILTER_KEY) || "all";
 
@@ -971,6 +992,20 @@ function renderFilters() {
     });
     wrap.appendChild(btn);
   });
+  // global: OK 項目を一括で畳む / 全部展開（消去ではなく畳むだけ・スクロール削減）
+  const collapseControls = document.createElement("span");
+  collapseControls.className = "collapse-controls";
+  const btnCollapseOk = document.createElement("button");
+  btnCollapseOk.type = "button";
+  btnCollapseOk.textContent = "✅ OK項目を畳む";
+  btnCollapseOk.addEventListener("click", () => setAllCollapsed(true));
+  const btnExpandAll = document.createElement("button");
+  btnExpandAll.type = "button";
+  btnExpandAll.textContent = "🗁 全部展開";
+  btnExpandAll.addEventListener("click", () => setAllCollapsed(false));
+  collapseControls.appendChild(btnCollapseOk);
+  collapseControls.appendChild(btnExpandAll);
+  wrap.appendChild(collapseControls);
 }
 
 function renderSheet() {
@@ -1000,6 +1035,7 @@ function renderSheet() {
     root.appendChild(secEl);
   });
   applyFilter();
+  applyCollapse();
 }
 
 function renderCard(sheetId, item) {
@@ -1019,6 +1055,21 @@ function renderCard(sheetId, item) {
       <span>${sysIcon(item.sys)}</span>
     </span>
   `;
+  // 結果バッジ + 畳むトグル（OK 等を畳んでスクロール削減。消去ではない）
+  const resultBadge = document.createElement("span");
+  resultBadge.dataset.role = "card-result";
+  head.appendChild(resultBadge);
+  const collapseToggle = document.createElement("button");
+  collapseToggle.type = "button";
+  collapseToggle.className = "collapse-toggle";
+  collapseToggle.dataset.role = "collapse-toggle";
+  collapseToggle.addEventListener("click", () => {
+    const key = uniqKey(sheetId, item.id);
+    STATE.collapsed[key] = !card.classList.contains("collapsed");
+    saveState(STATE);
+    applyCardCollapse(card);
+  });
+  head.appendChild(collapseToggle);
   card.appendChild(head);
 
   // Sys reason (partial / none の場合に表示)
@@ -1127,11 +1178,55 @@ function renderCard(sheetId, item) {
   return card;
 }
 
+// =================================================================
+// COLLAPSE (OK 等を畳んで表示・スクロール削減。消去ではない)
+// =================================================================
+function statusResultMeta(s) {
+  if (s === "ok") return { cls: "ok", text: "✅ OK" };
+  if (s === "ng") return { cls: "ng", text: "❌ NG" };
+  if (s === "na") return { cls: "na", text: "🟦 対象外" };
+  return { cls: "pending", text: "⬜ 未" };
+}
+function shouldCollapse(sheetId, itemId) {
+  const ov = STATE.collapsed[uniqKey(sheetId, itemId)];
+  if (typeof ov === "boolean") return ov;            // 明示オーバーライド優先
+  return effectiveStatus(sheetId, itemId) === "ok";  // 既定: OK は畳む
+}
+function applyCardCollapse(card) {
+  const sheetId = card.dataset.sheet, itemId = card.dataset.itemId;
+  const meta = statusResultMeta(effectiveStatus(sheetId, itemId));
+  const badge = card.querySelector('[data-role="card-result"]');
+  if (badge) { badge.className = "card-result " + meta.cls; badge.textContent = meta.text; }
+  const collapsed = shouldCollapse(sheetId, itemId);
+  card.classList.toggle("collapsed", collapsed);
+  const tg = card.querySelector('[data-role="collapse-toggle"]');
+  if (tg) tg.textContent = collapsed ? "▶ 展開" : "▼ 畳む";
+}
+function applyCollapse() {
+  document.querySelectorAll(".card").forEach(applyCardCollapse);
+}
+// global: OK 項目を一括で畳む / 全部展開
+function setAllCollapsed(collapseOkOnly) {
+  document.querySelectorAll(".card").forEach(card => {
+    const key = uniqKey(card.dataset.sheet, card.dataset.itemId);
+    if (collapseOkOnly) {
+      if (effectiveStatus(card.dataset.sheet, card.dataset.itemId) === "ok") STATE.collapsed[key] = true;
+    } else {
+      STATE.collapsed[key] = false;
+    }
+  });
+  saveState(STATE);
+  applyCollapse();
+}
+
 function applyFilter() {
   document.querySelectorAll(".card").forEach(card => {
     const sheetId = card.dataset.sheet;
     const itemId = card.dataset.itemId;
     const status = effectiveStatus(sheetId, itemId);
+    // 結果バッジを最新化（ここでは畳まない＝OK にした直後のメモ記入を妨げない）
+    const badge = card.querySelector('[data-role="card-result"]');
+    if (badge) { const m = statusResultMeta(status); badge.className = "card-result " + m.cls; badge.textContent = m.text; }
     let show = true;
     if (CURRENT_FILTER === "pending") show = (status === "pending");
     else if (CURRENT_FILTER === "ok") show = (status === "ok");
