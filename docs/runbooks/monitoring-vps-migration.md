@@ -16,11 +16,13 @@
 | スプリント | フェーズ | 状態 | 担当 | ブロック理由 | 更新日 |
 |----------|---------|:---:|------|-----------|------|
 | M1 | Phase 1: VPS契約・ファイアウォール・Docker | 完了 | Claude Code | - | 2026-05-29 |
-| M2-M6 | compose ファイル分離・設定変更（PR #1146） | 完了 | Codex | - | 2026-05-29 |
-| M7a | 管理室VPS claude-monitor ユーザー設定（ADR-079） | 完了 | Claude Code | - | 2026-05-29 |
-| M7b | Phase 7: 管理室VPSへ監視スタックをデプロイ・動作確認 | 未着手 | Claude Code | M2-M6デプロイ待ち | 2026-05-29 |
-| M7c | Phase 7: アプリVPS旧監視コンテナ撤去 | 未着手 | Claude Code | M7b完了待ち | 2026-05-29 |
-| M8 | 旧ボリューム削除（PO確認後・1週間運用後） | 未着手 | PO確認必須 | M7c完了+1週間後 | 2026-05-29 |
+| M2 | Phase 2: 監視スタック compose 分離（docker-compose.monitoring.yml）| 完了 | Codex（PR #1146） | - | 2026-05-29 |
+| M3 | Phase 3: VPS間通信設定（Prometheus scrape・promtail） | 完了 | Codex（PR #1146） | - | 2026-05-29 |
+| M4 | Phase 4: Grafana プロキシ変更 | 完了 | Codex（PR #1146） | - | 2026-05-29 |
+| M5 | Phase 5: exporter 専用 docker-compose 分離 | 完了 | Codex（PR #1146） | - | 2026-05-29 |
+| M6 | Phase 6: claude-monitor ユーザー設定（ADR-079） | 完了 | Claude Code | - | 2026-05-29 |
+| M7 | Phase 7: 管理室VPSへ監視スタックをデプロイ・動作確認・旧コンテナ撤去 | 未着手 | Claude Code | デプロイ実施待ち | 2026-05-29 |
+| M8 | 旧ボリューム削除（PO確認後・1週間運用後） | 未着手 | PO確認必須 | M7完了+1週間後 | 2026-05-29 |
 
 **状態の値**: `未着手` / `進行中` / `完了` / `ブロック`
 
