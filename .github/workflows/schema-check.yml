@@ -88,7 +88,7 @@ jobs:
 
       - name: Validate schema catch-up lists stay in sync
         run: |
-          python ../scripts/check_schema_catchup_sync.py
+          python scripts/check_schema_catchup_sync.py
 
       - name: Generate Fernet key
         id: fernet
