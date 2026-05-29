@@ -79,11 +79,10 @@ class ReviewItemInput(BaseModel):
     )
     unit: str | None = Field(
         default=None,
-        max_length=16,
+        max_length=20,
         description=(
-            "数量の単位 (UI: Box / Case / Pack / Set / Peace)。QA 2026-05-30 で UI に追加。"
-            "現状 public.inventory に unit 列が無いため永続化は別 PR (migration) で対応予定。"
-            "受理はするが現時点では保存しない。"
+            "数量の単位 (UI: Box / Case / Pack / Set / Peace)。QA 2026-05-30。"
+            "migration 084 で public.inventory.unit (VARCHAR(20)) へ UPSERT 保存される。None なら NULL。"
         ),
     )
 

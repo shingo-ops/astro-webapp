@@ -548,6 +548,7 @@ async def test_optionz_records_offer_when_delta_zero_without_movement(engine):
                         "condition": "new",
                         "quantity_offered": 5,
                         "unit_price": 3000,
+                        "unit": "Box",
                     }
                 ],
                 operator_id=9102,
@@ -567,7 +568,8 @@ async def test_optionz_records_offer_when_delta_zero_without_movement(engine):
                 (
                     await conn.execute(
                         text(
-                            "SELECT quantity, unit_price, status, source "
+                            "SELECT quantity, unit_price, unit, status, source, "
+                            "       offered_at, expires_at "
                             "FROM public.inventory "
                             "WHERE supplier_id = :sid AND product_id = :pid "
                             "AND condition = 'new'"
@@ -581,7 +583,14 @@ async def test_optionz_records_offer_when_delta_zero_without_movement(engine):
             assert row is not None, "delta=0 でも public.inventory に UPSERT される"
             assert row["quantity"] == 5
             assert row["unit_price"] == 3000
+            assert row["unit"] == "Box", "単位 (unit) が保存される (migration 084)"
             assert row["source"] == "f6_approved"
+            # QA 2026-05-30 時間失効: expires_at は offered_at の約18時間後
+            assert row["expires_at"] is not None, "expires_at が付与される"
+            elapsed = (row["expires_at"] - row["offered_at"]).total_seconds()
+            assert abs(elapsed - 18 * 3600) < 120, (
+                f"expires_at ≈ offered_at + 18h (実差分 {elapsed}s)"
+            )
 
             mov_count = (
                 await conn.execute(
