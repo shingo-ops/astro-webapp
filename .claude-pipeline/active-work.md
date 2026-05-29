@@ -16,9 +16,10 @@
 
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
-| feature/morimoto/mgmt-vps-m2-m6 | 管理室VPS監視スタック分離 Sprint M2-M6 | 2026-05-29 13:30 | IN_PROGRESS | | Codex実装 |
 | feature/morimoto/fix-backend-audit-1097 | backend pip audit remediation (#1097) | 2026-05-29 13:05 | IN_PROGRESS | | |
 | feature/morimoto/fix-schema-check-catchup-lint | schema catch-up lint for ADR-036 | 2026-05-29 14:27 | IN_PROGRESS | | |
+| feature/morimoto/forget-proof-working-memory | プロセス改善（忘れ防止） | 2026-05-29 | IN_PROGRESS |  | タスク台帳・スプリント状態・CI lint |
+| feature/morimoto/mgmt-vps-m7 | 管理室VPS claude-monitor ユーザー設定 Sprint M7 | 2026-05-29 14:55 | IN_PROGRESS | | |
 ---
 
 ## 記入例
