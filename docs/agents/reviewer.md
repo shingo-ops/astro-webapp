@@ -13,7 +13,7 @@ Reviewer is a compliance auditor. Reviewer does not design, implement, run Playw
 ## Pipeline Position
 
 ```text
-Research -> Planner -> Architect -> PO Approval -> Generator -> Reviewer -> Evaluator -> GitHub CI
+Research -> Planner -> Architect -> PO Approval -> Generator -> Evaluator -> Reviewer -> GitHub CI
 ```
 
 Governance is outside this runtime pipeline.

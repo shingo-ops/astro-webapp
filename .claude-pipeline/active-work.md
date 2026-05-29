@@ -16,7 +16,10 @@
 
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
-| feature/morimoto/cleanup-active-work-may29 | active-work stale エントリ整理 | 2026-05-29 | IN_PROGRESS | | |
+| feature/morimoto/github-collector-metrics | GitHub collector metrics | 2026-05-29 20:48 | IN_PROGRESS | | |
+| feature/morimoto/codex-research-planning-gaps | Codex research / planning gaps | 2026-05-30 00:37 | IN_PROGRESS | | |
+| feature/morimoto/remove-design-review-gate | design review gate removal | 2026-05-30 05:39 | IN_PROGRESS | | |
+| feature/morimoto/aeon-operation-guide-pr | AEON operation guide PR | 2026-05-30 05:42 | IN_PROGRESS | | |
 ---
 
 ## 記入例
