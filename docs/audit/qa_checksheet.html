@@ -487,12 +487,12 @@ const SHEETS = {
         id: "B",
         title: "B. 商品マスタ (/management-center/super-admin/masters 商品タブ)",
         items: [
-          { id:"M-01", category:"一覧表示", scenario:"商品マスタの一覧が表示される", expected:"商品の表が描画される", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「マスタ管理（中央）」をクリック\n3) 商品タブを選択 → 商品マスタの表が描画されることを確認", sys:"ok", test_evidence:"super-admin-masters.spec.ts", notes:"スーパー管理者権限が必要", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-02", category:"新規登録", scenario:"商品を新規登録できる", expected:"一覧に新しい商品が追加される", steps:"1) M-01 の画面 → 商品タブ\n2) 右上「+ 新規登録」ボタン\n3) モーダルに必須項目を入力 → 「Register」 → 一覧に追加されることを確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-03", category:"編集", scenario:"商品を編集できる", expected:"値の変更が一覧に反映される", steps:"1) M-01 の画面 → 商品タブ\n2) 編集したい商品行の「Edit」ボタン\n3) モーダルで値を変更 → 「Update」 → 一覧反映を確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-04", category:"削除", scenario:"商品を削除できる", expected:"削除した商品が一覧から消える", steps:"1) M-01 の画面 → 商品タブ\n2) 商品行の「Delete」ボタン → 確認モーダル → 「Delete」\n3) 一覧から消えることを確認", sys:"partial", test_evidence:"API テスト", notes:"削除操作 (テストデータのみで実施)", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-05", category:"ポケモン辞書連動", scenario:"編集モーダルで expansion_code のオートコンプリートが効く", expected:"入力時に候補が表示される", steps:"1) M-01 → 商品タブ → 「Edit」モーダル\n2) expansion_code 欄を入力 → 候補が表示されることを確認", sys:"partial", test_evidence:"test_seed_pokemon_dex.py + 手動", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-06", category:"テナント越境ガード", scenario:"他テナントの商品 ID にアクセスできない", expected:"アクセスがブロックされる", steps:"アドレスバーに他テナントの商品 ID URL を直接入力 → ブロックされることを確認", sys:"ok", test_evidence:"test_inventory_visibility_permissions.py", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] }
+          { id:"M-01", category:"一覧表示", scenario:"商品マスタの一覧が表示される", expected:"商品の表が描画される", steps:"1) サイドバー「在庫表」をクリック\n2) 商品マスタの表（在庫数を含む）が描画されることを確認", sys:"ok", test_evidence:"super-admin-masters.spec.ts", notes:"スーパー管理者権限が必要", smoke:false, urls:["/inventory"] },
+          { id:"M-02", category:"新規登録", scenario:"商品を新規登録できる", expected:"一覧に新しい商品が追加される", steps:"1) サイドバー「在庫表」をクリック\n2) 右上「新規登録」ボタン\n3) モーダルに必須項目を入力 → 「登録」 → 一覧に追加されることを確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"M-03", category:"編集", scenario:"商品を編集できる", expected:"値の変更が一覧に反映される", steps:"1) サイドバー「在庫表」をクリック\n2) 編集したい商品行の「編集」ボタン\n3) モーダルで値を変更 → 「更新」 → 一覧反映を確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"M-04", category:"削除", scenario:"商品を削除できる", expected:"削除した商品が一覧から消える", steps:"1) サイドバー「在庫表」をクリック\n2) 商品行の「削除」ボタン → 確認モーダル → 「削除」\n3) 一覧から消えることを確認", sys:"partial", test_evidence:"API テスト", notes:"削除操作 (テストデータのみで実施)", smoke:false, urls:["/inventory"] },
+          { id:"M-05", category:"ポケモン辞書連動", scenario:"編集モーダルで expansion_code のオートコンプリートが効く", expected:"入力時に候補が表示される", steps:"1) サイドバー「在庫表」→ 商品行の「編集」ボタンでモーダルを開く\n2) expansion_code 欄を入力 → 候補が表示されることを確認", sys:"partial", test_evidence:"test_seed_pokemon_dex.py + 手動", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"M-06", category:"テナント越境ガード", scenario:"他テナントの商品 ID にアクセスできない", expected:"アクセスがブロックされる", steps:"1) サイドバー「在庫表」で自テナントの商品一覧を確認\n2) 他テナントの商品 ID を含む API URL（/products/{他テナントの商品ID}）を直接叩く → ブロックされることを確認", sys:"ok", test_evidence:"test_inventory_visibility_permissions.py", notes:"—", smoke:false, urls:["/inventory"] }
         ]
       },
       {
