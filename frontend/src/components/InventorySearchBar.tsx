@@ -482,49 +482,8 @@ export default function InventorySearchBar({
                         ¥{c.unit_price.toLocaleString()}
                       </div>
                     )}
-                    {/* spec v1.3 F11 AC11.4: 仕入元現在オファー (最大 3 件まで compact 表示) */}
-                    {c.inventory_offers && c.inventory_offers.length > 0 && (
-                      <div
-                        data-testid={`${testIdPrefix}-result-${i}-offers`}
-                        style={{
-                          fontSize: "var(--font-xs)",
-                          color: "var(--text-secondary)",
-                          marginTop: "var(--space-2px)",
-                          textAlign: "right",
-                        }}
-                      >
-                        <div style={{ fontWeight: "var(--font-weight-semi)" }}>
-                          {t("inventory.search.offersLabel", {
-                            count: c.inventory_offers.length,
-                          })}
-                        </div>
-                        {c.inventory_offers.slice(0, 3).map((o, oi) => (
-                          <div
-                            key={`${o.supplier_id}-${o.condition}`}
-                            data-testid={`${testIdPrefix}-result-${i}-offer-${oi}`}
-                          >
-                            {o.supplier_name ?? `#${o.supplier_id}`}
-                            {" / "}
-                            <code>{o.condition}</code>
-                            {" "}
-                            {o.quantity === null
-                              ? "***"
-                              : t("inventory.search.qtyShort", { qty: o.quantity })}
-                            {" @ "}
-                            {o.unit_price === null
-                              ? "***"
-                              : `¥${o.unit_price.toLocaleString()}`}
-                          </div>
-                        ))}
-                        {c.inventory_offers.length > 3 && (
-                          <div style={{ fontStyle: "italic" }}>
-                            {t("inventory.search.offersMore", {
-                              extra: c.inventory_offers.length - 3,
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    {/* QA 2026-05-29: 仕入元オファーの候補内表示は撤去（表示不要との判断）。
+                        backend は inventory_offers を返すが UI では描画しない。 */}
                   </div>
                 </li>
               );

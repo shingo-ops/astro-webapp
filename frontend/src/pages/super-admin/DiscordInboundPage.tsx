@@ -186,7 +186,6 @@ export default function DiscordInboundPage() {
               <th>{t("superAdmin.inbound.columns.supplier")}</th>
               <th>{t("superAdmin.inbound.columns.parseStatus")}</th>
               <th>{t("superAdmin.inbound.columns.preview")}</th>
-              <th>{t("superAdmin.inbound.columns.engine")}</th>
               <th>{t("superAdmin.inbound.columns.llmCost")}</th>
               <th>{t("superAdmin.inbound.columns.actions")}</th>
             </tr>
@@ -195,9 +194,7 @@ export default function DiscordInboundPage() {
             {items.map((m) => (
               <tr key={m.id} data-testid={`inbound-row-${m.id}`}>
                 <td>
-                  <code style={{ fontSize: "0.85em" }}>
-                    {new Date(m.received_at).toLocaleString()}
-                  </code>
+                  <code>{new Date(m.received_at).toLocaleString()}</code>
                 </td>
                 <td>{m.supplier_name ?? "—"}</td>
                 <td>
@@ -219,11 +216,6 @@ export default function DiscordInboundPage() {
                   }}
                 >
                   {m.raw_content_preview}
-                </td>
-                <td>
-                  <code style={{ fontSize: "0.85em" }}>
-                    {m.parse_engine ?? "—"}
-                  </code>
                 </td>
                 <td>
                   {m.llm_cost_usd

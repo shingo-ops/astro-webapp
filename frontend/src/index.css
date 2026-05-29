@@ -281,9 +281,11 @@
   --success: #4ade80;
   --color-warning: #fde68a;
   --bg-disabled: #2d3b52;
-  /* 在庫数0の行背景（ダーク）。サーフェスより一段沈めて区別。文字は全不透明維持。 */
-  --bg-row-zero-stock: #19222f;
-  --bg-row-zero-stock-hover: #212c3c;
+  /* 在庫数0の行背景（ダーク）。サーフェス(#1e293b)より明確に沈めて区別する。
+     旧値#19222fはsurfaceと近すぎて差が弱かったため、ページ背景(#0f172a)と被らない
+     範囲で約2倍のコントラストに調整（ライトと同じ「在庫0=沈める」方向）。文字は全不透明維持。 */
+  --bg-row-zero-stock: #131c2c;
+  --bg-row-zero-stock-hover: #1b2536;
   --border-color: #475569;
   --border-light: #334155;
   --accent-bg: #818cf8;
