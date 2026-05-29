@@ -21,3 +21,65 @@
   color: var(--text-primary);
   font-weight: var(--font-weight-semi);
 }
+
+/* 受信本文 (raw_content) の開閉トグル。
+   QA (2026-05-29): <summary> がクリック可能に見えず「押せるか分かりづらい」状態だったため、
+   btn-secondary 相当のボタン外観 + ▶ (閉) / ▼ (開) インジケータを付与する。 */
+.raw-content-toggle {
+  margin-top: var(--space-2);
+}
+
+.raw-content-toggle > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  font-weight: var(--font-weight-semi);
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+  list-style: none; /* Firefox: 既定の開閉マーカーを隠す */
+}
+
+/* Safari / Chrome: 既定の開閉マーカーを隠す */
+.raw-content-toggle > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* 自前の開閉インジケータ (▶ → 開くと 90° 回転で ▼ 相当) */
+.raw-content-toggle > summary::before {
+  content: "\25B6";
+  font-size: var(--font-xs);
+  transition: transform 0.15s ease;
+}
+
+.raw-content-toggle[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.raw-content-toggle > summary:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
+}
+
+.raw-content-toggle > summary:focus-visible {
+  outline: 2px solid var(--border-strong);
+  outline-offset: 2px;
+}
+
+.raw-content-toggle > pre {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-height: 24rem;
+  overflow: auto;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+}

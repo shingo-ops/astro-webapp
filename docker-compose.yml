@@ -82,6 +82,12 @@ services:
       - META_PAGE_ACCESS_TOKEN=${META_PAGE_ACCESS_TOKEN:-}
       - ENFORCE_METADATA_FERNET_KEY=${ENFORCE_METADATA_FERNET_KEY:-}
       - FRONTEND_BASE_URL=${FRONTEND_BASE_URL:-}
+      # Sprint 4 (F4): 在庫メッセージ LLM フォールバック (Gemini 2.5 Flash) と
+      # budget HARD_STOP 通知。deploy.yml が .env に注入する secret をコンテナへ渡す。
+      # この行が無いと .env に値があっても os.getenv が空になり、LLM が
+      # parsed_rule_only に degrade して解析行が出ない (2026-05-29 修正)。
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ADMIN_NOTIFICATION_DISCORD_WEBHOOK=${ADMIN_NOTIFICATION_DISCORD_WEBHOOK:-}
     volumes:
       - ./firebase-credentials.json:/app/firebase-credentials.json:ro
     depends_on:
