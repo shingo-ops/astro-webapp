@@ -646,6 +646,8 @@
       "candidatesLabel": "検索候補",
       "noResults": "該当する商品がありません",
       "stockLabel": "在庫",
+      "pickerPlaceholder": "在庫一覧から選択（商品名で絞り込み可）",
+      "stockGuide": "在庫(目安)",
       "stockMaskedNote": "在庫数の閲覧権限がありません（***表示）",
       "zeroStockWarning": "「{{name}}」は在庫が 0 です。仕入元と在庫を確認してください。",
       "offersLabel": "仕入元オファー {{count}} 件",

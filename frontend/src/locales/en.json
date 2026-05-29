@@ -646,6 +646,8 @@
       "candidatesLabel": "Search candidates",
       "noResults": "No matching products",
       "stockLabel": "Stock",
+      "pickerPlaceholder": "Select from inventory (filter by product name)",
+      "stockGuide": "Stock (approx.)",
       "stockMaskedNote": "You do not have permission to view stock counts (shown as ***)",
       "zeroStockWarning": "\"{{name}}\" has 0 stock. Verify supplier and stock before quoting.",
       "offersLabel": "{{count}} supplier offer(s)",
