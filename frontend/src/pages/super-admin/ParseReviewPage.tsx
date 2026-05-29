@@ -31,6 +31,10 @@ interface ReviewItem {
   condition?: string | null;
   quantity_offered?: number | null;
   unit_price?: number | null;
+  // パーサ (inventory_parser ParsedItem) が出力するキー。LLM が抽出した商品名・数量。
+  // 旧 UI はこれらを読まず delta_qty/alias_text を見ていたため、抽出済みでも画面に出ていなかった。
+  product_name?: string | null;
+  quantity?: number | null;
 }
 
 interface ParseResultJson {
@@ -72,6 +76,9 @@ interface RowDraft {
   condition: string;
   quantity_offered: string;  // 数値だが入力途中の空文字を許容するため string で保持
   unit_price: string;
+  // 表示専用 (送信しない): LLM が抽出した商品名 と、メモから分離した来歴 (source=llm_v1; confidence=…)
+  product_name: string;
+  provenance: string;
 }
 
 interface ApproveResponse {
@@ -101,24 +108,37 @@ interface RejectResponse {
 function detailToDrafts(detail: ParseReviewDetail): RowDraft[] {
   const items = detail.parse_result_json?.items ?? [];
   const existingSkipped = new Set(detail.parse_result_json?.skipped ?? []);
-  return items.map((item, idx) => ({
-    product_id: item.product_id ?? null,
-    delta_qty: Number(item.delta_qty ?? 0),
-    alias_text: String(item.alias_text ?? ""),
-    notes: String(item.notes ?? ""),
-    original_index: idx,
-    skipped: existingSkipped.has(idx),
-    // Sprint 11 / F11 AC11.3: parse_result_json に値があれば prefill、無ければ空
-    condition: String(item.condition ?? ""),
-    quantity_offered:
-      item.quantity_offered === null || item.quantity_offered === undefined
-        ? ""
-        : String(item.quantity_offered),
-    unit_price:
-      item.unit_price === null || item.unit_price === undefined
-        ? ""
-        : String(item.unit_price),
-  }));
+  return items.map((item, idx) => {
+    // メモから来歴 (source=llm_v1; confidence=…) を分離。来歴はメモ入力欄に出さず表示専用に回し、
+    // メモ欄はオペレータ入力用に空ける。来歴でない (人間が書いた) メモはそのまま残す。
+    const rawNotes = String(item.notes ?? "");
+    const isProvenance = /(^|;\s*)source=/.test(rawNotes);
+    // 提示数量: パーサの quantity を prefill（旧 UI は quantity を読まず常に空だった）
+    const offered =
+      item.quantity_offered != null
+        ? String(item.quantity_offered)
+        : item.quantity != null
+          ? String(item.quantity)
+          : "";
+    return {
+      product_id: item.product_id ?? null,
+      delta_qty: Number(item.delta_qty ?? 0),
+      alias_text: String(item.alias_text ?? ""),
+      notes: isProvenance ? "" : rawNotes,
+      original_index: idx,
+      skipped: existingSkipped.has(idx),
+      // Sprint 11 / F11 AC11.3: parse_result_json に値があれば prefill、無ければ空
+      condition: String(item.condition ?? ""),
+      quantity_offered: offered,
+      unit_price:
+        item.unit_price === null || item.unit_price === undefined
+          ? ""
+          : String(item.unit_price),
+      // 表示専用: LLM 抽出の商品名 と、分離した来歴
+      product_name: String(item.product_name ?? ""),
+      provenance: isProvenance ? rawNotes : "",
+    };
+  });
 }
 
 export default function ParseReviewPage() {
@@ -455,6 +475,14 @@ export default function ParseReviewPage() {
                   >
                     <td>{idx}</td>
                     <td style={{ minWidth: 'var(--col-width-wide)' }}>
+                      {row.product_name && (
+                        <div
+                          data-testid={`review-row-${idx}-product-name`}
+                          style={{ fontWeight: "var(--font-weight-semi)", marginBottom: "var(--space-1)" }}
+                        >
+                          {row.product_name}
+                        </div>
+                      )}
                       {row.product_id === null ? (
                         <div data-testid={`review-row-${idx}-missing-product`}>
                           <em
@@ -565,6 +593,18 @@ export default function ParseReviewPage() {
                       />
                     </td>
                     <td>
+                      {row.provenance && (
+                        <div
+                          data-testid={`review-row-${idx}-provenance`}
+                          style={{
+                            fontSize: "0.8em",
+                            color: "var(--text-muted)",
+                            marginBottom: "var(--space-1)",
+                          }}
+                        >
+                          {row.provenance}
+                        </div>
+                      )}
                       <input
                         type="text"
                         data-testid={`review-row-${idx}-notes`}
