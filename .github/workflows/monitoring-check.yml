@@ -27,7 +27,7 @@ jobs:
         run: |
           BASE="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
           CHANGED=$(git diff --name-only "$BASE"...HEAD 2>/dev/null || git diff --name-only HEAD~1 HEAD)
-          if echo "$CHANGED" | grep -qE "^(monitoring/|docker-compose\.yml|\.github/workflows/monitoring-check\.yml)"; then
+          if echo "$CHANGED" | grep -qE "^(monitoring/|docker-compose(\.monitoring|\.exporters)?\.yml|\.env(\.monitoring)?\.example|\.github/workflows/monitoring-check\.yml)"; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
