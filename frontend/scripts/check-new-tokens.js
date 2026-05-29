@@ -16,20 +16,23 @@
 import { execSync } from 'child_process';
 
 const BASE_REF = process.env.GITHUB_BASE_REF;
+const HEAD_REF = process.env.GITHUB_HEAD_REF;
 const PR_BODY = process.env.PR_BODY ?? '';
 
 if (!BASE_REF) {
   process.exit(0);
 }
 
-// release PR (develop → main) はスキップする。
-// 新規トークンは feature → develop PR の時点で本チェック済みであり、
-// develop → main の release PR は Bot 自動生成で本文（チェックリスト）を
-// 編集できず、同じトークンを二重にゲートしても新たな確認価値がないため。
-// feature ブランチは develop を base にするので、base=main = release PR と判定できる。
-if (BASE_REF === 'main') {
+// develop → main の release PR のみスキップする (base=main かつ head=develop で厳密判定)。
+// 新規トークンは feature → develop PR の時点で本チェック済みであり、release PR は
+// Bot 自動生成で本文（チェックリスト）を編集できず、同じトークンを二重にゲートしても
+// 新たな確認価値がないため。
+// 注意: base=main だけで判定すると hotfix/* → main や feature/* → main（develop の
+// feature ゲートを経由しない経路）まで除外され、ゲートが効かなくなる。release PR の
+// head は必ず develop なので head=develop も条件に含めて厳密化する。
+if (BASE_REF === 'main' && HEAD_REF === 'develop') {
   console.log(
-    'ℹ️ release PR (base=main) のため新規トークンチェックをスキップ（feature→develop PR で確認済み）。',
+    'ℹ️ release PR (develop → main) のため新規トークンチェックをスキップ（feature→develop PR で確認済み）。',
   );
   process.exit(0);
 }
