@@ -79,6 +79,7 @@
 | [ADR-080](./ADR-080-monitoring-vps-separation.md) | ADR-080: 監視スタックの管理室VPS分離 — RAM危機の根本解決とCIランナー統合 | Proposed | — |
 | [ADR-081](./ADR-081-remove-design-review-gate.md) | ADR-081: design-review-gate 廃止 — develop までの自動化方針との整合 | Accepted | — |
 | [ADR-082](./ADR-082-deploy-skip-migrations-on-frontend-only.md) | ADR-082: フロントのみのデプロイで DB マイグレーション実行をスキップする | Accepted | — |
+| [ADR-081](./ADR-081-monitoring-vps-final-operational-design.md) | ADR-081: 監視VPS分離の最終運用設計 — パケットフィルタ、UFW、proxy 経路、backend worker 数の固定 | Accepted | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例

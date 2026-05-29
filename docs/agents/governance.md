@@ -126,6 +126,10 @@ Minimum metrics:
 - Cost Per Change.
 - Developer Feedback.
 
+For Claude Code + Codex AEON automation, the top-level KGI is `AEON Mainline Delivery Completion Rate` as defined in `docs/ai-agents/kpi.md`. Governance reviews should use that KGI when assessing whether Claude Code can call Codex from the same terminal and complete PR → main without unsupported manual handoff.
+
+Metric definitions, formulas, direct sources, and proxy rules are canonically defined in `docs/ai-agents/kpi.md`.
+
 ## Evidence Requirements
 
 Governance decisions must be evidence-based.
