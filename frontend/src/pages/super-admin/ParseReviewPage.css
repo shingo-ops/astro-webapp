@@ -2,11 +2,13 @@
    QA r7 SM-4 trial1: メタ情報 (仕入元/解析ステータス/受信時刻/バージョン) が
    縦積み・同スタイルで「項目と値の区別がしにくい」状態だったため、
    2 列グリッド (ラベル左・薄字 | 値右) に変更。 */
+/* QA 2026-05-29: 縦積み2列だとメタ情報の右に大きな空白ができて無駄だったため、
+   横並び(flex wrap)のコンパクトなメタバーに変更。下のテーブルが上に詰まる。 */
 .review-meta dl {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: var(--space-2) var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
+  gap: var(--space-1) var(--space-2);
   margin: 0 0 var(--space-3);
 }
 
@@ -17,7 +19,7 @@
 }
 
 .review-meta dd {
-  margin: 0;
+  margin: 0 var(--space-5) 0 var(--space-1);
   color: var(--text-primary);
   font-weight: var(--font-weight-semi);
 }
