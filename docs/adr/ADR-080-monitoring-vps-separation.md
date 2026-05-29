@@ -139,10 +139,22 @@
 | リスク | 影響 | 対策 |
 |--------|------|------|
 | VPS間ネットワーク遅延 | Prometheus の scrape timeout | さくらVPS同一リージョンを選択。scrape_timeout を調整（デフォルト10s） |
-| 管理室VPSの OOM | 監視スタック + runner の同居で RAM 不足 | 2GB プランを選択（既存 spec の1GB案から変更）。runner 実行時のみ Playwright が消費するため常時ではない |
+| 管理室VPSの OOM | 監視スタック + runner の同居で RAM 不足 | **4GB プランを推奨**（2GBは最小運用・retention短縮必須）。runner 実行時のみ Playwright が消費するため常時ではない |
 | ファイアウォール設定ミス | メトリクス収集不能 | runbook にテストコマンドを明記。段階的に移行 |
 | Grafana プロキシ変更時の URL 切れ | PO が一時的にアクセスできない | 先に管理室VPSで起動→確認→プロキシ切り替えの順序 |
 | promtail → Loki 通信断 | ログが一時的に欠損 | 管理室VPSの Loki 起動確認後に promtail の接続先を切り替え |
+
+## 実装制約（Codex / Generator 向け）
+
+以下の制約は Codex・Claude Code どちらが実装する場合も必須：
+
+| 制約 | 内容 |
+|------|------|
+| **Prometheus retention** | `--storage.tsdb.retention.time=30d`（4GB VPS の場合）を明示的に設定すること |
+| **Loki retention** | `retention_period: 14d`（4GB VPS の場合）を明示的に設定すること |
+| **ファイアウォール** | exporter ポート（9100/9187/9113/9121）は管理室VPS IPからのみ許可。インターネットに露出しないこと |
+| **削除順序** | 旧監視コンテナの停止・削除は、管理室VPS側 Grafana で同等メトリクスを確認した後のみ実施すること。確認前の削除は監視不能を招くため厳禁 |
+| **VPSサイズ** | 4GB 推奨。2GB で開始する場合は上記 retention 値を短縮（Prometheus 15d / Loki 7d）すること |
 
 ## 関連ドキュメント
 
