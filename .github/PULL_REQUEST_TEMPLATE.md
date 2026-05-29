@@ -1,6 +1,19 @@
 ## 概要
 <!-- 変更内容を簡潔に -->
 
+## Design Review Evidence
+<!-- design-review-gate は PR 本文ではなく、信頼済みレビュアーのコメント/Review を検証します。 -->
+
+レビュー完了後、信頼済みレビュアーが PR コメントまたは GitHub Review に以下を投稿してください。
+
+```text
+Design Review: APPROVED
+Reviewer:
+Commit:
+Scope:
+Evidence:
+```
+
 ## チェックリスト
 
 ### 共通
