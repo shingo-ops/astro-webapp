@@ -16,24 +16,41 @@ scrape_configs:
       - targets: ["localhost:9090"]
 
   # Node Exporter（ホストOS: CPU/メモリ/ディスク）
-  - job_name: "node"
+  # 管理室VPS 自身とアプリVPS を同じ job にまとめ、instance ラベルで区別する。
+  - job_name: "node-exporter"
     static_configs:
       - targets: ["node-exporter:9100"]
+        labels:
+          instance: "mgmt-vps"
+      - targets: ["49.212.137.46:9100"]
+        labels:
+          instance: "app-vps"
 
   # PostgreSQL Exporter（DB接続数・クエリ統計）
-  - job_name: "postgres"
+  - job_name: "postgres-exporter"
     static_configs:
-      - targets: ["postgres-exporter:9187"]
+      - targets: ["49.212.137.46:9187"]
+        labels:
+          instance: "app-vps"
 
   # Nginx Exporter（リクエスト数・ステータスコード）
-  - job_name: "nginx"
+  - job_name: "nginx-exporter"
     static_configs:
-      - targets: ["nginx-exporter:9113"]
+      - targets: ["49.212.137.46:9113"]
+        labels:
+          instance: "app-vps"
 
-  # FastAPI バックエンド（HTTPリクエスト数・レスポンスタイム・エラーレート）
+  # Backend（FastAPI /metrics）
+  # nginx 経由で app.salesanchor.jp の /metrics を mgmt VPS からスクレイプする。
   - job_name: "backend"
+    scheme: https
+    metrics_path: /metrics
+    tls_config:
+      server_name: app.salesanchor.jp
     static_configs:
-      - targets: ["backend:8000"]
+      - targets: ["49.212.137.46:443"]
+        labels:
+          instance: "app-vps"
 
   # GitHub Actions Exporter（CI実行メトリクス: ワークフロー/ジョブ/ステップ実行時間・成否）
   # rate limit 考慮: gha-exporter 側がデフォルト1分間隔でポーリング。Prometheus は 60s で収集。
@@ -48,9 +65,11 @@ scrape_configs:
   #     - targets: ["cadvisor:8080"]
 
   # Redis Exporter（Redisキャッシュメトリクス）ADR-079
-  - job_name: "redis"
+  - job_name: "redis-exporter"
     static_configs:
-      - targets: ["redis-exporter:9121"]
+      - targets: ["49.212.137.46:9121"]
+        labels:
+          instance: "app-vps"
 
   # Uptime Kuma（死活監視メトリクス）
   # v2.x は Basic 認証が必要。パスワードはコンテナ内シークレットファイルで管理
