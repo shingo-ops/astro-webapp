@@ -587,6 +587,14 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/082_extend_products_box_attributes.sql
 
+            # Migration 084: public.inventory に unit (数量の単位) 列を追加
+            #   - 解析レビューの単位列 (Box/Case/Pack/Set/Peace) を F6 承認時に保存
+            #   - to_regclass ガード + ADD COLUMN IF NOT EXISTS で idempotent
+            #   関連: QA 2026-05-30 / migrations/081_create_inventory.sql
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/084_add_unit_to_inventory.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

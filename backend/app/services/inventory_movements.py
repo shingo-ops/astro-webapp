@@ -27,6 +27,7 @@ spec.md v1.3 F11 AC11.3 (Sprint 11、本 module で実装):
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 
 from sqlalchemy import text
@@ -40,6 +41,11 @@ logger = logging.getLogger(__name__)
 # AC6.6 不変条件を満たすため、tenant_id NULL の products は中央在庫扱い (sentinel 0)。
 # inventory_movements.tenant_id は NOT NULL なので、NULL のままでは INSERT 不可。
 _CENTRAL_TENANT_SENTINEL = 0
+
+# QA 2026-05-30 (ひとしさん): 在庫オファーは時間失効モデル。F6 承認で記録した
+# public.inventory 行に expires_at = offered_at + 18h を付与し、Celery の
+# purge_expired_inventory_offers が期限切れを物理削除する（在庫数は増減させない）。
+_OFFER_EXPIRY_HOURS = int(os.getenv("INVENTORY_OFFER_EXPIRY_HOURS", "18"))
 
 
 @dataclass
@@ -79,26 +85,35 @@ async def _upsert_inventory_offer(
     condition: str,
     quantity: int,
     unit_price: int,
+    unit: str | None = None,
 ) -> None:
     """public.inventory に「仕入元 × 商品 × 状態」の現在オファーを UPSERT する。
 
     UNIQUE(supplier_id, product_id, condition)。products.stock_quantity（中央在庫）
     とは独立しており、この関数は中央在庫を一切変更しない。F11 AC11.3 の UPSERT を
     delta_qty>0 経路と delta_qty=0 経路 (Option Z) の双方から共用するための helper。
+
+    QA 2026-05-30:
+    - unit (数量の単位 Box/Case/Pack/Set/Peace) を保存 (migration 084 の列)。
+    - 時間失効モデル: offered_at=NOW() / expires_at=NOW()+18h を付与（再オファー時も
+      リフレッシュ）。期限切れは Celery purge_expired_inventory_offers が物理削除する。
     """
     await db.execute(
         text(
             """
             INSERT INTO public.inventory
-                (supplier_id, product_id, condition, quantity, unit_price,
-                 status, source)
-            VALUES (:sid, :pid, :cond, :qty, :up, 'in_stock', 'f6_approved')
+                (supplier_id, product_id, condition, quantity, unit_price, unit,
+                 status, source, offered_at, expires_at)
+            VALUES (:sid, :pid, :cond, :qty, :up, :unit, 'in_stock', 'f6_approved',
+                    NOW(), NOW() + (:exp_hours * INTERVAL '1 hour'))
             ON CONFLICT (supplier_id, product_id, condition) DO UPDATE SET
                 quantity = EXCLUDED.quantity,
                 unit_price = EXCLUDED.unit_price,
+                unit = EXCLUDED.unit,
                 status = EXCLUDED.status,
                 source = 'f6_approved',
                 offered_at = NOW(),
+                expires_at = NOW() + (:exp_hours * INTERVAL '1 hour'),
                 updated_at = NOW()
             """
         ),
@@ -108,6 +123,8 @@ async def _upsert_inventory_offer(
             "cond": str(condition),
             "qty": int(quantity),
             "up": int(unit_price),
+            "unit": (str(unit) if unit else None),
+            "exp_hours": _OFFER_EXPIRY_HOURS,
         },
     )
 
@@ -176,6 +193,7 @@ async def apply_inbound_items(
                     condition=str(condition_raw),
                     quantity=int(item.get("quantity_offered") or 0),
                     unit_price=int(item.get("unit_price") or 0),
+                    unit=item.get("unit"),
                 )
                 offers_recorded += 1
             else:
@@ -302,6 +320,7 @@ async def apply_inbound_items(
                     condition=str(condition_raw),
                     quantity=int(offered_qty),
                     unit_price=int(item.get("unit_price") or 0),
+                    unit=item.get("unit"),
                 )
                 offers_recorded += 1
 
