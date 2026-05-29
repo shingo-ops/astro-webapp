@@ -85,3 +85,4 @@ properties:
         enum: [Generator, Architect, Planner, Research, None]
       Ready For CI:
         type: boolean
+        description: "True only when PASS and the implementation is ready for GitHub CI / merge gating."

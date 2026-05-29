@@ -30,3 +30,4 @@ properties:
         items: { type: string }
       Ready For Evaluator:
         type: boolean
+        description: "True only when Generator output is compliant enough for browser-level validation."

@@ -109,8 +109,10 @@ properties:
         items: { type: string }
       Architect Review Required:
         type: boolean
+        description: "True when the plan must pass Architect review before PO Approval and Generator."
       Ready For Architect:
         type: boolean
+        description: "True only when Research evidence is sufficient and the package can move to Architect."
       Return To Research:
         type: array
         description: "Missing evidence items. Use when Ready For Architect is false."
