@@ -8,7 +8,7 @@
 
 | タスク | 担当 | 現在地 | 次の一手 | 根拠 | 更新日 |
 |------|------|------|---------|-----|------|
-| 監視VPS移行（ADR-080） | PO待ち | M7b進行中（さくらVPSパケットフィルター未開放） | (1)アプリVPS(49.212.137.46)側でTCP 9100/9187/9113/9121 を管理室VPS(49.212.160.98)から許可 (2)管理室VPS側でTCP 3100 をアプリVPSから許可 → さくらVPSコントロールパネルで設定 | docs/runbooks/monitoring-vps-migration.md:84-117 | 2026-05-29 |
+| 監視VPS移行 M8（ADR-080） | PO待ち | M7完了・M8未着手（1週間運用確認後に実施） | PO確認の上、アプリVPSの旧監視Dockerボリューム削除（prometheus_data/grafana_data/loki_data）→ `docs/runbooks/monitoring-vps-migration.md` Sprint M8 参照 | docs/runbooks/monitoring-vps-migration.md | 2026-05-29 |
 | VPS runner登録（ADR-078） | Agent（2026-06-15予定） | 未着手 | 予定日に `docs/runbooks/vps-runner-setup.md` に従い実行 | memory/project_vps_runner_plan.md | 2026-05-29 |
 | Meta App Review 申請 | PO待ち | ドキュメント整備済み・動画未撮影 | PO が申請動画を撮影 → Agent がレビュー申請書類を提出 | memory/project_meta_app_review_progress.md | 2026-05-29 |
 
@@ -18,6 +18,7 @@
 
 | タスク | 完了日 | PR |
 |------|------|---|
+| 監視VPS移行 M1〜M7（ADR-080） | 2026-05-29 | #1146 #1148 #1150 |
 | stale active-work クリーンアップ | 2026-05-29 | #1134 |
 | Discord Webhook 分離 | 2026-05-29 | #1132 |
 | PR固有 smoke テスト削除 | 2026-05-29 | #1133 |
