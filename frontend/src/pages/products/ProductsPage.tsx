@@ -92,7 +92,6 @@ export default function ProductsPage() {
   const { hasPermission } = usePermissions();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
-  const [showArchived, setShowArchived] = useState(false);
   // QA r7: 190 件全件閲覧のため pagination 追加。backend per_page max=100
   const [page, setPage] = useState(1);
   const PER_PAGE = 100;
@@ -112,7 +111,6 @@ export default function ProductsPage() {
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      if (showArchived) params.set("archived", "true");
       params.set("page", String(page));
       params.set("per_page", String(PER_PAGE));
       const qs = `?${params.toString()}`;
@@ -127,13 +125,13 @@ export default function ProductsPage() {
     }
   };
 
-  // search/archived 変更時は page を 1 に戻す
+  // search 変更時は page を 1 に戻す
   useEffect(() => {
     setPage(1);
-  }, [search, showArchived]);
+  }, [search]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [search, showArchived, page]);
+  useEffect(() => { load(); }, [search, page]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -250,10 +248,6 @@ export default function ProductsPage() {
     >
       <div className="search-bar" style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
         <input type="text" placeholder={t("common.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
-        <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", whiteSpace: "nowrap" }}>
-          <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-          {t("products.status_discontinued")}
-        </label>
       </div>
 
       {error && <div className="error-message">{error}</div>}
