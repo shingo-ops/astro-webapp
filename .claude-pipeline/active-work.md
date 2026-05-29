@@ -17,6 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
+| feature/morimoto/parse-review-table-refine | 解析レビュー表 QA修正 | 2026-05-30 | REVIEW | | メモ来歴削除/単価整数/差分数量列削除/単位列追加/列幅+承認Option Z |
 ---
 
 ## 記入例

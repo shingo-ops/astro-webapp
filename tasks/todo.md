@@ -12,6 +12,8 @@
 | VPS runner登録（ADR-078） | Agent（2026-06-15予定） | 未着手 | 予定日に `docs/runbooks/vps-runner-setup.md` に従い実行 | memory/project_vps_runner_plan.md | 2026-05-29 |
 | Meta App Review 申請 | PO待ち | ドキュメント整備済み・動画未撮影 | PO が申請動画を撮影 → Agent がレビュー申請書類を提出 | memory/project_meta_app_review_progress.md | 2026-05-29 |
 | discord-gateway live受信の LLM 解析 env 注入（Issue #1154） | PO待ち | gateway は idle(bot token未設定)・DATABASE_URL/GEMINI_API_KEY 未注入を docker inspect で確認。live化した瞬間に DB接続失敗+LLM不発 | PO が live化判断 → compose の discord-gateway に DATABASE_URL/GEMINI_API_KEY 追加 + bot token 設定 + 実機確認 | Issue #1154 / docker-compose.yml | 2026-05-29 |
+| 解析レビュー表 QA修正（メモ来歴削除/単価整数/差分数量列削除/単位列追加/列幅+承認Option Z） | Agent | feature/morimoto/parse-review-table-refine 実装完了・PR提出→Reviewer/Evaluator待ち。承認は delta_qty=0 で中央在庫不変+オファーのみ記録(Option Z)へ変更 | Reviewer+Evaluator APPROVE で develop 自動merge → main release は人間判断 | frontend ParseReviewPage.tsx / backend inventory_movements.py | 2026-05-30 |
+| 単位(unit)の public.inventory 永続化 | PO待ち | 解析レビューに単位列(Box/Case/Pack/Set/Peace)をUI追加済みだが在庫テーブルに unit 列が無く保存されない（受理のみ） | migration(084想定)で public.inventory に unit 列追加+UPSERT反映（deploy.yml 3点セット）。PO判断で着手 | backend/migrations/081_create_inventory.sql / schemas/parse_review.py unit field | 2026-05-30 |
 
 ---
 

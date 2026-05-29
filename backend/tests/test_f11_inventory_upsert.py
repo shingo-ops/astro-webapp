@@ -507,3 +507,173 @@ async def test_f11_upsert_skipped_in_phase_a(engine):
             tenant_id=tenant_id,
             supplier_id=supplier_id,
         )
+
+
+async def test_optionz_records_offer_when_delta_zero_without_movement(engine):
+    """QA 2026-05-30 (Option Z): delta_qty=0 でも supplier_id + condition があれば
+    public.inventory にオファーを UPSERT する。一方 inventory_movements は作らず、
+    products.stock_quantity も変更しない（在庫は目安・増減不要）。
+    """
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from app.services.inventory_movements import apply_inbound_items
+
+    SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+    tag = uuid.uuid4().hex[:8]
+    tenant_id = await _ensure_tenant(engine, f"f11_z_{tag}")
+    supplier_id = await _create_supplier(engine, tag)
+
+    async with engine.begin() as conn:
+        pid = (
+            await conn.execute(
+                text(
+                    "INSERT INTO public.products (tenant_id, product_code, name, stock_quantity) "
+                    "VALUES (:tid, :code, :n, 7) RETURNING id"
+                ),
+                {"tid": tenant_id, "code": f"F11Z-{tag}", "n": f"f11_z_product_{tag}"},
+            )
+        ).scalar_one()
+    iid = await _create_inbound(engine, tag)
+
+    try:
+        async with SessionLocal() as db:
+            result = await apply_inbound_items(
+                db,
+                inbound_id=iid,
+                items=[
+                    {
+                        "product_id": int(pid),
+                        "delta_qty": 0,  # 中央在庫を動かさない
+                        "condition": "new",
+                        "quantity_offered": 5,
+                        "unit_price": 3000,
+                    }
+                ],
+                operator_id=9102,
+                supplier_id=supplier_id,
+                phase="B",
+            )
+            await db.commit()
+
+        # オファーのみ記録 / movement なし / stock 更新なし
+        assert result.offers_recorded == 1
+        assert len(result.movements) == 0
+        assert result.skipped == 0
+        assert result.stock_updates_applied == 0
+
+        async with engine.connect() as conn:
+            row = (
+                (
+                    await conn.execute(
+                        text(
+                            "SELECT quantity, unit_price, status, source "
+                            "FROM public.inventory "
+                            "WHERE supplier_id = :sid AND product_id = :pid "
+                            "AND condition = 'new'"
+                        ),
+                        {"sid": supplier_id, "pid": int(pid)},
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            assert row is not None, "delta=0 でも public.inventory に UPSERT される"
+            assert row["quantity"] == 5
+            assert row["unit_price"] == 3000
+            assert row["source"] == "f6_approved"
+
+            mov_count = (
+                await conn.execute(
+                    text(
+                        "SELECT COUNT(*) FROM public.inventory_movements "
+                        "WHERE product_id = :pid"
+                    ),
+                    {"pid": int(pid)},
+                )
+            ).scalar_one()
+            assert mov_count == 0, "delta=0 では inventory_movements を作らない"
+
+            stock = (
+                await conn.execute(
+                    text("SELECT stock_quantity FROM public.products WHERE id = :pid"),
+                    {"pid": int(pid)},
+                )
+            ).scalar_one()
+            assert stock == 7, "中央在庫 (stock_quantity) は不変"
+    finally:
+        await _cleanup(
+            engine,
+            pid=int(pid),
+            iid=iid,
+            tenant_id=tenant_id,
+            supplier_id=supplier_id,
+        )
+
+
+async def test_optionz_skips_when_delta_zero_and_condition_missing(engine):
+    """Option Z: delta_qty=0 かつ condition 未指定なら記録対象が無いので skip。"""
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from app.services.inventory_movements import apply_inbound_items
+
+    SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
+    tag = uuid.uuid4().hex[:8]
+    tenant_id = await _ensure_tenant(engine, f"f11_zs_{tag}")
+    supplier_id = await _create_supplier(engine, tag)
+
+    async with engine.begin() as conn:
+        pid = (
+            await conn.execute(
+                text(
+                    "INSERT INTO public.products (tenant_id, product_code, name, stock_quantity) "
+                    "VALUES (:tid, :code, :n, 3) RETURNING id"
+                ),
+                {"tid": tenant_id, "code": f"F11ZS-{tag}", "n": f"f11_zs_product_{tag}"},
+            )
+        ).scalar_one()
+    iid = await _create_inbound(engine, tag)
+
+    try:
+        async with SessionLocal() as db:
+            result = await apply_inbound_items(
+                db,
+                inbound_id=iid,
+                items=[
+                    {
+                        "product_id": int(pid),
+                        "delta_qty": 0,
+                        # condition 未指定
+                        "quantity_offered": 5,
+                        "unit_price": 3000,
+                    }
+                ],
+                operator_id=9103,
+                supplier_id=supplier_id,
+                phase="B",
+            )
+            await db.commit()
+
+        assert result.offers_recorded == 0
+        assert result.skipped == 1
+        assert len(result.movements) == 0
+
+        async with engine.connect() as conn:
+            cnt = (
+                await conn.execute(
+                    text(
+                        "SELECT COUNT(*) FROM public.inventory WHERE product_id = :pid"
+                    ),
+                    {"pid": int(pid)},
+                )
+            ).scalar_one()
+            assert cnt == 0, "condition 未指定 → inventory には記録しない"
+    finally:
+        await _cleanup(
+            engine,
+            pid=int(pid),
+            iid=iid,
+            tenant_id=tenant_id,
+            supplier_id=supplier_id,
+        )

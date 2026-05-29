@@ -315,7 +315,7 @@
   --table-col-min-width:   280px;  /* テーブルカラム最小幅 */
   --col-width-checkbox:     40px;  /* チェックボックス列幅 */
   --col-width-medium:      200px;  /* 中幅カラム（エラーセル・検索フィールド） */
-  --col-width-wide:        240px;  /* 広めカラム（解析レビュー等） */
+  --col-width-wide:        360px;  /* 広めカラム（解析レビューの商品名/ID 列等。QA 2026-05-30 で 240→360 拡幅） */
   --col-width-url:         300px;  /* URL表示カラム */
 
   /* ---- Phase 5: モーダル・パネル幅 (ADR-067) ---- */
