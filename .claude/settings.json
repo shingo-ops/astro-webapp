@@ -17,6 +17,16 @@
       "Bash(gh workflow list:*)",
       "Bash(gh issue view:*)",
       "Bash(gh issue list:*)",
+      "Bash(bash scripts/aeon-dispatch.sh:*)",
+      "Bash(bash scripts/aeon-delivery.sh:*)",
+      "Bash(bash scripts/aeon-release.sh:*)",
+      "Bash(bash scripts/codex-generator.sh:*)",
+      "Bash(bash scripts/codex-exec.sh:*)",
+      "Bash(bash scripts/codex-research.sh:*)",
+      "Bash(bash scripts/codex-planner.sh:*)",
+      "Bash(bash scripts/codex-architect.sh:*)",
+      "Bash(bash scripts/codex-reviewer.sh:*)",
+      "Bash(bash scripts/codex-evaluator.sh:*)",
       "Bash(docker compose ps)",
       "Bash(docker compose logs:*)"
     ]
