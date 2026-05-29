@@ -16,10 +16,7 @@
 
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
-| feature/morimoto/fix-backend-audit-1097 | backend pip audit remediation (#1097) | 2026-05-29 13:05 | IN_PROGRESS | | |
-| feature/morimoto/fix-schema-check-catchup-lint | schema catch-up lint for ADR-036 | 2026-05-29 14:27 | IN_PROGRESS | | |
-| feature/morimoto/forget-proof-working-memory | プロセス改善（忘れ防止） | 2026-05-29 | IN_PROGRESS |  | タスク台帳・スプリント状態・CI lint |
-| feature/morimoto/monitoring-m7-complete | 監視VPS移行 M7完了・タスク台帳更新 | 2026-05-29 | IN_PROGRESS | | |
+| feature/morimoto/cleanup-active-work-may29 | active-work stale エントリ整理 | 2026-05-29 | IN_PROGRESS | | |
 ---
 
 ## 記入例
