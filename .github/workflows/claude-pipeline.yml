@@ -214,7 +214,7 @@ jobs:
               mcp__context7__resolve-library-id mcp__context7__get-library-docs \
               WebSearch WebFetch" \
             --permission-mode bypassPermissions \
-            "まず ~/.claude/agents/researcher.md を Read ツールで読み込んで researcher エージェントとして動作してください。
+            "まず ~/.claude/agents/research.md を Read ツールで読み込んで research エージェントとして動作してください。
 
           #指示1:調査モード
 
@@ -224,11 +224,11 @@ jobs:
 
           【手順】
           1. 調査対象ADRファイルをすべて Read で読み込み、設計内容を把握してください
-          2. researcher.md のフェーズ1〜4の手順に従い調査を実施してください:
-             - フェーズ1: 外部事例調査（5W2H + 数値化）
-             - フェーズ2: 開発ルール整合チェック（CLAUDE.md / 既存ADR / CI）
-             - フェーズ3: 設計案レビュー（Reviewer視点での査定）
-             - フェーズ4: しんごさんへの実現可否サマリー
+          2. research.md の Do セクションの手順に従い証拠収集を実施してください:
+             - 外部事例調査（5W2H + 数値化）
+             - 開発ルール整合チェック（CLAUDE.md / 既存ADR / CI）
+             - 設計案レビュー（Reviewer視点での査定）
+             - しんごさんへの実現可否サマリー
           3. 調査結果を PR コメントとして投稿してください:
              gh pr comment ${PR_NUMBER} --repo ${REPO} --body '<調査結果>'
 
