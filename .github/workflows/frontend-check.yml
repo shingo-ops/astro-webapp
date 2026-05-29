@@ -43,6 +43,7 @@ jobs:
         working-directory: frontend
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
 
       - name: Audit unused tokens (informational・非ブロック)

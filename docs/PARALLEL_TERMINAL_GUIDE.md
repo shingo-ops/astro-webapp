@@ -50,20 +50,31 @@ git rebase origin/develop
 - `InboxPage.css` / `schedule.css` / `tokens.css` / `index.css` への複数 PR 同時オープン
 - `.claude-pipeline/active-work.md` を確認せずに新しい作業を開始する
 
-### 4.5. 作業開始前の重複チェック（SSoT 確認・必須）
+### 4.5. 作業開始前の必須確認（SSoT 3点セット）
 
-**新しいターミナルで作業を始める前に `.claude-pipeline/active-work.md` を必ず確認すること。**
-
-このファイルが「誰が今何を担当しているか」の唯一の真実（SSoT）。
+**新しいターミナルで作業を始める前に以下の3ファイルを必ず確認すること。**
 
 ```bash
-# 確認コマンド
+# 1. ブランチ占有状況（誰が今何を担当しているか）
 cat .claude-pipeline/active-work.md
+
+# 2. 進行中タスク台帳（現在地・次の一手・根拠）
+cat tasks/todo.md
+
+# 3. 関連スプリントの状態（長期タスクの場合）
+# 例: cat docs/runbooks/monitoring-vps-migration.md | head -50
 ```
+
+| ファイル | 何が分かるか |
+|---------|------------|
+| `.claude-pipeline/active-work.md` | ブランチ占有・並行作業の衝突防止 |
+| `tasks/todo.md` | 各タスクの現在地・次の一手・根拠 |
+| `docs/runbooks/<関連>.md` | スプリントの完了状態・ブロック理由 |
 
 重複が見つかった場合 → **STOP → しんごさんに確認してから開始する**
 
-`scripts/new-worktree.sh` を使えば自動で記入される（手動記入不要）。
+`scripts/new-worktree.sh` を使えば active-work.md は自動で記入される（手動記入不要）。
+`tasks/todo.md` は作業完了・ブロック発生時に**手動で更新する**（ルール: `AGENTS.md §引き継ぎルール`）。
 
 ### 5. AI エージェントを並行起動するとき（P5 対策・推奨）
 

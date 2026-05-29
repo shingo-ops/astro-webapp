@@ -1,0 +1,119 @@
+schema: planner-package-v1
+type: object
+additionalProperties: false
+required:
+  - Plan Package
+properties:
+  Plan Package:
+    type: object
+    additionalProperties: false
+    required:
+      - Conclusion
+      - What
+      - Why
+      - Expected Result
+      - Expected Impact
+      - Success Metrics
+      - Constraints
+      - Risks
+      - Tradeoffs
+      - Recommended Approach
+      - Rejected Alternatives
+      - Implementation Scope
+      - Acceptance Criteria
+      - Guardrails
+      - Architect Review Required
+      - Ready For Architect
+    properties:
+      Conclusion:
+        type: string
+        description: "PO-facing conclusion: proceed, do not proceed, revise, or return to Research."
+      What:
+        type: string
+        description: What will be done.
+      Why:
+        type: string
+        description: Why this is necessary, based only on Research evidence.
+      Expected Result:
+        type: string
+        description: What will be true after execution.
+      Expected Impact:
+        type: array
+        description: Expected outcomes. Numeric framing must be attempted.
+        items:
+          required: [metric, expected_change, basis]
+          properties:
+            metric: { type: string }
+            expected_change: { type: string }
+            basis: { type: string }
+      Success Metrics:
+        type: array
+        items:
+          required: [metric, target, evidence_source]
+          properties:
+            metric: { type: string }
+            target: { type: string }
+            evidence_source: { type: string }
+      Constraints:
+        type: array
+        items: { type: string }
+      Risks:
+        type: array
+        items:
+          required: [risk, severity, mitigation]
+          properties:
+            risk: { type: string }
+            severity: { enum: [high, medium, low] }
+            mitigation: { type: string }
+      Tradeoffs:
+        type: array
+        items:
+          required: [benefit, cost]
+          properties:
+            benefit: { type: string }
+            cost: { type: string }
+      Recommended Approach:
+        type: string
+        description: The selected approach.
+      Rejected Alternatives:
+        type: array
+        items:
+          required: [alternative, reason]
+          properties:
+            alternative: { type: string }
+            reason: { type: string }
+      Implementation Scope:
+        type: object
+        additionalProperties: false
+        required: [included, excluded, generator_allowed_files]
+        properties:
+          included:
+            type: array
+            items: { type: string }
+          excluded:
+            type: array
+            items: { type: string }
+          generator_allowed_files:
+            type: array
+            items: { type: string }
+      Acceptance Criteria:
+        type: array
+        items:
+          required: [id, criterion, evaluator_evidence]
+          properties:
+            id: { type: string }
+            criterion: { type: string }
+            evaluator_evidence: { type: string }
+      Guardrails:
+        type: array
+        items: { type: string }
+      Architect Review Required:
+        type: boolean
+        description: "True when the plan must pass Architect review before PO Approval and Generator."
+      Ready For Architect:
+        type: boolean
+        description: "True only when Research evidence is sufficient and the package can move to Architect."
+      Return To Research:
+        type: array
+        description: "Missing evidence items. Use when Ready For Architect is false."
+        items: { type: string }

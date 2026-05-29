@@ -1,0 +1,42 @@
+schema: architect-review-v1
+type: object
+additionalProperties: false
+required:
+  - Architect Review
+properties:
+  Architect Review:
+    type: object
+    additionalProperties: false
+    required:
+      - Decision
+      - Reason
+      - Required Changes
+      - Approved Scope
+      - Generator Instructions
+      - Risks
+      - PO Approval Required
+      - Ready For Generator
+    properties:
+      Decision:
+        enum: [APPROVE, REVISE, REJECT]
+      Reason:
+        type: string
+      Required Changes:
+        type: array
+        items: { type: string }
+      Approved Scope:
+        type: array
+        items: { type: string }
+      Generator Instructions:
+        type: array
+        description: "Bounded instructions Generator may follow after PO Approval."
+        items: { type: string }
+      Risks:
+        type: array
+        items: { type: string }
+      PO Approval Required:
+        type: boolean
+        description: "Whether human PO approval is required before Generator starts."
+      Ready For Generator:
+        type: boolean
+        description: "True only when Decision is APPROVE and the package can move to PO Approval, then Generator."

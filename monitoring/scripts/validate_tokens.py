@@ -5,25 +5,34 @@ monitoring/scripts/validate_tokens.py
 監視スタック SSoT 整合性チェックスクリプト
 
 【チェック内容】
-  1. :latest タグ検出（監視サービス対象のみ）       → エラー（ブロック）
-  2. tokens.yml バージョン vs docker-compose.yml    → エラー（ブロック）
-  3. アラート閾値整合性チェック                      → 警告のみ（advisory）
-  4. healthcheck 設定確認                           → 警告のみ（STEP4完了まで）
+  1. :latest タグ検出（監視/周辺 compose 対象）   → エラー（ブロック）
+  2. tokens.yml バージョン vs compose files        → エラー（ブロック）
+  3. アラート閾値整合性チェック                    → 警告のみ（advisory）
+  4. healthcheck 設定確認                         → 警告のみ（advisory）
+  5. Dockerfile バージョン整合性（build: 方式）   → エラー（ブロック）
 
 【終了コード】
   0 = 全チェック通過（警告は出ても OK）
   1 = エラーあり（CI ブロック）
 """
 
-import sys
+from __future__ import annotations
+
 import re
+import sys
+from pathlib import Path
+
 import yaml
 
-TOKENS_FILE = "monitoring/tokens.yml"
-COMPOSE_FILE = "docker-compose.yml"
-ALERT_RULES_FILE = "monitoring/prometheus/alert_rules.yml"
+TOKENS_FILE = Path("monitoring/tokens.yml")
+ALERT_RULES_FILE = Path("monitoring/prometheus/alert_rules.yml")
+COMPOSE_FILES = [
+    Path("docker-compose.yml"),
+    Path("docker-compose.monitoring.yml"),
+    Path("docker-compose.exporters.yml"),
+]
 
-# tokens.yml の versions キー → docker-compose.yml のイメージプレフィックス
+# tokens.yml の versions キー → compose files のイメージプレフィックス
 MONITORING_IMAGES = {
     "nginx":             "nginx",
     "certbot":           "certbot/certbot",
@@ -41,49 +50,84 @@ MONITORING_IMAGES = {
 }
 
 # build: 方式のサービス: tokens.yml の versions キー → Dockerfile パス
-# docker-compose image: タグではなく Dockerfile ARG で バージョンを管理
 DOCKERFILE_VERSIONS = {
-    "gha_exporter": "monitoring/gha-exporter/Dockerfile",
+    "gha_exporter": Path("monitoring/gha-exporter/Dockerfile"),
 }
 
 # healthcheck 確認対象の監視サービス
-MONITORING_SERVICES = ["prometheus", "grafana", "loki", "promtail", "uptime-kuma"]
+MONITORING_SERVICES = [
+    "prometheus",
+    "grafana",
+    "node-exporter",
+    "gha-exporter",
+    "loki",
+    "uptime-kuma",
+    "postgres-exporter",
+    "nginx-exporter",
+    "redis-exporter",
+    "promtail",
+]
 
-errors = []
-warnings = []
+errors: list[str] = []
+warnings: list[str] = []
 
 
-def header(title):
+def header(title: str) -> None:
     print(f"\n{'=' * 60}")
     print(f"  {title}")
-    print('=' * 60)
+    print("=" * 60)
+
+
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text()
+    except FileNotFoundError:
+        errors.append(f"必要なファイルが見つかりません: {path}")
+        return ""
+
+
+def load_yaml(path: Path) -> dict:
+    try:
+        return yaml.safe_load(path.read_text()) or {}
+    except FileNotFoundError:
+        errors.append(f"必要なファイルが見つかりません: {path}")
+        return {}
+    except yaml.YAMLError as exc:
+        errors.append(f"{path} の YAML パースに失敗: {exc}")
+        return {}
 
 
 # ── ファイル読み込み ──────────────────────────────────────────
 
 try:
-    with open(TOKENS_FILE) as f:
-        tokens = yaml.safe_load(f)
+    tokens = yaml.safe_load(TOKENS_FILE.read_text()) or {}
 except FileNotFoundError:
     print(f"❌ {TOKENS_FILE} が見つかりません（このファイルは必須です）")
     sys.exit(1)
-
-with open(COMPOSE_FILE) as f:
-    compose_text = f.read()
-
-try:
-    compose_data = yaml.safe_load(compose_text)
-except yaml.YAMLError as e:
-    print(f"❌ {COMPOSE_FILE} の YAML パースに失敗: {e}")
+except yaml.YAMLError as exc:
+    print(f"❌ {TOKENS_FILE} の YAML パースに失敗: {exc}")
     sys.exit(1)
 
-with open(ALERT_RULES_FILE) as f:
-    alert_rules_text = f.read()
+compose_texts: list[str] = []
+compose_docs: list[tuple[Path, dict]] = []
+for compose_file in COMPOSE_FILES:
+    compose_text = read_text(compose_file)
+    if compose_text:
+        compose_texts.append(compose_text)
+        compose_docs.append((compose_file, load_yaml(compose_file)))
+
+compose_text = "\n\n".join(compose_texts)
+
+try:
+    alert_rules_text = ALERT_RULES_FILE.read_text()
+except FileNotFoundError:
+    print(f"❌ {ALERT_RULES_FILE} が見つかりません（このファイルは必須です）")
+    sys.exit(1)
 
 
 # ── CHECK 1: :latest タグ検出（監視サービス対象） ────────────
 
-header("CHECK 1: :latest タグ（監視サービス対象のみ）")
+header("CHECK 1: :latest タグ（compose files 対象のみ）")
 
 for token_key, image_prefix in MONITORING_IMAGES.items():
     pattern = rf"image:\s+{re.escape(image_prefix)}:latest"
@@ -96,7 +140,7 @@ for token_key, image_prefix in MONITORING_IMAGES.items():
         print(f"  ✅ {image_prefix}: latest タグなし")
 
 
-# ── CHECK 2: tokens.yml バージョン vs docker-compose.yml ─────
+# ── CHECK 2: tokens.yml バージョン vs compose files ─────────
 
 header("CHECK 2: tokens.yml バージョン整合性")
 
@@ -104,9 +148,7 @@ versions = tokens.get("versions", {})
 for token_key, image_prefix in MONITORING_IMAGES.items():
     expected_ver = versions.get(token_key)
     if not expected_ver:
-        warnings.append(
-            f"tokens.yml に versions.{token_key} の定義がありません"
-        )
+        warnings.append(f"tokens.yml に versions.{token_key} の定義がありません")
         continue
     expected_tag = f"{image_prefix}:{expected_ver}"
     if expected_tag in compose_text:
@@ -114,7 +156,7 @@ for token_key, image_prefix in MONITORING_IMAGES.items():
     else:
         errors.append(
             f"SSoT 不一致 [{token_key}]: "
-            f"tokens.yml={expected_ver} が docker-compose.yml に見つかりません"
+            f"tokens.yml={expected_ver} が compose files に見つかりません"
             f"（期待値: image: {expected_tag}）"
         )
 
@@ -124,7 +166,6 @@ for token_key, image_prefix in MONITORING_IMAGES.items():
 header("CHECK 3: アラート閾値整合性（警告のみ・advisory）")
 
 threshold_checks = [
-    # (tokens.yml キー, PromQL 検索パターン, アラート名)
     ("cpu_warning_pct",
      r"node_cpu_seconds_total[^>]+>\s*(\d+)",
      "HighCpuUsage"),
@@ -150,9 +191,9 @@ for token_key, pattern, alert_name in threshold_checks:
     expected = thresholds.get(token_key)
     if expected is None:
         continue
-    m = re.search(pattern, alert_rules_text, re.DOTALL)
-    if m:
-        actual = int(m.group(1))
+    match = re.search(pattern, alert_rules_text, re.DOTALL)
+    if match:
+        actual = int(match.group(1))
         if actual == expected:
             print(f"  ✅ {alert_name}: {expected}")
         else:
@@ -164,24 +205,35 @@ for token_key, pattern, alert_name in threshold_checks:
         print(f"  ℹ️  {alert_name}: パターン未マッチ（スキップ）")
 
 
-# ── CHECK 4: healthcheck 設定（WARNING MODE） ─────────────────
+# ── CHECK 4: healthcheck 設定（advisory） ───────────────────
 
-header("CHECK 4: healthcheck 設定（警告のみ・STEP4完了まで）")
+header("CHECK 4: healthcheck 設定（警告のみ・advisory）")
 
-services = compose_data.get("services", {})
+services = {}
+service_sources: dict[str, list[Path]] = {}
+for compose_file, compose_data in compose_docs:
+    file_services = compose_data.get("services", {})
+    for service_name, service_def in file_services.items():
+        services.setdefault(service_name, service_def)
+        service_sources.setdefault(service_name, []).append(compose_file)
+
 for svc in MONITORING_SERVICES:
     if svc not in services:
-        warnings.append(f"{svc}: docker-compose.yml にサービス定義が見つかりません")
-    elif "healthcheck" not in services[svc]:
+        warnings.append(f"{svc}: compose files にサービス定義が見つかりません")
+        continue
+    if "healthcheck" not in services[svc]:
         warnings.append(
             f"{svc}: healthcheck が未設定です"
-            f"（PR #889 がマージされると解消されます）"
+            f"（compose file: {', '.join(str(p) for p in service_sources.get(svc, []))}）"
         )
     else:
-        print(f"  ✅ {svc}: healthcheck 設定済み")
+        print(
+            f"  ✅ {svc}: healthcheck 設定済み"
+            f"（compose file: {', '.join(str(p) for p in service_sources.get(svc, []))}）"
+        )
 
 
-# ── CHECK 5: Dockerfile バージョン整合性（build: 方式サービス）─
+# ── CHECK 5: Dockerfile バージョン整合性（build: 方式）───────
 
 header("CHECK 5: Dockerfile バージョン整合性（build: 方式サービス）")
 
@@ -191,12 +243,10 @@ for token_key, dockerfile_path in DOCKERFILE_VERSIONS.items():
         warnings.append(f"tokens.yml に versions.{token_key} の定義がありません")
         continue
     try:
-        with open(dockerfile_path) as f:
-            dockerfile_text = f.read()
+        dockerfile_text = dockerfile_path.read_text()
     except FileNotFoundError:
         errors.append(f"Dockerfile が見つかりません: {dockerfile_path}")
         continue
-    # ARG GHA_EXPORTER_VERSION=v0.0.15 形式を検索
     arg_pattern = rf"ARG\s+\w+VERSION\s*=\s*{re.escape(expected_ver)}"
     if re.search(arg_pattern, dockerfile_text):
         print(f"  ✅ {token_key}: Dockerfile ARG = {expected_ver}")
@@ -213,13 +263,13 @@ header("結果サマリー")
 
 if warnings:
     print(f"\n⚠️  警告 {len(warnings)} 件（ブロックしません）:")
-    for w in warnings:
-        print(f"  • {w}")
+    for warning in warnings:
+        print(f"  • {warning}")
 
 if errors:
     print(f"\n❌ エラー {len(errors)} 件（CI ブロック）:")
-    for e in errors:
-        print(f"  • {e}")
+    for error in errors:
+        print(f"  • {error}")
     print(f"\n→ {len(errors)} 件のエラーを修正してください。")
     sys.exit(1)
 

@@ -64,10 +64,13 @@ git config user.email "<あなたのメール>"
 
 | Agent | 役割 |
 |---|---|
-| `planner` | 仕様の起案・既存仕様の精査 |
-| `generator` | 1スプリントずつ実装＋自己評価レポート |
+| `research` | 外部事例・成功/失敗パターンを Evidence Package にまとめる |
+| `planner` | Evidence から意思決定可能な Plan Package を作る |
+| `architect` | 実装前の妥当性確認と Generator 指示の作成 |
+| `generator` | 承認済み範囲のみ実装する |
+| `reviewer` | 実装の準拠監査を行う |
 | `evaluator` | 実装を Playwright で検証、Pass/Fail 判定 |
-| `reviewer` | コード監査、APPROVE / CHANGES_REQUESTED 判定（**merge は実行しない**。merge は起票者が手動で `gh pr merge --squash --delete-branch`） |
+| `governance` | 定期レビューで標準化・継続改善を判断する |
 
 呼び出し例:
 - 「Planner で機能 X の仕様書を起こして」
@@ -86,10 +89,24 @@ git config user.email "<あなたのメール>"
 1. `develop` から `feature/morimoto/<topic>` を切る（`<topic>` は作業内容を英語で簡潔に）
    - ADR pipeline 経由の自動実装は別途 `feature/shingo/adr-NNN-impl` が自動生成される
 2. 直接 `develop` / `main` にコミットしない
-3. PR を起票 → **Reviewer エージェント** で審査
-4. Reviewer が APPROVE → **起票者が手動で `gh pr merge --squash --delete-branch`**（Reviewer 自体は merge しない、`.claude/agents/reviewer.md` のクリティカルルール9 参照）
+3. PO Approval → Generator → Reviewer → Evaluator → GitHub CI の順で進める
+4. Reviewer / Evaluator の結果を確認してから PR を起票・マージする
 5. `develop → main` も必ず PR 経由（Branch Protection で物理ブロック）
 6. 不可逆操作（DROP TABLE / `rm -rf` / force-push 等）は **PO 確認必須**
+
+### タスク台帳（全員共通・必読）
+
+作業開始前に必ず3つのファイルを確認する:
+
+```bash
+cat tasks/todo.md                        # 進行中タスク一覧（担当・現在地・次の一手）
+cat .claude-pipeline/active-work.md      # 誰がどのブランチで作業中か
+# 長期タスクの場合は関連 runbook も確認
+# 例: cat docs/runbooks/monitoring-vps-migration.md | head -60
+```
+
+作業後に状態が変わったら `tasks/todo.md` の該当行を更新すること（更新日・現在地・次の一手）。
+**更新しないと毎週月曜の Discord 通知で「放置タスク」として報告される。**
 
 ---
 

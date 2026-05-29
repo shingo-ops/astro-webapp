@@ -5,19 +5,28 @@ public.discord_inbound_messages に seed する (spec.md v1.3 / F5 連携)。
 入力: astro-webapp/sheets/raw/API解析.csv (4880 行 × 46 列)
 出力: public.discord_inbound_messages に INSERT (discord_message_id ON CONFLICT)
 
-CSV 構造:
-  L1: 仕入元, <仕入元名1>, <仕入元名2>, ..., <仕入元名45>
-  L2: タイムスタンプ, ...
-  L3+: 「①[メッセージ原文]...」のような問い合わせ行 + 各列に仕入元の回答
+CSV 構造 (仕入元 × 項目 のマトリクス):
+  L1 (row0): 仕入元, <仕入元名1>, <仕入元名2>, ..., <仕入元名45>
+  L2 (row1): タイムスタンプ, ...
+  L3 (row2): ①[メッセージ原文]  ← 各仕入元列が「受信した生メッセージ」(これだけが受信本文)
+  L4 (row3): ②[整形結果]        ← 解析後の整形結果 (受信本文ではない)
+  L5 (row4): ③[除外リスト]
+  L6 (row5): ④[解析コメント]
+  L7 (row6): ♻️[Knowledge]      ← LLM プロンプト / ナレッジ指示文 (受信本文ではない)
+  以降: 最終更新日時 等のメタ行
 
-Pivot ロジック:
-  各 (row >= 3, col >= 2) のセルが空でなければ:
+Pivot ロジック (2026-05-29 修正):
+  「①[メッセージ原文]」行 (col0 に "メッセージ原文" を含む行) のみを対象とし、
+  各仕入元列 (col >= 1) の空でないセルを 1 受信メッセージとして投入する。
     supplier_name = L1 の col 位置
-    raw_content   = そのセルの値
+    raw_content   = ①[メッセージ原文] 行の該当セル
     discord_channel_id = "CSV_IMPORT_{supplier_id:03d}" (fake、後で実 channel 接続時に更新)
     discord_message_id = "CSV_{seq:06d}" (fake、連番)
     received_at   = NOW()
     parse_status  = 'pending'
+
+  ※旧実装は L3 以降の全行 (②整形結果・♻️Knowledge 等) を受信本文として誤投入しており、
+    33 件のナレッジ/プロンプト文が混入していた。受信本文 = ①メッセージ原文 のみが正。
 
 注意: discord_channel_id / discord_message_id は本物の Discord ID ではない。
 テストデータとして F3/F4 解析パイプライン動作確認用。
@@ -25,9 +34,11 @@ Pivot ロジック:
 
 実行方法:
   docker compose exec -w /app backend python scripts/seed_discord_inbound_from_api_analysis.py --dry-run
-  docker compose exec -w /app backend python scripts/seed_discord_inbound_from_api_analysis.py --apply
+  # 既存 CSV_IMPORT を全削除してからクリーン再投入する場合:
+  docker compose exec -w /app backend python scripts/seed_discord_inbound_from_api_analysis.py --apply --reset
 
 冪等: ON CONFLICT (discord_message_id) DO NOTHING (再走時の重複防止)
+      クリーン再投入したい場合は --reset で既存 CSV_IMPORT を削除してから投入する。
 
 前提:
   - seed_suppliers_from_line_master.py 実行済 (supplier_name で resolve 可能)
@@ -86,24 +97,35 @@ def _load_rows() -> list[MessageRow]:
         sys.exit(1)
     supplier_columns = header[1:]  # index 0 はラベル列
 
-    messages: list[MessageRow] = []
-    # L2 (タイムスタンプ) は skip
-    # L3 以降を pivot
-    for row_idx in range(2, len(all_rows)):
-        row = all_rows[row_idx]
-        for col_idx in range(1, min(len(row), len(supplier_columns) + 1)):
-            cell = (row[col_idx] or "").strip()
-            if not cell:
-                continue
-            supplier_name = supplier_columns[col_idx - 1].strip()
-            if not supplier_name:
-                continue
-            messages.append(MessageRow(supplier_name, cell))
+    # 受信本文 = 「①[メッセージ原文]」行のみ。col0 に "メッセージ原文" を含む行を採用する。
+    # (col0 は "①\n[メッセージ原文]" のように改行を含むため、改行除去後の部分一致で判定)
+    origin_row: list[str] | None = None
+    for row in all_rows[1:]:  # L1 ヘッダーは除外
+        label = (row[0] if row else "").replace("\n", "")
+        if "メッセージ原文" in label:
+            origin_row = row
+            break
+    if origin_row is None:
+        logger.error(
+            "「①[メッセージ原文]」行が見つかりません (col0 に 'メッセージ原文' を含む行が無い)"
+        )
+        sys.exit(1)
 
+    messages: list[MessageRow] = []
+    for col_idx in range(1, min(len(origin_row), len(supplier_columns) + 1)):
+        cell = (origin_row[col_idx] or "").strip()
+        if not cell:
+            continue
+        supplier_name = supplier_columns[col_idx - 1].strip()
+        if not supplier_name:
+            continue
+        messages.append(MessageRow(supplier_name, cell))
+
+    logger.info("①メッセージ原文 行から %d 件の受信本文を抽出", len(messages))
     return messages
 
 
-async def _seed(rows: Iterable[MessageRow], dry_run: bool) -> None:
+async def _seed(rows: Iterable[MessageRow], dry_run: bool, reset: bool = False) -> None:
     rows_list = list(rows)
 
     url = os.getenv("DATABASE_URL")
@@ -147,6 +169,12 @@ async def _seed(rows: Iterable[MessageRow], dry_run: bool) -> None:
             ))).scalar_one()
             logger.info("適用前 (CSV_IMPORT のみ) public.discord_inbound_messages 件数: %d", before)
 
+            if reset:
+                deleted = (await conn.execute(text(
+                    "DELETE FROM public.discord_inbound_messages WHERE discord_channel_id LIKE 'CSV_IMPORT_%'"
+                ))).rowcount
+                logger.warning("--reset: 既存 CSV_IMPORT レコードを %d 件削除しました", deleted)
+
             inserted = skipped = 0
             for seq, (r, sid) in enumerate(resolved, start=1):
                 channel_id = f"CSV_IMPORT_{sid:03d}"
@@ -182,10 +210,15 @@ def main() -> None:
     g = parser.add_mutually_exclusive_group(required=True)
     g.add_argument("--dry-run", action="store_true")
     g.add_argument("--apply", action="store_true")
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="--apply 時に既存 CSV_IMPORT レコードを全削除してから投入する (クリーン再投入)",
+    )
     args = parser.parse_args()
 
     rows = _load_rows()
-    asyncio.run(_seed(rows, dry_run=args.dry_run))
+    asyncio.run(_seed(rows, dry_run=args.dry_run, reset=args.reset))
 
 
 if __name__ == "__main__":

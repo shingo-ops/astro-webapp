@@ -368,10 +368,8 @@ export default function ProductsPage() {
               const isOutOfStock = p.quantity <= 0;
               const rowStyle: React.CSSProperties = {};
               if (p.is_archived) rowStyle.opacity = "var(--opacity-archived)";
-              if (isOutOfStock && !p.is_archived) {
-                rowStyle.opacity = "var(--opacity-skipped)";
-                rowStyle.background = "var(--bg-disabled)";
-              }
+              // 在庫0行の背景は CSS (.data-table tr[data-zero-stock="true"]) で濃淡を付ける。
+              // 文字の視認性を保つため opacity は下げない (QA 2026-05-29)。
               return (
               <tr key={p.id} style={rowStyle} data-zero-stock={isOutOfStock ? "true" : "false"}>
                 <td>

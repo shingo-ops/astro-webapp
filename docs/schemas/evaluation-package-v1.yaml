@@ -1,0 +1,88 @@
+schema: evaluation-package-v1
+type: object
+additionalProperties: false
+required:
+  - Evaluation Package
+properties:
+  Evaluation Package:
+    type: object
+    additionalProperties: false
+    required:
+      - inputs
+      - required_gate
+      - Decision
+      - Scope Evaluated
+      - Acceptance Criteria
+      - Acceptance Coverage
+      - Playwright Result
+      - UI Evidence
+      - Failures
+      - Root Cause
+      - Return To
+      - Ready For CI
+    properties:
+      inputs:
+        type: array
+        items:
+          enum: [planner-package-v1, architect-review-v1, generator-result-v1, review-package-v1]
+      required_gate:
+        type: object
+        additionalProperties: false
+        required: [reviewer_decision, ready_for_evaluator]
+        properties:
+          reviewer_decision:
+            enum: [APPROVED]
+          ready_for_evaluator:
+            const: true
+      Decision:
+        enum: [PASS, FAIL]
+      Scope Evaluated:
+        type: array
+        items: { type: string }
+      Acceptance Criteria:
+        type: array
+        items:
+          required: [id, criterion]
+          properties:
+            id: { type: string }
+            criterion: { type: string }
+      Acceptance Coverage:
+        type: array
+        items:
+          required: [criterion_id, result, evidence]
+          properties:
+            criterion_id: { type: string }
+            result: { enum: [pass, fail, not_evaluated] }
+            evidence: { type: string }
+      Playwright Result:
+        required: [status, command, summary]
+        properties:
+          status: { enum: [pass, fail, not_run, blocked] }
+          command: { type: string }
+          summary: { type: string }
+      UI Evidence:
+        required: [Screenshots, Trace, Logs]
+        properties:
+          Screenshots:
+            type: array
+            items: { type: string }
+          Trace:
+            type: array
+            items: { type: string }
+          Logs:
+            type: array
+            items: { type: string }
+      Failures:
+        type: array
+        items:
+          required: [failure, evidence]
+          properties:
+            failure: { type: string }
+            evidence: { type: string }
+      Root Cause:
+        enum: [implementation, architect_gap, planner_gap, research_gap, reviewer_not_approved, evidence_missing, environment, none]
+      Return To:
+        enum: [Generator, Architect, Planner, Research, None]
+      Ready For CI:
+        type: boolean
+        description: "True only when PASS and the implementation is ready for GitHub CI / merge gating."

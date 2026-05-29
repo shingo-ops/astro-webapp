@@ -205,7 +205,7 @@ async def create_invoice_from_quote(
         await db.execute(
             text("""
                 INSERT INTO invoice_items (invoice_id, product_id, product_name, quantity, unit_price, weight, subtotal, sort_order)
-                VALUES (:iid, :pid, :pname, :qty, :price, :weight, :sub, :sort)
+                VALUES (:iid, :product_id, :product_name, :quantity, :unit_price, :weight, :subtotal, :sort_order)
             """),
             {"iid": invoice_id, **dict(item)},
         )

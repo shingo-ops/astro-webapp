@@ -182,6 +182,18 @@
   background: var(--row-hover);
 }
 
+/* 在庫数0の行を明確に区別する (QA 2026-05-29 / 在庫表)。
+   旧実装は --bg-disabled (≒白) + 透明度ダウンで、ライトモードで区別が弱く
+   文字も読みづらかった。背景の濃淡で区別し、文字は全不透明のまま視認性を確保する。
+   行クリック対象ではないため hover も専用色で上書き (同詳細度の通常 hover に勝たせる)。 */
+.data-table tr[data-zero-stock="true"] td {
+  background: var(--bg-row-zero-stock);
+}
+
+.data-table tr[data-zero-stock="true"]:hover td {
+  background: var(--bg-row-zero-stock-hover);
+}
+
 .data-table .actions {
   display: flex;
   gap: var(--space-1);

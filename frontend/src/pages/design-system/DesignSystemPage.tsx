@@ -31,6 +31,8 @@ const COLOR_TOKENS = [
   { name: "--info-text",       label: "Info text" },
   { name: "--bg-primary",      label: "Page background" },
   { name: "--bg-disabled",     label: "Disabled background" },
+  { name: "--bg-row-zero-stock",       label: "Zero-stock row background" },
+  { name: "--bg-row-zero-stock-hover", label: "Zero-stock row hover" },
   { name: "--bg-badge",        label: "Badge background" },
   { name: "--border-strong",   label: "Border strong" },
   { name: "--border-icon",     label: "Border icon frame" },

@@ -1,0 +1,25 @@
+name: task state check
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+    paths:
+      - 'tasks/todo.md'
+      - 'docs/runbooks/monitoring-vps-migration.md'
+      - 'scripts/check-task-state.sh'
+  pull_request:
+    paths:
+      - 'tasks/todo.md'
+      - 'docs/runbooks/monitoring-vps-migration.md'
+      - 'scripts/check-task-state.sh'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: タスク台帳・スプリント状態の構造チェック
+        run: |
+          chmod +x scripts/check-task-state.sh
+          bash scripts/check-task-state.sh
