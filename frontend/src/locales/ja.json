@@ -1364,7 +1364,6 @@
         "versionConflict": "他のレビュアーが先に更新しました。最新版を再読み込みしたので再操作してください。",
         "col": {
           "productId": "商品 ID",
-          "deltaQty": "差分数量",
           "alias": "仕入元呼称",
           "notes": "メモ",
           "skip": "スキップ",

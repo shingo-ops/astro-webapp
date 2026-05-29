@@ -1,5 +1,6 @@
-# Node modules
-node_modules/
+# Node modules (末尾スラッシュ無しでディレクトリも symlink も無視する。
+# slash 付きだと node_modules を指す symlink を取りこぼすため。QA 2026-05-30)
+node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

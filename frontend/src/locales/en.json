@@ -1364,7 +1364,6 @@
         "versionConflict": "Another reviewer updated this item first. Reloaded — please review again.",
         "col": {
           "productId": "Product ID",
-          "deltaQty": "Delta Qty",
           "alias": "Supplier alias",
           "notes": "Notes",
           "skip": "Skip",

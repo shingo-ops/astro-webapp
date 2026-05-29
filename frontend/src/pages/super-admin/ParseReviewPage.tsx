@@ -68,7 +68,6 @@ interface ParseReviewDetail {
 
 interface RowDraft {
   product_id: number | null;
-  delta_qty: number;
   alias_text: string;
   notes: string;
   original_index: number;
@@ -152,7 +151,6 @@ function detailToDrafts(detail: ParseReviewDetail): RowDraft[] {
           : "";
     return {
       product_id: item.product_id ?? null,
-      delta_qty: Number(item.delta_qty ?? 0),
       alias_text: String(item.alias_text ?? ""),
       notes: isProvenance ? "" : rawNotes,
       original_index: idx,
