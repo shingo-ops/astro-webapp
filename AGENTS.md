@@ -48,6 +48,7 @@ make check     # lint-ci + pytest（カバレッジ 60% 以上）
 - `develop` / `main` への直接コミット禁止
 - 完了後 `gh pr create` で PR 作成 → レビュー後 `develop` へマージ
 - `develop → main` も PR 経由（直 push 禁止・Branch Protection で強制）
+  - マージ方法は必ず "Create a merge commit"（squash 禁止 — back-merge が永続発生するため）
 
 ---
 
