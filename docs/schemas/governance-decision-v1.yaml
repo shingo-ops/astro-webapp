@@ -1,0 +1,125 @@
+schema: governance-decision-v1
+type: object
+additionalProperties: false
+required:
+  - Governance Decision
+properties:
+  Governance Decision:
+    type: object
+    additionalProperties: false
+    required:
+      - Policy
+      - Review Program
+      - Metrics
+      - Evidence
+      - KGI
+      - KPI
+      - Decision
+      - Reason
+      - Tradeoffs
+      - Recommendation
+      - Root Cause Analysis Required
+      - Standardization Targets
+      - Next Review Date
+    properties:
+      Policy:
+        type: string
+      Review Program:
+        type: object
+        additionalProperties: false
+        required:
+          - Start Date
+          - End Date
+          - Observation Period
+          - Review Frequency
+          - Review Count
+          - Evidence Sources
+        properties:
+          Start Date: { type: string }
+          End Date: { type: string }
+          Observation Period: { type: string }
+          Review Frequency: { type: string }
+          Review Count: { type: integer }
+          Evidence Sources:
+            type: array
+            items: { type: string }
+      Metrics:
+        type: object
+        additionalProperties: false
+        required: [Before, After, Numeric Impact]
+        properties:
+          Before:
+            type: array
+            items:
+              required: [metric, value]
+              properties:
+                metric: { type: string }
+                value: { type: string }
+          After:
+            type: array
+            items:
+              required: [metric, value]
+              properties:
+                metric: { type: string }
+                value: { type: string }
+          Numeric Impact:
+            type: array
+            items:
+              required: [metric, delta]
+              properties:
+                metric: { type: string }
+                delta: { type: string }
+      Evidence:
+        type: object
+        additionalProperties: false
+        required: [Source, Confidence, Missing Data]
+        properties:
+          Source:
+            type: array
+            items: { type: string }
+          Confidence:
+            enum: [high, medium, low]
+          Missing Data:
+            type: array
+            items: { type: string }
+      KGI:
+        type: array
+        items:
+          required: [name, target, result]
+          properties:
+            name: { type: string }
+            target: { type: string }
+            result: { type: string }
+      KPI:
+        type: array
+        items:
+          required: [name, target, result]
+          properties:
+            name: { type: string }
+            target: { type: string }
+            result: { type: string }
+      Decision:
+        enum: [STANDARDIZE, CONTINUE_OBSERVATION, REVISE_POLICY, RETIRE_POLICY, ESCALATE_TO_ROOT_CAUSE_ANALYSIS]
+      Reason:
+        type: string
+      Tradeoffs:
+        type: array
+        items: { type: string }
+      Recommendation:
+        type: string
+      Root Cause Analysis Required:
+        type: boolean
+      Standardization Targets:
+        type: object
+        additionalProperties: false
+        properties:
+          AGENTS.md: { type: boolean }
+          docs/agents: { type: boolean }
+          docs/schemas: { type: boolean }
+          docs/adr: { type: boolean }
+          docs/ai-agents/evidence-registry.md: { type: boolean }
+          .github/CODEOWNERS: { type: boolean }
+          .github/workflows: { type: boolean }
+          GitHub Required Status Checks: { type: boolean }
+      Next Review Date:
+        type: string

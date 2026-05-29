@@ -1,0 +1,59 @@
+schema: generator-result-v1
+type: object
+additionalProperties: false
+required:
+  - Generator Result
+properties:
+  Generator Result:
+    type: object
+    additionalProperties: false
+    required:
+      - Status
+      - Modified Files
+      - Changes Made
+      - Tests Added
+      - Tests Run
+      - Acceptance Coverage
+      - Scope Deviations
+      - Risks
+      - Next Step
+    properties:
+      Status:
+        enum: [DONE, BLOCKED, NEEDS_SCOPE_CHANGE]
+      Modified Files:
+        type: array
+        items: { type: string }
+      Changes Made:
+        type: array
+        items: { type: string }
+      Tests Added:
+        type: array
+        items: { type: string }
+      Tests Run:
+        type: array
+        items:
+          required: [command_or_check, result]
+          properties:
+            command_or_check: { type: string }
+            result: { enum: [pass, fail, not_run, blocked] }
+      Acceptance Coverage:
+        type: array
+        items:
+          required: [criterion_id, status, evidence]
+          properties:
+            criterion_id: { type: string }
+            status: { enum: [covered, not_covered, blocked] }
+            evidence: { type: string }
+      Scope Deviations:
+        type: array
+        items:
+          required: [file_or_area, reason, requested_action]
+          properties:
+            file_or_area: { type: string }
+            reason: { type: string }
+            requested_action: { type: string }
+      Risks:
+        type: array
+        items: { type: string }
+      Next Step:
+        enum: [send_to_reviewer, return_to_architect, return_to_planner, blocked_wait_for_input]

@@ -1,0 +1,105 @@
+schema: research-package-v1
+type: object
+additionalProperties: false
+required:
+  - metadata
+  - scope
+  - five_w_two_h
+  - evidence
+  - success_patterns
+  - failure_patterns
+  - numeric_evidence
+  - constraints
+  - risks
+  - tradeoffs
+  - recommended_direction
+  - rejected_alternatives
+  - planner_handoff
+properties:
+  metadata:
+    required: [agent, generated_at, confidence]
+    properties:
+      agent:
+        const: Research
+      generated_at:
+        type: string
+      confidence:
+        enum: [high, medium, low]
+  scope:
+    required: [included, excluded]
+    properties:
+      included:
+        type: array
+        items: { type: string }
+      excluded:
+        type: array
+        items: { type: string }
+  five_w_two_h:
+    required: [who, what, when, where, why, how, how_much]
+    properties:
+      who: { type: string }
+      what: { type: string }
+      when: { type: string }
+      where: { type: string }
+      why: { type: string }
+      how: { type: string }
+      how_much: { type: string }
+  evidence:
+    type: array
+    items:
+      required: [type, reference, finding]
+      properties:
+        type:
+          enum: [file, adr, workflow, command, log, external, assumption]
+        reference:
+          type: string
+        finding:
+          type: string
+  success_patterns:
+    type: array
+    items: { type: string }
+  failure_patterns:
+    type: array
+    items: { type: string }
+  numeric_evidence:
+    type: array
+    items:
+      required: [metric, value, source]
+      properties:
+        metric: { type: string }
+        value: { type: string }
+        source: { type: string }
+  constraints:
+    type: array
+    items: { type: string }
+  risks:
+    type: array
+    items:
+      required: [risk, severity, evidence]
+      properties:
+        risk: { type: string }
+        severity: { enum: [high, medium, low] }
+        evidence: { type: string }
+  tradeoffs:
+    type: array
+    items: { type: string }
+  recommended_direction:
+    required: [summary, rationale]
+    properties:
+      summary: { type: string }
+      rationale: { type: string }
+  rejected_alternatives:
+    type: array
+    items:
+      required: [alternative, reason]
+      properties:
+        alternative: { type: string }
+        reason: { type: string }
+  planner_handoff:
+    required: [ready, missing_evidence, notes]
+    properties:
+      ready: { type: boolean }
+      missing_evidence:
+        type: array
+        items: { type: string }
+      notes: { type: string }
