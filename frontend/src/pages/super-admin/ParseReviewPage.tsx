@@ -412,7 +412,7 @@ export default function ParseReviewPage() {
                 <code data-testid="review-version">{detail.version}</code>
               </dd>
             </dl>
-            <details>
+            <details className="raw-content-toggle">
               <summary>{t("superAdmin.inbound.review.rawContent")}</summary>
               <pre style={{ whiteSpace: "pre-wrap" }}>{detail.raw_content}</pre>
             </details>

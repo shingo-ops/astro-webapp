@@ -122,6 +122,10 @@
   --success: #2e7d32;
   --color-warning: #c08a00;
   --bg-disabled: #f7f7f7;
+  /* 在庫数0の行背景（在庫表）。白い在庫あり行と明確に区別できる濃いめのグレー。
+     文字は全不透明のまま視認性を確保するため、行を薄くするのではなく背景濃淡で示す。 */
+  --bg-row-zero-stock: #e3e8f0;
+  --bg-row-zero-stock-hover: #d6dde8;
   --border-color: #cccccc;
   --border-light: #eeeeee;
   --accent-bg: #2d6cdf;
@@ -277,6 +281,9 @@
   --success: #4ade80;
   --color-warning: #fde68a;
   --bg-disabled: #2d3b52;
+  /* 在庫数0の行背景（ダーク）。サーフェスより一段沈めて区別。文字は全不透明維持。 */
+  --bg-row-zero-stock: #19222f;
+  --bg-row-zero-stock-hover: #212c3c;
   --border-color: #475569;
   --border-light: #334155;
   --accent-bg: #818cf8;
