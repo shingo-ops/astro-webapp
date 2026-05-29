@@ -130,6 +130,30 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  github-collector:
+    build:
+      context: ./monitoring/github-collector
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPO=shingo-ops/salesanchor
+      - PR_LOOKBACK=30
+      - PORT=8000
+      - COLLECT_INTERVAL=300
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:8000/metrics || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.25"
+    security_opt:
+      - no-new-privileges:true
+
   loki:
     image: grafana/loki:3.7.2
     command: -config.file=/etc/loki/loki-config.yaml
