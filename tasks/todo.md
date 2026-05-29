@@ -1,5 +1,35 @@
 # Tasks
 
+タスク台帳の正本。セッション開始時に必ず読むこと（`AGENTS.md §引き継ぎルール` 参照）。
+
+---
+
 ## 進行中
 
-なし
+| タスク | 担当 | 現在地 | 次の一手 | 根拠 | 更新日 |
+|------|------|------|---------|-----|------|
+| 監視VPS移行（ADR-080） | PO待ち | M1未着手（さくらVPS未契約） | PO がVPS契約完了後に `docs/runbooks/monitoring-vps-migration.md` Phase 1 Step 1-1 を実行 | memory/project_monitoring_server_plan.md + ADR-080 設計済み確認 | 2026-05-29 |
+| VPS runner登録（ADR-078） | Agent（2026-06-15予定） | 未着手 | 予定日に `docs/runbooks/vps-runner-setup.md` に従い実行 | memory/project_vps_runner_plan.md | 2026-05-29 |
+| Meta App Review 申請 | PO待ち | ドキュメント整備済み・動画未撮影 | PO が申請動画を撮影 → Agent がレビュー申請書類を提出 | memory/project_meta_app_review_progress.md | 2026-05-29 |
+
+---
+
+## 完了（直近）
+
+| タスク | 完了日 | PR |
+|------|------|---|
+| stale active-work クリーンアップ | 2026-05-29 | #1134 |
+| Discord Webhook 分離 | 2026-05-29 | #1132 |
+| PR固有 smoke テスト削除 | 2026-05-29 | #1133 |
+
+---
+
+## フォーマットルール
+
+- `担当`: `Agent` / `PO待ち` / `CI待ち` / `Agent+PO` のいずれか
+- `現在地`: コマンド・ファイル・PR で確認した事実。「〜のはず」は禁止
+- `次の一手`: 具体的なアクション（「進める」は不可）
+- `根拠`: ファイルパス / PR番号 / ADR番号 / コマンド結果
+- `更新日`: YYYY-MM-DD 形式
+
+完了したタスクは「完了（直近）」テーブルに移動する。30日超過行は削除可。
