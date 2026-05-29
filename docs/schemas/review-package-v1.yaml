@@ -1,0 +1,32 @@
+schema: review-package-v1
+type: object
+additionalProperties: false
+required:
+  - Review Result
+properties:
+  Review Result:
+    type: object
+    additionalProperties: false
+    required:
+      - Decision
+      - Reason
+      - Blocking Issues
+      - Non Blocking Suggestions
+      - Required Fixes
+      - Ready For Evaluator
+    properties:
+      Decision:
+        enum: [APPROVED, REQUEST_CHANGES]
+      Reason:
+        type: string
+      Blocking Issues:
+        type: array
+        items: { type: string }
+      Non Blocking Suggestions:
+        type: array
+        items: { type: string }
+      Required Fixes:
+        type: array
+        items: { type: string }
+      Ready For Evaluator:
+        type: boolean
