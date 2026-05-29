@@ -113,6 +113,7 @@ properties:
         type: object
         additionalProperties: false
         properties:
+          .claude/agents: { type: boolean }
           AGENTS.md: { type: boolean }
           docs/agents: { type: boolean }
           docs/schemas: { type: boolean }

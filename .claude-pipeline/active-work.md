@@ -16,7 +16,7 @@
 
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
-| feature/morimoto/cleanup-active-work-may29 | active-work stale エントリ整理 | 2026-05-29 | IN_PROGRESS | | |
+| feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
 ---
 
 ## 記入例

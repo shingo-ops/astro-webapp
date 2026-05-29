@@ -23,6 +23,31 @@ follow_up:
 ## Current Entries
 
 ```text
+id: EV-20260529-004
+date: 2026-05-29
+agent: Codex
+task: Agent pipeline redefinition and runtime definition sync
+scope: .claude/agents, docs/agents, AGENTS.md, CLAUDE.md, docs/onboarding/claude-code.md, docs/ai-agents/agent-roles.md
+evidence:
+  - type: file
+    reference: .claude/agents/planner.md
+    summary: Planner runtime prompt was rewritten to the Research -> Planner -> Architect -> PO Approval pipeline
+  - type: file
+    reference: .claude/agents/generator.md
+    summary: Generator now requires Architect APPROVE and explicit PO Approval before implementation
+  - type: file
+    reference: docs/ai-agents/agent-roles.md
+    summary: Runtime canonical source was moved to `.claude/agents/` and Architect was added to the role index
+  - type: file
+    reference: AGENTS.md
+    summary: Project rules now document the new runtime pipeline and source-of-truth split
+confidence: medium
+tradeoff: Keeping both `.claude/agents/` and `docs/agents/` in sync adds maintenance overhead, but it preserves a short runtime prompt and a detailed reference layer
+decision: Standardize the new Research -> Planner -> Architect -> PO Approval -> Generator -> Reviewer -> Evaluator -> GitHub CI pipeline with `.claude/agents/` as runtime source of truth
+follow_up: Add a lightweight sync check or maintainers' review note if divergence between `.claude/agents/` and `docs/agents/` appears again
+```
+
+```text
 id: EV-20260529-003
 date: 2026-05-29
 agent: Claude Code (orchestrator)
