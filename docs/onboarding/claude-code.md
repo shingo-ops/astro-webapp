@@ -91,6 +91,20 @@ git config user.email "<あなたのメール>"
 5. `develop → main` も必ず PR 経由（Branch Protection で物理ブロック）
 6. 不可逆操作（DROP TABLE / `rm -rf` / force-push 等）は **PO 確認必須**
 
+### タスク台帳（全員共通・必読）
+
+作業開始前に必ず3つのファイルを確認する:
+
+```bash
+cat tasks/todo.md                        # 進行中タスク一覧（担当・現在地・次の一手）
+cat .claude-pipeline/active-work.md      # 誰がどのブランチで作業中か
+# 長期タスクの場合は関連 runbook も確認
+# 例: cat docs/runbooks/monitoring-vps-migration.md | head -60
+```
+
+作業後に状態が変わったら `tasks/todo.md` の該当行を更新すること（更新日・現在地・次の一手）。
+**更新しないと毎週月曜の Discord 通知で「放置タスク」として報告される。**
+
 ---
 
 ## 5. プロジェクト前提のクイックリファレンス
