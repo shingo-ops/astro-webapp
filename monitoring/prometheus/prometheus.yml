@@ -60,6 +60,13 @@ scrape_configs:
       - targets: ["gha-exporter:8080"]
     scrape_interval: 60s
 
+  # GitHub PR Metrics Collector（Lead Time / Cycle Time / CR Rate / Pass Rate / Rework / WIP）
+  # 5分間隔収集（COLLECT_INTERVAL=300）に合わせてスクレイプ間隔も300sに設定
+  - job_name: "github-collector"
+    static_configs:
+      - targets: ["github-collector:8000"]
+    scrape_interval: 300s
+
   # cAdvisor: 無効化済み（VPS cgroup 名前空間制限により取得不可 ADR-079）
   # - job_name: "cadvisor"
   #   static_configs:

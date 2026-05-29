@@ -5,6 +5,8 @@
 # 使い方:
 #   bash scripts/codex-generator.sh              # 対話モード（推奨）
 #   bash scripts/codex-generator.sh --auto       # 非対話モード（自動承認）
+#   bash scripts/codex-generator.sh --exec       # 非対話モード（codex exec）
+#   bash scripts/codex-generator.sh --smoke      # smoke 検証（no-op）
 #
 # Claude Code の "次のスプリントを実装して" に相当する Codex 版コマンド。
 # スペック (.claude-pipeline/spec.md) を読み込んで Codex に渡す。
@@ -15,11 +17,13 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 SPEC_FILE="$REPO_ROOT/.claude-pipeline/spec.md"
 CODEX_BIN="${HOME}/.npm-global/bin/codex"
+EXEC_MODE="0"
+SMOKE_MODE="0"
 
 # ────────────────────────────────────────────────────────────────────────────
 # 前提チェック
 # ────────────────────────────────────────────────────────────────────────────
-if [[ ! -f "$CODEX_BIN" ]]; then
+if [[ ! -x "$CODEX_BIN" ]]; then
   echo "❌ Codex CLI が見つかりません: $CODEX_BIN"
   echo "   npm install -g @openai/codex を実行してください"
   exit 1
@@ -43,6 +47,13 @@ MODE_LABEL="対話モード（各コマンドの承認が必要）"
 if [[ "${1:-}" == "--auto" ]]; then
   APPROVAL_POLICY="untrusted"
   MODE_LABEL="自動モード（信頼済みコマンドは自動承認）"
+elif [[ "${1:-}" == "--exec" ]]; then
+  EXEC_MODE="1"
+  MODE_LABEL="非対話モード（codex exec）"
+elif [[ "${1:-}" == "--smoke" ]]; then
+  EXEC_MODE="1"
+  SMOKE_MODE="1"
+  MODE_LABEL="smoke モード（no-op report）"
 fi
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -52,6 +63,14 @@ echo "🤖 Codex Generator 起動"
 echo "   モード : $MODE_LABEL"
 echo "   スペック: $SPEC_FILE"
 echo ""
+
+if [[ "$SMOKE_MODE" == "1" ]]; then
+  echo "🧪 Codex Generator smoke validation"
+  echo "   status : no-op"
+  echo "   note   : Codex を起動せず、Generator ラッパーの起動経路のみ確認"
+  echo "   result : change-free exit"
+  exit 0
+fi
 
 PROMPT="$(cat <<'PROMPT_EOF'
 あなたは salesanchor プロジェクトの Generator エージェントです。
@@ -90,12 +109,38 @@ PROMPT="$(cat <<'PROMPT_EOF'
 PROMPT_EOF
 )"
 
-# スペック本文を追記
-FULL_PROMPT="${PROMPT}
+if [[ "$SMOKE_MODE" == "1" ]]; then
+  PROMPT="$(cat <<'PROMPT_EOF'
+あなたは salesanchor プロジェクトの Generator エージェントです。
+これは smoke 検証です。実装はせず、変更なしで終了してください。
+
+必須ルール:
+- ファイル変更をしないこと
+- git add / commit / push / PR 作成をしないこと
+- 既存スプリントや spec の実装判断をしないこと
+- 変更が必要だと判断しても、ここでは実行せず blocker として報告すること
+
+出力:
+- smoke validation の短いレポート
+- 変更なしで終了した事実
+- 必要なら blocker のみ
+PROMPT_EOF
+)"
+  FULL_PROMPT="$PROMPT"
+else
+  # スペック本文を追記
+  FULL_PROMPT="${PROMPT}
 $(cat "$SPEC_FILE")"
+fi
 
 # Codex 起動（salesanchor ルートから）
 cd "$REPO_ROOT"
-"$CODEX_BIN" \
-  --ask-for-approval "$APPROVAL_POLICY" \
-  "$FULL_PROMPT"
+if [[ "$EXEC_MODE" == "1" ]]; then
+  printf '%s\n' "$FULL_PROMPT" | "$CODEX_BIN" exec --sandbox workspace-write --cd "$REPO_ROOT" -
+else
+  "$CODEX_BIN" \
+    --sandbox workspace-write \
+    --ask-for-approval "$APPROVAL_POLICY" \
+    --cd "$REPO_ROOT" \
+    "$FULL_PROMPT"
+fi

@@ -85,3 +85,11 @@
   font-size: var(--font-sm);
   color: var(--text-primary);
 }
+
+/* QA 2026-05-30: スキップ列が余剰幅を吸収して右に空白ができていた。チェックボックス幅に
+   固定し見出しを 1 行に保つ。余った幅は最小幅を広げた商品 ID 列 (--col-width-wide) が吸収する。 */
+.review-col-skip {
+  width: var(--col-width-checkbox);
+  white-space: nowrap;
+  text-align: center;
+}

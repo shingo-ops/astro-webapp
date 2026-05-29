@@ -66,15 +66,6 @@ make check     # lint-ci + pytest（カバレッジ 60% 以上）
 
 ---
 
-## 設計レビューゲート
-
-- 全 PR は `design-review-gate` で、信頼済みレビュアーの設計レビュー証跡を確認する
-- 承認コメントまたは GitHub Review には `Design Review: APPROVED`、`Reviewer:`、最新 `Commit:`、`Scope:`、`Evidence:` を含める
-- 追加 push 後は `Commit:` が古くなるため、最新 SHA に対して再承認が必要
-- `design-review-gate` を Required Status Check に追加・削除する作業は Branch Protection / Ruleset 変更のため PO 確認必須
-
----
-
 ## 不可逆操作は必ず PO 確認
 
 DROP TABLE / 大量 DELETE / `rm -rf` / `git reset --hard` / `git push --force`（main/develop）/

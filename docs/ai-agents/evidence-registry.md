@@ -76,6 +76,257 @@ follow_up: Add a lightweight sync check or maintainers' review note if divergenc
 ```
 
 ```text
+id: EV-20260530-011
+date: 2026-05-30
+agent: Codex
+task: AEON delivery runner startup confirmed with non-recursive smoke prompt
+scope: scripts/aeon-delivery.sh, /tmp/aeon-delivery-20260530-051503.log, tasks/todo.md
+evidence:
+  - type: log
+    reference: /tmp/aeon-delivery-20260530-051503.log
+    summary: delivery flow started normally with research stage and read-only Codex wrapper invocation, confirming the same-terminal entry path works
+  - type: file
+    reference: tasks/todo.md
+    summary: task row updated to reflect that delivery startup was confirmed but full smoke completion remains pending
+confidence: high
+tradeoff: the smoke prompt can confirm startup and stage wiring without proving a full end-to-end completion; completion needs a longer run or a bounded no-op task
+decision: AEON delivery startup is working, but the smoke run is still incomplete
+follow_up: run a bounded, non-recursive no-op smoke task to let the stage sequence complete
+```
+
+```text
+id: EV-20260530-010
+date: 2026-05-30
+agent: Codex
+task: AEON delivery smoke run interrupted by recursive prompt
+scope: scripts/aeon-delivery.sh, /tmp/aeon-delivery-20260530-051337.log, tasks/todo.md
+evidence:
+  - type: log
+    reference: /tmp/aeon-delivery-20260530-051337.log
+    summary: smoke prompt triggered Research to invoke aeon-delivery.sh recursively, so the run was interrupted before the delivery stages completed
+  - type: file
+    reference: tasks/todo.md
+    summary: task row updated to reflect that the first smoke run was interrupted by prompt recursion
+confidence: high
+tradeoff: a naive smoke prompt can recurse into the same AEON delivery entry point, so smoke prompts must explicitly forbid re-entry
+decision: the first smoke run is not a valid success signal because it did not reach the intended stage sequence
+follow_up: rerun delivery with a non-recursive smoke prompt
+```
+
+```text
+id: EV-20260530-009
+date: 2026-05-30
+agent: Codex
+task: AEON release runner and delivery/release split
+scope: scripts/aeon-release.sh, docs/ai-agents/aeon-release.md, docs/ai-agents/aeon-delivery.md, docs/ai-agents/aeon-routing.md, docs/ai-agents/agent-roles.md, docs/onboarding/claude-code.md, .claude/settings.json
+evidence:
+  - type: file
+    reference: scripts/aeon-release.sh
+    summary: main 向け PR を worktree ownership と baseRefName の両方で確認してから merge commit する release runner を追加した
+  - type: file
+    reference: docs/ai-agents/aeon-release.md
+    summary: delivery と release を分離した canonical 手順を追加した
+  - type: file
+    reference: docs/ai-agents/aeon-routing.md
+    summary: AEON の observed sequence に release step を追加し、main 反映までの経路を明文化した
+  - type: file
+    reference: .claude/settings.json
+    summary: Claude Code から release runner を実行できる allow list を追加した
+confidence: high
+tradeoff: delivery と release を分離すると安全性は上がる一方、運用ステップは 1 つ増える
+decision: AEON の main 昇格は `scripts/aeon-release.sh` を別ステップとして扱う
+follow_up: dummy PR で release runner の smoke check を実行する
+```
+
+```text
+id: EV-20260530-008
+date: 2026-05-30
+agent: Codex
+task: Evaluator contract alignment for AEON delivery runner
+scope: scripts/codex-exec.sh, docs/agents/evaluator.md, .claude/agents/evaluator.md
+evidence:
+  - type: file
+    reference: docs/agents/evaluator.md
+    summary: Evaluator pipeline position and inputs were updated to run after Generator and before Reviewer
+  - type: file
+    reference: .claude/agents/evaluator.md
+    summary: runtime evaluator definition was kept aligned with the same post-generator/pre-reviewer flow
+  - type: file
+    reference: scripts/codex-exec.sh
+    summary: Codex exec evaluator prompt now matches the post-generator evaluation flow
+confidence: high
+tradeoff: evaluator no longer depends on Reviewer approval up front, which matches the new delivery runner but requires a disciplined handoff to Reviewer afterward
+decision: AEON delivery flow evaluates immediately after Generator completion and before Reviewer PR handling
+follow_up: smoke run the delivery runner on a small task to verify evaluator log flow
+```
+
+```text
+id: EV-20260530-007
+date: 2026-05-30
+agent: Codex
+task: AEON end-to-end delivery runner
+scope: scripts/aeon-delivery.sh, docs/ai-agents/aeon-delivery.md, docs/ai-agents/aeon-routing.md, docs/onboarding/claude-code.md, .claude/settings.json
+evidence:
+  - type: file
+    reference: scripts/aeon-delivery.sh
+    summary: same-terminal で research → planner → architect → generator → evaluator → reviewer を連結する delivery flow を追加した
+  - type: file
+    reference: docs/ai-agents/aeon-delivery.md
+    summary: delivery flow の canonical documentation を追加した
+  - type: file
+    reference: .claude/settings.json
+    summary: Claude Code から delivery runner を実行できる allow list を追加した
+confidence: high
+tradeoff: delivery runner で一気通貫化すると運用は楽になるが、失敗時の切り戻しは各 stage の report に依存する
+decision: AEON の end-to-end delivery は `scripts/aeon-delivery.sh` を canonical runner とする
+follow_up: 実行結果を見て、必要なら stage 別ログの保存先を固定する
+```
+
+```text
+id: EV-20260530-006
+date: 2026-05-30
+agent: Codex
+task: Claude Code permission allowlist for AEON dispatcher
+scope: .claude/settings.json, docs/onboarding/claude-code.md, scripts/aeon-dispatch.sh
+evidence:
+  - type: file
+    reference: .claude/settings.json
+    summary: project settings の allow list に aeon-dispatch / codex-* wrapper を追加した
+  - type: file
+    reference: docs/onboarding/claude-code.md
+    summary: 同一 terminal session から AEON dispatcher を呼ぶ操作導線を追記した
+  - type: file
+    reference: scripts/aeon-dispatch.sh
+    summary: dispatcher 自体は同一ターミナルから AEON roles を起動できる状態にあった
+confidence: high
+tradeoff: allow list を広げることで使いやすさは上がる一方、実行可能コマンドが増えるため運用ルールの周知が必要になる
+decision: Claude Code の project settings に AEON dispatcher を許可し、オンボーディングに標準コマンドを追加する
+follow_up: 実運用で不要な entry があれば、最小限まで allow list を絞る
+```
+
+```text
+id: EV-20260530-005
+date: 2026-05-30
+agent: Codex
+task: AEON routing index and same-terminal execution guide
+scope: docs/ai-agents/aeon-routing.md, docs/ai-agents/agent-roles.md, scripts/aeon-dispatch.sh
+evidence:
+  - type: file
+    reference: docs/ai-agents/aeon-routing.md
+    summary: Claude Code から同一端末で AEON roles を起動する canonical routing を明文化した
+  - type: file
+    reference: docs/ai-agents/agent-roles.md
+    summary: Role index に AEON runtime entry を追加して導線を揃えた
+  - type: file
+    reference: scripts/aeon-dispatch.sh
+    summary: generator / research / planner / architect / reviewer / evaluator の role routing を持つ入口を整備した
+confidence: high
+tradeoff: ルーティングの正本を docs/ai-agents に足したことで説明責任は上がるが、更新時に index と routing doc の同期が必要になる
+decision: Claude Code からの AEON 起動手順は `scripts/aeon-dispatch.sh` + `docs/ai-agents/aeon-routing.md` を正本とする
+follow_up: 将来 role が増えたら `aeon-routing.md` の表を先に更新し、dispatcher を追随させる
+```
+
+```text
+id: EV-20260530-004
+date: 2026-05-30
+agent: Codex
+task: AEON mainline delivery KGI definition
+scope: docs/ai-agents/kpi.md, docs/agents/governance.md, scripts/aeon-dispatch.sh
+evidence:
+  - type: file
+    reference: scripts/aeon-dispatch.sh
+    summary: Claude Code から同一ターミナルで Codex 担当ロールを呼び出す入口を定義済み
+  - type: file
+    reference: docs/agents/governance.md
+    summary: Governance は KGI / KPI review を責務に持ち、AEON の最上位指標を参照できる位置にある
+  - type: file
+    reference: docs/ai-agents/kpi.md
+    summary: GitHub / Claude telemetry / manual mapping の正本として KPI を集約していた
+confidence: high
+tradeoff: KGI を 1 本に絞ることで評価軸は明快になる一方、補助 KPI を併記しないと途中課題の切り分けが難しくなる
+decision: AEON の最上位 KGI を `AEON Mainline Delivery Completion Rate` とし、Claude Code → Codex → PR → main の完了率で測る
+follow_up: 30 日 or 10 deliveries の観測後に target 値を Governance で再評価する
+```
+
+```text
+id: EV-20260530-003
+date: 2026-05-30
+agent: Codex
+task: AEON dispatcher for same-terminal Codex invocation from Claude Code
+scope: scripts/aeon-dispatch.sh, scripts/codex-generator.sh, scripts/codex-exec.sh, .claude/agent-config.sh
+evidence:
+  - type: file
+    reference: scripts/codex-generator.sh
+    summary: Generator 入口は既に存在し、Claude Code から同一端末で呼び出す前提を持っていた
+  - type: file
+    reference: scripts/codex-exec.sh
+    summary: Research / Planner / Architect / Reviewer / Evaluator の non-interactive Codex 入口が既に揃っていた
+  - type: file
+    reference: .claude/agent-config.sh
+    summary: worktree / branch / active-work の共通設定値が SSoT 化されていた
+confidence: high
+tradeoff: 1 本の dispatcher で入口を揃えることで運用は単純になる一方、ロール判定とパスの増加に応じて保守範囲が広がる
+decision: Claude Code 側からは `scripts/aeon-dispatch.sh` を単一入口にし、Codex 担当ロールを同一端末で起動する
+follow_up: 将来 role mapping が増えたら `.claude/agent-config.sh` から role table を読み込む方式を検討する
+```
+
+```text
+id: EV-20260530-002
+date: 2026-05-30
+agent: Codex
+task: Codex exec runtime extension for reviewer and evaluator
+scope: scripts/codex-exec.sh, scripts/codex-reviewer.sh, scripts/codex-evaluator.sh, docs/agents/reviewer.md, docs/agents/evaluator.md, .claude/agents/reviewer.md, .claude/agents/evaluator.md
+evidence:
+  - type: file
+    reference: docs/agents/reviewer.md
+    summary: Reviewer agent の責務と sprint review / external PR review の2モードが既に詳細定義されていた
+  - type: file
+    reference: docs/agents/evaluator.md
+    summary: Evaluator agent の責務と Playwright ベースの評価フローが既に詳細定義されていた
+  - type: file
+    reference: .claude/agents/reviewer.md
+    summary: runtime 定義は Reviewer を別ロールとして公開していた
+  - type: file
+    reference: .claude/agents/evaluator.md
+    summary: runtime 定義は Evaluator を別ロールとして公開していた
+  - type: command
+    reference: bash -n scripts/codex-exec.sh
+    summary: 既存の role dispatcher に新規 role を追加しても構文上は問題ないことを確認済み
+confidence: high
+tradeoff: reviewer / evaluator も同一ディスパッチ基盤に載せることで運用は揃う一方、各 role のプロンプトが増えるほど dispatcher が長くなる
+decision: codex exec の runtime wrapper を reviewer / evaluator まで拡張し、role-specific entrypoint を用意する
+follow_up: 役割が増えたら `scripts/codex-*.sh` の共通化を検討する
+```
+
+```text
+id: EV-20260530-001
+date: 2026-05-30
+agent: Codex
+task: Codex exec non-interactive runtime sync
+scope: .claude/agents, scripts/codex-exec.sh, scripts/codex-research.sh, scripts/codex-planner.sh, scripts/codex-architect.sh, docs/agents/research.md, docs/agents/architect.md
+evidence:
+  - type: file
+    reference: docs/agents/research.md
+    summary: Research agent の責務と出力先が既に詳細定義として存在していた
+  - type: file
+    reference: docs/agents/architect.md
+    summary: Architect agent の責務と出力先が既に詳細定義として存在していた
+  - type: file
+    reference: .claude/agents/
+    summary: runtime 定義に research / architect が欠けていた
+  - type: file
+    reference: scripts/codex-generator.sh
+    summary: 既存の Codex ラッパーは対話型 Generator 専用で、非対話 exec ラッパーは存在しなかった
+  - type: command
+    reference: codex exec --help
+    summary: Codex CLI は `exec` サブコマンドで非対話実行し、`--sandbox workspace-write` と `--cd` が使えることを確認した
+confidence: high
+tradeoff: research/planner/architect の役割を個別スクリプトに分けることで呼び出しは明示的になる一方、将来の役割追加時には薄い wrapper が増える
+decision: non-interactive Codex は `codex exec` を正にして role-specific wrapper を追加し、runtime 定義も `.claude/agents` 側に同期する
+follow_up: 将来必要なら Evaluator / Reviewer 向けの `codex exec` ラッパーも同じ方式で追加する
+```
+
+```text
 id: EV-20260529-003
 date: 2026-05-29
 agent: Claude Code (orchestrator)
@@ -151,6 +402,81 @@ confidence: medium
 tradeoff: repo 全体探索を避けたため、指定範囲外に同種設定が残っている可能性は未確認
 decision: Agent 役割、読取範囲、Evidence 必須化、repo 全体探索禁止を標準化
 follow_up: 実運用後に ADR 化が必要か Governance が判断する
+```
+
+```text
+id: EV-20260529-004
+date: 2026-05-29
+agent: Governance
+task: Claude Code KPI / Grafana observability design
+scope: AGENTS.md, docs/ai-agents/kpi.md, docs/agents/governance.md, monitoring/prometheus/prometheus.yml, monitoring/grafana/provisioning/dashboards/json/monitoring-main.json, docs/schemas/evaluation-package-v1.yaml
+evidence:
+  - type: file
+    reference: AGENTS.md
+    summary: KPI の正本を 1 ファイルに固定する方針を追記
+  - type: file
+    reference: docs/agents/governance.md
+    summary: Governance の metric 定義を docs/ai-agents/kpi.md 参照に分離
+  - type: file
+    reference: monitoring/prometheus/prometheus.yml
+    summary: 既存の Prometheus 収集基盤があり、追加 exporter を載せる土台がある
+  - type: file
+    reference: docs/schemas/evaluation-package-v1.yaml
+    summary: Evaluator の合否と evidence 形式が既に schema 化されている
+  - type: external
+    reference: https://docs.anthropic.com/en/docs/claude-code/monitoring-usage
+    summary: Claude Code telemetry で session / token / cost 系メトリクスが観測可能
+  - type: external
+    reference: https://docs.anthropic.com/en/api/data-usage-cost-api
+    summary: Anthropic Admin API は個人アカウントでは利用不可
+confidence: high
+tradeoff: 個人 Pro Max では公式請求原本は取れないため、token/cost は telemetry proxy と manual mapping に分離する必要がある
+decision: docs/ai-agents/kpi.md を KPI 正本とし、GitHub direct metrics / Claude telemetry / manual mapping / unavailable metrics を分離して設計する
+follow_up: GitHub collector と Claude telemetry collector の実装計画を別 PR で具体化する
+```
+
+```text
+id: EV-20260530-012
+date: 2026-05-30
+agent: Agent
+task: AEON dispatcher smoke validation
+scope: scripts/aeon-delivery.sh, scripts/aeon-dispatch.sh, scripts/codex-generator.sh, docs/ai-agents/evidence-registry.md, tasks/todo.md
+evidence:
+  - type: command
+    reference: bash scripts/aeon-delivery.sh --smoke "AEON smoke validation: start all stages and return no-op reports only. Do not modify files. Do not inspect beyond what is needed to confirm the runner path. Stop after the stage sequence completes or the first blocker is found."
+    summary: research -> planner -> architect -> generator -> evaluator -> reviewer の smoke ルートが同一ターミナルから完走し、generator は no-op、reviewer は REQUEST_CHANGES の smoke 応答を返した
+  - type: file
+    reference: /tmp/aeon-delivery-20260530-052601.log
+    summary: delivery run の complete log が保存されている
+  - type: file
+    reference: tasks/todo.md
+    summary: AEON ディスパッチャ行を完了側へ移動した
+confidence: high
+tradeoff: smoke validation はレビュー判定の実体ではなく、起動経路と run loop の到達性確認に限定される
+decision: AEON delivery/release runner は smoke 完走まで確認でき、同一ターミナルからの Codex 呼び出し経路は実用可能と判断する
+follow_up: live PR がある場合のみ `scripts/aeon-release.sh <PR番号>` で release 実行に進める
+```
+
+```text
+id: EV-20260530-013
+date: 2026-05-30
+agent: Agent
+task: AEON operation guide canonicalization
+scope: docs/ai-agents/aeon-operation.md, docs/ai-agents/aeon-routing.md, docs/ai-agents/aeon-delivery.md, docs/ai-agents/aeon-release.md, docs/onboarding/claude-code.md, docs/ai-agents/agent-roles.md, tasks/todo.md
+evidence:
+  - type: file
+    reference: docs/ai-agents/aeon-operation.md
+    summary: delivery と release を 1 枚にまとめた canonical operating procedure を追加
+  - type: file
+    reference: docs/ai-agents/aeon-routing.md
+    summary: routing index から canonical operation guide へ誘導した
+  - type: file
+    reference: docs/onboarding/claude-code.md
+    summary: onboarding から canonical operation guide を参照するよう更新した
+confidence: high
+tradeoff: 既存の aeon-* ドキュメントは軽量索引として残し、重複説明は参照誘導に寄せた
+decision: AEON の運用手順は `docs/ai-agents/aeon-operation.md` を正本とし、delivery / release / onboarding はそこへ集約する
+follow_up: 新しい AEON 変更はまず operation guide と evidence-registry を更新してから関連索引へ反映する
 ```
 
 ## Review Rules

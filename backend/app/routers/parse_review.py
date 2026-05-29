@@ -268,6 +268,8 @@ async def approve_review(
             for m in result.movements
         ],
         skipped_count=len(skipped_payload) + result.skipped,
+        # QA 2026-05-30 (Option Z): 在庫を動かさず記録した仕入元オファー件数
+        offers_recorded=result.offers_recorded,
         # Sprint 9 / F9 v1.2: Phase A 並走時に UI が warning toast を出すための情報
         skipped_stock_update=result.stock_quantity_skipped,
         phase=str(result.phase),

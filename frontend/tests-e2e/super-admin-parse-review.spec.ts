@@ -124,7 +124,9 @@ test.describe("Sprint 6 / F6 — /super-admin/inbound/:id/review", () => {
     // 行 0 のみ items に含まれる
     expect(approveBody.items).toHaveLength(1);
     expect(approveBody.items[0].product_id).toBe(501);
-    expect(approveBody.items[0].delta_qty).toBe(3);
+    // QA 2026-05-30: 差分数量列を撤去。承認は中央在庫を動かさず（在庫は目安）、
+    // delta_qty=0 で送り backend は public.inventory のオファーのみ記録する (Option Z)。
+    expect(approveBody.items[0].delta_qty).toBe(0);
   });
 
   test("AC6.4: 差戻し UI で空白 reason → API 呼び出されずエラー", async ({
