@@ -211,9 +211,9 @@ Completion Criteria:
 
 ## Claude Code / Codex Definition Sync Policy
 
-The `docs/agents/*` files are Codex runtime definitions for the new pipeline.
+The `.claude/agents/*` files are the runtime definitions for the new pipeline.
 
-Existing `.claude/agents/*` files use the older Claude Code sprint pipeline and may differ in ordering and responsibilities. This setup does not modify `.claude/agents/*` to avoid destructive changes.
+The `docs/agents/*` files are the detailed reference docs for the same roles. They should stay aligned, but the runtime source of truth is `.claude/agents/*`.
 
 Future Governance work should evaluate whether Claude Code and Codex agent definitions should be synchronized. Any synchronization must happen in a separate PR.
 
