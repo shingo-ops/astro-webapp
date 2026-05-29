@@ -105,7 +105,7 @@ async def _upsert_inventory_offer(
                 (supplier_id, product_id, condition, quantity, unit_price, unit,
                  status, source, offered_at, expires_at)
             VALUES (:sid, :pid, :cond, :qty, :up, :unit, 'in_stock', 'f6_approved',
-                    NOW(), NOW() + (:exp_hours * INTERVAL '1 hour'))
+                    NOW(), NOW() + make_interval(hours => :exp_hours))
             ON CONFLICT (supplier_id, product_id, condition) DO UPDATE SET
                 quantity = EXCLUDED.quantity,
                 unit_price = EXCLUDED.unit_price,
@@ -113,7 +113,7 @@ async def _upsert_inventory_offer(
                 status = EXCLUDED.status,
                 source = 'f6_approved',
                 offered_at = NOW(),
-                expires_at = NOW() + (:exp_hours * INTERVAL '1 hour'),
+                expires_at = NOW() + make_interval(hours => :exp_hours),
                 updated_at = NOW()
             """
         ),
