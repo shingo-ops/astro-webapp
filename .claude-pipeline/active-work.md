@@ -17,6 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/fix-backend-audit-1097 | backend pip audit remediation (#1097) | 2026-05-29 13:05 | IN_PROGRESS | | |
+| feature/morimoto/fix-schema-check-catchup-lint | schema catch-up lint for ADR-036 | 2026-05-29 14:27 | IN_PROGRESS | | |
 ---
 
 ## 記入例
