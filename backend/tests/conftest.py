@@ -68,9 +68,16 @@ async def test_engine():
     def rewrite_ilike_for_sqlite(conn, cursor, statement, parameters, context, executemany):
         if "ILIKE" in statement:
             statement = statement.replace(" ILIKE ", " LIKE ").replace("\nILIKE ", "\nLIKE ")
-        # SQLite はスキーマプレフィックスを持たない。public.users → users に書き換える。
+        # SQLite はスキーマプレフィックスを持たない。スキーマ修飾名をテーブル名に書き換える。
         if "public.users" in statement:
             statement = statement.replace("public.users", "users")
+        if "public.permissions" in statement:
+            statement = statement.replace("public.permissions", "permissions")
+        if "public.data_access_events" in statement:
+            statement = statement.replace("public.data_access_events", "data_access_events")
+        # SQLite は FOR UPDATE をサポートしない（ファイルレベルロックで代替）。
+        if " FOR UPDATE" in statement:
+            statement = statement.replace(" FOR UPDATE", "")
         return statement, parameters
 
     yield engine
@@ -597,6 +604,18 @@ async def setup_test_db(test_engine):
                 category VARCHAR(50) NOT NULL
             )
         """))
+        # パーミッションマスタを全件シード（admin ユーザーの load_user_permissions フォールバック用）
+        for perm_key in sorted(ALL_TEST_PERMISSIONS):
+            parts = perm_key.split(".", 1)
+            resource = parts[0] if len(parts) == 2 else perm_key
+            action = parts[1] if len(parts) == 2 else "manage"
+            await conn.execute(text("""
+                INSERT OR IGNORE INTO permissions (key, resource, action, description, category)
+                VALUES (:key, :resource, :action, :description, :category)
+            """), {
+                "key": perm_key, "resource": resource, "action": action,
+                "description": perm_key, "category": resource,
+            })
         # ロール
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS roles (
@@ -671,7 +690,18 @@ async def setup_test_db(test_engine):
                 notes TEXT,
                 release_date DATE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                jan_code VARCHAR(20),
+                card_number VARCHAR(50),
+                expansion_code VARCHAR(20),
+                rarity VARCHAR(20),
+                language VARCHAR(10),
+                unit_price_usd NUMERIC(15, 2),
+                unit_price_eur NUMERIC(15, 2),
+                image_url VARCHAR(500),
+                is_archived BOOLEAN DEFAULT FALSE,
+                archived_at TIMESTAMP,
+                supplier_default_id INTEGER
             )
         """))
         await conn.execute(text("""
