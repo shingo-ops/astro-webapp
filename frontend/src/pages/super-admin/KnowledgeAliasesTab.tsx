@@ -68,6 +68,59 @@ export default function KnowledgeAliasesTab() {
   const [aliasSearch, setAliasSearch] = useState("");
   const [aliasError, setAliasError] = useState("");
 
+  // ---- 仕入先別 Gemini プロンプト (ADR-085) ----
+  const [suppliers, setSuppliers] = useState<{ id: number; name: string }[]>([]);
+  const [promptSupplierId, setPromptSupplierId] = useState<number | null>(null);
+  const [promptText, setPromptText] = useState("");
+  const [promptActive, setPromptActive] = useState(true);
+  const [promptMsg, setPromptMsg] = useState("");
+  const [promptError, setPromptError] = useState("");
+  const [promptSaving, setPromptSaving] = useState(false);
+
+  const loadSuppliers = async () => {
+    try {
+      const data = await api.get<{ id: number; name: string }[]>(
+        "/super-admin/suppliers?per_page=500",
+      );
+      setSuppliers(data);
+    } catch (e) {
+      setPromptError(e instanceof Error ? e.message : t("common.fetchError"));
+    }
+  };
+
+  const loadPrompt = async (supplierId: number) => {
+    setPromptError("");
+    setPromptMsg("");
+    try {
+      const data = await api.get<{ prompt: string; is_active: boolean }>(
+        `/super-admin/suppliers/${supplierId}/prompt`,
+      );
+      setPromptText(data.prompt);
+      setPromptActive(data.is_active);
+    } catch (e) {
+      setPromptError(e instanceof Error ? e.message : t("common.fetchError"));
+    }
+  };
+
+  const savePrompt = async (e: FormEvent) => {
+    e.preventDefault();
+    if (promptSupplierId === null) return;
+    setPromptError("");
+    setPromptMsg("");
+    setPromptSaving(true);
+    try {
+      await api.put(`/super-admin/suppliers/${promptSupplierId}/prompt`, {
+        prompt: promptText,
+        is_active: promptActive,
+      });
+      setPromptMsg(t("common.saved"));
+    } catch (e) {
+      setPromptError(e instanceof Error ? e.message : t("common.saveError"));
+    } finally {
+      setPromptSaving(false);
+    }
+  };
+
   const loadRules = async (q?: string) => {
     try {
       const data = await api.get<KnowledgeRule[]>(
@@ -93,6 +146,7 @@ export default function KnowledgeAliasesTab() {
   useEffect(() => {
     loadRules();
     loadAliases();
+    loadSuppliers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -185,6 +239,65 @@ export default function KnowledgeAliasesTab() {
 
   return (
     <div className="super-admin-knowledge-tab">
+      {/* ============ 仕入先別 Gemini プロンプト (ADR-085) ============ */}
+      <section style={{ marginBottom: "var(--space-8)" }}>
+        <h3>{t("superAdmin.knowledge.promptSection")}</h3>
+        <p style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)" }}>
+          {t("superAdmin.knowledge.promptHelp")}
+        </p>
+        {promptError && <div className="error-message">{promptError}</div>}
+        <form onSubmit={savePrompt} style={{ margin: "0.5rem 0" }}>
+          <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", marginBottom: "var(--space-2)", flexWrap: "wrap" }}>
+            <label>
+              {t("superAdmin.suppliersAdmin.fields.name")}:{" "}
+              <select
+                value={promptSupplierId ?? ""}
+                data-testid="supplier-prompt-select"
+                onChange={(e) => {
+                  const id = e.target.value ? Number(e.target.value) : null;
+                  setPromptSupplierId(id);
+                  setPromptText("");
+                  setPromptMsg("");
+                  if (id !== null) loadPrompt(id);
+                }}
+              >
+                <option value="">—</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={promptActive}
+                onChange={(e) => setPromptActive(e.target.checked)}
+              />{" "}
+              {t("superAdmin.suppliersAdmin.fields.isActive")}
+            </label>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={promptSupplierId === null || promptSaving}
+            >
+              {promptSaving ? t("common.saving") : t("common.save")}
+            </button>
+            {promptMsg && <span style={{ color: "var(--text-secondary)" }}>{promptMsg}</span>}
+          </div>
+          <textarea
+            value={promptText}
+            data-testid="supplier-prompt-textarea"
+            disabled={promptSupplierId === null}
+            onChange={(e) => setPromptText(e.target.value)}
+            placeholder={t("superAdmin.knowledge.promptPlaceholder")}
+            rows={16}
+            style={{ width: "100%", fontFamily: "var(--font-mono, monospace)", fontSize: "var(--font-sm)" }}
+          />
+        </form>
+      </section>
+
       {/* ============ Rules section ============ */}
       <section style={{ marginBottom: "var(--space-8)" }}>
         <h3>{t("superAdmin.knowledge.rulesSection")}</h3>

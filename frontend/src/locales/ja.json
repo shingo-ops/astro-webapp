@@ -1219,7 +1219,7 @@
     "subtitle": "マーケットプレイス中央マスタの編集（全テナント共有）",
     "accessDenied": "このページには Jarvis 運用 admin（中央 admin）のみアクセスできます。",
     "tabs": {
-      "knowledge": "正規化ルール / 別名",
+      "knowledge": "解析プロンプト / ルール",
       "tcg": "TCG シリーズ",
       "dex": "ポケモン / トレーナー図鑑",
       "suppliers": "仕入元",
@@ -1227,6 +1227,9 @@
     },
     "knowledge": {
       "title": "正規化辞書 (knowledge_rules) + 仕入元別名 (supplier_aliases)",
+      "promptSection": "仕入先別 解析プロンプト",
+      "promptHelp": "仕入先ごとに Gemini 解析用プロンプトを管理します（スプレッドシートから取込済み）。",
+      "promptPlaceholder": "この仕入先の Gemini 解析プロンプトを入力",
       "rulesSection": "正規化ルール",
       "aliasesSection": "仕入元別名",
       "newRule": "ルール新規作成",
