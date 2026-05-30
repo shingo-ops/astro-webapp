@@ -106,3 +106,23 @@ groups:
         annotations:
           summary: "バックエンド P99 レイテンシが高い"
           description: "P99 レスポンスタイムが {{ $value | printf \"%.2f\" }}s を超えています（閾値: 2.0s）"
+
+      # FastAPI バックエンドの同時処理中リクエスト数（workers=1 前提）
+      - alert: BackendWorkerSaturated
+        expr: http_requests_in_flight{job="backend"} > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "バックエンド worker が飽和し始めています"
+          description: "同時処理中リクエスト数が 1 を超えています。workers=1 運用では待ち行列が発生している可能性があります。"
+
+      # SSE 接続数が多いと worker 余力の確認が必要になる
+      - alert: BackendSseConnectionsHigh
+        expr: sum(sse_connections_active{job="backend"}) > 8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "バックエンド SSE 接続数が多い"
+          description: "SSE 接続数が 8 を超えています。SSE は worker を占有しない一方で、接続とメモリを消費します。"

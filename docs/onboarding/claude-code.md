@@ -76,6 +76,10 @@ AEON ルートを使う場合は、まず [AEON Operation Guide](../ai-agents/ae
 まとめて進める場合は `bash scripts/aeon-delivery.sh [--generator=exec|auto|interactive] "..."` を使う。これで research → planner → architect → generator → evaluator → reviewer を同じ terminal session で順に回せる。
 `main` へ昇格する場合は `bash scripts/aeon-release.sh [PR番号]` を使う。
 
+AEON ルートを使う場合は、まず [AEON Operation Guide](../ai-agents/aeon-operation.md) を読む。Claude Code の同じ terminal session から `bash scripts/aeon-dispatch.sh <role> ...` を呼ぶ。`research / planner / architect / reviewer / evaluator` は Codex に委譲し、`generator` は既存の Generator wrapper を使う。
+まとめて進める場合は `bash scripts/aeon-delivery.sh [--generator=exec|auto|interactive] "..."` を使う。これで research → planner → architect → generator → evaluator → reviewer を同じ terminal session で順に回せる。
+`main` へ昇格する場合は `bash scripts/aeon-release.sh [PR番号]` を使う。
+
 呼び出し例:
 - 「Planner で機能 X の仕様書を起こして」
 - 「次のスプリント実装して」（Generator）

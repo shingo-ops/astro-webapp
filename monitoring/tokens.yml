@@ -78,6 +78,8 @@ thresholds:
   # backend/app/metrics.py が出力する http_requests_total を使用
   backend_5xx_per_1m:      5    # BackendHighErrorRate: rate(...[1m]) > 5 (5xx)
   backend_p99_latency_sec: 2.0  # BackendHighLatency: histogram_quantile(0.99) > 2.0s
+  backend_inflight_warning: 1    # BackendWorkerSaturated: http_requests_in_flight > 1
+  backend_sse_warning:      8    # BackendSseConnectionsHigh: sum(sse_connections_active) > 8
 
   # ログ異常検知（loki/rules/jarvis/alerts.yml）
   brute_force_per_5m:     20    # BruteForceAttempt: > 20
@@ -97,4 +99,6 @@ for_durations:
   brute_force:       "1m"   # BruteForceAttempt
   auth_failure:      "5m"   # SustainedAuthFailure
   backend_error:     "2m"   # BackendErrorSpike
+  backend_worker:    "2m"   # BackendWorkerSaturated
+  backend_sse:       "5m"   # BackendSseConnectionsHigh
   db_log_error:      "1m"   # DatabaseError

@@ -1264,7 +1264,7 @@ async def stream_leads_updates(
         subscribe_leads,
     )
 
-    if not await increment_connection(tenant_id):
+    if not await increment_connection("leads", tenant_id):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="SSE接続数が上限に達しています",
@@ -1290,7 +1290,7 @@ async def stream_leads_updates(
                     break
         finally:
             await gen.aclose()
-            await decrement_connection(tenant_id)
+            await decrement_connection("leads", tenant_id)
 
     return StreamingResponse(
         event_generator(),
