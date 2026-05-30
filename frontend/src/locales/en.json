@@ -777,6 +777,7 @@
     "importCandidateCount": "{{count}} candidates",
     "importOccurrences": "Occurrences",
     "importSample": "Source sample",
+    "importCategory": "Category (optional)",
     "importApply": "Register {{count}} selected to product master",
     "importDone": "Registered {{count}} products to the master.",
     "newProduct": "New Product",

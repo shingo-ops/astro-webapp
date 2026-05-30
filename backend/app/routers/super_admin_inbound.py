@@ -225,9 +225,14 @@ async def apply_product_candidates(
 ):
     """選択された商品名候補を public.products へ一括登録する。
 
-    - 同名（name 完全一致）が既に存在する場合はスキップ（冪等）
+    - 同名（name 完全一致）が既に存在する場合はスキップ
+      （NOT EXISTS による重複防止。products.name に UNIQUE は無いため
+      厳密な同時実行排他ではないが、通常運用では実質冪等）
     - category は任意。指定があれば全件に同じ分類を付与する
     """
+    # public.products.name は VARCHAR(255)。超過名はバッチ全体を巻き込む
+    # 制約違反（→全件ロールバック）になるため、登録対象から除外する。
+    _NAME_MAX_LEN = 255
     category = (payload.category or "").strip() or None
     inserted = 0
     skipped = 0
@@ -237,6 +242,9 @@ async def apply_product_candidates(
         if not name or name in seen:
             continue
         seen.add(name)
+        if len(name) > _NAME_MAX_LEN:
+            skipped += 1
+            continue
         result = await db.execute(
             text(
                 "INSERT INTO public.products (name, category) "

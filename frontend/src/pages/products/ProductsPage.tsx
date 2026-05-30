@@ -142,9 +142,10 @@ export default function ProductsPage() {
       const data = await api.get<{ candidates: InboundProductCandidate[]; total: number }>(
         "/super-admin/inbound/product-candidates",
       );
-      setCandidates(data.candidates);
+      const list = Array.isArray(data.candidates) ? data.candidates : [];
+      setCandidates(list);
       // デフォルトは全選択（オペレータがノイズを外す運用）
-      setImportSelected(new Set(data.candidates.map((c) => c.name)));
+      setImportSelected(new Set(list.map((c) => c.name)));
     } catch (e) {
       setImportError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
@@ -401,7 +402,7 @@ export default function ProductsPage() {
                     {t("products.importCandidateCount", { count: candidates.length })}
                   </span>
                   <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
-                    <label style={{ fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("leads.type")}</label>
+                    <label style={{ fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.importCategory")}</label>
                     <input
                       style={{ width: "var(--input-width-product-name)" }}
                       placeholder={t("common.optional")}

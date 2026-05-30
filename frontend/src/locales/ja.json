@@ -777,6 +777,7 @@
     "importCandidateCount": "候補 {{count}} 件",
     "importOccurrences": "出現回数",
     "importSample": "受信本文サンプル",
+    "importCategory": "分類（任意）",
     "importApply": "選択した {{count}} 件を商品マスターに登録",
     "importDone": "{{count}} 件を商品マスターに登録しました。",
     "newProduct": "新規登録",
