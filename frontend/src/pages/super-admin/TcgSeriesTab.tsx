@@ -162,8 +162,13 @@ export default function TcgSeriesTab() {
             <th>{t("superAdmin.tcg.fields.nameJa")}</th>
             <th>{t("superAdmin.tcg.fields.nameEn")}</th>
             <th>{t("superAdmin.tcg.fields.releaseDate")}</th>
-            <th>{t("common.edit")}</th>
-            <th>{t("common.delete")}</th>
+            {/* QA 2026-05-30: 編集/削除列はボタン幅だけに縮め、余った幅を名称列に回す */}
+            <th style={{ width: "1%", whiteSpace: "nowrap" }}>
+              {t("common.edit")}
+            </th>
+            <th style={{ width: "1%", whiteSpace: "nowrap" }}>
+              {t("common.delete")}
+            </th>
           </tr>
         </thead>
         <tbody>
