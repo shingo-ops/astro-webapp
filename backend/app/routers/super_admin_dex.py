@@ -13,6 +13,7 @@ API:
 """
 from __future__ import annotations
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
@@ -21,6 +22,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import require_super_admin
 from app.database import get_db
 from app.schemas.central_masters import (
+    DexImportApplyRequest,
+    DexImportApplyResponse,
+    DexImportEntry,
+    DexImportPreviewResponse,
     PokemonDexCreate,
     PokemonDexResponse,
     PokemonDexUpdate,
@@ -28,6 +33,7 @@ from app.schemas.central_masters import (
     TrainerDexResponse,
     TrainerDexUpdate,
 )
+from app.services import pokeapi_dex
 
 router = APIRouter()
 
@@ -164,3 +170,70 @@ async def delete_dex(
     if result.rowcount == 0:
         raise HTTPException(status_code=404, detail="図鑑エントリが見つかりません")
     await db.commit()
+
+
+# ============================================================================
+# ADR-084: PokeAPI 取込 (ポケモン図鑑のみ・手動トリガ)
+#   preview = 外部取得 + 既存突合 (DB書込なし) → 新規分を返す
+#   apply   = preview で得た新規分を INSERT (既存は ON CONFLICT DO NOTHING で不変)
+# ============================================================================
+_IMPORT_MAX_FETCH = 500
+
+
+@router.post(
+    "/super-admin/dex/pokemon/import/preview",
+    response_model=DexImportPreviewResponse,
+    dependencies=[Depends(require_super_admin)],
+)
+async def import_pokemon_preview(db: AsyncSession = Depends(get_db)):
+    rows = (
+        await db.execute(text("SELECT dex_number FROM public.pokemon_dex"))
+    ).scalars().all()
+    existing = {int(n) for n in rows}
+    try:
+        result = await pokeapi_dex.fetch_new_species(
+            existing, max_fetch=_IMPORT_MAX_FETCH
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"PokeAPI への接続に失敗しました: {exc}",
+        )
+    return DexImportPreviewResponse(
+        source="pokeapi",
+        source_count=result["source_count"],
+        db_count=len(existing),
+        added=[DexImportEntry(**e) for e in result["added"]],
+        added_count=result["added_count"],
+        truncated=result["truncated"],
+    )
+
+
+@router.post(
+    "/super-admin/dex/pokemon/import/apply",
+    response_model=DexImportApplyResponse,
+    dependencies=[Depends(require_super_admin)],
+)
+async def import_pokemon_apply(
+    payload: DexImportApplyRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    inserted = 0
+    for entry in payload.entries:
+        result = await db.execute(
+            text(
+                "INSERT INTO public.pokemon_dex "
+                "(dex_number, name_ja, name_en, generation) "
+                "VALUES (:dex_number, :name_ja, :name_en, :generation) "
+                "ON CONFLICT (dex_number) DO NOTHING"
+            ),
+            {
+                "dex_number": entry.dex_number,
+                "name_ja": entry.name_ja,
+                "name_en": entry.name_en,
+                "generation": entry.generation,
+            },
+        )
+        inserted += result.rowcount or 0
+    await db.commit()
+    return DexImportApplyResponse(inserted_count=inserted)

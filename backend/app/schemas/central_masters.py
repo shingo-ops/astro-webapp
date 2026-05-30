@@ -212,6 +212,35 @@ class TrainerDexResponse(TrainerDexCreate):
 
 
 # ============================================================================
+# PokeAPI 取込 (ADR-084) — ポケモン図鑑のみ
+# ============================================================================
+
+
+class DexImportEntry(BaseModel):
+    dex_number: int = Field(ge=1)
+    name_ja: str = Field(min_length=1, max_length=100)
+    name_en: Optional[str] = Field(default=None, max_length=100)
+    generation: Optional[int] = Field(default=None, ge=1, le=20)
+
+
+class DexImportPreviewResponse(BaseModel):
+    source: str = "pokeapi"
+    source_count: int  # PokeAPI 側の総数
+    db_count: int  # 既存 pokemon_dex 件数
+    added: list[DexImportEntry]  # DB に無い新規分
+    added_count: int
+    truncated: bool = False  # 新規が上限を超えて打ち切ったか
+
+
+class DexImportApplyRequest(BaseModel):
+    entries: list[DexImportEntry] = Field(default_factory=list)
+
+
+class DexImportApplyResponse(BaseModel):
+    inserted_count: int
+
+
+# ============================================================================
 # public.suppliers (拡張: supplier_type / default_language)
 # ============================================================================
 

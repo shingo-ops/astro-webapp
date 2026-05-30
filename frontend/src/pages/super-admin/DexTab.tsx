@@ -24,6 +24,22 @@ interface DexEntry {
   era?: string | null;
 }
 
+// ADR-084: PokeAPI 取込
+interface ImportEntry {
+  dex_number: number;
+  name_ja: string;
+  name_en: string | null;
+  generation: number | null;
+}
+
+interface ImportPreview {
+  source_count: number;
+  db_count: number;
+  added: ImportEntry[];
+  added_count: number;
+  truncated: boolean;
+}
+
 export default function DexTab() {
   const { t } = useTranslation();
   const [kind, setKind] = useState<DexKind>("pokemon");
@@ -32,6 +48,10 @@ export default function DexTab() {
   const [editing, setEditing] = useState<DexEntry | null>(null);
   const [editValues, setEditValues] = useState<Partial<DexEntry>>({});
   const [error, setError] = useState("");
+  // ADR-084: PokeAPI 取込
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
 
   const load = async () => {
     try {
@@ -71,6 +91,49 @@ export default function DexTab() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("common.saveError"));
+    }
+  };
+
+  // ADR-084: PokeAPI から最新を取得し、DB に無い新規分を差分プレビュー（DB書込なし）
+  const runImportPreview = async () => {
+    setError("");
+    setImportMsg("");
+    setImporting(true);
+    try {
+      const data = await api.post<ImportPreview>(
+        "/super-admin/dex/pokemon/import/preview",
+        {},
+      );
+      setImportPreview(data);
+      if (data.added_count === 0) {
+        setImportMsg(t("superAdmin.dex.import.upToDate"));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("common.fetchError"));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // プレビューで得た新規分のみ一括 INSERT（既存は不変）
+  const runImportApply = async () => {
+    if (!importPreview || importPreview.added_count === 0) return;
+    setError("");
+    setImporting(true);
+    try {
+      const res = await api.post<{ inserted_count: number }>(
+        "/super-admin/dex/pokemon/import/apply",
+        { entries: importPreview.added },
+      );
+      setImportMsg(
+        t("superAdmin.dex.import.applied", { count: res.inserted_count }),
+      );
+      setImportPreview(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("common.saveError"));
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -144,6 +207,85 @@ export default function DexTab() {
           {t("common.search")}
         </button>
       </div>
+
+      {/* ADR-084: PokeAPI 取込 (ポケモン図鑑のみ) */}
+      {kind === "pokemon" && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--space-2)",
+            flexWrap: "wrap",
+            margin: "0.5rem 0",
+          }}
+        >
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={importing}
+            onClick={runImportPreview}
+            data-testid="dex-import-preview-btn"
+          >
+            {t("superAdmin.dex.import.previewBtn")}
+          </button>
+          {importMsg && (
+            <span style={{ color: "var(--text-secondary)" }}>{importMsg}</span>
+          )}
+        </div>
+      )}
+
+      {importPreview && importPreview.added_count > 0 && (
+        <div
+          className="dex-import-preview"
+          data-testid="dex-import-preview"
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-sm)",
+            padding: "var(--space-3)",
+            margin: "0.5rem 0",
+            background: "var(--bg-subtle)",
+          }}
+        >
+          <div style={{ fontWeight: "var(--font-weight-semi)" }}>
+            {t("superAdmin.dex.import.diffSummary", {
+              count: importPreview.added_count,
+              source: importPreview.source_count,
+              db: importPreview.db_count,
+            })}
+          </div>
+          {importPreview.truncated && (
+            <div style={{ color: "var(--color-warning)" }}>
+              {t("superAdmin.dex.import.truncated", { max: 500 })}
+            </div>
+          )}
+          <ul
+            style={{
+              maxHeight: "12rem",
+              overflowY: "auto",
+              margin: "var(--space-2) 0",
+              paddingLeft: "var(--space-4)",
+            }}
+          >
+            {importPreview.added.slice(0, 100).map((e) => (
+              <li key={e.dex_number}>
+                #{e.dex_number} {e.name_ja}
+                {e.name_en ? ` (${e.name_en})` : ""}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={importing}
+            onClick={runImportApply}
+            data-testid="dex-import-apply-btn"
+          >
+            {t("superAdmin.dex.import.applyBtn", {
+              count: importPreview.added_count,
+            })}
+          </button>
+        </div>
+      )}
 
       {editing && (
         <form onSubmit={saveEdit} className="modal-inline" style={{ border: "1px solid var(--border-color)", padding: "var(--space-2)", margin: "0.5rem 0" }}>
