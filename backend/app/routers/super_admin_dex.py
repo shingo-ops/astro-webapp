@@ -194,10 +194,11 @@ async def import_pokemon_preview(db: AsyncSession = Depends(get_db)):
         result = await pokeapi_dex.fetch_new_species(
             existing, max_fetch=_IMPORT_MAX_FETCH
         )
-    except httpx.HTTPError as exc:
+    except (httpx.HTTPError, ValueError) as exc:
+        # ValueError は resp.json() の JSONDecodeError 等を含む（500 でなく 502 にする）
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"PokeAPI への接続に失敗しました: {exc}",
+            detail=f"PokeAPI からの取得に失敗しました: {exc}",
         )
     return DexImportPreviewResponse(
         source="pokeapi",
@@ -220,6 +221,10 @@ async def import_pokemon_apply(
 ):
     inserted = 0
     for entry in payload.entries:
+        # public.pokemon_dex は name_ja / name_en とも NOT NULL。欠けた行は
+        # スキップして一括 INSERT 全体の失敗(NotNullViolation)を防ぐ。
+        if not entry.name_ja or not entry.name_en:
+            continue
         result = await db.execute(
             text(
                 "INSERT INTO public.pokemon_dex "

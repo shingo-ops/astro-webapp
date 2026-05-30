@@ -90,8 +90,10 @@ async def _fetch_species_detail(
     if gen_name.startswith("generation-"):
         generation = _GEN_ROMAN.get(gen_name.split("-", 1)[1])
 
-    if not name_ja:
-        # 日本語名が取れないものは取り込まない (DB は name_ja NOT NULL)
+    if not name_ja or not name_en:
+        # 日本語名・英語名のどちらかが取れないものは取り込まない。
+        # public.pokemon_dex は name_ja / name_en とも NOT NULL のため、欠落分を
+        # 混ぜると apply の一括 INSERT が NotNullViolation で丸ごと失敗する。
         return None
     return {
         "dex_number": dex_number,
