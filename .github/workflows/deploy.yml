@@ -151,7 +151,13 @@ jobs:
             # 旧プロジェクト名ハッシュ付きコンテナ（例: 6fc85fea3e3b_astro-webapp-frontend-1）が
             # 残留すると名前衝突で compose up が失敗するため、up の前に停止・削除する。
             docker ps -a --filter "name=astro-webapp-frontend" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
-            docker compose up -d --build --remove-orphans
+            # build と up を分離してダウンタイムを最小化する。
+            # --build を up と一体で実行すると旧コンテナ停止後にビルドが走り（最大2分程度）
+            # その間 nginx が 502 を返す問題があった（2026-05-30 障害）。
+            # build を先に完了させてから up（切り替えのみ）を実行することで
+            # ダウンタイムをコンテナ再起動の数秒に短縮する。
+            docker compose build
+            docker compose up -d --remove-orphans
 
             echo "Step 4: Waiting for backend to become healthy (max 120s)..."
             timeout 120 bash -c '
