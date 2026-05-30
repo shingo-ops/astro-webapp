@@ -813,6 +813,29 @@ async def _load_active_rules(db: AsyncSession) -> list[RuleRow]:
     ]
 
 
+async def _load_supplier_prompt(db: AsyncSession, supplier_id: int) -> str | None:
+    """public.supplier_prompts から当該 supplier の有効プロンプトを読む (ADR-085)。
+
+    テーブル未作成（未デプロイ環境）や行なし/空は None を返し、解析を止めない。
+    """
+    try:
+        result = await db.execute(
+            text(
+                "SELECT prompt FROM public.supplier_prompts "
+                "WHERE supplier_id = :sid AND is_active = TRUE"
+            ),
+            {"sid": supplier_id},
+        )
+    except Exception as exc:  # noqa: BLE001 - テーブル未作成等でも解析継続
+        logger.warning("[inventory_parser] supplier_prompts load skipped: %s", exc)
+        return None
+    row = result.mappings().first()
+    if not row:
+        return None
+    prompt = (row["prompt"] or "").strip()
+    return prompt or None
+
+
 async def parse_inventory_message(
     db: AsyncSession,
     raw_content: str,
@@ -864,11 +887,26 @@ async def parse_inventory_message(
         language=language,
     )
 
-    # Sprint 3 互換: tenant_id 未指定 or unparsed なし → rule_v1 のみで終了
-    if tenant_id is None or not base.unparsed:
+    # Sprint 3 互換: tenant_id 未指定 → rule_v1 のみで終了（LLM を呼ばない）
+    if tenant_id is None:
         return base
 
-    # LLM フォールバック経路
+    # ADR-085: 仕入先別プロンプトがあれば、メッセージ全文を Gemini で解析し rule_v1 を上書きする。
+    #   （スプレッドシート由来の全文解析プロンプト。budget HARD_STOP / LLM 失敗時は rule_v1 にフォールバック）
+    supplier_prompt = await _load_supplier_prompt(db, supplier_id)
+    if supplier_prompt:
+        return await _apply_supplier_prompt_llm(
+            db=db,
+            raw_content=raw_content,
+            base_result=base,
+            supplier_prompt=supplier_prompt,
+            tenant_id=tenant_id,
+            language=language,
+        )
+
+    # 従来のフォールバック経路: rule_v1 で unparsed があるときだけ LLM 再解析
+    if not base.unparsed:
+        return base
     return await _maybe_apply_llm_fallback(
         db=db,
         base_result=base,
@@ -1006,6 +1044,108 @@ async def _maybe_apply_llm_fallback(
         excludes=base_result.excludes,
         unparsed=remaining_unparsed,
         parse_engine="hybrid_rule_v1_llm_v1",
+    )
+
+
+async def _apply_supplier_prompt_llm(
+    db: AsyncSession,
+    *,
+    raw_content: str,
+    base_result: ParseResult,
+    supplier_prompt: str,
+    tenant_id: int,
+    language: str,
+) -> ParseResult:
+    """ADR-085: 仕入先別プロンプトでメッセージ全文を Gemini 解析する。
+
+    - budget HARD_STOP / NO_BUDGET_ROW → rule_v1 結果 (base_result) にフォールバック
+      (parse_engine='rule_v1_fallback_blocked')。HARD_STOP は admin に 1 回通知。
+    - LLM 設定なし / 呼び出し失敗 → base_result にフォールバック (graceful degrade)。
+    - 成功 → LLM 由来 items を採用し parse_engine='llm_supplier_prompt'。
+    """
+    from app.services import discord_notifier, llm_budget
+    from app.services.inventory_parser_llm import (
+        LLMConfigError,
+        LLMParseError,
+        parse_with_gemini,
+    )
+
+    # 月初リセット + budget チェック（_maybe_apply_llm_fallback と同方針）
+    try:
+        await llm_budget.reset_monthly_if_needed(db, tenant_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[inventory_parser] budget reset failed: %s", exc)
+
+    status = await llm_budget.check_budget(db, tenant_id)
+    if status in (
+        llm_budget.BudgetStatus.HARD_STOP,
+        llm_budget.BudgetStatus.NO_BUDGET_ROW,
+    ):
+        blocked = ParseResult(
+            items=base_result.items,
+            excludes=base_result.excludes,
+            unparsed=base_result.unparsed,
+            parse_engine="rule_v1_fallback_blocked",
+        )
+        if status == llm_budget.BudgetStatus.HARD_STOP:
+            snap = await llm_budget.get_budget_snapshot(db, tenant_id)
+            if snap is not None and snap.notify_admin:
+                try:
+                    await discord_notifier.notify_budget_exhausted(
+                        db,
+                        tenant_id,
+                        monthly_budget_usd=snap.monthly_budget_usd,
+                        current_month_usd=snap.current_month_usd,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("[inventory_parser] discord notify failed: %s", exc)
+        return blocked
+
+    # メッセージ全行を入力にする（空行は除外、line_no は 1 始まり）
+    all_lines = [
+        {"line_no": i + 1, "raw_line": ln}
+        for i, ln in enumerate(raw_content.splitlines())
+        if ln.strip()
+    ]
+    if not all_lines:
+        return base_result
+
+    try:
+        llm_result = await parse_with_gemini(
+            unparsed_lines=all_lines,
+            knowledge_snapshot=[],
+            language=language,
+            supplier_prompt=supplier_prompt,
+        )
+    except LLMConfigError as exc:
+        logger.info(
+            "[inventory_parser] LLM disabled (config): %s, rule_v1 fallback", exc
+        )
+        return base_result
+    except LLMParseError as exc:
+        logger.warning(
+            "[inventory_parser] supplier-prompt LLM failed: %s, rule_v1 fallback", exc
+        )
+        return base_result
+
+    try:
+        await llm_budget.record_cost(
+            db,
+            tenant_id,
+            input_tokens=llm_result.input_tokens,
+            output_tokens=llm_result.output_tokens,
+            model=llm_result.model,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[inventory_parser] record_cost failed: %s", exc)
+
+    items = [_to_parsed_item_from_llm(it) for it in llm_result.items]
+    items.sort(key=lambda x: x.line_no)
+    return ParseResult(
+        items=items,
+        excludes=base_result.excludes,
+        unparsed=[],
+        parse_engine="llm_supplier_prompt",
     )
 
 
