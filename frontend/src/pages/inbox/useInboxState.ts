@@ -530,6 +530,12 @@ export function useInboxState(): UseInboxStateReturn {
       });
   }, [conversations, statusTab, unreadOnly, followUpOnly, searchQuery]);
 
+  // 初期表示: 会話未選択かつ一覧が存在する場合、先頭を自動選択
+  useEffect(() => {
+    if (selectedLeadId !== null || convLoading || filteredConversations.length === 0) return;
+    selectLead(filteredConversations[0].lead_id);
+  }, [filteredConversations, selectedLeadId, convLoading, selectLead]);
+
   // ---------------------------------------------------------------------------
   // 送信
   // ---------------------------------------------------------------------------
