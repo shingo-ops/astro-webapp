@@ -11,6 +11,8 @@ from collections.abc import AsyncIterator
 
 import redis.asyncio as aioredis
 
+from app.metrics import SSE_CONNECTIONS_ACTIVE
+
 logger = logging.getLogger(__name__)
 
 # DB3 を SSE 専用に割り当て
@@ -20,27 +22,40 @@ SSE_REDIS_URL = _base.rsplit("/", 1)[0] + "/3"
 
 SSE_MAX_CONN_PER_TENANT = int(os.getenv("SSE_MAX_CONNECTIONS_PER_TENANT", "10"))
 
-_active: dict[int, int] = {}
+_active: dict[tuple[str, int], int] = {}
 _lock = asyncio.Lock()
 
 
-async def increment_connection(tenant_id: int) -> bool:
+async def increment_connection(stream: str, tenant_id: int) -> bool:
     async with _lock:
-        n = _active.get(tenant_id, 0)
+        key = (stream, tenant_id)
+        n = _active.get(key, 0)
         if n >= SSE_MAX_CONN_PER_TENANT:
-            logger.warning("SSE接続数上限: tenant_id=%s current=%d", tenant_id, n)
+            logger.warning(
+                "SSE接続数上限: stream=%s tenant_id=%s current=%d",
+                stream,
+                tenant_id,
+                n,
+            )
             return False
-        _active[tenant_id] = n + 1
+        _active[key] = n + 1
+        SSE_CONNECTIONS_ACTIVE.labels(stream=stream).inc()
         return True
 
 
-async def decrement_connection(tenant_id: int) -> None:
+async def decrement_connection(stream: str, tenant_id: int) -> None:
     async with _lock:
-        n = _active.get(tenant_id, 0)
+        key = (stream, tenant_id)
+        n = _active.get(key, 0)
         if n > 1:
-            _active[tenant_id] = n - 1
-        else:
-            _active.pop(tenant_id, None)  # 0 or 1 → remove entry
+            _active[key] = n - 1
+            SSE_CONNECTIONS_ACTIVE.labels(stream=stream).dec()
+            return
+        if n == 1:
+            _active.pop(key, None)
+            SSE_CONNECTIONS_ACTIVE.labels(stream=stream).dec()
+            return
+        logger.warning("SSE接続数の減算対象が存在しない: stream=%s tenant_id=%s", stream, tenant_id)
 
 
 def inbox_channel(tenant_id: int) -> str:

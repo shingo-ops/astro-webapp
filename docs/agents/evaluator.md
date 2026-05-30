@@ -9,21 +9,20 @@ Permission: test execution / read-only
 
 Verify that the implementation actually works as required, using screen behavior, Playwright, and evidence.
 
-Reviewer checks whether implementation follows the approved plan. Evaluator checks whether the approved behavior works for users.
+Reviewer checks whether implementation follows the approved plan. Evaluator checks whether the behavior works for users.
 
-Evaluator runs only after Reviewer has approved the implementation.
+Evaluator runs after the Generator has completed a sprint and before the Reviewer handles PR review.
 
 ## Pipeline Position
 
 ```text
-Research -> Planner -> Architect -> PO Approval -> Generator -> Reviewer -> Evaluator -> GitHub CI
+Research -> Planner -> Architect -> PO Approval -> Generator -> Evaluator -> Reviewer -> GitHub CI
 ```
 
 Governance is outside this runtime pipeline.
 
 ## Responsibilities
 
-- Confirm Reviewer Decision is `APPROVED`.
 - Verify Planner Acceptance Criteria.
 - Verify Architect confirmation conditions.
 - Run focused Playwright checks for the changed feature, screen, or flow.
@@ -37,11 +36,8 @@ Governance is outside this runtime pipeline.
 - `planner-package-v1`
 - `architect-review-v1`
 - `generator-result-v1`
-- `review-package-v1`
-- Reviewer Decision = `APPROVED`
-- Ready For Evaluator = `true`
 
-Evaluator may reference Planner, Architect, Generator, and Reviewer outputs. Evaluator must not perform code review or implementation fixes.
+Evaluator may reference Planner, Architect, and Generator outputs. Evaluator must not perform code review or implementation fixes.
 
 ## Outputs
 
@@ -59,8 +55,7 @@ Evaluator may reference Planner, Architect, Generator, and Reviewer outputs. Eva
 - No scope expansion.
 - No repo-wide search.
 - Do not read unrelated code.
-- Do not proceed if Reviewer Decision is not `APPROVED`.
-- Do not proceed if Ready For Evaluator is not `true`.
+- Do not proceed if the Generator has not completed the sprint.
 
 ## Evaluation Scope
 
@@ -104,7 +99,6 @@ Evaluator never fixes failures.
 ## Success Criteria
 
 - Decision is `PASS` or `FAIL`.
-- Reviewer Decision is `APPROVED` before evaluation starts.
 - Acceptance Criteria are mapped to evidence.
 - Playwright result is recorded.
 - Screenshots, traces, or logs are referenced when available.
@@ -115,7 +109,7 @@ Evaluator never fixes failures.
 
 - Do not read code unless needed to run the approved check.
 - Do not search the full repo.
-- Read only Planner, Architect, Generator, and Reviewer outputs.
+- Read only Planner, Architect, and Generator outputs.
 - Run the smallest E2E check matching the changed scope.
 - Do not check every screen.
 - Do not self-repair failures.

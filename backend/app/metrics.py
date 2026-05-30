@@ -1,7 +1,7 @@
 import time
 
 from fastapi import FastAPI, Request, Response
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 
 REQUEST_COUNT = Counter(
     "http_requests_total",
@@ -13,6 +13,17 @@ REQUEST_DURATION = Histogram(
     "http_request_duration_seconds",
     "HTTP request duration in seconds",
     ("method", "handler", "status"),
+)
+
+IN_FLIGHT_REQUESTS = Gauge(
+    "http_requests_in_flight",
+    "Current in-flight HTTP requests handled by this backend process",
+)
+
+SSE_CONNECTIONS_ACTIVE = Gauge(
+    "sse_connections_active",
+    "Current active SSE connections",
+    ("stream",),
 )
 
 
@@ -30,6 +41,7 @@ def register_metrics(app: FastAPI) -> None:
         if request.url.path == "/metrics":
             return await call_next(request)
 
+        IN_FLIGHT_REQUESTS.inc()
         started = time.perf_counter()
         status = "500"
         try:
@@ -41,6 +53,7 @@ def register_metrics(app: FastAPI) -> None:
             labels = (request.method, _handler_name(request), status)
             REQUEST_COUNT.labels(*labels).inc()
             REQUEST_DURATION.labels(*labels).observe(elapsed)
+            IN_FLIGHT_REQUESTS.dec()
 
     @app.get("/metrics", include_in_schema=False)
     async def metrics() -> Response:

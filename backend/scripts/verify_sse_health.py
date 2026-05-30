@@ -55,8 +55,8 @@ async def main() -> None:
     print("[3/3] 接続数カウンター確認")
     from app.services.sse_pubsub import decrement_connection, increment_connection
 
-    assert await increment_connection(0), "increment 失敗"
-    await decrement_connection(0)
+    assert await increment_connection("inbox", 0), "increment 失敗"
+    await decrement_connection("inbox", 0)
     print("  OK: カウンター正常")
 
     await r.aclose()

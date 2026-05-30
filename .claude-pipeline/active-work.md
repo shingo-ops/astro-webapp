@@ -18,6 +18,10 @@
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
 | feature/morimoto/deploy-skip-migrations-frontend-only | デプロイ最適化 | 2026-05-30 | REVIEW | | ADR-082 フロントのみデプロイで DB migration を skip し所要時間短縮 |
+| feature/morimoto/github-collector-metrics | GitHub collector metrics | 2026-05-29 20:48 | IN_PROGRESS | | |
+| feature/morimoto/codex-research-planning-gaps | Codex research / planning gaps | 2026-05-30 00:37 | IN_PROGRESS | | |
+| feature/morimoto/remove-design-review-gate | design review gate removal | 2026-05-30 05:39 | IN_PROGRESS | | |
+| feature/morimoto/aeon-operation-guide-pr | AEON operation guide PR | 2026-05-30 05:42 | IN_PROGRESS | | |
 ---
 
 ## 記入例
