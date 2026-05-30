@@ -74,6 +74,53 @@ export default function DexTab() {
     }
   };
 
+  const renderHead = () => (
+    <thead>
+      <tr>
+        <th>{t("superAdmin.dex.fields.dexNumber")}</th>
+        <th>{t("superAdmin.dex.fields.nameJa")}</th>
+        <th>{t("superAdmin.dex.fields.nameEn")}</th>
+        {kind === "pokemon" ? (
+          <>
+            <th>{t("superAdmin.dex.fields.generation")}</th>
+            <th>{t("superAdmin.dex.fields.region")}</th>
+          </>
+        ) : (
+          <th>{t("superAdmin.dex.fields.era")}</th>
+        )}
+        <th>{t("common.edit")}</th>
+      </tr>
+    </thead>
+  );
+
+  const renderRow = (it: DexEntry) => (
+    <tr key={it.id}>
+      <td>{it.dex_number}</td>
+      <td>{it.name_ja}</td>
+      <td>{it.name_en}</td>
+      {kind === "pokemon" ? (
+        <>
+          <td>{it.generation}</td>
+          <td>{it.region}</td>
+        </>
+      ) : (
+        <td>{it.era}</td>
+      )}
+      <td>
+        <button onClick={() => startEdit(it)} className="btn-secondary">
+          {t("common.edit")}
+        </button>
+      </td>
+    </tr>
+  );
+
+  // QA 2026-05-30: 図鑑は1行あたりの情報が少なく横に余白が大きいため、項目を
+  // 2列(2-up)に分割して縦の長さを半減する。狭い画面では flex-wrap で1列に戻る。
+  const half = Math.ceil(items.length / 2);
+  const columns = [items.slice(0, half), items.slice(half)].filter(
+    (c) => c.length > 0,
+  );
+
   return (
     <div className="super-admin-dex-tab">
       <h3>{t("superAdmin.dex.title")}</h3>
@@ -139,46 +186,25 @@ export default function DexTab() {
         </form>
       )}
 
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>{t("superAdmin.dex.fields.dexNumber")}</th>
-            <th>{t("superAdmin.dex.fields.nameJa")}</th>
-            <th>{t("superAdmin.dex.fields.nameEn")}</th>
-            {kind === "pokemon" ? (
-              <>
-                <th>{t("superAdmin.dex.fields.generation")}</th>
-                <th>{t("superAdmin.dex.fields.region")}</th>
-              </>
-            ) : (
-              <th>{t("superAdmin.dex.fields.era")}</th>
-            )}
-            <th>{t("common.edit")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((it) => (
-            <tr key={it.id}>
-              <td>{it.dex_number}</td>
-              <td>{it.name_ja}</td>
-              <td>{it.name_en}</td>
-              {kind === "pokemon" ? (
-                <>
-                  <td>{it.generation}</td>
-                  <td>{it.region}</td>
-                </>
-              ) : (
-                <td>{it.era}</td>
-              )}
-              <td>
-                <button onClick={() => startEdit(it)} className="btn-secondary">
-                  {t("common.edit")}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* QA 2026-05-30: 図鑑は横幅に余裕があるため 2 列(2-up)表示。
+          狭い画面では flex-wrap で 1 列に折り返す。 */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "var(--space-3)",
+          alignItems: "flex-start",
+        }}
+      >
+        {columns.map((colItems, ci) => (
+          <div key={ci} style={{ flex: "1 1 26rem", minWidth: 0 }}>
+            <table className="data-table">
+              {renderHead()}
+              <tbody>{colItems.map(renderRow)}</tbody>
+            </table>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
