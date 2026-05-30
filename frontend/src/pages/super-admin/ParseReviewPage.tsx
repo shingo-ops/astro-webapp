@@ -13,7 +13,7 @@
  *     ⇒ Sprint 7 (2026-05-22): InventorySearchBar を行内に埋め込み、インラインで product_id 解決可能化。
  *   - 編集は delta_qty / notes / product_id (Sprint 7 で追加) をインライン可能。
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../../lib/api";
@@ -481,6 +481,11 @@ export default function ParseReviewPage() {
                 <table className="data-table" data-testid="review-table">
                   <thead>
                     <tr>
+                      {/* QA 2026-05-30: スキップを最左へ。メモは各行の2段目に降ろし、
+                          1段目の列数を減らして横スクロールを抑える。 */}
+                      <th className="review-col-skip">
+                        {t("superAdmin.inbound.review.col.skip")}
+                      </th>
                       <th>#</th>
                       <th>{t("superAdmin.inbound.review.col.productId")}</th>
                       <th>{t("superAdmin.inbound.review.col.condition")}</th>
@@ -488,23 +493,19 @@ export default function ParseReviewPage() {
                       <th>{t("superAdmin.inbound.review.col.unit")}</th>
                       <th>{t("superAdmin.inbound.review.col.unitPrice")}</th>
                       <th>{t("superAdmin.inbound.review.col.alias")}</th>
-                      <th>{t("superAdmin.inbound.review.col.notes")}</th>
-                      <th className="review-col-skip">
-                        {t("superAdmin.inbound.review.col.skip")}
-                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {drafts.length === 0 ? (
                       <tr>
-                        <td colSpan={9} data-testid="review-empty">
+                        <td colSpan={8} data-testid="review-empty">
                           {t("superAdmin.inbound.review.noItems")}
                         </td>
                       </tr>
                     ) : (
                       drafts.map((row, idx) => (
+                        <Fragment key={idx}>
                         <tr
-                          key={idx}
                           data-testid={`review-row-${idx}`}
                           style={
                             row.skipped
@@ -515,6 +516,17 @@ export default function ParseReviewPage() {
                               : undefined
                           }
                         >
+                          <td className="review-col-skip">
+                            <input
+                              type="checkbox"
+                              data-testid={`review-row-${idx}-skip`}
+                              checked={row.skipped}
+                              disabled={isFinal}
+                              onChange={(e) =>
+                                updateDraft(idx, { skipped: e.target.checked })
+                              }
+                            />
+                          </td>
                           <td>{idx}</td>
                           <td style={{ minWidth: 'var(--col-width-wide)' }}>
                             {row.product_name && (
@@ -646,30 +658,50 @@ export default function ParseReviewPage() {
                               style={{ width: "8rem" }}
                             />
                           </td>
-                          <td>
-                            <input
-                              type="text"
-                              data-testid={`review-row-${idx}-notes`}
-                              value={row.notes}
-                              disabled={row.skipped || isFinal}
-                              onChange={(e) =>
-                                updateDraft(idx, { notes: e.target.value })
-                              }
-                              style={{ width: "10rem" }}
-                            />
-                          </td>
-                          <td className="review-col-skip">
-                            <input
-                              type="checkbox"
-                              data-testid={`review-row-${idx}-skip`}
-                              checked={row.skipped}
-                              disabled={isFinal}
-                              onChange={(e) =>
-                                updateDraft(idx, { skipped: e.target.checked })
-                              }
-                            />
+                        </tr>
+                        {/* QA 2026-05-30: メモは2段目に降ろし、1段目の横幅を抑える */}
+                        <tr
+                          data-testid={`review-row-${idx}-memo-row`}
+                          style={
+                            row.skipped
+                              ? {
+                                  opacity: "var(--opacity-skipped)",
+                                  background: "var(--bg-disabled)",
+                                }
+                              : undefined
+                          }
+                        >
+                          <td className="review-col-skip" aria-hidden="true" />
+                          <td colSpan={7}>
+                            <label
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "var(--space-2)",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  color: "var(--text-secondary)",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {t("superAdmin.inbound.review.col.notes")}
+                              </span>
+                              <input
+                                type="text"
+                                data-testid={`review-row-${idx}-notes`}
+                                value={row.notes}
+                                disabled={row.skipped || isFinal}
+                                onChange={(e) =>
+                                  updateDraft(idx, { notes: e.target.value })
+                                }
+                                style={{ flex: 1 }}
+                              />
+                            </label>
                           </td>
                         </tr>
+                        </Fragment>
                       ))
                     )}
                   </tbody>
