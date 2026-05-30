@@ -1255,6 +1255,11 @@
         "dragon_ball": "Dragon Ball TCG",
         "union_arena": "Union Arena",
         "yugioh": "Yu-Gi-Oh!"
+      },
+      "typeManager": {
+        "title": "Manage Types",
+        "code": "Type Code",
+        "addBtn": "Add Type"
       }
     },
     "dex": {
