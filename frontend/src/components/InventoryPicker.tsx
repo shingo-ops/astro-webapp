@@ -51,6 +51,16 @@ export interface InventoryPickerProps {
   debounceMs?: number;
   /** E2E / AC 用 data-testid prefix。 */
   testIdPrefix?: string;
+  /**
+   * 初期検索クエリ (QA 2026-05-30)。解析結果レビューで「解析された商品名」を
+   * 予めセットし、その名前を含む商品マスタを候補として絞り込んだ状態にする。
+   */
+  initialQuery?: string;
+  /**
+   * 候補に「在庫(目安)」を表示するか (QA 2026-05-30)。デフォルト true (発注画面は従来どおり)。
+   * 解析結果レビューの商品マスタ選択では在庫は無関係なため false を渡して非表示にする。
+   */
+  showStockGuide?: boolean;
 }
 
 const DEFAULT_DEBOUNCE = 250;
@@ -62,9 +72,11 @@ export default function InventoryPicker({
   placeholder,
   debounceMs = DEFAULT_DEBOUNCE,
   testIdPrefix = "inventory-picker",
+  initialQuery,
+  showStockGuide = true,
 }: InventoryPickerProps) {
   const { t } = useTranslation();
-  const [query, setQuery] = useState<string>("");
+  const [query, setQuery] = useState<string>(initialQuery ?? "");
   const [results, setResults] = useState<PickerProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
@@ -311,18 +323,20 @@ export default function InventoryPicker({
                       )}
                     </div>
                     <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                      <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)" }}>
-                        {t("inventory.search.stockGuide")}:{" "}
-                        <span
-                          data-testid={`${testIdPrefix}-result-${i}-stock`}
-                          style={{
-                            fontWeight: "var(--font-weight-semi)",
-                            color: isZero ? "var(--color-warning)" : "inherit",
-                          }}
-                        >
-                          {p.quantity}
-                        </span>
-                      </div>
+                      {showStockGuide && (
+                        <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)" }}>
+                          {t("inventory.search.stockGuide")}:{" "}
+                          <span
+                            data-testid={`${testIdPrefix}-result-${i}-stock`}
+                            style={{
+                              fontWeight: "var(--font-weight-semi)",
+                              color: isZero ? "var(--color-warning)" : "inherit",
+                            }}
+                          >
+                            {p.quantity}
+                          </span>
+                        </div>
+                      )}
                       {p.unit_price !== null && (
                         <div style={{ fontSize: "var(--font-sm)" }}>
                           ¥{p.unit_price.toLocaleString()}
