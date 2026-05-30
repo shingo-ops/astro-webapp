@@ -80,6 +80,7 @@
 | [ADR-081](./ADR-081-monitoring-vps-final-operational-design.md) | ADR-081: 監視VPS分離の最終運用設計 — パケットフィルタ、UFW、proxy 経路、backend worker 数の固定 | Accepted | — |
 | [ADR-081](./ADR-081-remove-design-review-gate.md) | ADR-081: design-review-gate 廃止 — develop までの自動化方針との整合 | Accepted | — |
 | [ADR-082](./ADR-082-deploy-skip-migrations-on-frontend-only.md) | ADR-082: フロントのみのデプロイで DB マイグレーション実行をスキップする | Accepted | — |
+| [ADR-083](./ADR-083-tcg-type-master.md) | ADR-083: TCG シリーズの「種別」をマスタ表 + UI 管理へ移行する | Accepted | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例

@@ -106,29 +106,43 @@ class SupplierAliasResponse(SupplierAliasBase):
 # tcg_series_master
 # ============================================================================
 
-_VALID_TCG_TYPES = {
-    "pokemon",
-    "one_piece",
-    "dragon_ball",
-    "union_arena",
-    "yugioh",
-}
+# ADR-083: TCG 種別は public.tcg_type_master で管理（固定リスト廃止）。
+# tcg_type の値検証は DB 側（tcg_type_master）に委ねる。code は安定キーのため不変。
+
+
+class TcgTypeBase(BaseModel):
+    code: str = Field(min_length=1, max_length=50)
+    name_ja: str = Field(min_length=1, max_length=100)
+    name_en: Optional[str] = Field(default=None, max_length=100)
+    sort_order: int = Field(default=100, ge=0)
+    is_active: bool = True
+
+
+class TcgTypeCreate(TcgTypeBase):
+    pass
+
+
+class TcgTypeUpdate(BaseModel):
+    # code は不変（既存シリーズが参照するため）。名称・並び順・有効フラグのみ更新可。
+    name_ja: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    name_en: Optional[str] = Field(default=None, max_length=100)
+    sort_order: Optional[int] = Field(default=None, ge=0)
+    is_active: Optional[bool] = None
+
+
+class TcgTypeResponse(TcgTypeBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TcgSeriesBase(BaseModel):
-    tcg_type: str = Field(min_length=1, max_length=30)
+    tcg_type: str = Field(min_length=1, max_length=50)
     series_code: str = Field(min_length=1, max_length=50)
     name_ja: str = Field(min_length=1, max_length=255)
     name_en: Optional[str] = Field(default=None, max_length=255)
     release_date: Optional[date] = None
     category: Optional[str] = Field(default=None, max_length=50)
-
-    @field_validator("tcg_type")
-    @classmethod
-    def _validate_tcg_type(cls, v: str) -> str:
-        if v not in _VALID_TCG_TYPES:
-            raise ValueError(f"tcg_type must be one of {sorted(_VALID_TCG_TYPES)}")
-        return v
 
 
 class TcgSeriesCreate(TcgSeriesBase):

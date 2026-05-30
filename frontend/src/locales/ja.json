@@ -1255,6 +1255,11 @@
         "dragon_ball": "ドラゴンボール",
         "union_arena": "ユニオンアリーナ",
         "yugioh": "遊戯王"
+      },
+      "typeManager": {
+        "title": "種別の管理",
+        "code": "種別コード",
+        "addBtn": "種別を追加"
       }
     },
     "dex": {
