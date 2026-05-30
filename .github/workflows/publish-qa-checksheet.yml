@@ -1,0 +1,60 @@
+name: Publish QA Checksheet
+
+# QA チェックシート (docs/audit/qa_checksheet.html) を develop 更新時に
+# GitHub Pages (gh-pages ブランチの qa/index.html) へ自動公開する。
+#   固定 URL: https://shingo-ops.github.io/salesanchor/qa/
+# 背景 (QA 2026-05-30): 従来は手動公開 (2026-05-27 が最後) で版ズレが発生し、
+#   古いチェックシートを見てしまう事故があったため自動化する。
+# develop を採用する理由: develop は常に main 以上に新しいため「常に最新」を満たす。
+# 既存の gh-pages:index.html (引き継ぎドキュメント) は触らず qa/index.html のみ更新する。
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'docs/audit/qa_checksheet.html'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-qa-checksheet
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish qa_checksheet to GitHub Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Publish to gh-pages /qa/
+        run: |
+          set -euo pipefail
+          SRC="docs/audit/qa_checksheet.html"
+          if [ ! -f "$SRC" ]; then
+            echo "::error::$SRC が見つかりません"
+            exit 1
+          fi
+          # develop 版のチェックシートを退避してから gh-pages へ切替
+          cp "$SRC" "$RUNNER_TEMP/qa_index.html"
+          git fetch origin gh-pages:gh-pages
+          git switch gh-pages
+          mkdir -p qa
+          cp "$RUNNER_TEMP/qa_index.html" qa/index.html
+          if git diff --quiet -- qa/index.html; then
+            echo "qa/index.html に変更なし。publish をスキップします。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add qa/index.html
+          git commit -m "docs(qa): auto-publish qa_checksheet to GitHub Pages [skip ci]"
+          git push origin gh-pages
+          echo "✅ published → https://shingo-ops.github.io/salesanchor/qa/"
