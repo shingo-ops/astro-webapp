@@ -24,66 +24,74 @@
   font-weight: var(--font-weight-semi);
 }
 
-/* 受信本文 (raw_content) の開閉トグル。
-   QA (2026-05-29): <summary> がクリック可能に見えず「押せるか分かりづらい」状態だったため、
-   btn-secondary 相当のボタン外観 + ▶ (閉) / ▼ (開) インジケータを付与する。 */
-.raw-content-toggle {
-  margin-top: var(--space-2);
+/* QA 2026-05-30: 受信本文 (左 2/5) と 解析結果 (右 3/5) の 2 カラムレイアウト。
+   受信本文は折りたたまず常時表示する (旧 <details> トグルを撤去)。横スクロールを
+   極力避けるため、左は本文を折り返し、右 (明細テーブル) は専用スクロールボックスで
+   内部スクロールさせる。 */
+/* この管理画面は情報量が多いため、ページ最大幅の制限を外して横幅を広く使う
+   (右カラムの明細テーブルの横スクロールを抑える)。 */
+.page.super-admin-parse-review-page {
+  max-width: none;
 }
 
-.raw-content-toggle > summary {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-5);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+.review-split {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+/* 左: 受信本文パネル (2/5)。常時表示・上端固定で内部縦スクロール・本文は折り返す。 */
+.review-raw {
+  flex: 0 0 40%;
+  max-width: 40%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.review-raw-title {
+  margin: 0 0 var(--space-2);
   font-size: var(--font-base);
   font-weight: var(--font-weight-semi);
-  cursor: pointer;
-  user-select: none;
-  width: fit-content;
-  list-style: none; /* Firefox: 既定の開閉マーカーを隠す */
+  color: var(--text-secondary);
 }
 
-/* Safari / Chrome: 既定の開閉マーカーを隠す */
-.raw-content-toggle > summary::-webkit-details-marker {
-  display: none;
-}
-
-/* 自前の開閉インジケータ (▶ → 開くと 90° 回転で ▼ 相当) */
-.raw-content-toggle > summary::before {
-  content: "\25B6";
-  font-size: var(--font-xs);
-  transition: transform 0.15s ease;
-}
-
-.raw-content-toggle[open] > summary::before {
-  transform: rotate(90deg);
-}
-
-.raw-content-toggle > summary:hover {
-  background: var(--bg-subtle);
-  border-color: var(--border-strong);
-}
-
-.raw-content-toggle > summary:focus-visible {
-  outline: 2px solid var(--border-strong);
-  outline-offset: 2px;
-}
-
-.raw-content-toggle > pre {
-  margin-top: var(--space-2);
+.review-raw-body {
+  margin: 0;
   padding: var(--space-3);
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  max-height: 24rem;
-  overflow: auto;
+  max-height: calc(100vh - 14rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   font-size: var(--font-sm);
   color: var(--text-primary);
+}
+
+/* 右: 解析結果メイン (3/5)。min-width:0 で内部テーブルが縮小でき、横スクロールが
+   レイアウト全体を押し広げないようにする。 */
+.review-main {
+  flex: 1 1 60%;
+  min-width: 0;
+}
+
+/* 画面が狭い場合 (タブレット以下) は 2 カラムを縦積みにする。 */
+@media (max-width: 1023px) {
+  .review-split {
+    flex-direction: column;
+  }
+  .review-raw {
+    flex-basis: auto;
+    max-width: 100%;
+    width: 100%;
+  }
+  .review-raw-body {
+    max-height: 18rem;
+  }
 }
 
 /* QA 2026-05-30: スキップ列が余剰幅を吸収して右に空白ができていた。チェックボックス幅に
