@@ -1,6 +1,8 @@
 {
   "common": {
     "loading": "読み込み中...",
+    "select": "選択",
+    "clear": "クリア",
     "saving": "保存中...",
     "save": "保存",
     "cancel": "キャンセル",
@@ -708,6 +710,13 @@
   "invoices": {
     "subtitle": "請求書の作成と管理ができます。",
     "title": "請求書管理",
+    "createTitle": "請求書作成",
+    "fromInventory": "在庫表から作成",
+    "fromQuote": "見積書から作成",
+    "fromQuoteHelp": "自テナントで作成した承認済みの見積書から請求書を作成します。",
+    "noApprovedQuotes": "承認済みの見積書がありません。",
+    "createFromThisQuote": "この見積から作成",
+    "createBtn": "請求書を作成",
     "invoiceCode": "請求書コード",
     "dueDate": "支払期限",
     "allStatuses": "全ステータス",
@@ -757,6 +766,9 @@
   "products": {
     "subtitle": "商品と在庫情報を管理します。",
     "title": "在庫管理",
+    "selectedCount": "{{count}}件選択中",
+    "createQuote": "見積書作成",
+    "createInvoice": "請求書作成",
     "newProduct": "新規登録",
     "editProduct": "商品編集",
     "productCode": "商品コード",

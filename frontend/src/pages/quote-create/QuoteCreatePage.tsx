@@ -12,7 +12,7 @@
  */
 
 import { useState, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import CompanyContactSelector from "../../components/CompanyContactSelector";
@@ -28,9 +28,32 @@ interface LineItem {
   zero_stock_warning?: boolean;
 }
 
+// QA 2026-05-31: 在庫表から「見積書作成」で渡される選択商品 (location.state)
+interface SelectedProduct {
+  product_id: number;
+  product_name: string;
+  unit_price: number | null;
+}
+
+const blankItem: LineItem = { product_id: null, product_name: "", quantity: 1, unit_price: 0, weight: null };
+
 export default function QuoteCreatePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  // 在庫表からの選択商品があれば初期明細に展開する
+  const handoff = (location.state as { selectedProducts?: SelectedProduct[] } | null)
+    ?.selectedProducts;
+  const initialItems: LineItem[] =
+    handoff && handoff.length > 0
+      ? handoff.map((p) => ({
+          product_id: p.product_id,
+          product_name: p.product_name,
+          quantity: 1,
+          unit_price: p.unit_price ?? 0,
+          weight: null,
+        }))
+      : [{ ...blankItem }];
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [contactId, setContactId] = useState<number | null>(null);
   const [selectorError, setSelectorError] = useState("");
@@ -38,12 +61,12 @@ export default function QuoteCreatePage() {
   const [shippingFee, setShippingFee] = useState("");
   const [taxAmount, setTaxAmount] = useState("");
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<LineItem[]>([{ product_id: null, product_name: "", quantity: 1, unit_price: 0, weight: null }]);
+  const [items, setItems] = useState<LineItem[]>(initialItems);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   const addItem = () => {
-    setItems([...items, { product_id: null, product_name: "", quantity: 1, unit_price: 0, weight: null }]);
+    setItems([...items, { ...blankItem }]);
   };
 
   const removeItem = (index: number) => {
