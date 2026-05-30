@@ -99,13 +99,18 @@ CREATE TABLE IF NOT EXISTS public.tcg_series_master (
 );
 
 -- tcg_type CHECK 制約（spec F1: 5 系列 + その他）
+-- ADR-083 (migration 085) で本 CHECK は撤廃され、種別は public.tcg_type_master で
+-- 管理する方式に移行した。tcg_type_master が既に存在する環境（=ADR-083 適用後）では
+-- 本 CHECK を再付与しない。再付与すると 085/086 で追加した新種別 (gundam 等) の
+-- データが 6 値固定 CHECK に違反し毎デプロイで失敗するため (QA 2026-05-31 hotfix)。
+-- ADR-083 未適用の旧環境では従来どおり付与する。
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint
         WHERE conname = 'tcg_series_master_tcg_type_check'
           AND conrelid = 'public.tcg_series_master'::regclass
-    ) THEN
+    ) AND to_regclass('public.tcg_type_master') IS NULL THEN
         ALTER TABLE public.tcg_series_master
             ADD CONSTRAINT tcg_series_master_tcg_type_check
             CHECK (tcg_type IN (
