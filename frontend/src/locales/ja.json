@@ -1227,7 +1227,7 @@
     },
     "knowledge": {
       "title": "正規化辞書 (knowledge_rules) + 仕入元別名 (supplier_aliases)",
-      "promptSection": "仕入先別 解析プロンプト",
+      "promptSection": "仕入先別 解析プロンプト（使用保留中）",
       "promptHelp": "仕入先ごとに Gemini 解析用プロンプトを管理します（スプレッドシートから取込済み）。",
       "promptPlaceholder": "この仕入先の Gemini 解析プロンプトを入力",
       "rulesSection": "正規化ルール",
