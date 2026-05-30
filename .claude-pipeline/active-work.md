@@ -17,7 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
-| feature/morimoto/parse-review-sticky-header | 解析レビュー明細 | 2026-05-30 | REVIEW | | 明細テーブルのヘッダー行をsticky固定(行スクロール時も列見出し表示) CSS only |
+| feature/morimoto/deploy-skip-migrations-frontend-only | デプロイ最適化 | 2026-05-30 | REVIEW | | ADR-082 フロントのみデプロイで DB migration を skip し所要時間短縮 |
 ---
 
 ## 記入例
