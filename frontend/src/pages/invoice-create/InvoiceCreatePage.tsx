@@ -35,9 +35,20 @@ interface QuoteSummary {
   id: number;
   quote_code: string;
   company_id: number;
-  total_amount: number;
+  currency: string;
+  total_amount: number | null;
   status: string;
   created_at: string;
+}
+
+// 通貨つきで金額を表示（null は "-"）。invoices/quotes 共通の見せ方に合わせる。
+function fmtAmount(n: number | null, ccy: string): string {
+  if (n == null) return "-";
+  try {
+    return n.toLocaleString("ja-JP", { style: "currency", currency: ccy });
+  } catch {
+    return `${ccy} ${Math.round(n).toLocaleString()}`;
+  }
 }
 
 const blankItem: LineItem = {
@@ -236,7 +247,7 @@ export default function InvoiceCreatePage() {
                 {quotes.map((q) => (
                   <tr key={q.id} data-testid={`invoice-quote-${q.id}`}>
                     <td>{q.quote_code}</td>
-                    <td>¥{Math.round(q.total_amount).toLocaleString()}</td>
+                    <td>{fmtAmount(q.total_amount, q.currency)}</td>
                     <td>
                       <button
                         className="btn-sm btn-primary"
@@ -307,6 +318,7 @@ export default function InvoiceCreatePage() {
                       />
                       {item.zero_stock_warning && (
                         <div
+                          data-testid={`invoice-item-row-${i}-zero-stock-warning`}
                           className="warning-message"
                           style={{ marginTop: "var(--space-1)", color: "var(--color-warning)", fontSize: "var(--font-sm)" }}
                         >
