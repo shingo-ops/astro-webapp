@@ -102,8 +102,7 @@ export default function KnowledgeAliasesTab() {
     }
   };
 
-  const savePrompt = async (e: FormEvent) => {
-    e.preventDefault();
+  const savePrompt = async () => {
     if (promptSupplierId === null) return;
     setPromptError("");
     setPromptMsg("");
@@ -246,7 +245,9 @@ export default function KnowledgeAliasesTab() {
           {t("superAdmin.knowledge.promptHelp")}
         </p>
         {promptError && <div className="error-message">{promptError}</div>}
-        <form onSubmit={savePrompt} style={{ margin: "0.5rem 0" }}>
+        {/* QA 2026-05-31: 既存 e2e は button[type=submit].first() で「ルール新規作成」を
+            クリックするため、ここは type=submit を使わない（先頭の submit を奪わない）。 */}
+        <div style={{ margin: "0.5rem 0" }}>
           <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", marginBottom: "var(--space-2)", flexWrap: "wrap" }}>
             <label>
               {t("superAdmin.suppliersAdmin.fields.name")}:{" "}
@@ -278,9 +279,11 @@ export default function KnowledgeAliasesTab() {
               {t("superAdmin.suppliersAdmin.fields.isActive")}
             </label>
             <button
-              type="submit"
+              type="button"
               className="btn-primary"
               disabled={promptSupplierId === null || promptSaving}
+              onClick={savePrompt}
+              data-testid="supplier-prompt-save"
             >
               {promptSaving ? t("common.saving") : t("common.save")}
             </button>
@@ -295,7 +298,7 @@ export default function KnowledgeAliasesTab() {
             rows={16}
             style={{ width: "100%", fontFamily: "var(--font-mono, monospace)", fontSize: "var(--font-sm)" }}
           />
-        </form>
+        </div>
       </section>
 
       {/* ============ Rules section ============ */}
