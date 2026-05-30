@@ -17,7 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
-| feature/morimoto/qa-checksheet-i03-regroup | QAチェックシート | 2026-05-30 | REVIEW | | I-03(AND/OR)を在庫メインページ→見積検索Fセクションへ移動+リンク監査(古いリンク0) docs-only |
+| feature/morimoto/publish-qa-checksheet-pages | QAチェックシート公開自動化 | 2026-05-30 | REVIEW | | develop更新時にqa_checksheetをgh-pages /qa/ へ自動publishするworkflow追加(常に最新の固定URL) |
 ---
 
 ## 記入例

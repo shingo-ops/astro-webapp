@@ -16,12 +16,22 @@
 
 ### 1. ブラウザで開く
 
-```bash
-# Mac 側でリポをクローン後
-open docs/audit/qa_checksheet.html
+**推奨: 公開URL（常に最新）**
+
+```
+https://shingo-ops.github.io/salesanchor/qa/
 ```
 
-ブラウザのお気に入りに追加しておくと便利。
+`develop` の `qa_checksheet.html` が更新されるたび、`publish-qa-checksheet.yml` が
+GitHub Pages (gh-pages ブランチの `qa/index.html`) へ自動公開する（QA 2026-05-30 自動化）。
+ローカルのクローンが古くても、この URL は常に最新を指す。ブラウザのお気に入り推奨。
+
+**ローカルファイルで開く場合**（クローンが最新であること）
+
+```bash
+# Mac 側でリポをクローン/最新化後
+open docs/audit/qa_checksheet.html
+```
 
 ### 2. QA 実施
 
