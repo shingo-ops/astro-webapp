@@ -1141,9 +1141,11 @@ async def _apply_supplier_prompt_llm(
 
     items = [_to_parsed_item_from_llm(it) for it in llm_result.items]
     items.sort(key=lambda x: x.line_no)
+    # 全文をプロンプトに委ねたため rule_v1 の excludes は持ち越さない
+    # （持ち越すと、LLM が item 化した行が excludes と二重に現れ得るため。Reviewer minor）
     return ParseResult(
         items=items,
-        excludes=base_result.excludes,
+        excludes=[],
         unparsed=[],
         parse_engine="llm_supplier_prompt",
     )
