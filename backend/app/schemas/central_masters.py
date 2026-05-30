@@ -119,7 +119,9 @@ class TcgTypeBase(BaseModel):
 
 
 class TcgTypeCreate(TcgTypeBase):
-    pass
+    # QA 2026-05-31: code はユーザー入力させず内部で自動採番する。
+    # 未指定なら backend が 'tcgtype_<連番>' を生成する。
+    code: Optional[str] = Field(default=None, max_length=50)
 
 
 class TcgTypeUpdate(BaseModel):

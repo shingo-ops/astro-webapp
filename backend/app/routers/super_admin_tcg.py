@@ -175,12 +175,16 @@ async def list_types(
     dependencies=[Depends(require_super_admin)],
 )
 async def create_type(data: TcgTypeCreate, db: AsyncSession = Depends(get_db)):
+    # QA 2026-05-31: code 未指定時は 'tcgtype_<連番>' を自動採番（UI からは入力させない）。
+    # 連番は現在の MAX(id)+1。super-admin の単独操作前提・UNIQUE 制約で衝突時は 409。
     try:
         result = await db.execute(
             text(
                 f"INSERT INTO public.tcg_type_master "
-                f"(code, name_ja, name_en, sort_order, is_active) "
-                f"VALUES (:code, :name_ja, :name_en, :sort_order, :is_active) "
+                f"(code, name_ja, name_en, sort_order, is_active) VALUES "
+                f"(COALESCE(:code, 'tcgtype_' || "
+                f"(SELECT COALESCE(MAX(id), 0) + 1 FROM public.tcg_type_master)), "
+                f":name_ja, :name_en, :sort_order, :is_active) "
                 f"RETURNING {_TYPE_COLS}"
             ),
             data.model_dump(),
