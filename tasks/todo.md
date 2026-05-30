@@ -13,7 +13,7 @@
 | VPS runner登録（ADR-078） | Agent（2026-06-15予定） | 未着手 | 予定日に `docs/runbooks/vps-runner-setup.md` に従い実行 | memory/project_vps_runner_plan.md | 2026-05-29 |
 | Meta App Review 申請 | PO待ち | ドキュメント整備済み・動画未撮影 | PO が申請動画を撮影 → Agent がレビュー申請書類を提出 | memory/project_meta_app_review_progress.md | 2026-05-29 |
 | discord-gateway live受信の LLM 解析 env 注入（Issue #1154） | PO待ち | gateway は idle(bot token未設定)・DATABASE_URL/GEMINI_API_KEY 未注入を docker inspect で確認。live化した瞬間に DB接続失敗+LLM不発 | PO が live化判断 → compose の discord-gateway に DATABASE_URL/GEMINI_API_KEY 追加 + bot token 設定 + 実機確認 | Issue #1154 / docker-compose.yml | 2026-05-29 |
-| 在庫表「追加」ボタン(廃番トグル誤表記)の撤去 | Agent | feature/morimoto/products-remove-archive-toggle 実装・PR提出。誤クリックで行が消える事故防止のため操作列を編集/削除のみに。承認済: tenant_006 で誤archiveされた3商品をDB復元済(is_archived=false) | Reviewer APPROVE で develop merge | frontend ProductsPage.tsx | 2026-05-30 |
+| 解析レビュー明細テーブルのヘッダー sticky 固定 | Agent | feature/morimoto/parse-review-sticky-header。受信本文を開いて明細行をスクロールしても列見出しが残るよう thead を sticky 化(.data-table の overflow:hidden を本テーブルのみ visible 上書き)。CSS only | Reviewer APPROVE で develop merge | frontend ParseReviewPage.css | 2026-05-30 |
 | (follow-up) ParseReviewPage の Phase A 在庫スキップ警告コードの撤去検討 | Agent | Option Z で Discord 承認が在庫を触らなくなり phaseAWarning が発火しない dead code 化。害は無いが整理候補 | 低優先。次の在庫系PRに同梱可 | frontend ParseReviewPage.tsx (phaseWarning) | 2026-05-30 |
 
 ---
@@ -22,7 +22,10 @@
 
 | タスク | 完了日 | PR |
 |------|------|---|
+| QAチェックシート GitHub Pages 自動公開 + bootstrap publish（/qa/ 最新化） | 2026-05-30 | #1190 |
 | release develop → main（AEON operation guide / ADR index sync / main back-merge 反映） | 2026-05-30 | #1178 |
+| 在庫表「追加」(廃番トグル誤表記)ボタン撤去 + 誤archive3商品復元 | 2026-05-30 | #1187 |
+| QAチェックシート I-03(AND/OR) を見積検索Fセクションへ移動 + 全URL監査(古いリンク0) | 2026-05-30 | #1188 |
 | QAチェックシート更新（在庫新仕様反映: Option Z/18h失効/単位/F11-10,11追加） | 2026-05-30 | #1180 |
 | 在庫オファー lifecycle（単位 unit 永続化 migration084 + 18時間自動失効 Celery purge） | 2026-05-30 | #1179 |
 | 解析レビュー表 QA修正（メモ来歴削除/単価整数/差分数量列削除/単位列追加/列幅+承認Option Z） | 2026-05-30 | #1177 |

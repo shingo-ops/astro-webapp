@@ -17,7 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
-| feature/morimoto/products-remove-archive-toggle | 在庫表 操作列 | 2026-05-30 | REVIEW | | 「追加」と誤表記の廃番トグルを撤去(誤クリック事故防止)+blocked modalラベル修正 |
+| feature/morimoto/parse-review-sticky-header | 解析レビュー明細 | 2026-05-30 | REVIEW | | 明細テーブルのヘッダー行をsticky固定(行スクロール時も列見出し表示) CSS only |
 ---
 
 ## 記入例
