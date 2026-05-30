@@ -27,12 +27,12 @@ async def test_increment_decrement_connection():
 
     _active.clear()
 
-    ok = await increment_connection(999)
+    ok = await increment_connection("inbox", 999)
     assert ok is True
-    assert _active[999] == 1
+    assert _active[("inbox", 999)] == 1
 
-    await decrement_connection(999)
-    assert 999 not in _active  # 0 になったら削除
+    await decrement_connection("inbox", 999)
+    assert ("inbox", 999) not in _active  # 0 になったら削除
 
 
 @pytest.mark.asyncio
@@ -40,9 +40,9 @@ async def test_increment_connection_limit():
     """SSE_MAX_CONN_PER_TENANT 超過時は False を返す"""
     from app.services.sse_pubsub import SSE_MAX_CONN_PER_TENANT, _active, increment_connection
 
-    _active[888] = SSE_MAX_CONN_PER_TENANT
+    _active[("inbox", 888)] = SSE_MAX_CONN_PER_TENANT
 
-    ok = await increment_connection(888)
+    ok = await increment_connection("inbox", 888)
     assert ok is False
 
     _active.clear()
