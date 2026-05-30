@@ -1276,6 +1276,14 @@
         "generation": "Generation",
         "region": "Region",
         "era": "Era"
+      },
+      "import": {
+        "previewBtn": "Import from PokeAPI",
+        "applyBtn": "Import {{count}} entries",
+        "upToDate": "Up to date (no new entries)",
+        "diffSummary": "{{count}} new (PokeAPI {{source}} / DB {{db}})",
+        "applied": "Imported {{count}} entries",
+        "truncated": "Many new entries — showing/importing the first {{max}} only"
       }
     },
     "suppliersAdmin": {
