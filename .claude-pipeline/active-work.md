@@ -17,7 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
-| feature/morimoto/products-remove-archive-toggle | 在庫表 操作列 | 2026-05-30 | REVIEW | | 「追加」と誤表記の廃番トグルを撤去(誤クリック事故防止)+blocked modalラベル修正 |
+| feature/morimoto/qa-checksheet-i03-regroup | QAチェックシート | 2026-05-30 | REVIEW | | I-03(AND/OR)を在庫メインページ→見積検索Fセクションへ移動+リンク監査(古いリンク0) docs-only |
 ---
 
 ## 記入例
