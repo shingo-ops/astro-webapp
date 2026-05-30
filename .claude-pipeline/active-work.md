@@ -17,7 +17,7 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
-| feature/morimoto/publish-qa-checksheet-pages | QAチェックシート公開自動化 | 2026-05-30 | REVIEW | | develop更新時にqa_checksheetをgh-pages /qa/ へ自動publishするworkflow追加(常に最新の固定URL) |
+| feature/morimoto/parse-review-sticky-header | 解析レビュー明細 | 2026-05-30 | REVIEW | | 明細テーブルのヘッダー行をsticky固定(行スクロール時も列見出し表示) CSS only |
 ---
 
 ## 記入例
