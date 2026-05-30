@@ -627,6 +627,12 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/086_seed_additional_tcg_types.sql
 
+            # Migration 087: public.supplier_prompts 新設（仕入先別 Gemini プロンプト, ADR-085）。
+            #   CREATE TABLE/INDEX IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/087_create_supplier_prompts.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

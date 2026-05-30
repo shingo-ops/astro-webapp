@@ -360,3 +360,21 @@ class RoleVisibilityAssign(BaseModel):
 
     role_id: int
     visibility_keys: list[str]
+
+
+# ============================================================================
+# ADR-085: 仕入先別 Gemini プロンプト (public.supplier_prompts)
+# ============================================================================
+
+
+class SupplierPromptResponse(BaseModel):
+    supplier_id: int
+    prompt: str
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SupplierPromptUpdate(BaseModel):
+    prompt: str = Field(default="", max_length=50000)
+    is_active: bool = True
