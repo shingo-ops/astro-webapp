@@ -46,7 +46,7 @@ _TYPE_UPDATABLE = {"name_ja", "name_en", "sort_order", "is_active"}
     dependencies=[Depends(require_super_admin)],
 )
 async def list_series(
-    tcg_type: str | None = Query(default=None, max_length=30),
+    tcg_type: str | None = Query(default=None, max_length=50),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=200, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
