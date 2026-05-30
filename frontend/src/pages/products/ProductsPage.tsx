@@ -8,8 +8,8 @@
  *               - TCG 列追加（jan_code, card_number, expansion_code, rarity, language）
  *               - 多通貨価格（unit_price_usd, unit_price_eur）
  *               - 画像 URL（image_url、単一列）
- *               - is_archived フィルタ + 廃番ボタン
- *               - DELETE 409（FK 参照あり）時にアーカイブ誘導モーダル
+ *               - DELETE 409（FK 参照あり）時にアーカイブ誘導モーダル（廃番の唯一の導線）
+ *               注: 廃番フィルタ(#1174) と行内「追加」(=廃番トグル) ボタン(QA 2026-05-30) は撤去済み
  */
 
 import { useEffect, useState, FormEvent } from "react";
@@ -195,15 +195,6 @@ export default function ProductsPage() {
       image_url: p.image_url || "",
     });
     setShowForm(true);
-  };
-
-  const handleArchiveToggle = async (p: Product) => {
-    try {
-      await api.patch(`/products/${p.id}`, { is_archived: !p.is_archived });
-      load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("common.operationError"));
-    }
   };
 
   const performDelete = async () => {
@@ -397,11 +388,8 @@ export default function ProductsPage() {
                 <td><span className={`badge badge-${p.status === "active" ? "won" : "lost"}`}>{p.status === "active" ? t("products.status_active") : t("products.status_discontinued")}</span></td>
                 <td className="actions">
                   {hasPermission("products.update") && <button className="btn-sm" onClick={() => handleEdit(p)}>{t("common.edit")}</button>}
-                  {hasPermission("products.update") && (
-                    <button className="btn-sm" onClick={() => handleArchiveToggle(p)}>
-                      {p.is_archived ? t("common.reload") : t("common.add")}
-                    </button>
-                  )}
+                  {/* QA 2026-05-30: 「追加」と誤表記された廃番(archive)トグルを撤去（誤クリックで行が消える事故防止）。
+                      廃番は「削除」の FK 参照時フォールバック (handleArchiveFromBlocked) でのみ行う。 */}
                   {hasPermission("products.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(p)}>{t("common.delete")}</button>}
                 </td>
               </tr>
@@ -480,7 +468,7 @@ export default function ProductsPage() {
             )}
           </>
         }
-        confirmLabel={t("common.add")}
+        confirmLabel={t("common.archive")}
         onConfirm={handleArchiveFromBlocked}
         onCancel={() => setArchiveBlocked(null)}
       />
