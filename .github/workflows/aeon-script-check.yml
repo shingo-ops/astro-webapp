@@ -1,0 +1,87 @@
+name: aeon script check
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - 'scripts/aeon-dispatch.sh'
+      - 'scripts/aeon-delivery.sh'
+      - 'scripts/aeon-release.sh'
+      - 'scripts/codex-exec.sh'
+      - 'scripts/codex-generator.sh'
+      - 'scripts/codex-research.sh'
+      - 'scripts/codex-planner.sh'
+      - 'scripts/codex-architect.sh'
+      - 'scripts/codex-reviewer.sh'
+      - 'scripts/codex-evaluator.sh'
+      - 'scripts/codex-auth-check.sh'
+      - '.claude/agents/*.md'
+      - 'docs/agents/*.md'
+  pull_request:
+    paths:
+      - 'scripts/aeon-dispatch.sh'
+      - 'scripts/aeon-delivery.sh'
+      - 'scripts/aeon-release.sh'
+      - 'scripts/codex-exec.sh'
+      - 'scripts/codex-generator.sh'
+      - 'scripts/codex-research.sh'
+      - 'scripts/codex-planner.sh'
+      - 'scripts/codex-architect.sh'
+      - 'scripts/codex-reviewer.sh'
+      - 'scripts/codex-evaluator.sh'
+      - 'scripts/codex-auth-check.sh'
+      - '.claude/agents/*.md'
+      - 'docs/agents/*.md'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: スクリプト構文チェック
+        run: |
+          set -e
+          scripts=(
+            scripts/aeon-dispatch.sh
+            scripts/codex-exec.sh
+            scripts/codex-generator.sh
+            scripts/codex-research.sh
+            scripts/codex-planner.sh
+            scripts/codex-architect.sh
+            scripts/codex-reviewer.sh
+            scripts/codex-evaluator.sh
+            scripts/codex-auth-check.sh
+          )
+          for s in "${scripts[@]}"; do
+            if [[ -f "$s" ]]; then
+              bash -n "$s" && echo "OK: $s"
+            else
+              echo "MISSING: $s" && exit 1
+            fi
+          done
+
+      - name: ロール定義ファイル存在チェック
+        run: |
+          set -e
+          roles=(research planner architect generator reviewer evaluator)
+          for role in "${roles[@]}"; do
+            f=".claude/agents/${role}.md"
+            [[ -f "$f" ]] && echo "OK: $f" || { echo "MISSING: $f"; exit 1; }
+          done
+          for role in "${roles[@]}"; do
+            f="docs/agents/${role}.md"
+            [[ -f "$f" ]] && echo "OK: $f" || { echo "MISSING: $f"; exit 1; }
+          done
+
+      - name: aeon-dispatch.sh ルーティング整合チェック
+        run: |
+          set -e
+          # aeon-dispatch.sh が全ロールの分岐を持つか確認
+          roles=(generator research planner architect reviewer evaluator)
+          for role in "${roles[@]}"; do
+            grep -q "$role)" scripts/aeon-dispatch.sh \
+              && echo "OK: routing for $role" \
+              || { echo "MISSING routing: $role in aeon-dispatch.sh"; exit 1; }
+          done

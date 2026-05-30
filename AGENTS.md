@@ -28,6 +28,30 @@ Research -> Planner -> Architect -> PO Approval -> Generator -> Reviewer -> Eval
 - `docs/agents/*` は同じ役割の詳細参照
 - Governance は runtime pipeline の外側で、標準化・継続改善・証跡確認を担う
 
+### AEON 呼び出し（単一エントリポイント）
+
+```bash
+bash scripts/aeon-dispatch.sh <role> "プロンプト"
+```
+
+| Role | 用途 | 内部で呼ぶスクリプト |
+|------|------|------------------|
+| `research` | 事実収集・調査 | `scripts/codex-research.sh` → `codex-exec.sh` |
+| `planner` | 実装計画作成 | `scripts/codex-planner.sh` → `codex-exec.sh` |
+| `architect` | 実装可否チェック | `scripts/codex-architect.sh` → `codex-exec.sh` |
+| `generator` | コード実装・PR作成 | `scripts/codex-generator.sh`（対話モード） |
+| `reviewer` | コードレビュー | `scripts/codex-reviewer.sh` → `codex-exec.sh` |
+| `evaluator` | 動作検証 | `scripts/codex-evaluator.sh` → `codex-exec.sh` |
+
+Generator のみ対話モード。`--auto` で自動承認モードに切替可。
+
+```bash
+bash scripts/aeon-dispatch.sh generator          # 対話モード（推奨）
+bash scripts/aeon-dispatch.sh generator --auto   # 自動承認モード
+```
+
+詳細手順: `docs/ai-agents/aeon-operation.md` / ルーティング定義: `docs/ai-agents/aeon-routing.md`
+
 ---
 
 ## セットアップ & 実行コマンド
