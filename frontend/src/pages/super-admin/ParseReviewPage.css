@@ -104,6 +104,16 @@
   text-align: center;
 }
 
+/* QA 2026-05-30: 1明細 = (明細行 + メモ2段目) の2行構成。両者を1グループに見せるため、
+   1段目(メモ行でない review-row-*)の下罫線を消し、罫線はメモ行の下だけに残して
+   明細どうしを区切る。 */
+.review-table-scroll
+  tbody
+  tr[data-testid^="review-row-"]:not([data-testid$="-memo-row"])
+  td {
+  border-bottom: none;
+}
+
 /* QA 2026-05-30: 明細行を縦スクロールしても列見出しが残るよう sticky 固定する。
    ただし sticky の固定基準は「最も近いスクロール祖先」になるため、明細テーブルを
    ページ全体 (.app-content) の中に素置きすると、ヘッダーが画面全体のスクロールに
