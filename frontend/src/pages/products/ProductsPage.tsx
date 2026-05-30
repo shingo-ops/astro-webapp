@@ -8,8 +8,8 @@
  *               - TCG 列追加（jan_code, card_number, expansion_code, rarity, language）
  *               - 多通貨価格（unit_price_usd, unit_price_eur）
  *               - 画像 URL（image_url、単一列）
- *               - is_archived フィルタ + 廃番ボタン
- *               - DELETE 409（FK 参照あり）時にアーカイブ誘導モーダル
+ *               - DELETE 409（FK 参照あり）時にアーカイブ誘導モーダル（廃番の唯一の導線）
+ *               注: 廃番フィルタ(#1174) と行内「追加」(=廃番トグル) ボタン(QA 2026-05-30) は撤去済み
  */
 
 import { useEffect, useState, FormEvent } from "react";
