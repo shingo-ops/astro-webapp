@@ -1291,8 +1291,8 @@
         "individual": "個人",
         "corporate": "法人"
       },
-      "discordRouting": "Discord 紐付け",
-      "addRouting": "Discord 紐付け追加",
+      "discordRouting": "Discord紐付け",
+      "addRouting": "Discord紐付け追加",
       "guildId": "Guild ID",
       "channelId": "Channel ID"
     },
