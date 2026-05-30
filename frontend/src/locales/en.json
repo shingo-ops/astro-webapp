@@ -1227,7 +1227,7 @@
     },
     "knowledge": {
       "title": "Normalization Rules (knowledge_rules) + Supplier Aliases",
-      "promptSection": "Per-Supplier Parsing Prompt",
+      "promptSection": "Per-Supplier Parsing Prompt (on hold)",
       "promptHelp": "Manage the Gemini parsing prompt per supplier (imported from the spreadsheet).",
       "promptPlaceholder": "Enter the Gemini parsing prompt for this supplier",
       "rulesSection": "Normalization Rules",
