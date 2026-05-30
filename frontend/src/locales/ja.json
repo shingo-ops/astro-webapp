@@ -1276,6 +1276,14 @@
         "generation": "世代",
         "region": "地方",
         "era": "時代"
+      },
+      "import": {
+        "previewBtn": "PokeAPIから取込",
+        "applyBtn": "{{count}} 件を一括取込",
+        "upToDate": "最新です（新規なし）",
+        "diffSummary": "新規 {{count}} 件（PokeAPI {{source}} 件 / DB {{db}} 件）",
+        "applied": "{{count}} 件を取り込みました",
+        "truncated": "新規が多いため先頭 {{max}} 件のみ表示・取込します"
       }
     },
     "suppliersAdmin": {
