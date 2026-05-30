@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-05-29 / ADR 総数: 70 件
+最終更新: 2026-05-30 / ADR 総数: 71 件
 
 ## 一覧
 
@@ -78,6 +78,7 @@
 | [ADR-079](./ADR-079-claude-code-monitoring-access.md) | ADR-079: Claude Code 専用 VPS 読み取り専用監視アクセス | Accepted | — |
 | [ADR-080](./ADR-080-monitoring-vps-separation.md) | ADR-080: 監視スタックの管理室VPS分離 — RAM危機の根本解決とCIランナー統合 | Proposed | — |
 | [ADR-081](./ADR-081-monitoring-vps-final-operational-design.md) | ADR-081: 監視VPS分離の最終運用設計 — パケットフィルタ、UFW、proxy 経路、backend worker 数の固定 | Accepted | — |
+| [ADR-082](./ADR-082-generator-executor-codex-fallback.md) | ADR-082: Generator Executor 選択 + Codex→Claude Code 自動フォールバック | Accepted | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例
