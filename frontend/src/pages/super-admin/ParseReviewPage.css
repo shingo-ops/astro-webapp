@@ -94,13 +94,27 @@
   text-align: center;
 }
 
-/* QA 2026-05-30: 受信本文を開いて明細行を縦スクロールしても列見出しが残るよう、
-   明細テーブルのヘッダー行を sticky 固定する。受信本文を閉じた場合も自然に上へ詰まる。 */
-/* .data-table の overflow:hidden は sticky thead を無効化するため、本テーブルのみ visible に上書き */
-.data-table[data-testid="review-table"] {
-  overflow: visible;
+/* QA 2026-05-30: 明細行を縦スクロールしても列見出しが残るよう sticky 固定する。
+   ただし sticky の固定基準は「最も近いスクロール祖先」になるため、明細テーブルを
+   ページ全体 (.app-content) の中に素置きすると、ヘッダーが画面全体のスクロールに
+   引っ張られて画面最上部へ飛んでしまう。これを防ぐため明細テーブルを専用の縦スクロール
+   ボックスに収め、ヘッダーはそのボックス上端に固定する。受信本文を閉じた場合も
+   ボックスごと自然に上へ詰まる。 */
+.review-table-scroll {
+  max-height: calc(100vh - 22rem);
+  overflow: auto;
+  /* .data-table の角丸・影をボックス側へ移し、内側のテーブルは矩形にする */
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
-.data-table[data-testid="review-table"] thead th {
+/* スクロール基準をボックスへ寄せるため、テーブル自身の overflow:hidden を無効化し
+   角丸・影も二重化しないよう解除する */
+.review-table-scroll .data-table[data-testid="review-table"] {
+  overflow: visible;
+  border-radius: 0;
+  box-shadow: none;
+}
+.review-table-scroll .data-table[data-testid="review-table"] thead th {
   position: sticky;
   top: 0;
   /* ADR-067: z-index は CSS変数。tbody 行より上・dropdown(--z-dropdown) より下 */
