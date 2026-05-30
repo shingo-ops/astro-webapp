@@ -44,7 +44,7 @@ const emptySeries = {
   category: "",
 };
 
-const emptyType = { code: "", name_ja: "", name_en: "" };
+const emptyType = { name_ja: "", name_en: "" };
 
 export default function TcgSeriesTab() {
   const { t } = useTranslation();
@@ -146,8 +146,8 @@ export default function TcgSeriesTab() {
     e.preventDefault();
     setError("");
     try {
+      // QA 2026-05-31: code は送らない（backend が自動採番）。名称のみ入力。
       await api.post("/super-admin/tcg/types", {
-        code: typeForm.code.trim(),
         name_ja: typeForm.name_ja.trim(),
         name_en: typeForm.name_en.trim() || null,
         sort_order: 100,
@@ -220,16 +220,11 @@ export default function TcgSeriesTab() {
             onSubmit={submitType}
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
+              gridTemplateColumns: "repeat(3, 1fr)",
               gap: "var(--space-2)",
             }}
           >
-            <input
-              placeholder={t("superAdmin.tcg.typeManager.code")}
-              value={typeForm.code}
-              onChange={(e) => setTypeForm({ ...typeForm, code: e.target.value })}
-              required
-            />
+            {/* QA 2026-05-31: 種別コードは内部自動採番のため入力欄を撤去（名称のみ） */}
             <input
               placeholder={t("superAdmin.tcg.fields.nameJa")}
               value={typeForm.name_ja}

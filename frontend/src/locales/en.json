@@ -1,6 +1,8 @@
 {
   "common": {
     "loading": "Loading...",
+    "select": "Select",
+    "clear": "Clear",
     "saving": "Saving...",
     "save": "Save",
     "cancel": "Cancel",
@@ -708,6 +710,13 @@
   "invoices": {
     "subtitle": "Create and manage invoices.",
     "title": "Invoices",
+    "createTitle": "Create Invoice",
+    "fromInventory": "From inventory",
+    "fromQuote": "From quote",
+    "fromQuoteHelp": "Create an invoice from one of your tenant's approved quotes.",
+    "noApprovedQuotes": "No approved quotes available.",
+    "createFromThisQuote": "Create from this quote",
+    "createBtn": "Create invoice",
     "invoiceCode": "Invoice code",
     "dueDate": "Due date",
     "allStatuses": "All statuses",
@@ -757,6 +766,9 @@
   "products": {
     "subtitle": "Manage products and inventory.",
     "title": "Inventory",
+    "selectedCount": "{{count}} selected",
+    "createQuote": "Create Quote",
+    "createInvoice": "Create Invoice",
     "newProduct": "New Product",
     "editProduct": "Edit Product",
     "productCode": "Product code",
@@ -1207,7 +1219,7 @@
     "subtitle": "Edit marketplace central masters (shared across all tenants)",
     "accessDenied": "Only Jarvis operations admins (central admins) can access this page.",
     "tabs": {
-      "knowledge": "Rules / Aliases",
+      "knowledge": "Parsing Prompts / Rules",
       "tcg": "TCG Series",
       "dex": "Pokemon / Trainer Dex",
       "suppliers": "Suppliers",
@@ -1215,6 +1227,9 @@
     },
     "knowledge": {
       "title": "Normalization Rules (knowledge_rules) + Supplier Aliases",
+      "promptSection": "Per-Supplier Parsing Prompt",
+      "promptHelp": "Manage the Gemini parsing prompt per supplier (imported from the spreadsheet).",
+      "promptPlaceholder": "Enter the Gemini parsing prompt for this supplier",
       "rulesSection": "Normalization Rules",
       "aliasesSection": "Supplier Aliases",
       "newRule": "New Rule",
