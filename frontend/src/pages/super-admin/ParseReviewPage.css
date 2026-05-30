@@ -103,7 +103,8 @@
 .data-table[data-testid="review-table"] thead th {
   position: sticky;
   top: 0;
-  z-index: 2;
+  /* ADR-067: z-index は CSS変数。tbody 行より上・dropdown(--z-dropdown) より下 */
+  z-index: var(--z-base);
   /* 行が透けないよう不透明背景（.data-table th と同じ）を明示 */
   background: var(--bg-subtle);
   /* border-collapse 下では sticky 時に border-bottom が外れるため box-shadow で下罫線を代替 */
