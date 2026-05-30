@@ -334,6 +334,23 @@ class TestPromptAndSchema:
         assert "L5:" in passed_prompt  # line_no が prompt に入る
 
     @pytest.mark.asyncio
+    async def test_supplier_prompt_used_as_instruction(self) -> None:
+        # ADR-085: supplier_prompt 指定時はそれを解析指針の本体に使い、
+        # 出力は JSON 強制（response_schema）を保つ。
+        response = _make_fake_response(json_payload={"items": []})
+        genai = _install_fake_genai_module(response)
+        await parse_with_gemini(
+            unparsed_lines=[{"line_no": 1, "raw_line": "■商品A 3点 @1000"}],
+            knowledge_snapshot=[],
+            supplier_prompt="# 役割\nシンソク形式を解析せよ。UNIQUE_SUPPLIER_MARKER_777",
+        )
+        model = genai.GenerativeModel.return_value
+        prompt = model.generate_content_async.await_args.args[0]
+        assert "UNIQUE_SUPPLIER_MARKER_777" in prompt  # 仕入先プロンプト本文が指針に入る
+        assert '"items"' in prompt  # JSON 出力指示が入る
+        assert "■商品A 3点 @1000" in prompt  # 入力行も含まれる
+
+    @pytest.mark.asyncio
     async def test_generation_config_uses_structured_output(self) -> None:
         response = _make_fake_response(json_payload={"items": []})
         genai = _install_fake_genai_module(response)
@@ -409,6 +426,9 @@ class TestHybridParseInventoryMessage:
             "app.services.inventory_parser._load_active_rules",
             new=AsyncMock(return_value=[]),
         ), patch(
+            "app.services.inventory_parser._load_supplier_prompt",
+            new=AsyncMock(return_value=None),
+        ), patch(
             "app.services.inventory_parser.parse_raw_content",
             return_value=ParseResult(
                 items=[],
@@ -440,6 +460,9 @@ class TestHybridParseInventoryMessage:
             "app.services.inventory_parser._load_active_rules",
             new=AsyncMock(return_value=[]),
         ), patch(
+            "app.services.inventory_parser._load_supplier_prompt",
+            new=AsyncMock(return_value=None),
+        ), patch(
             "app.services.inventory_parser.parse_raw_content",
             return_value=ParseResult(
                 items=[], excludes=[], unparsed=[], parse_engine="rule_v1"
@@ -466,6 +489,9 @@ class TestHybridParseInventoryMessage:
         ), patch(
             "app.services.inventory_parser._load_active_rules",
             new=AsyncMock(return_value=[]),
+        ), patch(
+            "app.services.inventory_parser._load_supplier_prompt",
+            new=AsyncMock(return_value=None),
         ), patch(
             "app.services.inventory_parser.parse_raw_content",
             return_value=ParseResult(
@@ -513,6 +539,9 @@ class TestHybridParseInventoryMessage:
             "app.services.inventory_parser._load_active_rules",
             new=AsyncMock(return_value=[]),
         ), patch(
+            "app.services.inventory_parser._load_supplier_prompt",
+            new=AsyncMock(return_value=None),
+        ), patch(
             "app.services.inventory_parser.parse_raw_content",
             return_value=ParseResult(
                 items=[],
@@ -555,6 +584,9 @@ class TestHybridParseInventoryMessage:
         ), patch(
             "app.services.inventory_parser._load_active_rules",
             new=AsyncMock(return_value=[]),
+        ), patch(
+            "app.services.inventory_parser._load_supplier_prompt",
+            new=AsyncMock(return_value=None),
         ), patch(
             "app.services.inventory_parser.parse_raw_content",
             return_value=ParseResult(
@@ -599,6 +631,9 @@ class TestHybridParseInventoryMessage:
         ), patch(
             "app.services.inventory_parser._load_active_rules",
             new=AsyncMock(return_value=[]),
+        ), patch(
+            "app.services.inventory_parser._load_supplier_prompt",
+            new=AsyncMock(return_value=None),
         ), patch(
             "app.services.inventory_parser.parse_raw_content",
             return_value=ParseResult(
@@ -679,6 +714,9 @@ class TestHybridParseInventoryMessage:
             "app.services.inventory_parser._load_active_rules",
             new=AsyncMock(return_value=[]),
         ), patch(
+            "app.services.inventory_parser._load_supplier_prompt",
+            new=AsyncMock(return_value=None),
+        ), patch(
             "app.services.inventory_parser.parse_raw_content",
             return_value=ParseResult(
                 items=[],
@@ -720,6 +758,9 @@ class TestHybridParseInventoryMessage:
         ), patch(
             "app.services.inventory_parser._load_active_rules",
             new=AsyncMock(return_value=[]),
+        ), patch(
+            "app.services.inventory_parser._load_supplier_prompt",
+            new=AsyncMock(return_value=None),
         ), patch(
             "app.services.inventory_parser.parse_raw_content",
             return_value=ParseResult(

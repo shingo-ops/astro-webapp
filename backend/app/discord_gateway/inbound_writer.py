@@ -440,7 +440,8 @@ async def schedule_parse(
                 engine = result.parse_engine
                 if engine == "rule_v1_fallback_blocked":
                     status_val = "budget_exhausted"
-                elif engine == "hybrid_rule_v1_llm_v1":
+                elif engine in ("hybrid_rule_v1_llm_v1", "llm_supplier_prompt"):
+                    # ADR-085: 仕入先別プロンプトによる全文 LLM 解析も LLM 由来
                     status_val = "parsed_llm"
                 elif engine == "rule_v1":
                     # tenant_id 指定で unparsed なし or unparsed あり&LLM 不在

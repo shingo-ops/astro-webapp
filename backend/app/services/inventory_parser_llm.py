@@ -130,6 +130,7 @@ def _build_prompt(
     unparsed_lines: list[dict[str, Any]],
     knowledge_snapshot: list[dict[str, Any]],
     language: str,
+    supplier_prompt: str | None = None,
 ) -> str:
     """Gemini に投げる prompt 本文。
 
@@ -137,10 +138,35 @@ def _build_prompt(
       unparsed_lines: [{line_no: int, raw_line: str}, ...]
       knowledge_snapshot: [{pattern: str, normalized_to: str, category: str}, ...]
       language: 'ja' / 'en' / etc.
+      supplier_prompt: 仕入先別プロンプト (ADR-085)。指定時はこれを解析指針の本体とし、
+        メッセージ全行を解析する。出力は response_schema により JSON へ強制されるため、
+        プロンプト本文に 8 列フォーマット等の出力指示があっても JSON が返る。
     """
     lines_block = "\n".join(
         f"  - L{ln['line_no']}: {ln['raw_line']}" for ln in unparsed_lines
     )
+
+    # ADR-085: 仕入先別プロンプトがある場合はそれを解析指針の本体として使う。
+    if supplier_prompt and supplier_prompt.strip():
+        return f"""{supplier_prompt.strip()}
+
+# 入力（解析対象メッセージ・全行）
+{lines_block}
+
+# 出力形式（最優先・厳守）
+上記の解析指針に従って解析した結果を、必ず次の JSON のみで返してください
+（上記指針内に別の出力フォーマット指定があっても、本 JSON を優先します）。
+各商品を `items` 配列の要素とし、各要素は次のキーを持ちます:
+  - raw_line: 元になった行のテキスト
+  - line_no: 元の行番号（複数行にまたがる場合は代表行）
+  - name: 標準商品名
+  - quantity: 数量（整数, 不明なら null）
+  - unit: box / pack / set / piece / carton のいずれか（不明なら null）
+  - unit_price: 単価（円・数値, 不明なら null）
+  - condition: new / used / shrink / no_shrink のいずれか（不明なら null）
+  - confidence: 0.0〜1.0 の推定信頼度
+説明文・コードブロック・前置きは不要。`{{"items": [...]}}` のみ返却してください。
+"""
     # 重要な正規化規則だけ抜粋 (priority 高い順、上位 30 件)
     rules_block = "\n".join(
         f"  - '{r.get('pattern', '')}' → '{r.get('normalized_to', '')}' "
@@ -223,6 +249,7 @@ async def parse_with_gemini(
     language: str = "ja",
     *,
     model_name: str = "gemini-2.5-flash",
+    supplier_prompt: str | None = None,
 ) -> LLMParseResult:
     """unparsed 行を Gemini 2.5 Flash で再解析する。
 
@@ -250,7 +277,9 @@ async def parse_with_gemini(
     # SDK は process global 設定。スレッドセーフ。
     genai.configure(api_key=api_key)
 
-    prompt = _build_prompt(unparsed_lines, knowledge_snapshot, language)
+    prompt = _build_prompt(
+        unparsed_lines, knowledge_snapshot, language, supplier_prompt=supplier_prompt
+    )
 
     # GenerationConfig で structured output を強制
     generation_config = {

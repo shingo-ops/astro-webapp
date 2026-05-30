@@ -2,10 +2,15 @@
 
 | 項目 | 内容 |
 |------|------|
-| ステータス | Accepted（MVP=管理レイヤのみ。パーサ統合は Proposed） |
+| ステータス | Accepted（管理レイヤ + パーサ統合とも実装） |
 | 作成日 | 2026-05-31 |
 | 起案 | Claude Code (Hikky-dev) |
 | 関連 | migration 057/058（knowledge_rules / supplier_aliases）/ inventory_parser_llm |
+
+> **更新 (2026-05-31)**: 当初「パーサ統合は Proposed（保留）」としたが、ひとしさんの指示で
+> 実装した（後述「パーサ統合（実装済）」節）。出力形式の不一致は、Gemini の
+> `response_schema`（structured output）で JSON を強制することで解消した
+> （プロンプト本文に 8 列出力指示があっても JSON が返る）。
 
 ## What
 
@@ -18,7 +23,15 @@
 - frontend: 「正規化ルール / 別名」タブ（`knowledge` タブ）の先頭に**仕入先別プロンプト編集 UI**（仕入先 select + textarea + 保存）を追加。タブ名を「解析プロンプト / ルール」に変更。
 - seed: `API解析.csv` 6 行目を仕入先名で突合し取り込み。
 
-### 本 ADR では実装しない（要判断・後続）
+### パーサ統合（実装済 / 2026-05-31 追記）
+
+- `parse_inventory_message` で `supplier_prompts` から有効プロンプトをロード（`_load_supplier_prompt`）。
+- プロンプトがある仕入先は、**メッセージ全文**を Gemini に投げて解析（`_apply_supplier_prompt_llm` → `parse_with_gemini(..., supplier_prompt=...)`）。rule_v1 を上書きし `parse_engine='llm_supplier_prompt'`（status=`parsed_llm`）。
+- 出力は `response_schema`（structured output）で現行 JSON スキーマ `{items:[...]}` に**強制**。プロンプト本文の 8 列出力指示は無視され、ダウンストリームの商品マッチング等は無改修で動く。
+- フォールバック: budget HARD_STOP / LLM 設定なし / 呼び出し失敗 → rule_v1 結果。プロンプト未登録の仕入先は従来どおり rule_v1 + 別名 + knowledge。
+- `supplier_prompts` テーブル不在の環境では `_load_supplier_prompt` が None を返し解析継続（非破壊）。
+
+### 当初は保留としていた（現在は実装済）
 
 > **重要**: 取り込んだプロンプトを**実際の Gemini 解析に使う配線は本 PR では行わない。**
 > 理由: スプレッドシートのプロンプトは「**メッセージ全文 → 8 列フォーマット出力**」を前提とするが、
