@@ -58,7 +58,15 @@ export default function InvoicesPage() {
   };
 
   return (
-    <PageLayout navKey="nav.quotesInvoices" subtitleKey="invoices.subtitle">
+    <PageLayout
+      navKey="nav.quotesInvoices"
+      subtitleKey="invoices.subtitle"
+      headerAction={
+        <button className="btn-primary" onClick={() => navigate("/invoices/new")}>
+          {t("invoices.createTitle")}
+        </button>
+      }
+    >
       <nav className="tab-nav">
         <button onClick={() => navigate("/quotes")}>{t("nav.quoteHistory")}</button>
         <button className="tab-active">{t("nav.invoices")}</button>

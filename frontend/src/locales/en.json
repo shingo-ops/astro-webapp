@@ -1,6 +1,8 @@
 {
   "common": {
     "loading": "Loading...",
+    "select": "Select",
+    "clear": "Clear",
     "saving": "Saving...",
     "save": "Save",
     "cancel": "Cancel",
@@ -708,6 +710,13 @@
   "invoices": {
     "subtitle": "Create and manage invoices.",
     "title": "Invoices",
+    "createTitle": "Create Invoice",
+    "fromInventory": "From inventory",
+    "fromQuote": "From quote",
+    "fromQuoteHelp": "Create an invoice from one of your tenant's approved quotes.",
+    "noApprovedQuotes": "No approved quotes available.",
+    "createFromThisQuote": "Create from this quote",
+    "createBtn": "Create invoice",
     "invoiceCode": "Invoice code",
     "dueDate": "Due date",
     "allStatuses": "All statuses",
@@ -757,6 +766,9 @@
   "products": {
     "subtitle": "Manage products and inventory.",
     "title": "Inventory",
+    "selectedCount": "{{count}} selected",
+    "createQuote": "Create Quote",
+    "createInvoice": "Create Invoice",
     "newProduct": "New Product",
     "editProduct": "Edit Product",
     "productCode": "Product code",

@@ -23,6 +23,7 @@ import QuotesPage from "./pages/quotes/QuotesPage";
 import QuoteCreatePage from "./pages/quote-create/QuoteCreatePage";
 import QuoteDetailPage from "./pages/quote-detail/QuoteDetailPage";
 import InvoicesPage from "./pages/invoices/InvoicesPage";
+import InvoiceCreatePage from "./pages/invoice-create/InvoiceCreatePage";
 import InvoiceDetailPage from "./pages/invoice-detail/InvoiceDetailPage";
 import SuppliersPage from "./pages/suppliers/SuppliersPage";
 import PurchaseOrdersPage from "./pages/purchase-orders/PurchaseOrdersPage";
@@ -122,6 +123,7 @@ function App() {
                   <Route path="/quotes/new" element={<QuoteCreatePage />} />
                   <Route path="/quotes/:id" element={<QuoteDetailPage />} />
                   <Route path="/quotes" element={<QuotesPage />} />
+                  <Route path="/invoices/new" element={<InvoiceCreatePage />} />
                   <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
                   <Route path="/invoices" element={<InvoicesPage />} />
 

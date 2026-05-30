@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -106,6 +107,31 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [archiveBlocked, setArchiveBlocked] = useState<ArchiveBlockedDetail | null>(null);
+  // QA 2026-05-31: 在庫表からチェックして見積/請求を作成するための複数選択
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const navigate = useNavigate();
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // 選択商品を初期明細として見積/請求の作成画面へ渡す
+  const goCreate = (path: string) => {
+    const selectedProducts = products
+      .filter((p) => selectedIds.has(p.id))
+      .map((p) => ({
+        product_id: p.id,
+        product_name: p.name_ja,
+        unit_price: p.unit_price,
+      }));
+    if (selectedProducts.length === 0) return;
+    navigate(path, { state: { selectedProducts } });
+  };
 
   const load = async () => {
     try {
@@ -241,6 +267,27 @@ export default function ProductsPage() {
         <input type="text" placeholder={t("common.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
+      {/* QA 2026-05-31: 在庫表からチェックした商品で見積/請求を作成 */}
+      {selectedIds.size > 0 && (
+        <div
+          className="selection-action-bar"
+          style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap", margin: "var(--space-2) 0", padding: "var(--space-2) var(--space-3)", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}
+        >
+          <span style={{ fontWeight: "var(--font-weight-semi)" }}>
+            {t("products.selectedCount", { count: selectedIds.size })}
+          </span>
+          <button className="btn-primary btn-sm" onClick={() => goCreate("/quotes/new")} data-testid="create-quote-from-products">
+            {t("products.createQuote")}
+          </button>
+          <button className="btn-primary btn-sm" onClick={() => goCreate("/invoices/new")} data-testid="create-invoice-from-products">
+            {t("products.createInvoice")}
+          </button>
+          <button className="btn-sm" onClick={() => setSelectedIds(new Set())}>
+            {t("common.clear")}
+          </button>
+        </div>
+      )}
+
       {error && <div className="error-message">{error}</div>}
 
       {showForm && (
@@ -338,6 +385,7 @@ export default function ProductsPage() {
         <table className="data-table">
           <thead>
             <tr>
+              <th style={{ width: "var(--col-width-checkbox)", textAlign: "center" }} aria-label={t("common.select")}></th>
               <th>{t("common.name")}</th>
               <th>{t("quotes.items")}</th>
               <th>{t("language.label")}</th>
@@ -357,6 +405,15 @@ export default function ProductsPage() {
               // 文字の視認性を保つため opacity は下げない (QA 2026-05-29)。
               return (
               <tr key={p.id} style={rowStyle} data-zero-stock={isOutOfStock ? "true" : "false"}>
+                <td style={{ textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(p.id)}
+                    onChange={() => toggleSelect(p.id)}
+                    aria-label={t("common.select")}
+                    data-testid={`product-select-${p.id}`}
+                  />
+                </td>
                 <td>
                   {p.image_url && <img src={p.image_url} alt="" style={{ width: 'var(--icon-lg)', height: 'var(--icon-lg)', marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: "var(--radius-xs)" }} />}
                   {isOutOfStock && !p.is_archived && (
@@ -395,7 +452,7 @@ export default function ProductsPage() {
               </tr>
               );
             })}
-            {products.length === 0 && <tr><td colSpan={8} className="empty">{t("products.noProducts")}</td></tr>}
+            {products.length === 0 && <tr><td colSpan={9} className="empty">{t("products.noProducts")}</td></tr>}
           </tbody>
         </table>
       )}
