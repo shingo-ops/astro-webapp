@@ -16,6 +16,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.inventory_offers import InventoryUnit
+
 
 class ReviewItemInput(BaseModel):
     """承認対象の 1 行（採用 / 編集後 / 新規追加すべて同じ形）。
@@ -77,11 +79,10 @@ class ReviewItemInput(BaseModel):
             "UPSERT される。None なら 0 で記録 (apply 側既定)。"
         ),
     )
-    unit: str | None = Field(
+    unit: InventoryUnit | None = Field(
         default=None,
-        max_length=20,
         description=(
-            "数量の単位 (UI: Box / Case / Pack / Set / Peace)。QA 2026-05-30。"
+            "数量の単位。正規値: piece / pack / box / case / set。"
             "migration 084 で public.inventory.unit (VARCHAR(20)) へ UPSERT 保存される。None なら NULL。"
         ),
     )

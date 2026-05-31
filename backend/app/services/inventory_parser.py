@@ -100,7 +100,7 @@ class ParsedItem:
     alias_text: str | None = None
     product_name: str | None = None  # 正規化後の表記 (alias_text or normalized)
     quantity: int | None = None
-    unit: str | None = None  # 'box' / 'carton' / 'pack' / 'piece'
+    unit: str | None = None  # 'box' / 'case' / 'pack' / 'piece' / 'set'
     unit_price: str | None = None  # Decimal を JSON 安全に str で保持
     condition: str | None = None  # 'normal' / 'state_a_minus' / 'state_b' / 'shrink_yes' / 'shrink_no'
     raw_condition: str | None = None  # マッチした元テキスト
@@ -150,7 +150,7 @@ class ParseResult:
 
 # 単位正規化: 表記ゆれを正規形に揃える。
 # 「BOX / box / Box / ボックス / 箱」 → "box"
-# 「カートン / Carton / CASE / case / ケース / CT」→ "carton"
+# 「カートン / Carton / CASE / case / ケース / CT」→ "case"
 # 「パック / pack / Pack」→ "pack"
 # 「set / セット」→ "set"
 # 「枚」→ "piece"
@@ -160,15 +160,15 @@ DEFAULT_UNIT_NORMALIZATION: dict[str, str] = {
     "BOX": "box",
     "ボックス": "box",
     "箱": "box",
-    "カートン": "carton",
-    "Carton": "carton",
-    "CARTON": "carton",
-    "case": "carton",
-    "Case": "carton",
-    "CASE": "carton",
-    "ケース": "carton",
-    "CT": "carton",
-    "ct": "carton",
+    "カートン": "case",
+    "Carton": "case",
+    "CARTON": "case",
+    "case": "case",
+    "Case": "case",
+    "CASE": "case",
+    "ケース": "case",
+    "CT": "case",
+    "ct": "case",
     "パック": "pack",
     "pack": "pack",
     "Pack": "pack",
