@@ -310,6 +310,52 @@ M1 ─→ M2 ─→ M3 ─→ M4 ─→ M5 ─→ M6
 
 ---
 
+## 8-A. 実装実績と設計変更（M3/M4、2026-06-01）
+
+### M3 実装変更: inbound は meta_messages に直接書き込む
+
+ADR 起草時の M3 設計（`raw_webhook_events` → Celery タスク → `conversations`）は
+実装時に簡略化された。
+
+**採用した設計（実装済み）:**
+- Discord DM（`message.guild is None`）→ `dm_writer.upsert_lead_and_message` で直接 `{schema}.meta_messages` に `platform='discord'` として書き込む
+- Guild メッセージ → `inbound_writer.write_inbound` で `public.discord_inbound_messages`（仕入元在庫）へ（変更なし）
+- G1 の「Meta Messenger と同じ抽象」は `meta_messages` テーブルの共有で実現（`raw_webhook_events` 経由は採用しない）
+
+**理由:**
+- `meta_messages` はすでに Messenger/Instagram で実績ある統一メッセージストアとして機能しており、Discord を第3の platform として追加するだけで `GET /conversations` API が自動対応する
+- Celery 中継を省くことで、VPS メモリ圧迫（Celery worker + Beat で ~150 MB 消費）を回避できる
+
+### M4 実装変更: httpx 直接送信（outbox + Redis 不採用）
+
+ADR 起草時の M4 設計（`outbox_discord_messages` テーブル + Redis Pub/Sub）は採用しない。
+
+**採用した設計（実装済み）:**
+
+| 設計要素 | M4 計画（旧） | 実装（採用） |
+|---------|-------------|------------|
+| 送信経路 | Redis Pub/Sub → Gateway | `httpx.AsyncClient` で Discord REST API v10 を直接呼び出し |
+| 新規テーブル | `outbox_discord_messages` | **なし** — outbound 記録は既存 `meta_messages` に `direction='outbound'` |
+| Bot Token 取得 | Gateway 内プロセス | `DISCORD_BOT_TOKEN_{tenant_id}` 環境変数を FastAPI 側でも参照 |
+| retry | 指数バックオフ 3 回 | FastAPI の 502 → フロントエンドが再送（現時点で自動 retry なし） |
+
+**実装ファイル:**
+- `backend/app/services/discord_sender.py` — httpx 送信ロジック・`DiscordSendError`
+- `backend/app/routers/leads.py::_send_discord_message()` — POST /leads/{id}/messages Discord パス
+- `migrations/091_add_leads_discord_messaging_columns.sql` — `discord_user_id`, `discord_dm_channel_id` 追加
+- `migrations/092_add_meta_messages_discord_index.sql` — discord platform インデックス
+
+**変更理由:**
+- Gateway と FastAPI は別コンテナだが、HTTP 直送（httpx）で十分な応答性（Discord API SLA p95 < 500 ms）
+- Redis Pub/Sub を介す設計は切断検出・retry の複雑さが増し、VPS 2 GB 環境では設計コストが過大
+- Meta Messenger 送信（同期 httpx）と同じアーキテクチャにすることで一貫性を保つ
+
+**Discord 固有の制約免除:**
+- Meta の 24h メッセージウィンドウは Discord に適用しない（`can_send_at_all` を常に `True` で返す）
+- `messaging_window` チェックをスキップし `_send_discord_message()` に直行する経路を leads.py に追加
+
+---
+
 ## 9. リスクと未確定事項
 
 | ID | リスク / 未確定事項 | 影響度 | 発生確率 | 対策 |

@@ -76,5 +76,12 @@ scrape_configs:
       - labels:
           stream:
           container_name:
+      # discord-gateway コンテナに service=discord-gateway ラベルを付与
+      # Loki クエリ: {job="containerlogs", service="discord-gateway"} |= "[dm_writer]"
+      - match:
+          selector: '{container_name=~".*discord.*gateway.*"}'
+          stages:
+            - static_labels:
+                service: discord-gateway
       - output:
           source: output

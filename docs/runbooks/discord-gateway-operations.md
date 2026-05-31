@@ -94,6 +94,105 @@ sudo journalctl -u sales-anchor-discord-gateway -f
 - `public.tenant_llm_budgets` の `current_month_usd` が `monthly_budget_usd` に到達していないか確認
   (到達時は `budget_exhausted` 状態に遷移する)
 
+---
+
+## 顧客 DM 受信箱（Discord ↔ Sales Anchor 受信箱連携）
+
+### 概要
+
+仕入元 Guild メッセージ（在庫処理）とは独立した、顧客向け DM 送受信経路。
+`message.guild is None` な DM のみがこの経路に流れる。
+
+```
+顧客（Discord DM）
+  → discord-gateway-1: client.py on_message
+    → _process_dm_message()
+      → dm_writer.upsert_lead_and_message()
+        → {schema}.leads (source='discord:<user_id>')
+        → {schema}.meta_messages (platform='discord', direction='inbound')
+
+スタッフ（受信箱 UI）
+  → POST /api/v1/leads/{id}/messages
+    → leads.py::_send_discord_message()
+      → discord_sender.send_discord_dm()
+        → Discord REST API v10 (httpx)
+```
+
+### 受信確認
+
+```bash
+# DB で直近 Discord DM 受信を確認 (tenant_004 例)
+docker exec -i astro-webapp-postgres-1 psql -U jarvis -d jarvis_db <<'SQL'
+SELECT id, lead_id, sender_name, message_text, created_at
+FROM tenant_004.meta_messages
+WHERE platform = 'discord' AND direction = 'inbound'
+ORDER BY created_at DESC LIMIT 10;
+SQL
+
+# lead が生成されているか確認
+docker exec -i astro-webapp-postgres-1 psql -U jarvis -d jarvis_db <<'SQL'
+SELECT id, customer_name, source, discord_user_id, discord_dm_channel_id
+FROM tenant_004.leads
+WHERE source LIKE 'discord:%'
+ORDER BY created_at DESC LIMIT 10;
+SQL
+```
+
+### 送信が 409 になる場合
+
+`discord_dm_channel_id` が leads テーブルに未設定。顧客から先に DM を送ってもらう必要がある。
+
+```bash
+# 確認: dm_channel_id が NULL かどうか
+docker exec -i astro-webapp-postgres-1 psql -U jarvis -d jarvis_db <<'SQL'
+SELECT id, source, discord_user_id, discord_dm_channel_id
+FROM tenant_004.leads WHERE source LIKE 'discord:%';
+SQL
+```
+
+顧客が Bot に DM を送信すると `dm_writer` が自動設定する。
+
+### 送信が 502 になる場合
+
+1. `DISCORD_BOT_TOKEN_{TENANT_ID}` が VPS 環境変数に設定されているか確認
+2. Discord Developer Portal で Bot Token が失効していないか確認
+3. Gateway コンテナが起動していない → `sudo systemctl restart sales-anchor-discord-gateway`
+
+```bash
+# VPS でトークン確認（値は表示しない）
+sudo grep -c "DISCORD_BOT_TOKEN" /etc/sales-anchor/discord-gateway.env
+```
+
+### dm_writer が失敗する場合（Gateway ログ確認）
+
+```bash
+sudo journalctl -u sales-anchor-discord-gateway --since "1 hour ago" | grep "\[dm_writer\]"
+```
+
+エラーパターン:
+- `lead 取得失敗` → DB 接続エラーまたはスキーマ不整合（migration 091 適用漏れを疑う）
+- `duplicate discord_message_id` → 正常（冪等処理。重複受信は Skip される）
+
+### migration 適用漏れチェック
+
+```bash
+# tenant_004.leads に discord カラムが存在するか
+docker exec -i astro-webapp-postgres-1 psql -U jarvis -d jarvis_db <<'SQL'
+SELECT column_name FROM information_schema.columns
+WHERE table_schema='tenant_004' AND table_name='leads'
+AND column_name IN ('discord_user_id','discord_dm_channel_id');
+SQL
+
+# meta_messages に discord インデックスがあるか
+docker exec -i astro-webapp-postgres-1 psql -U jarvis -d jarvis_db <<'SQL'
+SELECT indexname FROM pg_indexes
+WHERE schemaname='tenant_004' AND tablename='meta_messages'
+AND indexname='idx_meta_messages_discord';
+SQL
+```
+
+---
+
 ## 関連 ADR / Memory
 
 - ADR-009 Discord Gateway (M2 → M3 拡張)
