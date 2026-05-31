@@ -37,6 +37,26 @@ cat .claude-pipeline/active-work.md
 - If no overlap → continue. The worktree script (Step 1.5) will auto-register your branch entry.
 - When your sprint PR is merged → remove your row from `active-work.md` and commit the deletion.
 
+## Step 0.5: 並列化可否チェック
+
+タスクを開始する前に、以下で分類せよ。
+
+**並行 OK（他 worktree と独立）**:
+- 別機能エリアの UI コンポーネント・ページ実装
+- 別エンドポイント・別ルーターの実装
+- 影響範囲が局所的なバグ修正
+- テスト・ドキュメント追加
+
+**逐次必須（他の IN_PROGRESS と競合する可能性）**:
+- DB マイグレーションファイルの追加を伴う変更
+- 共通型定義・共通ユーティリティ（`utils/`, `types/` 等）の変更
+- 認証・決済まわりの変更
+- `active-work.md` に同一機能エリアの IN_PROGRESS がある
+
+逐次必須に該当する場合: 既存 IN_PROGRESS が完了するまで **STOP** し、しんごさんに報告する。
+
+---
+
 ## Step 1: Determine which sprint to work on
 
 1. Read `.claude-pipeline/state.json` to get `current_sprint` (call it N).
