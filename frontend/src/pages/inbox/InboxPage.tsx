@@ -12,7 +12,7 @@
 
 import "./InboxPage.css";
 import { useNavigate } from "react-router-dom";
-import { NAV_ICONS, PAGE_ICONS } from "../../constants/icons";
+import { PAGE_ICONS } from "../../constants/icons";
 import { PageLayout } from "../../components/PageLayout";
 import { ICON } from "../../constants/iconSizes";
 import { useInboxState } from "./useInboxState";
@@ -59,15 +59,6 @@ export default function InboxPage() {
         data-tooltip={t("faq.title")}
       >
         FAQ
-      </button>
-      <button
-        type="button"
-        className="icon-btn"
-        onClick={() => navigate("/templates")}
-        aria-label={t("nav.templates")}
-        data-tooltip={t("nav.templates")}
-      >
-        <NAV_ICONS.fileText size={ICON.md} aria-hidden="true" />
       </button>
       <button
         type="button"

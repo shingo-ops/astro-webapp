@@ -91,7 +91,9 @@ async def engine():
                 monthly_frequency NUMERIC(10, 2),
                 nickname VARCHAR(255),
                 country VARCHAR(100),
-                target_titles VARCHAR(500)
+                target_titles VARCHAR(500),
+                messenger_link VARCHAR(1000),
+                discord_id VARCHAR(255)
             )
         """))
         # meta_messages（migration 012 + 041 + 045 (F14-S5 page_id) を SQLite 用に縮小）

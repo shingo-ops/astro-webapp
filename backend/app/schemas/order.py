@@ -28,21 +28,21 @@ from pydantic import BaseModel, Field
 
 
 class OrderStatus(str, Enum):
-    """ADR-021 第 1 節「ステータスフィルタ」の正本 6 値。
+    """受注ステータス 6 値（migration 090 で旧値から改名）。
 
     日本語ラベル対応（フロント側で持つ）:
-      pending → 未処理
-      processing → 仕入中
-      shipped → 配送中
-      delivered → 完了
-      returned → トラブル
-      cancelled → キャンセル
+      awaiting_payment  → 支払い待ち
+      sourcing          → 仕入れ中
+      awaiting_shipping → 発送待ち
+      completed         → 完了
+      trouble           → トラブル
+      cancelled         → キャンセル
     """
-    pending = "pending"
-    processing = "processing"
-    shipped = "shipped"
-    delivered = "delivered"
-    returned = "returned"
+    awaiting_payment = "awaiting_payment"
+    sourcing = "sourcing"
+    awaiting_shipping = "awaiting_shipping"
+    completed = "completed"
+    trouble = "trouble"
     cancelled = "cancelled"
 
 
@@ -55,7 +55,7 @@ class OrderCreate(BaseModel):
     order_number: str = Field(min_length=1, max_length=100)
     total_amount: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     currency: str = Field(default="JPY", max_length=10)
-    status: OrderStatus = Field(default=OrderStatus.pending)
+    status: OrderStatus = Field(default=OrderStatus.awaiting_payment)
     shipping_carrier: str | None = Field(default=None, max_length=50)
     shipping_fee: Decimal | None = Field(default=None, ge=0, max_digits=15, decimal_places=2)
     shipping_country: str | None = Field(default=None, max_length=100)

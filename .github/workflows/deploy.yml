@@ -647,6 +647,17 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/087_create_supplier_prompts.sql
 
+            # Migration 090: 全テナントの leads に messenger_link / discord_id 追加。
+            #   DO $$ pg_namespace 走査形式。ADD COLUMN IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/090_add_lead_contact_links.sql
+
+            # Migration 093: orders.status 旧 6 値 → 新 6 値（支払い待ち/仕入れ中/発送待ち/完了/トラブル/キャンセル）
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/093_rename_order_statuses.sql
+
             # Migration 091: leads に discord_user_id / discord_dm_channel_id 追加（Discord 顧客メッセージング）
             #   DO $$ pg_namespace 走査形式。ADD COLUMN IF NOT EXISTS で冪等。
             docker exec -i astro-webapp-postgres-1 \

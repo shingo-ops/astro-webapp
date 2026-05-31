@@ -17,7 +17,7 @@ import { useOrdersState } from "./useOrdersState";
 import { OrdersFilterBar } from "./OrdersFilterBar";
 import { OrdersFormModal } from "./OrdersFormModal";
 import { OrdersTable } from "./OrdersTable";
-import { emptyForm } from "./orders.types";
+import { emptyForm, STATUSES } from "./orders.types";
 
 export default function OrdersPage() {
   const { t } = useTranslation();
@@ -67,22 +67,66 @@ export default function OrdersPage() {
   ) : null;
 
   return (
-    <PageLayout navKey="nav.orders" subtitleKey="orders.subtitle" headerAction={newOrderButton}>
-      <OrdersFilterBar
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        searchInput={searchInput}
-        setSearchInput={setSearchInput}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        sortOrder={sortOrder}
-        toggleSortOrder={toggleSortOrder}
-        groupCounts={groupCounts}
-        STATUS_LABELS={STATUS_LABELS}
-        SORT_OPTIONS={SORT_OPTIONS}
-      />
+    <PageLayout navKey="nav.orders" subtitleKey="orders.subtitle" noScroll headerAction={newOrderButton}>
+      <div className="hub-shell">
+        {/* 左サブナビ: ステータスフィルタ */}
+        <nav className="hub-subnav" aria-label={t("orders.title")}>
+          <button
+            type="button"
+            className={`hub-subnav-item${statusFilter === "" ? " active" : ""}`}
+            onClick={() => setStatusFilter("")}
+            aria-pressed={statusFilter === ""}
+            data-testid="subnav-all"
+          >
+            {t("common.all")} ({groupCounts?.total ?? 0})
+          </button>
+          {STATUSES.map((s) => (
+            <button
+              type="button"
+              key={s}
+              className={`hub-subnav-item${statusFilter === s ? " active" : ""}`}
+              onClick={() => setStatusFilter(statusFilter === s ? "" : s)}
+              aria-pressed={statusFilter === s}
+              data-testid={`subnav-${s}`}
+            >
+              {STATUS_LABELS[s]} ({groupCounts?.counts[s] ?? 0})
+            </button>
+          ))}
+        </nav>
 
-      {error && <div className="error-message">{error}</div>}
+        {/* 右コンテンツエリア */}
+        <div className="hub-content" style={{ overflowY: "auto", padding: "var(--space-4)" }}>
+          <OrdersFilterBar
+            searchInput={searchInput}
+            setSearchInput={setSearchInput}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            toggleSortOrder={toggleSortOrder}
+            STATUS_LABELS={STATUS_LABELS}
+            SORT_OPTIONS={SORT_OPTIONS}
+          />
+
+          {error && <div className="error-message">{error}</div>}
+
+          {loading ? (
+            <div className="loading">{t("common.loading")}</div>
+          ) : (
+            <OrdersTable
+              orders={orders}
+              financials={financials}
+              shippings={shippings}
+              purchases={purchases}
+              commissionTotals={commissionTotals}
+              panelOpeners={{ setFinancialTarget, setShippingTarget, setPurchaseTarget, setCommissionTarget }}
+              STATUS_LABELS={STATUS_LABELS}
+              companyDisplay={companyDisplay}
+              handleEdit={handleEdit}
+              setDeleteTarget={setDeleteTarget}
+            />
+          )}
+        </div>
+      </div>
 
       <OrdersFormModal
         showForm={showForm}
@@ -99,23 +143,6 @@ export default function OrdersPage() {
         STATUS_LABELS={STATUS_LABELS}
         handleSubmit={handleSubmit}
       />
-
-      {loading ? (
-        <div className="loading">{t("common.loading")}</div>
-      ) : (
-        <OrdersTable
-          orders={orders}
-          financials={financials}
-          shippings={shippings}
-          purchases={purchases}
-          commissionTotals={commissionTotals}
-          panelOpeners={{ setFinancialTarget, setShippingTarget, setPurchaseTarget, setCommissionTarget }}
-          STATUS_LABELS={STATUS_LABELS}
-          companyDisplay={companyDisplay}
-          handleEdit={handleEdit}
-          setDeleteTarget={setDeleteTarget}
-        />
-      )}
 
       {financialTarget && (
         <OrderFinancialPanel

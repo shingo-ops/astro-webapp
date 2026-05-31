@@ -400,7 +400,9 @@ async def setup_test_db(test_engine):
                 monthly_frequency NUMERIC(10, 2),
                 nickname VARCHAR(255),
                 country VARCHAR(100),
-                target_titles VARCHAR(500)
+                target_titles VARCHAR(500),
+                messenger_link VARCHAR(1000),
+                discord_id VARCHAR(255)
             )
         """))
         # 案件テーブル（Step 5d: 旧 customer_id 列削除済）
@@ -438,7 +440,7 @@ async def setup_test_db(test_engine):
                 order_number VARCHAR(100) NOT NULL,
                 total_amount NUMERIC(15, 2),
                 currency VARCHAR(10) DEFAULT 'JPY',
-                status VARCHAR(50) DEFAULT 'pending',
+                status VARCHAR(50) DEFAULT 'awaiting_payment',
                 shipping_carrier VARCHAR(50),
                 shipping_fee NUMERIC(15, 2),
                 tracking_number VARCHAR(200),

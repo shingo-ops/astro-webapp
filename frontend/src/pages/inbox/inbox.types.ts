@@ -72,6 +72,8 @@ export interface LeadDetail {
   nickname: string | null;
   country: string | null;
   target_titles: string | null;
+  messenger_link: string | null;
+  discord_id: string | null;
 }
 
 // ---------------------------------------------------------------------------

@@ -37,13 +37,13 @@ class TestOrdersCRUD:
             "deal_id": deal_id,
             "order_number": "ORD-001",
             "total_amount": 500000,
-            "status": "pending",
+            "status": "awaiting_payment",
         })
         assert res.status_code == 201
         data = res.json()
         assert data["order_number"] == "ORD-001"
         assert float(data["total_amount"]) == 500000.0
-        assert data["status"] == "pending"
+        assert data["status"] == "awaiting_payment"
         assert data["company_id"] == company_id
         assert data["contact_id"] == contact_id
         assert data["deal_id"] == deal_id
@@ -118,17 +118,17 @@ class TestOrdersCRUD:
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
             "order_number": "ORD-PEND",
-            "status": "pending",
+            "status": "awaiting_payment",
         })
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
             "order_number": "ORD-SHIP",
-            "status": "shipped",
+            "status": "awaiting_shipping",
         })
 
-        res = await client.get("/api/v1/orders", params={"status": "pending"})
+        res = await client.get("/api/v1/orders", params={"status": "awaiting_payment"})
         assert res.status_code == 200
-        assert all(o["status"] == "pending" for o in res.json())
+        assert all(o["status"] == "awaiting_payment" for o in res.json())
 
     async def test_get_order(self, client):
         """注文詳細を取得できる"""
@@ -153,10 +153,10 @@ class TestOrdersCRUD:
         order_id = create_res.json()["id"]
 
         res = await client.patch(f"/api/v1/orders/{order_id}", json={
-            "status": "shipped",
+            "status": "awaiting_shipping",
         })
         assert res.status_code == 200
-        assert res.json()["status"] == "shipped"
+        assert res.json()["status"] == "awaiting_shipping"
 
     async def test_update_order_with_amount_and_status(self, client):
         """Decimal(total_amount)とEnum(status)を同時更新できる（asyncpg encoder対策の回帰テスト）"""
@@ -168,13 +168,13 @@ class TestOrdersCRUD:
         order_id = create_res.json()["id"]
 
         res = await client.patch(f"/api/v1/orders/{order_id}", json={
-            "status": "processing",
+            "status": "sourcing",
             "total_amount": 50000,
             "notes": "備考更新",
         })
         assert res.status_code == 200
         body = res.json()
-        assert body["status"] == "processing"
+        assert body["status"] == "sourcing"
         assert float(body["total_amount"]) == 50000.0
         assert body["notes"] == "備考更新"
 
@@ -365,11 +365,11 @@ class TestOrdersListSearchSort:
         company_id, contact_id = await _create_company_contact(client)
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-ST-PEND", "status": "pending",
+            "order_number": "ORD-ST-PEND", "status": "awaiting_payment",
         })
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-ST-DEL", "status": "delivered",
+            "order_number": "ORD-ST-DEL", "status": "completed",
         })
 
         res = await client.get(
@@ -423,15 +423,15 @@ class TestOrdersGroupCounts:
         company_id, contact_id = await _create_company_contact(client)
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-GC-1", "status": "pending",
+            "order_number": "ORD-GC-1", "status": "awaiting_payment",
         })
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-GC-2", "status": "pending",
+            "order_number": "ORD-GC-2", "status": "awaiting_payment",
         })
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-GC-3", "status": "shipped",
+            "order_number": "ORD-GC-3", "status": "awaiting_shipping",
         })
 
         res = await client.get("/api/v1/orders/group-counts")
@@ -439,12 +439,12 @@ class TestOrdersGroupCounts:
         body = res.json()
         assert "counts" in body and "total" in body
         # ADR-021 J1 fix: OrderStatus 6 値が含まれる（件数 0 も）。confirmed は撤去済。
-        for s in ["pending", "processing", "shipped",
-                  "delivered", "returned", "cancelled"]:
+        for s in ["awaiting_payment", "sourcing", "awaiting_shipping",
+                  "completed", "trouble", "cancelled"]:
             assert s in body["counts"]
         assert "confirmed" not in body["counts"]
-        assert body["counts"]["pending"] >= 2
-        assert body["counts"]["shipped"] >= 1
+        assert body["counts"]["awaiting_payment"] >= 2
+        assert body["counts"]["awaiting_shipping"] >= 1
         # total はカウントの合計と一致
         assert body["total"] == sum(body["counts"].values())
 
@@ -454,15 +454,15 @@ class TestOrdersGroupCounts:
         co_b, ct_b = await _create_company_contact(client, "GroupSearchB")
         await client.post("/api/v1/orders", json={
             "company_id": co_a, "contact_id": ct_a,
-            "order_number": "ORD-GS-A1", "status": "pending",
+            "order_number": "ORD-GS-A1", "status": "awaiting_payment",
         })
         await client.post("/api/v1/orders", json={
             "company_id": co_a, "contact_id": ct_a,
-            "order_number": "ORD-GS-A2", "status": "pending",
+            "order_number": "ORD-GS-A2", "status": "awaiting_payment",
         })
         await client.post("/api/v1/orders", json={
             "company_id": co_b, "contact_id": ct_b,
-            "order_number": "ORD-GS-B1", "status": "shipped",
+            "order_number": "ORD-GS-B1", "status": "awaiting_shipping",
         })
 
         res = await client.get(
@@ -472,8 +472,8 @@ class TestOrdersGroupCounts:
         assert res.status_code == 200
         body = res.json()
         # A 検索なので A 社の 2 件のみ集計対象
-        assert body["counts"]["pending"] == 2
-        assert body["counts"]["shipped"] == 0
+        assert body["counts"]["awaiting_payment"] == 2
+        assert body["counts"]["awaiting_shipping"] == 0
         assert body["total"] == 2
 
     async def test_get_orders_group_counts_with_status_filter(self, client):
@@ -481,22 +481,22 @@ class TestOrdersGroupCounts:
         company_id, contact_id = await _create_company_contact(client)
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-GCF-1", "status": "pending",
+            "order_number": "ORD-GCF-1", "status": "awaiting_payment",
         })
         await client.post("/api/v1/orders", json={
             "company_id": company_id, "contact_id": contact_id,
-            "order_number": "ORD-GCF-2", "status": "shipped",
+            "order_number": "ORD-GCF-2", "status": "awaiting_shipping",
         })
 
         res = await client.get(
             "/api/v1/orders/group-counts",
-            params={"status": "shipped"},
+            params={"status": "awaiting_shipping"},
         )
         assert res.status_code == 200
         body = res.json()
-        assert body["counts"]["pending"] == 0
-        assert body["counts"]["shipped"] >= 1
-        assert body["total"] == body["counts"]["shipped"]
+        assert body["counts"]["awaiting_payment"] == 0
+        assert body["counts"]["awaiting_shipping"] >= 1
+        assert body["total"] == body["counts"]["awaiting_shipping"]
 
     async def test_get_orders_group_counts_empty(self, client):
         """注文が無いテナントでも 200 + 全 0 + total=0 を返す"""
@@ -505,8 +505,8 @@ class TestOrdersGroupCounts:
         body = res.json()
         assert body["total"] == 0
         # ADR-021 J1 fix: 6 値のみ（confirmed なし）
-        for s in ["pending", "processing", "shipped",
-                  "delivered", "returned", "cancelled"]:
+        for s in ["awaiting_payment", "sourcing", "awaiting_shipping",
+                  "completed", "trouble", "cancelled"]:
             assert body["counts"][s] == 0
         assert "confirmed" not in body["counts"]
 
@@ -559,8 +559,8 @@ class TestOrderStatusSixValues:
         from app.schemas.order import OrderStatus
         values = {s.value for s in OrderStatus}
         assert values == {
-            "pending", "processing", "shipped",
-            "delivered", "returned", "cancelled",
+            "awaiting_payment", "sourcing", "awaiting_shipping",
+            "completed", "trouble", "cancelled",
         }
         assert "confirmed" not in values
 
@@ -593,16 +593,16 @@ class TestOrderStatusSixValues:
         assert res.status_code == 400
         detail = res.json()["detail"]
         # 許可値 6 個が detail に列挙されている
-        assert "pending" in detail
-        assert "processing" in detail
-        assert "shipped" in detail
-        assert "delivered" in detail
-        assert "returned" in detail
+        assert "awaiting_payment" in detail
+        assert "sourcing" in detail
+        assert "awaiting_shipping" in detail
+        assert "completed" in detail
+        assert "trouble" in detail
         assert "cancelled" in detail
 
     async def test_status_filter_accepts_pending(self, client):
         """GET /orders?status=pending は 200 を返す（whitelist 通過）"""
-        res = await client.get("/api/v1/orders", params={"status": "pending"})
+        res = await client.get("/api/v1/orders", params={"status": "awaiting_payment"})
         assert res.status_code == 200
 
     async def test_group_counts_excludes_confirmed_key(self, client):
@@ -613,8 +613,8 @@ class TestOrderStatusSixValues:
         assert "confirmed" not in counts
         # 正本 6 値はすべて含まれる（件数 0 でも 0 埋め）
         assert set(counts.keys()) >= {
-            "pending", "processing", "shipped",
-            "delivered", "returned", "cancelled",
+            "awaiting_payment", "sourcing", "awaiting_shipping",
+            "completed", "trouble", "cancelled",
         }
 
     async def test_group_counts_filter_with_confirmed_returns_400(self, client):
