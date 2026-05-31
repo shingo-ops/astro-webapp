@@ -315,6 +315,8 @@
     "perOrderAmount": "Per Order Amount",
     "monthlyFrequency": "Monthly Frequency",
     "nickname": "Nickname",
+    "messengerLink": "Messenger Link",
+    "discordId": "Discord ID",
     "country": "Country",
     "targetTitles": "Titles",
     "rank": "Rank",
