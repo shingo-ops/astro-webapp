@@ -57,6 +57,7 @@ src/index.css      — カラートークン（:root ライト / :root.force-dar
 | `--input-width-weight`| `80px` | 重量・小数点入力 |
 | `--input-width-year`  | `90px` | 年・金額入力 |
 | `--size-thread-avatar`| `36px` | 受信箱スレッド送信者アバター |
+| `--size-icon-btn`     | `36px` | ヘッダーアクション・アイコンボタン共通サイズ（SSoT） |
 | `--table-min-width-base` | `720px` | テーブル最小幅（見積等） |
 | `--table-col-min-width`  | `280px` | テーブルカラム最小幅 |
 | `--col-width-checkbox`   | `40px`  | チェックボックス列幅 |
