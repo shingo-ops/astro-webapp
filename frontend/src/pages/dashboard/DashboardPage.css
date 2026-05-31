@@ -34,16 +34,22 @@
   background: var(--bg-hover);
 }
 
-/* ── 固定エリア（フォローアップ左広め・着地予測右） ── */
+/* ── 固定エリア ── */
 .db-fixed-area {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
 
+/* リードビュー: 着地予測カードが非表示のため2カラム */
+.db-fixed-area.db-two-cols {
+  grid-template-columns: 1fr 1fr;
+}
+
 @media (max-width: 960px) {
-  .db-fixed-area {
+  .db-fixed-area,
+  .db-fixed-area.db-two-cols {
     grid-template-columns: 1fr;
   }
 }
@@ -126,9 +132,9 @@
 .db-goal-row {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  grid-template-rows: auto 4px;
+  grid-template-rows: auto auto 4px;
   align-items: center;
-  gap: var(--space-2) var(--space-2);
+  gap: var(--space-1) var(--space-2);
   font-size: var(--font-sm);
 }
 
@@ -170,9 +176,17 @@
   grid-row: 1;
 }
 
+/* あとXXXで達成 — 逆算表示（row 2 に配置） */
+.db-goal-remaining {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
 .db-progress-wrap {
   grid-column: 1 / -1;
-  grid-row: 2;
+  grid-row: 3;
   height: var(--progress-bar-h);
   background: var(--bg-primary);
   border-radius: var(--radius-full);
@@ -277,6 +291,21 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.db-followup-clickable {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.db-followup-clickable:hover {
+  opacity: var(--opacity-hover);
+}
+
+.db-followup-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
 }
 
 .db-followup-item {
