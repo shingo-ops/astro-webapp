@@ -52,4 +52,36 @@ class DiscordInboundDetail(BaseModel):
     updated_at: datetime
 
 
-__all__ = ["DiscordInboundListItem", "DiscordInboundDetail"]
+class InboundProductCandidate(BaseModel):
+    """受信通知の解析結果から抽出した、商品マスタ未登録の商品名候補。"""
+
+    name: str
+    occurrences: int = Field(..., description="受信通知の解析結果中での出現回数")
+    sample: str | None = Field(default=None, description="抽出元の受信本文サンプル（raw_line）")
+
+
+class InboundProductCandidatesResponse(BaseModel):
+    candidates: list[InboundProductCandidate]
+    total: int
+
+
+class InboundProductImportApply(BaseModel):
+    """選択された商品名候補を商品マスタ（public.products）へ一括登録する。"""
+
+    names: list[str] = Field(default_factory=list, description="登録する商品名のリスト")
+    category: str | None = Field(default=None, max_length=50, description="一括で付与する分類（任意）")
+
+
+class InboundProductImportApplyResponse(BaseModel):
+    inserted: int = Field(..., description="新規登録された件数（既存同名はスキップ）")
+    skipped: int = Field(default=0, description="既存同名のためスキップした件数")
+
+
+__all__ = [
+    "DiscordInboundListItem",
+    "DiscordInboundDetail",
+    "InboundProductCandidate",
+    "InboundProductCandidatesResponse",
+    "InboundProductImportApply",
+    "InboundProductImportApplyResponse",
+]

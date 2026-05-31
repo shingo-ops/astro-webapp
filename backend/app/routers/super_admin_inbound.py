@@ -21,7 +21,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_super_admin
 from app.database import get_db
-from app.schemas.discord_inbound import DiscordInboundDetail, DiscordInboundListItem
+from app.schemas.discord_inbound import (
+    DiscordInboundDetail,
+    DiscordInboundListItem,
+    InboundProductCandidate,
+    InboundProductCandidatesResponse,
+    InboundProductImportApply,
+    InboundProductImportApplyResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -148,3 +155,115 @@ async def get_inbound(
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
+
+
+# ---------------------------------------------------------------------------
+# 受信通知 → 商品マスタ取込（プレビュー付き）
+#
+# 受信通知の解析結果（parse_result_json.items[].product_name）には商品マスタ
+# （public.products）へ未登録の商品名が多数含まれる（例: ヴァイスシュヴァルツ等）。
+# preview で未登録の候補を出現回数付きで抽出し、オペレータがノイズを外したうえで
+# apply で選択分を public.products へ一括登録する。
+# ---------------------------------------------------------------------------
+
+# 解析結果から商品名候補を取り出すための共通 CTE。
+# parse_result_json.items[] の product_name をトリムし、空でないものだけ対象にする。
+_PARSED_NAMES_CTE = (
+    "SELECT TRIM(it->>'product_name') AS pname, it->>'raw_line' AS raw_line "
+    "FROM public.discord_inbound_messages m, "
+    "jsonb_array_elements(COALESCE(m.parse_result_json->'items', '[]'::jsonb)) it "
+    "WHERE COALESCE(TRIM(it->>'product_name'), '') <> ''"
+)
+
+
+@router.get(
+    "/super-admin/inbound/product-candidates",
+    response_model=InboundProductCandidatesResponse,
+    dependencies=[Depends(require_super_admin)],
+)
+async def list_product_candidates(
+    db: AsyncSession = Depends(get_db),
+):
+    """受信通知の解析結果のうち、商品マスタ未登録の商品名候補を抽出する。
+
+    - public.products.name に exact 一致しないものだけを返す
+    - 出現回数（occurrences）の多い順、同数なら名前順
+    - 抽出元の受信本文サンプル（sample）を 1 件添える
+    """
+    result = await db.execute(
+        text(
+            f"WITH parsed AS ({_PARSED_NAMES_CTE}) "
+            "SELECT p.pname AS name, COUNT(*) AS occurrences, MIN(p.raw_line) AS sample "
+            "FROM parsed p "
+            "WHERE NOT EXISTS ("
+            "  SELECT 1 FROM public.products pr WHERE pr.name = p.pname"
+            ") "
+            "GROUP BY p.pname "
+            "ORDER BY COUNT(*) DESC, p.pname"
+        )
+    )
+    rows = result.mappings().all()
+    candidates = [
+        InboundProductCandidate(
+            name=r["name"],
+            occurrences=int(r["occurrences"]),
+            sample=r.get("sample"),
+        )
+        for r in rows
+    ]
+    return InboundProductCandidatesResponse(candidates=candidates, total=len(candidates))
+
+
+@router.post(
+    "/super-admin/inbound/product-candidates/apply",
+    response_model=InboundProductImportApplyResponse,
+    dependencies=[Depends(require_super_admin)],
+)
+async def apply_product_candidates(
+    payload: InboundProductImportApply,
+    db: AsyncSession = Depends(get_db),
+):
+    """選択された商品名候補を public.products へ一括登録する。
+
+    - 同名（name 完全一致）が既に存在する場合はスキップ
+      （NOT EXISTS による重複防止。products.name に UNIQUE は無いため
+      厳密な同時実行排他ではないが、通常運用では実質冪等）
+    - category は任意。指定があれば全件に同じ分類を付与する
+    """
+    # public.products.name は VARCHAR(255)。超過名はバッチ全体を巻き込む
+    # 制約違反（→全件ロールバック）になるため、登録対象から除外する。
+    _NAME_MAX_LEN = 255
+    category = (payload.category or "").strip() or None
+    inserted = 0
+    skipped = 0
+    seen: set[str] = set()
+    for raw_name in payload.names:
+        name = (raw_name or "").strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        if len(name) > _NAME_MAX_LEN:
+            skipped += 1
+            continue
+        result = await db.execute(
+            text(
+                "INSERT INTO public.products (name, category) "
+                "SELECT :name, :category "
+                "WHERE NOT EXISTS ("
+                "  SELECT 1 FROM public.products WHERE name = :name"
+                ")"
+            ),
+            {"name": name, "category": category},
+        )
+        if result.rowcount:
+            inserted += 1
+        else:
+            skipped += 1
+    await db.commit()
+    logger.info(
+        "inbound product import: inserted=%s skipped=%s category=%s",
+        inserted,
+        skipped,
+        category,
+    )
+    return InboundProductImportApplyResponse(inserted=inserted, skipped=skipped)
