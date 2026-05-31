@@ -68,9 +68,17 @@ function dashboardMocks() {
       },
       orders: {
         total_revenue: 5400000,
-        count: 9,
-        active: 2,
-        achievement_rate: 72.0,
+        order_count: 9,
+        active_count: 2,
+      },
+      comparison: {
+        leads_total: { pct: 12.5, direction: "up" },
+        leads_cv_rate: { pct: -3.2, direction: "down" },
+        deals_active: { pct: 0, direction: "flat" },
+        deals_won: { pct: 25.0, direction: "up" },
+        deals_win_rate: { pct: 8.1, direction: "up" },
+        orders_revenue: { pct: 15.3, direction: "up" },
+        orders_count: { pct: null, direction: "flat" },
       },
     },
   };

@@ -10,6 +10,7 @@ from __future__ import annotations
   2026-04-27: Phase 1-B-2 Step 5d — customer_id 参照を company_id に置換
   2026-05-25: ダッシュボード強化 — 着地予測・期間別サマリー追加
   2026-05-31: Sprint 2 — 月別受注実績＋着地予想API追加（予実比較グラフ用）
+  2026-05-31: Sprint 3 — 先月比（前期比較）フィールドをサマリーAPIに追加
 """
 
 from datetime import date, timedelta
@@ -380,6 +381,23 @@ class OrderSummary(BaseModel):
     active_count: int
 
 
+class KpiChange(BaseModel):
+    """前期比の変化率。prev が 0 の場合は pct=None"""
+    pct: float | None
+    direction: str  # "up" | "down" | "flat"
+
+
+class PeriodComparison(BaseModel):
+    """現在期間 vs 前期間の主要KPI変化率"""
+    leads_total: KpiChange
+    leads_cv_rate: KpiChange
+    deals_active: KpiChange
+    deals_won: KpiChange
+    deals_win_rate: KpiChange
+    orders_revenue: KpiChange
+    orders_count: KpiChange
+
+
 class DashboardSummaryResponse(BaseModel):
     period: str
     start_date: str
@@ -387,6 +405,7 @@ class DashboardSummaryResponse(BaseModel):
     leads: LeadSummary
     deals: DealSummary
     orders: OrderSummary
+    comparison: PeriodComparison
 
 
 @router.get(
@@ -474,6 +493,72 @@ async def dashboard_summary(
     )
     orr = order_result.mappings().first() or {}
 
+    # ── 前期（同じ期間幅の一つ前）を集計して比較データを生成 ──
+    prev_end = start_date
+    prev_start = prev_end - timedelta(days=days)
+
+    if tab == "individual":
+        prev_params: dict = {"start": prev_start, "end": prev_end, "uid": target_user_id}
+    else:
+        prev_params = {"start": prev_start, "end": prev_end}
+
+    prev_lead_result = await db.execute(
+        text(f"""
+            SELECT
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE converted_deal_id IS NOT NULL) AS converted
+            FROM leads
+            WHERE created_at::date >= :start AND created_at::date <= :end
+            {assign_filter_leads}
+        """),
+        prev_params,
+    )
+    plr = prev_lead_result.mappings().first() or {}
+    prev_lead_total = int(plr.get("total", 0) or 0)
+    prev_lead_converted = int(plr.get("converted", 0) or 0)
+    prev_cv_rate = round(prev_lead_converted / prev_lead_total * 100, 1) if prev_lead_total > 0 else 0.0
+
+    prev_deal_result = await db.execute(
+        text(f"""
+            SELECT
+                COUNT(*) FILTER (WHERE status NOT IN ('won', 'lost')) AS active,
+                COUNT(*) FILTER (WHERE status = 'won') AS won,
+                COUNT(*) AS total
+            FROM deals
+            WHERE created_at::date >= :start AND created_at::date <= :end
+            {assign_filter_deals}
+        """),
+        prev_params,
+    )
+    pdr = prev_deal_result.mappings().first() or {}
+    prev_deal_total = int(pdr.get("total", 0) or 0)
+    prev_deal_active = int(pdr.get("active", 0) or 0)
+    prev_deal_won = int(pdr.get("won", 0) or 0)
+    prev_win_rate = round(prev_deal_won / prev_deal_total * 100, 1) if prev_deal_total > 0 else 0.0
+
+    prev_order_result = await db.execute(
+        text("""
+            SELECT
+                COALESCE(SUM(total_amount), 0) AS revenue,
+                COUNT(*) AS cnt
+            FROM orders
+            WHERE created_at::date >= :start AND created_at::date <= :end
+        """),
+        {"start": prev_start, "end": prev_end},
+    )
+    porr = prev_order_result.mappings().first() or {}
+    prev_revenue = float(porr.get("revenue", 0) or 0)
+    prev_order_count = int(porr.get("cnt", 0) or 0)
+
+    def _kpi_change(current: float, prev: float) -> KpiChange:
+        if prev == 0:
+            return KpiChange(pct=None, direction="flat")
+        pct = round((current - prev) / prev * 100, 1)
+        return KpiChange(pct=pct, direction="up" if pct > 0 else "down" if pct < 0 else "flat")
+
+    current_order_count = int(orr.get("cnt", 0) or 0)
+    current_revenue = float(orr.get("revenue", 0) or 0)
+
     return DashboardSummaryResponse(
         period=period,
         start_date=str(start_date),
@@ -491,9 +576,18 @@ async def dashboard_summary(
             win_rate=win_rate,
         ),
         orders=OrderSummary(
-            total_revenue=float(orr.get("revenue", 0) or 0),
-            order_count=int(orr.get("cnt", 0) or 0),
+            total_revenue=current_revenue,
+            order_count=current_order_count,
             active_count=int(orr.get("active", 0) or 0),
+        ),
+        comparison=PeriodComparison(
+            leads_total=_kpi_change(lead_total, prev_lead_total),
+            leads_cv_rate=_kpi_change(cv_rate, prev_cv_rate),
+            deals_active=_kpi_change(deal_active, prev_deal_active),
+            deals_won=_kpi_change(deal_won, prev_deal_won),
+            deals_win_rate=_kpi_change(win_rate, prev_win_rate),
+            orders_revenue=_kpi_change(current_revenue, prev_revenue),
+            orders_count=_kpi_change(current_order_count, prev_order_count),
         ),
     )
 

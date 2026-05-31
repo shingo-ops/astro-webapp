@@ -1,17 +1,18 @@
 /**
- * ダッシュボードページ（Sprint 2: 予実比較グラフ）
+ * ダッシュボードページ（Sprint 3: 先月比バッジ）
  *
  * - 営業担当 / リード担当 / チーム タブ切り替え
  * - 表示期間プルダウン（1w / 1m / 3m / 6m / 12m）
  * - 固定エリア: 目標（今月・今週・逆算表示）/ 着地予測 / フォローアップリマインド（クリック導線付き）
  * - 予実比較グラフ: 月別受注実績（棒）+ 今月着地予想積み上げ（営業/チームのみ）
- * - 期間連動エリア: ロール別（営業=商談+受注 / リード=リード / チーム=全て）
+ * - 期間連動エリア: ロール別 + 各KPIに先月比（▲/▼）バッジ表示
  *
  * 変更履歴:
  *   2026-04-17: Phase 3 拡張
  *   2026-05-25: ダッシュボード強化（タブ・期間・目標・着地予測・フォローアップ）
  *   2026-05-31: Sprint 1 ロール別表示・フォローアップ導線・目標逆算
  *   2026-05-31: Sprint 2 Recharts予実比較グラフ追加
+ *   2026-05-31: Sprint 3 先月比バッジ追加
  */
 
 import { useEffect, useState } from "react";
@@ -37,6 +38,8 @@ const BellIcon = DashboardIcons.reminder;
 const CalendarCheckIcon = DashboardIcons.goalDone;
 const ArrowRightIcon = DashboardIcons.arrowRight;
 const FlagIcon = DashboardIcons.goalFlag;
+const TrendUpArrow = DashboardIcons.trendUp;
+const TrendDownArrow = DashboardIcons.trendDown;
 
 // ─── 型定義 ──────────────────────────────────────────────────
 
@@ -111,6 +114,7 @@ interface DashboardSummary {
     order_count: number;
     active_count: number;
   };
+  comparison: PeriodComparison;
 }
 
 interface MonthlyRevenueEntry {
@@ -123,6 +127,21 @@ interface MonthlyRevenueEntry {
 
 interface MonthlyRevenueResponse {
   entries: MonthlyRevenueEntry[];
+}
+
+interface KpiChange {
+  pct: number | null;
+  direction: "up" | "down" | "flat";
+}
+
+interface PeriodComparison {
+  leads_total: KpiChange;
+  leads_cv_rate: KpiChange;
+  deals_active: KpiChange;
+  deals_won: KpiChange;
+  deals_win_rate: KpiChange;
+  orders_revenue: KpiChange;
+  orders_count: KpiChange;
 }
 
 // ─── 定数 ────────────────────────────────────────────────────
@@ -245,6 +264,21 @@ function GoalRow({
       )}
       {g.target_value > 0 && <AchievementBar rate={g.achievement_rate} />}
     </div>
+  );
+}
+
+function VsPrev({ change }: { change: KpiChange }) {
+  if (change.pct === null) return null;
+  const abs = Math.abs(change.pct);
+  if (change.direction === "flat") {
+    return <span className="db-vs-prev db-vs-flat">—</span>;
+  }
+  const ArrowIcon = change.direction === "up" ? TrendUpArrow : TrendDownArrow;
+  return (
+    <span className={`db-vs-prev db-vs-${change.direction}`}>
+      <ArrowIcon aria-hidden="true" size={12} />
+      {abs}%
+    </span>
   );
 }
 
@@ -631,6 +665,7 @@ export default function DashboardPage() {
                   <div className="kpi-card">
                     <div className="kpi-value">{summary.leads.total}</div>
                     <div className="kpi-label">{t("dashboard.leadTotal")}</div>
+                    <VsPrev change={summary.comparison.leads_total} />
                   </div>
                   <div className="kpi-card">
                     <div className="kpi-value">{summary.leads.converted}</div>
@@ -643,6 +678,7 @@ export default function DashboardPage() {
                   <div className="kpi-card accent">
                     <div className="kpi-value">{summary.leads.conversion_rate}%</div>
                     <div className="kpi-label">{t("dashboard.conversionRate")}</div>
+                    <VsPrev change={summary.comparison.leads_cv_rate} />
                   </div>
                 </div>
               </div>
@@ -656,14 +692,17 @@ export default function DashboardPage() {
                   <div className="kpi-card">
                     <div className="kpi-value">{summary.deals.active}</div>
                     <div className="kpi-label">{t("dashboard.dealActive")}</div>
+                    <VsPrev change={summary.comparison.deals_active} />
                   </div>
                   <div className="kpi-card accent">
                     <div className="kpi-value">{summary.deals.won}</div>
                     <div className="kpi-label">{t("dashboard.dealWon")}</div>
+                    <VsPrev change={summary.comparison.deals_won} />
                   </div>
                   <div className="kpi-card accent">
                     <div className="kpi-value">{summary.deals.win_rate}%</div>
                     <div className="kpi-label">{t("dashboard.winRate")}</div>
+                    <VsPrev change={summary.comparison.deals_win_rate} />
                   </div>
                 </div>
               </div>
@@ -677,10 +716,12 @@ export default function DashboardPage() {
                   <div className="kpi-card accent">
                     <div className="kpi-value">{fmt(summary.orders.total_revenue)}</div>
                     <div className="kpi-label">{t("dashboard.orderRevenue")}</div>
+                    <VsPrev change={summary.comparison.orders_revenue} />
                   </div>
                   <div className="kpi-card">
                     <div className="kpi-value">{summary.orders.order_count}</div>
                     <div className="kpi-label">{t("dashboard.orderCount")}</div>
+                    <VsPrev change={summary.comparison.orders_count} />
                   </div>
                   <div className="kpi-card">
                     <div className="kpi-value">{summary.orders.active_count}</div>
