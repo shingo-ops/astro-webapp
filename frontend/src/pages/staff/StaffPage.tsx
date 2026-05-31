@@ -195,9 +195,11 @@ export default function StaffPage() {
       navKey="nav.staff"
       subtitleKey="staff.subtitle"
       headerAction={hasPermission("staff.create") ? (
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
-          {t("staff.newStaff")}
-        </button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
+            {t("staff.newStaff")}
+          </button>
+        </div>
       ) : undefined}
     >
       {error && <div className="error-message">{error}</div>}

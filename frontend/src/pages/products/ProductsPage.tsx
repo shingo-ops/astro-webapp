@@ -338,7 +338,7 @@ export default function ProductsPage() {
       subtitleKey="products.subtitle"
       headerAction={
         (hasPermission("products.create") || isSuperAdmin) ? (
-          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+          <div className="page-header-actions">
             {isSuperAdmin && (
               <button className="btn-secondary" onClick={openImport} data-testid="open-import-from-inbound">
                 {t("products.importFromInbound")}

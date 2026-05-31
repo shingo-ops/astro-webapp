@@ -18,6 +18,7 @@
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/standardize-agent-pipeline-defs | エージェント定義標準化 | 2026-05-29 | IN_PROGRESS | | |
 | feature/morimoto/deploy-skip-migrations-frontend-only | デプロイ最適化 | 2026-05-30 | REVIEW | | ADR-082 フロントのみデプロイで DB migration を skip し所要時間短縮 |
+| feature/morimoto/fix-profile-blank-phone-migration | プロフィール設定空白バグ修正 | 2026-05-31 | IN_PROGRESS | | deploy.yml から抜けていた Migration 083 を追加 |
 | feature/morimoto/github-collector-metrics | GitHub collector metrics | 2026-05-29 20:48 | IN_PROGRESS | | |
 | feature/morimoto/codex-research-planning-gaps | Codex research / planning gaps | 2026-05-30 00:37 | IN_PROGRESS | | |
 | feature/morimoto/remove-design-review-gate | design review gate removal | 2026-05-30 05:39 | IN_PROGRESS | | |
@@ -37,6 +38,8 @@
 | feature/morimoto/unify-icon-btn-token | （記入してください） | 2026-05-31 20:36 | IN_PROGRESS | | |
 | feature/morimoto/account-settings-ui | アカウント設定UI改善 | 2026-05-31 | IN_PROGRESS | | |
 | feature/morimoto/profile-section-kana-fields | プロフィール設定かなフィールド追加 | 2026-05-31 | IN_PROGRESS | | |
+| feature/morimoto/move-templates-to-inbox-header | テンプレートをサイドバーから受信箱ヘッダーへ移動 | 2026-05-31 | IN_PROGRESS | | |
+| feature/morimoto/hub-shell-unification | hub-shell 共通化・背景透過 | 2026-05-31 | IN_PROGRESS | | |
 ---
 
 ## 記入例

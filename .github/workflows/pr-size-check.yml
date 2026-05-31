@@ -1,0 +1,48 @@
+name: pr-size-check
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  size-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR diff size
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          git fetch origin "$BASE"
+
+          FILE_COUNT=$(git diff --name-only "origin/${BASE}...HEAD" | wc -l | tr -d ' ')
+          INSERTIONS=$(git diff --stat "origin/${BASE}...HEAD" | tail -1 | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo 0)
+          DELETIONS=$(git diff --stat "origin/${BASE}...HEAD" | tail -1 | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo 0)
+          TOTAL_LINES=$(( INSERTIONS + DELETIONS ))
+
+          echo "変更ファイル数 : ${FILE_COUNT}"
+          echo "変更行数(追加) : ${INSERTIONS}"
+          echo "変更行数(削除) : ${DELETIONS}"
+          echo "変更行数(合計) : ${TOTAL_LINES}"
+
+          WARN=0
+
+          if [ "${FILE_COUNT}" -gt 5 ]; then
+            echo "::warning title=PR size::変更ファイル数が推奨上限（5ファイル）を超えています（${FILE_COUNT} ファイル）。PRを分割することを検討してください。"
+            WARN=1
+          fi
+
+          if [ "${TOTAL_LINES}" -gt 300 ]; then
+            echo "::warning title=PR size::変更行数が推奨上限（300行）を超えています（${TOTAL_LINES} 行）。PRを分割することを検討してください。"
+            WARN=1
+          fi
+
+          if [ "${WARN}" -eq 0 ]; then
+            echo "PR サイズ OK（${FILE_COUNT} ファイル / ${TOTAL_LINES} 行）"
+          fi
+
+          # Warning のみ — fail させない（大きなリファクタ等の正当なケースを考慮）
+          exit 0

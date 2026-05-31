@@ -136,9 +136,11 @@ export default function PurchaseOrdersPage() {
       navKey="nav.purchaseOrders"
       subtitleKey="purchaseOrders.subtitle"
       headerAction={hasPermission("purchase_orders.create") ? (
-        <button className="btn-primary" data-testid="po-new-btn" onClick={() => setShowNewModal(true)}>
-          {t("purchaseOrders.newPO")}
-        </button>
+        <div className="page-header-actions">
+          <button className="btn-primary" data-testid="po-new-btn" onClick={() => setShowNewModal(true)}>
+            {t("purchaseOrders.newPO")}
+          </button>
+        </div>
       ) : undefined}
     >
       <PurchaseOrdersFormModal

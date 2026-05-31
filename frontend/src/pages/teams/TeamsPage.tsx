@@ -149,7 +149,9 @@ export default function TeamsPage() {
       navKey="nav.teams"
       subtitleKey="teams.subtitle"
       headerAction={hasPermission("teams.create") ? (
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("teams.newTeam")}</button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("teams.newTeam")}</button>
+        </div>
       ) : undefined}
     >
       {error && <div className="error-message">{error}</div>}

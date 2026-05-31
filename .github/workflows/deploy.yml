@@ -612,6 +612,14 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/082_extend_products_box_attributes.sql
 
+            # Migration 083: 全テナント staff テーブルに phone カラム追加
+            #   - アカウント設定画面でスタッフが自身の電話番号を登録できるようにする
+            #   - DO block で pg_namespace 走査して全 tenant_NNN に自動適用
+            #   - ADD COLUMN IF NOT EXISTS / CREATE INDEX IF NOT EXISTS で idempotent
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/083_add_staff_phone.sql
+
             # Migration 084: public.inventory に unit (数量の単位) 列を追加
             #   - 解析レビューの単位列 (Box/Case/Pack/Set/Peace) を F6 承認時に保存
             #   - to_regclass ガード + ADD COLUMN IF NOT EXISTS で idempotent

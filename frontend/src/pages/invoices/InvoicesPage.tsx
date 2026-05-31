@@ -62,9 +62,11 @@ export default function InvoicesPage() {
       navKey="nav.quotesInvoices"
       subtitleKey="invoices.subtitle"
       headerAction={
-        <button className="btn-primary" onClick={() => navigate("/invoices/new")}>
-          {t("invoices.createTitle")}
-        </button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => navigate("/invoices/new")}>
+            {t("invoices.createTitle")}
+          </button>
+        </div>
       }
     >
       <nav className="tab-nav">

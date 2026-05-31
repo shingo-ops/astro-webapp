@@ -11,7 +11,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { PageLayout } from "../../components/PageLayout";
 import { usePermissions } from "../../hooks/usePermissions";
-import "./CustomerHubPage.css";
+
 
 interface SubNavItem {
   to: string;
@@ -56,15 +56,15 @@ export default function CustomerHubPage() {
 
   return (
     <PageLayout navKey="nav.leads" noScroll>
-      <div className="crm-shell">
+      <div className="hub-shell">
         {/* 左サブナビ */}
-        <nav className="crm-subnav" aria-label={t("nav.leads")}>
+        <nav className="hub-subnav" aria-label={t("nav.leads")}>
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `crm-subnav-item${isActive ? " active" : ""}`
+                `hub-subnav-item${isActive ? " active" : ""}`
               }
             >
               {t(item.labelKey)}
@@ -73,7 +73,7 @@ export default function CustomerHubPage() {
         </nav>
 
         {/* 右コンテンツ */}
-        <div className="crm-content">
+        <div className="hub-content">
           <Outlet />
         </div>
       </div>

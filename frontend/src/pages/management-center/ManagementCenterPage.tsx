@@ -17,7 +17,7 @@ import { PageLayout } from "../../components/PageLayout";
 import { usePermissions } from "../../hooks/usePermissions";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
 import type { NavItem, NavSection } from "../../types/nav";
-import "./ManagementCenterPage.css";
+
 
 /** 権限フィルタリング前の生アイテム（このファイル内のみで使用） */
 interface RawNavItem extends NavItem {
@@ -83,18 +83,18 @@ export default function ManagementCenterPage() {
 
   return (
     <PageLayout navKey="nav.managementCenter" subtitleKey="managementCenter.subtitle" noScroll>
-      <div className="mc-shell">
+      <div className="hub-shell">
         {/* 左サブナビ */}
-        <nav className="mc-subnav" aria-label={t("nav.managementCenter")}>
+        <nav className="hub-subnav" aria-label={t("nav.managementCenter")}>
           {sections.map((section) => (
-            <div key={section.key} className="mc-subnav-section">
-              <span className="mc-subnav-title">{t(section.titleKey)}</span>
+            <div key={section.key} className="hub-subnav-section">
+              <span className="hub-subnav-title">{t(section.titleKey)}</span>
               {section.items.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     className={({ isActive }) =>
-                      `mc-subnav-item${isActive ? " active" : ""}`
+                      `hub-subnav-item${isActive ? " active" : ""}`
                     }
                   >
                     {t(item.labelKey)}
@@ -105,7 +105,7 @@ export default function ManagementCenterPage() {
         </nav>
 
         {/* 右コンテンツ（子ルートが展開される） */}
-        <div className="mc-content">
+        <div className="hub-content">
           <Outlet />
         </div>
       </div>
