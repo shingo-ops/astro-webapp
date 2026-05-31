@@ -48,6 +48,7 @@ import {
   ReceiptPercentIcon,
   UserCircleIcon, LockClosedIcon, PhoneIcon,
   ArchiveBoxIcon,
+  ArrowUpIcon, ArrowDownIcon,
 } from "@heroicons/react/24/solid";
 
 // ── outline: サイドバーナビゲーション専用 ────────────────────────────────
@@ -117,6 +118,8 @@ const Trash         = hi(TrashIcon);
 const Envelope      = hi(EnvelopeOpenIcon);  // markRead = 開封済み封筒
 const EnvelopeClosed = hi(EnvelopeIcon);     // markUnread = 未開封封筒（完全ソリッド）
 const TrendUp       = hi(ArrowTrendingUpIcon);
+const ArrowUp       = hi(ArrowUpIcon);
+const ArrowDown     = hi(ArrowDownIcon);
 const Bell          = hi(BellIcon);
 const CalendarCheck = hi(CalendarDaysIcon);
 const ArrowRight    = hi(ArrowRightIcon);
@@ -218,6 +221,8 @@ export const DashboardIcons = {
   goalDone:  CalendarCheck,
   arrowRight: ArrowRight,
   goalFlag:  Flag,
+  trendUp:   ArrowUp,
+  trendDown: ArrowDown,
 } satisfies Record<string, Icon>;
 
 // ============================================================
