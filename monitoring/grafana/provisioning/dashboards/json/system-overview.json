@@ -117,31 +117,30 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">システム概要</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。</p></div>"
+        "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">システム概要</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">インフラの総合評価から詳細推移までを 1 画面で確認します。緑=OK、黄=注意、赤=異常。repo 変更だけでは反映されず、監視VPS が provisioning を読み込んだ時点で画面に現れます。</p></div>"
       },
       "transparent": true
     },
     {
-      "id": 101,
+      "id": 1001,
       "type": "row",
-      "title": "リソース概要",
-      "collapsed": false,
+      "title": "総合通知",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 3
-      },
-      "panels": []
+        "y": 3,
+        "w": 24,
+        "h": 1
+      }
     },
     {
-      "title": "CPU使用率",
-      "type": "timeseries",
+      "id": 1002,
+      "title": "総合評価",
+      "type": "stat",
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 0,
-        "y": 4
+        "y": 4,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -150,8 +149,80 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "clamp_min(0, 100 - 20 * ((max(100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > bool 85) + (max((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100) > bool 85) + (max((1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100) > bool 85) + (pg_up == bool 0) + (sum(rate(nginx_http_requests_total{status=~\"5..\"}[5m])) > bool 0.05)))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "システム概要の詳細へ",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "インフラ詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1003,
+      "title": "要確認件数",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -161,52 +232,218 @@
               },
               {
                 "color": "yellow",
-                "value": 60
+                "value": 1
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 3
               }
             ]
           },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          },
-          "links": [
-            {
-              "title": "コンテナ別 CPU 詳細を見る →",
-              "url": "/grafana/d/container-detail?orgId=1&from=${__from}&to=${__to}",
-              "targetBlank": false
-            }
-          ]
+          "mappings": []
         },
         "overrides": []
       },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
       "targets": [
         {
-          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-          "legendFormat": "CPU使用率",
+          "expr": "((max(100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > bool 85) + (max((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100) > bool 85) + (max((1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100) > bool 85) + (pg_up == bool 0) + (sum(rate(nginx_http_requests_total{status=~\"5..\"}[5m])) > bool 0.05))",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
       "links": [
         {
-          "title": "コンテナ別リソース詳細を確認 →",
-          "url": "/grafana/d/container-detail",
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
           "targetBlank": false,
-          "tooltip": "コンテナ別リソース詳細を確認 →"
+          "tooltip": "要確認件数の詳細へ"
         }
       ]
     },
     {
-      "title": "メモリ使用率",
-      "type": "timeseries",
+      "id": 1004,
+      "title": "監視対象UP数",
+      "type": "stat",
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 12,
-        "y": 4
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "count(up == 1)",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "サービス稼働へ",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "監視対象の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1005,
+      "title": "DBステータス",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red",
+                  "index": 1
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "pg_up",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "DB詳細へ",
+          "url": "/grafana/d/db-connection-detail",
+          "targetBlank": false,
+          "tooltip": "DB状態の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1101,
+      "type": "row",
+      "title": "部門サマリー",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 1102,
+      "title": "CPU 使用率",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -215,8 +452,9 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -234,57 +472,49 @@
               }
             ]
           },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          },
-          "links": [
-            {
-              "title": "コンテナ別メモリ詳細を見る →",
-              "url": "/grafana/d/container-detail?orgId=1&from=${__from}&to=${__to}",
-              "targetBlank": false
-            }
-          ]
+          "mappings": []
         },
         "overrides": []
       },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
       "targets": [
         {
-          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
-          "legendFormat": "メモリ使用率",
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
       "links": [
         {
-          "title": "コンテナ別リソース詳細を確認 →",
-          "url": "/grafana/d/container-detail",
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
           "targetBlank": false,
-          "tooltip": "コンテナ別リソース詳細を確認 →"
+          "tooltip": "CPUの詳細へ"
         }
       ]
     },
     {
-      "id": 102,
-      "type": "row",
-      "title": "ストレージ & DB",
-      "collapsed": false,
+      "id": 1103,
+      "title": "メモリ使用率",
+      "type": "stat",
       "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 12
-      },
-      "panels": []
-    },
-    {
-      "title": "ディスク使用率",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 13
+        "x": 6,
+        "y": 10,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -293,8 +523,9 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -304,45 +535,128 @@
               },
               {
                 "color": "yellow",
-                "value": 60
+                "value": 70
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 85
               }
             ]
           },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          }
+          "mappings": []
         },
         "overrides": []
       },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
       "targets": [
         {
-          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100",
-          "legendFormat": "ディスク使用率",
+          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
       "links": [
         {
-          "title": "コンテナ別リソース詳細を確認 →",
-          "url": "/grafana/d/container-detail",
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
           "targetBlank": false,
-          "tooltip": "コンテナ別リソース詳細を確認 →"
+          "tooltip": "メモリの詳細へ"
         }
       ]
     },
     {
-      "title": "DB接続数",
-      "type": "timeseries",
+      "id": 1104,
+      "title": "ディスク使用率",
+      "type": "stat",
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 12,
-        "y": 13
+        "y": 10,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "ディスクの詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1105,
+      "title": "DB接続数",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 10,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -351,7 +665,9 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "min": 0,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -361,65 +677,433 @@
               },
               {
                 "color": "yellow",
-                "value": 60
+                "value": 20
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 50
               }
             ]
           },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          },
-          "links": [
-            {
-              "title": "DB接続の詳細内訳を見る →",
-              "url": "/grafana/d/db-connection-detail?orgId=1&from=${__from}&to=${__to}",
-              "targetBlank": false
-            }
-          ]
+          "mappings": []
         },
         "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
       },
       "targets": [
         {
           "expr": "pg_stat_activity_count",
-          "legendFormat": "DB接続数",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
       "links": [
         {
-          "title": "DB接続詳細を確認 →",
+          "title": "DB詳細へ",
           "url": "/grafana/d/db-connection-detail",
           "targetBlank": false,
-          "tooltip": "DB接続詳細を確認 →"
+          "tooltip": "DB接続の詳細へ"
         }
       ]
     },
     {
-      "id": 103,
+      "id": 1201,
       "type": "row",
-      "title": "ネットワーク",
-      "collapsed": false,
+      "title": "機能別詳細",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 21
-      },
-      "panels": []
+        "y": 15,
+        "w": 24,
+        "h": 1
+      }
     },
     {
-      "title": "Nginxリクエスト数 (per sec)",
+      "id": 1202,
+      "title": "Nginx リクエスト数",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 50
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total[5m])",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "Nginx詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1203,
+      "title": "Nginx 5xxエラー率",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 16,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total{status=~\"5..\"}[5m]) or vector(0)",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "Nginxエラー詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1204,
+      "title": "サービスステータス",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red",
+                  "index": 1
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "pg_up",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "DB詳細へ",
+          "url": "/grafana/d/db-connection-detail",
+          "targetBlank": false,
+          "tooltip": "サービス詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1205,
+      "title": "監視対象UP数",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 16,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "count(up == 1)",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "サービス稼働へ",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "監視対象の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1301,
+      "type": "row",
+      "title": "推移",
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 1302,
+      "title": "CPU / メモリ / ディスク 推移",
       "type": "timeseries",
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 0,
-        "y": 22
+        "y": 22,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "CPU %",
+          "refId": "A"
+        },
+        {
+          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+          "legendFormat": "Memory %",
+          "refId": "B"
+        },
+        {
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100",
+          "legendFormat": "Disk %",
+          "refId": "C"
+        }
+      ],
+      "links": [
+        {
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "インフラ推移の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1303,
+      "title": "Nginx リクエスト / 5xx 推移",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 12,
+        "h": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -429,162 +1113,41 @@
         "defaults": {
           "unit": "reqps",
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 10,
             "lineWidth": 2
-          }
+          },
+          "min": 0
         },
         "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       },
       "targets": [
         {
           "expr": "rate(nginx_http_requests_total[5m])",
-          "legendFormat": "リクエスト/秒",
+          "legendFormat": "requests/s",
           "refId": "A"
-        }
-      ],
-      "links": [
-        {
-          "title": "バックエンドAPIメトリクスを確認 →",
-          "url": "/grafana/d/backend-api-metrics",
-          "targetBlank": false,
-          "tooltip": "バックエンドAPIメトリクスを確認 →"
-        }
-      ]
-    },
-    {
-      "title": "Nginx 5xxエラー率",
-      "type": "timeseries",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 22
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          },
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          }
         },
-        "overrides": []
-      },
-      "targets": [
         {
           "expr": "rate(nginx_http_requests_total{status=~\"5..\"}[5m]) or vector(0)",
-          "legendFormat": "5xxエラー/秒",
-          "refId": "A"
-        }
-      ],
-      "links": [
-        {
-          "title": "エラーログを確認 →",
-          "url": "/grafana/d/loki-error-logs",
-          "targetBlank": false,
-          "tooltip": "エラーログを確認 →"
-        }
-      ]
-    },
-    {
-      "id": 104,
-      "type": "row",
-      "title": "サービス",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 30
-      },
-      "panels": []
-    },
-    {
-      "title": "サービスステータス",
-      "type": "stat",
-      "gridPos": {
-        "h": 4,
-        "w": 24,
-        "x": 0,
-        "y": 31
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "text": "DOWN",
-                  "color": "red"
-                },
-                "1": {
-                  "text": "UP",
-                  "color": "green"
-                }
-              },
-              "type": "value"
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "targets": [
-        {
-          "expr": "pg_up",
-          "legendFormat": "PostgreSQL",
-          "refId": "A"
-        },
-        {
-          "expr": "up{job=\"nginx-exporter\"}",
-          "legendFormat": "Nginx",
+          "legendFormat": "5xx/s",
           "refId": "B"
-        },
-        {
-          "expr": "up{job=\"node-exporter\"}",
-          "legendFormat": "Node",
-          "refId": "C"
         }
       ],
       "links": [
         {
-          "title": "サービス稼働監視を確認 →",
-          "url": "/grafana/d/uptime-kuma-monitors",
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
           "targetBlank": false,
-          "tooltip": "サービス稼働監視を確認 →"
+          "tooltip": "Nginx推移の詳細へ"
         }
       ]
     }
@@ -606,5 +1169,5 @@
   "title": "Sales Anchor - システム概要",
   "uid": "jarvis-system-overview",
   "version": 1,
-  "description": "サーバーの CPU・メモリ・ディスクなどリソース使用状況をリアルタイムで監視します。"
+  "description": "インフラの総合評価 → 部門サマリー → 詳細 → 推移の順で確認するダッシュボード。緑=OK / 黄=注意 / 赤=異常の基準で、サーバー状態をひと目で判断できます。"
 }
