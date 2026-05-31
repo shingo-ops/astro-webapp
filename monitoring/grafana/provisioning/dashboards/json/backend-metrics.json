@@ -132,29 +132,333 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">バックエンド API メトリクス</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">バックエンドサービスの HTTP レスポンスタイム・エラー率・スループットを監視します。</p></div>"
+        "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">バックエンド API メトリクス</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">バックエンドの総合評価から詳細推移までを 1 画面で確認します。緑=OK、黄=注意、赤=異常。repo 変更だけでは反映されず、監視VPS の provisioning 読み込み後に画面へ出ます。</p></div>"
       },
       "transparent": true
     },
     {
-      "collapsed": false,
+      "id": 2001,
+      "type": "row",
+      "title": "総合通知",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 3
-      },
-      "id": 100,
-      "title": "リクエスト概要",
-      "type": "row"
+        "y": 3,
+        "w": 24,
+        "h": 1
+      }
     },
     {
+      "id": 2002,
+      "title": "総合評価",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "clamp_min(0, 100 - 25 * ((sum(rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m])) > bool 0.05) + (histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) > bool 2.0) + (http_requests_in_flight{job=\"backend\"} > bool 1) + (sum(sse_connections_active{job=\"backend\"}) > bool 8)))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "総合評価の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 2003,
+      "title": "要確認件数",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "((sum(rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m])) > bool 0.05) + (histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) > bool 2.0) + (http_requests_in_flight{job=\"backend\"} > bool 1) + (sum(sse_connections_active{job=\"backend\"}) > bool 8))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "要確認件数の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 2004,
+      "title": "P99 レイテンシ",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 500
+              },
+              {
+                "color": "red",
+                "value": 2000
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "P99の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 2005,
+      "title": "5xx エラー率",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m]))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "5xxの詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 2101,
+      "type": "row",
+      "title": "部門サマリー",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 2102,
+      "title": "リクエスト数（req/s）",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
           "color": {
             "mode": "thresholds"
           },
@@ -175,22 +479,11 @@
               }
             ]
           },
-          "unit": "reqps"
+          "mappings": []
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 0,
-        "y": 4
-      },
-      "id": 1,
       "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -198,103 +491,45 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
       },
-      "title": "リクエスト数（req/s）",
-      "type": "stat",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
           "expr": "sum(rate(http_requests_total{job=\"backend\"}[1m]))",
-          "legendFormat": "req/s",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 5
-              }
-            ]
-          },
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 6,
-        "y": 4
-      },
-      "id": 2,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
-      },
-      "title": "5xx エラー数（req/s）",
-      "type": "stat",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"backend\", status=~\"5..\"}[1m]))",
-          "legendFormat": "5xx/s",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
       "links": [
         {
-          "title": "エラーログで詳細を確認 →",
-          "url": "/grafana/d/loki-error-logs",
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
           "targetBlank": false,
-          "tooltip": "エラーログで詳細を確認 →"
+          "tooltip": "リクエスト数の詳細へ"
         }
       ]
     },
     {
+      "id": 2103,
+      "title": "5xx エラー数（req/s）",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 10,
+        "w": 6,
+        "h": 5
+      },
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
+          "unit": "reqps",
           "color": {
             "mode": "thresholds"
           },
@@ -307,30 +542,19 @@
               },
               {
                 "color": "yellow",
-                "value": 500
+                "value": 0.01
               },
               {
                 "color": "red",
-                "value": 2000
+                "value": 0.05
               }
             ]
           },
-          "unit": "ms"
+          "mappings": []
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 4
-      },
-      "id": 3,
       "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -338,469 +562,45 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
-      },
-      "title": "レスポンスタイム P50",
-      "type": "stat",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
-          "legendFormat": "P50",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1000
-              },
-              {
-                "color": "red",
-                "value": 2000
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 4
-      },
-      "id": 4,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
         "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "textMode": "auto"
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
       },
-      "title": "レスポンスタイム P99",
-      "type": "stat",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
-          "legendFormat": "P99",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 8
-      },
-      "id": 101,
-      "title": "リクエスト推移",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 2,
-            "showPoints": "never"
-          },
-          "unit": "reqps"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "5xx エラー"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "4xx"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "orange",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "2xx"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 9
-      },
-      "id": 10,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "title": "HTTPリクエスト数 推移（ステータスコード別）",
-      "type": "timeseries",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"backend\", status=~\"2..\"}[1m]))",
-          "legendFormat": "2xx",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "sum(rate(http_requests_total{job=\"backend\", status=~\"4..\"}[1m]))",
-          "legendFormat": "4xx",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
           "expr": "sum(rate(http_requests_total{job=\"backend\", status=~\"5..\"}[1m]))",
-          "legendFormat": "5xx エラー",
-          "refId": "C"
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 17
-      },
-      "id": 102,
-      "title": "レスポンスタイム",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 2,
-            "showPoints": "never"
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 18
-      },
-      "id": 20,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "title": "レスポンスタイム推移（P50 / P95 / P99）",
-      "type": "timeseries",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
-          "legendFormat": "P50",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
-          "legendFormat": "P95",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
-          "legendFormat": "P99",
-          "refId": "C"
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 26
-      },
-      "id": 103,
-      "title": "エンドポイント別",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 5
-              }
-            ]
-          },
-          "unit": "reqps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 27
-      },
-      "id": 30,
-      "options": {
-        "displayMode": "gradient",
-        "minVizHeight": 10,
-        "minVizWidth": 0,
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true
-      },
-      "title": "エンドポイント別 リクエスト数（req/s）",
-      "type": "bargauge",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "topk(10, sum by (handler) (rate(http_requests_total{job=\"backend\"}[5m])))",
-          "legendFormat": "{{handler}}",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "5xx詳細へ"
+        }
       ]
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 500
-              },
-              {
-                "color": "red",
-                "value": 2000
-              }
-            ]
-          },
-          "unit": "ms"
-        },
-        "overrides": []
-      },
+      "id": 2104,
+      "title": "同時処理中リクエスト数",
+      "type": "stat",
       "gridPos": {
-        "h": 8,
-        "w": 12,
         "x": 12,
-        "y": 27
+        "y": 10,
+        "w": 6,
+        "h": 5
       },
-      "id": 31,
-      "options": {
-        "displayMode": "gradient",
-        "minVizHeight": 10,
-        "minVizWidth": 0,
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "mean"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showUnfilled": true
-      },
-      "title": "エンドポイント別 P95 レスポンスタイム",
-      "type": "bargauge",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "topk(10, histogram_quantile(0.95, sum by (handler, le) (rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m]))) * 1000)",
-          "legendFormat": "{{handler}}",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 35
-      },
-      "id": 32,
-      "title": "同時接続と worker 余力",
-      "type": "row"
-    },
-    {
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
+          "unit": "short",
           "color": {
             "mode": "thresholds"
           },
@@ -821,22 +621,11 @@
               }
             ]
           },
-          "unit": "short"
+          "mappings": []
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 0,
-        "y": 36
-      },
-      "id": 33,
       "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -844,37 +633,45 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
       },
-      "title": "同時処理中リクエスト数",
-      "type": "stat",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
           "expr": "http_requests_in_flight{job=\"backend\"}",
-          "legendFormat": "in-flight",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
       "links": [
         {
-          "title": "システム概要でメモリを見る →",
-          "url": "/grafana/d/jarvis-system-overview",
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
           "targetBlank": false,
-          "tooltip": "システム概要でメモリを見る →"
+          "tooltip": "in-flightの詳細へ"
         }
       ]
     },
     {
+      "id": 2105,
+      "title": "SSE 接続数",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 10,
+        "w": 6,
+        "h": 5
+      },
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
+          "unit": "short",
           "color": {
             "mode": "thresholds"
           },
@@ -895,22 +692,11 @@
               }
             ]
           },
-          "unit": "short"
+          "mappings": []
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 12,
-        "y": 36
-      },
-      "id": 34,
       "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "orientation": "auto",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -918,23 +704,219 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
       },
-      "title": "SSE 接続数",
-      "type": "stat",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
           "expr": "sum(sse_connections_active{job=\"backend\"}) or vector(0)",
-          "legendFormat": "SSE",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "SSEの詳細へ"
         }
       ]
     },
     {
+      "id": 2201,
+      "type": "row",
+      "title": "機能別詳細",
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 2202,
+      "title": "レスポンスタイム推移（P50 / P95 / P99）",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "レスポンスタイムの詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 2203,
+      "title": "エンドポイント別 リクエスト数（req/s）",
+      "type": "bargauge",
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (handler) (rate(http_requests_total{job=\"backend\"}[5m])))",
+          "legendFormat": "{{handler}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "エンドポイント別リクエスト詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 2204,
+      "title": "エンドポイント別 P95 レスポンスタイム",
+      "type": "bargauge",
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "targets": [
+        {
+          "expr": "topk(10, histogram_quantile(0.95, sum by (handler, le) (rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m]))) * 1000)",
+          "legendFormat": "{{handler}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "エンドポイント別P95詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 2301,
+      "type": "row",
+      "title": "補助監視",
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 2302,
+      "title": "同時処理中リクエスト / SSE 接続数 推移",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 34,
+        "w": 12,
+        "h": 8
+      },
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
@@ -943,94 +925,41 @@
         "defaults": {
           "unit": "short",
           "custom": {
-            "fillOpacity": 20,
+            "fillOpacity": 10,
             "lineWidth": 2
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 40
-      },
-      "id": 35,
       "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "max"
-          ]
-        },
         "tooltip": {
           "mode": "multi",
-          "sort": "none"
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         }
       },
-      "title": "同時処理中リクエスト推移",
-      "type": "timeseries",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
           "expr": "http_requests_in_flight{job=\"backend\"}",
           "legendFormat": "in-flight",
           "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "fillOpacity": 20,
-            "lineWidth": 2
-          }
         },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 40
-      },
-      "id": 36,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "max"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "title": "SSE 接続数推移",
-      "type": "timeseries",
-      "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
           "expr": "sum(sse_connections_active{job=\"backend\"}) or vector(0)",
           "legendFormat": "SSE",
-          "refId": "A"
+          "refId": "B"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "同時処理/SSEの詳細へ"
         }
       ]
     }
@@ -1055,5 +984,5 @@
   "title": "バックエンド API メトリクス",
   "uid": "backend-api-metrics",
   "version": 1,
-  "description": "バックエンドサービスの HTTP レスポンスタイム・エラー率・スループットを監視します。"
+  "description": "バックエンドの総合評価 → 部門サマリー → 詳細 → 推移の順で確認するダッシュボード。緑=OK / 黄=注意 / 赤=異常の基準で、応答遅延・5xx・同時処理・SSE を判断できます。"
 }
