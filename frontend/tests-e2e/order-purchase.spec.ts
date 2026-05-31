@@ -69,13 +69,12 @@ const baseOrder: OrderFixture = {
 };
 
 const groupCountsAll = {
-  counts: {
-    pending: 1,
-    confirmed: 0,
-    processing: 0,
-    shipped: 0,
-    delivered: 0,
-    returned: 0,
+    counts: {
+    awaiting_payment: 0,
+    sourcing: 0,
+    awaiting_shipping: 0,
+    completed: 1,
+    trouble: 0,
     cancelled: 0,
   },
   total: 1,

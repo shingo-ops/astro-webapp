@@ -62,12 +62,11 @@ const allOrders = [baseOrder, otherOrder];
 
 const groupCountsAll = {
   counts: {
-    pending: 1,
-    confirmed: 0,
-    processing: 0,
-    shipped: 1,
-    delivered: 0,
-    returned: 0,
+    awaiting_payment: 1,
+    sourcing: 0,
+    awaiting_shipping: 1,
+    completed: 0,
+    trouble: 0,
     cancelled: 0,
   },
   total: 2,
@@ -75,12 +74,11 @@ const groupCountsAll = {
 
 const groupCountsAlpha = {
   counts: {
-    pending: 1,
-    confirmed: 0,
-    processing: 0,
-    shipped: 0,
-    delivered: 0,
-    returned: 0,
+    awaiting_payment: 1,
+    sourcing: 0,
+    awaiting_shipping: 0,
+    completed: 0,
+    trouble: 0,
     cancelled: 0,
   },
   total: 1,
