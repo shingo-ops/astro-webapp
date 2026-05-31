@@ -42,6 +42,16 @@ function dashboardMocks() {
       stalled_count: 0,
       stalled_deals: [],
     },
+    // 月次売上グラフ（Sprint 2 追加）
+    "GET /analytics/monthly-revenue": {
+      entries: [
+        { month: "2026-01", actual: 3200000, forecast: null, remaining: 0, is_current: false },
+        { month: "2026-02", actual: 2800000, forecast: null, remaining: 0, is_current: false },
+        { month: "2026-03", actual: 4100000, forecast: null, remaining: 0, is_current: false },
+        { month: "2026-04", actual: 3600000, forecast: null, remaining: 0, is_current: false },
+        { month: "2026-05", actual: 1800000, forecast: 3200000, remaining: 1400000, is_current: true },
+      ],
+    },
     // 期間連動 KPI サマリー
     "GET /analytics/summary": {
       leads: {
