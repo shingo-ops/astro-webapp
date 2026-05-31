@@ -1,7 +1,7 @@
 {
   "uid": "monitoring-main",
   "title": "監視メイン",
-  "description": "全システムの主要指標を 1 画面で確認できるメインダッシュボード。異常があればここに現れます。",
+  "description": "全体通知 → 部門サマリー → 機能別詳細 → 推移の順で確認するメインダッシュボード。緑=OK / 黄=注意 / 赤=異常の基準を共通化し、repo 反映と実機反映の差も明示します。",
   "tags": [
     "main",
     "overview"
@@ -127,31 +127,30 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">監視メイン</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">全システムの主要指標を 1 画面で確認できるメインダッシュボード。異常があればここに現れます。</p></div>"
+        "content": "<div style=\"padding:4px 8px\"><p style=\"margin:0;font-size:20px;font-weight:600;line-height:1.3\">監視メイン</p><p style=\"margin:2px 0 0;font-size:10px;opacity:0.75\">全体通知 → 部門サマリー → 機能別詳細 → 推移の順で確認します。緑=OK、黄=注意、赤=異常。repo の変更だけでは反映されず、監視VPS の provisioning 読み込み後に画面へ出ます。</p></div>"
       },
       "transparent": true
     },
     {
-      "title": "サーバーリソース",
+      "id": 1001,
       "type": "row",
-      "collapsed": false,
+      "title": "総合通知",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 3
-      },
-      "id": 100,
-      "panels": []
+        "y": 3,
+        "w": 24,
+        "h": 1
+      }
     },
     {
-      "title": "CPU 使用率",
-      "type": "gauge",
+      "id": 1002,
+      "title": "総合評価",
+      "type": "stat",
       "gridPos": {
-        "h": 5,
-        "w": 6,
         "x": 0,
-        "y": 4
+        "y": 4,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -160,13 +159,14 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
@@ -174,7 +174,7 @@
                 "value": 60
               },
               {
-                "color": "red",
+                "color": "green",
                 "value": 80
               }
             ]
@@ -187,36 +187,257 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
       },
       "targets": [
         {
-          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
-          "legendFormat": "CPU %",
+          "expr": "clamp_min(0, 100 - 20 * ((max(100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > bool 85) + (max((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100) > bool 85) + (max((1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100) > bool 85) + (sum(rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m])) > bool 0.05) + (sum(increase(gha_workflow_run_count{conclusion=\"failure\"}[24h])) > bool 0) + (count(monitor_status == 0) > bool 0)))",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
-      "id": 1,
       "links": [
         {
-          "title": "システム概要で詳細を確認 →",
+          "title": "システム概要へ",
           "url": "/grafana/d/jarvis-system-overview",
           "targetBlank": false,
-          "tooltip": "システム概要で詳細を確認 →"
+          "tooltip": "インフラ詳細へ"
         }
       ]
     },
     {
-      "title": "メモリ使用率",
-      "type": "gauge",
+      "id": 1003,
+      "title": "要確認件数",
+      "type": "stat",
       "gridPos": {
-        "h": 5,
-        "w": 6,
         "x": 6,
-        "y": 4
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "((max(100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > bool 85) + (max((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100) > bool 85) + (max((1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100) > bool 85) + (sum(rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m])) > bool 0.05) + (sum(increase(gha_workflow_run_count{conclusion=\"failure\"}[24h])) > bool 0) + (count(monitor_status == 0) > bool 0))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "バックエンド詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1004,
+      "title": "稼働中サービス数",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "count(up == 1)",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "サービス稼働へ",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "サービス詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1005,
+      "title": "外部DOWN数",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 4,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "count(monitor_status == 0)",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "外部連携へ",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "外部サービス詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1101,
+      "type": "row",
+      "title": "部門サマリー",
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 1102,
+      "title": "インフラ",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -225,8 +446,304 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "clamp_min(0, 100 - 25 * ((max(100 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > bool 85) + (max((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100) > bool 85) + (max((1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100) > bool 85)))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
+          "targetBlank": false,
+          "tooltip": "インフラ詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1103,
+      "title": "アプリ",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 10,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "clamp_min(0, 100 - 25 * ((sum(rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m])) > bool 0.05) + (histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) > bool 2.0) + (http_requests_in_flight{job=\"backend\"} > bool 1) + (sum(sse_connections_active{job=\"backend\"}) > bool 8)))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "バックエンド詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1104,
+      "title": "運用 / CI",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 10,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "clamp_min(0, 100 - 50 * ((sum(increase(gha_workflow_run_count{conclusion=\"failure\"}[24h])) > bool 0) + ((sum(increase(gha_workflow_elapsed_seconds[1h])) / (sum(increase(gha_workflow_run_count[1h])) + 0.001)) > bool 300)))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "CI / GitHubへ",
+          "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206",
+          "targetBlank": false,
+          "tooltip": "CI詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1105,
+      "title": "外部連携",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 10,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "clamp_min(0, 100 - 50 * ((count(monitor_status == 0) > bool 0) + (min(monitor_cert_days_remaining) < bool 14)))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "サービス稼働へ",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "外部連携詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1201,
+      "type": "row",
+      "title": "インフラ詳細",
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 1202,
+      "title": "CPU 使用率",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -252,36 +769,41 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
       },
       "targets": [
         {
-          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
-          "legendFormat": "Memory %",
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
-      "id": 2,
       "links": [
         {
-          "title": "システム概要で詳細を確認 →",
+          "title": "システム概要へ",
           "url": "/grafana/d/jarvis-system-overview",
           "targetBlank": false,
-          "tooltip": "システム概要で詳細を確認 →"
+          "tooltip": "CPUの詳細へ"
         }
       ]
     },
     {
-      "title": "ディスク使用率",
-      "type": "gauge",
+      "id": 1203,
+      "title": "メモリ使用率",
+      "type": "stat",
       "gridPos": {
-        "h": 5,
+        "x": 6,
+        "y": 16,
         "w": 6,
-        "x": 12,
-        "y": 4
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -290,8 +812,9 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -305,7 +828,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 85
               }
             ]
           },
@@ -317,113 +840,41 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "targets": [
-        {
-          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100",
-          "legendFormat": "Disk %",
-          "refId": "A"
-        }
-      ],
-      "id": 3,
-      "links": [
-        {
-          "title": "システム概要で詳細を確認 →",
-          "url": "/grafana/d/jarvis-system-overview",
-          "targetBlank": false,
-          "tooltip": "システム概要で詳細を確認 →"
-        }
-      ]
-    },
-    {
-      "title": "稼働中サービス数",
-      "type": "stat",
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 18,
-        "y": 4
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
         "orientation": "auto",
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "colorMode": "background",
-        "graphMode": "none"
+        "graphMode": "none",
+        "justifyMode": "center"
       },
       "targets": [
         {
-          "expr": "count(up == 1)",
-          "legendFormat": "UP",
+          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
-      "id": 4,
       "links": [
         {
-          "title": "サービス稼働監視で詳細を確認 →",
-          "url": "/grafana/d/uptime-kuma-monitors",
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
           "targetBlank": false,
-          "tooltip": "サービス稼働監視で詳細を確認 →"
+          "tooltip": "メモリの詳細へ"
         }
       ]
     },
     {
-      "title": "CI / GitHub Actions",
-      "type": "row",
-      "collapsed": false,
+      "id": 1204,
+      "title": "ディスク使用率",
+      "type": "stat",
       "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 9
-      },
-      "id": 101,
-      "panels": []
-    },
-    {
-      "title": "CI 成功率（7日間）",
-      "type": "gauge",
-      "gridPos": {
-        "h": 5,
+        "x": 12,
+        "y": 16,
         "w": 6,
-        "x": 0,
-        "y": 10
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -432,13 +883,14 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": null
               },
               {
@@ -446,8 +898,8 @@
                 "value": 80
               },
               {
-                "color": "green",
-                "value": 95
+                "color": "red",
+                "value": 90
               }
             ]
           },
@@ -459,36 +911,261 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
       },
       "targets": [
         {
-          "expr": "100 * sum(increase(gha_workflow_run_count{conclusion=\"success\"}[7d])) / (sum(increase(gha_workflow_run_count[7d])) + 0.001)",
-          "legendFormat": "成功率",
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
-      "id": 5,
       "links": [
         {
-          "title": "CI/GitHub Actions で詳細を確認 →",
-          "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206",
+          "title": "システム概要へ",
+          "url": "/grafana/d/jarvis-system-overview",
           "targetBlank": false,
-          "tooltip": "CI/GitHub Actions で詳細を確認 →"
+          "tooltip": "ディスクの詳細へ"
         }
       ]
     },
     {
-      "title": "CI 失敗（24時間）",
+      "id": 1205,
+      "title": "稼働中サービス",
       "type": "stat",
       "gridPos": {
-        "h": 5,
+        "x": 18,
+        "y": 16,
         "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "count(up == 1)",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "サービス稼働へ",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "サービス稼働の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1301,
+      "type": "row",
+      "title": "バックエンド詳細",
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 1302,
+      "title": "P99 レイテンシ",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 500
+              },
+              {
+                "color": "red",
+                "value": 2000
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "P99の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1303,
+      "title": "5xx エラー率",
+      "type": "stat",
+      "gridPos": {
         "x": 6,
-        "y": 10
+        "y": 22,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m]))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "5xxの詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1304,
+      "title": "同時処理中リクエスト",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -513,7 +1190,7 @@
               },
               {
                 "color": "red",
-                "value": 5
+                "value": 2
               }
             ]
           },
@@ -525,38 +1202,190 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
         "orientation": "auto",
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "colorMode": "background",
-        "graphMode": "none"
+        "graphMode": "none",
+        "justifyMode": "center"
       },
       "targets": [
         {
-          "expr": "sum(increase(gha_workflow_run_count{conclusion=\"failure\"}[24h]))",
-          "legendFormat": "失敗数",
+          "expr": "http_requests_in_flight{job=\"backend\"}",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
-      "id": 6,
       "links": [
         {
-          "title": "CI/GitHub Actions で詳細を確認 →",
-          "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206",
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
           "targetBlank": false,
-          "tooltip": "CI/GitHub Actions で詳細を確認 →"
+          "tooltip": "in-flightの詳細へ"
         }
       ]
     },
     {
-      "title": "直近 CI 実行時間（平均・秒）",
+      "id": 1305,
+      "title": "SSE 接続数",
       "type": "stat",
       "gridPos": {
-        "h": 5,
+        "x": 18,
+        "y": 22,
         "w": 6,
-        "x": 12,
-        "y": 10
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 8
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "sum(sse_connections_active{job=\"backend\"}) or vector(0)",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "SSEの詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1401,
+      "type": "row",
+      "title": "運用 / 外部",
+      "gridPos": {
+        "x": 0,
+        "y": 27,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 1402,
+      "title": "CI 失敗数（24時間）",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(gha_workflow_run_count{conclusion=\"failure\"}[24h]))",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "CI / GitHubへ",
+          "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206",
+          "targetBlank": false,
+          "tooltip": "CI失敗の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1403,
+      "title": "CI 平均実行時間",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 28,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
         "type": "prometheus",
@@ -577,11 +1406,11 @@
               },
               {
                 "color": "yellow",
-                "value": 300
+                "value": 120
               },
               {
                 "color": "red",
-                "value": 600
+                "value": 300
               }
             ]
           },
@@ -593,55 +1422,116 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
         "orientation": "auto",
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "colorMode": "background",
-        "graphMode": "none"
+        "graphMode": "none",
+        "justifyMode": "center"
       },
       "targets": [
         {
           "expr": "sum(increase(gha_workflow_elapsed_seconds[1h])) / (sum(increase(gha_workflow_run_count[1h])) + 0.001)",
-          "legendFormat": "平均時間",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
-      "id": 7,
       "links": [
         {
-          "title": "CI/GitHub Actions で詳細を確認 →",
+          "title": "CI / GitHubへ",
           "url": "/grafana/d/ea99fc9c-32f6-4678-9f45-ab1421a94206",
           "targetBlank": false,
-          "tooltip": "CI/GitHub Actions で詳細を確認 →"
+          "tooltip": "CI時間の詳細へ"
         }
       ]
     },
     {
-      "title": "エラーログ",
-      "type": "row",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 15
-      },
-      "id": 102,
-      "panels": []
-    },
-    {
-      "title": "バックエンドエラー（1時間）",
+      "id": 1404,
+      "title": "SSL 証明書残日数",
       "type": "stat",
       "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 0,
-        "y": 16
+        "x": 12,
+        "y": 28,
+        "w": 6,
+        "h": 5
       },
       "datasource": {
-        "type": "loki",
-        "uid": "P8E80F9AEF21F6940"
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 14
+              },
+              {
+                "color": "green",
+                "value": 30
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      "targets": [
+        {
+          "expr": "min(monitor_cert_days_remaining)",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "links": [
+        {
+          "title": "サービス稼働へ",
+          "url": "/grafana/d/uptime-kuma-monitors",
+          "targetBlank": false,
+          "tooltip": "SSL証明書の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1405,
+      "title": "外部UP数",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 28,
+        "w": 6,
+        "h": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
       },
       "fieldConfig": {
         "defaults": {
@@ -653,16 +1543,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
-                "color": "yellow",
+                "color": "green",
                 "value": 1
-              },
-              {
-                "color": "red",
-                "value": 10
               }
             ]
           },
@@ -674,51 +1560,52 @@
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
-          ]
+          ],
+          "fields": "",
+          "values": false
         },
         "orientation": "auto",
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "colorMode": "background",
-        "graphMode": "none"
+        "graphMode": "none",
+        "justifyMode": "center"
       },
       "targets": [
         {
-          "expr": "sum(count_over_time({container=\"salesanchor-backend-1\"} |= \"ERROR\" [1h]))",
-          "legendFormat": "エラー数",
+          "expr": "sum(monitor_status == 1)",
+          "legendFormat": "{{__name__}}",
           "refId": "A"
         }
       ],
-      "id": 8,
       "links": [
         {
-          "title": "エラーログで詳細を確認 →",
-          "url": "/grafana/d/loki-error-logs",
+          "title": "サービス稼働へ",
+          "url": "/grafana/d/uptime-kuma-monitors",
           "targetBlank": false,
-          "tooltip": "エラーログで詳細を確認 →"
+          "tooltip": "外部サービスの詳細へ"
         }
       ]
     },
     {
-      "title": "リソース推移（1時間）",
+      "id": 1501,
       "type": "row",
-      "collapsed": false,
+      "title": "推移",
       "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
-        "y": 21
-      },
-      "id": 103,
-      "panels": []
+        "y": 33,
+        "w": 24,
+        "h": 1
+      }
     },
     {
-      "title": "CPU / メモリ 推移",
+      "id": 1502,
+      "title": "CPU / メモリ / ディスク 推移",
       "type": "timeseries",
       "gridPos": {
-        "h": 8,
-        "w": 24,
         "x": 0,
-        "y": 22
+        "y": 34,
+        "w": 12,
+        "h": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -727,12 +1614,12 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "min": 0,
-          "max": 100,
           "custom": {
             "fillOpacity": 10,
             "lineWidth": 2
-          }
+          },
+          "min": 0,
+          "max": 100
         },
         "overrides": []
       },
@@ -756,15 +1643,75 @@
           "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
           "legendFormat": "Memory %",
           "refId": "B"
+        },
+        {
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"} / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"tmpfs\"}) * 100",
+          "legendFormat": "Disk %",
+          "refId": "C"
         }
       ],
-      "id": 9,
       "links": [
         {
-          "title": "システム概要で詳細を確認 →",
+          "title": "システム概要へ",
           "url": "/grafana/d/jarvis-system-overview",
           "targetBlank": false,
-          "tooltip": "システム概要で詳細を確認 →"
+          "tooltip": "インフラ推移の詳細へ"
+        }
+      ]
+    },
+    {
+      "id": 1503,
+      "title": "バックエンド応答 / エラー 推移",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 34,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"backend\"}[5m])) by (le)) * 1000",
+          "legendFormat": "P99 ms",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_requests_total{job=\"backend\",status=~\"5..\"}[5m]))",
+          "legendFormat": "5xx rps",
+          "refId": "B"
+        }
+      ],
+      "links": [
+        {
+          "title": "バックエンドへ",
+          "url": "/grafana/d/backend-api-metrics",
+          "targetBlank": false,
+          "tooltip": "バックエンド推移の詳細へ"
         }
       ]
     }
