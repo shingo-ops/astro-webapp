@@ -1420,6 +1420,13 @@
           "usedA": "Used A",
           "sealed": "Sealed",
           "opened": "Opened"
+        },
+        "unitOptions": {
+          "piece": "Single Card",
+          "pack": "Pack",
+          "box": "Box",
+          "case": "Case / Carton",
+          "set": "Set / Bulk"
         }
       }
     },

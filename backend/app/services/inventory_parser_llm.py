@@ -165,7 +165,7 @@ Discord 仕入元から届いた在庫メッセージのうち、ルールベー
 # 出力要件
 - {lang_instruction}
 - quantity は数値のみ（box / pack / セット等の数量を整数で）
-- unit は box / pack / set / piece / carton のいずれか（不明なら null）
+- unit は box / pack / set / piece / case のいずれか（不明なら null）
 - unit_price は数値（円単位、不明なら null）
 - condition は 'new' / 'used' / 'shrink' / 'no_shrink' / null
 - confidence は 0.0〜1.0 で推定信頼度

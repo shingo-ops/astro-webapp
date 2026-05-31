@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 InventoryStatus = Literal["in_stock", "out_of_stock", "reserved", "archived"]
 InventorySource = Literal["manual", "discord_parsed", "csv_import", "f6_approved"]
+InventoryUnit = Literal["piece", "pack", "box", "case", "set"]
 
 
 class InventoryOfferBase(BaseModel):
@@ -24,8 +25,8 @@ class InventoryOfferBase(BaseModel):
     condition: str = Field(..., min_length=1, max_length=50)
     quantity: int = Field(..., ge=0)
     unit_price: int = Field(..., ge=0)
-    # 数量の単位 (Box / Case / Pack / Set / Peace)。QA 2026-05-30 / migration 084。
-    unit: str | None = Field(default=None, max_length=20)
+    # 数量の単位。正規値: piece / pack / box / case / set。
+    unit: InventoryUnit | None = Field(default=None)
     status: InventoryStatus = "in_stock"
     notes_ja: str | None = Field(default=None, max_length=2000)
     notes_en: str | None = Field(default=None, max_length=2000)
@@ -43,7 +44,7 @@ class InventoryOfferUpdate(BaseModel):
 
     quantity: int | None = Field(default=None, ge=0)
     unit_price: int | None = Field(default=None, ge=0)
-    unit: str | None = Field(default=None, max_length=20)
+    unit: InventoryUnit | None = Field(default=None)
     status: InventoryStatus | None = None
     notes_ja: str | None = Field(default=None, max_length=2000)
     notes_en: str | None = Field(default=None, max_length=2000)
@@ -83,4 +84,5 @@ __all__ = [
     "InventoryOfferListResponse",
     "InventoryStatus",
     "InventorySource",
+    "InventoryUnit",
 ]
