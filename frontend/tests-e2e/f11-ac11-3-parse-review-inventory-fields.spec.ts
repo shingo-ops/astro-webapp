@@ -122,7 +122,7 @@ test.describe("Sprint 11 / F11 AC11.3 — ParseReviewPage inventory fields wirin
       .getByTestId("review-row-0-condition")
       .selectOption("sealed");
     await page.getByTestId("review-row-0-quantity-offered").fill("2");
-    await page.getByTestId("review-row-0-unit").selectOption("Box");
+    await page.getByTestId("review-row-0-unit").selectOption("box");
     await page.getByTestId("review-row-0-unit-price").fill("4500");
 
     // 承認
@@ -139,7 +139,7 @@ test.describe("Sprint 11 / F11 AC11.3 — ParseReviewPage inventory fields wirin
     expect(items[0].delta_qty).toBe(0);
     expect(items[0].condition).toBe("sealed");
     expect(items[0].quantity_offered).toBe(2);
-    expect(items[0].unit).toBe("Box");
+    expect(items[0].unit).toBe("box");
     expect(items[0].unit_price).toBe(4500);
   });
 
