@@ -1602,7 +1602,10 @@
     "passwordTooShort": "パスワードは8文字以上で入力してください",
     "passwordChanged": "パスワードを変更しました",
     "saving": "保存中...",
-    "changing": "変更中..."
+    "changing": "変更中...",
+    "sectionPreferences": "環境設定",
+    "darkModeLabel": "ダークモード",
+    "languageLabel": "言語"
   },
   "badges": {
     "subtitle": "バッジと達成条件を管理します。"

@@ -205,6 +205,13 @@
   --size-avatar-md:  40px;   /* 右パネル・ポップオーバー */
   --size-avatar-lg:  48px;   /* 会話リスト（1カラム目）*/
 
+  /* ---- Toggle switch（アカウント設定 ダークモードトグル） ---- */
+  --size-toggle-w:    44px;  /* トグルトラック幅 */
+  --size-toggle-knob: 18px;  /* トグルつまみ直径 */
+
+  /* ---- Form controls ---- */
+  --size-lang-select-min: 120px;  /* 言語選択プルダウン最小幅 */
+
   /* ---- Opacity ---- */
   --opacity-full:      1;     /* 不透明（三項演算子の else 側で使用）*/
   --opacity-muted:     0.7;   /* タイムスタンプ・補足テキストの減光 */
