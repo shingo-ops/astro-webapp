@@ -647,6 +647,18 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/087_create_supplier_prompts.sql
 
+            # Migration 091: leads に discord_user_id / discord_dm_channel_id 追加（Discord 顧客メッセージング）
+            #   DO $$ pg_namespace 走査形式。ADD COLUMN IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/091_add_leads_discord_messaging_columns.sql
+
+            # Migration 092: meta_messages に Discord Partial Index 追加
+            #   DO $$ pg_namespace 走査形式。CREATE INDEX IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/092_add_meta_messages_discord_index.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

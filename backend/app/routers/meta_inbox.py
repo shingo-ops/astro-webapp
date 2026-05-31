@@ -890,7 +890,7 @@ def _compute_window_expires(last_inbound_at: Optional[datetime]) -> Optional[str
     dependencies=[Depends(require_permission("messaging.view"))],
 )
 async def list_conversations(
-    platform: str = Query("all", pattern="^(all|messenger|instagram)$"),
+    platform: str = Query("all", pattern="^(all|messenger|instagram|discord)$"),
     unread_only: bool = Query(False),
     page_id: Optional[str] = Query(None, max_length=50),
     limit: int = Query(50, ge=1, le=200),
