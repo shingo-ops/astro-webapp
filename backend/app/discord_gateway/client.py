@@ -22,7 +22,7 @@ from typing import Any, Callable
 
 import discord
 
-from app.discord_gateway import inbound_writer
+from app.discord_gateway import dm_writer, inbound_writer
 from app.discord_gateway.config import TenantBotConfig
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,13 @@ class JarvisDiscordClient(discord.Client):
         )
 
     async def on_message(self, message: discord.Message) -> None:  # type: ignore[override]
-        """MESSAGE_CREATE: routing 照合 → 冪等 INSERT → 解析タスク投入。
+        """MESSAGE_CREATE: DM は顧客受信箱経路、guild は仕入元解析経路へ振り分ける。
+
+        DM (guild=None):
+          _process_dm_message → dm_writer → {schema}.meta_messages (platform='discord')
+
+        Guild メッセージ:
+          _process_message → inbound_writer → public.discord_inbound_messages (在庫解析)
 
         AC5.1: 受信から 5 秒以内に discord_inbound_messages 1 行追加
         AC5.2: 同一 discord_message_id 2 回 → 1 行のみ
@@ -118,10 +124,55 @@ class JarvisDiscordClient(discord.Client):
         # Bot 自身 / 他 Bot は無視
         if getattr(message.author, "bot", False):
             return
-        # DM (guild=None) は当面 ignored_routing 扱い（仕入元は guild 経由のみ）
-        await self._process_message(message)
+        if message.guild is None:
+            # DM → 顧客メッセージング（受信箱）経路
+            await self._process_dm_message(message)
+        else:
+            # Guild チャンネル → 仕入元在庫解析経路（既存）
+            await self._process_message(message)
 
     # --- internal --------------------------------------------------------
+
+    async def _process_dm_message(self, message: discord.Message) -> None:
+        """DM メッセージを受信箱へ記録する（顧客向けメッセージング経路）。
+
+        leads テーブルで discord_user_id による lead upsert を行い、
+        meta_messages に platform='discord', direction='inbound' で INSERT する。
+        SSE で受信箱フロントエンドに通知する。
+        """
+        discord_user_id = str(message.author.id)
+        dm_channel_id = str(message.channel.id)
+        sender_name = getattr(message.author, "display_name", "") or str(message.author)
+        tenant_id = self.tenant.tenant_id
+
+        db_factory = self._db_factory()
+        try:
+            async with db_factory() as session:  # type: ignore[misc]
+                await dm_writer.upsert_lead_and_message(
+                    session,
+                    tenant_id=tenant_id,
+                    discord_user_id=discord_user_id,
+                    sender_name=sender_name,
+                    dm_channel_id=dm_channel_id,
+                    message_text=message.content or "",
+                    discord_message_id=str(message.id),
+                    created_at=message.created_at,
+                )
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            logger.exception(
+                "[discord-gateway] DM 受信箱記録失敗 tenant=%s user=%s msg=%s: %s",
+                self.tenant.tenant_code, discord_user_id, message.id, exc,
+            )
+            return
+
+        # SSE で受信箱フロントエンドに通知（失敗しても DM 処理は継続）
+        try:
+            from app.services.sse_pubsub import publish_inbox_update
+            await publish_inbox_update(tenant_id)
+        except Exception:  # noqa: BLE001
+            logger.debug("[discord-gateway] SSE publish スキップ（設定なし）")
 
     async def _process_message(self, message: discord.Message) -> None:
         payload = inbound_writer.message_to_inbound_payload(message)

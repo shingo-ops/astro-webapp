@@ -647,6 +647,13 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/087_create_supplier_prompts.sql
 
+            # Migration 091+092: Discord B2C 顧客メッセージング（受信箱連携）
+            #   {schema} プレースホルダ含むテンプレート migration → Python スクリプト経由で適用。
+            #   leads.discord_user_id / discord_dm_channel_id カラム + インデックス追加。
+            #   meta_messages に Discord 用 Partial Index 追加。冪等（ADD/CREATE IF NOT EXISTS）。
+            docker exec astro-webapp-backend-1 \
+              python scripts/migrate_discord_b2c.py
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
