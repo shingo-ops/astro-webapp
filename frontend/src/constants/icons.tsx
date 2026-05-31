@@ -110,7 +110,6 @@ const Users     = hi(UsersIcon);
 const Key       = hi(KeyIcon);
 const GearSix   = hi(Cog6ToothIcon);
 const GearEight        = hi(Cog8ToothIcon);
-const GearEightOutline = hi(Cog8ToothOutlineIcon);
 const Folder    = hi(FolderIcon);
 const HardHat   = hi(WrenchScrewdriverIcon);
 const Chat      = hi(ChatBubbleLeftIcon);
@@ -152,6 +151,7 @@ const SignOut           = hi(ArrowRightOnRectangleIcon);
 const SlidersHorizontal = hi(AdjustmentsHorizontalIcon);
 const MagnifyingGlass   = hi(MagnifyingGlassIcon);
 const XOutline          = hi(XMarkOutlineIcon);
+const GearEightOutline  = hi(Cog8ToothOutlineIcon);
 
 // ステータス（✓ ⚠ ✕ の代替）
 export const STATUS_ICONS = {
