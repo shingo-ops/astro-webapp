@@ -224,9 +224,11 @@ class TestMonthlySummary:
         """売上 2 件作って合計が合う"""
         # SQLite テストでは created_at は CURRENT_TIMESTAMP（fixture の "2026-04-07 00:00:00+00:00"）
         # ではなく、SQLite の datetime 関数で "now" になる。テスト fixture の NOW() と
-        # 厳密に整合するため、現在月をクエリする。
-        from datetime import datetime, timezone
-        now = datetime.now(timezone.utc)
+        # 厳密に整合するため、現在月（JST）をクエリする。
+        # UTC.month を使うと月末 JST0:00〜UTC0:00 の9時間で月境界がずれるため JST で取得。
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        now_jst = datetime.now(ZoneInfo("Asia/Tokyo"))
 
         order1 = await _create_order(client, "ORD-FIN-MONTH-1")
         order2 = await _create_order(client, "ORD-FIN-MONTH-2")
@@ -240,7 +242,7 @@ class TestMonthlySummary:
         )
         res = await client.get(
             "/api/v1/financials/monthly",
-            params={"year": now.year, "month": now.month},
+            params={"year": now_jst.year, "month": now_jst.month},
         )
         assert res.status_code == 200, res.text
         body = res.json()

@@ -105,6 +105,7 @@ export default function InboxPage() {
                 <option value="all">{t("inbox.platformAll")}</option>
                 <option value="messenger">{t("inbox.platformMessenger")}</option>
                 <option value="instagram">{t("inbox.platformInstagram")}</option>
+                <option value="discord">{t("inbox.platformDiscord")}</option>
               </select>
             </div>
 
