@@ -37,6 +37,7 @@
 | feature/morimoto/branch-protection-cleanup | （記入してください） | 2026-05-31 18:13 | IN_PROGRESS | | |
 | feature/morimoto/unify-icon-btn-token | （記入してください） | 2026-05-31 20:36 | IN_PROGRESS | | |
 | feature/morimoto/account-settings-ui | アカウント設定UI改善 | 2026-05-31 | IN_PROGRESS | | |
+| feature/morimoto/profile-section-kana-fields | プロフィール設定かなフィールド追加 | 2026-05-31 | IN_PROGRESS | | |
 | feature/morimoto/move-templates-to-inbox-header | テンプレートをサイドバーから受信箱ヘッダーへ移動 | 2026-05-31 | IN_PROGRESS | | |
 | feature/morimoto/hub-shell-unification | hub-shell 共通化・背景透過 | 2026-05-31 | IN_PROGRESS | | |
 ---
