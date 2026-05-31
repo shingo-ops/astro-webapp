@@ -75,6 +75,92 @@
   padding-top: var(--space-2);
 }
 
+.account-settings-pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-settings-pref-row:last-child {
+  border-bottom: none;
+}
+
+.account-settings-pref-label {
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: var(--size-toggle-w);
+  height: var(--space-6);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: var(--radius-full);
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: var(--size-toggle-knob);
+  height: var(--size-toggle-knob);
+  left: var(--space-3px);
+  top: var(--space-3px);
+  background: var(--bg-surface);
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: var(--shadow-drop-sm);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--accent);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(var(--space-5));
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+  box-shadow: var(--focus-ring-shadow);
+}
+
+/* Language select */
+.account-settings-lang-select {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  min-width: var(--size-lang-select-min);
+}
+
+.account-settings-lang-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring-shadow);
+}
+
 .account-settings-success {
   font-size: var(--font-sm);
   color: var(--success);

@@ -288,9 +288,11 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
 
 // アカウント設定（AccountSettingsPage）
 export const ACCOUNT_ICONS = {
-  profile:  UserCircle,
-  security: Lock,
-  phone:    Phone,
+  profile:      UserCircle,
+  security:     Lock,
+  phone:        Phone,
+  preferences:  GearSix,
+  language:     Globe,
 } satisfies Record<string, Icon>;
 
 // 受信箱ヘッダーアクションアイコン（既読 / 未読にする / 対象外 / 削除）

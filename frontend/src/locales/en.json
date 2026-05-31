@@ -1602,7 +1602,10 @@
     "passwordTooShort": "Password must be at least 8 characters",
     "passwordChanged": "Password changed successfully",
     "saving": "Saving...",
-    "changing": "Changing..."
+    "changing": "Changing...",
+    "sectionPreferences": "Preferences",
+    "darkModeLabel": "Dark mode",
+    "languageLabel": "Language"
   },
   "badges": {
     "subtitle": "Manage badges and achievement conditions."

@@ -33,6 +33,9 @@
 | feature/morimoto/stylelint-phase2-error | stylelint error昇格 Phase2 | 2026-05-31 | IN_PROGRESS | | |
 | feature/morimoto/back-merge-main-for-1262 | （記入してください） | 2026-05-31 17:20 | IN_PROGRESS | | |
 | feature/morimoto/permit-danger-script | permit-danger.sh 実装 | 2026-05-31 | IN_PROGRESS | | |
+| feature/morimoto/branch-protection-cleanup | （記入してください） | 2026-05-31 18:13 | IN_PROGRESS | | |
+| feature/morimoto/unify-icon-btn-token | （記入してください） | 2026-05-31 20:36 | IN_PROGRESS | | |
+| feature/morimoto/account-settings-ui | アカウント設定UI改善 | 2026-05-31 | IN_PROGRESS | | |
 ---
 
 ## 記入例

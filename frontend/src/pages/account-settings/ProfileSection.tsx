@@ -77,8 +77,8 @@ export default function ProfileSection() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="account-settings-field">
-          <label htmlFor="phone" className="account-settings-label">{t("accountSettings.phoneLabel")}</label>
+        <div className="form-group">
+          <label htmlFor="phone">{t("accountSettings.phoneLabel")}</label>
           <input id="phone" type="tel" value={form.phone} onChange={set("phone")} />
         </div>
 
