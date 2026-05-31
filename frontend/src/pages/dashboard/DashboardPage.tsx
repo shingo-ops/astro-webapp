@@ -1,20 +1,32 @@
 /**
- * ダッシュボードページ（Sprint 1: ロール別表示 / フォローアップ導線 / 目標逆算）
+ * ダッシュボードページ（Sprint 2: 予実比較グラフ）
  *
- * - 営業担当 / リード担当 / チーム タブ切り替え（旧: チーム/個人）
+ * - 営業担当 / リード担当 / チーム タブ切り替え
  * - 表示期間プルダウン（1w / 1m / 3m / 6m / 12m）
  * - 固定エリア: 目標（今月・今週・逆算表示）/ 着地予測 / フォローアップリマインド（クリック導線付き）
+ * - 予実比較グラフ: 月別受注実績（棒）+ 今月着地予想積み上げ（営業/チームのみ）
  * - 期間連動エリア: ロール別（営業=商談+受注 / リード=リード / チーム=全て）
  *
  * 変更履歴:
  *   2026-04-17: Phase 3 拡張
  *   2026-05-25: ダッシュボード強化（タブ・期間・目標・着地予測・フォローアップ）
  *   2026-05-31: Sprint 1 ロール別表示・フォローアップ導線・目標逆算
+ *   2026-05-31: Sprint 2 Recharts予実比較グラフ追加
  */
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { api } from "../../lib/api";
 import { PageLayout } from "../../components/PageLayout";
 import { DashboardIcons } from "../../constants/icons";
@@ -101,6 +113,18 @@ interface DashboardSummary {
   };
 }
 
+interface MonthlyRevenueEntry {
+  month: string;
+  actual: number;
+  forecast: number | null;
+  remaining: number;
+  is_current: boolean;
+}
+
+interface MonthlyRevenueResponse {
+  entries: MonthlyRevenueEntry[];
+}
+
 // ─── 定数 ────────────────────────────────────────────────────
 
 const KPI_LABEL_KEYS: Record<string, string> = {
@@ -117,6 +141,28 @@ const KPI_UNIT: Record<string, string> = {
   close_rate:      "%",
   lead_count:      "",
   conversion_rate: "%",
+};
+
+// チャート用カラー（CSS変数を直接使えないため getComputedStyle で取得）
+const getChartColors = () => {
+  const root = document.documentElement;
+  const style = getComputedStyle(root);
+  const accent = style.getPropertyValue("--accent").trim() || "#1877F2";
+  return { actual: accent, remaining: `${accent}40` };
+};
+
+// YAxis フォーマット（万単位）— 単位文字はコンポーネント内で t() 経由で渡す
+const formatYValue = (value: number, unitMan: string, unitOku: string): string => {
+  if (value === 0) return "0";
+  if (value >= 100_000_000) return `${Math.round(value / 100_000_000)}${unitOku}`;
+  if (value >= 10_000) return `${Math.round(value / 10_000)}${unitMan}`;
+  return String(value);
+};
+
+// XAxis フォーマット: "2026-01" → "1月" — 単位文字は t() 経由で渡す
+const formatXMonth = (month: string, unitMonth: string): string => {
+  const m = month.split("-")[1];
+  return m ? `${parseInt(m, 10)}${unitMonth}` : month;
 };
 
 // フロントのタブ → バックエンドの tab パラメータに変換
@@ -218,9 +264,11 @@ export default function DashboardPage() {
   const [followups, setFollowups] = useState<FollowUps | null>(null);
   const [stalled, setStalled] = useState<StalledDealsReport | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueResponse | null>(null);
 
   const [loadingFixed, setLoadingFixed] = useState(true);
   const [loadingPeriod, setLoadingPeriod] = useState(true);
+  const [loadingChart, setLoadingChart] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -249,6 +297,26 @@ export default function DashboardPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoadingPeriod(false));
   }, [tab, period]);
+
+  // チャートフォーマッター（t() が必要なため component 内で定義）
+  const yTickFormatter = (value: number) =>
+    formatYValue(value, t("common.unitMan"), t("common.unitOku"));
+  const xTickFormatter = (month: string) =>
+    formatXMonth(month, t("common.unitMonth"));
+
+  // 予実グラフ: リードビューでは不要。タブ変更時に再取得
+  useEffect(() => {
+    if (tab === "lead") {
+      setLoadingChart(false);
+      return;
+    }
+    setLoadingChart(true);
+    api
+      .get<MonthlyRevenueResponse>("/analytics/monthly-revenue?months=6")
+      .then(setMonthlyRevenue)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoadingChart(false));
+  }, [tab]);
 
   const fmt = (n: number | null | undefined) => {
     if (n === null || n === undefined) return "¥0";
@@ -469,6 +537,82 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* -------------------------------------------------
+          予実比較グラフ（営業/チームビューのみ）
+      ------------------------------------------------- */}
+
+      {tab !== "lead" && (
+        <div className="db-chart-card">
+          <div className="db-section-header">
+            <TrendUpIcon aria-hidden="true" className="db-section-icon" />
+            <h3>{t("dashboard.chartTitle")}</h3>
+          </div>
+          {loadingChart ? (
+            <div className="db-loading">{t("common.loading")}</div>
+          ) : monthlyRevenue && monthlyRevenue.entries.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <ComposedChart
+                data={monthlyRevenue.entries}
+                margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-muted)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickFormatter={xTickFormatter}
+                  tick={{ fontSize: 12, fill: "var(--text-secondary)" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={yTickFormatter}
+                  tick={{ fontSize: 12, fill: "var(--text-secondary)" }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={48}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    const actual = Number(payload.find((p) => p.dataKey === "actual")?.value ?? 0);
+                    const remaining = Number(payload.find((p) => p.dataKey === "remaining")?.value ?? 0);
+                    return (
+                      <div className="db-chart-tooltip">
+                        <p className="db-chart-tooltip-label">{xTickFormatter(label as string)}</p>
+                        <p>{t("dashboard.chartActual")}: ¥{actual.toLocaleString("ja-JP")}</p>
+                        {remaining > 0 && (
+                          <p>{t("dashboard.chartTooltipForecast")}: ¥{(actual + remaining).toLocaleString("ja-JP")}</p>
+                        )}
+                      </div>
+                    );
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                />
+                <Bar
+                  dataKey="actual"
+                  name={t("dashboard.chartActual")}
+                  stackId="rev"
+                  fill={getChartColors().actual}
+                  radius={[0, 0, 0, 0]}
+                  maxBarSize={48}
+                />
+                <Bar
+                  dataKey="remaining"
+                  name={t("dashboard.chartRemaining")}
+                  stackId="rev"
+                  fill={getChartColors().remaining}
+                  radius={[3, 3, 0, 0]}
+                  maxBarSize={48}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="db-empty">{t("dashboard.noData")}</p>
+          )}
+        </div>
+      )}
 
       {/* -------------------------------------------------
           期間連動エリア（ロール別）

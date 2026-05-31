@@ -9,6 +9,7 @@ from __future__ import annotations
   2026-04-17: 初版作成（Phase 3）
   2026-04-27: Phase 1-B-2 Step 5d — customer_id 参照を company_id に置換
   2026-05-25: ダッシュボード強化 — 着地予測・期間別サマリー追加
+  2026-05-31: Sprint 2 — 月別受注実績＋着地予想API追加（予実比較グラフ用）
 """
 
 from datetime import date, timedelta
@@ -495,3 +496,123 @@ async def dashboard_summary(
             active_count=int(orr.get("active", 0) or 0),
         ),
     )
+
+
+# ─────────────────────────────────────────────
+# 月別受注実績＋着地予想（予実比較グラフ用）
+# ─────────────────────────────────────────────
+
+class MonthlyRevenueEntry(BaseModel):
+    month: str           # "2026-01"
+    actual: float        # 確定受注額（orders テーブル）
+    forecast: float | None  # 現在月のみ: 着地予想 = won + weighted open deals
+    remaining: float     # max(0, forecast - actual)。現在月のみ非ゼロ
+    is_current: bool
+
+
+class MonthlyRevenueResponse(BaseModel):
+    entries: list[MonthlyRevenueEntry]
+
+
+@router.get(
+    "/analytics/monthly-revenue",
+    response_model=MonthlyRevenueResponse,
+    dependencies=[Depends(require_permission("dashboard.view"))],
+)
+async def monthly_revenue(
+    months: int = Query(default=6, ge=3, le=12, description="取得月数（現在月含む）"),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+) -> MonthlyRevenueResponse:
+    """
+    過去 N ヶ月の月別受注実績と今月の着地予想。予実比較グラフ用。
+
+    - actual: orders.total_amount の月別合計
+    - forecast: 今月のみ。成約済み(won) + 進行中商談の加重合計
+    - remaining: max(0, forecast - actual)。スタック棒グラフの積み上げ部分に使用
+    """
+    today = date.today()
+
+    # 取得開始月（N-1 ヶ月前の月初）を計算
+    start_year = today.year
+    start_month = today.month - (months - 1)
+    while start_month <= 0:
+        start_month += 12
+        start_year -= 1
+    range_start = date(start_year, start_month, 1)
+
+    # 翌月の月初（range終端）
+    if today.month == 12:
+        range_end = date(today.year + 1, 1, 1)
+    else:
+        range_end = date(today.year, today.month + 1, 1)
+
+    # 月別受注実績（orders テーブル）
+    actual_result = await db.execute(
+        text("""
+            SELECT
+                TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+                COALESCE(SUM(total_amount), 0) AS actual
+            FROM orders
+            WHERE created_at >= :start
+              AND created_at < :end
+            GROUP BY DATE_TRUNC('month', created_at)
+            ORDER BY DATE_TRUNC('month', created_at)
+        """),
+        {"start": range_start, "end": range_end},
+    )
+    actual_rows = {row["month"]: float(row["actual"]) for row in actual_result.mappings().all()}
+
+    # 今月の着地予想（deals テーブル）
+    current_month_str = today.strftime("%Y-%m")
+    month_start = today.replace(day=1)
+
+    # 今月成約済み
+    won_result = await db.execute(
+        text("""
+            SELECT COALESCE(SUM(amount), 0) AS won
+            FROM deals
+            WHERE status = 'won'
+              AND updated_at >= :start AND updated_at < :end
+        """),
+        {"start": month_start, "end": range_end},
+    )
+    won_amount = float((won_result.mappings().first() or {}).get("won", 0) or 0)
+
+    # 今月進行中商談の加重合計
+    open_result = await db.execute(
+        text("""
+            SELECT COALESCE(SUM(amount * probability / 100.0), 0) AS weighted
+            FROM deals
+            WHERE status NOT IN ('won', 'lost')
+              AND expected_close_date >= :start
+              AND expected_close_date < :end
+        """),
+        {"start": month_start, "end": range_end},
+    )
+    weighted_amount = float((open_result.mappings().first() or {}).get("weighted", 0) or 0)
+    forecast_total = won_amount + weighted_amount
+
+    # 全月分のエントリを生成（データがない月はゼロ補完）
+    entries: list[MonthlyRevenueEntry] = []
+    cur_year, cur_month = start_year, start_month
+    for _ in range(months):
+        month_key = f"{cur_year:04d}-{cur_month:02d}"
+        is_current = month_key == current_month_str
+        actual = actual_rows.get(month_key, 0.0)
+        forecast = forecast_total if is_current else None
+        remaining = max(0.0, forecast_total - actual) if is_current else 0.0
+        entries.append(MonthlyRevenueEntry(
+            month=month_key,
+            actual=actual,
+            forecast=forecast,
+            remaining=remaining,
+            is_current=is_current,
+        ))
+        cur_month += 1
+        if cur_month > 12:
+            cur_month = 1
+            cur_year += 1
+
+    return MonthlyRevenueResponse(entries=entries)

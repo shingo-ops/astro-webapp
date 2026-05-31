@@ -70,7 +70,10 @@
     "requestFailed": "Request failed",
     "blobFetchFailed": "Failed to fetch file",
     "downloadFailed": "Download failed",
-    "devOnly": "DEV only"
+    "devOnly": "DEV only",
+    "unitMan": "万",
+    "unitOku": "億",
+    "unitMonth": ""
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -229,7 +232,11 @@
     "subtitle": "View your sales KPIs and progress.",
     "tabSales": "Sales",
     "tabLead": "Leads",
-    "goalRemaining": "{{value}} remaining"
+    "goalRemaining": "{{value}} remaining",
+    "chartTitle": "Revenue vs Forecast",
+    "chartActual": "Actual Revenue",
+    "chartRemaining": "Forecast Remaining",
+    "chartTooltipForecast": "Total Forecast"
   },
   "goals": {
     "individualTitle": "Individual Goals",
