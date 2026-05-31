@@ -29,6 +29,8 @@
 
 DROP TABLE / 大量DELETE / `rm -rf` / `git reset --hard` / `git push --force`（main/develop） / 本番Docker volume削除 / secrets変更 / Cloudflare・Firebase等の外部GUI操作 / `.github/workflows/workflow-lint.yml` の変更 / `gh api` による Branch Protection・Ruleset・Required Status Check の変更・削除
 
+上記操作を許可する場合: `bash scripts/permit-danger.sh "<op>"`（1回限り有効・30分で自動失効）
+
 ---
 
 ## ブランチ運用ルール
