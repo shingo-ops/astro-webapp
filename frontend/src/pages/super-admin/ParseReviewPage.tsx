@@ -109,22 +109,18 @@ interface RejectResponse {
   exclude_reason: string;
 }
 
-// 単位列 (QA 2026-05-30) の選択肢。値は UI 表示そのまま (Box / Case / Pack / Set / Peace)。
-const UNIT_OPTIONS = ["Box", "Case", "Pack", "Set", "Peace"] as const;
-// parser 正規化値 (box/carton/pack/piece/set) → UI 単位値 へのマップ。
-const PARSER_UNIT_TO_UI: Record<string, string> = {
-  box: "Box",
-  carton: "Case",
-  case: "Case",
-  pack: "Pack",
-  set: "Set",
-  piece: "Peace",
-  peace: "Peace",
-};
+// 単位列の選択肢。値は DB 正規値と同一 (piece / pack / box / case / set)。
+const UNIT_OPTIONS = ["piece", "pack", "box", "case", "set"] as const;
+type InventoryUnit = (typeof UNIT_OPTIONS)[number];
 
-function mapParserUnit(raw: string | null | undefined): string {
+function mapParserUnit(raw: string | null | undefined): InventoryUnit | "" {
   if (!raw) return "";
-  return PARSER_UNIT_TO_UI[String(raw).trim().toLowerCase()] ?? "";
+  const normalized = String(raw).trim().toLowerCase();
+  // "carton" は旧パーサ内部値 → "case" に吸収
+  const mapped = normalized === "carton" ? "case" : normalized;
+  return (UNIT_OPTIONS as readonly string[]).includes(mapped)
+    ? (mapped as InventoryUnit)
+    : "";
 }
 
 // 単価を整数文字列に正規化（LLM は 190000.0 のような float を返すため小数を落とす）。

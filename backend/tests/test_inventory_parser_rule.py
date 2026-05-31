@@ -255,7 +255,7 @@ def test_12_box_unit_normalization():
 
 
 def test_13_carton_unit_normalization():
-    """カートン / Carton / case / CASE → "carton"。"""
+    """カートン / Carton / case / CASE → "case"。"""
     raw = "■ニンジャスピナー 3カートン@438,000円"
     result = parse_raw_content(
         raw,
@@ -263,7 +263,7 @@ def test_13_carton_unit_normalization():
         aliases=[AliasRow(id=1, supplier_id=1, alias_text="ニンジャスピナー", product_id=200)],
         rules=[],
     )
-    assert result.items[0].unit == "carton"
+    assert result.items[0].unit == "case"
     assert result.items[0].quantity == 3
     assert result.items[0].unit_price == "438000"
 
@@ -345,7 +345,7 @@ def test_19_unit_at_price_qty_format():
     )
     assert len(result.items) == 1
     assert result.items[0].quantity == 1  # alias の "151" を qty と誤検出しない
-    assert result.items[0].unit == "carton"
+    assert result.items[0].unit == "case"
     assert result.items[0].unit_price == "520000"
     assert result.items[0].condition == "damaged"
 
@@ -653,7 +653,7 @@ def test_38_alias_with_digit_not_misinterpreted_as_qty(aliases_sup5):
     assert len(result.items) == 1
     assert result.items[0].quantity == 1
     assert result.items[0].alias_text == "151"
-    assert result.items[0].unit == "carton"
+    assert result.items[0].unit == "case"
 
 
 def test_39_qty_keyword_extracts_correct_qty():
