@@ -3,12 +3,13 @@
  *
  * - チーム / 個人 タブ切り替え
  * - 表示期間プルダウン（1w / 1m / 3m / 6m / 12m）
- * - 固定エリア: 目標（今月・今週） / 着地予測 / フォローアップリマインド
- * - 期間連動エリア: リード / 商談 / 受注
+ * - 固定エリア: フォローアップリマインド（左） / 着地予測グラフ（右）
+ * - 期間連動エリア: 目標（KPIカード形式） / リード / 商談 / 受注
  *
  * 変更履歴:
  *   2026-04-17: Phase 3 拡張
  *   2026-05-25: ダッシュボード強化（タブ・期間・目標・着地予測・フォローアップ）
+ *   2026-05-31: レイアウト再設計（フォローアップ最左・着地予測最右グラフ化・目標カード形式）
  */
 
 import { useEffect, useState } from "react";
@@ -120,28 +121,29 @@ const KPI_UNIT: Record<string, string> = {
 
 // ─── サブコンポーネント ────────────────────────────────────────
 
-function AchievementBar({ rate }: { rate: number }) {
-  const clamped = Math.min(rate, 100);
+/** 着地予測の進捗バー（成約済み / 見込み全体） */
+function ForecastBar({ wonAmount, forecastAmount }: { wonAmount: number; forecastAmount: number }) {
+  const pct = forecastAmount > 0
+    ? Math.min(Math.round((wonAmount / forecastAmount) * 100), 100)
+    : 0;
   const color =
-    clamped >= 100
-      ? "var(--success)"
-      : clamped >= 70
-      ? "var(--accent)"
-      : clamped >= 40
-      ? "var(--warning-text)"
-      : "var(--danger)";
+    pct >= 100 ? "var(--success)" : pct >= 70 ? "var(--accent)" : pct >= 40 ? "var(--warning-text)" : "var(--danger)";
 
   return (
-    <div className="db-progress-wrap">
-      <div
-        className="db-progress-bar"
-        style={{ width: `${clamped}%`, background: color }}
-      />
+    <div className="db-forecast-bar-wrap">
+      <div className="db-forecast-bar-track">
+        <div
+          className="db-forecast-bar-fill"
+          style={{ width: `${pct}%`, background: color }}
+        />
+      </div>
+      <span className="db-forecast-bar-pct" style={{ color }}>{pct}%</span>
     </div>
   );
 }
 
-function GoalRow({ g, t }: { g: GoalWithActual; t: (k: string) => string }) {
+/** 目標KPIカード（期間連動エリア用・カード形式） */
+function GoalKpiCard({ g, t }: { g: GoalWithActual; t: (k: string) => string }) {
   const labelKey = KPI_LABEL_KEYS[g.kpi_type] ?? g.kpi_type;
   const unit = KPI_UNIT[g.kpi_type] ?? "";
   const isPercent = unit === "%";
@@ -153,28 +155,25 @@ function GoalRow({ g, t }: { g: GoalWithActual; t: (k: string) => string }) {
       ? `${v}%`
       : String(v);
 
+  const rateColor =
+    g.achievement_rate >= 100
+      ? "var(--success)"
+      : g.achievement_rate >= 70
+      ? "var(--accent)"
+      : "var(--danger)";
+
   return (
-    <div className="db-goal-row">
-      <span className="db-goal-label">{t(labelKey)}</span>
-      <span className="db-goal-values">
-        <span className="db-goal-actual">{fmt(g.actual_value)}</span>
-        <span className="db-goal-sep">/</span>
-        <span className="db-goal-target">{g.target_value > 0 ? fmt(g.target_value) : "-"}</span>
-      </span>
-      <span
-        className="db-goal-rate"
-        style={{
-          color:
-            g.achievement_rate >= 100
-              ? "var(--success)"
-              : g.achievement_rate >= 70
-              ? "var(--accent)"
-              : "var(--danger)",
-        }}
-      >
-        {g.target_value > 0 ? `${g.achievement_rate}%` : "-"}
-      </span>
-      {g.target_value > 0 && <AchievementBar rate={g.achievement_rate} />}
+    <div className="kpi-card db-goal-kpi-card">
+      <div className="kpi-value">{fmt(g.actual_value)}</div>
+      <div className="db-goal-kpi-target">
+        {g.target_value > 0 ? `/ ${fmt(g.target_value)}` : "-"}
+      </div>
+      <div className="kpi-label">{t(labelKey)}</div>
+      {g.target_value > 0 && (
+        <div className="db-goal-kpi-rate" style={{ color: rateColor }}>
+          {g.achievement_rate}%
+        </div>
+      )}
     </div>
   );
 }
@@ -288,78 +287,11 @@ export default function DashboardPage() {
 
       {/* -------------------------------------------------
           固定エリア（期間変更でも不変）
+          左: フォローアップリマインド / 右: 着地予測グラフ
       ------------------------------------------------- */}
 
       <div className="db-fixed-area">
-        {/* ── 目標セクション ── */}
-        <div className="db-section-card db-goals-card">
-          <div className="db-section-header">
-            <FlagIcon aria-hidden="true" className="db-section-icon" />
-            <h3>{t("dashboard.goalsTitle")}</h3>
-            <button
-              className="db-set-goals-btn"
-              onClick={() => navigate("/goals/settings")}
-            >
-              {t("dashboard.setGoals")}
-              <ArrowRightIcon aria-hidden="true" size={14} />
-            </button>
-          </div>
-
-          {loadingFixed ? (
-            <div className="db-loading">{t("common.loading")}</div>
-          ) : (
-            <div className="db-goals-body">
-              {/* 今月の目標 */}
-              <div className="db-goals-period-block">
-                <span className="db-goals-period-label">{t("dashboard.thisMonth")}</span>
-                {goals && goals.monthly.length > 0 ? (
-                  goals.monthly.map((g) => (
-                    <GoalRow key={g.kpi_type} g={g} t={t} />
-                  ))
-                ) : (
-                  <p className="db-no-goals">{t("dashboard.noGoalsSet")}</p>
-                )}
-              </div>
-              {/* 今週の目標 */}
-              <div className="db-goals-period-block">
-                <span className="db-goals-period-label">{t("dashboard.thisWeek")}</span>
-                {goals && goals.weekly.length > 0 ? (
-                  goals.weekly.map((g) => (
-                    <GoalRow key={g.kpi_type} g={g} t={t} />
-                  ))
-                ) : (
-                  <p className="db-no-goals">{t("dashboard.noGoalsSet")}</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── 着地予測 ── */}
-        <div className="db-section-card db-forecast-card">
-          <div className="db-section-header">
-            <TrendUpIcon aria-hidden="true" className="db-section-icon" />
-            <h3>{t("dashboard.forecastTitle")}</h3>
-          </div>
-          {loadingFixed ? (
-            <div className="db-loading">{t("common.loading")}</div>
-          ) : forecast ? (
-            <div className="db-forecast-body">
-              <div className="db-forecast-main">
-                <span className="db-forecast-label">{t("dashboard.forecastAmount")}</span>
-                <span className="db-forecast-value">
-                  {fmt(forecast.forecast_amount)}
-                </span>
-              </div>
-              <div className="db-forecast-sub">
-                <span>{t("dashboard.wonAmountThisMonth")}: {fmt(forecast.won_amount)}</span>
-                <span>{t("dashboard.openDealCount")}: {forecast.open_deal_count}{t("dashboard.unitDeal")}</span>
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        {/* ── フォローアップリマインド ── */}
+        {/* ── フォローアップリマインド（最左） ── */}
         <div className={`db-section-card db-followup-card${urgentCount > 0 ? " db-has-urgent" : ""}`}>
           <div className="db-section-header">
             <BellIcon aria-hidden="true" className="db-section-icon" />
@@ -415,6 +347,34 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* ── 着地予測（最右・グラフ付き） ── */}
+        <div className="db-section-card db-forecast-card">
+          <div className="db-section-header">
+            <TrendUpIcon aria-hidden="true" className="db-section-icon" />
+            <h3>{t("dashboard.forecastTitle")}</h3>
+          </div>
+          {loadingFixed ? (
+            <div className="db-loading">{t("common.loading")}</div>
+          ) : forecast ? (
+            <div className="db-forecast-body">
+              <div className="db-forecast-main">
+                <span className="db-forecast-label">{t("dashboard.forecastAmount")}</span>
+                <span className="db-forecast-value">
+                  {fmt(forecast.forecast_amount)}
+                </span>
+              </div>
+              <ForecastBar
+                wonAmount={forecast.won_amount}
+                forecastAmount={forecast.forecast_amount}
+              />
+              <div className="db-forecast-sub">
+                <span>{t("dashboard.wonAmountThisMonth")}: {fmt(forecast.won_amount)}</span>
+                <span>{t("dashboard.openDealCount")}: {forecast.open_deal_count}{t("dashboard.unitDeal")}</span>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* -------------------------------------------------
@@ -422,6 +382,32 @@ export default function DashboardPage() {
       ------------------------------------------------- */}
 
       <div className="db-period-area">
+        {/* ── 目標（カード形式・リード/商談と同列） ── */}
+        {!loadingFixed && (
+          <div className="db-metric-card">
+            <div className="db-metric-header">
+              <FlagIcon aria-hidden="true" className="db-metric-icon" />
+              <div className="db-metric-title">{t("dashboard.goalsTitle")}</div>
+              <button
+                className="db-set-goals-btn"
+                onClick={() => navigate("/goals/settings")}
+              >
+                {t("dashboard.setGoals")}
+                <ArrowRightIcon aria-hidden="true" size={14} />
+              </button>
+            </div>
+            {goals && goals.monthly.length > 0 ? (
+              <div className="kpi-grid">
+                {goals.monthly.map((g) => (
+                  <GoalKpiCard key={g.kpi_type} g={g} t={t} />
+                ))}
+              </div>
+            ) : (
+              <p className="db-no-goals">{t("dashboard.noGoalsSet")}</p>
+            )}
+          </div>
+        )}
+
         {loadingPeriod ? (
           <div className="db-loading">{t("common.loading")}</div>
         ) : summary ? (
@@ -496,4 +482,3 @@ export default function DashboardPage() {
     </PageLayout>
   );
 }
-

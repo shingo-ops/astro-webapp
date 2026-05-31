@@ -494,7 +494,7 @@
 }
 /* stylelint-disable no-descending-specificity -- intentional: header context overrides base btn-ghost/icon-btn */
 .page-header-actions .btn-ghost {
-  font-size: var(--font-md);
+  font-size: var(--font-sm);
   height: var(--size-icon-btn);
 }
 /* stylelint-enable no-descending-specificity */

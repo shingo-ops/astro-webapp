@@ -34,10 +34,10 @@
   background: var(--bg-hover);
 }
 
-/* ── 固定エリア ── */
+/* ── 固定エリア（フォローアップ左広め・着地予測右） ── */
 .db-fixed-area {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
@@ -224,6 +224,36 @@
   color: var(--text-secondary);
 }
 
+/* 着地予測バーグラフ */
+.db-forecast-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.db-forecast-bar-track {
+  flex: 1;
+  height: var(--progress-bar-h);
+  background: var(--bg-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.db-forecast-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+  max-width: 100%;
+}
+
+.db-forecast-bar-pct {
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi);
+  white-space: nowrap;
+  min-width: var(--dashboard-badge-min-w);
+  text-align: right;
+}
+
 /* ── フォローアップカード ── */
 .db-followup-card.db-has-urgent {
   border-left: 3px solid var(--danger);
@@ -319,6 +349,23 @@
   flex-shrink: 0;
 }
 
+/* ── 目標KPIカード（期間連動エリア） ── */
+.db-goal-kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.db-goal-kpi-target {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.db-goal-kpi-rate {
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi);
+}
+
 /* ── 期間連動エリア ── */
 .db-period-area {
   display: flex;
@@ -333,6 +380,21 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* 目標カードのヘッダー（アイコン + タイトル + ボタン） */
+.db-metric-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.db-metric-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+  width: var(--icon-base);
+  height: var(--icon-base);
+}
+
 .db-metric-title {
   font-size: var(--font-sm);
   font-weight: var(--font-weight-semi);
@@ -340,6 +402,12 @@
   margin-bottom: var(--space-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  flex: 1;
+}
+
+/* db-metric-header 内の db-metric-title はマージン不要 */
+.db-metric-header .db-metric-title {
+  margin-bottom: 0;
 }
 
 /* ── ローディング / 空 ── */
