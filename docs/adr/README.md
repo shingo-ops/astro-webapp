@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-05-31 / ADR 総数: 77 件
+最終更新: 2026-05-31 / ADR 総数: 78 件
 
 ## 一覧
 
@@ -85,6 +85,7 @@
 | [ADR-084](./ADR-084-pokeapi-dex-import.md) | ADR-084: ポケモン図鑑を PokeAPI から取込（差分プレビュー→一括反映） | Accepted | — |
 | [ADR-085](./ADR-085-supplier-prompts.md) | ADR-085: 仕入先別 Gemini 解析プロンプトの管理 | Accepted | — |
 | [ADR-086](./ADR-086-parallel-development-standardization.md) | ADR-086: 複数エージェント並行開発の標準化 — worktree / AEON / Evidence Registry / Release Gate | — | 2026-05-31 |
+| [ADR-087](./ADR-087-hub-shell-layout-standard.md) | ADR-087: hub-shell 共通シェルレイアウト標準 | — | 2026-05-31 |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例
