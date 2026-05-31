@@ -74,6 +74,8 @@ export interface LeadDetail {
   target_titles: string | null;
   messenger_link: string | null;
   discord_id: string | null;
+  instagram_link: string | null;
+  whatsapp_link: string | null;
 }
 
 // ---------------------------------------------------------------------------

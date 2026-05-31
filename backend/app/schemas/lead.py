@@ -120,6 +120,8 @@ class LeadUpdate(BaseModel):
     target_titles: str | None = Field(default=None, max_length=500)
     messenger_link: str | None = Field(default=None, max_length=1000)
     discord_id: str | None = Field(default=None, max_length=255)
+    instagram_link: str | None = Field(default=None, max_length=1000)
+    whatsapp_link: str | None = Field(default=None, max_length=1000)
 
     @field_validator("email")
     @classmethod
@@ -170,6 +172,8 @@ class LeadResponse(BaseModel):
     target_titles: str | None = None
     messenger_link: str | None = None
     discord_id: str | None = None
+    instagram_link: str | None = None
+    whatsapp_link: str | None = None
 
     model_config = {"from_attributes": True}
 

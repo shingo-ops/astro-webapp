@@ -93,7 +93,9 @@ async def engine():
                 country VARCHAR(100),
                 target_titles VARCHAR(500),
                 messenger_link VARCHAR(1000),
-                discord_id VARCHAR(255)
+                discord_id VARCHAR(255),
+                instagram_link VARCHAR(1000),
+                whatsapp_link VARCHAR(1000)
             )
         """))
         # meta_messages（migration 012 + 041 + 045 (F14-S5 page_id) を SQLite 用に縮小）
