@@ -465,6 +465,26 @@
   color: var(--text-secondary);
 }
 
+/* ── 先月比バッジ ── */
+.db-vs-prev {
+  display: inline-block;
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semi);
+  margin-top: var(--space-1);
+}
+
+.db-vs-up {
+  color: var(--success);
+}
+
+.db-vs-down {
+  color: var(--danger);
+}
+
+.db-vs-flat {
+  color: var(--text-muted);
+}
+
 /* ── ローディング / 空 ── */
 .db-loading {
   font-size: var(--font-sm);
