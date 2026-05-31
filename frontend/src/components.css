@@ -37,6 +37,7 @@
   box-shadow: var(--focus-ring-shadow);
 }
 
+/* stylelint-disable-next-line no-descending-specificity -- intentional: textarea size after focus state */
 .form-group textarea {
   min-height: var(--textarea-min-h);
   resize: vertical;
@@ -115,6 +116,7 @@
   margin-bottom: var(--space-4);
 }
 
+/* stylelint-disable no-descending-specificity -- intentional: search/filter context overrides form-group styles */
 .search-bar input,
 .filter-bar select {
   padding: var(--space-2) var(--space-3);
@@ -125,6 +127,7 @@
   background: var(--bg-surface);
   color: var(--text-primary);
 }
+/* stylelint-enable no-descending-specificity */
 
 /* --- Search Input Field (Single Source of Truth) ---
  * 検索欄のデザイントークン。すべてのページでこのクラスを使う。
@@ -269,6 +272,7 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* stylelint-disable-next-line no-descending-specificity -- intentional: .card td overrides .data-table tr:hover td */
 .card td {
   padding: var(--space-2) 0;
   font-size: var(--font-sm);
@@ -314,6 +318,7 @@
 .status-badge.status-archived { background: var(--bg-active); color: var(--text-secondary); }
 .status-badge.status-pending_dedup_review { background: var(--warning-bg); color: var(--warning-text); }
 
+/* stylelint-disable-next-line no-descending-specificity -- intentional: dedup row overrides hover td */
 .row-pending-dedup td {
   background: var(--warning-bg);
   border-left: 3px solid var(--warning-text);
@@ -487,12 +492,14 @@
 .page-header-actions .icon-btn:hover {
   border-color: var(--border-icon);
 }
+/* stylelint-disable no-descending-specificity -- intentional: header context overrides base btn-ghost/icon-btn */
 .page-header-actions .btn-ghost {
   font-size: var(--font-md);
 }
 .page-header-actions .icon-btn {
   padding: var(--space-2);
 }
+/* stylelint-enable no-descending-specificity */
 
 /* --- Page Header Select --- */
 /* ヘッダーアクションエリア内のドロップダウン共通スタイル (SSoT: ここのみ定義) */
@@ -520,6 +527,7 @@
 }
 
 /* --- Icon Button --- */
+/* stylelint-disable-next-line no-descending-specificity -- intentional: base .icon-btn defined after scoped override */
 .icon-btn {
   display: flex;
   align-items: center;
@@ -534,6 +542,7 @@
   transition: background var(--transition-fast), color var(--transition-fast);
   flex-shrink: 0;
 }
+/* stylelint-disable-next-line no-descending-specificity -- intentional: base hover after scoped hover */
 .icon-btn:hover { background: var(--bg-subtle); color: var(--text-primary); }
 .icon-btn.danger:hover { background: var(--danger-bg); color: var(--danger); }
 
@@ -687,6 +696,7 @@
 
 /* --- Toggle Switch (ADR-069: トグルスイッチ) --- */
 .toggle-switch { position: relative; display: inline-flex; width: var(--toggle-width); height: var(--toggle-height); cursor: pointer; }
+/* stylelint-disable-next-line no-descending-specificity -- intentional: toggle input overrides form-group input:focus */
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .toggle-switch-slider {
   position: absolute; inset: 0;

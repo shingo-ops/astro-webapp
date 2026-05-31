@@ -195,6 +195,7 @@
   transition: background var(--transition-micro);
 }
 .inbox-bulk-action:hover:not(:disabled) { background: var(--bg-hover); }
+/* stylelint-disable-next-line no-descending-specificity -- intentional: disabled overrides hover state */
 .inbox-bulk-action:disabled { opacity: var(--opacity-disabled); cursor: not-allowed; }
 .inbox-bulk-delete { color: var(--danger); border-color: var(--danger); }
 .inbox-bulk-delete:hover:not(:disabled) { background: var(--danger-bg); }
@@ -576,6 +577,7 @@
   transition: background var(--transition-micro);
 }
 .inbox-send-btn:hover:not(:disabled) { background: var(--accent-hover); }
+/* stylelint-disable-next-line no-descending-specificity -- intentional: disabled overrides hover state */
 .inbox-send-btn:disabled {
   background: var(--bg-active);
   color: var(--text-secondary);
