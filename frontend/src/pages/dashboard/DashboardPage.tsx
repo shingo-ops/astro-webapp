@@ -38,6 +38,8 @@ const BellIcon = DashboardIcons.reminder;
 const CalendarCheckIcon = DashboardIcons.goalDone;
 const ArrowRightIcon = DashboardIcons.arrowRight;
 const FlagIcon = DashboardIcons.goalFlag;
+const TrendUpArrow = DashboardIcons.trendUp;
+const TrendDownArrow = DashboardIcons.trendDown;
 
 // ─── 型定義 ──────────────────────────────────────────────────
 
@@ -271,10 +273,11 @@ function VsPrev({ change }: { change: KpiChange }) {
   if (change.direction === "flat") {
     return <span className="db-vs-prev db-vs-flat">—</span>;
   }
-  const arrow = change.direction === "up" ? "▲" : "▼";
+  const ArrowIcon = change.direction === "up" ? TrendUpArrow : TrendDownArrow;
   return (
     <span className={`db-vs-prev db-vs-${change.direction}`}>
-      {arrow} {abs}%
+      <ArrowIcon aria-hidden="true" size={12} />
+      {abs}%
     </span>
   );
 }
