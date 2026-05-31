@@ -54,6 +54,7 @@
 
 /* expanded 時: ロゴアイコン中心を --sidebar-nav-icon-center-x (33px) に揃える
    padding-left = center(33) - logo-size/2(18) = 15px */
+/* stylelint-disable-next-line no-descending-specificity -- intentional: expanded state overrides collapsed */
 .sidebar-expanded .sidebar-logo-area {
   padding-left: calc(var(--sidebar-nav-icon-center-x) - var(--logo-size) / 2);
 }

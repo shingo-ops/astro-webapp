@@ -99,6 +99,7 @@ src/index.css      — カラートークン（:root ライト / :root.force-dar
 | `check:css-var-fallbacks` | var() フォールバック hex 禁止 |
 | `check:css-values` | opacity / border-radius / z-index 数値ハードコード検出 |
 | `check:dark-parity` | :root と :root.force-dark の変数一致検査 |
+| `check:stylelint` | CSS 詳細度競合（no-descending-specificity）検出 |
 | `check:all` | 上記全実行 |
 
 ---
@@ -132,6 +133,22 @@ src/index.css      — カラートークン（:root ライト / :root.force-dar
 | `--inbox-hover` | index.css | 会話アイテムホバー背景色 |
 | `--inbox-action-icon-color` | index.css | ヘッダーアクションアイコン色 |
 | `--inbox-bulk-icon-color` | index.css | 一括操作アイコン色 |
+
+---
+
+## Acceptance Criteria
+
+デザイントークン強制システムが正常に機能していることを確認するための基準:
+
+| # | 基準 | 検証コマンド |
+|---|------|------------|
+| AC-1 | CSS ファイルに hex 色のハードコードがゼロ | `npm run check:css-colors` が 0 件 |
+| AC-2 | `var()` フォールバックに hex 色が存在しない | `npm run check:css-var-fallbacks` が 0 件 |
+| AC-3 | opacity / z-index 等のマジックナンバーがゼロ | `npm run check:css-values` が 0 件 |
+| AC-4 | `:root` と `:root.force-dark` の色変数が一致 | `npm run check:dark-parity` が 0 件 |
+| AC-5 | TSX インラインスタイルへの数値直書きがゼロ | `npm run lint` が 0 errors |
+| AC-6 | CSS 詳細度競合が自動検出される | `npm run check:stylelint` が 0 errors |
+| AC-7 | 意図的な子孫セレクタには disable コメントが付与されている | `check:stylelint` の warning 箇所に `-- intentional` コメントあり |
 
 ---
 

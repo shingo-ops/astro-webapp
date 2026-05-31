@@ -33,6 +33,7 @@
 | feature/morimoto/back-merge-main-v2 | back-merge main→develop v2 | 2026-05-31 12:10 | IN_PROGRESS | | |
 | feature/morimoto/condition-standardize | inventory condition 16値正規化 | 2026-05-31 14:00 | IN_PROGRESS | | |
 | feature/morimoto/codex-agent-dispatch | Codexエージェント自動委任 | 2026-05-31 | IN_PROGRESS | | |
+| feature/morimoto/inbox-action-gap | 受信箱アクションボタン余白調整 | 2026-05-31 | IN_PROGRESS | | |
 ---
 
 ## 記入例

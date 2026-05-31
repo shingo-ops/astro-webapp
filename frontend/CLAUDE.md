@@ -44,6 +44,15 @@ DB 由来の値（ステータスコード・カテゴリキー等）は `// esl
 
 **初めて触る場合**: `docs/onboarding/design-system.md`（5分）を先に読む。
 
+## CSS 詳細度（stylelint 自動検出）
+
+子孫セレクタ（例: `.page-header-actions .btn-ghost`）は詳細度 (0,2,0) で単純クラス (0,1,0) より高い。
+コンテナ側で `font-size` 等を変更しても子孫セレクタに上書きされる。
+CSS プロパティを変更する際は対象クラスの子孫セレクタを必ず grep で確認すること。
+
+意図的なスコープ限定には `/* stylelint-disable-next-line no-descending-specificity -- intentional */` を付与。
+確認: `cd frontend && npm run check:stylelint`
+
 ---
 
 ## アイコン管理

@@ -116,6 +116,7 @@
   resize: vertical;
 }
 
+/* stylelint-disable no-descending-specificity -- intentional: focus state after general input style */
 .form-grid > .form-row input:focus,
 .form-grid > .form-row select:focus,
 .form-grid > .form-row textarea:focus {
@@ -123,6 +124,7 @@
   border-color: var(--accent);
   box-shadow: var(--focus-ring-shadow);
 }
+/* stylelint-enable no-descending-specificity */
 
 .form-grid > .form-actions {
   display: flex;
@@ -150,6 +152,7 @@
   color: var(--text-secondary);
 }
 
+/* stylelint-disable no-descending-specificity -- intentional: modal context overrides grid styles */
 .modal-content .form-row input:not([type="checkbox"]):not([type="radio"]),
 .modal-content .form-row select,
 .modal-content .form-row textarea,
@@ -172,7 +175,9 @@
   min-height: var(--textarea-min-h);
   resize: vertical;
 }
+/* stylelint-enable no-descending-specificity */
 
+/* stylelint-disable no-descending-specificity -- intentional: modal focus overrides grid focus style */
 .modal-content .form-row input:focus,
 .modal-content .form-row select:focus,
 .modal-content .form-row textarea:focus,
@@ -183,6 +188,7 @@
   border-color: var(--accent);
   box-shadow: var(--focus-ring-shadow);
 }
+/* stylelint-enable no-descending-specificity */
 
 /* タブレット縦 (~ 768px) では form-grid を 1 カラムに */
 @media (max-width: 768px) {
