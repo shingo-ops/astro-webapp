@@ -201,7 +201,7 @@ export const NAV_ICONS = {
   schedule:    CalendarBlank,      // outline
   help:        QuestionOutline,    // outline
   admin:       ShieldCheckOutline, // outline
-  settings:    GearSixOutline,     // outline
+  settings:    GearSix,            // solid
   more:        DotsThreeOutline,   // outline
   chevronDown: CaretDown,          // outline
   logout:      SignOut,            // outline
