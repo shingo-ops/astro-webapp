@@ -162,6 +162,16 @@ const KPI_UNIT: Record<string, string> = {
   conversion_rate: "%",
 };
 
+// タブ別に表示するKPIタイプを絞り込む
+const LEAD_KPI_TYPES = new Set(["lead_count", "conversion_rate"]);
+const SALES_KPI_TYPES = new Set(["revenue", "deal_count", "close_rate"]);
+
+const filterGoalsByTab = (goals: GoalWithActual[], tab: Tab): GoalWithActual[] => {
+  if (tab === "team") return goals;
+  const allowed = tab === "lead" ? LEAD_KPI_TYPES : SALES_KPI_TYPES;
+  return goals.filter((g) => allowed.has(g.kpi_type));
+};
+
 // チャート用カラー（CSS変数を直接使えないため getComputedStyle で取得）
 const getChartColors = () => {
   const root = document.documentElement;
@@ -443,23 +453,25 @@ export default function DashboardPage() {
             <div className="db-goals-body">
               <div className="db-goals-period-block">
                 <span className="db-goals-period-label">{t("dashboard.thisMonth")}</span>
-                {goals && goals.monthly.length > 0 ? (
-                  goals.monthly.map((g) => (
-                    <GoalRow key={g.kpi_type} g={g} t={t} />
-                  ))
-                ) : (
-                  <p className="db-no-goals">{t("dashboard.noGoalsSet")}</p>
-                )}
+                {(() => {
+                  const filtered = goals ? filterGoalsByTab(goals.monthly, tab) : [];
+                  return filtered.length > 0 ? (
+                    filtered.map((g) => <GoalRow key={g.kpi_type} g={g} t={t} />)
+                  ) : (
+                    <p className="db-no-goals">{t("dashboard.noGoalsSet")}</p>
+                  );
+                })()}
               </div>
               <div className="db-goals-period-block">
                 <span className="db-goals-period-label">{t("dashboard.thisWeek")}</span>
-                {goals && goals.weekly.length > 0 ? (
-                  goals.weekly.map((g) => (
-                    <GoalRow key={g.kpi_type} g={g} t={t} />
-                  ))
-                ) : (
-                  <p className="db-no-goals">{t("dashboard.noGoalsSet")}</p>
-                )}
+                {(() => {
+                  const filtered = goals ? filterGoalsByTab(goals.weekly, tab) : [];
+                  return filtered.length > 0 ? (
+                    filtered.map((g) => <GoalRow key={g.kpi_type} g={g} t={t} />)
+                  ) : (
+                    <p className="db-no-goals">{t("dashboard.noGoalsSet")}</p>
+                  );
+                })()}
               </div>
             </div>
           )}
