@@ -2,6 +2,9 @@
 
 `Claude Code` から同じ terminal session で `Codex` を呼び、AEON の delivery から release までを回すための正本手順。
 
+並行開発の標準化ポリシーは [ADR-086](../adr/ADR-086-parallel-development-standardization.md) を参照する。  
+このガイドは「どう実行するか」の正本であり、ADR-086 は「なぜその順番で固定するか」の正本。
+
 ## Purpose
 
 - 同一ターミナルから AEON を起動する手順を固定する
@@ -44,6 +47,7 @@ bash scripts/aeon-release.sh [PR番号]
 - `.claude-pipeline/active-work.md` を読む
 - 関連 runbook を読む
 - `scripts/validate-worktree-start.sh` が通る状態である
+- `docs/adr/ADR-086-parallel-development-standardization.md` で標準化方針を確認する
 
 ## Completion Criteria
 
