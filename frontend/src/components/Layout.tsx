@@ -160,9 +160,7 @@ export default function Layout() {
       "tenant.profile.view",
     );
 
-  const moreItems: NavItem[] = [
-    { to: "/templates", labelKey: "nav.templates" },
-  ];
+  const moreItems: NavItem[] = [];
 
   return (
     <div className="app-shell">
