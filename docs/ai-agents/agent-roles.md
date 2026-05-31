@@ -52,6 +52,18 @@ The canonical one-page operating procedure is `docs/ai-agents/aeon-operation.md`
 - Release role: `release`
 - Canonical routing definition: `docs/ai-agents/aeon-routing.md`
 
+## AEON Runtime Entry
+
+`scripts/aeon-dispatch.sh` is the Claude Code entrypoint that routes AEON roles from the same terminal to the appropriate runtime wrapper.
+`scripts/aeon-delivery.sh` is the end-to-end delivery runner for the full AEON flow.
+`scripts/aeon-release.sh` is the safe release runner that merges an approved PR to `main`.
+The canonical one-page operating procedure is `docs/ai-agents/aeon-operation.md`.
+
+- Codex roles: `research`, `planner`, `architect`, `reviewer`, `evaluator`
+- Generator role: `generator`
+- Release role: `release`
+- Canonical routing definition: `docs/ai-agents/aeon-routing.md`
+
 ## Handoff Contract
 
 各 Agent は次の形式で次工程へ渡す。
