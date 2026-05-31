@@ -45,6 +45,15 @@ export default function InboxPage() {
       <button
         type="button"
         className="btn-ghost"
+        onClick={() => navigate("/templates")}
+        aria-label={t("nav.templates")}
+        data-tooltip={t("nav.templates")}
+      >
+        {t("nav.templates")}
+      </button>
+      <button
+        type="button"
+        className="btn-ghost"
         onClick={() => navigate("/faq")}
         aria-label={t("faq.title")}
         data-tooltip={t("faq.title")}

@@ -42,6 +42,16 @@ function dashboardMocks() {
       stalled_count: 0,
       stalled_deals: [],
     },
+    // 月次売上グラフ（Sprint 2 追加）
+    "GET /analytics/monthly-revenue": {
+      entries: [
+        { month: "2026-01", actual: 3200000, forecast: null, remaining: 0, is_current: false },
+        { month: "2026-02", actual: 2800000, forecast: null, remaining: 0, is_current: false },
+        { month: "2026-03", actual: 4100000, forecast: null, remaining: 0, is_current: false },
+        { month: "2026-04", actual: 3600000, forecast: null, remaining: 0, is_current: false },
+        { month: "2026-05", actual: 1800000, forecast: 3200000, remaining: 1400000, is_current: true },
+      ],
+    },
     // 期間連動 KPI サマリー
     "GET /analytics/summary": {
       leads: {
@@ -93,23 +103,25 @@ test.describe("Scene 1: Dashboard Overview", () => {
       timeout: 20_000,
     });
 
-    // チーム / 個人 タブが描画される
+    // 営業担当 / リード担当 / チーム タブが描画される（Sprint 1 でタブ構造変更）
+    await expect(page.getByRole("button", { name: "営業担当" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "リード担当" })).toBeVisible();
     await expect(page.getByRole("button", { name: "チーム" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "個人" })).toBeVisible();
 
     // 期間プルダウンが描画される
     const periodSelect = page.locator(".page-header-select");
     await expect(periodSelect).toBeVisible();
 
-    // 期間連動エリア: リード / 商談 / 受注 セクション見出しが描画される
-    await expect(page.getByText("リード", { exact: true })).toBeVisible();
-    await expect(page.getByText("商談", { exact: true })).toBeVisible();
-    await expect(page.getByText("受注・売上", { exact: true })).toBeVisible();
-
-    // 固定エリア: 目標 / 着地予測 / フォローアップ の見出しが描画される
+    // 固定エリア: 目標 / 着地予測 / フォローアップ の見出しが描画される（デフォルト: 営業担当ビュー）
     await expect(page.getByText("目標", { exact: true })).toBeVisible();
     await expect(page.getByText("今月の着地予測", { exact: true })).toBeVisible();
     await expect(page.getByText("フォローアップ", { exact: true })).toBeVisible();
+
+    // チームタブに切り替えると全セクション（リード / 商談 / 受注）が表示される
+    await page.getByRole("button", { name: "チーム" }).click();
+    await expect(page.getByText("リード", { exact: true })).toBeVisible();
+    await expect(page.getByText("商談", { exact: true })).toBeVisible();
+    await expect(page.getByText("受注・売上", { exact: true })).toBeVisible();
   });
 
   test("0:18–0:25: メインナビにダッシュボード / 顧客管理 / 管理メニューが出ている", async ({

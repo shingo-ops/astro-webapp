@@ -70,7 +70,10 @@
     "requestFailed": "リクエストに失敗しました",
     "blobFetchFailed": "ファイルの取得に失敗しました",
     "downloadFailed": "ダウンロードに失敗しました",
-    "devOnly": "開発環境専用"
+    "devOnly": "開発環境専用",
+    "unitMan": "万",
+    "unitOku": "億",
+    "unitMonth": "月"
   },
   "nav": {
     "dashboard": "ダッシュボード",
@@ -226,7 +229,14 @@
     "orderRevenue": "売上金額",
     "orderCount": "受注数",
     "orderActive": "進行中",
-    "subtitle": "営業KPIと進捗を確認できます。"
+    "subtitle": "営業KPIと進捗を確認できます。",
+    "tabSales": "営業担当",
+    "tabLead": "リード担当",
+    "goalRemaining": "あと{{value}}で達成",
+    "chartTitle": "予実比較（月別受注）",
+    "chartActual": "受注実績",
+    "chartRemaining": "着地予想（残り）",
+    "chartTooltipForecast": "着地予想合計"
   },
   "goals": {
     "individualTitle": "個人目標",
