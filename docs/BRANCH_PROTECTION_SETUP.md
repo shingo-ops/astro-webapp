@@ -217,6 +217,40 @@ Required approvals: **0** に戻す。防御は次の通り分業:
 
 ---
 
+## 8. Legacy Branch Protection と Ruleset の二重管理（2026-05-31 発見）
+
+### 背景
+
+`develop → main` PR が毎回 "Require branch to be up to date" でブロックされ、back-merge PR が繰り返し必要になっていた。
+
+### 根本原因
+
+`gh api repos/shingo-ops/salesanchor/branches/main/protection/required_status_checks` を確認したところ、Ruleset（ID: 15777895）とは**別に** Legacy Branch Protection が存在し、`strict: true` が設定されていた。
+
+| 設定層 | 種別 | strict | 備考 |
+|--------|------|--------|------|
+| Legacy Branch Protection | 旧来の UI 設定 | **true（問題の原因）** | BRANCH_PROTECTION_SETUP.md に未記載だった隠れた設定 |
+| Ruleset（ID: 15777895） | 新しい Ruleset | false | ADR-050 / 本ドキュメントで管理 |
+
+### 対処
+
+```bash
+gh api -X PATCH repos/shingo-ops/salesanchor/branches/main/protection/required_status_checks --field strict=false
+```
+
+→ 2026-05-31 にしんごさん承認のもと実行済み。以後 back-merge PR は不要。
+
+### Legacy Branch Protection の required checks（4件）
+
+- `models.py に新 Column → deploy.yml にマイグレーション追記必須`
+- `マイグレーションSQL 実行テスト（実DB）`
+- `pytest (SQLite + PostgreSQL RLS)`
+- `Lint & Dark Mode Check (ADR-067)`
+
+Ruleset（3件）と一部重複。将来的には Ruleset に統合して Legacy Branch Protection の status check 要件を削除することが望ましい（不可逆操作のため PO 承認必須）。
+
+---
+
 ## 7. 参考リンク
 
 - GitHub Docs: [Available rules for rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
