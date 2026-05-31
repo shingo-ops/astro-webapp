@@ -317,6 +317,8 @@
     "nickname": "呼び名",
     "messengerLink": "Messengerリンク",
     "discordId": "Discord ID",
+    "instagramLink": "Instagramリンク",
+    "whatsappLink": "WhatsAppリンク",
     "country": "国",
     "targetTitles": "取り扱いタイトル",
     "rank": "ランク",

@@ -51,7 +51,8 @@ _LEAD_COLUMNS = """
     next_action, next_action_date, challenge, meeting_memo, meeting_impression,
     cs_memo, sales_form, competitor_check, per_order_amount, monthly_frequency,
     nickname, country, target_titles,
-    messenger_link, discord_id
+    messenger_link, discord_id,
+    instagram_link, whatsapp_link
 """
 
 _UPDATABLE_COLUMNS = {
@@ -65,6 +66,8 @@ _UPDATABLE_COLUMNS = {
     "per_order_amount", "monthly_frequency", "nickname", "country", "target_titles",
     # Migration 090: 連絡先リンク
     "messenger_link", "discord_id",
+    # Migration 095: ソーシャルリンク
+    "instagram_link", "whatsapp_link",
 }
 
 

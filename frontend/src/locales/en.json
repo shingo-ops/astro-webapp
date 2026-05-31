@@ -317,6 +317,8 @@
     "nickname": "Nickname",
     "messengerLink": "Messenger Link",
     "discordId": "Discord ID",
+    "instagramLink": "Instagram Link",
+    "whatsappLink": "WhatsApp Link",
     "country": "Country",
     "targetTitles": "Titles",
     "rank": "Rank",
