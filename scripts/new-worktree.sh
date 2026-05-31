@@ -40,6 +40,18 @@ REPO_NAME="$(basename "${REPO_ROOT}")"
 BRANCH_SAFE="${BRANCH//\//-}"
 WORKTREE_DIR="${HOME}/worktrees/${REPO_NAME}/${BRANCH_SAFE}"
 
+# 並行 worktree 数の上限チェック（メインリポジトリ除く）
+WORKTREE_COUNT=$(git worktree list | tail -n +2 | wc -l | tr -d ' ')
+WORKTREE_LIMIT="${WORKTREE_LIMIT:-5}"
+if [ "${WORKTREE_COUNT}" -ge "${WORKTREE_LIMIT}" ]; then
+  echo ""
+  echo "⚠️  worktree が上限（${WORKTREE_LIMIT}個）に達しています（現在 ${WORKTREE_COUNT} 個）。"
+  echo "   既存の PR をマージ・クリーンアップしてから新しい worktree を作成してください。"
+  echo "   強制的に作成する場合: WORKTREE_LIMIT=99 bash scripts/new-worktree.sh ${BRANCH}"
+  echo ""
+  exit 1
+fi
+
 # develop から最新化してブランチ作成
 git fetch origin
 
