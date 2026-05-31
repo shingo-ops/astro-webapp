@@ -43,8 +43,10 @@ export default function ProfileSection() {
         given_name_en: me.given_name_en ?? "",
         phone: me.phone ?? "",
       });
-    }).catch(() => {});
-  }, []);
+    }).catch(() => {
+      setError(t("common.fetchError"));
+    });
+  }, [t]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -90,6 +92,17 @@ export default function ProfileSection() {
           <div className="form-group">
             <label htmlFor="given_name_jp">{t("accountSettings.givenNameJp")}</label>
             <input id="given_name_jp" value={form.given_name_jp} onChange={set("given_name_jp")} />
+          </div>
+        </div>
+
+        <div className="account-settings-row">
+          <div className="form-group">
+            <label htmlFor="surname_kana">{t("staff.surnameKana")}</label>
+            <input id="surname_kana" value={form.surname_kana} onChange={set("surname_kana")} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="given_name_kana">{t("staff.givenNameKana")}</label>
+            <input id="given_name_kana" value={form.given_name_kana} onChange={set("given_name_kana")} />
           </div>
         </div>
 
