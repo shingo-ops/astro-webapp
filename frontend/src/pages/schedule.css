@@ -172,6 +172,7 @@
 }
 
 /* 月外の日（グレーアウト） */
+/* stylelint-disable-next-line no-descending-specificity -- intentional: day-other overrides today highlight */
 .fc .fc-day-other .fc-daygrid-day-number {
   color: var(--text-muted);
 }
