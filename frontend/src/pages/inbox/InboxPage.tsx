@@ -58,7 +58,7 @@ export default function InboxPage() {
         aria-label={t("inbox.settings.title")}
         data-tooltip={t("inbox.settings.tooltip")}
       >
-        <PAGE_ICONS.settingsSolid size={ICON.base} aria-hidden="true" />
+        <PAGE_ICONS.settingsSolid size={ICON.md} aria-hidden="true" />
       </button>
     </div>
   );
