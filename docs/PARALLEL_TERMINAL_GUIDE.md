@@ -21,12 +21,16 @@
 ### 1. 作業開始前（必須）
 
 ```bash
-# develop を最新化してから feature ブランチを切る
-git fetch origin
-git checkout develop
-git merge --ff-only origin/develop
-git checkout -b feature/morimoto/<トピック名>
+# 新しい並行作業は必ず worktree から開始する
+bash scripts/new-worktree.sh feature/morimoto/<トピック名>
+
+# Claude Code も同時起動したい場合
+bash scripts/new-worktree.sh feature/morimoto/<トピック名> --claude
 ```
+
+- 直 `git checkout -b` は使わない
+- `scripts/new-worktree.sh` が `active-work.md` まで自動登録する
+- 以後の作業は作成された worktree 内でのみ行う
 
 ### 2. 各ターミナルでの作業ルール
 
@@ -76,7 +80,7 @@ cat tasks/todo.md
 `scripts/new-worktree.sh` を使えば active-work.md は自動で記入される（手動記入不要）。
 `tasks/todo.md` は作業完了・ブロック発生時に**手動で更新する**（ルール: `AGENTS.md §引き継ぎルール`）。
 
-### 5. AI エージェントを並行起動するとき（P5 対策・推奨）
+### 5. AI エージェントを並行起動するとき（P5 対策・必須）
 
 **原則: 新しい並行作業は必ず Worktree で起動する**
 
