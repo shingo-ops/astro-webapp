@@ -6,7 +6,7 @@
  *   - 検索キーワード入力で API 呼び出しに `search=` が含まれる
  *   - ソート切替で API の `sort_by` / `sort_order` が変わる
  *   - グループ件数バッジが描画され、検索キーワードに連動して再取得される
- *   - ステータス表示ラベルが ADR-021 の 6 値（未処理/仕入中/配送中/完了/トラブル/キャンセル）
+ *   - ステータス表示ラベルが ADR-021 の 6 値（未処理/仕入れ中/発送待ち/完了/トラブル/キャンセル）
  *
  * Backend は ADR-019/020 の英語UI 影響を受けない API mock 経由で固定。
  */
@@ -38,7 +38,7 @@ const baseOrder: OrderFixture = {
   deal_id: null,
   order_number: "ORD-LIST-1",
   total_amount: 50000,
-  status: "pending",
+  status: "awaiting_payment",
   notes: null,
   created_at: "2026-05-01T00:00:00+00:00",
   updated_at: "2026-05-10T00:00:00+00:00",
@@ -51,7 +51,7 @@ const otherOrder: OrderFixture = {
   id: 2,
   order_number: "ORD-LIST-2",
   total_amount: 200000,
-  status: "shipped",
+  status: "awaiting_shipping",
   company_id: 12,
   contact_id: 22,
   company_name: "ベータ工業",
@@ -162,26 +162,26 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
     // ソート順切替ボタン
     await expect(page.getByTestId("orders-sort-order")).toBeVisible();
 
-    // グループ件数バッジ（ADR-021 第 1 節の 6 ステータス + 全件、J1 で confirmed 撤去）
-    await expect(page.getByTestId("group-count-all")).toBeVisible();
+    // 左サブナビのステータスフィルタ（migration 090 で新6値）
+    await expect(page.getByTestId("subnav-all")).toBeVisible();
     for (const s of [
-      "pending",
-      "processing",
-      "shipped",
-      "delivered",
-      "returned",
+      "awaiting_payment",
+      "sourcing",
+      "awaiting_shipping",
+      "completed",
+      "trouble",
       "cancelled",
     ]) {
-      await expect(page.getByTestId(`group-count-${s}`)).toBeVisible();
+      await expect(page.getByTestId(`subnav-${s}`)).toBeVisible();
     }
 
     // ADR-021 第 1 節の 6 値ラベル
-    await expect(page.getByTestId("group-count-pending")).toContainText(/未処理/);
-    await expect(page.getByTestId("group-count-processing")).toContainText(/仕入中/);
-    await expect(page.getByTestId("group-count-shipped")).toContainText(/配送中/);
-    await expect(page.getByTestId("group-count-delivered")).toContainText(/完了/);
-    await expect(page.getByTestId("group-count-returned")).toContainText(/トラブル/);
-    await expect(page.getByTestId("group-count-cancelled")).toContainText(/キャンセル/);
+    await expect(page.getByTestId("subnav-awaiting_payment")).toContainText(/支払い待ち/);
+    await expect(page.getByTestId("subnav-sourcing")).toContainText(/仕入れ中/);
+    await expect(page.getByTestId("subnav-awaiting_shipping")).toContainText(/発送待ち/);
+    await expect(page.getByTestId("subnav-completed")).toContainText(/完了/);
+    await expect(page.getByTestId("subnav-trouble")).toContainText(/トラブル/);
+    await expect(page.getByTestId("subnav-cancelled")).toContainText(/キャンセル/);
   });
 
   test("初期表示で受注行が表示され、JOIN 列（会社名/担当者名）が出る", async ({
@@ -231,9 +231,9 @@ test.describe("ADR-021 Sprint 1: 受注一覧 MVP", () => {
     await expect(page.getByRole("cell", { name: "ORD-LIST-2" })).toHaveCount(0);
 
     // 件数バッジも連動: total が 1 になる（mock の groupCountsAlpha）
-    await expect(page.getByTestId("group-count-all")).toContainText(/\(1\)/);
-    await expect(page.getByTestId("group-count-pending")).toContainText(/\(1\)/);
-    await expect(page.getByTestId("group-count-shipped")).toContainText(/\(0\)/);
+    await expect(page.getByTestId("subnav-all")).toContainText(/\(1\)/);
+    await expect(page.getByTestId("subnav-awaiting_payment")).toContainText(/\(1\)/);
+    await expect(page.getByTestId("subnav-awaiting_shipping")).toContainText(/\(0\)/);
   });
 
   test("ソート切替で API 呼び出しの sort_by / sort_order が変わる", async ({
