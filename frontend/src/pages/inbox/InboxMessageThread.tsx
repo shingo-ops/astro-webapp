@@ -85,8 +85,8 @@ export function InboxMessageThread({
       return;
     }
 
-    // Determine target language (translate to Japanese if current UI is Japanese, else to English)
-    const targetLanguage = i18n.language === "ja" ? "ja" : "en";
+    // 翻訳先は常に UI 言語（ADR-088: オペレーターが読める言語に揃える）
+    const targetLanguage = i18n.language ?? "ja";
 
     setTranslations((prev) => ({
       ...prev,
