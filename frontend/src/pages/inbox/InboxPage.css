@@ -441,7 +441,7 @@
 .inbox-thread-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-3);
   flex-shrink: 0;
 }
 .inbox-thread-action-btn {
