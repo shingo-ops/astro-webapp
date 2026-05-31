@@ -16,7 +16,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.schemas.inventory_offers import InventoryUnit
+from app.schemas.inventory_offers import InventoryCondition, InventoryUnit
 
 
 class ReviewItemInput(BaseModel):
@@ -54,11 +54,11 @@ class ReviewItemInput(BaseModel):
     original_index: int | None = Field(default=None, ge=0)
 
     # Sprint 11 / F11 AC11.3 拡張 (任意・後方互換)
-    condition: str | None = Field(
+    # 正規 16 値は InventoryCondition 参照 (migration 089)。None なら inventory UPSERT skip。
+    condition: InventoryCondition | None = Field(
         default=None,
-        max_length=32,
         description=(
-            "商品の状態 (例: 'new' / 'used_a' / 'sealed' / 'opened')。"
+            "商品の状態。migration 089 正規値 16 種。"
             "public.inventory UNIQUE(supplier_id × product_id × condition) の"
             "discriminator。None なら inventory UPSERT は skip。"
         ),

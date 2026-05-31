@@ -28,15 +28,10 @@
 | feature/morimoto/fix-deploy-zero-downtime | （記入してください） | 2026-05-30 22:08 | IN_PROGRESS | | |
 | feature/morimoto/governance-section-f | （記入してください） | 2026-05-31 10:57 | IN_PROGRESS | | |
 | feature/morimoto/add-governance-agent | （記入してください） | 2026-05-31 10:59 | IN_PROGRESS | | |
-| feature/morimoto/header-action-border | （記入してください） | 2026-05-31 11:56 | IN_PROGRESS | | |
 | feature/morimoto/back-merge-main | back-merge main→develop | 2026-05-31 12:00 | IN_PROGRESS | | |
 | feature/morimoto/back-merge-main-v2 | back-merge main→develop v2 | 2026-05-31 12:10 | IN_PROGRESS | | |
-| feature/morimoto/unit-definition-standardize | （記入してください） | 2026-05-31 12:50 | IN_PROGRESS | | |
-| feature/morimoto/header-action-border-black | （記入してください） | 2026-05-31 12:51 | IN_PROGRESS | | |
+| feature/morimoto/condition-standardize | inventory condition 16値正規化 | 2026-05-31 14:00 | IN_PROGRESS | | |
 | feature/morimoto/codex-agent-dispatch | Codexエージェント自動委任 | 2026-05-31 | IN_PROGRESS | | |
-| feature/morimoto/back-merge-main-v3 | （記入してください） | 2026-05-31 13:49 | IN_PROGRESS | | |
-| feature/morimoto/grafana-dashboard-hierarchy | （記入してください） | 2026-05-31 13:57 | IN_PROGRESS | | |
-| feature/morimoto/aeon-operation-guide | UI（ヘッダーアクションボタン調整） | 2026-05-31 | IN_PROGRESS | | |
 ---
 
 ## 記入例
