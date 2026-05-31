@@ -6,39 +6,40 @@ on:
 
 jobs:
   check:
-    name: models.py に新 Column → deploy.yml にマイグレーション追記必須
+    name: migration 追加 → deploy.yml 登録必須チェック
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # ──────────────────────────────────────────────────────────────────────
+      # チェック1（既存）: models.py に新 Column → deploy.yml に migrate_ 追記
+      # ──────────────────────────────────────────────────────────────────────
       - name: 新規 Column 追加を検出
-        id: detect
+        id: detect_columns
         run: |
           BASE=${{ github.event.pull_request.base.sha }}
           HEAD=${{ github.event.pull_request.head.sha }}
 
-          # models.py の差分で追加行に Column( が含まれるか
           NEW_COLUMNS=$(git diff "$BASE" "$HEAD" -- backend/app/models.py \
             | grep '^+' | grep -v '^+++' | grep 'Column(' || true)
 
           if [ -z "$NEW_COLUMNS" ]; then
             echo "new_columns=false" >> "$GITHUB_OUTPUT"
-            echo "✅ models.py に新規 Column 追加なし — スキップ"
+            echo "✅ models.py に新規 Column 追加なし — チェック1 スキップ"
           else
             echo "new_columns=true" >> "$GITHUB_OUTPUT"
             echo "🔍 新規 Column を検出:"
             echo "$NEW_COLUMNS"
           fi
 
-      - name: deploy.yml にマイグレーション追記を確認
-        if: steps.detect.outputs.new_columns == 'true'
+      - name: deploy.yml に migrate_ スクリプト追記を確認
+        if: steps.detect_columns.outputs.new_columns == 'true'
         run: |
           BASE=${{ github.event.pull_request.base.sha }}
           HEAD=${{ github.event.pull_request.head.sha }}
 
-          # deploy.yml の差分で migrate_ スクリプト呼び出しが追加されているか
           DEPLOY_UPDATED=$(git diff "$BASE" "$HEAD" -- .github/workflows/deploy.yml \
             | grep '^+' | grep -v '^+++' | grep 'migrate_' || true)
 
@@ -48,18 +49,94 @@ jobs:
             exit 0
           fi
 
-          # deploy.yml に変更がない場合はエラー
           echo ""
-          echo "❌ MIGRATION GUARD FAILED"
+          echo "❌ MIGRATION GUARD FAILED (チェック1)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "backend/app/models.py に新規 Column が追加されましたが、"
           echo ".github/workflows/deploy.yml への マイグレーションステップ追記が見つかりません。"
           echo ""
           echo "【対応手順】"
           echo "1. migrations/ に SQL ファイルを作成（ADD COLUMN IF NOT EXISTS で冪等に）"
-          echo "2. scripts/ に Python 実行スクリプトを作成"
+          echo "2. scripts/ に Python 実行スクリプトを作成（必要な場合）"
           echo "3. deploy.yml の「新しいマイグレーションはここに追加」の直前に実行ステップを追記"
           echo ""
-          echo "参考: PR #518 の変更内容を確認してください"
+          echo "参考: backend/CLAUDE.md「## Migration 適用経路」セクション"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          exit 1
+
+      # ──────────────────────────────────────────────────────────────────────
+      # チェック2（新規）: migrations/NNN.sql 追加 → deploy.yml に psql 実行行必須
+      #
+      # 背景: ADR-045（migration 055）と PR #1277（migration 083）で
+      #       2回連続して同一バグ（migrations/*.sql を追加したが deploy.yml 未登録）が
+      #       発生した。チェック1は models.py 経由のみ検知するため、
+      #       SQL ファイル単独追加の経路を検知できなかった。
+      # ──────────────────────────────────────────────────────────────────────
+      - name: 新規 migrations/*.sql を検出
+        id: detect_sql
+        run: |
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+
+          NEW_SQL=$(git diff "$BASE" "$HEAD" --name-only --diff-filter=A \
+            | grep '^migrations/[0-9].*\.sql$' || true)
+
+          if [ -z "$NEW_SQL" ]; then
+            echo "new_sql=false" >> "$GITHUB_OUTPUT"
+            echo "✅ 新規 migrations/*.sql なし — チェック2 スキップ"
+          else
+            echo "new_sql=true" >> "$GITHUB_OUTPUT"
+            NEW_SQL_JOINED=$(echo "$NEW_SQL" | tr '\n' '|' | sed 's/|$//')
+            echo "new_sql_files=$NEW_SQL_JOINED" >> "$GITHUB_OUTPUT"
+            echo "🔍 新規 SQL ファイルを検出:"
+            echo "$NEW_SQL"
+          fi
+
+      - name: deploy.yml に psql 実行行を確認
+        if: steps.detect_sql.outputs.new_sql == 'true'
+        run: |
+          FAILED=0
+          MISSING_FILES=""
+
+          IFS='|' read -ra SQL_FILES <<< "${{ steps.detect_sql.outputs.new_sql_files }}"
+          for sql_path in "${SQL_FILES[@]}"; do
+            fname=$(basename "$sql_path")
+
+            # deploy.yml（現在の全文）に該当ファイル名の psql 行があるか確認
+            if grep -q "< migrations/$fname" .github/workflows/deploy.yml; then
+              echo "✅ $fname → deploy.yml に登録済み"
+            else
+              echo "❌ $fname → deploy.yml に未登録"
+              FAILED=1
+              MISSING_FILES="$MISSING_FILES $fname"
+            fi
+          done
+
+          if [ "$FAILED" -eq 0 ]; then
+            echo ""
+            echo "✅ チェック2 通過: 全 migrations/*.sql が deploy.yml に登録されています"
+            exit 0
+          fi
+
+          echo ""
+          echo "❌ MIGRATION GUARD FAILED (チェック2)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "以下の migrations/*.sql が .github/workflows/deploy.yml に登録されていません:"
+          echo "$MISSING_FILES"
+          echo ""
+          echo "【対応手順】"
+          echo "deploy.yml の part 2 マイグレーションリストの"
+          echo "「新しいマイグレーションはここに追加」コメントの直前に以下を追記してください:"
+          echo ""
+          for fname in $MISSING_FILES; do
+            echo "            # Migration NNN: <変更内容を記述>"
+            echo "            #   - <設計判断・冪等性の根拠>"
+            echo "            docker exec -i astro-webapp-postgres-1 \\"
+            echo "              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \\"
+            echo "              < migrations/$fname"
+            echo ""
+          done
+          echo "参考: backend/CLAUDE.md「## Migration 適用経路」セクション"
+          echo "前例: ADR-045（migration 055）、PR #1277（migration 083）"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           exit 1
