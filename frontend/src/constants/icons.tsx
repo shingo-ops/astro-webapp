@@ -39,7 +39,7 @@ import {
   MoonIcon, SunIcon, GlobeAltIcon,
   CheckIcon, ExclamationTriangleIcon, XMarkIcon,
   ChartBarIcon, UserIcon, SignalIcon, BriefcaseIcon, CubeIcon,
-  UsersIcon, KeyIcon, Cog6ToothIcon, FolderIcon,
+  UsersIcon, KeyIcon, Cog6ToothIcon, Cog8ToothIcon, FolderIcon,
   WrenchScrewdriverIcon, ChatBubbleLeftIcon, ChatBubbleOvalLeftIcon, ClipboardDocumentListIcon,
   DocumentTextIcon,
   EllipsisHorizontalIcon,
@@ -70,6 +70,8 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon as XMarkOutlineIcon,
   ChatBubbleOvalLeftIcon as ChatBubbleOvalLeftOutlineIcon,
+  TruckIcon as TruckOutlineIcon,
+  Cog8ToothIcon as Cog8ToothOutlineIcon,
 } from "@heroicons/react/24/outline";
 
 /**
@@ -107,6 +109,7 @@ const Package   = hi(CubeIcon);
 const Users     = hi(UsersIcon);
 const Key       = hi(KeyIcon);
 const GearSix   = hi(Cog6ToothIcon);
+const GearEight        = hi(Cog8ToothIcon);
 const Folder    = hi(FolderIcon);
 const HardHat   = hi(WrenchScrewdriverIcon);
 const Chat      = hi(ChatBubbleLeftIcon);
@@ -136,6 +139,7 @@ const UsersOutline      = hi(UsersOutlineIcon);
 const PackageOutline    = hi(CubeOutlineIcon);
 const FileTextOutline   = hi(DocumentTextOutlineIcon);
 const ReceiptOutline    = hi(ReceiptPercentOutlineIcon);
+const TruckOutline      = hi(TruckOutlineIcon);
 const ChartBarOutline   = hi(ChartBarOutlineIcon);
 const CalendarBlank     = hi(CalendarIcon);
 const QuestionOutline   = hi(QuestionMarkCircleIcon);
@@ -147,6 +151,7 @@ const SignOut           = hi(ArrowRightOnRectangleIcon);
 const SlidersHorizontal = hi(AdjustmentsHorizontalIcon);
 const MagnifyingGlass   = hi(MagnifyingGlassIcon);
 const XOutline          = hi(XMarkOutlineIcon);
+const GearEightOutline  = hi(Cog8ToothOutlineIcon);
 
 // ステータス（✓ ⚠ ✕ の代替）
 export const STATUS_ICONS = {
@@ -179,7 +184,7 @@ export const PAGE_ICONS = {
   comingSoon:    HardHat,
   inboxEmpty:    Chat,
   kartePanel:    ClipboardText, // 受信箱モバイルドロワー「カルテ」ボタン用
-  settingsSolid: GearSix,       // 受信箱ヘッダー設定ボタン（solid）
+  settingsSolid: GearEight,     // 受信箱ヘッダー設定ボタン（solid）
 } satisfies Record<string, Icon>;
 
 // テーマ切り替え（Layout.tsx）
@@ -200,12 +205,12 @@ export const NAV_ICONS = {
   leads:       UsersOutline,       // outline
   inventory:   PackageOutline,     // outline
   fileText:    FileTextOutline,    // outline
-  orders:      ReceiptOutline,     // outline
+  orders:      TruckOutline,       // outline
   report:      ChartBarOutline,    // outline
   schedule:    CalendarBlank,      // outline
   help:        QuestionOutline,    // outline
   admin:       ShieldCheckOutline, // outline
-  settings:    GearSixOutline,     // outline
+  settings:    GearEightOutline,    // outline
   more:        DotsThreeOutline,   // outline
   chevronDown: CaretDown,          // outline
   logout:      SignOut,            // outline
