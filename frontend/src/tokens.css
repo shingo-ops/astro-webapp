@@ -144,6 +144,7 @@
   /* ---- Component sizes ---- */
   /* btn-min-height: 現行ボタンはpadding主体のため最小高として定義（height固定ではない） */
   --btn-min-height-md:  40px;   /* 標準ボタン — industry consensus */
+  --size-icon-btn:      36px;   /* ヘッダーアクション・アイコンボタン共通サイズ（SSoT: ADR-067） */
   --textarea-min-h:     80px;   /* テキストエリア最小高 */
   --topbar-height:      56px;   /* トップバー・ブランドバー高さ */
   --drawer-width:      300px;   /* ユーザードロワー幅 */

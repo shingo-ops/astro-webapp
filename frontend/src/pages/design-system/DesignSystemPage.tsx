@@ -387,6 +387,50 @@ function MotionSection() {
   );
 }
 
+/* ---- Header Action Buttons Section ---- */
+function HeaderActionButtonsSection() {
+  return (
+    <section className="ds-section">
+      <h3 className="ds-section-title">Header Action Buttons (ADR-067)</h3>
+      <p style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", marginBottom: "var(--space-3)" }}>
+        All buttons in <code>.page-header-actions</code> share{" "}
+        <code>--size-icon-btn: 36px</code> as their size token (SSoT).
+      </p>
+      <div className="ds-component-grid">
+        <div className="ds-component-block">
+          <p className="ds-component-label">.btn-ghost — text button (height: --size-icon-btn)</p>
+          <div className="page-header-actions">
+            <button type="button" className="btn-ghost">FAQ</button>
+          </div>
+        </div>
+        <div className="ds-component-block">
+          <p className="ds-component-label">.icon-btn — icon button (width/height: --size-icon-btn)</p>
+          <div className="page-header-actions">
+            <button type="button" className="icon-btn" aria-label="settings">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.1 4.1l1.4 1.4M14.5 14.5l1.4 1.4M4.1 15.9l1.4-1.4M14.5 5.5l1.4-1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div className="ds-component-block">
+          <p className="ds-component-label">Combined — .page-header-actions (aligned at 36px)</p>
+          <div className="page-header-actions">
+            <button type="button" className="btn-ghost">FAQ</button>
+            <button type="button" className="icon-btn" aria-label="settings">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.1 4.1l1.4 1.4M14.5 14.5l1.4 1.4M4.1 15.9l1.4-1.4M14.5 5.5l1.4-1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---- Main Page ---- */
 export default function DesignSystemPage() {
   const { t } = useTranslation();
@@ -407,6 +451,7 @@ export default function DesignSystemPage() {
         <ZIndexSection />
         <MotionSection />
         <ComponentsSection />
+        <HeaderActionButtonsSection />
       </div>
     </PageLayout>
   );
