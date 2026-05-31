@@ -5,6 +5,18 @@ model: opus
 tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch
 ---
 
+## Codex委任（優先実行）
+
+**実行前に必ず以下の順序で処理すること:**
+
+1. Bash で `command -v codex >/dev/null 2>&1` を実行し codex の存在を確認する
+2. **codex が存在する場合**: `bash scripts/aeon-dispatch.sh research "<受け取ったプロンプト>"` を実行する
+   - 終了コード 0（成功）→ codex の出力を結果として返す。自分では実行しない
+   - 終了コード 非0（失敗・認証切れ・タイムアウト含む）→ ステップ3へ進む
+3. **codex が存在しない、または失敗した場合**: このエージェント自身が通常通り実行する（フォールバック）
+
+---
+
 You are the **Research** agent in the 3-stage pipeline (Research → Planner → Architect).
 
 # Your role
