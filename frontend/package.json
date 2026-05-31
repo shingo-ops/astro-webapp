@@ -33,9 +33,10 @@
     "check:concurrently": "node scripts/check-concurrently-usage.js",
     "check:sidebar-outline": "node scripts/check-sidebar-outline.js",
     "check:new-tokens": "node scripts/check-new-tokens.js",
+    "check:stylelint": "stylelint \"src/**/*.css\"",
     "test:unit": "vitest run --project unit",
     "test:coverage": "vitest run --project unit --coverage",
-    "check:all": "concurrently --kill-others-on-fail --max-processes 6 \"npm run check:claude-size\" \"npm run lint\" \"npm run check:css-colors\" \"npm run check:dark-parity\" \"npm run check:jsx-emoji\" \"npm run check:css-var-fallbacks\" \"npm run check:css-values\" \"npm run check:nav-sync\" \"npm run check:page-layout\" \"npm run check:page-folder\" \"npm run check:icon-sync\" \"npm run check:css-fixed-position\" \"npm run check:breakpoint-sync\" \"npm run check:page-size\" \"npm run check:stories\" \"npm run check:color-token-sync\" \"npm run check:onboarding-doc\" \"npm run check:concurrently\" \"npm run check:sidebar-outline\"",
+    "check:all": "concurrently --kill-others-on-fail --max-processes 6 \"npm run check:claude-size\" \"npm run lint\" \"npm run check:css-colors\" \"npm run check:dark-parity\" \"npm run check:jsx-emoji\" \"npm run check:css-var-fallbacks\" \"npm run check:css-values\" \"npm run check:nav-sync\" \"npm run check:page-layout\" \"npm run check:page-folder\" \"npm run check:icon-sync\" \"npm run check:css-fixed-position\" \"npm run check:breakpoint-sync\" \"npm run check:page-size\" \"npm run check:stories\" \"npm run check:color-token-sync\" \"npm run check:onboarding-doc\" \"npm run check:concurrently\" \"npm run check:sidebar-outline\" \"npm run check:stylelint\"",
     "prepare": "cd .. && husky frontend/.husky",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
@@ -51,7 +52,8 @@
       "node scripts/check-css-hardcoded-colors.js",
       "node scripts/check-css-var-fallbacks.js",
       "node scripts/check-css-hardcoded-values.js",
-      "node scripts/check-css-fixed-position.js"
+      "node scripts/check-css-fixed-position.js",
+      "stylelint"
     ],
     "src/index.css": [
       "node scripts/check-dark-parity.js"
@@ -103,6 +105,8 @@
     "lint-staged": "^17.0.5",
     "playwright": "^1.60.0",
     "storybook": "^10.4.1",
+    "stylelint": "^16.26.1",
+    "stylelint-config-standard": "^36.0.1",
     "typescript": "^5.7.3",
     "vite": "^8.0.14",
     "vitest": "^4.1.7"
