@@ -440,7 +440,7 @@ async def setup_test_db(test_engine):
                 order_number VARCHAR(100) NOT NULL,
                 total_amount NUMERIC(15, 2),
                 currency VARCHAR(10) DEFAULT 'JPY',
-                status VARCHAR(50) DEFAULT 'pending',
+                status VARCHAR(50) DEFAULT 'awaiting_payment',
                 shipping_carrier VARCHAR(50),
                 shipping_fee NUMERIC(15, 2),
                 tracking_number VARCHAR(200),

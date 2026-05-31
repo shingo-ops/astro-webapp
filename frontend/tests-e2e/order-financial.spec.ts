@@ -63,7 +63,7 @@ const baseOrder: OrderFixture = {
   deal_id: null,
   order_number: "ORD-FIN-1",
   total_amount: 100000,
-  status: "pending",
+  status: "awaiting_payment",
   notes: null,
   created_at: "2026-05-01T00:00:00+00:00",
   updated_at: "2026-05-10T00:00:00+00:00",
@@ -72,13 +72,12 @@ const baseOrder: OrderFixture = {
 };
 
 const groupCountsAll = {
-  counts: {
-    pending: 1,
-    confirmed: 0,
-    processing: 0,
-    shipped: 0,
-    delivered: 0,
-    returned: 0,
+    counts: {
+    awaiting_payment: 0,
+    sourcing: 0,
+    awaiting_shipping: 0,
+    completed: 1,
+    trouble: 0,
     cancelled: 0,
   },
   total: 1,
@@ -298,7 +297,7 @@ test.describe("ADR-021 Sprint 2: 売上計算 MVP", () => {
     await expect(page.getByTestId("orders-search-input")).toBeVisible();
     await expect(page.getByTestId("orders-sort-by")).toBeVisible();
     await expect(page.getByTestId("orders-sort-order")).toBeVisible();
-    await expect(page.getByTestId("group-count-all")).toBeVisible();
-    await expect(page.getByTestId("group-count-pending")).toBeVisible();
+    await expect(page.getByTestId("subnav-all")).toBeVisible();
+    await expect(page.getByTestId("subnav-awaiting_payment")).toBeVisible();
   });
 });

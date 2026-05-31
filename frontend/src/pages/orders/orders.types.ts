@@ -29,15 +29,14 @@ export interface GroupCountsResponse {
 }
 
 /**
- * ADR-021 第 1 節の正本 6 値。
- * 2026-05-13 J1 fix: 旧 confirmed は migration 051 で pending に統合。
+ * 受注ステータス 6 値（migration 090 で旧値から改名）。
  */
 export const STATUSES = [
-  "pending",
-  "processing",
-  "shipped",
-  "delivered",
-  "returned",
+  "awaiting_payment",
+  "sourcing",
+  "awaiting_shipping",
+  "completed",
+  "trouble",
   "cancelled",
 ] as const;
 
@@ -45,6 +44,6 @@ export const emptyForm = {
   deal_id: "",
   order_number: "",
   total_amount: "",
-  status: "pending",
+  status: "awaiting_payment",
   notes: "",
 };
