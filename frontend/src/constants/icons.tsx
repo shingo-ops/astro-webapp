@@ -71,6 +71,7 @@ import {
   XMarkIcon as XMarkOutlineIcon,
   ChatBubbleOvalLeftIcon as ChatBubbleOvalLeftOutlineIcon,
   TruckIcon as TruckOutlineIcon,
+  Cog8ToothIcon as Cog8ToothOutlineIcon,
 } from "@heroicons/react/24/outline";
 
 /**
@@ -108,7 +109,8 @@ const Package   = hi(CubeIcon);
 const Users     = hi(UsersIcon);
 const Key       = hi(KeyIcon);
 const GearSix   = hi(Cog6ToothIcon);
-const GearEight = hi(Cog8ToothIcon);
+const GearEight        = hi(Cog8ToothIcon);
+const GearEightOutline = hi(Cog8ToothOutlineIcon);
 const Folder    = hi(FolderIcon);
 const HardHat   = hi(WrenchScrewdriverIcon);
 const Chat      = hi(ChatBubbleLeftIcon);
@@ -182,7 +184,7 @@ export const PAGE_ICONS = {
   comingSoon:    HardHat,
   inboxEmpty:    Chat,
   kartePanel:    ClipboardText, // 受信箱モバイルドロワー「カルテ」ボタン用
-  settingsSolid: GearSix,       // 受信箱ヘッダー設定ボタン（solid）
+  settingsSolid: GearEight,     // 受信箱ヘッダー設定ボタン（solid）
 } satisfies Record<string, Icon>;
 
 // テーマ切り替え（Layout.tsx）
@@ -208,7 +210,7 @@ export const NAV_ICONS = {
   schedule:    CalendarBlank,      // outline
   help:        QuestionOutline,    // outline
   admin:       ShieldCheckOutline, // outline
-  settings:    GearEight,          // solid
+  settings:    GearEightOutline,    // outline
   more:        DotsThreeOutline,   // outline
   chevronDown: CaretDown,          // outline
   logout:      SignOut,            // outline
