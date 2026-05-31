@@ -49,6 +49,7 @@ import {
   UserCircleIcon, LockClosedIcon, PhoneIcon,
   ArchiveBoxIcon,
   ArrowUpIcon, ArrowDownIcon,
+  LanguageIcon,
 } from "@heroicons/react/24/solid";
 
 // ── outline: サイドバーナビゲーション専用 ────────────────────────────────
@@ -132,6 +133,7 @@ const UserCircle    = hi(UserCircleIcon);
 const Lock          = hi(LockClosedIcon);
 const Phone         = hi(PhoneIcon);
 const ArchiveBox    = hi(ArchiveBoxIcon);
+const Languages     = hi(LanguageIcon);
 
 // ── outline wrapped（サイドバーナビゲーション専用）────────────────────────
 const SquaresFour       = hi(Squares2X2Icon);
@@ -311,6 +313,7 @@ export const INBOX_ACTION_ICONS = {
   markUnread: EnvelopeClosed,  // EnvelopeIcon      — 未開封封筒（完全ソリッド）
   exclude:    ArchiveBox,      // ArchiveBoxIcon    — アーカイブ
   delete:     Trash,           // TrashIcon         — 削除
+  translate:  Languages,       // LanguageIcon      — AI翻訳（ADR-088）
 } satisfies Record<string, Icon>;
 
 // Layout.tsx の /lead-chat ナビアイテム用（outline バリアント — サイドバー統一仕様）

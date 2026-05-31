@@ -558,6 +558,12 @@
     "selectAll": "Select all",
     "selectedCount": "{{count}} selected",
     "confirmBulkDelete": "Delete selected leads? This action cannot be undone.",
+    "translate": "Translate",
+    "translating": "Translating...",
+    "translationError": "Translation failed",
+    "translationBudgetExceeded": "Monthly translation limit reached",
+    "showOriginal": "Show original",
+    "translatedBy": "AI Translation",
     "settings": {
       "title": "Inbox Settings",
       "display": "Display Customization",

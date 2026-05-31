@@ -191,3 +191,29 @@ export async function sendMessage(
     { text: request.text },
   );
 }
+
+// ---------------------------------------------------------------------------
+// ADR-088: メッセージ翻訳
+// ---------------------------------------------------------------------------
+
+export interface TranslateMessageResponse {
+  translated_text: string;
+  cached: boolean;
+  engine: string;
+}
+
+/**
+ * POST /api/v1/leads/{lead_id}/messages/{message_id}/translate
+ *
+ * AI 翻訳をリクエストする。キャッシュがあれば即座に返却される。
+ */
+export async function translateMessage(
+  leadId: number,
+  messageId: string,
+  targetLanguage: string,
+): Promise<TranslateMessageResponse> {
+  return api.post<TranslateMessageResponse>(
+    `/leads/${leadId}/messages/${messageId}/translate`,
+    { target_language: targetLanguage },
+  );
+}
