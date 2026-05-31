@@ -22,6 +22,14 @@
 | feature/morimoto/codex-research-planning-gaps | Codex research / planning gaps | 2026-05-30 00:37 | IN_PROGRESS | | |
 | feature/morimoto/remove-design-review-gate | design review gate removal | 2026-05-30 05:39 | IN_PROGRESS | | |
 | feature/morimoto/aeon-operation-guide-pr | AEON operation guide PR | 2026-05-30 05:42 | IN_PROGRESS | | |
+| feature/morimoto/inbox-auto-select-first-conv | （記入してください） | 2026-05-30 21:46 | IN_PROGRESS | | |
+| feature/morimoto/aeon-standardize | （記入してください） | 2026-05-30 21:47 | IN_PROGRESS | | |
+| feature/morimoto/claude-dispatch-verify | （記入してください） | 2026-05-30 21:56 | IN_PROGRESS | | |
+| feature/morimoto/fix-deploy-zero-downtime | （記入してください） | 2026-05-30 22:08 | IN_PROGRESS | | |
+| feature/morimoto/governance-section-f | （記入してください） | 2026-05-31 10:57 | IN_PROGRESS | | |
+| feature/morimoto/add-governance-agent | （記入してください） | 2026-05-31 10:59 | IN_PROGRESS | | |
+| feature/morimoto/back-merge-main | back-merge main→develop | 2026-05-31 12:00 | IN_PROGRESS | | |
+| feature/morimoto/back-merge-main-v2 | back-merge main→develop v2 | 2026-05-31 12:10 | IN_PROGRESS | | |
 ---
 
 ## 記入例

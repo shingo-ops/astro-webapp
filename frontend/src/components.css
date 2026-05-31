@@ -479,6 +479,14 @@
   gap: var(--space-3);
   flex-shrink: 0;
 }
+.page-header-actions .btn-ghost,
+.page-header-actions .icon-btn {
+  border: 1px solid var(--border);
+}
+.page-header-actions .btn-ghost:hover,
+.page-header-actions .icon-btn:hover {
+  border-color: var(--border-strong);
+}
 
 /* --- Page Header Select --- */
 /* ヘッダーアクションエリア内のドロップダウン共通スタイル (SSoT: ここのみ定義) */

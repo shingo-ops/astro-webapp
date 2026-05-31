@@ -56,6 +56,21 @@ git config user.email "<あなたのメール>"
 
 設定方法は `claude mcp add` で各自登録。
 
+### Step 6: フックスクリプトの実行権限設定（必須）
+
+`~/.claude/scripts/` 配下のフックに実行権限がないと、worktree 外からの編集がブロックされず**ルール違反が素通りする**。
+セットアップ後・スクリプト更新後に必ず実行すること。
+
+```bash
+chmod +x ~/.claude/scripts/*.sh
+
+# 確認（全て ✅ OK になること）
+bash scripts/check-hooks.sh
+```
+
+権限が壊れていると `worktree-only-guard.sh` が無効になり、feature ブランチ上で
+main リポジトリから直接ファイルを編集できてしまう（push 時に詰まる）。
+
 ---
 
 ## 3. リポジトリ専用エージェントの使い方
@@ -71,6 +86,10 @@ git config user.email "<あなたのメール>"
 | `reviewer` | 実装の準拠監査を行う |
 | `evaluator` | 実装を Playwright で検証、Pass/Fail 判定 |
 | `governance` | 定期レビューで標準化・継続改善を判断する |
+
+AEON ルートを使う場合は、まず [AEON Operation Guide](../ai-agents/aeon-operation.md) を読む。Claude Code の同じ terminal session から `bash scripts/aeon-dispatch.sh <role> ...` を呼ぶ。`research / planner / architect / reviewer / evaluator` は Codex に委譲し、`generator` は既存の Generator wrapper を使う。
+まとめて進める場合は `bash scripts/aeon-delivery.sh [--generator=exec|auto|interactive] "..."` を使う。これで research → planner → architect → generator → evaluator → reviewer を同じ terminal session で順に回せる。
+`main` へ昇格する場合は `bash scripts/aeon-release.sh [PR番号]` を使う。
 
 AEON ルートを使う場合は、まず [AEON Operation Guide](../ai-agents/aeon-operation.md) を読む。Claude Code の同じ terminal session から `bash scripts/aeon-dispatch.sh <role> ...` を呼ぶ。`research / planner / architect / reviewer / evaluator` は Codex に委譲し、`generator` は既存の Generator wrapper を使う。
 まとめて進める場合は `bash scripts/aeon-delivery.sh [--generator=exec|auto|interactive] "..."` を使う。これで research → planner → architect → generator → evaluator → reviewer を同じ terminal session で順に回せる。

@@ -24,6 +24,15 @@ on:
         description: '実装対象のADRファイル（スペース区切り。例: ADR-013.md docs/adr/ADR-014.md）'
         required: true
         type: string
+      generator_executor:
+        description: 'Generatorエクゼキュータ (auto=Codex優先→Claude Code自動フォールバック | codex=Codex専用 | claude=Claude Code専用)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - codex
+          - claude
   pull_request:
     types: [synchronize]
   push:
@@ -38,6 +47,7 @@ permissions:
 
 env:
   MAX_AUTO_RETRIES: 3
+  GENERATOR_EXECUTOR: ${{ inputs.generator_executor || 'auto' }}
 
 jobs:
   skip-push:
@@ -298,22 +308,13 @@ jobs:
           done
           echo "Validated: $ADR_FILES"
 
-      - name: Run Claude Code
+      - name: Run Generator (Codex / Claude Code with auto-fallback)
         env:
           ADR_FILES: ${{ inputs.adr_files }}
         run: |
           set -e
-          claude -p \
-            --disallowedTools "WebFetch WebSearch" \
-            --allowedTools "Read Write Edit Grep Glob \
-              Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(mkdir:*) Bash(touch:*) \
-              Bash(git diff:*) Bash(git log:*) Bash(git status:*) Bash(git rev-parse:*) Bash(git fetch:*) Bash(git add:*) Bash(git commit:*) Bash(git checkout:*) Bash(git switch:*) \
-              Bash(npm test:*) Bash(npm run:*) Bash(npx playwright test:*) \
-              Bash(pytest:*) Bash(python:*) Bash(python -m:*) \
-              Bash(bash scripts/qa/:*) Bash(bash scripts/smoke/:*) Bash(bash scripts/probe/:*) \
-              Bash(psql:*) Bash(python scripts/probe/:*)" \
-            --permission-mode bypassPermissions \
-            "次のADRファイルを実装してください: ${ADR_FILES}
+
+          PROMPT="次のADRファイルを実装してください: ${ADR_FILES}
 
           【実装手順】
           1. ADR本文を読み取り、Acceptance Criteria（AC-XXX）を抽出する
@@ -330,6 +331,62 @@ jobs:
           - Codebase reconnaissance を skip して 0-hit referent をそのまま実装に使うこと
 
           実装が完了したら、変更をコミットしてください。後続のステップが自動でPRを作成します。"
+
+          run_with_codex() {
+            echo "🤖 Executor: Codex"
+            codex --approval-mode full-auto "$PROMPT"
+          }
+
+          run_with_claude() {
+            echo "🤖 Executor: Claude Code"
+            claude -p \
+              --disallowedTools "WebFetch WebSearch" \
+              --allowedTools "Read Write Edit Grep Glob \
+                Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(mkdir:*) Bash(touch:*) \
+                Bash(git diff:*) Bash(git log:*) Bash(git status:*) Bash(git rev-parse:*) Bash(git fetch:*) Bash(git add:*) Bash(git commit:*) Bash(git checkout:*) Bash(git switch:*) \
+                Bash(npm test:*) Bash(npm run:*) Bash(npx playwright test:*) \
+                Bash(pytest:*) Bash(python:*) Bash(python -m:*) \
+                Bash(bash scripts/qa/:*) Bash(bash scripts/smoke/:*) Bash(bash scripts/probe/:*) \
+                Bash(psql:*) Bash(python scripts/probe/:*)" \
+              --permission-mode bypassPermissions \
+              "$PROMPT"
+          }
+
+          EXECUTOR="${GENERATOR_EXECUTOR:-auto}"
+          echo "generator_executor=$EXECUTOR"
+
+          case "$EXECUTOR" in
+            codex)
+              run_with_codex
+              ;;
+            claude)
+              run_with_claude
+              ;;
+            *)
+              # auto: Codex 優先、失敗時は Claude Code にフォールバック
+              if command -v codex >/dev/null 2>&1; then
+                if ! run_with_codex; then
+                  echo "⚠️ Codex が失敗しました。Claude Code にフォールバックします。"
+                  echo "GENERATOR_FALLBACK=true" >> "$GITHUB_ENV"
+                  run_with_claude
+                fi
+              else
+                echo "ℹ️ Codex が見つかりません。Claude Code を使用します。"
+                echo "GENERATOR_FALLBACK=true" >> "$GITHUB_ENV"
+                run_with_claude
+              fi
+              ;;
+          esac
+
+      - name: Notify Discord (Codex fallback)
+        if: env.GENERATOR_FALLBACK == 'true'
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+          ADR_FILES: ${{ inputs.adr_files }}
+        run: |
+          MSG="⚠️ **Generator フォールバック発動**\nCodexが利用できなかったため、Claude Codeで実装しました。\nADR: ${ADR_FILES}"
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
 
       - name: Commit, Push, and Open PR
         id: create-pr
@@ -934,7 +991,7 @@ jobs:
           ref: ${{ needs.reviewer.outputs.pr_head_ref }}
           fetch-depth: 0
 
-      - name: Run Claude Code as Generator (regenerate)
+      - name: Run Generator (regenerate) (Codex / Claude Code with auto-fallback)
         if: steps.policy.outputs.halt == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -958,18 +1015,7 @@ jobs:
             echo "$EVAL_FB"
           } > /tmp/regenerate_feedback.txt
 
-          claude -p \
-            --disallowedTools "WebFetch WebSearch" \
-            --allowedTools "Read Write Edit Grep Glob \
-              Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(mkdir:*) Bash(touch:*) \
-              Bash(git diff:*) Bash(git log:*) Bash(git status:*) Bash(git rev-parse:*) Bash(git fetch:*) Bash(git add:*) Bash(git commit:*) Bash(git checkout:*) Bash(git switch:*) \
-              Bash(gh pr view:*) Bash(gh pr diff:*) \
-              Bash(npm test:*) Bash(npm run:*) Bash(npx playwright test:*) \
-              Bash(pytest:*) Bash(python:*) Bash(python -m:*) \
-              Bash(bash scripts/qa/:*) Bash(bash scripts/smoke/:*) Bash(bash scripts/probe/:*) \
-              Bash(psql:*) Bash(python scripts/probe/:*)" \
-            --permission-mode bypassPermissions \
-            "ADR-056 自動修正フロー (リトライ ${NEXT_RETRY}/${MAX_AUTO_RETRIES})。
+          PROMPT="ADR-056 自動修正フロー (リトライ ${NEXT_RETRY}/${MAX_AUTO_RETRIES})。
 
           PR #${PR_NUMBER} で Reviewer または Evaluator から REQUEST_CHANGES が出ました。
           実装対象 ADR: ${ADR_FILES}
@@ -986,6 +1032,51 @@ jobs:
           - ADR のスコープ外の変更は行わない
           - PR の作成・push・マージは行わない (この場で git commit のみ、push は次のステップで実施)
           - feedback.md への追記は行わない"
+
+          run_with_codex() {
+            echo "🤖 Executor: Codex (regenerate)"
+            codex --approval-mode full-auto "$PROMPT"
+          }
+
+          run_with_claude() {
+            echo "🤖 Executor: Claude Code (regenerate)"
+            claude -p \
+              --disallowedTools "WebFetch WebSearch" \
+              --allowedTools "Read Write Edit Grep Glob \
+                Bash(grep:*) Bash(rg:*) Bash(find:*) Bash(cat:*) Bash(ls:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Bash(awk:*) Bash(sed:*) Bash(jq:*) Bash(mkdir:*) Bash(touch:*) \
+                Bash(git diff:*) Bash(git log:*) Bash(git status:*) Bash(git rev-parse:*) Bash(git fetch:*) Bash(git add:*) Bash(git commit:*) Bash(git checkout:*) Bash(git switch:*) \
+                Bash(gh pr view:*) Bash(gh pr diff:*) \
+                Bash(npm test:*) Bash(npm run:*) Bash(npx playwright test:*) \
+                Bash(pytest:*) Bash(python:*) Bash(python -m:*) \
+                Bash(bash scripts/qa/:*) Bash(bash scripts/smoke/:*) Bash(bash scripts/probe/:*) \
+                Bash(psql:*) Bash(python scripts/probe/:*)" \
+              --permission-mode bypassPermissions \
+              "$PROMPT"
+          }
+
+          EXECUTOR="${GENERATOR_EXECUTOR:-auto}"
+          echo "generator_executor=$EXECUTOR (regenerate)"
+
+          case "$EXECUTOR" in
+            codex)
+              run_with_codex
+              ;;
+            claude)
+              run_with_claude
+              ;;
+            *)
+              # auto: Codex 優先、失敗時は Claude Code にフォールバック
+              if command -v codex >/dev/null 2>&1; then
+                if ! run_with_codex; then
+                  echo "⚠️ Codex が失敗しました。Claude Code にフォールバックします (regenerate)。"
+                  run_with_claude
+                fi
+              else
+                echo "ℹ️ Codex が見つかりません。Claude Code を使用します (regenerate)。"
+                run_with_claude
+              fi
+              ;;
+          esac
 
       - name: Commit and push regeneration
         if: steps.policy.outputs.halt == 'false'

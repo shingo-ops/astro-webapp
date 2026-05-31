@@ -1,0 +1,51 @@
+name: Claude Code Hook Permission Check
+
+# Claude Code フックスクリプトの実行権限を定期・PR時に検証する。
+# セルフホステッドランナー（macOS）上の ~/.claude/scripts/ を直接確認する。
+#
+# 背景: worktree-only-guard.sh 等のフックは chmod +x がないと
+#       Claude Code から呼ばれても Permission denied でサイレント失敗する。
+#       これにより worktree 外からの Edit/Write が素通りしてしまう（2026-05-31 事案）。
+# ADR: docs/adr/ADR-082-generator-executor-codex-fallback.md §再発防止
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'scripts/check-hooks.sh'
+      - '.github/workflows/hook-permission-check.yml'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'scripts/check-hooks.sh'
+      - '.github/workflows/hook-permission-check.yml'
+  schedule:
+    # 毎週月曜 09:00 JST（00:00 UTC）に定期チェック
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-hook-permissions:
+    name: Hook Permission Check
+    runs-on: [self-hosted, macOS]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run check-hooks.sh
+        id: check
+        run: bash scripts/check-hooks.sh
+        continue-on-error: true
+
+      - name: Notify Discord on failure
+        if: steps.check.outcome == 'failure'
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_PLAN_REVIEW }}
+        run: |
+          MSG="⚠️ **Claude Code フック権限エラー**\nworktree-only-guard 等のフックに実行権限がありません。\nworktree 外からの Edit/Write がブロックされていない状態です。\n修正: \`bash scripts/check-hooks.sh --fix\`"
+          PAYLOAD=$(jq -nc --arg msg "$MSG" '{content: $msg}')
+          curl -s -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK"
+
+      - name: Fail if hooks broken
+        if: steps.check.outcome == 'failure'
+        run: exit 1
