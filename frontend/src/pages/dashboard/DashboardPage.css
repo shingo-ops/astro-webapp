@@ -465,6 +465,43 @@
   color: var(--text-secondary);
 }
 
+/* ── 受注統合カード 統計行 ── */
+.db-revenue-stats {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.db-revenue-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: var(--dashboard-stat-min-w, 96px);
+}
+
+.db-revenue-stat-label {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+.db-revenue-stat-value {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.db-revenue-forecast-value {
+  color: var(--accent);
+}
+
+.db-revenue-stat-sub {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
 /* ── 先月比バッジ ── */
 .db-vs-prev {
   display: inline-flex;
