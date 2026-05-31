@@ -481,11 +481,11 @@
 }
 .page-header-actions .btn-ghost,
 .page-header-actions .icon-btn {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-icon);
 }
 .page-header-actions .btn-ghost:hover,
 .page-header-actions .icon-btn:hover {
-  border-color: var(--border-strong);
+  border-color: var(--border-icon);
 }
 
 /* --- Page Header Select --- */
