@@ -558,6 +558,12 @@
     "selectAll": "すべて選択",
     "selectedCount": "{{count}}件選択中",
     "confirmBulkDelete": "選択したリードを削除しますか？この操作は取り消せません。",
+    "translate": "翻訳",
+    "translating": "翻訳中...",
+    "translationError": "翻訳に失敗しました",
+    "translationBudgetExceeded": "今月の翻訳上限に達しました",
+    "showOriginal": "原文を見る",
+    "translatedBy": "AI翻訳",
     "settings": {
       "title": "受信箱の設定",
       "display": "表示カスタマイズ",

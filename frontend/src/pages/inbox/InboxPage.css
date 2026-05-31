@@ -515,6 +515,60 @@
 }
 .msg-time.inbound { text-align: left; }
 
+/* ADR-088: メッセージ翻訳ボタン */
+.msg-translate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2px);
+  margin-left: var(--space-1);
+  border-radius: var(--radius-sm);
+  opacity: var(--opacity-secondary);
+  transition: opacity var(--transition-micro), background var(--transition-micro);
+  vertical-align: middle;
+  color: inherit;
+}
+.msg-translate-btn:hover {
+  opacity: 1;
+  background: var(--bg-hover);
+}
+.msg-translate-btn:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+/* ADR-088: 翻訳結果表示 */
+.msg-translation {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-light);
+  font-size: var(--font-sm);
+  line-height: 1.4;
+}
+.msg-translation--loading {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.msg-translation--error {
+  color: var(--danger-text);
+  font-size: var(--font-xs);
+}
+.msg-translation-text {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg-translation-badge {
+  display: inline-block;
+  margin-top: var(--space-1);
+  font-size: var(--font-2xs);
+  opacity: var(--opacity-muted);
+  font-style: italic;
+}
+
 /* 送信エリア — Meta実測: 白角丸カード(br=8px) + 左側に送信者アバター */
 .inbox-send-area {
   padding: var(--space-1) var(--space-3) var(--space-3);

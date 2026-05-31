@@ -813,6 +813,114 @@ async def mark_lead_messages_read(
 
 
 # ---------------------------------------------------------------------------
+# ADR-088: メッセージ翻訳
+# ---------------------------------------------------------------------------
+
+
+class _TranslateRequest(BaseModel):
+    """翻訳リクエスト body。"""
+    target_language: str = Field(min_length=2, max_length=10)
+
+
+@router.post(
+    "/leads/{lead_id}/messages/{message_id}/translate",
+    dependencies=[Depends(require_permission("messaging.view"))],
+)
+async def translate_message_endpoint(
+    lead_id: int,
+    message_id: str,
+    body: _TranslateRequest,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """指定メッセージを AI 翻訳する（ADR-088）。
+
+    キャッシュヒット時は Gemini 未呼び出しで即返却。
+    予算超過時は 429 を返す。
+    """
+    from app.services.inventory_parser_llm import LLMConfigError, LLMParseError
+    from app.services.message_translator import (
+        BudgetExceededError,
+        translate_message,
+    )
+
+    if not message_id or message_id.strip() == "":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="message_id is required",
+        )
+
+    # lead 存在確認
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
+    lead_q = await db.execute(
+        text(f"SELECT id FROM {leads_t} WHERE id = :id AND tenant_id = :tenant_id"),
+        {"id": lead_id, "tenant_id": tenant_id},
+    )
+    if lead_q.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="リードが見つかりません",
+        )
+
+    # message 存在確認 & テキスト取得
+    meta_messages_t = tenant_table_ref(db, tenant_id, "meta_messages")
+    msg_q = await db.execute(
+        text(
+            f"SELECT message_text FROM {meta_messages_t} "
+            "WHERE message_id = :message_id AND lead_id = :lead_id AND tenant_id = :tenant_id"
+        ),
+        {"message_id": message_id, "lead_id": lead_id, "tenant_id": tenant_id},
+    )
+    msg_row = msg_q.first()
+    if msg_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="メッセージが見つかりません",
+        )
+
+    message_text = msg_row[0]
+    if not message_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="メッセージ本文が空です",
+        )
+
+    translations_t = tenant_table_ref(db, tenant_id, "message_translations")
+
+    try:
+        result = await translate_message(
+            db=db,
+            tenant_id=tenant_id,
+            table_ref=translations_t,
+            message_id=message_id,
+            message_text=message_text,
+            target_language=body.target_language,
+        )
+    except BudgetExceededError:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="LLM budget exceeded for this month",
+        )
+    except LLMConfigError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        )
+    except LLMParseError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        )
+
+    return {
+        "translated_text": result.translated_text,
+        "cached": result.cached,
+        "engine": result.engine,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Phase 1-D Sprint 5: メッセージ送信
 # ---------------------------------------------------------------------------
 #
