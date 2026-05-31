@@ -113,6 +113,14 @@ interface RejectResponse {
 const UNIT_OPTIONS = ["piece", "pack", "box", "case", "set"] as const;
 type InventoryUnit = (typeof UNIT_OPTIONS)[number];
 
+// 状態列の選択肢 (migration 089 正規 16 値・全単位共用)。
+const CONDITION_OPTIONS = [
+  "shrink", "no_shrink", "sealed", "damage",
+  "unsearched", "searched",
+  "graded", "grade_s", "grade_a", "grade_b", "grade_c", "grade_d",
+  "junk", "bulk", "normal", "unknown",
+] as const;
+
 function mapParserUnit(raw: string | null | undefined): InventoryUnit | "" {
   if (!raw) return "";
   const normalized = String(raw).trim().toLowerCase();
@@ -570,23 +578,16 @@ export default function ParseReviewPage() {
                               onChange={(e) =>
                                 updateDraft(idx, { condition: e.target.value })
                               }
-                              style={{ width: "7rem" }}
+                              style={{ width: "8rem" }}
                             >
                               <option value="">
                                 {t("superAdmin.inbound.review.condition.unspecified")}
                               </option>
-                              <option value="new">
-                                {t("superAdmin.inbound.review.condition.new")}
-                              </option>
-                              <option value="used_a">
-                                {t("superAdmin.inbound.review.condition.usedA")}
-                              </option>
-                              <option value="sealed">
-                                {t("superAdmin.inbound.review.condition.sealed")}
-                              </option>
-                              <option value="opened">
-                                {t("superAdmin.inbound.review.condition.opened")}
-                              </option>
+                              {CONDITION_OPTIONS.map((c) => (
+                                <option key={c} value={c}>
+                                  {t(`superAdmin.inbound.review.conditionOptions.${c}`)}
+                                </option>
+                              ))}
                             </select>
                           </td>
                           <td>

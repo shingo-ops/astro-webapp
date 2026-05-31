@@ -16,13 +16,36 @@ InventoryStatus = Literal["in_stock", "out_of_stock", "reserved", "archived"]
 InventorySource = Literal["manual", "discord_parsed", "csv_import", "f6_approved"]
 InventoryUnit = Literal["piece", "pack", "box", "case", "set"]
 
+# 状態の正規 16 値 (migration 089)。
+# UNIQUE(supplier_id × product_id × condition) の discriminator として使用。
+InventoryCondition = Literal[
+    "shrink",      # シュリンク付き  (box 主)
+    "no_shrink",   # シュリンクなし  (box 主)
+    "sealed",      # 未開封         (case / set 主)
+    "damage",      # ダメージあり    (box / case / set 共用)
+    "unsearched",  # 未サーチ        (pack 主)
+    "searched",    # サーチ済み      (pack 主)
+    "graded",      # 鑑定品         (piece 主)
+    "grade_s",     # S 評価         (piece 主)
+    "grade_a",     # A 評価         (piece 主)
+    "grade_b",     # B 評価         (piece 主)
+    "grade_c",     # C 評価         (piece 主)
+    "grade_d",     # D 評価         (piece 主)
+    "junk",        # ジャンク        (piece 主)
+    "bulk",        # バルク          (piece 主)
+    "normal",      # ノーマル        (piece 主)
+    "unknown",     # 不明            (全単位)
+]
+
 
 class InventoryOfferBase(BaseModel):
     """共通フィールド (新規作成 / 更新で共有)。"""
 
     supplier_id: int = Field(..., gt=0)
     product_id: int = Field(..., gt=0)
-    condition: str = Field(..., min_length=1, max_length=50)
+    # 状態。UNIQUE(supplier_id × product_id × condition) の discriminator。
+    # migration 089 で 16 値に正規化・CHECK 制約追加済み。
+    condition: InventoryCondition = Field(...)
     quantity: int = Field(..., ge=0)
     unit_price: int = Field(..., ge=0)
     # 数量の単位。正規値: piece / pack / box / case / set。
@@ -77,6 +100,7 @@ class InventoryOfferListResponse(BaseModel):
 
 
 __all__ = [
+    "InventoryCondition",
     "InventoryOfferBase",
     "InventoryOfferCreate",
     "InventoryOfferUpdate",

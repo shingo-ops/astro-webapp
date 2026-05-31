@@ -222,7 +222,7 @@ def test_schemas_importable():
     base = InventoryOfferBase(
         supplier_id=1,
         product_id=2,
-        condition="new",
+        condition="sealed",
         quantity=5,
         unit_price=300,
     )
@@ -231,9 +231,9 @@ def test_schemas_importable():
 
     # Create は base 同等
     created = InventoryOfferCreate(
-        supplier_id=1, product_id=2, condition="new", quantity=5, unit_price=300
+        supplier_id=1, product_id=2, condition="sealed", quantity=5, unit_price=300
     )
-    assert created.condition == "new"
+    assert created.condition == "sealed"
 
     # Update はすべて任意
     upd = InventoryOfferUpdate()

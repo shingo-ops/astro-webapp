@@ -1427,6 +1427,24 @@
           "box": "ボックス",
           "case": "ケース / カートン",
           "set": "セット / バルク"
+        },
+        "conditionOptions": {
+          "shrink": "シュリンク付き",
+          "no_shrink": "シュリンクなし",
+          "sealed": "未開封",
+          "damage": "ダメージあり",
+          "unsearched": "未サーチ",
+          "searched": "サーチ済み",
+          "graded": "鑑定品",
+          "grade_s": "S",
+          "grade_a": "A",
+          "grade_b": "B",
+          "grade_c": "C",
+          "grade_d": "D",
+          "junk": "ジャンク",
+          "bulk": "バルク",
+          "normal": "ノーマル",
+          "unknown": "不明"
         }
       }
     },
