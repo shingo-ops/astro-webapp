@@ -400,7 +400,9 @@ async def setup_test_db(test_engine):
                 monthly_frequency NUMERIC(10, 2),
                 nickname VARCHAR(255),
                 country VARCHAR(100),
-                target_titles VARCHAR(500)
+                target_titles VARCHAR(500),
+                messenger_link VARCHAR(1000),
+                discord_id VARCHAR(255)
             )
         """))
         # 案件テーブル（Step 5d: 旧 customer_id 列削除済）
