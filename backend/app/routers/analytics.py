@@ -593,14 +593,38 @@ async def dashboard_summary(
 
 
 # ─────────────────────────────────────────────
-# 月別受注実績＋着地予想（予実比較グラフ用）
+# 受注実績グラフ（期間・粒度切り替え対応）
 # ─────────────────────────────────────────────
 
+# period → (granularity, 取得日数 or 月数)
+_PERIOD_CHART_MAP: dict[str, tuple[str, int]] = {
+    "1w":  ("daily",   7),
+    "1m":  ("daily",  30),
+    "3m":  ("monthly", 3),
+    "6m":  ("monthly", 6),
+    "12m": ("monthly", 12),
+}
+
+
+class RevenueChartEntry(BaseModel):
+    label: str            # 月次: "2026-01" / 日次: "2026-05-31"
+    actual: float
+    forecast: float | None  # 月次・当月のみ
+    remaining: float        # 月次・当月のみ
+    is_current: bool        # 月次: 当月 / 日次: 今日
+
+
+class RevenueChartResponse(BaseModel):
+    granularity: str       # "daily" | "monthly"
+    entries: list[RevenueChartEntry]
+
+
+# 後方互換のため旧モデルを残す
 class MonthlyRevenueEntry(BaseModel):
-    month: str           # "2026-01"
-    actual: float        # 確定受注額（orders テーブル）
-    forecast: float | None  # 現在月のみ: 着地予想 = won + weighted open deals
-    remaining: float     # max(0, forecast - actual)。現在月のみ非ゼロ
+    month: str
+    actual: float
+    forecast: float | None
+    remaining: float
     is_current: bool
 
 
@@ -610,59 +634,90 @@ class MonthlyRevenueResponse(BaseModel):
 
 @router.get(
     "/analytics/monthly-revenue",
-    response_model=MonthlyRevenueResponse,
+    response_model=RevenueChartResponse,
     dependencies=[Depends(require_permission("dashboard.view"))],
 )
 async def monthly_revenue(
-    months: int = Query(default=6, ge=3, le=12, description="取得月数（現在月含む）"),
+    period: str = Query(default="6m", description="1w/1m/3m/6m/12m"),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
-) -> MonthlyRevenueResponse:
+) -> RevenueChartResponse:
     """
-    過去 N ヶ月の月別受注実績と今月の着地予想。予実比較グラフ用。
+    受注実績グラフ用データ。period により粒度が変わる。
 
-    - actual: orders.total_amount の月別合計
-    - forecast: 今月のみ。成約済み(won) + 進行中商談の加重合計
-    - remaining: max(0, forecast - actual)。スタック棒グラフの積み上げ部分に使用
+    - 1w / 1m  → 日次（daily）: 日別 actual のみ（forecast なし）
+    - 3m / 6m / 12m → 月次（monthly）: 月別 actual + 当月 forecast/remaining
     """
     today = date.today()
+    granularity, count = _PERIOD_CHART_MAP.get(period, ("monthly", 6))
 
-    # 取得開始月（N-1 ヶ月前の月初）を計算
+    if granularity == "daily":
+        range_start = today - timedelta(days=count - 1)
+        range_end = today + timedelta(days=1)  # 翌日 0時（exclusive）
+
+        actual_result = await db.execute(
+            text("""
+                SELECT
+                    TO_CHAR(DATE_TRUNC('day', created_at), 'YYYY-MM-DD') AS label,
+                    COALESCE(SUM(total_amount), 0) AS actual
+                FROM orders
+                WHERE created_at >= :start AND created_at < :end
+                GROUP BY DATE_TRUNC('day', created_at)
+                ORDER BY DATE_TRUNC('day', created_at)
+            """),
+            {"start": range_start, "end": range_end},
+        )
+        actual_rows = {row["label"]: float(row["actual"]) for row in actual_result.mappings().all()}
+
+        entries: list[RevenueChartEntry] = []
+        cur = range_start
+        while cur < range_end.replace(hour=0, minute=0, second=0, microsecond=0) if hasattr(range_end, 'hour') else range_end:
+            label = cur.strftime("%Y-%m-%d")
+            entries.append(RevenueChartEntry(
+                label=label,
+                actual=actual_rows.get(label, 0.0),
+                forecast=None,
+                remaining=0.0,
+                is_current=(cur == today),
+            ))
+            cur = cur + timedelta(days=1)
+            if cur > today:
+                break
+
+        return RevenueChartResponse(granularity="daily", entries=entries)
+
+    # ── 月次 ──
+    months = count
     start_year = today.year
     start_month = today.month - (months - 1)
     while start_month <= 0:
         start_month += 12
         start_year -= 1
-    range_start = date(start_year, start_month, 1)
+    range_start_m = date(start_year, start_month, 1)
 
-    # 翌月の月初（range終端）
     if today.month == 12:
-        range_end = date(today.year + 1, 1, 1)
+        range_end_m = date(today.year + 1, 1, 1)
     else:
-        range_end = date(today.year, today.month + 1, 1)
+        range_end_m = date(today.year, today.month + 1, 1)
 
-    # 月別受注実績（orders テーブル）
     actual_result = await db.execute(
         text("""
             SELECT
-                TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+                TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS label,
                 COALESCE(SUM(total_amount), 0) AS actual
             FROM orders
-            WHERE created_at >= :start
-              AND created_at < :end
+            WHERE created_at >= :start AND created_at < :end
             GROUP BY DATE_TRUNC('month', created_at)
             ORDER BY DATE_TRUNC('month', created_at)
         """),
-        {"start": range_start, "end": range_end},
+        {"start": range_start_m, "end": range_end_m},
     )
-    actual_rows = {row["month"]: float(row["actual"]) for row in actual_result.mappings().all()}
+    actual_rows_m = {row["label"]: float(row["actual"]) for row in actual_result.mappings().all()}
 
-    # 今月の着地予想（deals テーブル）
     current_month_str = today.strftime("%Y-%m")
     month_start = today.replace(day=1)
 
-    # 今月成約済み
     won_result = await db.execute(
         text("""
             SELECT COALESCE(SUM(amount), 0) AS won
@@ -670,11 +725,10 @@ async def monthly_revenue(
             WHERE status = 'won'
               AND updated_at >= :start AND updated_at < :end
         """),
-        {"start": month_start, "end": range_end},
+        {"start": month_start, "end": range_end_m},
     )
     won_amount = float((won_result.mappings().first() or {}).get("won", 0) or 0)
 
-    # 今月進行中商談の加重合計
     open_result = await db.execute(
         text("""
             SELECT COALESCE(SUM(amount * probability / 100.0), 0) AS weighted
@@ -683,25 +737,22 @@ async def monthly_revenue(
               AND expected_close_date >= :start
               AND expected_close_date < :end
         """),
-        {"start": month_start, "end": range_end},
+        {"start": month_start, "end": range_end_m},
     )
     weighted_amount = float((open_result.mappings().first() or {}).get("weighted", 0) or 0)
     forecast_total = won_amount + weighted_amount
 
-    # 全月分のエントリを生成（データがない月はゼロ補完）
-    entries: list[MonthlyRevenueEntry] = []
+    entries_m: list[RevenueChartEntry] = []
     cur_year, cur_month = start_year, start_month
     for _ in range(months):
         month_key = f"{cur_year:04d}-{cur_month:02d}"
         is_current = month_key == current_month_str
-        actual = actual_rows.get(month_key, 0.0)
-        forecast = forecast_total if is_current else None
-        remaining = max(0.0, forecast_total - actual) if is_current else 0.0
-        entries.append(MonthlyRevenueEntry(
-            month=month_key,
+        actual = actual_rows_m.get(month_key, 0.0)
+        entries_m.append(RevenueChartEntry(
+            label=month_key,
             actual=actual,
-            forecast=forecast,
-            remaining=remaining,
+            forecast=forecast_total if is_current else None,
+            remaining=max(0.0, forecast_total - actual) if is_current else 0.0,
             is_current=is_current,
         ))
         cur_month += 1
@@ -709,4 +760,4 @@ async def monthly_revenue(
             cur_month = 1
             cur_year += 1
 
-    return MonthlyRevenueResponse(entries=entries)
+    return RevenueChartResponse(granularity="monthly", entries=entries_m)

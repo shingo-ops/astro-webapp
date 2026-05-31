@@ -1,18 +1,18 @@
 /**
- * ダッシュボードページ（Sprint 3: 先月比バッジ）
+ * ダッシュボードページ（Sprint 4: 受注統合カード＋期間連動グラフ）
  *
  * - 営業担当 / リード担当 / チーム タブ切り替え
  * - 表示期間プルダウン（1w / 1m / 3m / 6m / 12m）
- * - 固定エリア: 目標（今月・今週・逆算表示）/ 着地予測 / フォローアップリマインド（クリック導線付き）
- * - 予実比較グラフ: 月別受注実績（棒）+ 今月着地予想積み上げ（営業/チームのみ）
- * - 期間連動エリア: ロール別 + 各KPIに先月比（▲/▼）バッジ表示
+ * - 固定エリア: 目標 / フォローアップ（2枚に整理）
+ * - 受注統合カード（営業/チームのみ）: 確定売上・件数・着地予測＋期間連動グラフ
+ *   - 1w/1m → 日次棒グラフ、3m/6m/12m → 月次棒グラフ
+ * - 期間連動エリア: リード / 商談（受注は統合カードに移動）
  *
  * 変更履歴:
  *   2026-04-17: Phase 3 拡張
- *   2026-05-25: ダッシュボード強化（タブ・期間・目標・着地予測・フォローアップ）
- *   2026-05-31: Sprint 1 ロール別表示・フォローアップ導線・目標逆算
- *   2026-05-31: Sprint 2 Recharts予実比較グラフ追加
- *   2026-05-31: Sprint 3 先月比バッジ追加
+ *   2026-05-25: ダッシュボード強化
+ *   2026-05-31: Sprint 1–3 ロール別・グラフ・先月比
+ *   2026-06-01: Sprint 4 受注統合カード＋期間連動グラフ
  */
 
 import { useEffect, useState } from "react";
@@ -117,16 +117,17 @@ interface DashboardSummary {
   comparison: PeriodComparison;
 }
 
-interface MonthlyRevenueEntry {
-  month: string;
+interface RevenueChartEntry {
+  label: string;        // 月次: "2026-01" / 日次: "2026-05-31"
   actual: number;
   forecast: number | null;
   remaining: number;
   is_current: boolean;
 }
 
-interface MonthlyRevenueResponse {
-  entries: MonthlyRevenueEntry[];
+interface RevenueChartResponse {
+  granularity: "daily" | "monthly";
+  entries: RevenueChartEntry[];
 }
 
 interface KpiChange {
@@ -188,10 +189,16 @@ const formatYValue = (value: number, unitMan: string, unitOku: string): string =
   return String(value);
 };
 
-// XAxis フォーマット: "2026-01" → "1月" — 単位文字は t() 経由で渡す
-const formatXMonth = (month: string, unitMonth: string): string => {
-  const m = month.split("-")[1];
-  return m ? `${parseInt(m, 10)}${unitMonth}` : month;
+// XAxis フォーマット（月次）: "2026-01" → "1月"
+const formatXMonth = (label: string, unitMonth: string): string => {
+  const m = label.split("-")[1];
+  return m ? `${parseInt(m, 10)}${unitMonth}` : label;
+};
+
+// XAxis フォーマット（日次）: "2026-05-31" → "5/31"
+const formatXDay = (label: string): string => {
+  const parts = label.split("-");
+  return parts.length === 3 ? `${parseInt(parts[1], 10)}/${parseInt(parts[2], 10)}` : label;
 };
 
 // フロントのタブ → バックエンドの tab パラメータに変換
@@ -308,7 +315,7 @@ export default function DashboardPage() {
   const [followups, setFollowups] = useState<FollowUps | null>(null);
   const [stalled, setStalled] = useState<StalledDealsReport | null>(null);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenueResponse | null>(null);
+  const [revenueChart, setRevenueChart] = useState<RevenueChartResponse | null>(null);
 
   const [loadingFixed, setLoadingFixed] = useState(true);
   const [loadingPeriod, setLoadingPeriod] = useState(true);
@@ -345,10 +352,12 @@ export default function DashboardPage() {
   // チャートフォーマッター（t() が必要なため component 内で定義）
   const yTickFormatter = (value: number) =>
     formatYValue(value, t("common.unitMan"), t("common.unitOku"));
-  const xTickFormatter = (month: string) =>
-    formatXMonth(month, t("common.unitMonth"));
+  const xTickFormatter = (label: string) =>
+    revenueChart?.granularity === "daily"
+      ? formatXDay(label)
+      : formatXMonth(label, t("common.unitMonth"));
 
-  // 予実グラフ: リードビューでは不要。タブ変更時に再取得
+  // 受注グラフ: リードビューでは不要。タブ・期間変更時に再取得
   useEffect(() => {
     if (tab === "lead") {
       setLoadingChart(false);
@@ -356,11 +365,11 @@ export default function DashboardPage() {
     }
     setLoadingChart(true);
     api
-      .get<MonthlyRevenueResponse>("/analytics/monthly-revenue?months=6")
-      .then(setMonthlyRevenue)
+      .get<RevenueChartResponse>(`/analytics/monthly-revenue?period=${period}`)
+      .then(setRevenueChart)
       .catch((e) => setError(e.message))
       .finally(() => setLoadingChart(false));
-  }, [tab]);
+  }, [tab, period]);
 
   const fmt = (n: number | null | undefined) => {
     if (n === null || n === undefined) return "¥0";
@@ -380,8 +389,8 @@ export default function DashboardPage() {
     );
   }
 
-  // リードビューは着地予測カードを非表示にするため2カラムグリッドを使用
-  const fixedAreaClass = `db-fixed-area${tab === "lead" ? " db-two-cols" : ""}`;
+  // 着地予測カードを統合カードに移動したため常に2カラム
+  const fixedAreaClass = "db-fixed-area db-two-cols";
 
   return (
     <PageLayout
@@ -477,32 +486,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* ── 着地予測（リードビューでは不要なため非表示）── */}
-        {tab !== "lead" && (
-          <div className="db-section-card db-forecast-card">
-            <div className="db-section-header">
-              <TrendUpIcon aria-hidden="true" className="db-section-icon" />
-              <h3>{t("dashboard.forecastTitle")}</h3>
-            </div>
-            {loadingFixed ? (
-              <div className="db-loading">{t("common.loading")}</div>
-            ) : forecast ? (
-              <div className="db-forecast-body">
-                <div className="db-forecast-main">
-                  <span className="db-forecast-label">{t("dashboard.forecastAmount")}</span>
-                  <span className="db-forecast-value">
-                    {fmt(forecast.forecast_amount)}
-                  </span>
-                </div>
-                <div className="db-forecast-sub">
-                  {/* won_amount は受注セクションに表示するため重複削除 */}
-                  <span>{t("dashboard.openDealCount")}: {forecast.open_deal_count}{t("dashboard.unitDeal")}</span>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        )}
-
         {/* ── フォローアップリマインド ── */}
         <div className={`db-section-card db-followup-card${urgentCount > 0 ? " db-has-urgent" : ""}`}>
           <div className="db-section-header">
@@ -585,30 +568,61 @@ export default function DashboardPage() {
       </div>
 
       {/* -------------------------------------------------
-          予実比較グラフ（営業/チームビューのみ）
+          受注統合カード（営業/チームビューのみ）
+          確定売上 + 着地予測 + 期間連動グラフ
       ------------------------------------------------- */}
 
       {tab !== "lead" && (
         <div className="db-chart-card">
           <div className="db-section-header">
             <TrendUpIcon aria-hidden="true" className="db-section-icon" />
-            <h3>{t("dashboard.chartTitle")}</h3>
+            <h3>{t("dashboard.sectionOrders")}</h3>
           </div>
+
+          {/* KPI + 着地予測 統計行 */}
+          {!loadingFixed && !loadingPeriod && summary && (
+            <div className="db-revenue-stats">
+              <div className="db-revenue-stat">
+                <span className="db-revenue-stat-label">{t("dashboard.orderRevenue")}</span>
+                <span className="db-revenue-stat-value">{fmt(summary.orders.total_revenue)}</span>
+                <VsPrev change={summary.comparison.orders_revenue} />
+              </div>
+              <div className="db-revenue-stat">
+                <span className="db-revenue-stat-label">{t("dashboard.orderCount")}</span>
+                <span className="db-revenue-stat-value">{summary.orders.order_count}</span>
+                <VsPrev change={summary.comparison.orders_count} />
+              </div>
+              {forecast && (
+                <div className="db-revenue-stat db-revenue-forecast">
+                  <span className="db-revenue-stat-label">{t("dashboard.forecastTitle")}</span>
+                  <span className="db-revenue-stat-value db-revenue-forecast-value">
+                    {fmt(forecast.forecast_amount)}
+                  </span>
+                  <span className="db-revenue-stat-sub">
+                    {t("dashboard.openDealCount")}: {forecast.open_deal_count}{t("dashboard.unitDeal")}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* グラフ */}
           {loadingChart ? (
             <div className="db-loading">{t("common.loading")}</div>
-          ) : monthlyRevenue && monthlyRevenue.entries.length > 0 ? (
+          ) : revenueChart && revenueChart.entries.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
               <ComposedChart
-                data={monthlyRevenue.entries}
+                data={revenueChart.entries}
                 margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-muted)" vertical={false} />
                 <XAxis
-                  dataKey="month"
+                  dataKey="label"
                   tickFormatter={xTickFormatter}
                   tick={{ fontSize: 12, fill: "var(--text-secondary)" }}
                   axisLine={false}
                   tickLine={false}
+                  interval={revenueChart.granularity === "daily" ? "preserveStartEnd" : 0}
                 />
                 <YAxis
                   tickFormatter={yTickFormatter}
@@ -633,25 +647,25 @@ export default function DashboardPage() {
                     );
                   }}
                 />
-                <Legend
-                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                 <Bar
                   dataKey="actual"
                   name={t("dashboard.chartActual")}
                   stackId="rev"
                   fill={getChartColors().actual}
                   radius={[0, 0, 0, 0]}
-                  maxBarSize={48}
+                  maxBarSize={revenueChart.granularity === "daily" ? 24 : 48}
                 />
-                <Bar
-                  dataKey="remaining"
-                  name={t("dashboard.chartRemaining")}
-                  stackId="rev"
-                  fill={getChartColors().remaining}
-                  radius={[3, 3, 0, 0]}
-                  maxBarSize={48}
-                />
+                {revenueChart.granularity === "monthly" && (
+                  <Bar
+                    dataKey="remaining"
+                    name={t("dashboard.chartRemaining")}
+                    stackId="rev"
+                    fill={getChartColors().remaining}
+                    radius={[3, 3, 0, 0]}
+                    maxBarSize={48}
+                  />
+                )}
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
@@ -720,28 +734,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* 受注（営業ビューとチームビューのみ表示）*/}
-            {(tab === "sales" || tab === "team") && (
-              <div className="db-metric-card">
-                <div className="db-metric-title">{t("dashboard.sectionOrders")}</div>
-                <div className="kpi-grid">
-                  <div className="kpi-card accent">
-                    <div className="kpi-value">{fmt(summary.orders.total_revenue)}</div>
-                    <div className="kpi-label">{t("dashboard.orderRevenue")}</div>
-                    <VsPrev change={summary.comparison.orders_revenue} />
-                  </div>
-                  <div className="kpi-card">
-                    <div className="kpi-value">{summary.orders.order_count}</div>
-                    <div className="kpi-label">{t("dashboard.orderCount")}</div>
-                    <VsPrev change={summary.comparison.orders_count} />
-                  </div>
-                  <div className="kpi-card">
-                    <div className="kpi-value">{summary.orders.active_count}</div>
-                    <div className="kpi-label">{t("dashboard.orderActive")}</div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* 受注は統合カードに移動 */}
           </>
         ) : null}
       </div>
