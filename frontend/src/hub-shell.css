@@ -41,6 +41,7 @@
 
 .hub-subnav-item {
   display: block;
+  width: 100%;
   padding: var(--space-2) var(--space-4);
   font-size: var(--font-sm);
   font-weight: var(--font-weight-bold);
@@ -49,6 +50,10 @@
   margin-right: var(--space-2);
   transition: background var(--transition-fast), color var(--transition-fast);
   text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
 }
 
 .hub-subnav-item:hover {

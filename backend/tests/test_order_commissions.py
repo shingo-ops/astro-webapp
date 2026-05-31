@@ -60,7 +60,7 @@ class TestCalculateLogic:
     @pytest.mark.parametrize("role", ["sales", "order", "ship", "purchase", "trouble"])
     def test_unassigned_returns_zero(self, role):
         result = calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=self.rates,
             role=role,
@@ -72,7 +72,7 @@ class TestCalculateLogic:
     @pytest.mark.parametrize("role", ["sales", "order", "ship", "purchase", "trouble"])
     def test_is_employee_returns_zero(self, role):
         result = calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=self.rates,
             role=role,
@@ -119,7 +119,7 @@ class TestCalculateLogic:
     @pytest.mark.parametrize("role,expected", [("sales", "1000.00"), ("order", "1000.00")])
     def test_rate_role_uses_commission_base_amount(self, role, expected):
         result = calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=self.rates,
             role=role,
@@ -131,7 +131,7 @@ class TestCalculateLogic:
     @pytest.mark.parametrize("role", ["sales", "order"])
     def test_rate_role_returns_zero_when_financial_missing(self, role):
         result = calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=None,
             rates=self.rates,
             role=role,
@@ -146,7 +146,7 @@ class TestCalculateLogic:
     )
     def test_fixed_role_returns_value_even_without_financial(self, role, expected):
         result = calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=None,
             rates=self.rates,
             role=role,
@@ -165,7 +165,7 @@ class TestCalculateLogic:
         )
         # 売上 10000 × 20% = 2000
         assert calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=custom,
             role="sales",
@@ -173,7 +173,7 @@ class TestCalculateLogic:
         ) == Decimal("2000.00")
         # 売上 10000 × 5% = 500
         assert calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=custom,
             role="order",
@@ -181,21 +181,21 @@ class TestCalculateLogic:
         ) == Decimal("500.00")
         # ship 300 / purchase 150 / trouble 750
         assert calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=custom,
             role="ship",
             staff=self.regular_staff,
         ) == Decimal("300.00")
         assert calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=custom,
             role="purchase",
             staff=self.regular_staff,
         ) == Decimal("150.00")
         assert calculate(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=custom,
             role="trouble",
@@ -205,7 +205,7 @@ class TestCalculateLogic:
     def test_unknown_role_raises(self):
         with pytest.raises(ValueError):
             calculate(
-                order_status="pending",
+                order_status="awaiting_payment",
                 financial=self.fin,
                 rates=self.rates,
                 role="unknown_role",
@@ -214,7 +214,7 @@ class TestCalculateLogic:
 
     def test_calculate_all_returns_5_roles(self):
         out = calculate_all(
-            order_status="pending",
+            order_status="awaiting_payment",
             financial=self.fin,
             rates=self.rates,
             staff_by_role={
@@ -336,7 +336,7 @@ async def _create_company_contact(client, name="報酬テスト"):
     return company_id, ct.json()["id"]
 
 
-async def _create_order(client, order_number="ORD-COM-1", status_value="pending"):
+async def _create_order(client, order_number="ORD-COM-1", status_value="awaiting_payment"):
     company_id, contact_id = await _create_company_contact(client, f"Co-{order_number}")
     res = await client.post(
         "/api/v1/orders",
@@ -538,7 +538,7 @@ class TestAssignEndpoint:
 class TestRecalcEndpoint:
     async def test_recalc_applies_current_formula(self, client):
         """recalc で 5 ロールが現行式通り計算される"""
-        order_id = await _create_order(client, "ORD-COM-RECALC-1", status_value="pending")
+        order_id = await _create_order(client, "ORD-COM-RECALC-1", status_value="awaiting_payment")
         staff_id = await _create_staff(client, email="recalc1@example.com")
         await _create_financial(client, order_id, 10000)
         # 5 ロールに staff を割当
