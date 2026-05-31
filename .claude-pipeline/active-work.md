@@ -22,6 +22,7 @@
 | feature/morimoto/codex-research-planning-gaps | Codex research / planning gaps | 2026-05-30 00:37 | IN_PROGRESS | | |
 | feature/morimoto/remove-design-review-gate | design review gate removal | 2026-05-30 05:39 | IN_PROGRESS | | |
 | feature/morimoto/aeon-operation-guide-pr | AEON operation guide PR | 2026-05-30 05:42 | IN_PROGRESS | | |
+| feature/morimoto/parallel-dev-standard | 複数エージェント並行開発の標準化 | 2026-05-31 14:27 | IN_PROGRESS | | ADR-086 作成 / PR 化予定 |
 | feature/morimoto/inbox-auto-select-first-conv | （記入してください） | 2026-05-30 21:46 | IN_PROGRESS | | |
 | feature/morimoto/aeon-standardize | （記入してください） | 2026-05-30 21:47 | IN_PROGRESS | | |
 | feature/morimoto/claude-dispatch-verify | （記入してください） | 2026-05-30 21:56 | IN_PROGRESS | | |

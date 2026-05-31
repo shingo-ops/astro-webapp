@@ -23,6 +23,65 @@ follow_up:
 ## Current Entries
 
 ```text
+id: EV-20260531-002
+date: 2026-05-31
+agent: Codex
+task: 複数エージェント並行開発の標準化レビュー通過
+scope: docs/PARALLEL_TERMINAL_GUIDE.md, docs/ai-agents/evidence-registry.md, docs/adr/ADR-086-parallel-development-standardization.md
+evidence:
+  - type: command
+    reference: bash scripts/aeon-dispatch.sh reviewer "Re-review the branch feature/morimoto/parallel-dev-standard after the latest fixes..."
+    summary: external PR review returned APPROVED / no findings after stale branch-first flow removal and evidence registry reinforcement
+  - type: command
+    reference: bash scripts/check-task-state.sh
+    summary: task/runbook format checks passed after the doc updates
+  - type: command
+    reference: bash scripts/check-active-work-format.sh
+    summary: active-work.md 6列 format checks passed after the doc updates
+confidence: high
+tradeoff: The standard is now validated by a reviewer run, but PR/merge evidence is still the next step if this needs to be promoted to mainline history.
+decision: The parallel-development standard is repeatable by another session and the documentation changes are approved for PR submission.
+follow_up: Create the PR and capture PR number / CI / merge SHA if the goal is mainline promotion.
+```
+
+```text
+id: EV-20260531-001
+date: 2026-05-31
+agent: Codex
+task: 複数エージェント並行開発の標準化
+scope: docs/adr/ADR-086-parallel-development-standardization.md, docs/ai-agents/aeon-operation.md, tasks/todo.md, .claude-pipeline/active-work.md
+evidence:
+  - type: file
+    reference: docs/adr/ADR-086-parallel-development-standardization.md
+    summary: worktree / active-work / tasks / evidence / delivery-release / governance review を1枚に統合した標準 ADR を作成した
+  - type: file
+    reference: docs/ai-agents/aeon-operation.md
+    summary: 実行手順の正本に ADR-086 への参照を追加した
+  - type: file
+    reference: tasks/todo.md
+    summary: 今回の標準化タスクを進行中として登録した
+  - type: file
+    reference: .claude-pipeline/active-work.md
+    summary: worktree 占有状況に本ブランチを登録した
+  - type: command
+    reference: node scripts/generate-adr-index.js
+    summary: ADR-086 を含む ADR index を再生成した
+  - type: command
+    reference: bash scripts/check-task-state.sh
+    summary: tasks/todo.md と関連 runbook の形式チェックが通過した
+  - type: command
+    reference: bash scripts/check-active-work-format.sh
+    summary: active-work.md の 6 列フォーマットが通過した
+  - type: file
+    reference: /Users/tanizawashingo/worktrees/salesanchor/feature-morimoto-parallel-dev-standard
+    summary: worktree path は feature/morimoto/parallel-dev-standard で分離されている
+confidence: medium
+tradeoff: 正本を1枚にまとめるぶん文書量は増えるが、同じ説明を各セッションで繰り返す無駄を減らせる
+decision: 既存の worktree / AEON / evidence / release の仕組みを、並行開発の標準 ADR として正式化する
+follow_up: Reviewer / CI / PR 番号 / merge SHA を追加して、ADR-086 を Accepted に更新する
+```
+
+```text
 id: EV-20260530-001
 date: 2026-05-30
 agent: Claude Code (orchestrator)
