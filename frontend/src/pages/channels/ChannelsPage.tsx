@@ -226,13 +226,15 @@ export default function ChannelsPage() {
       navKey="nav.channels"
       subtitleKey="channels.subtitle"
       headerAction={canManage ? (
-        <button
-          className="btn-primary"
-          onClick={handleConnect}
-          disabled={connecting}
-        >
-          {connecting ? t("channels.connecting") : t("channels.connect")}
-        </button>
+        <div className="page-header-actions">
+          <button
+            className="btn-primary"
+            onClick={handleConnect}
+            disabled={connecting}
+          >
+            {connecting ? t("channels.connecting") : t("channels.connect")}
+          </button>
+        </div>
       ) : undefined}
     >
       {banner && (

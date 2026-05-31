@@ -41,7 +41,9 @@ export default function ShiftsPage() {
       navKey="nav.shifts"
       subtitleKey="shifts.subtitle"
       headerAction={hasPermission("shifts.manage") ? (
-        <button className="btn-primary" onClick={() => setShowForm(true)}>{t("shifts.newShift")}</button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => setShowForm(true)}>{t("shifts.newShift")}</button>
+        </div>
       ) : undefined}
     >
       {error && <div className="error-message">{error}</div>}

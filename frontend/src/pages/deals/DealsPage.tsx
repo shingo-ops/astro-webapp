@@ -197,17 +197,19 @@ export default function DealsPage() {
       navKey="nav.deals"
       subtitleKey="deals.subtitle"
       headerAction={hasPermission("deals.create") ? (
-        <button
-          className="btn-primary"
-          onClick={() => {
-            setShowForm(true);
-            setEditId(null);
-            setForm(emptyForm);
-            resetSelector();
-          }}
-        >
-          {t("deals.newDeal")}
-        </button>
+        <div className="page-header-actions">
+          <button
+            className="btn-primary"
+            onClick={() => {
+              setShowForm(true);
+              setEditId(null);
+              setForm(emptyForm);
+              resetSelector();
+            }}
+          >
+            {t("deals.newDeal")}
+          </button>
+        </div>
       ) : undefined}
     >
       <div className="filter-bar">
