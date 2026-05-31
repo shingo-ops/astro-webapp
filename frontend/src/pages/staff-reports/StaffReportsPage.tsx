@@ -48,7 +48,9 @@ export default function StaffReportsPage() {
       navKey="nav.reports"
       subtitleKey="reports.subtitle"
       headerAction={hasPermission("staff_reports.create") ? (
-        <button className="btn-primary" onClick={() => setShowForm(true)}>{t("common.add")}</button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => setShowForm(true)}>{t("common.add")}</button>
+        </div>
       ) : undefined}
     >
       <div className="filter-bar">

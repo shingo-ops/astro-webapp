@@ -45,7 +45,9 @@ export default function BuddyPage() {
       navKey="nav.buddy"
       subtitleKey="buddy.subtitle"
       headerAction={hasPermission("buddy.manage") ? (
-        <button className="btn-primary" onClick={() => setShowForm(true)}>{t("buddy.newPair")}</button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => setShowForm(true)}>{t("buddy.newPair")}</button>
+        </div>
       ) : undefined}
     >
       {error && <div className="error-message">{error}</div>}

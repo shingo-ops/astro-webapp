@@ -44,9 +44,11 @@ export default function ERPPage() {
       navKey="nav.dataManagement"
       subtitleKey="erp.subtitle"
       headerAction={hasPermission("erp.sync") ? (
-        <button className="btn-primary" onClick={exportInvoices} disabled={exporting}>
-          {exporting ? t("erp.exporting") : t("erp.exportInvoices")}
-        </button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={exportInvoices} disabled={exporting}>
+            {exporting ? t("erp.exporting") : t("erp.exportInvoices")}
+          </button>
+        </div>
       ) : undefined}
     >
       {error && <div className="error-message">{error}</div>}

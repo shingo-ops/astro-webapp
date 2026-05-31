@@ -415,9 +415,11 @@ export default function CustomersPage() {
       subtitleKey="customers.subtitle"
       headerAction={
         hasPermission("customers.create") ? (
-          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); setDiscordTouched(false); }}>
-            {t("customers.newCustomer")}
-          </button>
+          <div className="page-header-actions">
+            <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); setPhoneError(null); setActiveTab("basic"); setDiscordTouched(false); }}>
+              {t("customers.newCustomer")}
+            </button>
+          </div>
         ) : undefined
       }
     >

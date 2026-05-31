@@ -439,7 +439,9 @@ export default function DesignSystemPage() {
     <PageLayout
       navKey="nav.designSystem"
       headerAction={
-        <span className="ds-dev-badge">{t("common.devOnly")}</span>
+        <div className="page-header-actions">
+          <span className="ds-dev-badge">{t("common.devOnly")}</span>
+        </div>
       }
     >
       <div className="ds-page">
