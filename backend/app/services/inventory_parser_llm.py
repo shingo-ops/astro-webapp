@@ -167,7 +167,7 @@ Discord 仕入元から届いた在庫メッセージのうち、ルールベー
 - quantity は数値のみ（box / pack / セット等の数量を整数で）
 - unit は box / pack / set / piece / case のいずれか（不明なら null）
 - unit_price は数値（円単位、不明なら null）
-- condition は 'new' / 'used' / 'shrink' / 'no_shrink' / null
+- condition は 'shrink' / 'no_shrink' / 'sealed' / 'damage' / 'unsearched' / 'searched' / 'graded' / 'grade_s' / 'grade_a' / 'grade_b' / 'grade_c' / 'grade_d' / 'junk' / 'bulk' / 'normal' / 'unknown' のいずれか（不明なら null）
 - confidence は 0.0〜1.0 で推定信頼度
 - 1 行から複数商品を抽出してよい（その場合は line_no を同じ値で複数 item に分割）
 - 解析不能な行は items から除外 (報告しない)
