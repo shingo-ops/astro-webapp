@@ -2,9 +2,9 @@
 
 | 項目 | 内容 |
 |------|------|
-| ステータス | Superseded |
+| ステータス | Superseded by `scripts/setup_review_tenant.py` + `docs/META_APP_REVIEW_PRE_RECORDING_CHECKLIST.md` |
 | 作成日 | 2026-05-14 |
-| 関連 | ADR-012, ADR-019, ADR-025 |
+| 関連 | ADR-012, ADR-019, ADR-025, ADR-075（Secrets管理ポリシー）|
 
 ## What
 

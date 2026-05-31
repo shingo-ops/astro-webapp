@@ -23,6 +23,7 @@ const LIMITS = [
   { path: 'CLAUDE.md', limit: 120 },
   { path: 'frontend/CLAUDE.md', limit: 90 },
   { path: 'backend/CLAUDE.md', limit: 70 },
+  { path: 'backend/scripts/CLAUDE.md', limit: 70 },
 ];
 
 // LIMITS に未登録のサブディレクトリ CLAUDE.md を自動検出して警告（ADR-076）
