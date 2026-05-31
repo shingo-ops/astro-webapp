@@ -28,6 +28,8 @@ interface CardForm {
   notes?: string | null;
   meeting_memo?: string | null;
   cs_memo?: string | null;
+  messenger_link?: string | null;
+  discord_id?: string | null;
 }
 
 interface ConversationSummary {
@@ -162,13 +164,6 @@ function KarteTabContent({
     return (
       <div className="right-panel-section">
         <div className="right-panel-row">
-          <span className="right-panel-label">{t("leads.nickname")}</span>
-          <input className="right-panel-field" type="text"
-            value={cardForm.nickname ?? ""}
-            onChange={(e) => handleCardFieldChange("nickname", e.target.value)}
-            onBlur={handleCardFieldBlur} placeholder={t("leads.nickname")} />
-        </div>
-        <div className="right-panel-row">
           <span className="right-panel-label">{t("leads.email")}</span>
           <input className="right-panel-field" type="email"
             value={cardForm.email ?? ""}
@@ -181,6 +176,20 @@ function KarteTabContent({
             value={cardForm.phone ?? ""}
             onChange={(e) => handleCardFieldChange("phone", e.target.value)}
             onBlur={handleCardFieldBlur} />
+        </div>
+        <div className="right-panel-row">
+          <span className="right-panel-label">{t("leads.messengerLink")}</span>
+          <input className="right-panel-field" type="url"
+            value={cardForm.messenger_link ?? ""}
+            onChange={(e) => handleCardFieldChange("messenger_link", e.target.value)}
+            onBlur={handleCardFieldBlur} placeholder="https://m.me/..." />
+        </div>
+        <div className="right-panel-row">
+          <span className="right-panel-label">{t("leads.discordId")}</span>
+          <input className="right-panel-field" type="text"
+            value={cardForm.discord_id ?? ""}
+            onChange={(e) => handleCardFieldChange("discord_id", e.target.value)}
+            onBlur={handleCardFieldBlur} placeholder="username#0000" />
         </div>
       </div>
     );
