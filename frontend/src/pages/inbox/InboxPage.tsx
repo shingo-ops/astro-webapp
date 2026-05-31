@@ -12,7 +12,7 @@
 
 import "./InboxPage.css";
 import { useNavigate } from "react-router-dom";
-import { NAV_ICONS } from "../../constants/icons";
+import { PAGE_ICONS } from "../../constants/icons";
 import { PageLayout } from "../../components/PageLayout";
 import { ICON } from "../../constants/iconSizes";
 import { useInboxState } from "./useInboxState";
@@ -58,7 +58,7 @@ export default function InboxPage() {
         aria-label={t("inbox.settings.title")}
         data-tooltip={t("inbox.settings.tooltip")}
       >
-        <NAV_ICONS.settings size={ICON.base} weight="fill" aria-hidden="true" />
+        <PAGE_ICONS.settingsSolid size={ICON.base} aria-hidden="true" />
       </button>
     </div>
   );
