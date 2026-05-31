@@ -226,7 +226,10 @@
     "orderRevenue": "Revenue",
     "orderCount": "Orders",
     "orderActive": "Active",
-    "subtitle": "View your sales KPIs and progress."
+    "subtitle": "View your sales KPIs and progress.",
+    "tabSales": "Sales",
+    "tabLead": "Leads",
+    "goalRemaining": "{{value}} remaining"
   },
   "goals": {
     "individualTitle": "Individual Goals",

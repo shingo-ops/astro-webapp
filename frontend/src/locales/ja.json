@@ -226,7 +226,10 @@
     "orderRevenue": "売上金額",
     "orderCount": "受注数",
     "orderActive": "進行中",
-    "subtitle": "営業KPIと進捗を確認できます。"
+    "subtitle": "営業KPIと進捗を確認できます。",
+    "tabSales": "営業担当",
+    "tabLead": "リード担当",
+    "goalRemaining": "あと{{value}}で達成"
   },
   "goals": {
     "individualTitle": "個人目標",
