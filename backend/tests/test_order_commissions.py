@@ -744,11 +744,13 @@ class TestMonthlyEndpoint:
         await client.post(f"/api/v1/orders/{order2}/commissions/recalc")
 
         # recalc 時に Python 側で datetime.now(UTC) を calculated_at に書き込むため、
-        # 月次集計は当該テスト実行月で照会する。
+        # 月次集計は当該テスト実行月（JST）で照会する。
+        # UTC.month を使うと月末 JST0:00〜UTC0:00 の9時間で月境界がずれるため JST で取得。
         from datetime import datetime, timezone
-        now = datetime.now(timezone.utc)
+        from zoneinfo import ZoneInfo
+        now_jst = datetime.now(ZoneInfo("Asia/Tokyo"))
         res = await client.get(
-            f"/api/v1/commissions/monthly?year={now.year}&month={now.month}"
+            f"/api/v1/commissions/monthly?year={now_jst.year}&month={now_jst.month}"
         )
         assert res.status_code == 200, res.text
         body = res.json()
