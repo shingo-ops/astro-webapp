@@ -2,8 +2,9 @@
  * /super-admin/masters — 仕入元（中央 admin、public.suppliers）+ Discord routing タブ。
  *
  * spec.md v1.1 F2 (Sprint 2) / AC2.5:
- *   - supplier_type (individual / corporate) 切替
  *   - default_language 切替
+ *   - (QA 2026-05-30) supplier_type 個人/法人の区別は不要のため UI から撤去。
+ *     データ列・API は温存し、新規は既定値 corporate を送る（非破壊）。
  *   - 各 supplier に Discord guild_id / channel_id 紐付け
  *
  * 注意: 既存 /suppliers（テナント側 SuppliersPage）はそのまま温存。
@@ -193,23 +194,16 @@ export default function SuppliersAdminTab() {
 
       <form
         onSubmit={submit}
-        style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-2)", margin: "0.5rem 0" }}
+        style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "var(--space-2)", margin: "0.5rem 0" }}
       >
+        {/* QA 2026-05-30: 仕入元の個人/法人区別は不要のため select を撤去。
+            supplier_type は form 既定値 (corporate) を payload にそのまま送るため backend は不変。 */}
         <input
           placeholder={t("superAdmin.suppliersAdmin.fields.name")}
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
         />
-        <select
-          value={form.supplier_type}
-          onChange={(e) =>
-            setForm({ ...form, supplier_type: e.target.value as "individual" | "corporate" })
-          }
-        >
-          <option value="corporate">{t("superAdmin.suppliersAdmin.types.corporate")}</option>
-          <option value="individual">{t("superAdmin.suppliersAdmin.types.individual")}</option>
-        </select>
         <select
           value={form.default_language}
           onChange={(e) => setForm({ ...form, default_language: e.target.value })}
@@ -229,7 +223,6 @@ export default function SuppliersAdminTab() {
           <tr>
             <th>ID</th>
             <th>{t("superAdmin.suppliersAdmin.fields.name")}</th>
-            <th>{t("superAdmin.suppliersAdmin.fields.supplierType")}</th>
             <th>{t("superAdmin.suppliersAdmin.fields.defaultLanguage")}</th>
             <th>{t("superAdmin.suppliersAdmin.fields.isActive")}</th>
             <th>{t("common.edit")}</th>
@@ -242,7 +235,6 @@ export default function SuppliersAdminTab() {
             <tr key={s.id}>
               <td>{s.id}</td>
               <td>{s.name}</td>
-              <td>{t(`superAdmin.suppliersAdmin.types.${s.supplier_type}`)}</td>
               <td>{s.default_language}</td>
               <td>{s.is_active ? <STATUS_ICONS.check size={ICON.sm} aria-hidden="true" /> : "—"}</td>
               <td>

@@ -76,7 +76,7 @@ ADR は What/Why/Scope のみ記述（実装手順 How は書かない）。`cla
 2. `frontend/` だけに関係するか？ → YES: **`frontend/CLAUDE.md`** に追加
 3. `backend/` だけに関係するか？ → YES: **`backend/CLAUDE.md`** に追加
 4. frontend と backend 両方に等しく関係するか？ → YES: **このファイル** に追加（i18n 等）
-5. Generator / Evaluator / Reviewer の動作手順か？ → YES: **`~/.claude/agents/`** の該当ファイルに追加
+5. Agent の動作手順か？ → YES: **`~/.claude/agents/`** の該当ファイルに追加
 6. `~/.claude/rules/` に同等の内容が既にあるか？ → YES: **書かない**（Git workflow・coding-style 等）
 7. 全セッションで Claude が知る必要があるか？ → NO: **書かない**（ADRリンクか docs/ 参照で十分）
 8. 上記をすべて通過した場合のみ追加。既存セクションへの統合を最優先（新セクション追加は最後の手段）。

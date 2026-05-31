@@ -181,3 +181,61 @@ def purge_auth_events():
     deleted = _delete_in_batches("public.auth_events", interval)
     logger.info("auth_events: 合計 %d件 削除（保持期間 %d日）", deleted, AUTH_EVENT_RETENTION_DAYS)
     return {"deleted": deleted}
+
+
+@shared_task(
+    name="app.tasks.maintenance.purge_expired_inventory_offers",
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=300,
+    retry_jitter=True,
+)
+def purge_expired_inventory_offers():
+    """public.inventory の expires_at を過ぎた仕入元オファーを物理削除する。
+
+    在庫オファーは時間失効モデル (QA 2026-05-30 / ひとしさん):
+    - F6 承認時に expires_at = offered_at + 18h を付与（_upsert_inventory_offer）。
+    - 本タスクが期限切れ行を削除する。中央在庫 (products.stock_quantity) は触らない。
+    - expires_at IS NULL の行（手動の恒久オファー等）は対象外。
+
+    _delete_in_batches は created_at 基準のため、expires_at 基準の本タスクは
+    専用ループでバッチ削除する（バッチサイズ・スリープは共通定数を流用）。
+    """
+    engine = _get_sync_engine()
+    Session = sessionmaker(engine)
+    total_deleted = 0
+    batch_num = 0
+
+    while True:
+        with Session() as session:
+            result = session.execute(
+                text("""
+                    DELETE FROM public.inventory
+                    WHERE id IN (
+                        SELECT id FROM public.inventory
+                        WHERE expires_at IS NOT NULL AND expires_at < NOW()
+                        ORDER BY expires_at ASC
+                        LIMIT :batch_size
+                    )
+                """),
+                {"batch_size": _BATCH_SIZE},
+            )
+            session.commit()
+
+        count = result.rowcount if result.rowcount >= 0 else 0
+        total_deleted += count
+        batch_num += 1
+
+        if count < _BATCH_SIZE:
+            break
+
+        logger.info(
+            "inventory offers: バッチ %d 完了 %d件削除（累計 %d件）",
+            batch_num, count, total_deleted,
+        )
+        time.sleep(_BATCH_SLEEP_MS / 1000.0)
+
+    logger.info("inventory offers: 合計 %d件 失効削除", total_deleted)
+    return {"deleted": total_deleted}

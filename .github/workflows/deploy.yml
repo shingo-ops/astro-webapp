@@ -17,6 +17,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ADR-082: フロントのみのデプロイでは DB マイグレーション（冪等・約60ステップ）を
+      # スキップして所要時間を短縮する。backend/migrations/scripts/compose/deploy.yml の
+      # いずれかが変わった場合のみ migrations を実行（保守的ゲート・判定不能時は安全側=実行）。
+      - name: Detect backend / migration changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            migrations:
+              - 'migrations/**'
+              - 'scripts/**'
+              - 'backend/**'
+              - 'docker-compose.yml'
+              - '.github/workflows/deploy.yml'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -136,7 +151,13 @@ jobs:
             # 旧プロジェクト名ハッシュ付きコンテナ（例: 6fc85fea3e3b_astro-webapp-frontend-1）が
             # 残留すると名前衝突で compose up が失敗するため、up の前に停止・削除する。
             docker ps -a --filter "name=astro-webapp-frontend" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
-            docker compose up -d --build --remove-orphans
+            # build と up を分離してダウンタイムを最小化する。
+            # --build を up と一体で実行すると旧コンテナ停止後にビルドが走り（最大2分程度）
+            # その間 nginx が 502 を返す問題があった（2026-05-30 障害）。
+            # build を先に完了させてから up（切り替えのみ）を実行することで
+            # ダウンタイムをコンテナ再起動の数秒に短縮する。
+            docker compose build
+            docker compose up -d --remove-orphans
 
             echo "Step 4: Waiting for backend to become healthy (max 120s)..."
             timeout 120 bash -c '
@@ -154,7 +175,9 @@ jobs:
             echo "Code + env + docker compose phase done."
             echo "============================================"
 
+      # ADR-082: backend/migration 系の変更がある場合のみ実行（フロントのみは skip）
       - name: Run database migrations (part 1)
+        if: ${{ success() && steps.changes.outputs.migrations == 'true' }}
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -374,7 +397,9 @@ jobs:
             echo "Migrations (part 1) done."
             echo "============================================"
 
-      - name: Run database migrations (part 2) and finalize
+      # ADR-082: backend/migration 系の変更がある場合のみ実行（フロントのみは skip）
+      - name: Run database migrations (part 2)
+        if: ${{ success() && steps.changes.outputs.migrations == 'true' }}
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -383,7 +408,7 @@ jobs:
           script: |
             set -e
             echo "============================================"
-            echo "Running database migrations (part 2) and finalize..."
+            echo "Running database migrations (part 2)..."
             echo "============================================"
 
             cd /home/ubuntu/salesanchor
@@ -587,12 +612,61 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/082_extend_products_box_attributes.sql
 
+            # Migration 084: public.inventory に unit (数量の単位) 列を追加
+            #   - 解析レビューの単位列 (Box/Case/Pack/Set/Peace) を F6 承認時に保存
+            #   - to_regclass ガード + ADD COLUMN IF NOT EXISTS で idempotent
+            #   関連: QA 2026-05-30 / migrations/081_create_inventory.sql
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/084_add_unit_to_inventory.sql
+
+            # Migration 085: public.tcg_type_master 新設 + tcg_series_master の tcg_type CHECK 撤廃
+            #   - 種別を UI から増減可能にする (ADR-083)。6 種別 seed は ON CONFLICT DO NOTHING。
+            #   - CHECK DROP は to_regclass ガード + DROP CONSTRAINT IF EXISTS で idempotent。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/085_create_tcg_type_master.sql
+
+            # Migration 086: TCG 種別を追加 (gundam/weiss_schwarz/digimon/hololive/
+            #   lorcana/xross_stars)。ON CONFLICT DO NOTHING で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/086_seed_additional_tcg_types.sql
+
+            # Migration 087: public.supplier_prompts 新設（仕入先別 Gemini プロンプト, ADR-085）。
+            #   CREATE TABLE/INDEX IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/087_create_supplier_prompts.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
             #       のテンプレートが全テーブルを作るので新テナントには追従不要。
             # ADR-034: 新規テナント作成時は scripts/setup_tenant.py を使うこと。
             #   同スクリプトが上記 migration を含む全 catch-up migration を新テナントに適用する。
+
+            echo "============================================"
+            echo "Migrations (part 2) done."
+            echo "============================================"
+
+      # ADR-082: ヘルスチェック・監視確認・イメージ prune はマイグレーション skip 時も
+      # 必ず走らせる必要があるため、マイグレーションから分離して常時実行する。
+      # （フロントのみのデプロイでも本番の健全性検証が抜けない）
+      - name: Finalize (health check + cleanup)
+        if: success()
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /home/ubuntu/salesanchor
+
+            if [ "${{ steps.changes.outputs.migrations }}" != "true" ]; then
+              echo "ℹ️  ADR-082: backend/migration 変更なし → DB マイグレーションは skip しました（フロントのみのデプロイ）。"
+            fi
 
             echo "Step 6: Health check..."
             docker exec astro-webapp-backend-1 python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" || (echo "Health check failed!" && exit 1)

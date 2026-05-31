@@ -106,29 +106,45 @@ class SupplierAliasResponse(SupplierAliasBase):
 # tcg_series_master
 # ============================================================================
 
-_VALID_TCG_TYPES = {
-    "pokemon",
-    "one_piece",
-    "dragon_ball",
-    "union_arena",
-    "yugioh",
-}
+# ADR-083: TCG 種別は public.tcg_type_master で管理（固定リスト廃止）。
+# tcg_type の値検証は DB 側（tcg_type_master）に委ねる。code は安定キーのため不変。
+
+
+class TcgTypeBase(BaseModel):
+    code: str = Field(min_length=1, max_length=50)
+    name_ja: str = Field(min_length=1, max_length=100)
+    name_en: Optional[str] = Field(default=None, max_length=100)
+    sort_order: int = Field(default=100, ge=0)
+    is_active: bool = True
+
+
+class TcgTypeCreate(TcgTypeBase):
+    # QA 2026-05-31: code はユーザー入力させず内部で自動採番する。
+    # 未指定なら backend が 'tcgtype_<連番>' を生成する。
+    code: Optional[str] = Field(default=None, max_length=50)
+
+
+class TcgTypeUpdate(BaseModel):
+    # code は不変（既存シリーズが参照するため）。名称・並び順・有効フラグのみ更新可。
+    name_ja: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    name_en: Optional[str] = Field(default=None, max_length=100)
+    sort_order: Optional[int] = Field(default=None, ge=0)
+    is_active: Optional[bool] = None
+
+
+class TcgTypeResponse(TcgTypeBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TcgSeriesBase(BaseModel):
-    tcg_type: str = Field(min_length=1, max_length=30)
+    tcg_type: str = Field(min_length=1, max_length=50)
     series_code: str = Field(min_length=1, max_length=50)
     name_ja: str = Field(min_length=1, max_length=255)
     name_en: Optional[str] = Field(default=None, max_length=255)
     release_date: Optional[date] = None
     category: Optional[str] = Field(default=None, max_length=50)
-
-    @field_validator("tcg_type")
-    @classmethod
-    def _validate_tcg_type(cls, v: str) -> str:
-        if v not in _VALID_TCG_TYPES:
-            raise ValueError(f"tcg_type must be one of {sorted(_VALID_TCG_TYPES)}")
-        return v
 
 
 class TcgSeriesCreate(TcgSeriesBase):
@@ -195,6 +211,35 @@ class TrainerDexResponse(TrainerDexCreate):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# PokeAPI 取込 (ADR-084) — ポケモン図鑑のみ
+# ============================================================================
+
+
+class DexImportEntry(BaseModel):
+    dex_number: int = Field(ge=1)
+    name_ja: str = Field(min_length=1, max_length=100)
+    name_en: Optional[str] = Field(default=None, max_length=100)
+    generation: Optional[int] = Field(default=None, ge=1, le=20)
+
+
+class DexImportPreviewResponse(BaseModel):
+    source: str = "pokeapi"
+    source_count: int  # PokeAPI 側の総数
+    db_count: int  # 既存 pokemon_dex 件数
+    added: list[DexImportEntry]  # DB に無い新規分
+    added_count: int
+    truncated: bool = False  # 新規が上限を超えて打ち切ったか
+
+
+class DexImportApplyRequest(BaseModel):
+    entries: list[DexImportEntry] = Field(default_factory=list)
+
+
+class DexImportApplyResponse(BaseModel):
+    inserted_count: int
 
 
 # ============================================================================
@@ -315,3 +360,21 @@ class RoleVisibilityAssign(BaseModel):
 
     role_id: int
     visibility_keys: list[str]
+
+
+# ============================================================================
+# ADR-085: 仕入先別 Gemini プロンプト (public.supplier_prompts)
+# ============================================================================
+
+
+class SupplierPromptResponse(BaseModel):
+    supplier_id: int
+    prompt: str
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SupplierPromptUpdate(BaseModel):
+    prompt: str = Field(default="", max_length=50000)
+    is_active: bool = True

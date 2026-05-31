@@ -117,11 +117,12 @@ test.describe("Sprint 11 / F11 AC11.3 — ParseReviewPage inventory fields wirin
 
     await page.goto("/super-admin/inbound/901/review");
 
-    // condition / quantity_offered / unit_price を入力
+    // condition / quantity_offered / unit / unit_price を入力
     await page
       .getByTestId("review-row-0-condition")
       .selectOption("sealed");
     await page.getByTestId("review-row-0-quantity-offered").fill("2");
+    await page.getByTestId("review-row-0-unit").selectOption("Box");
     await page.getByTestId("review-row-0-unit-price").fill("4500");
 
     // 承認
@@ -134,9 +135,11 @@ test.describe("Sprint 11 / F11 AC11.3 — ParseReviewPage inventory fields wirin
     >;
     expect(items).toHaveLength(1);
     expect(items[0].product_id).toBe(701);
-    expect(items[0].delta_qty).toBe(2);
+    // QA 2026-05-30: 差分数量列撤去。承認は在庫を動かさず delta_qty=0 で送信 (Option Z)。
+    expect(items[0].delta_qty).toBe(0);
     expect(items[0].condition).toBe("sealed");
     expect(items[0].quantity_offered).toBe(2);
+    expect(items[0].unit).toBe("Box");
     expect(items[0].unit_price).toBe(4500);
   });
 

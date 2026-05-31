@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-05-30 / ADR 総数: 71 件
+最終更新: 2026-05-31 / ADR 総数: 76 件
 
 ## 一覧
 
@@ -78,7 +78,12 @@
 | [ADR-079](./ADR-079-claude-code-monitoring-access.md) | ADR-079: Claude Code 専用 VPS 読み取り専用監視アクセス | Accepted | — |
 | [ADR-080](./ADR-080-monitoring-vps-separation.md) | ADR-080: 監視スタックの管理室VPS分離 — RAM危機の根本解決とCIランナー統合 | Proposed | — |
 | [ADR-081](./ADR-081-monitoring-vps-final-operational-design.md) | ADR-081: 監視VPS分離の最終運用設計 — パケットフィルタ、UFW、proxy 経路、backend worker 数の固定 | Accepted | — |
+| [ADR-081](./ADR-081-remove-design-review-gate.md) | ADR-081: design-review-gate 廃止 — develop までの自動化方針との整合 | Accepted | — |
+| [ADR-082](./ADR-082-deploy-skip-migrations-on-frontend-only.md) | ADR-082: フロントのみのデプロイで DB マイグレーション実行をスキップする | Accepted | — |
 | [ADR-082](./ADR-082-generator-executor-codex-fallback.md) | ADR-082: Generator Executor 選択 + Codex→Claude Code 自動フォールバック | Accepted | — |
+| [ADR-083](./ADR-083-tcg-type-master.md) | ADR-083: TCG シリーズの「種別」をマスタ表 + UI 管理へ移行する | Accepted | — |
+| [ADR-084](./ADR-084-pokeapi-dex-import.md) | ADR-084: ポケモン図鑑を PokeAPI から取込（差分プレビュー→一括反映） | Accepted | — |
+| [ADR-085](./ADR-085-supplier-prompts.md) | ADR-085: 仕入先別 Gemini 解析プロンプトの管理 | Accepted | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例

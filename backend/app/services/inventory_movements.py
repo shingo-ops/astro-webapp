@@ -27,6 +27,7 @@ spec.md v1.3 F11 AC11.3 (Sprint 11、本 module で実装):
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 
 from sqlalchemy import text
@@ -40,6 +41,11 @@ logger = logging.getLogger(__name__)
 # AC6.6 不変条件を満たすため、tenant_id NULL の products は中央在庫扱い (sentinel 0)。
 # inventory_movements.tenant_id は NOT NULL なので、NULL のままでは INSERT 不可。
 _CENTRAL_TENANT_SENTINEL = 0
+
+# QA 2026-05-30 (ひとしさん): 在庫オファーは時間失効モデル。F6 承認で記録した
+# public.inventory 行に expires_at = offered_at + 18h を付与し、Celery の
+# purge_expired_inventory_offers が期限切れを物理削除する（在庫数は増減させない）。
+_OFFER_EXPIRY_HOURS = int(os.getenv("INVENTORY_OFFER_EXPIRY_HOURS", "18"))
 
 
 @dataclass
@@ -62,10 +68,65 @@ class ApplyResult:
     stock_updates_skipped: int = 0
     # 同 sprint で stock を実際に更新した件数（Phase B/C のみ加算）
     stock_updates_applied: int = 0
+    # QA 2026-05-30 (Option Z): public.inventory に記録した仕入元オファー件数。
+    # delta_qty=0 (在庫を動かさない) でも condition + supplier_id があれば加算される。
+    offers_recorded: int = 0
 
 
 class InventoryApplyError(Exception):
     """承認反映の業務エラー（product 不存在、delta=0 等）。"""
+
+
+async def _upsert_inventory_offer(
+    db: AsyncSession,
+    *,
+    supplier_id: int,
+    product_id: int,
+    condition: str,
+    quantity: int,
+    unit_price: int,
+    unit: str | None = None,
+) -> None:
+    """public.inventory に「仕入元 × 商品 × 状態」の現在オファーを UPSERT する。
+
+    UNIQUE(supplier_id, product_id, condition)。products.stock_quantity（中央在庫）
+    とは独立しており、この関数は中央在庫を一切変更しない。F11 AC11.3 の UPSERT を
+    delta_qty>0 経路と delta_qty=0 経路 (Option Z) の双方から共用するための helper。
+
+    QA 2026-05-30:
+    - unit (数量の単位 Box/Case/Pack/Set/Peace) を保存 (migration 084 の列)。
+    - 時間失効モデル: offered_at=NOW() / expires_at=NOW()+18h を付与（再オファー時も
+      リフレッシュ）。期限切れは Celery purge_expired_inventory_offers が物理削除する。
+    """
+    await db.execute(
+        text(
+            """
+            INSERT INTO public.inventory
+                (supplier_id, product_id, condition, quantity, unit_price, unit,
+                 status, source, offered_at, expires_at)
+            VALUES (:sid, :pid, :cond, :qty, :up, :unit, 'in_stock', 'f6_approved',
+                    NOW(), NOW() + make_interval(hours => :exp_hours))
+            ON CONFLICT (supplier_id, product_id, condition) DO UPDATE SET
+                quantity = EXCLUDED.quantity,
+                unit_price = EXCLUDED.unit_price,
+                unit = EXCLUDED.unit,
+                status = EXCLUDED.status,
+                source = 'f6_approved',
+                offered_at = NOW(),
+                expires_at = NOW() + make_interval(hours => :exp_hours),
+                updated_at = NOW()
+            """
+        ),
+        {
+            "sid": supplier_id,
+            "pid": product_id,
+            "cond": str(condition),
+            "qty": int(quantity),
+            "up": int(unit_price),
+            "unit": (str(unit) if unit else None),
+            "exp_hours": _OFFER_EXPIRY_HOURS,
+        },
+    )
 
 
 async def apply_inbound_items(
@@ -103,6 +164,7 @@ async def apply_inbound_items(
     skipped = 0
     stock_updates_applied = 0
     stock_updates_skipped = 0
+    offers_recorded = 0
     # Phase 決定は products.tenant_id ごとに行うが、ループ初回で一度だけ取得し
     # 同一 inbound 内では tenant が混在しない前提で 1 回判定する。
     # 明示 phase が渡されたらそれを尊重 (テスト/旧来動作用)。
@@ -117,8 +179,25 @@ async def apply_inbound_items(
             skipped += 1
             continue
         if delta_qty == 0:
-            # 0 動 → DB 反映なし。AC6.1 の「delta_qty だけ増減」と矛盾しない範囲で skip。
-            skipped += 1
+            # QA 2026-05-30 (Option Z): 差分数量列を撤去し、承認は中央在庫
+            # (products.stock_quantity) を増減させない方針へ。delta_qty=0 でも
+            # supplier_id + condition があれば public.inventory のオファーだけ記録する
+            # （inventory_movements は作らない＝在庫不変）。condition 未指定の行は
+            # 記録対象が無いため従来どおり skip。
+            condition_raw = item.get("condition")
+            if supplier_id is not None and condition_raw:
+                await _upsert_inventory_offer(
+                    db,
+                    supplier_id=supplier_id,
+                    product_id=product_id,
+                    condition=str(condition_raw),
+                    quantity=int(item.get("quantity_offered") or 0),
+                    unit_price=int(item.get("unit_price") or 0),
+                    unit=item.get("unit"),
+                )
+                offers_recorded += 1
+            else:
+                skipped += 1
             continue
 
         # 1. products 行を SELECT FOR UPDATE で取得（同時更新ガード）
@@ -234,31 +313,16 @@ async def apply_inbound_items(
                 if offered_qty is None:
                     # 後方互換: quantity_offered 未指定なら after_qty で代替
                     offered_qty = after_qty
-                offered_price = int(item.get("unit_price") or 0)
-                await db.execute(
-                    text(
-                        """
-                        INSERT INTO public.inventory
-                            (supplier_id, product_id, condition, quantity, unit_price,
-                             status, source)
-                        VALUES (:sid, :pid, :cond, :qty, :up, 'in_stock', 'f6_approved')
-                        ON CONFLICT (supplier_id, product_id, condition) DO UPDATE SET
-                            quantity = EXCLUDED.quantity,
-                            unit_price = EXCLUDED.unit_price,
-                            status = EXCLUDED.status,
-                            source = 'f6_approved',
-                            offered_at = NOW(),
-                            updated_at = NOW()
-                        """
-                    ),
-                    {
-                        "sid": supplier_id,
-                        "pid": product_id,
-                        "cond": str(condition_raw),
-                        "qty": int(offered_qty),
-                        "up": offered_price,
-                    },
+                await _upsert_inventory_offer(
+                    db,
+                    supplier_id=supplier_id,
+                    product_id=product_id,
+                    condition=str(condition_raw),
+                    quantity=int(offered_qty),
+                    unit_price=int(item.get("unit_price") or 0),
+                    unit=item.get("unit"),
                 )
+                offers_recorded += 1
 
         movements.append(
             MovementResult(
@@ -278,6 +342,7 @@ async def apply_inbound_items(
         phase=final_phase,
         stock_updates_applied=stock_updates_applied,
         stock_updates_skipped=stock_updates_skipped,
+        offers_recorded=offers_recorded,
     )
 
 

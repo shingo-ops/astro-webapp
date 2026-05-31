@@ -35,7 +35,13 @@ class ReviewItemInput(BaseModel):
         default=None,
         description="public.products.id。None なら inventory_movements へ反映しない",
     )
-    delta_qty: int = Field(..., description="在庫差分。正=入荷、負=出庫。0 は禁止")
+    delta_qty: int = Field(
+        ...,
+        description=(
+            "在庫差分。正=入荷、負=出庫。0 = 中央在庫を動かさず "
+            "public.inventory のオファーのみ記録 (QA 2026-05-30 / Option Z)。"
+        ),
+    )
     alias_text: str | None = Field(
         default=None,
         max_length=255,
@@ -69,6 +75,14 @@ class ReviewItemInput(BaseModel):
         description=(
             "仕入元の提示単価 (円・税抜)。public.inventory.unit_price に"
             "UPSERT される。None なら 0 で記録 (apply 側既定)。"
+        ),
+    )
+    unit: str | None = Field(
+        default=None,
+        max_length=20,
+        description=(
+            "数量の単位 (UI: Box / Case / Pack / Set / Peace)。QA 2026-05-30。"
+            "migration 084 で public.inventory.unit (VARCHAR(20)) へ UPSERT 保存される。None なら NULL。"
         ),
     )
 
@@ -122,6 +136,8 @@ class ApproveResponse(BaseModel):
       - skipped_stock_update: Phase A 時に products.stock_quantity の更新を
         スキップしたかどうか。フロントエンドが warning toast 表示判定に使用。
       - phase: 当該承認操作実行時のテナント Phase ('A' / 'B' / 'C')。
+      - offers_recorded: QA 2026-05-30 (Option Z)。中央在庫を動かさず
+        public.inventory に記録した仕入元オファーの件数。
     """
 
     inbound_id: int
@@ -129,6 +145,8 @@ class ApproveResponse(BaseModel):
     version: int
     movements: list[InventoryMovementSummary]
     skipped_count: int
+    # QA 2026-05-30 (Option Z): 在庫を動かさず public.inventory に記録したオファー件数
+    offers_recorded: int = 0
     # Sprint 9 / F9 v1.2: Phase A 並走時の挙動を UI に伝える
     skipped_stock_update: bool = False
     phase: str = "B"

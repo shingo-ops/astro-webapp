@@ -1,6 +1,10 @@
 {
   "common": {
     "loading": "Loading...",
+    "select": "Select",
+    "selectAll": "Select all",
+    "optional": "Optional",
+    "clear": "Clear",
     "saving": "Saving...",
     "save": "Save",
     "cancel": "Cancel",
@@ -21,6 +25,7 @@
     "back": "Back",
     "create": "Create",
     "add": "Add",
+    "archive": "Archive",
     "remove": "Remove",
     "previous": "Previous",
     "next": "Next",
@@ -646,6 +651,8 @@
       "candidatesLabel": "Search candidates",
       "noResults": "No matching products",
       "stockLabel": "Stock",
+      "pickerPlaceholder": "Select from inventory (filter by product name)",
+      "stockGuide": "Stock (approx.)",
       "stockMaskedNote": "You do not have permission to view stock counts (shown as ***)",
       "zeroStockWarning": "\"{{name}}\" has 0 stock. Verify supplier and stock before quoting.",
       "offersLabel": "{{count}} supplier offer(s)",
@@ -705,6 +712,13 @@
   "invoices": {
     "subtitle": "Create and manage invoices.",
     "title": "Invoices",
+    "createTitle": "Create Invoice",
+    "fromInventory": "From inventory",
+    "fromQuote": "From quote",
+    "fromQuoteHelp": "Create an invoice from one of your tenant's approved quotes.",
+    "noApprovedQuotes": "No approved quotes available.",
+    "createFromThisQuote": "Create from this quote",
+    "createBtn": "Create invoice",
     "invoiceCode": "Invoice code",
     "dueDate": "Due date",
     "allStatuses": "All statuses",
@@ -754,6 +768,18 @@
   "products": {
     "subtitle": "Manage products and inventory.",
     "title": "Inventory",
+    "selectedCount": "{{count}} selected",
+    "createQuote": "Create Quote",
+    "createInvoice": "Create Invoice",
+    "importFromInbound": "Import unregistered products from notifications",
+    "importFromInboundHint": "These product names appeared in parsed inbound notifications but are not yet in the product master. Check the ones to register (uncheck noise or near-duplicates).",
+    "importNoCandidates": "No unregistered product candidates found.",
+    "importCandidateCount": "{{count}} candidates",
+    "importOccurrences": "Occurrences",
+    "importSample": "Source sample",
+    "importCategory": "Category (optional)",
+    "importApply": "Register {{count}} selected to product master",
+    "importDone": "Registered {{count}} products to the master.",
     "newProduct": "New Product",
     "editProduct": "Edit Product",
     "productCode": "Product code",
@@ -1204,7 +1230,7 @@
     "subtitle": "Edit marketplace central masters (shared across all tenants)",
     "accessDenied": "Only Jarvis operations admins (central admins) can access this page.",
     "tabs": {
-      "knowledge": "Rules / Aliases",
+      "knowledge": "Parsing Prompts / Rules",
       "tcg": "TCG Series",
       "dex": "Pokemon / Trainer Dex",
       "suppliers": "Suppliers",
@@ -1212,6 +1238,9 @@
     },
     "knowledge": {
       "title": "Normalization Rules (knowledge_rules) + Supplier Aliases",
+      "promptSection": "Per-Supplier Parsing Prompt (on hold)",
+      "promptHelp": "Manage the Gemini parsing prompt per supplier (imported from the spreadsheet).",
+      "promptPlaceholder": "Enter the Gemini parsing prompt for this supplier",
       "rulesSection": "Normalization Rules",
       "aliasesSection": "Supplier Aliases",
       "newRule": "New Rule",
@@ -1252,6 +1281,11 @@
         "dragon_ball": "Dragon Ball TCG",
         "union_arena": "Union Arena",
         "yugioh": "Yu-Gi-Oh!"
+      },
+      "typeManager": {
+        "title": "Manage Types",
+        "code": "Type Code",
+        "addBtn": "Add Type"
       }
     },
     "dex": {
@@ -1268,6 +1302,14 @@
         "generation": "Generation",
         "region": "Region",
         "era": "Era"
+      },
+      "import": {
+        "previewBtn": "Import from PokeAPI",
+        "applyBtn": "Import {{count}} entries",
+        "upToDate": "Up to date (no new entries)",
+        "diffSummary": "{{count}} new (PokeAPI {{source}} / DB {{db}})",
+        "applied": "Imported {{count}} entries",
+        "truncated": "Many new entries — showing/importing the first {{max}} only"
       }
     },
     "suppliersAdmin": {
@@ -1357,18 +1399,18 @@
         "rejectReasonLabel": "exclude_reason (required)",
         "rejectConfirmBtn": "Confirm rejection",
         "rejectReasonRequired": "Please enter a rejection reason",
-        "approveSuccess": "Approved {{count}} item(s), skipped {{skipped}}.",
+        "approveSuccess": "Recorded {{offers}} offer(s), skipped {{skipped}}.",
         "rejectSuccess": "Rejected.",
         "versionConflict": "Another reviewer updated this item first. Reloaded — please review again.",
         "col": {
           "productId": "Product ID",
-          "deltaQty": "Delta Qty",
           "alias": "Supplier alias",
           "notes": "Notes",
           "skip": "Skip",
           "condition": "Condition",
           "quantityOffered": "Qty on hand",
           "quantityOfferedPlaceholder": "Offered qty",
+          "unit": "Unit",
           "unitPrice": "Unit price (JPY)",
           "unitPricePlaceholder": "Offered price"
         },

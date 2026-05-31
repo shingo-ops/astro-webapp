@@ -32,7 +32,7 @@ router = APIRouter()
 
 _BASE_SELECT = """
     SELECT i.id, i.supplier_id, i.product_id, i.condition, i.quantity,
-           i.unit_price, i.status, i.notes_ja, i.notes_en,
+           i.unit_price, i.unit, i.status, i.notes_ja, i.notes_en,
            i.offered_at, i.expires_at, i.source,
            i.created_at, i.updated_at,
            s.name AS supplier_name,
@@ -46,6 +46,7 @@ _BASE_SELECT = """
 _UPDATABLE_COLS = {
     "quantity",
     "unit_price",
+    "unit",
     "status",
     "notes_ja",
     "notes_en",
@@ -142,9 +143,9 @@ async def create_offer(
                 text(
                     """
                     INSERT INTO public.inventory
-                        (supplier_id, product_id, condition, quantity, unit_price,
+                        (supplier_id, product_id, condition, quantity, unit_price, unit,
                          status, notes_ja, notes_en, expires_at, source)
-                    VALUES (:supplier_id, :product_id, :condition, :quantity, :unit_price,
+                    VALUES (:supplier_id, :product_id, :condition, :quantity, :unit_price, :unit,
                             :status, :notes_ja, :notes_en, :expires_at, :source)
                     RETURNING id
                     """

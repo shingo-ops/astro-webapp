@@ -120,6 +120,25 @@
     background: var(--c-smoke-bg);
   }
   .card.hidden { display: none; }
+  /* collapse: OK 等を「畳んで表示」（消去ではない）。head + scenario のみ残しスクロール削減 */
+  .card.collapsed > *:not(.card-head):not(.card-scenario) { display: none; }
+  .card.collapsed .card-scenario { margin-bottom: 0; opacity: 0.7; }
+  .collapse-toggle {
+    margin-left: auto; cursor: pointer; border: 1px solid var(--c-border);
+    background: transparent; border-radius: 6px; padding: 2px 9px; font-size: 12px; color: var(--c-muted); white-space: nowrap;
+  }
+  .collapse-toggle:hover { color: var(--c-accent); border-color: var(--c-accent); }
+  .card-result { padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+  .card-result.ok { background: #dcfce7; color: var(--c-ok); }
+  .card-result.ng { background: #fee2e2; color: var(--c-ng); }
+  .card-result.na { background: #dbeafe; color: var(--c-accent); }
+  .card-result.pending { background: #f3f4f6; color: var(--c-muted); }
+  .collapse-controls { display: inline-flex; gap: 6px; margin-left: 8px; flex-wrap: wrap; }
+  .collapse-controls button {
+    cursor: pointer; border: 1px solid var(--c-border); background: #fff;
+    border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--c-text);
+  }
+  .collapse-controls button:hover { border-color: var(--c-accent); color: var(--c-accent); }
 
   .card-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
   .card-id {
@@ -464,9 +483,8 @@ const SHEETS = {
         subtitle: "リリース後・障害復旧後にまず通す最小確認セット",
         items: [
           { id:"SM-1", category:"在庫一覧", scenario:"在庫表のページが表示される", expected:"商品の一覧表が表示され、エラーが出ない", steps:"サイドバー「在庫表」をクリック → 商品の表が画面に出る", sys:"ok", test_evidence:"ProductsPage 経路 + Claude実機 2026-05-16 navigate OK", notes:"—", smoke:true, urls:["/inventory"] },
-          { id:"SM-2", category:"仕入元オファー一覧", scenario:"「仕入元現在オファー」画面が開き、一覧表と件数が出る", expected:"仕入元 × 商品 × 状態 単位の表が描画される", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「仕入元現在オファー」をクリック\n3) 表 + 下部に「N 件中 1〜M 件目を表示」が見える", sys:"ok", test_evidence:"f11-ac11-5-super-admin-inventory-offers.spec.ts (4 ケース)", notes:"スーパー管理者権限が必要。表示されない場合は権限を確認", smoke:true, urls:["/management-center/super-admin/inventory-offers"] },
-          { id:"SM-3", category:"検索結果に仕入元オファー", scenario:"商品検索の候補に各仕入元のオファーが出る", expected:"候補行の右端に「仕入元オファー N 件」と最大 3 件の (仕入元名 / 状態 / 数量 / 単価) が表示される。4 件以上は「他 N 件」表示", steps:"1) サイドバー「請求書作成」をクリック → 見積一覧ページ\n2) ページ右上の「+ 新規見積」ボタンを押す\n3) 商品検索ボックスに「リザードン」など複数オファーがある商品名を入力\n4) 候補ドロップダウンに各仕入元のオファーが compact 表示", sys:"ok", test_evidence:"f11-ac11-4-inventory-search-offers.spec.ts (2 ケース)", notes:"—", smoke:true, urls:["/quotes/new"] },
-          { id:"SM-4", category:"Discord 取り込み + 承認", scenario:"Discord メッセージの解析結果に状態/数量/単価を入力し、承認できる", expected:"「承認」ボタンを押すと完了メッセージが出て、public.inventory に在庫データが反映される", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビの「スーパー管理者」セクション内「Discord 受信一覧」\n3) 受信メッセージ行の「レビュー」ボタンを押す\n4) 行ごとに 状態 (プルダウン) / 提示数量 / 単価 を入力\n5) 画面下「承認」ボタンを押す → 「承認しました」のメッセージが出る", sys:"ok", test_evidence:"f11-ac11-3-parse-review-inventory-fields.spec.ts (4 ケース)", notes:"スーパー管理者権限が必要", smoke:true, urls:["/management-center/super-admin/inbound"] },
+          { id:"SM-2", category:"仕入元オファー一覧", scenario:"「仕入元現在オファー」画面が開き、一覧表と件数が出る", expected:"仕入元 × 商品 × 状態 粒度の表が描画される（数量・単位・単価の各列を含む）", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「仕入元現在オファー」をクリック\n3) 表 + 下部に「N 件中 1〜M 件目を表示」が見える", sys:"ok", test_evidence:"f11-ac11-5-super-admin-inventory-offers.spec.ts (4 ケース)", notes:"スーパー管理者権限が必要。表示されない場合は権限を確認。QA 2026-05-30: 単位 (unit) 列を追加 (PR #1179)", smoke:true, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"SM-4", category:"Discord 取り込み + 承認", scenario:"Discord メッセージの解析結果に状態/数量/単位/単価を入力し、承認できる", expected:"「承認」を押すと「N 件のオファーを記録しました」が出て、public.inventory に仕入元オファーが記録される（中央在庫数 stock_quantity は増減しない＝在庫は目安）。記録したオファーは18時間後に自動失効（削除）される", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビの「スーパー管理者」セクション内「Discord 受信一覧」\n3) 受信メッセージ行の「レビュー」ボタンを押す\n4) 行ごとに 状態 (プルダウン) / 在庫数 / 単位 (Box/Case/Pack/Set/Peace) / 単価 を入力（差分数量列は撤去済）\n5) 画面下「承認」ボタンを押す → 「N 件のオファーを記録しました」のメッセージが出る", sys:"ok", test_evidence:"f11-ac11-3-parse-review-inventory-fields.spec.ts (4 ケース) / test_f11_inventory_upsert.py (Option Z + unit + expires_at)", notes:"スーパー管理者権限が必要。QA 2026-05-30: 承認は在庫オファー記録のみ（在庫数不変）、単位を保存、18h自動失効（PR #1177/#1179）", smoke:true, urls:["/management-center/super-admin/inbound"] },
           { id:"SM-5", category:"仕入先一覧", scenario:"仕入先の一覧表と新規登録ボタンが見える", expected:"仕入先のテーブルが表示され、右上に「+ 新規登録」ボタンが見える", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビの「データ管理」セクション内「仕入先」をクリック\n3) 仕入先テーブル + 右上「+ 新規登録」ボタンを確認", sys:"partial", test_evidence:"API テストのみ、画面の自動テストなし", notes:"仕入先閲覧権限が必要", smoke:true, urls:["/management-center/suppliers"] }
         ]
       },
@@ -476,7 +494,6 @@ const SHEETS = {
         items: [
           { id:"I-01", category:"在庫一覧", scenario:"在庫表のページが表示される", expected:"商品の一覧表が画面に出る (エラーは出ない)", steps:"サイドバー「在庫表」をクリック → 商品の表が表示される", sys:"ok", test_evidence:"ProductsPage 経路", notes:"🔥 SM-1", smoke:false, urls:["/inventory"] },
           { id:"I-02", category:"検索", scenario:"商品名や JAN コードで部分一致検索ができる", expected:"入力した文字を含む商品だけが表に残る", steps:"1) サイドバー「在庫表」\n2) 検索ボックスに商品名 (例「リザードン」) や JAN コードを入力\n3) 表が絞り込まれて表示されることを確認", sys:"ok", test_evidence:"test_inventory_search.py + test_inventory_search_logic.py", notes:"—", smoke:false, urls:["/inventory"] },
-          { id:"I-03", category:"AND/OR 切替 (見積画面)", scenario:"見積新規画面の商品検索バーで「AND」「OR」切替ボタンが動く", expected:"2 単語以上を入力するとボタン押下状態と検索結果が切り替わる", steps:"1) サイドバー「請求書作成」をクリック\n2) ページ右上「+ 新規見積」ボタンを押す\n3) 見積行の商品検索ボックスに 2 単語以上を半角スペース区切りで入力 (例「リザードン ex」「ポケモン Box」)\n4) ボックス右側の「AND」「OR」切替ボタンをクリック\n5) ボタンの押された見た目が変わり、検索結果が変わることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.7/7.8", notes:"AND/OR は 2 単語以上のときに違いが出る。1 単語ではトグルが無効化される。在庫表ページ (/inventory) はシンプル検索のみ。", smoke:false, urls:["/quotes/new"] },
           { id:"I-04", category:"在庫切れ表示", scenario:"在庫数 0 の商品は灰色 + 警告マークで表示される", expected:"在庫 0 行が他より薄く、商品名の前に ⚠ が付く", steps:"【在庫表 (/inventory) — PR-3 で追加】\n1) サイドバー「在庫表」\n2) 在庫数 0 の商品を一覧で探す\n3) 行全体が薄くなり、商品名の前に ⚠ が付くことを確認\n\n【見積新規画面 (/quotes/new、候補ドロップダウン)】\n1) サイドバー「請求書作成」→「+ 新規見積」\n2) 見積行の商品検索ボックスに在庫数 0 の商品名 (例「リザードン」) を入力\n3) 候補ドロップダウンの該当行が灰色になることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.5 + ProductsPage 在庫 0 行スタイル", notes:"在庫表 (/inventory) の灰色 + ⚠ は QA r6 NG を受けて PR-3 で追加。InventorySearchBar (見積画面) の灰色は元から実装済。", smoke:false, urls:["/inventory","/quotes/new"] },
           { id:"I-05", category:"在庫の可視性", scenario:"在庫は全テナント共通で実数表示される (マスクなし)", expected:"在庫数が *** ではなく実数で表示される", steps:"【仕様確定 2026-05-28】在庫は全テナント共通で見える。テナントによる見える/見えないの区別は撤廃。\n1) review@salesanchor.jp (tenant_006、撮影/QA 用) でログイン\n2) サイドバー「請求書作成」→「+ 新規見積」\n3) 見積行の商品検索バーで商品名を入力 (例「リザードン」「ポケモン」)\n4) 候補ドロップダウンの在庫数が *** ではなく実数で表示されることを確認 (どのテナントの商品でもマスクされない)", sys:"ok", test_evidence:"inventory_search.py router mask_stock=False 固定", notes:"旧仕様の *** マスク機能は撤廃 (しんごさん確定 2026-05-28)。全在庫が全テナントで実数表示。", smoke:false, urls:["/quotes/new"] },
           { id:"I-06", category:"パフォーマンス", scenario:"検索結果が体感速く出る (500ms 以内)", expected:"入力後に待ち時間を感じない", steps:"1) サイドバー「在庫表」\n2) 検索ボックスに件数の多い語 (例「ポケモン」「Box」) を入力\n3) 結果が体感的に遅延なく出ることを確認", sys:"ok", test_evidence:"test_inventory_search_perf.py", notes:"—", smoke:false, urls:["/inventory"] },
@@ -487,12 +504,11 @@ const SHEETS = {
         id: "B",
         title: "B. 商品マスタ (/management-center/super-admin/masters 商品タブ)",
         items: [
-          { id:"M-01", category:"一覧表示", scenario:"商品マスタの一覧が表示される", expected:"商品の表が描画される", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「マスタ管理（中央）」をクリック\n3) 商品タブを選択 → 商品マスタの表が描画されることを確認", sys:"ok", test_evidence:"super-admin-masters.spec.ts", notes:"スーパー管理者権限が必要", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-02", category:"新規登録", scenario:"商品を新規登録できる", expected:"一覧に新しい商品が追加される", steps:"1) M-01 の画面 → 商品タブ\n2) 右上「+ 新規登録」ボタン\n3) モーダルに必須項目を入力 → 「Register」 → 一覧に追加されることを確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-03", category:"編集", scenario:"商品を編集できる", expected:"値の変更が一覧に反映される", steps:"1) M-01 の画面 → 商品タブ\n2) 編集したい商品行の「Edit」ボタン\n3) モーダルで値を変更 → 「Update」 → 一覧反映を確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-04", category:"削除", scenario:"商品を削除できる", expected:"削除した商品が一覧から消える", steps:"1) M-01 の画面 → 商品タブ\n2) 商品行の「Delete」ボタン → 確認モーダル → 「Delete」\n3) 一覧から消えることを確認", sys:"partial", test_evidence:"API テスト", notes:"削除操作 (テストデータのみで実施)", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-05", category:"ポケモン辞書連動", scenario:"編集モーダルで expansion_code のオートコンプリートが効く", expected:"入力時に候補が表示される", steps:"1) M-01 → 商品タブ → 「Edit」モーダル\n2) expansion_code 欄を入力 → 候補が表示されることを確認", sys:"partial", test_evidence:"test_seed_pokemon_dex.py + 手動", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] },
-          { id:"M-06", category:"テナント越境ガード", scenario:"他テナントの商品 ID にアクセスできない", expected:"アクセスがブロックされる", steps:"アドレスバーに他テナントの商品 ID URL を直接入力 → ブロックされることを確認", sys:"ok", test_evidence:"test_inventory_visibility_permissions.py", notes:"—", smoke:false, urls:["/management-center/super-admin/masters"] }
+          { id:"M-01", category:"一覧表示", scenario:"商品マスタの一覧が表示される", expected:"商品の表が描画される", steps:"1) サイドバー「在庫表」をクリック\n2) 商品マスタの表（在庫数を含む）が描画されることを確認", sys:"ok", test_evidence:"super-admin-masters.spec.ts", notes:"スーパー管理者権限が必要", smoke:false, urls:["/inventory"] },
+          { id:"M-02", category:"新規登録", scenario:"商品を新規登録できる", expected:"一覧に新しい商品が追加される", steps:"1) サイドバー「在庫表」をクリック\n2) 右上「新規登録」ボタン\n3) モーダルに必須項目を入力 → 「登録」 → 一覧に追加されることを確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"M-03", category:"編集", scenario:"商品を編集できる", expected:"値の変更が一覧に反映される", steps:"1) サイドバー「在庫表」をクリック\n2) 編集したい商品行の「編集」ボタン\n3) モーダルで値を変更 → 「更新」 → 一覧反映を確認", sys:"partial", test_evidence:"API テスト", notes:"—", smoke:false, urls:["/inventory"] },
+          { id:"M-04", category:"削除", scenario:"商品を削除できる", expected:"削除した商品が一覧から消える", steps:"1) サイドバー「在庫表」をクリック\n2) 商品行の「削除」ボタン → 確認モーダル → 「削除」\n3) 一覧から消えることを確認", sys:"partial", test_evidence:"API テスト", notes:"削除操作 (テストデータのみで実施)", smoke:false, urls:["/inventory"] },
+          { id:"M-05", category:"拡張セット略号の入力", scenario:"編集モーダルで拡張セット略号 (expansion_code) を入力・保存できる", expected:"入力した略号が保存され、一覧に反映される", steps:"1) 商品マスタの編集モーダル (M-03 の Edit ボタン) を開く\n2) TCG 欄の expansion_code (ポケモンカードの拡張セット略号) に値を入力\n3) 「Update」 → 一覧に反映されることを確認", sys:"partial", test_evidence:"test_seed_pokemon_dex.py + 手動", notes:"expansion_code 欄はプレーンな入力欄でオートコンプリート未実装のため、入力・保存できるかのみ確認する", smoke:false, urls:["/management-center/super-admin/masters"] }
         ]
       },
       {
@@ -521,15 +537,10 @@ const SHEETS = {
         id: "E",
         title: "E. Discord 取り込み + 解析レビュー (F6)",
         items: [
-          { id:"F6-01", category:"受信一覧", scenario:"Discord から取り込んだメッセージの一覧が表示される", expected:"受信メッセージの表 + 各行の処理状態ラベル (解析中 / ルール解析済 / 承認済 等)", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「Discord 受信一覧」をクリック\n3) 受信メッセージの表と処理状態ラベルが描画されることを確認", sys:"ok", test_evidence:"super-admin-discord-inbound.spec.ts", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"F6-02", category:"解析レビュー", scenario:"解析結果の各行を採用 / スキップ選択して承認できる", expected:"承認時にバックエンドへ正しい内容が送信される", steps:"1) F6-01 の画面\n2) 受信メッセージ行の「レビュー」ボタン\n3) 各行のチェックボックスで採用 / スキップを選択\n4) 画面下「承認」ボタン → 完了メッセージ表示", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.1", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"F6-03", category:"F11 入力欄 (状態/数量/単価)", scenario:"レビュー画面で状態 / 提示数量 / 単価を入力して承認できる", expected:"送信内容に 3 項目が乗ることを確認", steps:"1) F6-02 の画面に到達\n2) 行の 状態 (プルダウン) / 提示数量 / 単価 を入力\n3) 「承認」 → 送信内容に値が反映されることを確認", sys:"ok", test_evidence:"f11-ac11-3-parse-review-inventory-fields.spec.ts (4 ケース)", notes:"🔥 SM-4", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"F6-04", category:"F11 在庫データ反映", scenario:"承認後、public.inventory テーブルに在庫データが書き込まれる", expected:"既存行は更新、無ければ新規追加", steps:"1) F6-03 で承認実行\n2) VPS 側 psql で SELECT * FROM public.inventory WHERE supplier_id=X AND product_id=Y AND condition='Z' を確認\n3) 既存行があれば更新、なければ新規追加されていることを確認", sys:"ok", test_evidence:"test_f11_inventory_upsert.py (5 PG ケース)", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
           { id:"F6-05", category:"同時編集時の挙動", scenario:"他の人が先に承認した場合、自分の操作はエラーになる", expected:"エラーメッセージ表示 + 画面の自動再読み込み", steps:"1) 2 つのブラウザタブで同じレビュー画面 (/super-admin/inbound/:id/review) を開く\n2) タブ A で「承認」 → 成功\n3) タブ B で「承認」 → エラーメッセージ + 自動再読み込みを確認", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.5", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"F6-06", category:"差戻し", scenario:"差戻し時に理由欄が必須", expected:"理由空欄ならエラー、入力すれば差戻し成功", steps:"1) F6-02 の画面\n2) 「差戻し」ボタン → 理由入力モーダル\n3) 理由を空のまま「Confirm」 → エラー表示\n4) 続いて理由を入力 → 「Confirm」 → 差戻し成功を確認", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.4", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"F6-06", category:"差戻し", scenario:"差戻し時に理由欄が必須", expected:"理由空欄ならエラー、入力すれば差戻し成功", steps:"1) Discord 受信一覧 (/management-center/super-admin/inbound) で受信行の「レビュー」ボタンを押してレビュー画面を開く\n2) 「差戻し」ボタン → 理由入力モーダル\n3) 理由を空のまま「Confirm」 → エラー表示\n4) 続いて理由を入力 → 「Confirm」 → 差戻し成功を確認", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.4", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
           { id:"F6-07", category:"権限ガード", scenario:"スーパー管理者以外はレビュー画面に入れない", expected:"403 アラート表示 + レビューテーブル非表示", steps:"1) スーパー管理者でない一般ユーザーでログイン\n2) アドレスバーに /super-admin/inbound/:id/review を直接入力\n3) 403 アラートが表示され、レビューテーブルが描画されないことを確認", sys:"ok", test_evidence:"test_parse_review_rbac.py + super-admin-parse-review.spec.ts AC6.8", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"F6-08", category:"LLM 解析", scenario:"自動解析 (ルール + LLM) の結果が反映される", expected:"処理状態が「解析中」→「ルール解析済」or「LLM 解析済」へ遷移", steps:"1) F6-01 の画面\n2) 処理状態が「解析中」の受信行を発見し、数秒待つ\n3) 状態が確定し、解析内容がリストアップされることを確認", sys:"partial", test_evidence:"test_inventory_parser_llm_real_api.py (実 API)", notes:"KL-LLM-DRYRUN", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"F6-09", category:"Phase A 警告表示", scenario:"Phase A 中の承認では警告が出る", expected:"「Phase A」の警告メッセージ表示", steps:"A) サイドバー「管理センター」 → 「スーパー管理者」 → 「Phase Switch」で一時的に Phase A に切替\nB) F6-02 で承認実行\nC) 「Phase A」警告メッセージが表示されることを確認\nD) 確認後、Phase B に戻す", sys:"ok", test_evidence:"parse-review-phase-a-warning.spec.ts", notes:"KL-PHASE-B", smoke:false, urls:["/management-center/super-admin/phase","/management-center/super-admin/inbound"] }
+          { id:"F6-09", category:"Phase A 警告表示", scenario:"（QA 2026-05-30 仕様変更）Discord 承認は在庫を触らないため Phase A 在庫スキップ警告は出ない", expected:"Phase A でも承認は仕入元オファー記録のみで中央在庫を変更しないため、在庫スキップ警告は表示されない（Option Z で本警告は Discord 承認経路では発生しなくなった）", steps:"A) 「Phase Switch」で一時的に Phase A に切替\nB) Discord 受信一覧 → 受信行「レビュー」→ 承認を実行\nC) 在庫スキップ警告が表示されない（承認は在庫を動かさない）ことを確認\nD) 確認後 Phase B に戻す", sys:"partial", test_evidence:"parse-review-phase-a-warning.spec.ts (frontend mock 維持。実バックエンドは Option Z で skipped_stock_update=false)", notes:"QA 2026-05-30: Option Z (PR #1177) で在庫不変のため旧 Phase A 警告は Discord 承認では非発生。警告 UI コードの撤去は follow-up", smoke:false, urls:["/management-center/super-admin/phase","/management-center/super-admin/inbound"] }
         ]
       },
       {
@@ -538,7 +549,7 @@ const SHEETS = {
         items: [
           { id:"F7-01", category:"検索バー表示", scenario:"見積新規画面に商品検索ボックスが出る", expected:"検索ボックスが表示され、プレースホルダーも翻訳済み", steps:"1) サイドバー「請求書作成」をクリック\n2) ページ右上「+ 新規見積」ボタン\n3) 見積行の検索ボックスのプレースホルダーが日本語 / 英語切替で正しく出ることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts", notes:"—", smoke:false, urls:["/quotes/new"] },
           { id:"F7-02", category:"候補選択", scenario:"候補をクリックすると見積行に標準名と単価が入る", expected:"商品名と単価が自動入力される", steps:"1) F7-01 の画面\n2) 検索ボックスに商品名を入力\n3) 候補ドロップダウンの行をクリック\n4) 見積行の商品名と単価が自動入力されることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.4", notes:"—", smoke:false, urls:["/quotes/new"] },
-          { id:"F7-03", category:"仕入元オファー表示", scenario:"候補に各仕入元のオファーが小さく表示される", expected:"各候補行に「仕入元オファー N 件」+ 最大 3 件のオファー詳細 (仕入元名 / 状態 / 数量 / 単価)", steps:"1) F7-01 の画面\n2) 検索ボックスに複数仕入元が出る商品名 (例「リザードン」) を入力\n3) 候補リストに各仕入元のオファーが小さく表示されることを確認", sys:"ok", test_evidence:"f11-ac11-4-inventory-search-offers.spec.ts (2 ケース)", notes:"🔥 SM-3", smoke:false, urls:["/quotes/new"] },
+          { id:"I-03", category:"AND/OR 切替 (見積画面)", scenario:"見積新規画面の商品検索バーで「AND」「OR」切替ボタンが動く", expected:"2 単語以上を入力するとボタン押下状態と検索結果が切り替わる", steps:"1) サイドバー「請求書作成」をクリック\n2) ページ右上「+ 新規見積」ボタンを押す\n3) 見積行の商品検索ボックスに 2 単語以上を半角スペース区切りで入力 (例「リザードン ex」「ポケモン Box」)\n4) ボックス右側の「AND」「OR」切替ボタンをクリック\n5) ボタンの押された見た目が変わり、検索結果が変わることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.7/7.8", notes:"AND/OR は 2 単語以上のときに違いが出る。1 単語ではトグルが無効化される。在庫表ページ (/inventory) はシンプル検索のみ。", smoke:false, urls:["/quotes/new"] },
           { id:"F7-04", category:"「他 N 件」表示", scenario:"仕入元オファーが 4 件以上ある場合に「他 N 件」が表示される", expected:"翻訳済みで日英両方の表記が出る", steps:"1) F7-03 の画面\n2) 4 件以上のオファーがある商品で「他 N 件」表示を確認 (日本語 / 英語両方)", sys:"ok", test_evidence:"同上 (f11-ac11-4)", notes:"—", smoke:false, urls:["/quotes/new"] },
           { id:"F7-05", category:"マスク表示 (オファー)", scenario:"他テナントのオファーは数量 / 単価が伏字 (***)", expected:"数量 / 単価列が ***", steps:"1) F7-01 の画面\n2) 他テナント所有商品で検索\n3) 候補のオファーの数量 / 単価列が *** 表示になることを確認", sys:"ok", test_evidence:"同上 (f11-ac11-4)", notes:"—", smoke:false, urls:["/quotes/new"] },
           { id:"F7-06", category:"在庫切れ警告", scenario:"在庫 0 商品を見積行に追加すると警告が出る", expected:"該当行に警告メッセージ", steps:"1) F7-01 の画面\n2) 在庫 0 の商品を検索 → 候補をクリックして見積行に追加\n3) 該当行に警告メッセージが表示されることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts AC7.5", notes:"—", smoke:false, urls:["/quotes/new"] }
@@ -552,18 +563,20 @@ const SHEETS = {
           { id:"F11-02", category:"一覧表示", scenario:"仕入元別オファーの一覧 + 件数表示", expected:"表 + 「N 件中 1〜M 件目を表示」", steps:"1) サイドバー「管理センター」をクリック\n2) 左サブナビ「スーパー管理者」セクション内「仕入元現在オファー」をクリック\n3) テーブル + 下部に件数表示があることを確認", sys:"ok", test_evidence:"同上 (f11-ac11-5)", notes:"🔥 SM-2", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
           { id:"F11-03", category:"検索", scenario:"仕入元名 / 商品名 / 商品コードで検索ができる", expected:"入力 250ms 後にフィルタされる (カクつき無し)", steps:"1) F11-02 の画面\n2) 上部の検索ボックスに仕入元名 or 商品名 or コードの部分文字列を入力\n3) フィルタされた結果が表示されることを確認 (カクつき無し)", sys:"ok", test_evidence:"同上 (検索テスト)", notes:"PR #914 でカクつき修正済", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
           { id:"F11-04", category:"絞り込みフィルタ", scenario:"状態 / コンディションで絞り込める", expected:"結果がフィルタされる", steps:"1) F11-02 の画面\n2) 状態プルダウン (在庫あり / 在庫切れ / 予約済 / アーカイブ) で選択、もしくはコンディション欄に入力\n3) 結果が絞り込まれることを確認", sys:"ok", test_evidence:"API 経路確認", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
-          { id:"F11-05", category:"編集 (行内編集)", scenario:"行内で 数量 / 単価 / 状態 / メモ / 期限 を編集できる", expected:"「Save」で更新成功メッセージ + 反映", steps:"1) F11-02 の画面\n2) 編集したい行の「Edit」ボタン\n3) 数量 / 単価 / 状態 / メモ / 期限 を変更 → 「Save」\n4) 「オファーを更新しました」メッセージ + テーブル反映を確認", sys:"ok", test_evidence:"同上 (PATCH テスト)", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-05", category:"編集 (行内編集)", scenario:"行内で 数量 / 単価 / 単位 / 状態 / メモ / 期限 を編集できる", expected:"「Save」で更新成功メッセージ + 反映", steps:"1) F11-02 の画面\n2) 編集したい行の「Edit」ボタン\n3) 数量 / 単価 / 単位 / 状態 / メモ / 期限 を変更 → 「Save」\n4) 「オファーを更新しました」メッセージ + テーブル反映を確認", sys:"ok", test_evidence:"同上 (PATCH テスト)", notes:"QA 2026-05-30: 単位 (unit) も編集可能 (PR #1179)", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
           { id:"F11-06", category:"削除", scenario:"オファーを削除できる (確認モーダル付き)", expected:"削除成功メッセージ + 一覧から消える", steps:"1) F11-02 の画面\n2) 行の「Delete」ボタン → 確認モーダル「『商品名』のオファーを削除しますか？」\n3) 「OK」 → 「オファーを削除しました」メッセージ + 一覧から消えることを確認", sys:"partial", test_evidence:"API テストのみ", notes:"削除操作 (テストデータのみで実施)", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
           { id:"F11-07", category:"経路 (source) 表示", scenario:"オファーの登録経路がわかりやすく表示される", expected:"「手動 / F6 承認 / CSV 取込 / Discord 解析」が翻訳済みで表示", steps:"1) F11-02 の画面のテーブル「経路」列で各 source が日本語で表示されることを確認\n2) ヘッダーの言語切替で英語に変更 → 同じ列が英語表記になることを確認", sys:"partial", test_evidence:"翻訳キー存在確認のみ", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
           { id:"F11-08", category:"重複登録チェック", scenario:"同じ (仕入元 / 商品 / 状態) で 2 回登録すると 409 エラー", expected:"2 回目はエラーで拒否される", steps:"1) curl / Postman で POST /api/v1/super-admin/inventory-offers を同じ (supplier_id, product_id, condition) で 2 回送信\n2) 2 回目が 409 エラーで拒否されることを確認", sys:"ok", test_evidence:"test_inventory_offers_rbac.py", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
-          { id:"F11-09", category:"権限ガード (API)", scenario:"API レベルでも一般ユーザーは弾かれる", expected:"GET / POST / PATCH / DELETE すべて 403", steps:"curl で各 API (GET / POST / PATCH / DELETE) をスーパー管理者と一般ユーザーで叩き、一般ユーザーがすべて 403 で弾かれることを確認", sys:"ok", test_evidence:"test_inventory_offers_rbac.py (7 ケース)", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] }
+          { id:"F11-09", category:"権限ガード (API)", scenario:"API レベルでも一般ユーザーは弾かれる", expected:"GET / POST / PATCH / DELETE すべて 403", steps:"curl で各 API (GET / POST / PATCH / DELETE) をスーパー管理者と一般ユーザーで叩き、一般ユーザーがすべて 403 で弾かれることを確認", sys:"ok", test_evidence:"test_inventory_offers_rbac.py (7 ケース)", notes:"—", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-10", category:"時間失効 (18h)", scenario:"F6 承認で記録した仕入元オファーは18時間後に自動削除される", expected:"承認直後は expires_at = offered_at + 18h が入り、期限を過ぎると一覧から自動的に消える（中央在庫数は変わらない）", steps:"1) SM-4 の手順で1件承認する\n2) VPS 側 psql で SELECT offered_at, expires_at FROM public.inventory WHERE source='f6_approved' ORDER BY offered_at DESC LIMIT 1 → expires_at が offered_at の約18時間後であることを確認\n3) (任意) 検証用に当該行の expires_at を過去 (NOW()-1min) に UPDATE → 30分以内に Celery purge_expired_inventory_offers が削除し一覧から消えることを確認", sys:"ok", test_evidence:"test_purge_expired_inventory_offers.py + test_f11_inventory_upsert.py (expires_at≈+18h)", notes:"QA 2026-05-30: 時間失効モデル採用 (PR #1179)。purge は Celery beat 30分毎。expires_at IS NULL の手動恒久オファーは対象外", smoke:false, urls:["/management-center/super-admin/inventory-offers"] },
+          { id:"F11-11", category:"単位 (unit) 保存", scenario:"承認時に入力した単位 (Box/Case/Pack/Set/Peace) が保存・表示される", expected:"オファー一覧・編集に単位列があり、F6 承認で入力した単位が保存されている", steps:"1) SM-4 の手順で単位 (例: Box) を選んで1件承認\n2) 「仕入元現在オファー」一覧で該当行の単位列に Box が表示されることを確認\n3) (任意) Edit で単位を変更 → Save → 反映を確認", sys:"ok", test_evidence:"test_f11_inventory_upsert.py (unit 保存) / inventory_offers CRUD", notes:"QA 2026-05-30: migration 084 で public.inventory.unit 追加 (PR #1179)", smoke:false, urls:["/management-center/super-admin/inventory-offers"] }
         ]
       },
       {
         id: "H",
         title: "H. 在庫履歴 (inventory_movements)",
         items: [
-          { id:"H-01", category:"履歴記録", scenario:"入庫 / 出庫があると履歴行が追加される", expected:"履歴は追加のみ (編集不可)、経路と数量が記録される", steps:"A) F6-02 (Discord 解析レビュー承認) を 1 件実行、または D-PO-05 (発注入荷確認) を実行\nB) VPS 側 psql で SELECT * FROM tenant_NNN.inventory_movements ORDER BY created_at DESC LIMIT 5\nC) 新規行が経路 + 数量付きで追加されていることを確認", sys:"ok", test_evidence:"test_inventory_movements_invariant.py", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound","/management-center/purchase-orders"] },
+          { id:"H-01", category:"履歴記録", scenario:"入庫 / 出庫があると履歴行が追加される", expected:"履歴は追加のみ (編集不可)、経路と数量が記録される", steps:"A) D-PO-05 (発注入荷確認) を実行する（QA 2026-05-30: Discord 承認は仕入元オファー記録のみで在庫を動かさないため inventory_movements は作らない。movement は発注入荷で発生）\nB) VPS 側 psql で SELECT * FROM tenant_NNN.inventory_movements ORDER BY created_at DESC LIMIT 5\nC) 新規行が経路 + 数量付きで追加されていることを確認", sys:"ok", test_evidence:"test_inventory_movements_invariant.py", notes:"QA 2026-05-30: Discord 承認 (SM-4) は Option Z で在庫不変 → movement なし。履歴は発注入荷 (D-PO-05) で確認 (PR #1177)", smoke:false, urls:["/management-center/purchase-orders"] },
           { id:"H-02", category:"整合性チェック", scenario:"履歴の合計 = 現在の在庫数になる", expected:"DB の整合性が保たれている", steps:"VPS 側 psql で任意の商品 X について以下を比較\nSELECT SUM(delta_qty) FROM tenant_NNN.inventory_movements WHERE product_id=X\nSELECT stock_quantity FROM tenant_NNN.products WHERE id=X\n両者が一致することを確認 (Phase B 切替後のみ)", sys:"ok", test_evidence:"同上 (test_inventory_movements_invariant.py)", notes:"Phase B 中のみ実際の在庫数を反映", smoke:false, urls:["/management-center/super-admin/inbound","/management-center/purchase-orders"] }
         ]
       },
@@ -584,7 +597,7 @@ const SHEETS = {
           { id:"PB-02", category:"Phase C 無効化", scenario:"Phase C 切替ボタンは押せない", expected:"ボタンが押せず、ツールチップで「別 ADR で検討中」表示", steps:"1) PB-01 の画面\n2) Phase C ボタンにマウスホバー\n3) ボタンが押せず、ツールチップで「別 ADR で検討中」が表示されることを確認", sys:"ok", test_evidence:"同上", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] },
           { id:"PB-03", category:"切替権限", scenario:"権限なしユーザーはアクセスできない", expected:"403 アラート表示", steps:"1) 「Phase 切替」権限なしのユーザーでログイン\n2) アドレスバーに /management-center/super-admin/phase を直接入力\n3) 403 アラートが表示されることを確認", sys:"ok", test_evidence:"同上 AC9.3", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] },
           { id:"PB-04", category:"切替履歴", scenario:"Phase 切替時に履歴が記録される", expected:"履歴に行が追加される", steps:"1) PB-01 の画面で Phase B → Phase A → Phase B などを実際に切替\n2) VPS 側 psql で SELECT * FROM public.audit_log WHERE action='phase.switch' ORDER BY created_at DESC LIMIT 5\n3) 切替操作が記録されていることを確認", sys:"partial", test_evidence:"API テストのみ", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] },
-          { id:"PB-05", category:"警告非表示確認", scenario:"Phase B 中は Phase A 警告が出ない", expected:"警告メッセージが表示されない", steps:"A) PB-01 で Phase B 設定を確認\nB) F6-02 (Discord 解析レビュー承認) を 1 件実行\nC) 「Phase A」警告メッセージが表示されないことを確認", sys:"ok", test_evidence:"parse-review-phase-a-warning.spec.ts AC9.6", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] }
+          { id:"PB-05", category:"警告非表示確認", scenario:"Phase B 中は Phase A 警告が出ない", expected:"警告メッセージが表示されない", steps:"A) PB-01 で Phase B 設定を確認\nB) Discord 受信一覧 (/management-center/super-admin/inbound) のレビュー画面で承認を 1 件実行 (SM-4 / SCN-A-06 と同じ手順)\nC) 「Phase A」警告メッセージが表示されないことを確認", sys:"ok", test_evidence:"parse-review-phase-a-warning.spec.ts AC9.6", notes:"—", smoke:false, urls:["/management-center/super-admin/phase"] }
         ]
       },
       {
@@ -592,7 +605,7 @@ const SHEETS = {
         title: "K. 知識ルール (knowledge_rules)",
         items: [
           { id:"K-01", category:"一覧表示", scenario:"知識ルールの一覧が表示される", expected:"テーブル描画", steps:"(現状の画面パスは未確定)\n1) サイドバー「管理センター」をクリック\n2) 左サブナビで「ナレッジルール」もしくは「Knowledge Rules」項目を探す → 該当があればクリック\n3) 該当 UI が無い場合は API 経由 (GET /api/v1/knowledge-rules) で確認", sys:"partial", test_evidence:"API テストのみ", notes:"—", smoke:false, urls:["/management-center"] },
-          { id:"K-02", category:"ルール適用", scenario:"解析時にルールが補助として使われる", expected:"解析結果に「ルール解析済」ステータスが反映される", steps:"1) F6-01 (Discord 受信一覧) の画面\n2) 処理状態「ルール解析済」の行を観察\n3) ルール経由でパース成功 → 商品 ID が解決されていることを確認", sys:"partial", test_evidence:"test_inventory_parser_rule.py", notes:"—", smoke:false, urls:["/management-center"] }
+          { id:"K-02", category:"ルール適用", scenario:"解析時にルールが補助として使われる", expected:"解析結果に「ルール解析済」ステータスが反映される", steps:"1) Discord 受信一覧 (/management-center/super-admin/inbound) の画面\n2) 処理状態「ルール解析済」の行を観察\n3) ルール経由でパース成功 → 商品 ID が解決されていることを確認", sys:"partial", test_evidence:"test_inventory_parser_rule.py", notes:"—", smoke:false, urls:["/management-center"] }
         ]
       }
     ]
@@ -716,10 +729,10 @@ const SHEETS = {
           { id:"SCN-A-02", category:"準備 2/9", scenario:"仕入先に Discord channel ID を紐付ける", expected:"仕入先詳細に channel ID が保存される", steps:"1) SCN-A-01 で作った仕入先の行をクリック → 詳細画面\n2) Discord channel ID 入力欄に紐付けたい channel の ID を入力\n3) 「Save」 → 反映確認", sys:"partial", test_evidence:"API テストのみ", notes:"channel ID は Discord 開発者モードで右クリック→「ID をコピー」", smoke:false, urls:["/management-center/suppliers"] },
           { id:"SCN-A-03", category:"取り込み 3/9", scenario:"Discord 側で該当 channel にメッセージ送信 → 受信一覧に表示される", expected:"受信一覧に新しい行が追加され、処理状態が「解析中」", steps:"1) Discord の該当 channel で「ピカチュウ AR Box 2セット @4500」のようなメッセージを送信\n2) サイドバー「管理センター」→ サブナビ「スーパー管理者」→「Discord 受信一覧」を開く\n3) 数秒以内に新規行が追加され、処理状態ラベルが「解析中」になることを確認", sys:"partial", test_evidence:"webhook + rule parser テスト、実 Discord はモック化されている", notes:"KL-DISCORD-CHANS: 該当 channel に Bot が参加済か事前確認", smoke:false, urls:["/management-center/super-admin/inbound"] },
           { id:"SCN-A-04", category:"解析 4/9", scenario:"数秒待つと処理状態が「ルール解析済」または「LLM 解析済」に遷移", expected:"処理状態が確定し、商品名・数量・単価がパースされる", steps:"1) SCN-A-03 の受信行を観察\n2) 30 秒以内に処理状態が「ルール解析済」(parsed_rule_only) または「LLM 解析済」(parsed_llm) に遷移\n3) 行をクリックして詳細を見ると、items[] に商品名・数量・単価が入っていることを確認", sys:"partial", test_evidence:"test_inventory_parser_rule.py + test_inventory_parser_llm_real_api.py", notes:"KL-LLM-DRYRUN: 本番 LLM は実 API なのでコスト発生", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"SCN-A-05", category:"レビュー 5/9", scenario:"レビュー画面で状態 / 数量 / 単価 を入力する", expected:"3 項目すべてに値が入る", steps:"1) SCN-A-04 の受信行の「レビュー」ボタンを押す\n2) パースされた各行の状態 (プルダウン)、提示数量、単価 を入力\n3) 入力したい行のみ採用、ノイズ行はスキップにチェック", sys:"ok", test_evidence:"f11-ac11-3-parse-review-inventory-fields.spec.ts", notes:"🔥 SM-4 と同じ手順", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"SCN-A-06", category:"承認 6/9", scenario:"承認ボタンを押すと完了メッセージが出る", expected:"「承認しました」「N 件追加されました」のメッセージ", steps:"1) SCN-A-05 の入力完了後、画面下「承認」ボタンを押す\n2) 完了メッセージが表示される\n3) 受信一覧に戻ると、該当行の状態が「承認済」に変わっている", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.1", notes:"—", smoke:false, urls:["/management-center/super-admin/inbound"] },
-          { id:"SCN-A-07", category:"反映確認 7/9", scenario:"public.inventory に在庫データが書き込まれた", expected:"DB に該当行 (supplier × product × condition) が存在", steps:"1) Mac 側で `ssh ubuntu@49.212.137.46`\n2) VPS 側で `cd /home/ubuntu/salesanchor && docker compose exec -T postgres bash -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB -c \"SELECT * FROM public.inventory WHERE supplier_id=X AND product_id=Y AND condition='\\''sealed'\\''\"'`\n3) 行が存在し、quantity / unit_price が SCN-A-05 で入力した値と一致することを確認", sys:"ok", test_evidence:"test_f11_inventory_upsert.py (5 PG ケース)", notes:"X = SCN-A-01 の仕入先 ID, Y = 解析された商品 ID", smoke:false, urls:[] },
-          { id:"SCN-A-08", category:"検索表示 8/9", scenario:"在庫検索 (見積画面) に新オファーが表示される", expected:"候補リストに該当商品が出て、右端に SCN-A-01 の仕入先名 + 数量 + 単価が compact 表示", steps:"1) サイドバー「請求書作成」→ 右上「+ 新規見積」\n2) 検索ボックスに該当商品名を入力\n3) 候補ドロップダウンに該当商品が出て、右端に「仕入元オファー N 件」+ 仕入先名 / 状態 / 数量 / 単価 が表示されることを確認", sys:"ok", test_evidence:"f11-ac11-4-inventory-search-offers.spec.ts", notes:"🔥 SM-3 と同じ", smoke:false, urls:["/quotes/new"] },
+          { id:"SCN-A-05", category:"レビュー 5/9", scenario:"レビュー画面で状態 / 数量 / 単位 / 単価 を入力する", expected:"各項目に値が入る（単位は Box/Case/Pack/Set/Peace から選択。差分数量列は撤去済）", steps:"1) SCN-A-04 の受信行の「レビュー」ボタンを押す\n2) パースされた各行の状態 (プルダウン)、在庫数、単位 (プルダウン)、単価 を入力\n3) 入力したい行のみ採用、ノイズ行はスキップにチェック", sys:"ok", test_evidence:"f11-ac11-3-parse-review-inventory-fields.spec.ts", notes:"🔥 SM-4 と同じ手順。QA 2026-05-30: 差分数量列撤去・単位列追加 (PR #1177/#1179)", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-A-06", category:"承認 6/9", scenario:"承認ボタンを押すと完了メッセージが出る", expected:"「N 件のオファーを記録しました」のメッセージ（中央在庫数 stock_quantity は増減しない＝在庫は目安）", steps:"1) SCN-A-05 の入力完了後、画面下「承認」ボタンを押す\n2) 「N 件のオファーを記録しました」メッセージが表示される\n3) 受信一覧に戻ると、該当行の状態が「承認済」に変わっている", sys:"ok", test_evidence:"super-admin-parse-review.spec.ts AC6.1", notes:"QA 2026-05-30: 承認は仕入元オファー記録のみ・在庫数不変 (Option Z, PR #1177)", smoke:false, urls:["/management-center/super-admin/inbound"] },
+          { id:"SCN-A-07", category:"反映確認 7/9", scenario:"承認後、在庫表に在庫数が反映される", expected:"承認した商品の在庫数が増えている（無かった商品は一覧に新規追加されている）", steps:"1) サイドバー「在庫表」を開く\n2) SCN-A-05 で承認した商品を検索\n3) 在庫数が増えている（既存商品は加算、無かった商品は一覧に新規追加されている）ことを確認", sys:"ok", test_evidence:"test_f11_inventory_upsert.py (5 PG ケース)", notes:"DB を直接見なくても在庫表の在庫数で確認できる", smoke:false, urls:["/inventory"] },
+          { id:"SCN-A-08", category:"検索表示 8/9", scenario:"在庫検索 (見積画面) に該当商品が表示される", expected:"候補リストに承認した商品が表示される（仕入元オファーの候補内表示は撤去済）", steps:"1) サイドバー「請求書作成」→ 右上「+ 新規見積」\n2) 検索ボックスに該当商品名を入力\n3) 候補ドロップダウンに該当商品が表示されることを確認", sys:"ok", test_evidence:"quote-create-inventory-search.spec.ts", notes:"仕入元オファーの候補内表示は QA 2026-05-29 で撤去", smoke:false, urls:["/quotes/new"] },
           { id:"SCN-A-09", category:"管理画面 9/9", scenario:"仕入元別オファー画面に該当行があり、編集できる", expected:"該当オファーが一覧に表示され、Edit ボタンで数量/単価/状態を変更可", steps:"1) サイドバー「管理センター」→ サブナビ「スーパー管理者」→「仕入元現在オファー」\n2) 検索ボックスに SCN-A-01 の仕入先名を入力 → 該当行を絞り込み\n3) 行の「Edit」ボタン → 数量や状態を変更 → 「Save」 → 更新成功メッセージを確認", sys:"ok", test_evidence:"f11-ac11-5-super-admin-inventory-offers.spec.ts", notes:"🔥 SM-2 と同じ", smoke:false, urls:["/management-center/super-admin/inventory-offers"] }
         ]
       },
@@ -821,6 +834,8 @@ function saveState(state) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 let STATE = loadState();
+// collapse: 各項目の畳み状態の明示オーバーライド (uniqKey -> bool)。未設定なら OK 項目を既定で畳む。
+if (!STATE.collapsed || typeof STATE.collapsed !== "object") STATE.collapsed = {};
 let CURRENT_TAB = "inventory";
 let CURRENT_FILTER = localStorage.getItem(FILTER_KEY) || "all";
 
@@ -979,6 +994,20 @@ function renderFilters() {
     });
     wrap.appendChild(btn);
   });
+  // global: OK 項目を一括で畳む / 全部展開（消去ではなく畳むだけ・スクロール削減）
+  const collapseControls = document.createElement("span");
+  collapseControls.className = "collapse-controls";
+  const btnCollapseOk = document.createElement("button");
+  btnCollapseOk.type = "button";
+  btnCollapseOk.textContent = "✅ OK項目を畳む";
+  btnCollapseOk.addEventListener("click", () => setAllCollapsed(true));
+  const btnExpandAll = document.createElement("button");
+  btnExpandAll.type = "button";
+  btnExpandAll.textContent = "🗁 全部展開";
+  btnExpandAll.addEventListener("click", () => setAllCollapsed(false));
+  collapseControls.appendChild(btnCollapseOk);
+  collapseControls.appendChild(btnExpandAll);
+  wrap.appendChild(collapseControls);
 }
 
 function renderSheet() {
@@ -1008,6 +1037,7 @@ function renderSheet() {
     root.appendChild(secEl);
   });
   applyFilter();
+  applyCollapse();
 }
 
 function renderCard(sheetId, item) {
@@ -1027,6 +1057,21 @@ function renderCard(sheetId, item) {
       <span>${sysIcon(item.sys)}</span>
     </span>
   `;
+  // 結果バッジ + 畳むトグル（OK 等を畳んでスクロール削減。消去ではない）
+  const resultBadge = document.createElement("span");
+  resultBadge.dataset.role = "card-result";
+  head.appendChild(resultBadge);
+  const collapseToggle = document.createElement("button");
+  collapseToggle.type = "button";
+  collapseToggle.className = "collapse-toggle";
+  collapseToggle.dataset.role = "collapse-toggle";
+  collapseToggle.addEventListener("click", () => {
+    const key = uniqKey(sheetId, item.id);
+    STATE.collapsed[key] = !card.classList.contains("collapsed");
+    saveState(STATE);
+    applyCardCollapse(card);
+  });
+  head.appendChild(collapseToggle);
   card.appendChild(head);
 
   // Sys reason (partial / none の場合に表示)
@@ -1135,11 +1180,55 @@ function renderCard(sheetId, item) {
   return card;
 }
 
+// =================================================================
+// COLLAPSE (OK 等を畳んで表示・スクロール削減。消去ではない)
+// =================================================================
+function statusResultMeta(s) {
+  if (s === "ok") return { cls: "ok", text: "✅ OK" };
+  if (s === "ng") return { cls: "ng", text: "❌ NG" };
+  if (s === "na") return { cls: "na", text: "🟦 対象外" };
+  return { cls: "pending", text: "⬜ 未" };
+}
+function shouldCollapse(sheetId, itemId) {
+  const ov = STATE.collapsed[uniqKey(sheetId, itemId)];
+  if (typeof ov === "boolean") return ov;            // 明示オーバーライド優先
+  return effectiveStatus(sheetId, itemId) === "ok";  // 既定: OK は畳む
+}
+function applyCardCollapse(card) {
+  const sheetId = card.dataset.sheet, itemId = card.dataset.itemId;
+  const meta = statusResultMeta(effectiveStatus(sheetId, itemId));
+  const badge = card.querySelector('[data-role="card-result"]');
+  if (badge) { badge.className = "card-result " + meta.cls; badge.textContent = meta.text; }
+  const collapsed = shouldCollapse(sheetId, itemId);
+  card.classList.toggle("collapsed", collapsed);
+  const tg = card.querySelector('[data-role="collapse-toggle"]');
+  if (tg) tg.textContent = collapsed ? "▶ 展開" : "▼ 畳む";
+}
+function applyCollapse() {
+  document.querySelectorAll(".card").forEach(applyCardCollapse);
+}
+// global: OK 項目を一括で畳む / 全部展開
+function setAllCollapsed(collapseOkOnly) {
+  document.querySelectorAll(".card").forEach(card => {
+    const key = uniqKey(card.dataset.sheet, card.dataset.itemId);
+    if (collapseOkOnly) {
+      if (effectiveStatus(card.dataset.sheet, card.dataset.itemId) === "ok") STATE.collapsed[key] = true;
+    } else {
+      STATE.collapsed[key] = false;
+    }
+  });
+  saveState(STATE);
+  applyCollapse();
+}
+
 function applyFilter() {
   document.querySelectorAll(".card").forEach(card => {
     const sheetId = card.dataset.sheet;
     const itemId = card.dataset.itemId;
     const status = effectiveStatus(sheetId, itemId);
+    // 結果バッジを最新化（ここでは畳まない＝OK にした直後のメモ記入を妨げない）
+    const badge = card.querySelector('[data-role="card-result"]');
+    if (badge) { const m = statusResultMeta(status); badge.className = "card-result " + m.cls; badge.textContent = m.text; }
     let show = true;
     if (CURRENT_FILTER === "pending") show = (status === "pending");
     else if (CURRENT_FILTER === "ok") show = (status === "ok");

@@ -1,6 +1,10 @@
 {
   "common": {
     "loading": "読み込み中...",
+    "select": "選択",
+    "selectAll": "全選択",
+    "optional": "任意",
+    "clear": "クリア",
     "saving": "保存中...",
     "save": "保存",
     "cancel": "キャンセル",
@@ -21,6 +25,7 @@
     "back": "戻る",
     "create": "作成",
     "add": "追加",
+    "archive": "アーカイブ",
     "remove": "削除",
     "previous": "前へ",
     "next": "次へ",
@@ -646,6 +651,8 @@
       "candidatesLabel": "検索候補",
       "noResults": "該当する商品がありません",
       "stockLabel": "在庫",
+      "pickerPlaceholder": "在庫一覧から選択（商品名で絞り込み可）",
+      "stockGuide": "在庫(目安)",
       "stockMaskedNote": "在庫数の閲覧権限がありません（***表示）",
       "zeroStockWarning": "「{{name}}」は在庫が 0 です。仕入元と在庫を確認してください。",
       "offersLabel": "仕入元オファー {{count}} 件",
@@ -705,6 +712,13 @@
   "invoices": {
     "subtitle": "請求書の作成と管理ができます。",
     "title": "請求書管理",
+    "createTitle": "請求書作成",
+    "fromInventory": "在庫表から作成",
+    "fromQuote": "見積書から作成",
+    "fromQuoteHelp": "自テナントで作成した承認済みの見積書から請求書を作成します。",
+    "noApprovedQuotes": "承認済みの見積書がありません。",
+    "createFromThisQuote": "この見積から作成",
+    "createBtn": "請求書を作成",
     "invoiceCode": "請求書コード",
     "dueDate": "支払期限",
     "allStatuses": "全ステータス",
@@ -754,6 +768,18 @@
   "products": {
     "subtitle": "商品と在庫情報を管理します。",
     "title": "在庫管理",
+    "selectedCount": "{{count}}件選択中",
+    "createQuote": "見積書作成",
+    "createInvoice": "請求書作成",
+    "importFromInbound": "受信通知から未登録商品を抽出",
+    "importFromInboundHint": "受信通知の解析結果から、商品マスタに未登録の商品名を抽出しました。登録するものにチェックを入れてください（ノイズや既存類似はチェックを外す）。",
+    "importNoCandidates": "未登録の商品名候補はありません。",
+    "importCandidateCount": "候補 {{count}} 件",
+    "importOccurrences": "出現回数",
+    "importSample": "受信本文サンプル",
+    "importCategory": "分類（任意）",
+    "importApply": "選択した {{count}} 件を商品マスターに登録",
+    "importDone": "{{count}} 件を商品マスターに登録しました。",
     "newProduct": "新規登録",
     "editProduct": "商品編集",
     "productCode": "商品コード",
@@ -1204,7 +1230,7 @@
     "subtitle": "マーケットプレイス中央マスタの編集（全テナント共有）",
     "accessDenied": "このページには Jarvis 運用 admin（中央 admin）のみアクセスできます。",
     "tabs": {
-      "knowledge": "正規化ルール / 別名",
+      "knowledge": "解析プロンプト / ルール",
       "tcg": "TCG シリーズ",
       "dex": "ポケモン / トレーナー図鑑",
       "suppliers": "仕入元",
@@ -1212,6 +1238,9 @@
     },
     "knowledge": {
       "title": "正規化辞書 (knowledge_rules) + 仕入元別名 (supplier_aliases)",
+      "promptSection": "仕入先別 解析プロンプト（使用保留中）",
+      "promptHelp": "仕入先ごとに Gemini 解析用プロンプトを管理します（スプレッドシートから取込済み）。",
+      "promptPlaceholder": "この仕入先の Gemini 解析プロンプトを入力",
       "rulesSection": "正規化ルール",
       "aliasesSection": "仕入元別名",
       "newRule": "ルール新規作成",
@@ -1252,6 +1281,11 @@
         "dragon_ball": "ドラゴンボール",
         "union_arena": "ユニオンアリーナ",
         "yugioh": "遊戯王"
+      },
+      "typeManager": {
+        "title": "種別の管理",
+        "code": "種別コード",
+        "addBtn": "種別を追加"
       }
     },
     "dex": {
@@ -1268,6 +1302,14 @@
         "generation": "世代",
         "region": "地方",
         "era": "時代"
+      },
+      "import": {
+        "previewBtn": "PokeAPIから取込",
+        "applyBtn": "{{count}} 件を一括取込",
+        "upToDate": "最新です（新規なし）",
+        "diffSummary": "新規 {{count}} 件（PokeAPI {{source}} 件 / DB {{db}} 件）",
+        "applied": "{{count}} 件を取り込みました",
+        "truncated": "新規が多いため先頭 {{max}} 件のみ表示・取込します"
       }
     },
     "suppliersAdmin": {
@@ -1288,8 +1330,8 @@
         "individual": "個人",
         "corporate": "法人"
       },
-      "discordRouting": "Discord 紐付け",
-      "addRouting": "Discord 紐付け追加",
+      "discordRouting": "Discord紐付け",
+      "addRouting": "Discord紐付け追加",
       "guildId": "Guild ID",
       "channelId": "Channel ID"
     },
@@ -1357,18 +1399,18 @@
         "rejectReasonLabel": "exclude_reason（必須）",
         "rejectConfirmBtn": "差し戻しを確定",
         "rejectReasonRequired": "差し戻し理由を入力してください",
-        "approveSuccess": "{{count}} 件を承認し、{{skipped}} 件をスキップしました。",
+        "approveSuccess": "{{offers}} 件のオファーを記録し、{{skipped}} 件をスキップしました。",
         "rejectSuccess": "差し戻しました。",
         "versionConflict": "他のレビュアーが先に更新しました。最新版を再読み込みしたので再操作してください。",
         "col": {
           "productId": "商品 ID",
-          "deltaQty": "差分数量",
           "alias": "仕入元呼称",
           "notes": "メモ",
           "skip": "スキップ",
           "condition": "状態",
           "quantityOffered": "在庫数",
           "quantityOfferedPlaceholder": "提示数量",
+          "unit": "単位",
           "unitPrice": "単価 (円)",
           "unitPricePlaceholder": "提示単価"
         },

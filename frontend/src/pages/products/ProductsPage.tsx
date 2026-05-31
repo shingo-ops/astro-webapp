@@ -8,15 +8,17 @@
  *               - TCG 列追加（jan_code, card_number, expansion_code, rarity, language）
  *               - 多通貨価格（unit_price_usd, unit_price_eur）
  *               - 画像 URL（image_url、単一列）
- *               - is_archived フィルタ + 廃番ボタン
- *               - DELETE 409（FK 参照あり）時にアーカイブ誘導モーダル
+ *               - DELETE 409（FK 参照あり）時にアーカイブ誘導モーダル（廃番の唯一の導線）
+ *               注: 廃番フィルタ(#1174) と行内「追加」(=廃番トグル) ボタン(QA 2026-05-30) は撤去済み
  */
 
 import { useEffect, useState, FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api, ApiError } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import { usePermissions } from "../../hooks/usePermissions";
+import { useSuperAdmin } from "../../hooks/useSuperAdmin";
 import { PageLayout } from "../../components/PageLayout";
 
 interface Product {
@@ -87,12 +89,19 @@ interface ArchiveBlockedDetail {
   detail: string;
 }
 
+// 受信通知 → 商品マスタ取込（プレビュー付き）の候補
+interface InboundProductCandidate {
+  name: string;
+  occurrences: number;
+  sample: string | null;
+}
+
 export default function ProductsPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
+  const { isSuperAdmin } = useSuperAdmin();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
-  const [showArchived, setShowArchived] = useState(false);
   // QA r7: 190 件全件閲覧のため pagination 追加。backend per_page max=100
   const [page, setPage] = useState(1);
   const PER_PAGE = 100;
@@ -107,12 +116,104 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [archiveBlocked, setArchiveBlocked] = useState<ArchiveBlockedDetail | null>(null);
+  // QA 2026-05-31: 在庫表からチェックして見積/請求を作成するための複数選択
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  // QA 2026-05-31: 受信通知 → 商品マスタ取込（プレビュー付き）
+  const [showImport, setShowImport] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importApplying, setImportApplying] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [candidates, setCandidates] = useState<InboundProductCandidate[]>([]);
+  const [importSelected, setImportSelected] = useState<Set<string>>(new Set());
+  const [importCategory, setImportCategory] = useState("");
+  const [importDone, setImportDone] = useState("");
+  const navigate = useNavigate();
+
+  // 受信通知から未登録の商品名候補を取得してプレビューを開く
+  const openImport = async () => {
+    setShowImport(true);
+    setImportError("");
+    setImportDone("");
+    setImportLoading(true);
+    setCandidates([]);
+    setImportSelected(new Set());
+    setImportCategory("");
+    try {
+      const data = await api.get<{ candidates: InboundProductCandidate[]; total: number }>(
+        "/super-admin/inbound/product-candidates",
+      );
+      const list = Array.isArray(data.candidates) ? data.candidates : [];
+      setCandidates(list);
+      // デフォルトは全選択（オペレータがノイズを外す運用）
+      setImportSelected(new Set(list.map((c) => c.name)));
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : t("common.fetchError"));
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const toggleImport = (name: string) => {
+    setImportSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const allImportSelected = candidates.length > 0 && importSelected.size === candidates.length;
+  const toggleImportAll = () => {
+    setImportSelected(allImportSelected ? new Set() : new Set(candidates.map((c) => c.name)));
+  };
+
+  // 選択した候補を商品マスタへ一括登録
+  const applyImport = async () => {
+    const names = candidates.map((c) => c.name).filter((n) => importSelected.has(n));
+    if (names.length === 0) return;
+    setImportApplying(true);
+    setImportError("");
+    try {
+      const res = await api.post<{ inserted: number; skipped: number }>(
+        "/super-admin/inbound/product-candidates/apply",
+        { names, category: importCategory.trim() || null },
+      );
+      setShowImport(false);
+      setImportDone(t("products.importDone", { count: res.inserted }));
+      load();
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : t("common.saveError"));
+    } finally {
+      setImportApplying(false);
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // 選択商品を初期明細として見積/請求の作成画面へ渡す
+  const goCreate = (path: string) => {
+    const selectedProducts = products
+      .filter((p) => selectedIds.has(p.id))
+      .map((p) => ({
+        product_id: p.id,
+        product_name: p.name_ja,
+        unit_price: p.unit_price,
+      }));
+    if (selectedProducts.length === 0) return;
+    navigate(path, { state: { selectedProducts } });
+  };
 
   const load = async () => {
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      if (showArchived) params.set("archived", "true");
       params.set("page", String(page));
       params.set("per_page", String(PER_PAGE));
       const qs = `?${params.toString()}`;
@@ -127,13 +228,13 @@ export default function ProductsPage() {
     }
   };
 
-  // search/archived 変更時は page を 1 に戻す
+  // search 変更時は page を 1 に戻す
   useEffect(() => {
     setPage(1);
-  }, [search, showArchived]);
+  }, [search]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [search, showArchived, page]);
+  useEffect(() => { load(); }, [search, page]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -199,15 +300,6 @@ export default function ProductsPage() {
     setShowForm(true);
   };
 
-  const handleArchiveToggle = async (p: Product) => {
-    try {
-      await api.patch(`/products/${p.id}`, { is_archived: !p.is_archived });
-      load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("common.operationError"));
-    }
-  };
-
   const performDelete = async () => {
     if (!deleteTarget) return;
     const id = deleteTarget.id;
@@ -244,19 +336,128 @@ export default function ProductsPage() {
     <PageLayout
       navKey="nav.inventory"
       subtitleKey="products.subtitle"
-      headerAction={hasPermission("products.create") ? (
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("products.newProduct")}</button>
-      ) : undefined}
+      headerAction={
+        (hasPermission("products.create") || isSuperAdmin) ? (
+          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+            {isSuperAdmin && (
+              <button className="btn-secondary" onClick={openImport} data-testid="open-import-from-inbound">
+                {t("products.importFromInbound")}
+              </button>
+            )}
+            {hasPermission("products.create") && (
+              <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("products.newProduct")}</button>
+            )}
+          </div>
+        ) : undefined
+      }
     >
       <div className="search-bar" style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
         <input type="text" placeholder={t("common.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
-        <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", whiteSpace: "nowrap" }}>
-          <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-          {t("products.status_discontinued")}
-        </label>
       </div>
 
+      {/* QA 2026-05-31: 在庫表からチェックした商品で見積/請求を作成 */}
+      {selectedIds.size > 0 && (
+        <div
+          className="selection-action-bar"
+          style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap", margin: "var(--space-2) 0", padding: "var(--space-2) var(--space-3)", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}
+        >
+          <span style={{ fontWeight: "var(--font-weight-semi)" }}>
+            {t("products.selectedCount", { count: selectedIds.size })}
+          </span>
+          <button className="btn-primary btn-sm" onClick={() => goCreate("/quotes/new")} data-testid="create-quote-from-products">
+            {t("products.createQuote")}
+          </button>
+          <button className="btn-primary btn-sm" onClick={() => goCreate("/invoices/new")} data-testid="create-invoice-from-products">
+            {t("products.createInvoice")}
+          </button>
+          <button className="btn-sm" onClick={() => setSelectedIds(new Set())}>
+            {t("common.clear")}
+          </button>
+        </div>
+      )}
+
       {error && <div className="error-message">{error}</div>}
+      {importDone && <div className="success-message" data-testid="import-done">{importDone}</div>}
+
+      {showImport && (
+        <div className="modal-overlay" onClick={() => !importApplying && setShowImport(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{t("products.importFromInbound")}</h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)", marginTop: 0 }}>
+              {t("products.importFromInboundHint")}
+            </p>
+            {importError && <div className="error-message">{importError}</div>}
+            {importLoading ? (
+              <div className="loading">{t("common.loading")}</div>
+            ) : candidates.length === 0 ? (
+              <p className="empty">{t("products.importNoCandidates")}</p>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap", marginBottom: "var(--space-2)" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "var(--space-1)", cursor: "pointer" }}>
+                    <input type="checkbox" checked={allImportSelected} onChange={toggleImportAll} data-testid="import-select-all" />
+                    {t("common.selectAll")}
+                  </label>
+                  <span style={{ color: "var(--text-secondary)", fontSize: "var(--font-sm)" }}>
+                    {t("products.importCandidateCount", { count: candidates.length })}
+                  </span>
+                  <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
+                    <label style={{ fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.importCategory")}</label>
+                    <input
+                      style={{ width: "var(--input-width-product-name)" }}
+                      placeholder={t("common.optional")}
+                      value={importCategory}
+                      onChange={(e) => setImportCategory(e.target.value)}
+                      data-testid="import-category"
+                    />
+                  </span>
+                </div>
+                <div style={{ maxHeight: "50vh", overflowY: "auto", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "var(--col-width-checkbox)", textAlign: "center" }} aria-label={t("common.select")}></th>
+                        <th>{t("common.name")}</th>
+                        <th style={{ width: "var(--col-width-checkbox)", textAlign: "right" }}>{t("products.importOccurrences")}</th>
+                        <th>{t("products.importSample")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {candidates.map((c) => (
+                        <tr key={c.name}>
+                          <td style={{ textAlign: "center" }}>
+                            <input
+                              type="checkbox"
+                              checked={importSelected.has(c.name)}
+                              onChange={() => toggleImport(c.name)}
+                              aria-label={c.name}
+                            />
+                          </td>
+                          <td>{c.name}</td>
+                          <td style={{ textAlign: "right" }}>{c.occurrences}</td>
+                          <td style={{ color: "var(--text-secondary)", fontSize: "var(--font-xs)" }}>{c.sample || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+            <div className="form-actions">
+              <button type="button" className="btn-secondary" onClick={() => setShowImport(false)} disabled={importApplying}>{t("common.cancel")}</button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={applyImport}
+                disabled={importApplying || importLoading || importSelected.size === 0}
+                data-testid="import-apply"
+              >
+                {importApplying ? t("common.loading") : t("products.importApply", { count: importSelected.size })}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
@@ -353,6 +554,7 @@ export default function ProductsPage() {
         <table className="data-table">
           <thead>
             <tr>
+              <th style={{ width: "var(--col-width-checkbox)", textAlign: "center" }} aria-label={t("common.select")}></th>
               <th>{t("common.name")}</th>
               <th>{t("quotes.items")}</th>
               <th>{t("language.label")}</th>
@@ -372,6 +574,15 @@ export default function ProductsPage() {
               // 文字の視認性を保つため opacity は下げない (QA 2026-05-29)。
               return (
               <tr key={p.id} style={rowStyle} data-zero-stock={isOutOfStock ? "true" : "false"}>
+                <td style={{ textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(p.id)}
+                    onChange={() => toggleSelect(p.id)}
+                    aria-label={t("common.select")}
+                    data-testid={`product-select-${p.id}`}
+                  />
+                </td>
                 <td>
                   {p.image_url && <img src={p.image_url} alt="" style={{ width: 'var(--icon-lg)', height: 'var(--icon-lg)', marginRight: "var(--space-1)", objectFit: "cover", verticalAlign: "middle", borderRadius: "var(--radius-xs)" }} />}
                   {isOutOfStock && !p.is_archived && (
@@ -403,17 +614,14 @@ export default function ProductsPage() {
                 <td><span className={`badge badge-${p.status === "active" ? "won" : "lost"}`}>{p.status === "active" ? t("products.status_active") : t("products.status_discontinued")}</span></td>
                 <td className="actions">
                   {hasPermission("products.update") && <button className="btn-sm" onClick={() => handleEdit(p)}>{t("common.edit")}</button>}
-                  {hasPermission("products.update") && (
-                    <button className="btn-sm" onClick={() => handleArchiveToggle(p)}>
-                      {p.is_archived ? t("common.reload") : t("common.add")}
-                    </button>
-                  )}
+                  {/* QA 2026-05-30: 「追加」と誤表記された廃番(archive)トグルを撤去（誤クリックで行が消える事故防止）。
+                      廃番は「削除」の FK 参照時フォールバック (handleArchiveFromBlocked) でのみ行う。 */}
                   {hasPermission("products.delete") && <button className="btn-sm btn-danger" onClick={() => setDeleteTarget(p)}>{t("common.delete")}</button>}
                 </td>
               </tr>
               );
             })}
-            {products.length === 0 && <tr><td colSpan={8} className="empty">{t("products.noProducts")}</td></tr>}
+            {products.length === 0 && <tr><td colSpan={9} className="empty">{t("products.noProducts")}</td></tr>}
           </tbody>
         </table>
       )}
@@ -486,7 +694,7 @@ export default function ProductsPage() {
             )}
           </>
         }
-        confirmLabel={t("common.add")}
+        confirmLabel={t("common.archive")}
         onConfirm={handleArchiveFromBlocked}
         onCancel={() => setArchiveBlocked(null)}
       />

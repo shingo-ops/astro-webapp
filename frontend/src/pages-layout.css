@@ -84,7 +84,9 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 var(--page-padding-x);
+  /* QA 2026-05-31: 下端に余白が無く最下部要素がビューポート底に張り付いていた
+     （特にマスタ管理など縦に長いページ）。スクロール領域に下余白を追加する。 */
+  padding: 0 var(--page-padding-x) var(--space-8);
 }
 
 .page-layout-content--no-scroll {

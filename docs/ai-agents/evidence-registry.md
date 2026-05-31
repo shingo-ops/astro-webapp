@@ -23,6 +23,59 @@ follow_up:
 ## Current Entries
 
 ```text
+id: EV-20260530-001
+date: 2026-05-30
+agent: Claude Code (orchestrator)
+task: Codex の役割を Research・Planning に拡張し、非対話 exec ラッパーを整備
+scope: AGENTS.md, memory/project_codex_adoption.md, scripts/codex-research.sh
+evidence:
+  - type: command
+    reference: codex --help
+    summary: codex exec サブコマンドが実装済みであることを確認（v0.134.0）
+  - type: command
+    reference: ls scripts/
+    summary: codex-generator.sh（TUI対話型）は存在するが codex exec 用の非対話ラッパーは存在しなかった
+  - type: file
+    reference: scripts/codex-generator.sh
+    summary: 既存ラッパーは Generator（対話型TUI）専用であり Research/Planning 用の exec ラッパーは未作成
+  - type: file
+    reference: .claude/agents/research.md
+    summary: develop ブランチでは既に存在していた（ギャップ③は既解消）
+  - type: file
+    reference: AGENTS.md
+    summary: 役割分担テーブル（Codex: Research/Planning/Generator、Claude Code: Review）を追加済み
+confidence: high
+tradeoff: codex exec はサンドボックス制限あり（sandbox_permissions = disk-full-read-access）。書き込みが必要なタスクは codex-generator.sh（対話型）を使い続ける必要がある
+decision: scripts/codex-research.sh を新設。--plan フラグで Planner モード切替可能。既存の codex-generator.sh は Generator 専用として温存
+follow_up: 実運用 30 日後に Research/Planning exec モードの採用率を Governance が確認する
+```
+
+```text
+id: EV-20260529-004
+date: 2026-05-29
+agent: Codex
+task: Agent pipeline redefinition and runtime definition sync
+scope: .claude/agents, docs/agents, AGENTS.md, CLAUDE.md, docs/onboarding/claude-code.md, docs/ai-agents/agent-roles.md
+evidence:
+  - type: file
+    reference: .claude/agents/planner.md
+    summary: Planner runtime prompt was rewritten to the Research -> Planner -> Architect -> PO Approval pipeline
+  - type: file
+    reference: .claude/agents/generator.md
+    summary: Generator now requires Architect APPROVE and explicit PO Approval before implementation
+  - type: file
+    reference: docs/ai-agents/agent-roles.md
+    summary: Runtime canonical source was moved to `.claude/agents/` and Architect was added to the role index
+  - type: file
+    reference: AGENTS.md
+    summary: Project rules now document the new runtime pipeline and source-of-truth split
+confidence: medium
+tradeoff: Keeping both `.claude/agents/` and `docs/agents/` in sync adds maintenance overhead, but it preserves a short runtime prompt and a detailed reference layer
+decision: Standardize the new Research -> Planner -> Architect -> PO Approval -> Generator -> Reviewer -> Evaluator -> GitHub CI pipeline with `.claude/agents/` as runtime source of truth
+follow_up: Add a lightweight sync check or maintainers' review note if divergence between `.claude/agents/` and `docs/agents/` appears again
+```
+
+```text
 id: EV-20260530-011
 date: 2026-05-30
 agent: Codex
@@ -451,6 +504,26 @@ confidence: high
 tradeoff: auto モードでは実際の executor をログで確認する必要がある。Codex が安定したら codex 専用モードへの移行を検討
 decision: generator_executor=auto をデフォルトとし、Codex 不在・失敗時は自動で Claude Code にフォールバックする
 follow_up: Codex フォールバック Discord 通知が頻発する場合は self-hosted runner の codex CLI インストールを確認する
+```text
+id: EV-20260530-014
+date: 2026-05-30
+agent: Agent
+task: release develop → main completion for AEON sync
+scope: PR #1178, gh pr checks 1178, gh pr merge 1178 --merge --delete-branch, tasks/todo.md, docs/ai-agents/evidence-registry.md
+evidence:
+  - type: command
+    reference: gh pr checks 1178
+    summary: Playwright E2E (chromium) と pytest-run-internal が pass し、release PR の必須チェックが揃った
+  - type: command
+    reference: gh pr merge 1178 --merge --delete-branch
+    summary: GitHub 上で PR #1178 が MERGED になり、merge commit 341c399a505e3150a54612de6055fdbabbacc56a が生成された
+  - type: command
+    reference: gh pr view 1178 --json state,mergedAt,mergeCommit,url,mergeStateStatus
+    summary: state=MERGED, mergedAt=2026-05-29T21:24:21Z, mergeCommit=341c399a505e3150a54612de6055fdbabbacc56a を確認した
+confidence: high
+tradeoff: local `gh pr merge` は worktree の branch checkout 制約で delete-branch に失敗したが、GitHub 側の merge 自体は完了した
+decision: AEON 関連の develop → main release は PR #1178 で完了したとみなし、次の release 系作業では main 側の差分だけを別途確認する
+follow_up: `tasks/todo.md` の完了欄と release 関連 runbook を必要に応じて参照更新する
 ```
 
 ## Review Rules

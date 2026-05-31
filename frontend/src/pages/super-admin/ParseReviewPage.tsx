@@ -13,12 +13,12 @@
  *     ⇒ Sprint 7 (2026-05-22): InventorySearchBar を行内に埋め込み、インラインで product_id 解決可能化。
  *   - 編集は delta_qty / notes / product_id (Sprint 7 で追加) をインライン可能。
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ApiError, api } from "../../lib/api";
 import { useSuperAdmin } from "../../hooks/useSuperAdmin";
-import InventorySearchBar, { InventorySearchCandidate } from "../../components/InventorySearchBar";
+import InventoryPicker, { PickedProduct } from "../../components/InventoryPicker";
 import "./ParseReviewPage.css";
 
 interface ReviewItem {
@@ -31,6 +31,11 @@ interface ReviewItem {
   condition?: string | null;
   quantity_offered?: number | null;
   unit_price?: number | null;
+  // パーサ (inventory_parser ParsedItem) が出力するキー。LLM が抽出した商品名・数量・単位。
+  // 旧 UI はこれらを読まず delta_qty/alias_text を見ていたため、抽出済みでも画面に出ていなかった。
+  product_name?: string | null;
+  quantity?: number | null;
+  unit?: string | null;  // parser 正規化値: box / carton / pack / piece / set
 }
 
 interface ParseResultJson {
@@ -63,7 +68,6 @@ interface ParseReviewDetail {
 
 interface RowDraft {
   product_id: number | null;
-  delta_qty: number;
   alias_text: string;
   notes: string;
   original_index: number;
@@ -72,6 +76,11 @@ interface RowDraft {
   condition: string;
   quantity_offered: string;  // 数値だが入力途中の空文字を許容するため string で保持
   unit_price: string;
+  // 単位 (QA 2026-05-30): Box / Case / Pack / Set / Peace。空文字 = 未指定。
+  // parser の unit (box/carton/pack/piece/set) を UI 値にマップして prefill する。
+  unit: string;
+  // 表示専用 (送信しない): LLM が抽出した商品名
+  product_name: string;
 }
 
 interface ApproveResponse {
@@ -86,6 +95,8 @@ interface ApproveResponse {
     after_qty: number;
   }>;
   skipped_count: number;
+  // QA 2026-05-30 (Option Z): 在庫を動かさず public.inventory に記録した仕入元オファー件数
+  offers_recorded?: number;
   // Sprint 9 / F9 v1.2: Phase A 並走時に products.stock_quantity 更新を skip したか
   skipped_stock_update?: boolean;
   phase?: "A" | "B" | "C";
@@ -98,27 +109,61 @@ interface RejectResponse {
   exclude_reason: string;
 }
 
+// 単位列 (QA 2026-05-30) の選択肢。値は UI 表示そのまま (Box / Case / Pack / Set / Peace)。
+const UNIT_OPTIONS = ["Box", "Case", "Pack", "Set", "Peace"] as const;
+// parser 正規化値 (box/carton/pack/piece/set) → UI 単位値 へのマップ。
+const PARSER_UNIT_TO_UI: Record<string, string> = {
+  box: "Box",
+  carton: "Case",
+  case: "Case",
+  pack: "Pack",
+  set: "Set",
+  piece: "Peace",
+  peace: "Peace",
+};
+
+function mapParserUnit(raw: string | null | undefined): string {
+  if (!raw) return "";
+  return PARSER_UNIT_TO_UI[String(raw).trim().toLowerCase()] ?? "";
+}
+
+// 単価を整数文字列に正規化（LLM は 190000.0 のような float を返すため小数を落とす）。
+function toIntPriceString(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  const n = Number(value);
+  return Number.isFinite(n) ? String(Math.round(n)) : "";
+}
+
 function detailToDrafts(detail: ParseReviewDetail): RowDraft[] {
   const items = detail.parse_result_json?.items ?? [];
   const existingSkipped = new Set(detail.parse_result_json?.skipped ?? []);
-  return items.map((item, idx) => ({
-    product_id: item.product_id ?? null,
-    delta_qty: Number(item.delta_qty ?? 0),
-    alias_text: String(item.alias_text ?? ""),
-    notes: String(item.notes ?? ""),
-    original_index: idx,
-    skipped: existingSkipped.has(idx),
-    // Sprint 11 / F11 AC11.3: parse_result_json に値があれば prefill、無ければ空
-    condition: String(item.condition ?? ""),
-    quantity_offered:
-      item.quantity_offered === null || item.quantity_offered === undefined
-        ? ""
-        : String(item.quantity_offered),
-    unit_price:
-      item.unit_price === null || item.unit_price === undefined
-        ? ""
-        : String(item.unit_price),
-  }));
+  return items.map((item, idx) => {
+    // メモから来歴 (source=llm_v1; confidence=…) を除去。来歴は表示せず、メモ欄は
+    // オペレータ入力用に空ける。来歴でない (人間が書いた) メモはそのまま残す。
+    const rawNotes = String(item.notes ?? "");
+    const isProvenance = /(^|;\s*)source=/.test(rawNotes);
+    // 提示数量: パーサの quantity を prefill（旧 UI は quantity を読まず常に空だった）
+    const offered =
+      item.quantity_offered != null
+        ? String(item.quantity_offered)
+        : item.quantity != null
+          ? String(item.quantity)
+          : "";
+    return {
+      product_id: item.product_id ?? null,
+      alias_text: String(item.alias_text ?? ""),
+      notes: isProvenance ? "" : rawNotes,
+      original_index: idx,
+      skipped: existingSkipped.has(idx),
+      // Sprint 11 / F11 AC11.3: parse_result_json に値があれば prefill、無ければ空
+      condition: String(item.condition ?? ""),
+      quantity_offered: offered,
+      unit_price: toIntPriceString(item.unit_price),
+      unit: mapParserUnit(item.unit),
+      // 表示専用: LLM 抽出の商品名
+      product_name: String(item.product_name ?? ""),
+    };
+  });
 }
 
 export default function ParseReviewPage() {
@@ -198,22 +243,26 @@ export default function ParseReviewPage() {
     setInfo("");
     setSubmitting(true);
     try {
-      // 採用行（skipped=false かつ product_id !== null かつ delta_qty !== 0）のみ送信
+      // 採用行（skipped=false かつ product_id !== null）を送信。
+      // QA 2026-05-30: 差分数量列を撤去。在庫数は「目安」で中央在庫を増減させないため
+      // delta_qty=0 で送る → backend は在庫を動かさず public.inventory のオファーのみ記録する
+      // (condition 指定行が対象。Option Z / inventory_movements.apply_inbound_items)。
       const items = drafts
-        .filter((r) => !r.skipped && r.product_id !== null && r.delta_qty !== 0)
+        .filter((r) => !r.skipped && r.product_id !== null)
         .map((r) => {
           // Sprint 11 / F11 AC11.3: 数値項目は空文字を null に変換 + パース
           const qOffered = r.quantity_offered.trim();
           const uPrice = r.unit_price.trim();
           return {
             product_id: r.product_id,
-            delta_qty: r.delta_qty,
+            delta_qty: 0,
             alias_text: r.alias_text || null,
             notes: r.notes || null,
             original_index: r.original_index,
             condition: r.condition.trim() || null,
             quantity_offered: qOffered ? Number.parseInt(qOffered, 10) : null,
             unit_price: uPrice ? Number.parseInt(uPrice, 10) : null,
+            unit: r.unit || null,
           };
         });
       const skipped_indices = drafts
@@ -231,7 +280,7 @@ export default function ParseReviewPage() {
       );
       setInfo(
         t("superAdmin.inbound.review.approveSuccess", {
-          count: resp.movements.length,
+          offers: resp.offers_recorded ?? 0,
           skipped: resp.skipped_count,
         }),
       );
@@ -412,224 +461,292 @@ export default function ParseReviewPage() {
                 <code data-testid="review-version">{detail.version}</code>
               </dd>
             </dl>
-            <details className="raw-content-toggle">
-              <summary>{t("superAdmin.inbound.review.rawContent")}</summary>
-              <pre style={{ whiteSpace: "pre-wrap" }}>{detail.raw_content}</pre>
-            </details>
           </section>
 
-          <table className="data-table" data-testid="review-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>{t("superAdmin.inbound.review.col.productId")}</th>
-                <th>{t("superAdmin.inbound.review.col.deltaQty")}</th>
-                <th>{t("superAdmin.inbound.review.col.condition")}</th>
-                <th>{t("superAdmin.inbound.review.col.quantityOffered")}</th>
-                <th>{t("superAdmin.inbound.review.col.unitPrice")}</th>
-                <th>{t("superAdmin.inbound.review.col.alias")}</th>
-                <th>{t("superAdmin.inbound.review.col.notes")}</th>
-                <th>{t("superAdmin.inbound.review.col.skip")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {drafts.length === 0 ? (
-                <tr>
-                  <td colSpan={9} data-testid="review-empty">
-                    {t("superAdmin.inbound.review.noItems")}
-                  </td>
-                </tr>
-              ) : (
-                drafts.map((row, idx) => (
-                  <tr
-                    key={idx}
-                    data-testid={`review-row-${idx}`}
-                    style={
-                      row.skipped
-                        ? {
-                            opacity: "var(--opacity-skipped)",
-                            background: "var(--bg-disabled)",
-                          }
-                        : undefined
-                    }
-                  >
-                    <td>{idx}</td>
-                    <td style={{ minWidth: 'var(--col-width-wide)' }}>
-                      {row.product_id === null ? (
-                        <div data-testid={`review-row-${idx}-missing-product`}>
-                          <em
-                            style={{ color: "var(--color-warning)", fontSize: "0.85em" }}
-                          >
-                            {t("superAdmin.inbound.review.missingProduct")}
-                          </em>
-                          {!isFinal && (
-                            <div style={{ marginTop: "var(--space-1)" }}>
-                              <InventorySearchBar
-                                disabled={row.skipped}
-                                testIdPrefix={`review-row-${idx}-inv-search`}
-                                onSelect={(c: InventorySearchCandidate) =>
-                                  updateDraft(idx, { product_id: c.product_id })
+          {/* QA 2026-05-30: 受信本文を左 2/5・解析結果を右 3/5 の 2 カラムで常時表示する。
+              受信本文は折りたたまず左パネルに常時表示し、明細テーブルは右カラムに収める。
+              いずれも横スクロールを極力出さないため、左は折り返し・右は内部縦スクロール。 */}
+          <div className="review-split">
+            <section className="review-raw" data-testid="review-raw">
+              <h3 className="review-raw-title">
+                {t("superAdmin.inbound.review.rawContent")}
+              </h3>
+              <pre className="review-raw-body">{detail.raw_content}</pre>
+            </section>
+
+            <div className="review-main">
+              {/* 明細テーブルは自前の縦スクロール領域に収める。sticky な列見出しが
+                  右カラムのスクロールボックス上端に固定される (QA 2026-05-30)。 */}
+              <div className="review-table-scroll">
+                <table className="data-table" data-testid="review-table">
+                  <thead>
+                    <tr>
+                      {/* QA 2026-05-30: スキップを最左へ。メモは各行の2段目に降ろし、
+                          1段目の列数を減らして横スクロールを抑える。 */}
+                      <th className="review-col-skip">
+                        {t("superAdmin.inbound.review.col.skip")}
+                      </th>
+                      <th>#</th>
+                      <th>{t("superAdmin.inbound.review.col.productId")}</th>
+                      <th>{t("superAdmin.inbound.review.col.condition")}</th>
+                      <th>{t("superAdmin.inbound.review.col.quantityOffered")}</th>
+                      <th>{t("superAdmin.inbound.review.col.unit")}</th>
+                      <th>{t("superAdmin.inbound.review.col.unitPrice")}</th>
+                      <th>{t("superAdmin.inbound.review.col.alias")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drafts.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} data-testid="review-empty">
+                          {t("superAdmin.inbound.review.noItems")}
+                        </td>
+                      </tr>
+                    ) : (
+                      drafts.map((row, idx) => (
+                        <Fragment key={idx}>
+                        <tr
+                          data-testid={`review-row-${idx}`}
+                          style={
+                            row.skipped
+                              ? {
+                                  opacity: "var(--opacity-skipped)",
+                                  background: "var(--bg-disabled)",
                                 }
+                              : undefined
+                          }
+                        >
+                          <td className="review-col-skip">
+                            <input
+                              type="checkbox"
+                              data-testid={`review-row-${idx}-skip`}
+                              checked={row.skipped}
+                              disabled={isFinal}
+                              onChange={(e) =>
+                                updateDraft(idx, { skipped: e.target.checked })
+                              }
+                            />
+                          </td>
+                          <td>{idx}</td>
+                          <td style={{ minWidth: 'var(--col-width-wide)' }}>
+                            {row.product_name && (
+                              <div
+                                data-testid={`review-row-${idx}-product-name`}
+                                style={{ fontWeight: "var(--font-weight-semi)", marginBottom: "var(--space-1)" }}
+                              >
+                                {row.product_name}
+                              </div>
+                            )}
+                            {row.product_id === null ? (
+                              <div data-testid={`review-row-${idx}-missing-product`}>
+                                <em
+                                  style={{ color: "var(--color-warning)", fontSize: "0.85em" }}
+                                >
+                                  {t("superAdmin.inbound.review.missingProduct")}
+                                </em>
+                                {!isFinal && (
+                                  <div style={{ marginTop: "var(--space-1)" }}>
+                                    <InventoryPicker
+                                      disabled={row.skipped}
+                                      testIdPrefix={`review-row-${idx}-inv-search`}
+                                      /* QA 2026-05-30: 解析された商品名で商品マスタ候補を予め絞り込む */
+                                      initialQuery={row.product_name || undefined}
+                                      /* QA 2026-05-30: 商品マスタ選択では在庫(目安)は無関係なので非表示 */
+                                      showStockGuide={false}
+                                      onSelect={(c: PickedProduct) =>
+                                        updateDraft(idx, { product_id: c.product_id })
+                                      }
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <code data-testid={`review-row-${idx}-product-id`}>{row.product_id}</code>
+                            )}
+                          </td>
+                          {/* Sprint 11 / F11 AC11.3: condition / quantity_offered / unit / unit_price
+                              QA 2026-05-30: 差分数量列は撤去（在庫は目安・増減不要） */}
+                          <td>
+                            <select
+                              data-testid={`review-row-${idx}-condition`}
+                              value={row.condition}
+                              disabled={row.skipped || isFinal}
+                              onChange={(e) =>
+                                updateDraft(idx, { condition: e.target.value })
+                              }
+                              style={{ width: "7rem" }}
+                            >
+                              <option value="">
+                                {t("superAdmin.inbound.review.condition.unspecified")}
+                              </option>
+                              <option value="new">
+                                {t("superAdmin.inbound.review.condition.new")}
+                              </option>
+                              <option value="used_a">
+                                {t("superAdmin.inbound.review.condition.usedA")}
+                              </option>
+                              <option value="sealed">
+                                {t("superAdmin.inbound.review.condition.sealed")}
+                              </option>
+                              <option value="opened">
+                                {t("superAdmin.inbound.review.condition.opened")}
+                              </option>
+                            </select>
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              min="0"
+                              data-testid={`review-row-${idx}-quantity-offered`}
+                              value={row.quantity_offered}
+                              disabled={row.skipped || isFinal}
+                              placeholder={t(
+                                "superAdmin.inbound.review.col.quantityOfferedPlaceholder",
+                              )}
+                              onChange={(e) =>
+                                updateDraft(idx, { quantity_offered: e.target.value })
+                              }
+                              style={{ width: "5rem" }}
+                            />
+                          </td>
+                          <td>
+                            <select
+                              data-testid={`review-row-${idx}-unit`}
+                              value={row.unit}
+                              disabled={row.skipped || isFinal}
+                              onChange={(e) =>
+                                updateDraft(idx, { unit: e.target.value })
+                              }
+                              style={{ width: "6rem" }}
+                            >
+                              <option value="">
+                                {t("superAdmin.inbound.review.condition.unspecified")}
+                              </option>
+                              {UNIT_OPTIONS.map((u) => (
+                                <option key={u} value={u}>
+                                  {u}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              data-testid={`review-row-${idx}-unit-price`}
+                              value={row.unit_price}
+                              disabled={row.skipped || isFinal}
+                              placeholder={t(
+                                "superAdmin.inbound.review.col.unitPricePlaceholder",
+                              )}
+                              onChange={(e) =>
+                                updateDraft(idx, { unit_price: e.target.value })
+                              }
+                              style={{ width: "6rem" }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              data-testid={`review-row-${idx}-alias`}
+                              value={row.alias_text}
+                              disabled={row.skipped || isFinal}
+                              onChange={(e) =>
+                                updateDraft(idx, { alias_text: e.target.value })
+                              }
+                              style={{ width: "8rem" }}
+                            />
+                          </td>
+                        </tr>
+                        {/* QA 2026-05-30: メモは2段目に降ろし、1段目の横幅を抑える */}
+                        <tr
+                          data-testid={`review-row-${idx}-memo-row`}
+                          style={
+                            row.skipped
+                              ? {
+                                  opacity: "var(--opacity-skipped)",
+                                  background: "var(--bg-disabled)",
+                                }
+                              : undefined
+                          }
+                        >
+                          <td className="review-col-skip" aria-hidden="true" />
+                          <td colSpan={7}>
+                            <label
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "var(--space-2)",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  color: "var(--text-secondary)",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {t("superAdmin.inbound.review.col.notes")}
+                              </span>
+                              <input
+                                type="text"
+                                data-testid={`review-row-${idx}-notes`}
+                                value={row.notes}
+                                disabled={row.skipped || isFinal}
+                                onChange={(e) =>
+                                  updateDraft(idx, { notes: e.target.value })
+                                }
+                                style={{ flex: 1 }}
                               />
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <code data-testid={`review-row-${idx}-product-id`}>{row.product_id}</code>
-                      )}
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        data-testid={`review-row-${idx}-delta`}
-                        value={row.delta_qty}
-                        disabled={row.skipped || isFinal}
-                        onChange={(e) =>
-                          updateDraft(idx, {
-                            delta_qty: Number.parseInt(e.target.value, 10) || 0,
-                          })
-                        }
-                        style={{ width: "5rem" }}
-                      />
-                    </td>
-                    {/* Sprint 11 / F11 AC11.3: condition / quantity_offered / unit_price */}
-                    <td>
-                      <select
-                        data-testid={`review-row-${idx}-condition`}
-                        value={row.condition}
-                        disabled={row.skipped || isFinal}
-                        onChange={(e) =>
-                          updateDraft(idx, { condition: e.target.value })
-                        }
-                        style={{ width: "7rem" }}
-                      >
-                        <option value="">
-                          {t("superAdmin.inbound.review.condition.unspecified")}
-                        </option>
-                        <option value="new">
-                          {t("superAdmin.inbound.review.condition.new")}
-                        </option>
-                        <option value="used_a">
-                          {t("superAdmin.inbound.review.condition.usedA")}
-                        </option>
-                        <option value="sealed">
-                          {t("superAdmin.inbound.review.condition.sealed")}
-                        </option>
-                        <option value="opened">
-                          {t("superAdmin.inbound.review.condition.opened")}
-                        </option>
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min="0"
-                        data-testid={`review-row-${idx}-quantity-offered`}
-                        value={row.quantity_offered}
-                        disabled={row.skipped || isFinal}
-                        placeholder={t(
-                          "superAdmin.inbound.review.col.quantityOfferedPlaceholder",
-                        )}
-                        onChange={(e) =>
-                          updateDraft(idx, { quantity_offered: e.target.value })
-                        }
-                        style={{ width: "5rem" }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min="0"
-                        data-testid={`review-row-${idx}-unit-price`}
-                        value={row.unit_price}
-                        disabled={row.skipped || isFinal}
-                        placeholder={t(
-                          "superAdmin.inbound.review.col.unitPricePlaceholder",
-                        )}
-                        onChange={(e) =>
-                          updateDraft(idx, { unit_price: e.target.value })
-                        }
-                        style={{ width: "6rem" }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        data-testid={`review-row-${idx}-alias`}
-                        value={row.alias_text}
-                        disabled={row.skipped || isFinal}
-                        onChange={(e) =>
-                          updateDraft(idx, { alias_text: e.target.value })
-                        }
-                        style={{ width: "8rem" }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        data-testid={`review-row-${idx}-notes`}
-                        value={row.notes}
-                        disabled={row.skipped || isFinal}
-                        onChange={(e) =>
-                          updateDraft(idx, { notes: e.target.value })
-                        }
-                        style={{ width: "10rem" }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="checkbox"
-                        data-testid={`review-row-${idx}-skip`}
-                        checked={row.skipped}
-                        disabled={isFinal}
-                        onChange={(e) =>
-                          updateDraft(idx, { skipped: e.target.checked })
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                            </label>
+                          </td>
+                        </tr>
+                        </Fragment>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-          <section
-            className="review-comment"
-            style={{ marginTop: "var(--space-4)", maxWidth: "40rem" }}
-          >
-            <label htmlFor="operator-comment">
-              {t("superAdmin.inbound.review.operatorComment")}
-            </label>
-            <textarea
-              id="operator-comment"
-              data-testid="review-operator-comment"
-              rows={3}
-              value={operatorComment}
-              disabled={isFinal}
-              onChange={(e) => setOperatorComment(e.target.value)}
-              style={{ width: "100%" }}
-            />
-          </section>
+              <section
+                className="review-comment"
+                style={{ marginTop: "var(--space-4)", maxWidth: "40rem" }}
+              >
+                <label htmlFor="operator-comment">
+                  {t("superAdmin.inbound.review.operatorComment")}
+                </label>
+                <textarea
+                  id="operator-comment"
+                  data-testid="review-operator-comment"
+                  rows={3}
+                  value={operatorComment}
+                  disabled={isFinal}
+                  onChange={(e) => setOperatorComment(e.target.value)}
+                  style={{ width: "100%" }}
+                />
+              </section>
 
-          <div className="action-bar" style={{ marginTop: "var(--space-4)" }}>
-            <button
-              onClick={() => void handleApprove()}
-              disabled={isFinal || submitting}
-              data-testid="review-approve-btn"
-              className="btn-primary"
-            >
-              {t("superAdmin.inbound.review.approveBtn")}
-            </button>
-            <button
-              onClick={() => setShowRejectDialog(true)}
-              disabled={isFinal || submitting}
-              data-testid="review-reject-btn"
-              className="btn-danger"
-              style={{ marginLeft: "var(--space-2)" }}
-            >
-              {t("superAdmin.inbound.review.rejectBtn")}
-            </button>
-          </div>
+              <div className="action-bar" style={{ marginTop: "var(--space-4)" }}>
+                <button
+                  onClick={() => void handleApprove()}
+                  disabled={isFinal || submitting}
+                  data-testid="review-approve-btn"
+                  className="btn-primary"
+                >
+                  {t("superAdmin.inbound.review.approveBtn")}
+                </button>
+                <button
+                  onClick={() => setShowRejectDialog(true)}
+                  disabled={isFinal || submitting}
+                  data-testid="review-reject-btn"
+                  className="btn-danger"
+                  style={{ marginLeft: "var(--space-2)" }}
+                >
+                  {t("superAdmin.inbound.review.rejectBtn")}
+                </button>
+              </div>
+            </div>{/* /.review-main */}
+          </div>{/* /.review-split */}
 
           {showRejectDialog && (
             <div
