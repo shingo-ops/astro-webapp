@@ -56,6 +56,21 @@ git config user.email "<あなたのメール>"
 
 設定方法は `claude mcp add` で各自登録。
 
+### Step 6: フックスクリプトの実行権限設定（必須）
+
+`~/.claude/scripts/` 配下のフックに実行権限がないと、worktree 外からの編集がブロックされず**ルール違反が素通りする**。
+セットアップ後・スクリプト更新後に必ず実行すること。
+
+```bash
+chmod +x ~/.claude/scripts/*.sh
+
+# 確認（全て ✅ OK になること）
+bash scripts/check-hooks.sh
+```
+
+権限が壊れていると `worktree-only-guard.sh` が無効になり、feature ブランチ上で
+main リポジトリから直接ファイルを編集できてしまう（push 時に詰まる）。
+
 ---
 
 ## 3. リポジトリ専用エージェントの使い方
