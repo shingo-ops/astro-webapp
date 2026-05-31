@@ -6,7 +6,7 @@ on:
 
 jobs:
   check:
-    name: migration 追加 → deploy.yml 登録必須チェック
+    name: models.py に新 Column → deploy.yml にマイグレーション追記必須
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
