@@ -30,6 +30,8 @@ interface CardForm {
   cs_memo?: string | null;
   messenger_link?: string | null;
   discord_id?: string | null;
+  instagram_link?: string | null;
+  whatsapp_link?: string | null;
 }
 
 interface ConversationSummary {
@@ -132,6 +134,18 @@ export function InboxProfileModal({
                 <input className="right-panel-field" type="text" value={cardForm.discord_id ?? ""}
                   onChange={(e) => handleCardFieldChange("discord_id", e.target.value)}
                   onBlur={handleCardFieldBlur} placeholder="username#0000" />
+              </div>
+              <div className="right-panel-row">
+                <span className="right-panel-label">{t("leads.instagramLink")}</span>
+                <input className="right-panel-field" type="url" value={cardForm.instagram_link ?? ""}
+                  onChange={(e) => handleCardFieldChange("instagram_link", e.target.value)}
+                  onBlur={handleCardFieldBlur} placeholder="https://instagram.com/..." />
+              </div>
+              <div className="right-panel-row">
+                <span className="right-panel-label">{t("leads.whatsappLink")}</span>
+                <input className="right-panel-field" type="url" value={cardForm.whatsapp_link ?? ""}
+                  onChange={(e) => handleCardFieldChange("whatsapp_link", e.target.value)}
+                  onBlur={handleCardFieldBlur} placeholder="https://wa.me/..." />
               </div>
             </div>
           )}
