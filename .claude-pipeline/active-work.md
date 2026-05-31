@@ -29,11 +29,8 @@
 | feature/morimoto/fix-deploy-zero-downtime | （記入してください） | 2026-05-30 22:08 | IN_PROGRESS | | |
 | feature/morimoto/governance-section-f | （記入してください） | 2026-05-31 10:57 | IN_PROGRESS | | |
 | feature/morimoto/add-governance-agent | （記入してください） | 2026-05-31 10:59 | IN_PROGRESS | | |
-| feature/morimoto/back-merge-main | back-merge main→develop | 2026-05-31 12:00 | IN_PROGRESS | | |
-| feature/morimoto/back-merge-main-v2 | back-merge main→develop v2 | 2026-05-31 12:10 | IN_PROGRESS | | |
 | feature/morimoto/condition-standardize | inventory condition 16値正規化 | 2026-05-31 14:00 | IN_PROGRESS | | |
 | feature/morimoto/codex-agent-dispatch | Codexエージェント自動委任 | 2026-05-31 | IN_PROGRESS | | |
-| feature/morimoto/inbox-action-gap | 受信箱アクションボタン余白調整 | 2026-05-31 | IN_PROGRESS | | |
 ---
 
 ## 記入例

@@ -185,3 +185,4 @@ grep -c "develop.*常設" ~/.claude/agents/generator.md
 
 - 2026-05-20: 初版起案（Web Claude via Shingo）
 - 2026-05-28: develop→main のマージ方法を `--squash` → `--merge`（merge commit）に変更。squash merge は back-merge PR の永続発生を引き起こす構造バグのため禁止。GitHub Ruleset（ID: 15777895）で main への squash/rebase を無効化し merge commit のみに機械的強制済み（PR #1085）。
+- 2026-05-31 【訂正】: 上記マージ方式変更は "BEHIND ブロック" 問題の根本原因ではなかった。実際の原因は Ruleset とは独立した Legacy Branch Protection の `required_status_checks.strict: true` であり、2026-05-31 に `strict: false` へ変更済み（詳細: `docs/BRANCH_PROTECTION_SETUP.md §8`）。
