@@ -487,6 +487,13 @@
 .page-header-actions .icon-btn:hover {
   border-color: var(--border-icon);
 }
+.page-header-actions .btn-ghost {
+  font-size: var(--font-lg);
+}
+.page-header-actions .icon-btn {
+  width: var(--size-avatar-md);
+  height: var(--size-avatar-md);
+}
 
 /* --- Page Header Select --- */
 /* ヘッダーアクションエリア内のドロップダウン共通スタイル (SSoT: ここのみ定義) */
