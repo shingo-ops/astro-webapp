@@ -336,6 +336,9 @@ async def _apply_catchup_to_tenant(
         ("050_add_commissions.sql", "050: commissions"),
         ("051_remove_confirmed_status.sql", "051: confirmed → pending"),
         ("052_alter_meta_messages_message_id_to_text.sql", "052: message_id → TEXT"),
+        # Discord 顧客メッセージング（受信箱連携）
+        ("091_add_leads_discord_messaging_columns.sql",    "091: leads Discord DM カラム"),
+        ("092_add_meta_messages_discord_index.sql",        "092: meta_messages discord インデックス"),
     ]
 
     for sql_file, desc in public_migrations:
