@@ -173,9 +173,10 @@ export const CATEGORY_ICONS: Record<string, Icon> = {
 
 // ページ用（🚧 💬 の代替）
 export const PAGE_ICONS = {
-  comingSoon:  HardHat,
-  inboxEmpty:  Chat,
-  kartePanel:  ClipboardText, // 受信箱モバイルドロワー「カルテ」ボタン用
+  comingSoon:    HardHat,
+  inboxEmpty:    Chat,
+  kartePanel:    ClipboardText, // 受信箱モバイルドロワー「カルテ」ボタン用
+  settingsSolid: GearSix,       // 受信箱ヘッダー設定ボタン（solid）
 } satisfies Record<string, Icon>;
 
 // テーマ切り替え（Layout.tsx）
