@@ -13,7 +13,6 @@ from __future__ import annotations
 """
 
 from datetime import date, timedelta
-from calendar import monthrange
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
