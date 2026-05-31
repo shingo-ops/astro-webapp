@@ -51,17 +51,19 @@ export default function OrdersPage() {
   } = state;
 
   const newOrderButton = hasPermission("orders.create") ? (
-    <button
-      className="btn-primary"
-      onClick={() => {
-        setShowForm(true);
-        setEditId(null);
-        setForm(emptyForm);
-        resetSelector();
-      }}
-    >
-      {t("orders.newOrder")}
-    </button>
+    <div className="page-header-actions">
+      <button
+        className="btn-primary"
+        onClick={() => {
+          setShowForm(true);
+          setEditId(null);
+          setForm(emptyForm);
+          resetSelector();
+        }}
+      >
+        {t("orders.newOrder")}
+      </button>
+    </div>
   ) : null;
 
   return (

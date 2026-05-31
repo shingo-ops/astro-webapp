@@ -71,7 +71,9 @@ export default function SuppliersPage() {
       navKey="nav.suppliers"
       subtitleKey="suppliers.subtitle"
       headerAction={hasPermission("suppliers.create") ? (
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("suppliers.newSupplier")}</button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("suppliers.newSupplier")}</button>
+        </div>
       ) : undefined}
     >
       {error && <div className="error-message">{error}</div>}

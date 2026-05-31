@@ -40,7 +40,9 @@ export default function BadgesPage() {
       navKey="nav.badges"
       subtitleKey="badges.subtitle"
       headerAction={hasPermission("badges.manage") ? (
-        <button className="btn-primary" onClick={() => setShowForm(true)}>{t("badges.newBadge")}</button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => setShowForm(true)}>{t("badges.newBadge")}</button>
+        </div>
       ) : undefined}
     >
       {error && <div className="error-message">{error}</div>}

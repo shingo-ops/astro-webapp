@@ -170,9 +170,11 @@ export default function BotsPage() {
       navKey="nav.bots"
       subtitleKey="bots.subtitle"
       headerAction={hasPermission("bots.create") ? (
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
-          {t("bots.newBot")}
-        </button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>
+            {t("bots.newBot")}
+          </button>
+        </div>
       ) : undefined}
     >
       {error && <div className="error-message">{error}</div>}

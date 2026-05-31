@@ -42,7 +42,9 @@ export default function NotificationsPage() {
       subtitleKey="settings.subtitle"
       headerAction={
         hasPermission("notifications.manage") ? (
-          <button className="btn-primary" onClick={() => setShowForm(true)}>{t("settings.addChannel")}</button>
+          <div className="page-header-actions">
+            <button className="btn-primary" onClick={() => setShowForm(true)}>{t("settings.addChannel")}</button>
+          </div>
         ) : undefined
       }
     >

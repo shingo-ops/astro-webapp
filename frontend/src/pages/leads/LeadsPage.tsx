@@ -255,7 +255,9 @@ export default function LeadsPage() {
       navKey="nav.leads"
       subtitleKey="leads.subtitle"
       headerAction={hasPermission("leads.create") ? (
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("leads.newLead")}</button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm); }}>{t("leads.newLead")}</button>
+        </div>
       ) : undefined}
     >
       <div className="filter-bar">

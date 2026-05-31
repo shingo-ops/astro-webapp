@@ -64,7 +64,9 @@ export default function QuotesPage() {
       navKey="nav.quotesInvoices"
       subtitleKey="quotes.subtitle"
       headerAction={hasPermission("quotes.create") ? (
-        <button className="btn-primary" onClick={() => navigate("/quotes/new")}>{t("quotes.newQuote")}</button>
+        <div className="page-header-actions">
+          <button className="btn-primary" onClick={() => navigate("/quotes/new")}>{t("quotes.newQuote")}</button>
+        </div>
       ) : undefined}
     >
       <nav className="tab-nav">
