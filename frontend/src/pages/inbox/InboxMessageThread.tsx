@@ -5,10 +5,12 @@ import { ICON } from "../../constants/iconSizes";
 import type { Conversation, MessagesResponse } from "../../lib/messages";
 import { translateMessage } from "../../lib/messages";
 import { formatAbsolute, getInitials, relativeTime } from "./inbox.types";
+import type { LeadDetail } from "./inbox.types";
 
 interface Props {
   selectedLeadId: number | null;
   selectedConversation: Conversation | null;
+  leadDetail: LeadDetail | null;
   messagesData: MessagesResponse | null;
   msgLoading: boolean;
   msgError: string | null;
@@ -28,6 +30,7 @@ interface Props {
   sendError: string | null;
   sendDisabled: boolean;
   canSend: boolean;
+  discordDmChannelMissing: boolean;
   trimmedDraft: string;
   submitSend: () => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -41,13 +44,13 @@ interface TranslationState {
 }
 
 export function InboxMessageThread({
-  selectedLeadId, selectedConversation, messagesData, msgLoading, msgError,
+  selectedLeadId, selectedConversation, leadDetail, messagesData, msgLoading, msgError,
   avatarErrors, handleAvatarError,
   handleMarkUnread, handleExclude, handleDeleteLead,
   showKartePanel, openKartePanel, closeKartePanel, inboxSettings,
   messageListRef,
-  draft, setDraft, sending, sendError, sendDisabled, canSend, trimmedDraft,
-  submitSend, handleKeyDown,
+  draft, setDraft, sending, sendError, sendDisabled, canSend, discordDmChannelMissing,
+  trimmedDraft, submitSend, handleKeyDown,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -150,6 +153,12 @@ export function InboxMessageThread({
           {messagesData?.lead?.customer_name
             || selectedConversation?.customer_name
             || `Lead #${selectedLeadId}`}
+          {/* AC1.6: Discord 未連携バッジ */}
+          {messagesData?.lead?.platform === "discord" && !leadDetail?.discord_user_id && (
+            <span className="discord-unlinked-badge" title={t("inbox.discordNotLinked")}>
+              {t("inbox.discordNotLinked")}
+            </span>
+          )}
         </h3>
         <div className="inbox-thread-actions">
           <button type="button" className="inbox-thread-action-btn"
@@ -316,7 +325,13 @@ export function InboxMessageThread({
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={canSend ? t("inbox.messagePlaceholder") : t("inbox.sendDisabled7d")}
+                placeholder={
+                  discordDmChannelMissing
+                    ? t("inbox.discordDmChannelMissing")
+                    : canSend
+                      ? t("inbox.messagePlaceholder")
+                      : t("inbox.sendDisabled7d")
+                }
                 rows={2}
                 disabled={!canSend || sending}
               />
@@ -329,11 +344,13 @@ export function InboxMessageThread({
               onClick={submitSend}
               disabled={sendDisabled}
               title={
-                !canSend
-                  ? t("inbox.sendDisabled7d")
-                  : trimmedDraft.length === 0
-                    ? t("inbox.messagePlaceholder")
-                    : t("inbox.send")
+                discordDmChannelMissing
+                  ? t("inbox.discordDmChannelMissing")
+                  : !canSend
+                    ? t("inbox.sendDisabled7d")
+                    : trimmedDraft.length === 0
+                      ? t("inbox.messagePlaceholder")
+                      : t("inbox.send")
               }
             >
               {sending ? t("inbox.sending") : t("inbox.send")}

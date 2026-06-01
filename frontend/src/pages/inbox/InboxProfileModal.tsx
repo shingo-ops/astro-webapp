@@ -135,6 +135,14 @@ export function InboxProfileModal({
                   onChange={(e) => handleCardFieldChange("discord_id", e.target.value)}
                   onBlur={handleCardFieldBlur} placeholder="username#0000" />
               </div>
+              {/* AC1.8: Discord Gateway 情報（読み取り専用） */}
+              {leadDetail.discord_user_id && (
+                <div className="right-panel-row">
+                  <span className="right-panel-label">{t("leads.discordUserId")}</span>
+                  <input className="right-panel-field" type="text" value={leadDetail.discord_user_id}
+                    readOnly tabIndex={-1} />
+                </div>
+              )}
               <div className="right-panel-row">
                 <span className="right-panel-label">{t("leads.instagramLink")}</span>
                 <input className="right-panel-field" type="url" value={cardForm.instagram_link ?? ""}

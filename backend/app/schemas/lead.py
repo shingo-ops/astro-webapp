@@ -174,6 +174,9 @@ class LeadResponse(BaseModel):
     discord_id: str | None = None
     instagram_link: str | None = None
     whatsapp_link: str | None = None
+    # Discord Gateway fields (read-only, set by dm_writer)
+    discord_user_id: str | None = None
+    discord_dm_channel_id: str | None = None
 
     model_config = {"from_attributes": True}
 

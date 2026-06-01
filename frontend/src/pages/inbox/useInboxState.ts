@@ -106,6 +106,7 @@ export interface UseInboxStateReturn {
   sendError: string;
   sendDisabled: boolean;
   canSend: boolean;
+  discordDmChannelMissing: boolean;
   trimmedDraft: string;
   messagingWindow: MessagingWindow | undefined;
   submitSend: () => Promise<void>;
@@ -541,7 +542,10 @@ export function useInboxState(): UseInboxStateReturn {
   // ---------------------------------------------------------------------------
 
   const messagingWindow: MessagingWindow | undefined = messagesData?.messaging_window;
-  const canSend = !!messagingWindow?.can_send_at_all;
+  // AC1.5: Discord DM channel が未設定の場合は送信不可
+  const currentPlatform = messagesData?.lead?.platform ?? null;
+  const discordDmChannelMissing = currentPlatform === "discord" && !leadDetail?.discord_dm_channel_id;
+  const canSend = !!messagingWindow?.can_send_at_all && !discordDmChannelMissing;
   const trimmedDraft = draft.trim();
   const sendDisabled = sending || !canSend || trimmedDraft.length === 0 || selectedLeadId === null;
 
@@ -783,6 +787,7 @@ export function useInboxState(): UseInboxStateReturn {
     sendError,
     sendDisabled,
     canSend,
+    discordDmChannelMissing,
     trimmedDraft,
     messagingWindow,
     submitSend,

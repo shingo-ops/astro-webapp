@@ -439,6 +439,19 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.discord-unlinked-badge {
+  font-size: var(--font-2xs);
+  font-weight: var(--font-weight-semi);
+  color: var(--color-warning-text, var(--text-muted));
+  background: var(--color-warning-subtle, var(--bg-subtle));
+  border-radius: var(--radius-badge);
+  padding: var(--space-2px) var(--space-6px);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .inbox-thread-actions {
   display: flex;

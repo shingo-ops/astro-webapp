@@ -137,6 +137,7 @@ export default function InboxPage() {
               <InboxMessageThread
                 selectedLeadId={selectedLeadId}
                 selectedConversation={selectedConversation}
+                leadDetail={leadDetail}
                 messagesData={state.messagesData}
                 msgLoading={state.msgLoading}
                 msgError={state.msgError}
@@ -156,6 +157,7 @@ export default function InboxPage() {
                 sendError={state.sendError}
                 sendDisabled={state.sendDisabled}
                 canSend={state.canSend}
+                discordDmChannelMissing={state.discordDmChannelMissing}
                 trimmedDraft={state.trimmedDraft}
                 submitSend={state.submitSend}
                 handleKeyDown={state.handleKeyDown}
