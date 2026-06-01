@@ -94,9 +94,9 @@ class TestDashboardTask:
             result = MagicMock()
             # クエリ順:
             # 1: SET search_path / 2: SET app.tenant_id
-            # 3: customers count / 4: leads集計 / 5: deals集計
+            # 3: companies count / 4: leads集計 / 5: deals集計
             # 6: orders集計 / 7: teams count
-            # 8: 直近顧客 / 9: 直近商談 / 10: 直近リード
+            # 8: 直近会社 / 9: 直近商談 / 10: 直近リード
             if call_count[0] == 3:
                 result.scalar.return_value = 10
             elif call_count[0] == 4:
@@ -117,21 +117,21 @@ class TestDashboardTask:
 
         expected_keys = {
             "schema_version",
-            "customer_count",
+            "company_count",
             "lead_count", "lead_open_count",
             "deal_count", "deal_open_count", "deal_won_count",
             "deal_total_amount", "deal_won_amount",
             "order_count", "order_pending_count", "order_total_amount",
             "team_count",
-            "recent_customers", "recent_deals", "recent_leads",
+            "recent_companies", "recent_deals", "recent_leads",
         }
         assert set(kpis.keys()) == expected_keys
-        assert kpis["customer_count"] == 10
+        assert kpis["company_count"] == 10
         assert kpis["lead_count"] == 7
         assert kpis["deal_count"] == 5
         assert kpis["order_count"] == 8
         assert kpis["team_count"] == 3
-        assert kpis["schema_version"] == 2
+        assert kpis["schema_version"] == 3
 
 
 class TestMaintenanceTask:
@@ -361,7 +361,7 @@ class TestDashboardCacheIntegration:
         # schema_version=3 を含む最新スキーマのキャッシュ（Phase 3拡張後）
         cached_kpi = json.dumps({
             "schema_version": 3,
-            "customer_count": 42,
+            "company_count": 42,
             "lead_count": 7,
             "lead_open_count": 4,
             "deal_count": 10,
@@ -373,7 +373,7 @@ class TestDashboardCacheIntegration:
             "order_pending_count": 3,
             "order_total_amount": 800000.0,
             "team_count": 3,
-            "recent_customers": [],
+            "recent_companies": [],
             "recent_deals": [],
             "recent_leads": [],
         })
@@ -390,4 +390,4 @@ class TestDashboardCacheIntegration:
         assert resp.status_code == 200
         data = resp.json()
         assert data["cached"] is True
-        assert data["customer_count"] == 42
+        assert data["company_count"] == 42
