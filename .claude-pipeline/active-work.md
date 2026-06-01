@@ -60,6 +60,7 @@
 | feature/morimoto/deprecate-customers-sprint6 | （記入してください） | 2026-06-01 17:40 | IN_PROGRESS | | |
 | feature/morimoto/deprecate-customers-sprint7 | （記入してください） | 2026-06-01 17:46 | IN_PROGRESS | | |
 | feature/morimoto/inbox-image-send | 受信箱画像送信 Sprint 2（バックエンドAPI） | 2026-06-01 17:53 | IN_PROGRESS | | |
+| feature/morimoto/fix-e2e-develop-red | E2E 赤化修正（scene1 ×2 / scene3 ×1） | 2026-06-01T19:53:49 | IN_PROGRESS | | |
 ---
 
 ## 記入例
