@@ -1160,7 +1160,8 @@ async def client(db_session):
     # audit_log と権限チェックをまとめてモック（ネスト制限回避のため ExitStack 使用）
     from contextlib import ExitStack
     _audit_targets = [
-        "app.routers.customers", "app.routers.deals", "app.routers.orders",
+        # ADR-089 Sprint 3: app.routers.customers 廃止済み
+        "app.routers.deals", "app.routers.orders",
         "app.routers.order_financials",
         "app.routers.order_shipping_details",
         "app.routers.order_purchase_details",
