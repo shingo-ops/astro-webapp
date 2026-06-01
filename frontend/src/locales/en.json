@@ -638,7 +638,11 @@
       "internal_error": "An internal error occurred. Please contact support.",
       "unknown": "Connection failed (reason: {{reason}})."
     },
-    "subtitle": "Set up Facebook and Instagram message integrations."
+    "subtitle": "Set up Meta and Discord message integrations.",
+    "discordSection": "Discord Guild Settings",
+    "discordGuildId": "Guild ID",
+    "discordGuildIdNotSet": "Not configured",
+    "discordEdit": "Edit settings"
   },
   "deals": {
     "title": "Deal Management",
