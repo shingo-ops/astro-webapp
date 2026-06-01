@@ -910,6 +910,181 @@ async def _send_messages_json(
     return rbody
 
 
+async def upload_attachment(
+    *,
+    page_id: str,
+    page_access_token: str,
+    file_bytes: bytes,
+    content_type: str,
+    filename: str,
+    client: Optional[httpx.AsyncClient] = None,
+) -> str:
+    """Meta Attachment Upload API で画像をアップロードし attachment_id を返す。
+
+    `POST /{page_id}/message_attachments` (multipart/form-data)
+
+    is_reusable=true で登録することでキャッシュ利用可。
+    戻り値: attachment_id (str)
+    """
+    if not page_id:
+        raise ValueError("page_id is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    if not file_bytes:
+        raise ValueError("file_bytes must not be empty")
+
+    url = f"{graph_base_url()}/{page_id}/message_attachments"
+    message_payload = {
+        "attachment": {
+            "type": "image",
+            "payload": {"is_reusable": True},
+        }
+    }
+    import json as _json
+
+    own_client = client is None
+    try:
+        if own_client:
+            client = httpx.AsyncClient(timeout=_DEFAULT_TIMEOUT_SECONDS)
+        try:
+            response = await client.post(
+                url,
+                params={"access_token": page_access_token},
+                data={"message": _json.dumps(message_payload)},
+                files={"filedata": (filename, file_bytes, content_type)},
+            )
+        finally:
+            if own_client:
+                await client.aclose()
+    except httpx.TimeoutException as e:
+        raise MetaGraphTimeoutError(f"Meta Attachment Upload timeout: POST {url}") from e
+    except httpx.HTTPError as e:
+        raise MetaGraphTransportError(f"Meta Attachment Upload transport error: {e}") from e
+
+    try:
+        rbody = response.json()
+    except ValueError as e:
+        raise MetaGraphTransportError(
+            f"Meta Attachment Upload returned non-JSON (status={response.status_code})"
+        ) from e
+
+    if isinstance(rbody, dict) and "error" in rbody:
+        err = rbody["error"] or {}
+        raise MetaGraphAPIError(
+            err.get("message") or "Meta Attachment Upload error",
+            status_code=response.status_code,
+            error_type=err.get("type"),
+            error_code=err.get("code"),
+            error_subcode=err.get("error_subcode"),
+            fbtrace_id=err.get("fbtrace_id"),
+        )
+    if response.status_code >= 400:
+        raise MetaGraphTransportError(
+            f"Meta Attachment Upload HTTP {response.status_code}"
+        )
+    attachment_id = rbody.get("attachment_id")
+    if not attachment_id:
+        raise MetaGraphTransportError(
+            "Meta Attachment Upload did not return attachment_id"
+        )
+    return str(attachment_id)
+
+
+async def send_messenger_attachment(
+    *,
+    page_access_token: str,
+    recipient_id: str,
+    attachment_id: str,
+    messaging_type: str = "RESPONSE",
+    tag: Optional[str] = None,
+    page_id: str = "me",
+    client: Optional[httpx.AsyncClient] = None,
+) -> dict[str, Any]:
+    """Messenger Send API で attachment_id を使って画像メッセージを送信する。"""
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    if not recipient_id:
+        raise ValueError("recipient_id is required")
+    if not attachment_id:
+        raise ValueError("attachment_id is required")
+    if messaging_type not in ("RESPONSE", "MESSAGE_TAG", "UPDATE"):
+        raise ValueError(f"invalid messaging_type: {messaging_type}")
+
+    pid = page_id or "me"
+    url = f"{graph_base_url()}/{pid}/messages"
+    body: dict[str, Any] = {
+        "messaging_type": messaging_type,
+        "recipient": {"id": recipient_id},
+        "message": {
+            "attachment": {
+                "type": "image",
+                "payload": {"attachment_id": attachment_id},
+            }
+        },
+    }
+    if tag:
+        body["tag"] = tag
+
+    response = await _send_messages_json(
+        url=url,
+        access_token=page_access_token,
+        body=body,
+        client=client,
+    )
+    return {
+        "recipient_id": response.get("recipient_id") or recipient_id,
+        "message_id": response.get("message_id"),
+    }
+
+
+async def send_instagram_attachment(
+    *,
+    page_access_token: str,
+    page_id: str,
+    recipient_id: str,
+    attachment_id: str,
+    messaging_type: str = "RESPONSE",
+    tag: Optional[str] = None,
+    client: Optional[httpx.AsyncClient] = None,
+) -> dict[str, Any]:
+    """Instagram Messaging API で attachment_id を使って画像メッセージを送信する。"""
+    if not page_id:
+        raise ValueError("page_id is required")
+    if not page_access_token:
+        raise ValueError("page_access_token is required")
+    if not recipient_id:
+        raise ValueError("recipient_id is required")
+    if not attachment_id:
+        raise ValueError("attachment_id is required")
+    if messaging_type not in ("RESPONSE", "MESSAGE_TAG", "UPDATE"):
+        raise ValueError(f"invalid messaging_type: {messaging_type}")
+
+    url = f"{graph_base_url()}/{page_id}/messages"
+    body: dict[str, Any] = {
+        "messaging_type": messaging_type,
+        "recipient": {"id": recipient_id},
+        "message": {
+            "attachment": {
+                "type": "image",
+                "payload": {"attachment_id": attachment_id},
+            }
+        },
+    }
+    if tag:
+        body["tag"] = tag
+
+    response = await _send_messages_json(
+        url=url,
+        access_token=page_access_token,
+        body=body,
+        client=client,
+    )
+    return {
+        "recipient_id": response.get("recipient_id") or recipient_id,
+        "message_id": response.get("message_id"),
+    }
+
+
 async def unsubscribe_page_from_app(
     page_id: str,
     page_access_token: str,
@@ -1038,4 +1213,7 @@ __all__ = [
     "unsubscribe_page_from_app",
     "send_messenger_message",
     "send_instagram_message",
+    "upload_attachment",
+    "send_messenger_attachment",
+    "send_instagram_attachment",
 ]

@@ -34,6 +34,9 @@ interface Props {
   trimmedDraft: string;
   submitSend: () => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  attachedFile: File | null;
+  setAttachedFile: (f: File | null) => void;
+  clearAttachment: () => void;
 }
 
 /** Per-message translation state. */
@@ -51,16 +54,16 @@ export function InboxMessageThread({
   messageListRef,
   draft, setDraft, sending, sendError, sendDisabled, canSend, discordDmChannelMissing,
   trimmedDraft, submitSend, handleKeyDown,
+  attachedFile, setAttachedFile, clearAttachment,
 }: Props) {
   const { t, i18n } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // 画像添付
+  // 画像添付（ファイル選択 UI）
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInputId = useId();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [attachedFile, setAttachedFile] = useState<File | null>(null);
 
   const handleAttachClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -72,15 +75,17 @@ export function InboxMessageThread({
     setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
     setAttachedFile(file);
     e.target.value = "";
-  }, []);
+  }, [setAttachedFile]);
 
-  const clearAttachment = useCallback(() => {
+  const handleClearAttachment = useCallback(() => {
     setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
-    setAttachedFile(null);
-  }, []);
+    clearAttachment();
+  }, [clearAttachment]);
 
-  // 会話切り替えで添付をリセット
-  useEffect(() => { clearAttachment(); }, [selectedLeadId, clearAttachment]);
+  // 会話切り替えで添付プレビューをリセット
+  useEffect(() => {
+    setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
+  }, [selectedLeadId]);
 
   // Translation state: keyed by message_id
   const [translations, setTranslations] = useState<Record<string, TranslationState>>({});
@@ -291,7 +296,20 @@ export function InboxMessageThread({
                     Send failed ({msg.error_code})
                   </div>
                 )}
-                <div>{msg.message_text || "(no body)"}</div>
+                {msg.attachment_type === "image" && msg.attachment_url ? (
+                  <img
+                    src={msg.attachment_url}
+                    alt={t("inbox.imagePreviewAlt")}
+                    className="msg-attachment-img"
+                  />
+                ) : msg.attachment_type === "image" && !msg.attachment_url ? (
+                  <span className="msg-attachment-placeholder">
+                    <INBOX_ACTION_ICONS.attach size={ICON.sm} aria-hidden="true" />
+                    {t("inbox.imageSent")}
+                  </span>
+                ) : (
+                  <div>{msg.message_text || "(no body)"}</div>
+                )}
 
                 {/* Translation section */}
                 {translationState?.loading && (
@@ -348,7 +366,7 @@ export function InboxMessageThread({
               <button
                 type="button"
                 className="send-preview-remove"
-                onClick={clearAttachment}
+                onClick={handleClearAttachment}
                 aria-label={t("inbox.removeAttachment")}
               >
                 <INBOX_ACTION_ICONS.delete size={ICON.sm} aria-hidden="true" />

@@ -42,6 +42,8 @@ interface Lead {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  discord_user_id: string | null;
+  discord_role_sync_status: string | null;
 }
 
 type FormState = {
@@ -388,6 +390,7 @@ export default function LeadsPage() {
               <th>{t("leads.status")}</th>
               <th>{t("leads.temperature")}</th>
               <th>{t("leads.prospectRank")}</th>
+              <th>Discord</th>
               <th>{t("leads.actions")}</th>
             </tr>
           </thead>
@@ -399,6 +402,14 @@ export default function LeadsPage() {
                 <td><span className={`badge lead-badge-${l.status}`}>{translateLeadStatus(l.status)}</span></td>
                 <td>{l.temperature || "-"}</td>
                 <td>{rankBadge(l.prospect_rank)}</td>
+                <td>
+                  {l.discord_user_id && (
+                    <span className={`badge badge-sm discord-sync-${l.discord_role_sync_status ?? "not_linked"}`}
+                          title={t(`discordConfig.syncStatus.${l.discord_role_sync_status ?? "not_linked"}`)}>
+                      D
+                    </span>
+                  )}
+                </td>
                 <td className="actions">
                   {hasPermission("leads.update") && <button className="btn-sm" onClick={() => handleEdit(l)}>{t("common.edit")}</button>}
                   {/* eslint-disable-next-line local/no-japanese-literal -- DB 定義のリードステータス比較値 */}
@@ -409,7 +420,7 @@ export default function LeadsPage() {
                 </td>
               </tr>
             ))}
-            {leads.length === 0 && <tr><td colSpan={7} className="empty">{t("leads.noLeads")}</td></tr>}
+            {leads.length === 0 && <tr><td colSpan={8} className="empty">{t("leads.noLeads")}</td></tr>}
           </tbody>
         </table>
       )}

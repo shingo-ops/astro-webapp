@@ -177,6 +177,9 @@ class LeadResponse(BaseModel):
     # Discord Gateway fields (read-only, set by dm_writer)
     discord_user_id: str | None = None
     discord_dm_channel_id: str | None = None
+    # Discord role sync fields (read-only, set by discord_role_sync service)
+    discord_role_sync_status: str | None = None
+    discord_role_sync_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

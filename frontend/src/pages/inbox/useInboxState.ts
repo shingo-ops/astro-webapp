@@ -21,6 +21,7 @@ import {
   inferPlatform,
   listConversations,
   markRead as apiMarkRead,
+  sendImageMessage,
   sendMessage,
 } from "../../lib/messages";
 import {
@@ -112,6 +113,11 @@ export interface UseInboxStateReturn {
   submitSend: () => Promise<void>;
   handleKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
 
+  // 画像添付
+  attachedFile: File | null;
+  setAttachedFile: (f: File | null) => void;
+  clearAttachment: () => void;
+
   // 管理ドロップダウン
   manageOpen: boolean;
   setManageOpen: (fn: boolean | ((prev: boolean) => boolean)) => void;
@@ -195,6 +201,8 @@ export function useInboxState(): UseInboxStateReturn {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const clearAttachment = useCallback(() => { setAttachedFile(null); }, []);
 
   // 管理ドロップダウン
   const [manageOpen, setManageOpen] = useState(false);
@@ -464,6 +472,7 @@ export function useInboxState(): UseInboxStateReturn {
     closeKartePanel();
     setDraft("");
     setSendError("");
+    clearAttachment();
     const params = new URLSearchParams(searchParams);
     params.set("lead_id", String(leadId));
     setSearchParams(params, { replace: true });
@@ -547,15 +556,21 @@ export function useInboxState(): UseInboxStateReturn {
   const discordDmChannelMissing = currentPlatform === "discord" && !leadDetail?.discord_dm_channel_id;
   const canSend = !!messagingWindow?.can_send_at_all && !discordDmChannelMissing;
   const trimmedDraft = draft.trim();
-  const sendDisabled = sending || !canSend || trimmedDraft.length === 0 || selectedLeadId === null;
+  const sendDisabled = sending || !canSend || (trimmedDraft.length === 0 && !attachedFile) || selectedLeadId === null;
 
   const submitSend = useCallback(async () => {
-    if (sendDisabled || selectedLeadId === null) return;
+    if ((trimmedDraft.length === 0 && !attachedFile) || !canSend || selectedLeadId === null || sending) return;
     setSendError("");
     setSending(true);
     try {
-      await sendMessage(selectedLeadId, { text: trimmedDraft });
-      setDraft("");
+      if (attachedFile) {
+        await sendImageMessage(selectedLeadId, attachedFile);
+        clearAttachment();
+        setDraft("");
+      } else {
+        await sendMessage(selectedLeadId, { text: trimmedDraft });
+        setDraft("");
+      }
       skipNextPollRef.current = true;
       await loadMessages(selectedLeadId);
       loadConversations();
@@ -570,7 +585,7 @@ export function useInboxState(): UseInboxStateReturn {
     } finally {
       setSending(false);
     }
-  }, [sendDisabled, selectedLeadId, trimmedDraft, loadMessages, loadConversations]);
+  }, [sending, canSend, selectedLeadId, trimmedDraft, attachedFile, clearAttachment, loadMessages, loadConversations]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -792,6 +807,11 @@ export function useInboxState(): UseInboxStateReturn {
     messagingWindow,
     submitSend,
     handleKeyDown,
+
+    // 画像添付
+    attachedFile,
+    setAttachedFile,
+    clearAttachment,
 
     // 管理ドロップダウン
     manageOpen,

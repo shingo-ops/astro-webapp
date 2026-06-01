@@ -737,3 +737,227 @@ async def test_get_page_subscribed_apps_empty_args_raise():
         await get_page_subscribed_apps("", "token")
     with pytest.raises(ValueError):
         await get_page_subscribed_apps("page", "")
+
+
+# ---------------------------------------------------------------------------
+# upload_attachment
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_upload_attachment_happy_path():
+    """upload_attachment: 正常系 → attachment_id を返す。"""
+    from app.services.meta_graph import upload_attachment
+
+    captured: dict = {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        captured["url"] = str(req.url)
+        return _ok({"attachment_id": "abc-attach-123"})
+
+    async with _make_client(handler) as client:
+        att_id = await upload_attachment(
+            page_id="page-1",
+            page_access_token="page-token",
+            file_bytes=b"JPEG_DATA",
+            content_type="image/jpeg",
+            filename="test.jpg",
+            client=client,
+        )
+    assert att_id == "abc-attach-123"
+    assert "page-1/message_attachments" in captured["url"]
+
+
+@pytest.mark.asyncio
+async def test_upload_attachment_meta_error():
+    """upload_attachment: Meta がエラーを返す → MetaGraphAPIError。"""
+    from app.services.meta_graph import upload_attachment
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _err(400, {"type": "OAuthException", "code": 100,
+                          "message": "Invalid token", "fbtrace_id": "Z1"})
+
+    async with _make_client(handler) as client:
+        with pytest.raises(MetaGraphAPIError) as exc:
+            await upload_attachment(
+                page_id="page-1",
+                page_access_token="tok",
+                file_bytes=b"DATA",
+                content_type="image/png",
+                filename="img.png",
+                client=client,
+            )
+    assert exc.value.error_type == "OAuthException"
+
+
+@pytest.mark.asyncio
+async def test_upload_attachment_no_attachment_id():
+    """upload_attachment: 200 だが attachment_id なし → MetaGraphTransportError。"""
+    from app.services.meta_graph import upload_attachment
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _ok({"unexpected": "shape"})
+
+    async with _make_client(handler) as client:
+        with pytest.raises(MetaGraphTransportError, match="attachment_id"):
+            await upload_attachment(
+                page_id="p1", page_access_token="tok",
+                file_bytes=b"X", content_type="image/gif", filename="a.gif",
+                client=client,
+            )
+
+
+@pytest.mark.asyncio
+async def test_upload_attachment_timeout():
+    """upload_attachment: タイムアウト → MetaGraphTimeoutError。"""
+    from app.services.meta_graph import upload_attachment
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        raise httpx.TimeoutException("timed out", request=req)
+
+    async with _make_client(handler) as client:
+        with pytest.raises(MetaGraphTimeoutError):
+            await upload_attachment(
+                page_id="p1", page_access_token="tok",
+                file_bytes=b"X", content_type="image/jpeg", filename="f.jpg",
+                client=client,
+            )
+
+
+@pytest.mark.asyncio
+async def test_upload_attachment_empty_args_raise():
+    """upload_attachment: 必須引数が空 → ValueError。"""
+    from app.services.meta_graph import upload_attachment
+
+    with pytest.raises(ValueError, match="page_id"):
+        await upload_attachment(page_id="", page_access_token="tok",
+                                file_bytes=b"X", content_type="image/jpeg", filename="f.jpg")
+    with pytest.raises(ValueError, match="page_access_token"):
+        await upload_attachment(page_id="p1", page_access_token="",
+                                file_bytes=b"X", content_type="image/jpeg", filename="f.jpg")
+    with pytest.raises(ValueError, match="file_bytes"):
+        await upload_attachment(page_id="p1", page_access_token="tok",
+                                file_bytes=b"", content_type="image/jpeg", filename="f.jpg")
+
+
+# ---------------------------------------------------------------------------
+# send_messenger_attachment
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_send_messenger_attachment_happy_path():
+    """send_messenger_attachment: 正常系 → recipient_id と message_id を返す。"""
+    from app.services.meta_graph import send_messenger_attachment
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _ok({"recipient_id": "user-111", "message_id": "mid.MSG1"})
+
+    async with _make_client(handler) as client:
+        result = await send_messenger_attachment(
+            page_access_token="page-tok",
+            recipient_id="user-111",
+            attachment_id="att-999",
+            client=client,
+        )
+    assert result["recipient_id"] == "user-111"
+    assert result["message_id"] == "mid.MSG1"
+
+
+@pytest.mark.asyncio
+async def test_send_messenger_attachment_invalid_messaging_type():
+    """send_messenger_attachment: 不正 messaging_type → ValueError。"""
+    from app.services.meta_graph import send_messenger_attachment
+
+    with pytest.raises(ValueError, match="invalid messaging_type"):
+        await send_messenger_attachment(
+            page_access_token="tok", recipient_id="uid", attachment_id="att",
+            messaging_type="INVALID",
+        )
+
+
+@pytest.mark.asyncio
+async def test_send_messenger_attachment_empty_args_raise():
+    """send_messenger_attachment: 必須引数が空 → ValueError。"""
+    from app.services.meta_graph import send_messenger_attachment
+
+    with pytest.raises(ValueError, match="page_access_token"):
+        await send_messenger_attachment(page_access_token="", recipient_id="uid", attachment_id="att")
+    with pytest.raises(ValueError, match="recipient_id"):
+        await send_messenger_attachment(page_access_token="tok", recipient_id="", attachment_id="att")
+    with pytest.raises(ValueError, match="attachment_id"):
+        await send_messenger_attachment(page_access_token="tok", recipient_id="uid", attachment_id="")
+
+
+@pytest.mark.asyncio
+async def test_send_messenger_attachment_meta_error():
+    """send_messenger_attachment: Meta がエラーを返す → MetaGraphAPIError。"""
+    from app.services.meta_graph import send_messenger_attachment
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _err(400, {"type": "OAuthException", "code": 190,
+                          "message": "Invalid OAuth token", "fbtrace_id": "T1"})
+
+    async with _make_client(handler) as client:
+        with pytest.raises(MetaGraphAPIError):
+            await send_messenger_attachment(
+                page_access_token="bad-tok", recipient_id="uid",
+                attachment_id="att", client=client,
+            )
+
+
+# ---------------------------------------------------------------------------
+# send_instagram_attachment
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_send_instagram_attachment_happy_path():
+    """send_instagram_attachment: 正常系 → recipient_id と message_id を返す。"""
+    from app.services.meta_graph import send_instagram_attachment
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return _ok({"recipient_id": "ig-user-222", "message_id": "mid.IG1"})
+
+    async with _make_client(handler) as client:
+        result = await send_instagram_attachment(
+            page_access_token="page-tok",
+            page_id="ig-page-1",
+            recipient_id="ig-user-222",
+            attachment_id="att-ig-888",
+            client=client,
+        )
+    assert result["recipient_id"] == "ig-user-222"
+    assert result["message_id"] == "mid.IG1"
+
+
+@pytest.mark.asyncio
+async def test_send_instagram_attachment_empty_args_raise():
+    """send_instagram_attachment: 必須引数が空 → ValueError。"""
+    from app.services.meta_graph import send_instagram_attachment
+
+    with pytest.raises(ValueError, match="page_id"):
+        await send_instagram_attachment(page_access_token="tok", page_id="",
+                                        recipient_id="uid", attachment_id="att")
+    with pytest.raises(ValueError, match="page_access_token"):
+        await send_instagram_attachment(page_access_token="", page_id="pg",
+                                        recipient_id="uid", attachment_id="att")
+    with pytest.raises(ValueError, match="recipient_id"):
+        await send_instagram_attachment(page_access_token="tok", page_id="pg",
+                                        recipient_id="", attachment_id="att")
+    with pytest.raises(ValueError, match="attachment_id"):
+        await send_instagram_attachment(page_access_token="tok", page_id="pg",
+                                        recipient_id="uid", attachment_id="")
+
+
+@pytest.mark.asyncio
+async def test_send_instagram_attachment_invalid_messaging_type():
+    """send_instagram_attachment: 不正 messaging_type → ValueError。"""
+    from app.services.meta_graph import send_instagram_attachment
+
+    with pytest.raises(ValueError, match="invalid messaging_type"):
+        await send_instagram_attachment(
+            page_access_token="tok", page_id="pg",
+            recipient_id="uid", attachment_id="att",
+            messaging_type="WRONG",
+        )

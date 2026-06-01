@@ -47,10 +47,20 @@
 | feature/morimoto/header-btn-size-unify | ヘッダーアクションボタンサイズ統一 | 2026-06-01 | IN_PROGRESS | | |
 | feature/morimoto/discord-bot-token-deploy | （記入してください） | 2026-06-01 13:12 | IN_PROGRESS | | |
 | feature/morimoto/discord-integration-d1 | （記入してください） | 2026-06-01 13:58 | IN_PROGRESS | | |
+| feature/morimoto/discord-d2-role-management | Discord D2: APIレジリエンス・ロール同期・Guild設定 | 2026-06-01 | IN_PROGRESS | #1331 | |
 | feature/morimoto/hotfix-backend-500s | （記入してください） | 2026-06-01 15:40 | IN_PROGRESS | | |
 | feature/morimoto/deal-lead-source | （記入してください） | 2026-06-01 15:56 | IN_PROGRESS | | |
 | feature/morimoto/inbox-send-btn-paper-airplane | 受信箱Sendボタン紙飛行機アイコン・インライン配置 | 2026-06-01 | IN_PROGRESS | | |
 | feature/morimoto/inbox-attach-button-v2 | 受信箱クリップ画像添付ボタン | 2026-06-01 | IN_PROGRESS | | |
+| feature/morimoto/deprecate-customers-sprint1 | （記入してください） | 2026-06-01 17:10 | IN_PROGRESS | | |
+| feature/morimoto/deprecate-customers-sprint2 | （記入してください） | 2026-06-01 17:20 | IN_PROGRESS | | |
+| feature/morimoto/deprecate-customers-sprint3 | （記入してください） | 2026-06-01 17:27 | IN_PROGRESS | | |
+| feature/morimoto/deprecate-customers-sprint4 | （記入してください） | 2026-06-01 17:34 | IN_PROGRESS | | |
+| feature/morimoto/deprecate-customers-sprint5 | （記入してください） | 2026-06-01 17:36 | IN_PROGRESS | | |
+| feature/morimoto/deprecate-customers-sprint6 | （記入してください） | 2026-06-01 17:40 | IN_PROGRESS | | |
+| feature/morimoto/deprecate-customers-sprint7 | （記入してください） | 2026-06-01 17:46 | IN_PROGRESS | | |
+| feature/morimoto/inbox-image-send | 受信箱画像送信 Sprint 2（バックエンドAPI） | 2026-06-01 17:53 | IN_PROGRESS | | |
+| feature/morimoto/fix-e2e-develop-red | E2E 赤化修正（scene1 ×2 / scene3 ×1） | 2026-06-01T19:53:49 | IN_PROGRESS | | |
 ---
 
 ## 記入例
