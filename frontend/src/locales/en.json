@@ -1641,5 +1641,14 @@
   },
   "buddy": {
     "subtitle": "Manage buddy assignments and pairings."
+  },
+  "discord": {
+    "title": "Discord",
+    "isJoined": "Discord integration enabled",
+    "channelId": "Channel ID",
+    "userId": "User ID",
+    "invoiceWebhook": "Invoice Webhook URL",
+    "shipmentWebhook": "Shipment Webhook URL",
+    "deleteSettings": "Delete Discord settings"
   }
 }

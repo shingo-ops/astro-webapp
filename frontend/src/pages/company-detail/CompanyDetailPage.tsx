@@ -2,7 +2,7 @@
  * 会社詳細ページ（Phase 1-B-2 Step 5c-2）。
  *
  * URL: /companies/:id
- * 4 タブ: 基本情報 / 住所（multi_branch）/ 担当者 / 販売チャネル
+ * 5 タブ: 基本情報 / 住所（multi_branch）/ 担当者 / 販売チャネル / Discord
  *
  * このファイルはオーケストレーターのみ。ロジックは useCompanyDetail、
  * UI は各タブコンポーネントに分割済み。
@@ -18,6 +18,7 @@ import { CompanyBasicTab } from "./CompanyBasicTab";
 import { CompanyAddressesTab } from "./CompanyAddressesTab";
 import { CompanyContactsTab } from "./CompanyContactsTab";
 import { CompanyChannelsTab } from "./CompanyChannelsTab";
+import { CompanyDiscordTab } from "./CompanyDiscordTab";
 import { CompanyAddressModal } from "./CompanyAddressModal";
 import { typeLabel } from "./company-detail.types";
 
@@ -42,6 +43,7 @@ export default function CompanyDetailPage() {
     contactModalOpen, setContactModalOpen,
     contactForm, setContactForm, contactSubmitting,
     contactDeleteTarget, setContactDeleteTarget,
+    discordForm, setDiscordForm, discordDirty, setDiscordDirty, discordSubmitting,
     dedupConfirmOpen, setDedupConfirmOpen, dedupSubmitting,
     mergeModalOpen, setMergeModalOpen,
     handleBasicSubmit, handleChannelsSubmit,
@@ -50,6 +52,7 @@ export default function CompanyDetailPage() {
     handleAddressTypeChange,
     openContactNew, openContactEdit,
     handleContactSubmit, handleContactDelete,
+    handleDiscordSubmit, handleDiscordDelete,
     handleResolveAsDistinct, handleAddressDelete,
   } = state;
 
@@ -103,6 +106,9 @@ export default function CompanyDetailPage() {
         </button>
         <button className={`tab ${activeTab === "channels" ? "active" : ""}`} onClick={() => switchTab("channels")}>
           {t("nav.channels")} ({company.sales_channels.length})
+        </button>
+        <button className={`tab ${activeTab === "discord" ? "active" : ""}`} onClick={() => switchTab("discord")}>
+          {t("discord.title")}
         </button>
       </div>
 
@@ -160,6 +166,19 @@ export default function CompanyDetailPage() {
           setChannelsDirty={setChannelsDirty}
           channelsSubmitting={channelsSubmitting}
           handleChannelsSubmit={handleChannelsSubmit}
+          canEdit={canEdit}
+        />
+      )}
+
+      {activeTab === "discord" && (
+        <CompanyDiscordTab
+          discordForm={discordForm}
+          setDiscordForm={setDiscordForm}
+          discordDirty={discordDirty}
+          setDiscordDirty={setDiscordDirty}
+          discordSubmitting={discordSubmitting}
+          handleDiscordSubmit={handleDiscordSubmit}
+          handleDiscordDelete={handleDiscordDelete}
           canEdit={canEdit}
         />
       )}
