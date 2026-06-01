@@ -92,6 +92,30 @@ jobs:
             echo "$NEW_SQL"
           fi
 
+      - name: migration ファイル名フォーマット検証（タイムスタンプ形式強制）
+        if: steps.detect_sql.outputs.new_sql == 'true'
+        run: |
+          FAILED=0
+          IFS='|' read -ra SQL_FILES <<< "${{ steps.detect_sql.outputs.new_sql_files }}"
+          for sql_path in "${SQL_FILES[@]}"; do
+            fname=$(basename "$sql_path")
+            # 001〜099 の連番形式（廃止済み）は旧ファイルなので除外
+            if echo "$fname" | grep -qE '^[0-9]{3}_'; then
+              echo "⚠️  旧連番形式のファイルが追加されています: $fname"
+              echo "   100番以降はタイムスタンプ形式 YYYYMMDD_HHMMSS_description.sql を使用してください"
+              FAILED=1
+            elif echo "$fname" | grep -qE '^[0-9]{8}_[0-9]{6}_.*\.sql$'; then
+              echo "✅ $fname — タイムスタンプ形式 OK"
+            else
+              echo "❌ $fname — ファイル名が不正です"
+              echo "   正しい形式: YYYYMMDD_HHMMSS_description.sql（例: 20260601_082000_add_foo.sql）"
+              FAILED=1
+            fi
+          done
+          if [ "$FAILED" -ne 0 ]; then
+            exit 1
+          fi
+
       - name: deploy.yml に psql 実行行を確認
         if: steps.detect_sql.outputs.new_sql == 'true'
         run: |

@@ -404,3 +404,52 @@ class TestQuotesValidation:
             "items": [{"product_name": "x", "quantity": 0, "unit_price": "100.00"}],
         })
         assert res.status_code == 422
+
+
+class TestQuoteResponseSchema:
+    """QuoteResponse スキーマの堅牢性（後発テナントの NULL contact_id 行）。"""
+
+    def _row(self, **overrides):
+        from datetime import datetime, date
+
+        row = {
+            "id": 1,
+            "quote_code": "Q-001",
+            "deal_id": None,
+            "company_id": 10,
+            "contact_id": 20,
+            "currency": "JPY",
+            "subtotal": Decimal("100.00"),
+            "shipping_fee": None,
+            "tax_amount": None,
+            "total_amount": Decimal("100.00"),
+            "status": "draft",
+            "validity_date": date(2026, 1, 1),
+            "shipping_country": None,
+            "shipping_carrier": None,
+            "delivery_info": None,
+            "pdf_url": None,
+            "notes": None,
+            "created_by": None,
+            "created_at": datetime(2026, 1, 1, 0, 0, 0),
+            "updated_at": datetime(2026, 1, 1, 0, 0, 0),
+        }
+        row.update(overrides)
+        return row
+
+    def test_contact_id_null_does_not_raise(self):
+        """tenant_006 等の demo 行 (contact_id IS NULL) が一覧で 500 を出さないこと。
+
+        旧仕様では contact_id: int 必須で ValidationError → GET /quotes が 500。
+        """
+        from app.schemas.quote import QuoteResponse
+
+        resp = QuoteResponse(**self._row(contact_id=None))
+        assert resp.contact_id is None
+        assert resp.company_id == 10
+
+    def test_contact_id_present_still_valid(self):
+        from app.schemas.quote import QuoteResponse
+
+        resp = QuoteResponse(**self._row(contact_id=20))
+        assert resp.contact_id == 20

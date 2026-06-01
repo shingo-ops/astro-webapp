@@ -82,12 +82,15 @@ class OrderUpdate(BaseModel):
 class OrderResponse(BaseModel):
     """注文情報レスポンス。
 
-    Note: PR γ (Step 5d 最終クリーンアップ) で `contact_id: int` 必須に昇格。
-    migration 035 で legacy 行 (contact_id IS NULL) は precondition で 0 件保証。
+    Note: PR γ (Step 5d) で `contact_id` を必須化したが、対象は tenant_004 のみ
+    (migration 035 の precondition で 0 件保証)。`orders.contact_id` は migration 032 で
+    nullable に追加され NOT NULL 化されておらず、後発作成テナント (例: tenant_006) には
+    demo/seed で contact_id IS NULL の行が存在しうる。一覧/詳細レスポンスがそれで 500 に
+    ならないよう `int | None` で許容する (作成リクエスト OrderCreate は引き続き必須)。
     """
     id: int
     company_id: int
-    contact_id: int
+    contact_id: int | None
     deal_id: int | None
     invoice_id: int | None
     order_number: str

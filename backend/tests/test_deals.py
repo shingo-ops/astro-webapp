@@ -222,3 +222,46 @@ class TestDealsValidation:
             "title": "負の金額", "amount": -100,
         })
         assert res.status_code == 422
+
+
+class TestDealResponseSchema:
+    """DealResponse の堅牢性（後発テナントの NULL contact_id 行）。"""
+
+    def _row(self, **overrides):
+        from datetime import datetime
+
+        row = {
+            "id": 1,
+            "deal_code": "D-001",
+            "company_id": 10,
+            "contact_id": 20,
+            "lead_id": None,
+            "title": "テスト商談",
+            "amount": None,
+            "currency": None,
+            "status": "open",
+            "stage": None,
+            "probability": None,
+            "lost_reason": None,
+            "assigned_to": None,
+            "expected_close_date": None,
+            "notes": None,
+            "lead_source": None,
+            "created_at": datetime(2026, 1, 1, 0, 0, 0),
+            "updated_at": datetime(2026, 1, 1, 0, 0, 0),
+        }
+        row.update(overrides)
+        return row
+
+    def test_contact_id_null_does_not_raise(self):
+        """tenant_006 等の NULL contact_id 行で GET /deals が 500 にならないこと。"""
+        from app.schemas.deal import DealResponse
+
+        resp = DealResponse(**self._row(contact_id=None))
+        assert resp.contact_id is None
+        assert resp.company_id == 10
+
+    def test_contact_id_present_still_valid(self):
+        from app.schemas.deal import DealResponse
+
+        assert DealResponse(**self._row(contact_id=20)).contact_id == 20
