@@ -83,6 +83,19 @@ const emptyForm: FormState = {
   unit_price_usd: "", unit_price_eur: "", image_url: "",
 };
 
+// 取引単位は取込パーサ由来で表記が揺れる（BOX/box/carton 等）。
+// 正規化ルール（ひとしさん確定 2026-06-02）: 小文字化 + carton→case に統一。
+// 表示は「先頭の文字だけ大文字」（例: BOX→Box, carton→Case）。
+const UNIT_OPTIONS = ["piece", "pack", "box", "case", "set"];
+const normalizeUnit = (u: string) => {
+  const lc = (u || "").toLowerCase();
+  return lc === "carton" ? "case" : lc;
+};
+const capUnit = (u: string) => {
+  const n = normalizeUnit(u);
+  return n ? n.charAt(0).toUpperCase() + n.slice(1) : n;
+};
+
 interface ArchiveBlockedDetail {
   id: number;
   name_ja: string;
@@ -385,11 +398,9 @@ export default function ProductsPage() {
               <div className="form-group"><label>{t("products.unitCol")}</label>
                 <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
                   <option value="">{t("common.notSet")}</option>
-                  <option value="piece">{t("products.unitValues.piece")}</option>
-                  <option value="pack">{t("products.unitValues.pack")}</option>
-                  <option value="box">{t("products.unitValues.box")}</option>
-                  <option value="case">{t("products.unitValues.case")}</option>
-                  <option value="set">{t("products.unitValues.set")}</option>
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>{capUnit(u)}</option>
+                  ))}
                 </select>
               </div>
 
@@ -514,7 +525,7 @@ export default function ProductsPage() {
                     {p.quantity}
                   </span>
                 </td>
-                <td>{p.unit ? t(`products.unitValues.${p.unit}`, { defaultValue: p.unit }) : "-"}</td>
+                <td>{p.unit ? capUnit(p.unit) : "-"}</td>
                 <td className="actions">
                   {hasPermission("products.update") && <button className="btn-sm" onClick={() => handleEdit(p)}>{t("common.edit")}</button>}
                   {/* QA 2026-05-30: 「追加」と誤表記された廃番(archive)トグルを撤去（誤クリックで行が消える事故防止）。
