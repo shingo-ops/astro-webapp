@@ -45,6 +45,7 @@
 | feature/morimoto/review-tenant-password-governance | review tenant パスワード管理標準化 | 2026-06-01 03:30 | IN_PROGRESS | | ガバナンスMONITOR 3件解消 |
 | feature/morimoto/inbox-message-translation | 受信箱メッセージAI翻訳（ADR-088） | 2026-06-01 | REVIEW | | |
 | feature/morimoto/header-btn-size-unify | ヘッダーアクションボタンサイズ統一 | 2026-06-01 | IN_PROGRESS | | |
+| feature/morimoto/discord-bot-token-deploy | （記入してください） | 2026-06-01 13:12 | IN_PROGRESS | | |
 ---
 
 ## 記入例
