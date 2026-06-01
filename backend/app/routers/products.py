@@ -28,7 +28,7 @@ from app.auth.dependencies import (
     get_current_user,
     is_postgresql,
     require_permission,
-    tenant_table_ref,
+    reset_tenant_context,
 )
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
@@ -49,15 +49,6 @@ router = APIRouter()
 # バックを行うため `is_postgresql` も使う。
 
 
-_PRODUCT_COLUMNS = """
-    id, product_code, name_ja, name_en, category, mark,
-    status, condition, unit_price, quantity, weight,
-    notes, release_date, created_at, updated_at,
-    jan_code, card_number, expansion_code, rarity, language,
-    unit_price_usd, unit_price_eur, image_url,
-    is_archived, archived_at, supplier_default_id
-"""
-
 _UPDATABLE_COLUMNS = {
     "name_ja", "name_en", "category", "mark", "status", "condition",
     "unit_price", "quantity", "weight", "notes", "release_date",
@@ -66,6 +57,29 @@ _UPDATABLE_COLUMNS = {
     "unit_price_usd", "unit_price_eur", "image_url",
     "is_archived", "supplier_default_id",
 }
+
+
+# ADR-090: products を public 中央テーブルへ一本化。
+# - PostgreSQL 本番: public.products（実列は name / stock_quantity）。Discord取込もここに入るため
+#   在庫表(/products)が public を読むことで取込が在庫表に反映される。
+# - SQLite (pytest): schema 概念が無く conftest の products（実列は name_ja / quantity）を使うため
+#   dialect で参照テーブル名と列名を分岐する（応答契約 name_ja / quantity は alias で維持）。
+def _products_ctx(db: AsyncSession) -> dict[str, str]:
+    if is_postgresql(db):
+        return {"ref": "public.products", "name": "name", "qty": "stock_quantity"}
+    return {"ref": "products", "name": "name_ja", "qty": "quantity"}
+
+
+def _select_columns(ctx: dict[str, str]) -> str:
+    """応答契約（name_ja / quantity）を維持しつつ実列を alias した SELECT 列リストを返す。"""
+    return (
+        f"id, product_code, {ctx['name']} AS name_ja, name_en, category, mark, "
+        f"status, condition, unit_price, {ctx['qty']} AS quantity, weight, "
+        "notes, release_date, created_at, updated_at, "
+        "jan_code, card_number, expansion_code, rarity, language, "
+        "unit_price_usd, unit_price_eur, image_url, "
+        "is_archived, archived_at, supplier_default_id"
+    )
 
 
 @router.get(
@@ -91,6 +105,7 @@ async def list_products(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
+    ctx = _products_ctx(db)
     offset = (page - 1) * per_page
     conditions = []
     params: dict = {"limit": per_page, "offset": offset}
@@ -100,7 +115,7 @@ async def list_products(
         # 例: 「TCG」検索で category="TCG" / "Pokemon TCG" の双方をヒットさせる。
         # language / rarity / expansion_code も検索可能列として一般的なため同時に追加。
         conditions.append(
-            "(name_ja ILIKE :search OR name_en ILIKE :search OR product_code ILIKE :search "
+            f"({ctx['name']} ILIKE :search OR name_en ILIKE :search OR product_code ILIKE :search "
             "OR mark ILIKE :search OR jan_code ILIKE :search OR card_number ILIKE :search "
             "OR category ILIKE :search OR rarity ILIKE :search OR expansion_code ILIKE :search "
             "OR language ILIKE :search)"
@@ -119,12 +134,11 @@ async def list_products(
 
     # 名前ソート（在庫表ヘッダーのトグル用）。ホワイトリストで SQL インジェクション防止。
     # 未指定は従来どおり updated_at DESC。
-    _SORT_MAP = {"name_asc": "name_ja ASC", "name_desc": "name_ja DESC"}
+    _SORT_MAP = {"name_asc": f"{ctx['name']} ASC", "name_desc": f"{ctx['name']} DESC"}
     order_by = _SORT_MAP.get(sort or "", "updated_at DESC")
 
-    products_t = tenant_table_ref(db, tenant_id, "products")
     result = await db.execute(
-        text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} {where} ORDER BY {order_by} LIMIT :limit OFFSET :offset"),
+        text(f"SELECT {_select_columns(ctx)} FROM {ctx['ref']} {where} ORDER BY {order_by} LIMIT :limit OFFSET :offset"),
         params,
     )
     return [ProductResponse(**row) for row in result.mappings().all()]
@@ -141,9 +155,9 @@ async def get_product(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    products_t = tenant_table_ref(db, tenant_id, "products")
+    ctx = _products_ctx(db)
     result = await db.execute(
-        text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} WHERE id = :id"),
+        text(f"SELECT {_select_columns(ctx)} FROM {ctx['ref']} WHERE id = :id"),
         {"id": product_id},
     )
     row = result.mappings().first()
@@ -164,17 +178,19 @@ async def create_product(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
+    ctx = _products_ctx(db)
     payload = data.model_dump()
     if payload.get("status") is not None:
         payload["status"] = payload["status"].value if hasattr(payload["status"], "value") else payload["status"]
-    payload["tenant_id"] = tenant_id
+    # ADR-090: public.products は中央カタログ（tenant_id=NULL）。SQLite テスト表は
+    # tenant_id NOT NULL のため従来どおり tenant_id を入れる。
+    payload["tenant_id"] = None if is_postgresql(db) else tenant_id
 
-    products_t = tenant_table_ref(db, tenant_id, "products")
     result = await db.execute(
         text(f"""
-            INSERT INTO {products_t} (
-                tenant_id, name_ja, name_en, category, mark,
-                status, condition, unit_price, quantity, weight,
+            INSERT INTO {ctx['ref']} (
+                tenant_id, {ctx['name']}, name_en, category, mark,
+                status, condition, unit_price, {ctx['qty']}, weight,
                 notes, release_date,
                 jan_code, card_number, expansion_code, rarity, language,
                 unit_price_usd, unit_price_eur, image_url,
@@ -193,12 +209,12 @@ async def create_product(
     new_id = result.scalar_one()
 
     await db.execute(
-        text(f"UPDATE {products_t} SET product_code = :code WHERE id = :id"),
+        text(f"UPDATE {ctx['ref']} SET product_code = :code WHERE id = :id"),
         {"code": f"PD-{new_id:05d}", "id": new_id},
     )
 
     fetched = await db.execute(
-        text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} WHERE id = :id"),
+        text(f"SELECT {_select_columns(ctx)} FROM {ctx['ref']} WHERE id = :id"),
         {"id": new_id},
     )
     row = fetched.mappings().first()
@@ -209,6 +225,7 @@ async def create_product(
         new_data=data.model_dump(exclude_none=True, mode="json"),
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
     return ProductResponse(**row)
@@ -226,9 +243,9 @@ async def update_product(
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    products_t = tenant_table_ref(db, tenant_id, "products")
+    ctx = _products_ctx(db)
     old_result = await db.execute(
-        text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} WHERE id = :id"),
+        text(f"SELECT {_select_columns(ctx)} FROM {ctx['ref']} WHERE id = :id"),
         {"id": product_id},
     )
     old_row = old_result.mappings().first()
@@ -243,8 +260,10 @@ async def update_product(
     if "status" in update_data and update_data["status"] is not None:
         update_data["status"] = update_data["status"].value if hasattr(update_data["status"], "value") else update_data["status"]
 
+    # 応答契約の name_ja / quantity を実列(ctx)へマッピングして SET 句を組む（param キーは据え置き）。
+    _col = {"name_ja": ctx["name"], "quantity": ctx["qty"]}
     # is_archived=true への遷移時に archived_at を自動設定
-    set_clauses = ", ".join(f"{k} = :{k}" for k in update_data)
+    set_clauses = ", ".join(f"{_col.get(k, k)} = :{k}" for k in update_data)
     if update_data.get("is_archived") is True and not old_row.get("is_archived"):
         set_clauses += ", archived_at = NOW()"
     elif update_data.get("is_archived") is False and old_row.get("is_archived"):
@@ -254,9 +273,9 @@ async def update_product(
 
     result = await db.execute(
         text(f"""
-            UPDATE {products_t} SET {set_clauses}, updated_at = NOW()
+            UPDATE {ctx['ref']} SET {set_clauses}, updated_at = NOW()
             WHERE id = :id
-            RETURNING {_PRODUCT_COLUMNS}
+            RETURNING {_select_columns(ctx)}
         """),
         update_data,
     )
@@ -268,6 +287,7 @@ async def update_product(
         old_data=dict(old_row), new_data=update_data,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
     return ProductResponse(**row)
@@ -304,32 +324,45 @@ async def _check_product_references(
     SQLite (pytest) は to_regclass 未対応のため prefix なしの dialect 分岐に倒す。
     """
     blocking: list[str] = []
-    for table in _DOWNSTREAM_TABLES_TO_CHECK:
-        qualified = tenant_table_ref(db, tenant_id, table)
-        # テーブル存在確認。未投入テナントは無音 SKIP（dangling FK にはならない）
-        if is_postgresql(db):
-            exists_result = await db.execute(
-                text("SELECT to_regclass(:qname) IS NOT NULL"),
-                {"qname": qualified},
-            )
-            if not exists_result.scalar():
-                continue
-        else:
-            # SQLite: sqlite_master で確認（schema 概念なしなので table 名のみ）
+    if is_postgresql(db):
+        # ADR-090: products は public 中央テーブルになったため、削除時は全テナント schema の
+        # 下流参照を確認する（どこか 1 テナントでも参照していれば物理削除を拒否）。
+        schemas_result = await db.execute(
+            text("SELECT nspname FROM pg_namespace WHERE nspname ~ '^tenant_[0-9]+$' ORDER BY nspname"),
+        )
+        schemas = [r[0] for r in schemas_result.all()]
+        for table in _DOWNSTREAM_TABLES_TO_CHECK:
+            for schema in schemas:
+                # schema は pg_namespace 由来 + table は allowlist 確定済。:id のみバインド。
+                qualified = f"{schema}.{table}"
+                exists_result = await db.execute(
+                    text("SELECT to_regclass(:qname) IS NOT NULL"),
+                    {"qname": qualified},
+                )
+                if not exists_result.scalar():
+                    continue
+                result = await db.execute(
+                    text(f"SELECT EXISTS(SELECT 1 FROM {qualified} WHERE product_id = :id)"),
+                    {"id": product_id},
+                )
+                if result.scalar():
+                    blocking.append(table)
+                    break  # この table はいずれかのテナントで参照済 → 次の table へ
+    else:
+        # SQLite (pytest): schema 概念なし。単一 products / 下流テーブルを確認。
+        for table in _DOWNSTREAM_TABLES_TO_CHECK:
             exists_result = await db.execute(
                 text("SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name = :n)"),
                 {"n": table},
             )
             if not exists_result.scalar():
                 continue
-
-        # 識別子は allowlist 確定済 + tenant schema 修飾、:id だけバインド
-        result = await db.execute(
-            text(f"SELECT EXISTS(SELECT 1 FROM {qualified} WHERE product_id = :id)"),
-            {"id": product_id},
-        )
-        if result.scalar():
-            blocking.append(table)
+            result = await db.execute(
+                text(f"SELECT EXISTS(SELECT 1 FROM {table} WHERE product_id = :id)"),
+                {"id": product_id},
+            )
+            if result.scalar():
+                blocking.append(table)
     return blocking
 
 
@@ -355,9 +388,9 @@ async def delete_product(
     Q9（2026-04-28 確定）: FK 参照あり時は 409 を返し、is_archived=true の
     アーカイブ運用に誘導する。参照なしのときだけ物理削除する。
     """
-    products_t = tenant_table_ref(db, tenant_id, "products")
+    ctx = _products_ctx(db)
     old_result = await db.execute(
-        text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} WHERE id = :id"),
+        text(f"SELECT {_select_columns(ctx)} FROM {ctx['ref']} WHERE id = :id"),
         {"id": product_id},
     )
     old_row = old_result.mappings().first()
@@ -375,6 +408,7 @@ async def delete_product(
             new_data={"blocking_references": blocking, "result": "409_conflict"},
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
@@ -395,13 +429,14 @@ async def delete_product(
     # キャッチして同じ 409 構造で返す + rollback で aborted transaction を
     # 残さない。
     try:
-        await db.execute(text(f"DELETE FROM {products_t} WHERE id = :id"), {"id": product_id})
+        await db.execute(text(f"DELETE FROM {ctx['ref']} WHERE id = :id"), {"id": product_id})
         await record_audit_log(
             db=db, tenant_id=tenant_id, user_id=current_user.id,
             action="delete", table_name="products", record_id=product_id,
             old_data=dict(old_row),
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except IntegrityError as exc:
         await db.rollback()
         logger.warning(
@@ -417,6 +452,7 @@ async def delete_product(
                 new_data={"blocking_references": ["unknown"], "result": "409_integrity_error"},
             )
             await db.commit()
+            await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
         except Exception:
             # audit log 自体の失敗で 500 を返さない（ベストエフォート）
             await db.rollback()
@@ -451,9 +487,9 @@ async def check_inventory(
     current_user: User = Depends(get_current_user),
 ):
     """指定商品の在庫が要求数量を満たすか確認する"""
-    products_t = tenant_table_ref(db, tenant_id, "products")
+    ctx = _products_ctx(db)
     result = await db.execute(
-        text(f"SELECT id, name_ja, quantity FROM {products_t} WHERE id = :id"),
+        text(f"SELECT id, {ctx['name']} AS name_ja, {ctx['qty']} AS quantity FROM {ctx['ref']} WHERE id = :id"),
         {"id": product_id},
     )
     row = result.mappings().first()
