@@ -36,11 +36,6 @@ export default function CustomerHubPage() {
       visible: hasPermission("customers.view"),
     },
     {
-      to: "customers",
-      labelKey: "nav.customers",
-      visible: hasPermission("customers.view"),
-    },
-    {
       to: "archive",
       labelKey: "nav.archive",
       visible:

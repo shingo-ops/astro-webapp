@@ -505,10 +505,10 @@ export default function DashboardPage() {
                 <div
                   key={item.id}
                   className="db-followup-item db-overdue db-followup-clickable"
-                  onClick={() => navigate("/crm/customers")}
+                  onClick={() => navigate("/crm/companies")}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && navigate("/crm/customers")}
+                  onKeyDown={(e) => e.key === "Enter" && navigate("/crm/companies")}
                 >
                   <span className="db-followup-badge">{t("dashboard.overdue")}</span>
                   <span className="db-followup-name">{item.customer_name}</span>
@@ -520,10 +520,10 @@ export default function DashboardPage() {
                 <div
                   key={item.id}
                   className="db-followup-item db-due-today db-followup-clickable"
-                  onClick={() => navigate("/crm/customers")}
+                  onClick={() => navigate("/crm/companies")}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && navigate("/crm/customers")}
+                  onKeyDown={(e) => e.key === "Enter" && navigate("/crm/companies")}
                 >
                   <span className="db-followup-badge db-badge-today">{t("dashboard.dueToday")}</span>
                   <span className="db-followup-name">{item.customer_name}</span>
@@ -548,10 +548,10 @@ export default function DashboardPage() {
                 <div
                   key={item.id}
                   className="db-followup-item db-followup-clickable"
-                  onClick={() => navigate("/crm/customers")}
+                  onClick={() => navigate("/crm/companies")}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && navigate("/crm/customers")}
+                  onKeyDown={(e) => e.key === "Enter" && navigate("/crm/companies")}
                 >
                   <CalendarCheckIcon aria-hidden="true" size={14} className="db-followup-icon" />
                   <span className="db-followup-name">{item.customer_name}</span>
