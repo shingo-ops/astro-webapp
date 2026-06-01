@@ -37,7 +37,10 @@ test.describe("Scene 3: Incoming Messenger", () => {
         await route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify({ marked_count: 1 }),
+          // marked_count: 0 を返すことで自動選択時の mark-read がフロントエンドの
+          // unread_count を 0 に書き換えない（badge が消えない）。
+          // marked_count > 0 の場合のみ setConversations が走る実装（useInboxState.ts）。
+          body: JSON.stringify({ marked_count: 0 }),
         });
       },
     });
