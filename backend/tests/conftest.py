@@ -946,12 +946,8 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM products"))
         await conn.execute(text("DELETE FROM deals"))
         await conn.execute(text("DELETE FROM leads"))
-        # Phase 1 再設計の副テーブル → 本体の順
-        await conn.execute(text("DELETE FROM customer_contact_channels"))
-        await conn.execute(text("DELETE FROM customer_discord"))
-        await conn.execute(text("DELETE FROM customer_sales_channels"))
-        await conn.execute(text("DELETE FROM customer_addresses"))
         # Phase 1-B-2 Step 5b-1: companies/contacts 副テーブル → 本体
+        # ADR-089 Sprint 6: customer_contact_channels/customer_discord/customer_sales_channels/customer_addresses は削除済み
         await conn.execute(text("DELETE FROM contact_contact_channels"))
         await conn.execute(text("DELETE FROM contact_discord"))
         await conn.execute(text("DELETE FROM contact_emails"))
