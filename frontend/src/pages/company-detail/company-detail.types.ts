@@ -68,6 +68,42 @@ export interface Contact {
 
 export type Tab = "basic" | "addresses" | "contacts" | "channels";
 
+export type ContactFormState = {
+  /** null = 新規、数値 = 既存更新 */
+  id: number | null;
+  display_name: string;
+  surname: string;
+  given_name: string;
+  job_title: string;
+  department: string;
+  is_primary_contact: boolean;
+  primary_email: string;
+  primary_phone: string;
+  status: string;
+};
+
+export const emptyContact = (): ContactFormState => ({
+  id: null,
+  display_name: "", surname: "", given_name: "",
+  job_title: "", department: "",
+  is_primary_contact: false,
+  primary_email: "", primary_phone: "",
+  status: "active",
+});
+
+export const contactFromApi = (c: Contact): ContactFormState => ({
+  id: c.id,
+  display_name: c.display_name || "",
+  surname: c.surname || "",
+  given_name: c.given_name || "",
+  job_title: c.job_title || "",
+  department: c.department || "",
+  is_primary_contact: c.is_primary_contact,
+  primary_email: c.primary_email || "",
+  primary_phone: c.primary_phone || "",
+  status: c.status || "active",
+});
+
 export type AddressFormState = {
   /** null = 新規、数値 = 既存更新 */
   id: number | null;

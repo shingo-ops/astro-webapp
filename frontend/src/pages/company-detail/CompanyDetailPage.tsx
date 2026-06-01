@@ -39,12 +39,17 @@ export default function CompanyDetailPage() {
     addrModalOpen, setAddrModalOpen,
     addrForm, setAddrForm,
     addrDeleteTarget, setAddrDeleteTarget,
+    contactModalOpen, setContactModalOpen,
+    contactForm, setContactForm, contactSubmitting,
+    contactDeleteTarget, setContactDeleteTarget,
     dedupConfirmOpen, setDedupConfirmOpen, dedupSubmitting,
     mergeModalOpen, setMergeModalOpen,
     handleBasicSubmit, handleChannelsSubmit,
     submitAddresses,
     openAddressNew, openAddressEdit,
     handleAddressTypeChange,
+    openContactNew, openContactEdit,
+    handleContactSubmit, handleContactDelete,
     handleResolveAsDistinct, handleAddressDelete,
   } = state;
 
@@ -130,7 +135,20 @@ export default function CompanyDetailPage() {
       )}
 
       {activeTab === "contacts" && (
-        <CompanyContactsTab company={company} contacts={contacts} />
+        <CompanyContactsTab
+          company={company}
+          contacts={contacts}
+          canEdit={canEdit}
+          contactModalOpen={contactModalOpen}
+          contactForm={contactForm}
+          setContactForm={setContactForm}
+          contactSubmitting={contactSubmitting}
+          setContactDeleteTarget={setContactDeleteTarget}
+          openContactNew={openContactNew}
+          openContactEdit={openContactEdit}
+          handleContactSubmit={handleContactSubmit}
+          onCloseModal={() => setContactModalOpen(false)}
+        />
       )}
 
       {activeTab === "channels" && (
@@ -169,6 +187,22 @@ export default function CompanyDetailPage() {
         confirmLabel={t("common.delete")}
         onConfirm={handleAddressDelete}
         onCancel={() => setAddrDeleteTarget(null)}
+      />
+
+      <ConfirmModal
+        open={contactDeleteTarget !== null}
+        title={t("contacts.deleteContact")}
+        message={
+          contactDeleteTarget
+            ? t("contacts.deleteConfirmMessage", {
+                name: contactDeleteTarget.display_name || `${contactDeleteTarget.surname || ""} ${contactDeleteTarget.given_name || ""}`.trim() || "-",
+                code: contactDeleteTarget.contact_code,
+              })
+            : ""
+        }
+        confirmLabel={t("common.delete")}
+        onConfirm={handleContactDelete}
+        onCancel={() => setContactDeleteTarget(null)}
       />
 
       {/* PR #145 Q2: 別会社として確定の確認 */}
