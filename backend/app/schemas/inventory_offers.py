@@ -84,6 +84,10 @@ class InventoryOfferResponse(InventoryOfferBase):
     created_at: datetime
     updated_at: datetime
 
+    # レスポンスでは condition を str に緩める（非正規値を含む既存データで500にならないよう）
+    # 書き込み側（Create/Update）は InventoryCondition のまま維持
+    condition: str = Field(...)
+
     # JOIN 結果 (admin UI 表示用、任意)
     supplier_name: str | None = None
     product_code: str | None = None
