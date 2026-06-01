@@ -58,6 +58,8 @@ _UPDATABLE_COLUMNS = {
     "is_archived", "supplier_default_id",
     # ADR-090 PR5a: TCG 種別マスタ統一
     "tcg_type",
+    # ADR-090 PR5b: 取引単位（Box/Case 等）
+    "unit",
 }
 
 
@@ -80,7 +82,7 @@ def _select_columns(ctx: dict[str, str]) -> str:
         "notes, release_date, created_at, updated_at, "
         "jan_code, card_number, expansion_code, rarity, language, "
         "unit_price_usd, unit_price_eur, image_url, "
-        "is_archived, archived_at, supplier_default_id, tcg_type"
+        "is_archived, archived_at, supplier_default_id, tcg_type, unit"
     )
 
 
@@ -231,14 +233,14 @@ async def create_product(
                 notes, release_date,
                 jan_code, card_number, expansion_code, rarity, language,
                 unit_price_usd, unit_price_eur, image_url,
-                is_archived, supplier_default_id, tcg_type
+                is_archived, supplier_default_id, tcg_type, unit
             ) VALUES (
                 :tenant_id, :name_ja, :name_en, :category, :mark,
                 :status, :condition, :unit_price, :quantity, :weight,
                 :notes, :release_date,
                 :jan_code, :card_number, :expansion_code, :rarity, :language,
                 :unit_price_usd, :unit_price_eur, :image_url,
-                :is_archived, :supplier_default_id, :tcg_type
+                :is_archived, :supplier_default_id, :tcg_type, :unit
             ) RETURNING id
         """),
         payload,

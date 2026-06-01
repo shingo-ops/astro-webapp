@@ -49,6 +49,7 @@ interface Product {
   archived_at: string | null;
   supplier_default_id: number | null;
   tcg_type: string | null;
+  unit: string | null;
 }
 
 type FormState = {
@@ -58,6 +59,7 @@ type FormState = {
   mark: string;
   status: string;
   condition: string;
+  unit: string;
   unit_price: string;
   quantity: string;
   weight: string;
@@ -75,10 +77,23 @@ type FormState = {
 
 const emptyForm: FormState = {
   name_ja: "", name_en: "", category: "", mark: "",
-  status: "active", condition: "", unit_price: "", quantity: "0",
+  status: "active", condition: "", unit: "", unit_price: "", quantity: "0",
   weight: "", notes: "",
   jan_code: "", card_number: "", expansion_code: "", rarity: "", language: "",
   unit_price_usd: "", unit_price_eur: "", image_url: "",
+};
+
+// 取引単位は取込パーサ由来で表記が揺れる（BOX/box/carton 等）。
+// 正規化ルール（ひとしさん確定 2026-06-02）: 小文字化 + carton→case に統一。
+// 表示は「先頭の文字だけ大文字」（例: BOX→Box, carton→Case）。
+const UNIT_OPTIONS = ["piece", "pack", "box", "case", "set"];
+const normalizeUnit = (u: string) => {
+  const lc = (u || "").toLowerCase();
+  return lc === "carton" ? "case" : lc;
+};
+const capUnit = (u: string) => {
+  const n = normalizeUnit(u);
+  return n ? n.charAt(0).toUpperCase() + n.slice(1) : n;
 };
 
 interface ArchiveBlockedDetail {
@@ -195,6 +210,7 @@ export default function ProductsPage() {
       mark: toNull(form.mark),
       status: form.status,
       condition: toNull(form.condition),
+      unit: toNull(form.unit),
       unit_price: form.unit_price ? Number(form.unit_price) : null,
       quantity: Number(form.quantity),
       weight: form.weight ? Number(form.weight) : null,
@@ -232,6 +248,7 @@ export default function ProductsPage() {
       mark: p.mark || "",
       status: p.status,
       condition: p.condition || "",
+      unit: p.unit || "",
       unit_price: p.unit_price != null ? String(p.unit_price) : "",
       quantity: String(p.quantity),
       weight: p.weight != null ? String(p.weight) : "",
@@ -378,6 +395,15 @@ export default function ProductsPage() {
                 <input value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })} />
               </div>
 
+              <div className="form-group"><label>{t("products.unitCol")}</label>
+                <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}>
+                  <option value="">{t("common.notSet")}</option>
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>{capUnit(u)}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* 価格 */}
               <fieldset style={{ border: "1px solid var(--border)", padding: "var(--space-3)", marginBottom: "var(--space-4)" }}>
                 <legend style={{ padding: "0 var(--space-2)", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.unitPrice")}</legend>
@@ -448,6 +474,7 @@ export default function ProductsPage() {
               <th>{t("products.conditionCol")}</th>
               <th>{t("products.unitPrice")}</th>
               <th>{t("products.stockQty")}</th>
+              <th>{t("products.unitCol")}</th>
               <th>{t("common.actions")}</th>
             </tr>
           </thead>
@@ -498,6 +525,7 @@ export default function ProductsPage() {
                     {p.quantity}
                   </span>
                 </td>
+                <td>{p.unit ? capUnit(p.unit) : "-"}</td>
                 <td className="actions">
                   {hasPermission("products.update") && <button className="btn-sm" onClick={() => handleEdit(p)}>{t("common.edit")}</button>}
                   {/* QA 2026-05-30: 「追加」と誤表記された廃番(archive)トグルを撤去（誤クリックで行が消える事故防止）。
@@ -507,7 +535,7 @@ export default function ProductsPage() {
               </tr>
               );
             })}
-            {products.length === 0 && <tr><td colSpan={9} className="empty">{t("products.noProducts")}</td></tr>}
+            {products.length === 0 && <tr><td colSpan={10} className="empty">{t("products.noProducts")}</td></tr>}
           </tbody>
         </table>
       )}
