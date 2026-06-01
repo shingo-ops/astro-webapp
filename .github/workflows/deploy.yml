@@ -690,6 +690,18 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/096_add_deal_lead_source.sql
 
+            # Migration 097: 全テナントに company_discord テーブルを新設（ADR-089 Sprint 1）
+            #   customer_discord の後継。PK=company_id、companies(id) FK + RLS。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/097_create_company_discord.sql
+
+            # Migration 098: customer_discord データを company_discord へ移行（ADR-089 Sprint 1）
+            #   company_name 正規化マッチ。マッピング不能行があれば中断。0件ならスキップ。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/098_migrate_customer_discord_to_company_discord.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
