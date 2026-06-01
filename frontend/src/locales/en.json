@@ -827,6 +827,8 @@
     "conditionCol": "Condition",
     "selectHint": "Select for quote / invoice creation",
     "sortByName": "Sort by name",
+    "filterByTcgType": "Filter by type",
+    "allTcgTypes": "All types",
     "allStatuses": "All statuses",
     "noProducts": "No products registered",
     "deleteProduct": "Delete Product",

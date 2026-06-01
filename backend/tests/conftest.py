@@ -645,7 +645,8 @@ async def setup_test_db(test_engine):
                 image_url VARCHAR(500),
                 is_archived BOOLEAN DEFAULT FALSE,
                 archived_at TIMESTAMP,
-                supplier_default_id INTEGER
+                supplier_default_id INTEGER,
+                tcg_type VARCHAR(50)
             )
         """))
         await conn.execute(text("""
