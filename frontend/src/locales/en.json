@@ -829,6 +829,14 @@
     "sortByName": "Sort by name",
     "filterByTcgType": "Filter by type",
     "allTcgTypes": "All types",
+    "unitCol": "Unit",
+    "unitValues": {
+      "piece": "Single",
+      "pack": "Pack",
+      "box": "Box",
+      "case": "Case",
+      "set": "Set"
+    },
     "allStatuses": "All statuses",
     "noProducts": "No products registered",
     "deleteProduct": "Delete Product",

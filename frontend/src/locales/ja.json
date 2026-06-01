@@ -829,6 +829,14 @@
     "sortByName": "名前で並び替え",
     "filterByTcgType": "種別で絞り込み",
     "allTcgTypes": "全種別",
+    "unitCol": "単位",
+    "unitValues": {
+      "piece": "シングル",
+      "pack": "パック",
+      "box": "ボックス",
+      "case": "ケース",
+      "set": "セット"
+    },
     "allStatuses": "全ステータス",
     "noProducts": "商品が登録されていません",
     "deleteProduct": "商品を削除",
