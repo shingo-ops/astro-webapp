@@ -35,7 +35,7 @@ class DashboardResponse(BaseModel):
     """ダッシュボードKPIレスポンス"""
     schema_version: int = KPI_SCHEMA_VERSION
     # 基本
-    customer_count: int
+    company_count: int
     lead_count: int = 0
     lead_open_count: int = 0
     lead_inbound_count: int = 0
@@ -64,7 +64,7 @@ class DashboardResponse(BaseModel):
     # パイプライン（ステージ別）
     pipeline_by_stage: list[dict] = []
     # 直近データ
-    recent_customers: list[dict]
+    recent_companies: list[dict]
     recent_deals: list[dict]
     recent_leads: list[dict] = []
     recent_quotes: list[dict] = []
@@ -98,9 +98,9 @@ async def get_dashboard(
         except Exception:
             logger.warning("ダッシュボードキャッシュ読み取り失敗、DBにフォールバック")
 
-    # 顧客数
-    result = await db.execute(text("SELECT COUNT(*) AS cnt FROM customers"))
-    customer_count = result.scalar() or 0
+    # 会社数
+    result = await db.execute(text("SELECT COUNT(*) AS cnt FROM companies"))
+    company_count = result.scalar() or 0
 
     # リード集計
     result = await db.execute(text("""
@@ -198,19 +198,18 @@ async def get_dashboard(
     team_count = result.scalar() or 0
 
     # 直近5件ずつ
-    # Phase 1 再設計: name/company は廃止、代わりに billing_display_name/company_name を使用
     result = await db.execute(text("""
         SELECT
             id,
-            customer_code,
-            COALESCE(billing_display_name, company_name) AS name,
-            company_name AS company,
+            company_code,
+            COALESCE(billing_display_name, name) AS name,
+            name AS company,
             created_at
-        FROM customers
+        FROM companies
         ORDER BY created_at DESC
         LIMIT 5
     """))
-    recent_customers = [dict(row) for row in result.mappings().all()]
+    recent_companies = [dict(row) for row in result.mappings().all()]
 
     result = await db.execute(text("SELECT id, title, amount, status, created_at FROM deals ORDER BY created_at DESC LIMIT 5"))
     recent_deals = [dict(row) for row in result.mappings().all()]
@@ -222,7 +221,7 @@ async def get_dashboard(
     recent_quotes = [dict(row) for row in result.mappings().all()]
 
     return DashboardResponse(
-        customer_count=customer_count,
+        company_count=company_count,
         lead_count=lead_total,
         lead_open_count=lead_row.get("open_count", 0) or 0,
         lead_inbound_count=lead_row.get("inbound", 0) or 0,
@@ -248,7 +247,7 @@ async def get_dashboard(
         supplier_count=supplier_count,
         po_pending_count=po_pending,
         pipeline_by_stage=pipeline,
-        recent_customers=recent_customers,
+        recent_companies=recent_companies,
         recent_deals=recent_deals,
         recent_leads=recent_leads,
         recent_quotes=recent_quotes,

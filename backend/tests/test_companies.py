@@ -1,6 +1,6 @@
 """
-Phase 1-B-2 Step 5b-1 で新設した companies 系 API のスモークテスト。
-既存 customers API は温存されており、本テストは新 API のみ対象。
+ADR-089: companies 系 API のテスト。
+customers API は Sprint 3 で廃止済み（ADR-089 Sprint 3）。
 """
 
 
@@ -194,3 +194,66 @@ class TestPendingDedupReviewResolution:
             "status": "totally_invalid",
         })
         assert res.status_code == 422
+
+
+class TestCompanyDiscord:
+    """ADR-089 Sprint 2: company_discord CRUD テスト"""
+
+    async def test_discord_null_by_default(self, client):
+        """新規会社作成時は discord が null であること"""
+        res = await client.post("/api/v1/companies", json={"name": "Discord未設定会社"})
+        assert res.status_code == 201
+        assert res.json()["discord"] is None
+
+    async def test_discord_upsert_and_retrieve(self, client):
+        """PATCH で discord を設定でき、GET で取得できること"""
+        create = await client.post("/api/v1/companies", json={"name": "Discord有会社"})
+        company_id = create.json()["id"]
+
+        patch_res = await client.patch(f"/api/v1/companies/{company_id}", json={
+            "discord": {
+                "is_joined": True,
+                "channel_id": "123456789",
+                "user_id": "987654321",
+                "invoice_webhook": "https://discord.com/api/webhooks/inv",
+                "shipment_webhook": "https://discord.com/api/webhooks/ship",
+            }
+        })
+        assert patch_res.status_code == 200
+        data = patch_res.json()
+        assert data["discord"]["is_joined"] is True
+        assert data["discord"]["channel_id"] == "123456789"
+        assert data["discord"]["invoice_webhook"] == "https://discord.com/api/webhooks/inv"
+
+        # GET でも取得できること
+        get_res = await client.get(f"/api/v1/companies/{company_id}")
+        assert get_res.status_code == 200
+        assert get_res.json()["discord"]["user_id"] == "987654321"
+
+    async def test_discord_delete_via_null(self, client):
+        """discord に null を送ると設定が削除されること"""
+        create = await client.post("/api/v1/companies", json={"name": "Discord削除会社"})
+        company_id = create.json()["id"]
+
+        # 先に設定
+        await client.patch(f"/api/v1/companies/{company_id}", json={
+            "discord": {"is_joined": True, "channel_id": "delete-me"}
+        })
+        # null で削除
+        del_res = await client.patch(f"/api/v1/companies/{company_id}", json={"discord": None})
+        assert del_res.status_code == 200
+        assert del_res.json()["discord"] is None
+
+    async def test_discord_omit_does_not_touch(self, client):
+        """discord フィールドを省略した PATCH は discord を変更しないこと（sentinel パターン）"""
+        create = await client.post("/api/v1/companies", json={"name": "Discord不変会社"})
+        company_id = create.json()["id"]
+
+        await client.patch(f"/api/v1/companies/{company_id}", json={
+            "discord": {"is_joined": True, "channel_id": "keep-me"}
+        })
+        # discord を含まない PATCH
+        await client.patch(f"/api/v1/companies/{company_id}", json={"notes": "メモ更新"})
+
+        get_res = await client.get(f"/api/v1/companies/{company_id}")
+        assert get_res.json()["discord"]["channel_id"] == "keep-me"

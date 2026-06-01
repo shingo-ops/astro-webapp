@@ -1,7 +1,7 @@
 """
 レポートエクスポートタスク。
 
-顧客・商談・注文・リードデータをCSV形式でエクスポートする。
+会社・商談・注文・リードデータをCSV形式でエクスポートする。
 オンデマンドで実行され、結果はRedisに一時保存される。
 
 変更履歴:
@@ -12,6 +12,8 @@
     `branch_name` で 1:N（partial UNIQUE は `is_default = TRUE` のみ）。
     multi-branch 顧客（例: Card Galaxy LTD = Essex + Preston）で 1 invoice/deal
     が 2 行に膨らむのを防ぐため、JOIN 条件に `AND ba.is_default = TRUE` を追加。
+  ADR-089 Sprint 7: "customers" エクスポートを "companies" に置換。
+    customers テーブル削除に伴い、companies テーブルを参照するよう変更。
 """
 
 import csv
@@ -34,34 +36,36 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 EXPORT_RESULT_TTL = 3600
 
 EXPORT_QUERIES = {
-    "customers": {
+    "companies": {
         "query": """
             SELECT
                 c.id,
-                c.customer_code,
-                COALESCE(c.billing_display_name, ba.name, c.company_name) AS customer_name,
+                c.company_code,
+                COALESCE(c.billing_display_name, ba.name, c.name) AS company_name,
                 ba.email AS billing_email,
                 ba.telephone AS billing_telephone,
-                c.company_name,
-                c.primary_contact_channel AS registration_source,
+                c.name,
+                c.industry,
                 c.status,
                 ba.tax_id AS business_id,
                 TRIM(CONCAT_WS(' ', ba.address_line_1, ba.address_line_2, ba.address_line_3, ba.city, ba.state, ba.zip, ba.country_code)) AS billing_address,
                 TRIM(CONCAT_WS(' ', da.address_line_1, da.address_line_2, da.address_line_3, da.city, da.state, da.zip)) AS delivery_address,
                 da.country_code AS delivery_country,
-                c.shipping_note AS notes,
+                c.notes,
                 c.created_at,
                 c.updated_at
-            FROM customers c
-            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
-            LEFT JOIN customer_addresses da ON da.customer_id = c.id AND da.address_type = 'delivery'
+            FROM companies c
+            LEFT JOIN company_addresses ba ON ba.company_id = c.id
+                 AND ba.address_type = 'billing' AND ba.is_default = TRUE
+            LEFT JOIN company_addresses da ON da.company_id = c.id
+                 AND da.address_type = 'delivery' AND da.is_default = TRUE
             ORDER BY c.id
         """,
         "headers": [
-            "ID", "顧客コード", "顧客名", "請求先メール", "請求先電話", "会社名",
-            "主連絡チャネル", "ステータス", "事業者ID",
+            "ID", "会社コード", "会社名（表示用）", "請求先メール", "請求先電話", "会社名",
+            "業種", "ステータス", "事業者ID",
             "請求先住所", "配送先住所", "配送先国",
-            "発送時メモ", "作成日", "更新日",
+            "備考", "作成日", "更新日",
         ],
     },
     "leads": {
@@ -184,7 +188,7 @@ def export_csv(tenant_id: int, report_type: str):
 
     Args:
         tenant_id: テナントID
-        report_type: "customers", "deals", "orders" のいずれか
+        report_type: "companies", "deals", "orders" 等のいずれか
     """
     if report_type not in EXPORT_QUERIES:
         return {"error": f"不正なレポートタイプ: {report_type}"}

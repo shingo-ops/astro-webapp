@@ -556,5 +556,5 @@ async def delete_staff(staff_id: int, db: AsyncSession = Depends(get_db),
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="このスタッフは他のレコード（bots.owner_staff_id, customers.sales_rep_id 等）から参照されているため削除できません",
+            detail="このスタッフは他のレコード（bots.owner_staff_id 等）から参照されているため削除できません",
         )

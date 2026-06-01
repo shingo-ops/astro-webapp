@@ -28,8 +28,8 @@ class TestUnauthenticatedAccess:
     """未認証アクセスが全て拒否されることを検証"""
 
     PROTECTED_ENDPOINTS = [
-        ("GET", "/api/v1/customers"),
-        ("POST", "/api/v1/customers"),
+        ("GET", "/api/v1/companies"),
+        ("POST", "/api/v1/companies"),
         ("GET", "/api/v1/deals"),
         ("POST", "/api/v1/deals"),
         ("GET", "/api/v1/orders"),
@@ -66,7 +66,7 @@ class TestUnauthenticatedAccess:
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             resp = await client.get(
-                "/api/v1/customers",
+                "/api/v1/companies",
                 headers={"Authorization": "Bearer invalid-token-xyz"},
             )
         assert resp.status_code == 401
@@ -84,22 +84,17 @@ class TestSQLInjection:
     ]
 
     @pytest.mark.parametrize("payload", SQL_INJECTION_PAYLOADS)
-    async def test_sqli_in_customer_name(self, client, payload):
-        """顧客名フィールドでSQLインジェクションが無効化されること"""
+    async def test_sqli_in_company_name(self, client, payload):
+        """会社名フィールドでSQLインジェクションが無効化されること"""
         resp = await client.post(
-            "/api/v1/customers",
-            json={
-                "company_name": payload,
-                "addresses": [
-                    {"address_type": "billing", "email": "test@test.com"},
-                ],
-            },
+            "/api/v1/companies",
+            json={"name": payload},
         )
         # 201（ペイロードが文字列として安全に保存）or 422（バリデーションエラー）
         assert resp.status_code in (201, 422)
         if resp.status_code == 201:
             # ペイロードが文字列として保存され、テーブルは破壊されていない
-            check = await client.get("/api/v1/customers")
+            check = await client.get("/api/v1/companies")
             assert check.status_code == 200
 
 
@@ -118,34 +113,34 @@ class TestXSSPrevention:
     async def test_xss_in_response_is_json(self, client, payload):
         """APIレスポンスがJSON形式でXSSペイロードをそのまま実行しないこと"""
         resp = await client.post(
-            "/api/v1/customers",
-            json={"company_name": payload},
+            "/api/v1/companies",
+            json={"name": payload},
         )
         # FastAPIはJSON応答なのでContent-Type: application/jsonが保証される
         if resp.status_code == 201:
             assert resp.headers["content-type"].startswith("application/json")
             # ペイロードがHTMLとして解釈されないことを確認
             data = resp.json()
-            assert data["company_name"] == payload  # エスケープではなくそのまま文字列保存
+            assert data["name"] == payload  # エスケープではなくそのまま文字列保存
 
 
 class TestInputValidation:
     """入力バリデーションが正しく動作することを検証"""
 
     async def test_oversized_payload_rejected(self, client):
-        """非常に長い文字列が拒否されること（company_name の max_length=255 制約）"""
+        """非常に長い文字列が拒否されること（name の max_length=255 制約）"""
         resp = await client.post(
-            "/api/v1/customers",
-            json={"company_name": "A" * 10000},
+            "/api/v1/companies",
+            json={"name": "A" * 10000},
         )
         assert resp.status_code == 422
 
     async def test_invalid_email_format(self, client):
         """不正なメールアドレス形式が拒否されること（addresses[].email のバリデーション）"""
         resp = await client.post(
-            "/api/v1/customers",
+            "/api/v1/companies",
             json={
-                "company_name": "Test",
+                "name": "Test",
                 "addresses": [
                     {"address_type": "billing", "email": "not-an-email"},
                 ],

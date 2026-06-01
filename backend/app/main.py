@@ -31,7 +31,6 @@ from app.routers import (
     companies,  # Phase 1-B-2 Step 5b-1
     contact,  # LP問い合わせフォーム受付
     contacts,  # Phase 1-B-2 Step 5b-1
-    customers,
     dashboard,
     deals,
     duplicates,
@@ -185,12 +184,7 @@ app.include_router(
     tags=["admin"],
     dependencies=[Depends(get_current_tenant), Depends(get_current_admin)],
 )
-# CRM業務ルーター（認証必須）
-app.include_router(
-    customers.router, prefix="/api/v1", tags=["customers"],
-    dependencies=[Depends(get_current_tenant)],
-)
-# Phase 1-B-2 Step 5b-1: 新 companies/contacts API（既存 customers と併存）
+# Phase 1-B-2 Step 5b-1: companies/contacts API（ADR-089 Sprint 3: customers 廃止済み）
 app.include_router(
     companies.router, prefix="/api/v1", tags=["companies"],
     dependencies=[Depends(get_current_tenant)],
