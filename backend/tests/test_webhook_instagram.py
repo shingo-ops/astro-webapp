@@ -77,7 +77,9 @@ _LEADS_DDL = """
         messenger_link VARCHAR(1000),
         discord_id VARCHAR(255),
         instagram_link VARCHAR(1000),
-        whatsapp_link VARCHAR(1000)
+        whatsapp_link VARCHAR(1000),
+        discord_user_id VARCHAR(50),
+        discord_dm_channel_id VARCHAR(50)
     )
 """
 
