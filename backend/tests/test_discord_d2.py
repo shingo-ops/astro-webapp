@@ -88,7 +88,7 @@ async def app_client(db_engine):
 
     # stub reset_tenant_context
     with patch("app.routers.discord_guild_config.reset_tenant_context", new=AsyncMock()):
-        with patch("app.services.audit.record_audit_log", new=AsyncMock()):
+        with patch("app.routers.discord_guild_config.record_audit_log", new=AsyncMock()):
             app = FastAPI()
             app.include_router(dgc_router.router, prefix="/api/v1")
             app.dependency_overrides[get_db] = override_db
