@@ -22,6 +22,15 @@ export interface CompanyAddress {
   is_default: boolean;
 }
 
+export interface CompanyDiscord {
+  company_id: number;
+  is_joined: boolean;
+  channel_id: string | null;
+  user_id: string | null;
+  invoice_webhook: string | null;
+  shipment_webhook: string | null;
+}
+
 export interface Company {
   id: number;
   tenant_id: number;
@@ -48,6 +57,7 @@ export interface Company {
   notes: string | null;
   addresses: CompanyAddress[];
   sales_channels: string[];
+  discord: CompanyDiscord | null;
   created_at: string;
   updated_at: string;
 }
@@ -66,7 +76,29 @@ export interface Contact {
   status: string;
 }
 
-export type Tab = "basic" | "addresses" | "contacts" | "channels";
+export type Tab = "basic" | "addresses" | "contacts" | "channels" | "discord";
+
+export type DiscordFormState = {
+  is_joined: boolean;
+  channel_id: string;
+  user_id: string;
+  invoice_webhook: string;
+  shipment_webhook: string;
+};
+
+export const emptyDiscordForm = (): DiscordFormState => ({
+  is_joined: false,
+  channel_id: "", user_id: "",
+  invoice_webhook: "", shipment_webhook: "",
+});
+
+export const discordFromApi = (d: CompanyDiscord): DiscordFormState => ({
+  is_joined: d.is_joined,
+  channel_id: d.channel_id || "",
+  user_id: d.user_id || "",
+  invoice_webhook: d.invoice_webhook || "",
+  shipment_webhook: d.shipment_webhook || "",
+});
 
 export type ContactFormState = {
   /** null = 新規、数値 = 既存更新 */

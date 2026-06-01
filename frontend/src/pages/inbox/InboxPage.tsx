@@ -161,6 +161,9 @@ export default function InboxPage() {
                 trimmedDraft={state.trimmedDraft}
                 submitSend={state.submitSend}
                 handleKeyDown={state.handleKeyDown}
+                attachedFile={state.attachedFile}
+                setAttachedFile={state.setAttachedFile}
+                clearAttachment={state.clearAttachment}
               />
             </div>
           </div>

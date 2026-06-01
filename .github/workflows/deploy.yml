@@ -690,6 +690,35 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/096_add_deal_lead_source.sql
 
+            # Migration 097: 全テナントに company_discord テーブルを新設（ADR-089 Sprint 1）
+            #   customer_discord の後継。PK=company_id、companies(id) FK + RLS。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/097_create_company_discord.sql
+
+            # Migration 098: customer_discord データを company_discord へ移行（ADR-089 Sprint 1）
+            #   company_name 正規化マッチ。マッピング不能行があれば中断。0件ならスキップ。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/098_migrate_customer_discord_to_company_discord.sql
+
+            # Migration 099: Discord Guild Config + leads に discord_role_sync カラム追加。
+            #   public.tenant_discord_config テーブル作成 + DO $$ pg_namespace 走査。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/099_add_discord_guild_config.sql
+
+            # Migration 100: meta_messages に attachment_url / attachment_type 追加（受信箱画像送信 Sprint 2）。
+            #   ADD COLUMN IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/100_add_meta_messages_image_columns.sql
+
+            # ─────────────────────────────────────────────────────────────────
+            # 101番以降はタイムスタンプ形式: YYYYMMDD_HHMMSS_description.sql
+            # 例: 20260601_082000_add_foo.sql
+            # 連番（NNN_）は廃止。並行エージェント間の番号衝突を防ぐため。
+            # ─────────────────────────────────────────────────────────────────
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

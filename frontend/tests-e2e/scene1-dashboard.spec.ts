@@ -129,12 +129,13 @@ test.describe("Scene 1: Dashboard Overview", () => {
     await expect(page.getByText("受注・売上", { exact: true })).toBeVisible();
 
     // チームタブに切り替えると商談・リードセクションが表示される
+    // db-period-area にスコープして sidebar-label の "リード" (opacity:0) と衝突しないようにする
     await page.getByRole("button", { name: "チーム" }).click();
-    await expect(page.getByText("リード", { exact: true })).toBeVisible();
-    await expect(page.getByText("商談", { exact: true })).toBeVisible();
+    await expect(page.locator(".db-period-area").getByText("リード", { exact: true })).toBeVisible();
+    await expect(page.locator(".db-period-area").getByText("商談", { exact: true })).toBeVisible();
   });
 
-  test("0:18–0:25: メインナビにダッシュボード / 顧客管理 / 管理メニューが出ている", async ({
+  test("0:18–0:25: メインナビにダッシュボード / リード / 管理メニューが出ている", async ({
     page,
   }) => {
     await installAuthBypass(page);
@@ -157,9 +158,10 @@ test.describe("Scene 1: Dashboard Overview", () => {
     const nav = page.locator("nav.sidebar-nav-items");
     await expect(nav).toBeVisible();
 
-    // sidebar 内の主要ラベル: ダッシュボード（NavLink） / 顧客管理（NavLink） / 管理センター（NavLink, 管理アコーディオン廃止）
+    // sidebar 内の主要ラベル: ダッシュボード（NavLink） / リード（NavLink） / 管理センター（NavLink, 管理アコーディオン廃止）
+    // nav.leads は commit 9980895 で "顧客管理" → "リード" に変更済み
     await expect(nav.getByText("ダッシュボード", { exact: true })).toBeVisible();
-    await expect(nav.getByText("顧客管理", { exact: true })).toBeVisible();
+    await expect(nav.getByText("リード", { exact: true })).toBeVisible();
     await expect(nav.getByText("管理センター", { exact: true })).toBeVisible();
   });
 });

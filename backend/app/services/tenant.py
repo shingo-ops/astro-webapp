@@ -6,7 +6,7 @@ from __future__ import annotations
 新しいテナントが登録されるたびに:
   1. public.tenants に企業情報を保存
   2. tenant_{id:03d} スキーマを自動作成
-  3. スキーマ内に業務テーブル（customers, deals, orders, audit_logs,
+  3. スキーマ内に業務テーブル（companies, contacts, deals, orders, audit_logs,
      roles, role_permissions, user_roles, leads, teams, team_members）を作成
   4. Row Level Security（RLS）ポリシーを自動適用
   5. システムロール（オーナー/メンバー）をシード
@@ -20,6 +20,8 @@ from __future__ import annotations
   2026-05-07: ADR-015 段階分割 Phase 1 — leads にカルテ・AI 収集・返信速度・
     次回アクション列を追加、lead_playbook 新設、customer_contact_channels に
     external_id 追加（migration 046 と同じ列を新テナント作成時から備える）
+  ADR-089 Sprint 5: customers/customer_*テーブル定義を削除（新テナントは最初から
+    companies モデルのみ）。company_discord を追加。
 """
 
 import re
@@ -136,91 +138,9 @@ DEFAULT_NEW_USER_ROLE = "CS"
 
 # テナントスキーマ内に作成する業務テーブルのSQL定義
 _TENANT_TABLES_SQL = """
--- 顧客データ（Phase 1 再設計: 正規化された本体 + 3副テーブル）
--- migration 015 と同等の構造。sales_rep_id の FK は staff テーブル作成後に付与
-CREATE TABLE IF NOT EXISTS {schema}.customers (
-    id SERIAL PRIMARY KEY,
-    tenant_id INTEGER NOT NULL DEFAULT {tenant_id},
-    customer_code VARCHAR(20) NOT NULL,
-    lead_id INTEGER,                                   -- FK は leads 作成後に付与（下記ALTER）
-    sales_rep_id INTEGER,                              -- FK は staff 作成後に付与（下記ALTER）
-    company_name VARCHAR(255),
-    trust_level SMALLINT CHECK (trust_level IS NULL OR trust_level BETWEEN 1 AND 5),
-    priority_focus VARCHAR(50),
-    per_order_amount NUMERIC(15,2),
-    monthly_frequency SMALLINT,
-    monthly_forecast NUMERIC(15,2),
-    monthly_forecast_source VARCHAR(20)
-        CHECK (monthly_forecast_source IS NULL OR monthly_forecast_source IN ('manual','ai_analysis')),
-    monthly_forecast_updated_at TIMESTAMPTZ,
-    meeting_requested BOOLEAN NOT NULL DEFAULT FALSE,
-    billing_display_name VARCHAR(255),
-    payment_recipient_name VARCHAR(255),
-    fedex_account VARCHAR(100),
-    shipping_note TEXT,
-    primary_contact_channel VARCHAR(30),
-    status VARCHAR(20) NOT NULL DEFAULT 'active'
-        CHECK (status IN ('active','inactive','archived','pending_dedup_review')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (tenant_id, customer_code)
-);
-
-CREATE INDEX IF NOT EXISTS idx_customers_tenant_id ON {schema}.customers (tenant_id);
-CREATE INDEX IF NOT EXISTS idx_customers_lead_id ON {schema}.customers (lead_id);
-CREATE INDEX IF NOT EXISTS idx_customers_sales_rep_id ON {schema}.customers (sales_rep_id);
-CREATE INDEX IF NOT EXISTS idx_customers_status ON {schema}.customers (status);
-
--- 顧客住所（billing / delivery の2行を持つ副テーブル、将来は複数配送先にも対応）
-CREATE TABLE IF NOT EXISTS {schema}.customer_addresses (
-    id SERIAL PRIMARY KEY,
-    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id) ON DELETE CASCADE,
-    address_type VARCHAR(20) NOT NULL CHECK (address_type IN ('billing','delivery')),
-    name VARCHAR(255),
-    email VARCHAR(255),
-    telephone VARCHAR(50),
-    tax_id VARCHAR(100),
-    address_line_1 VARCHAR(255),
-    address_line_2 VARCHAR(255),
-    address_line_3 VARCHAR(255),
-    city VARCHAR(100),
-    state VARCHAR(100),
-    zip VARCHAR(50),
-    country_code CHAR(2),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_customer_addresses_customer_id ON {schema}.customer_addresses (customer_id);
-CREATE INDEX IF NOT EXISTS idx_customer_addresses_type ON {schema}.customer_addresses (customer_id, address_type);
-
--- 顧客の販売チャネル（実店舗/EC/配信/PF 等、複数持てる中間テーブル）
-CREATE TABLE IF NOT EXISTS {schema}.customer_sales_channels (
-    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id) ON DELETE CASCADE,
-    channel VARCHAR(30) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (customer_id, channel)
-);
-
--- 連絡ツール（Phase 1-B-1: 複数チャネル × 用途の多対多）
--- ADR-015 §3: external_id は SNS プラットフォーム上のユーザー ID（既存顧客 dedup 用）
-CREATE TABLE IF NOT EXISTS {schema}.customer_contact_channels (
-    id SERIAL PRIMARY KEY,
-    customer_id INTEGER NOT NULL REFERENCES {schema}.customers(id) ON DELETE CASCADE,
-    channel VARCHAR(30) NOT NULL,
-    purpose VARCHAR(50),
-    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
-    external_id VARCHAR(100),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_ccc_customer_id ON {schema}.customer_contact_channels (customer_id);
-CREATE INDEX IF NOT EXISTS idx_ccc_channel ON {schema}.customer_contact_channels (channel);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_one_primary_per_customer
-    ON {schema}.customer_contact_channels (customer_id) WHERE is_primary = TRUE;
-CREATE INDEX IF NOT EXISTS idx_ccc_channel_external_id
-    ON {schema}.customer_contact_channels (channel, external_id) WHERE external_id IS NOT NULL;
+-- ADR-089 Sprint 5: customers/customer_* テーブル定義を削除。
+-- 新テナントは最初から companies モデルのみ。
+-- 既存テナントの customers/* テーブルは Sprint 7 の DROP migration で削除する。
 
 -- Phase 1-B-2: companies + contacts 階層（新テナントは最初から新構造）
 CREATE TABLE IF NOT EXISTS {schema}.companies (
@@ -324,6 +244,18 @@ CREATE TABLE IF NOT EXISTS {schema}.company_sales_channels (
     PRIMARY KEY (company_id, channel)
 );
 
+-- ADR-089 Sprint 1 / migration 097 と同等: 新テナントも最初から company_discord を保持
+CREATE TABLE IF NOT EXISTS {schema}.company_discord (
+    company_id INTEGER PRIMARY KEY REFERENCES {schema}.companies(id) ON DELETE CASCADE,
+    is_joined BOOLEAN NOT NULL DEFAULT FALSE,
+    channel_id VARCHAR(50),
+    user_id VARCHAR(50),
+    invoice_webhook TEXT,
+    shipment_webhook TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS {schema}.contact_emails (
     id SERIAL PRIMARY KEY,
     contact_id INTEGER NOT NULL REFERENCES {schema}.contacts(id) ON DELETE CASCADE,
@@ -363,18 +295,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_ccc_new_one_primary_per_contact
 --   _customer_migration_map は migration 036 で DROP 済。
 --   新テナント作成時は本テーブル不要のため CREATE TABLE ブロックを撤去した。
 --   過去履歴: migration 031 で追加 → migration 034 で UNIQUE 付与 → migration 036 で DROP。
-
--- Discord連携（任意、使う顧客のみ1行）
-CREATE TABLE IF NOT EXISTS {schema}.customer_discord (
-    customer_id INTEGER PRIMARY KEY REFERENCES {schema}.customers(id) ON DELETE CASCADE,
-    is_joined BOOLEAN NOT NULL DEFAULT FALSE,
-    channel_id VARCHAR(50),
-    user_id VARCHAR(50),
-    invoice_webhook TEXT,
-    shipment_webhook TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
 
 -- リード管理
 -- ADR-015 §1〜§5 のカルテ・AI 収集・返信速度・次回アクション列を含める
@@ -492,20 +412,6 @@ BEGIN
         ALTER TABLE {schema}.leads
             ADD CONSTRAINT fk_leads_converted_deal
             FOREIGN KEY (converted_deal_id) REFERENCES {schema}.deals(id);
-    END IF;
-END $$;
-
--- customers.lead_id → leads.id（customers作成時点ではleadsが未存在のため後付け）
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint
-        WHERE conname = 'fk_customers_lead'
-          AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = '{schema_raw}')
-    ) THEN
-        ALTER TABLE {schema}.customers
-            ADD CONSTRAINT fk_customers_lead
-            FOREIGN KEY (lead_id) REFERENCES {schema}.leads(id);
     END IF;
 END $$;
 
@@ -628,24 +534,8 @@ $fn$ LANGUAGE plpgsql;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_customers_updated_at' AND tgrelid = '{schema}.customers'::regclass) THEN
-        CREATE TRIGGER trg_customers_updated_at BEFORE UPDATE ON {schema}.customers
-            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_customer_addresses_updated_at' AND tgrelid = '{schema}.customer_addresses'::regclass) THEN
-        CREATE TRIGGER trg_customer_addresses_updated_at BEFORE UPDATE ON {schema}.customer_addresses
-            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_customer_discord_updated_at' AND tgrelid = '{schema}.customer_discord'::regclass) THEN
-        CREATE TRIGGER trg_customer_discord_updated_at BEFORE UPDATE ON {schema}.customer_discord
-            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
-    END IF;
-    -- Phase 1-B-1: customer_contact_channels（PR #105 で tenant.py への反映が漏れていたため同時修正）
-    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_ccc_updated_at' AND tgrelid = '{schema}.customer_contact_channels'::regclass) THEN
-        CREATE TRIGGER trg_ccc_updated_at BEFORE UPDATE ON {schema}.customer_contact_channels
-            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
-    END IF;
     -- Phase 1-B-2: companies + contacts 階層（migration 028-030 と同じトリガ名で idempotent）
+    -- ADR-089 Sprint 5: customers/customer_* トリガ削除済（新テナントは company_discord のみ）
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_companies_updated_at' AND tgrelid = '{schema}.companies'::regclass) THEN
         CREATE TRIGGER trg_companies_updated_at BEFORE UPDATE ON {schema}.companies
             FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
@@ -660,6 +550,11 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_contact_discord_updated_at' AND tgrelid = '{schema}.contact_discord'::regclass) THEN
         CREATE TRIGGER trg_contact_discord_updated_at BEFORE UPDATE ON {schema}.contact_discord
+            FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
+    END IF;
+    -- ADR-089 Sprint 1/Sprint 5: company_discord の updated_at 自動更新
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_company_discord_updated_at' AND tgrelid = '{schema}.company_discord'::regclass) THEN
+        CREATE TRIGGER trg_company_discord_updated_at BEFORE UPDATE ON {schema}.company_discord
             FOR EACH ROW EXECUTE FUNCTION {schema}.trg_set_updated_at();
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_ccc_new_updated_at' AND tgrelid = '{schema}.contact_contact_channels'::regclass) THEN
@@ -729,19 +624,10 @@ CREATE TABLE IF NOT EXISTS {schema}.staff_ui_preferences (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- customers.sales_rep_id → staff(id)（customers作成時点ではstaffが未存在のため後付け）
+-- Phase 1-B-2: companies.sales_rep_id → staff(id)（staff 作成後に付与）
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint
-        WHERE conname = 'fk_customers_sales_rep'
-          AND connamespace = (SELECT oid FROM pg_namespace WHERE nspname = '{schema_raw}')
-    ) THEN
-        ALTER TABLE {schema}.customers
-            ADD CONSTRAINT fk_customers_sales_rep
-            FOREIGN KEY (sales_rep_id) REFERENCES {schema}.staff(id);
-    END IF;
-    -- Phase 1-B-2: companies.sales_rep_id → staff(id)
+    -- ADR-089 Sprint 5: fk_customers_sales_rep 削除済（customers テーブル不要）
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint
         WHERE conname = 'fk_companies_sales_rep'
@@ -1136,7 +1022,7 @@ CREATE INDEX IF NOT EXISTS idx_goals_team_period
 # 連携テーブル（role_permissions, user_roles, team_members）は tenant_id カラムを持たないが、
 # 親テーブルのRLSを経由した保護を追加することで防御の二重化を実現する。
 _RLS_ENABLE_SQL = """
-ALTER TABLE {schema}.customers ENABLE ROW LEVEL SECURITY;
+-- ADR-089 Sprint 5: customers は廃止済。RLS は companies 体系のみ。
 ALTER TABLE {schema}.deals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.audit_logs ENABLE ROW LEVEL SECURITY;
@@ -1160,11 +1046,7 @@ ALTER TABLE {schema}.team_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.meta_messages ENABLE ROW LEVEL SECURITY;
 -- Phase 1-D Sprint 1: Meta OAuth 接続情報
 ALTER TABLE {schema}.tenant_meta_config ENABLE ROW LEVEL SECURITY;
--- Phase 1 再設計の新テーブル
-ALTER TABLE {schema}.customer_addresses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE {schema}.customer_sales_channels ENABLE ROW LEVEL SECURITY;
-ALTER TABLE {schema}.customer_discord ENABLE ROW LEVEL SECURITY;
-ALTER TABLE {schema}.customer_contact_channels ENABLE ROW LEVEL SECURITY;
+-- Phase 1 再設計の新テーブル（ADR-089 Sprint 5: customer_* 削除済）
 ALTER TABLE {schema}.staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.staff_emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.staff_ui_preferences ENABLE ROW LEVEL SECURITY;
@@ -1174,6 +1056,8 @@ ALTER TABLE {schema}.companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.company_addresses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.company_sales_channels ENABLE ROW LEVEL SECURITY;
+-- ADR-089 Sprint 1/Sprint 5: company_discord の RLS
+ALTER TABLE {schema}.company_discord ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_emails ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_discord ENABLE ROW LEVEL SECURITY;
 ALTER TABLE {schema}.contact_contact_channels ENABLE ROW LEVEL SECURITY;
@@ -1187,10 +1071,7 @@ ALTER TABLE {schema}.lead_playbook ENABLE ROW LEVEL SECURITY;
 _RLS_POLICY_SQL = """
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customers' AND schemaname = '{schema_raw}') THEN
-        CREATE POLICY tenant_isolation_customers ON {schema}.customers
-            USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
-    END IF;
+    -- ADR-089 Sprint 5: tenant_isolation_customers 削除済（customers テーブル廃止）
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_deals' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_deals ON {schema}.deals
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
@@ -1305,31 +1186,8 @@ BEGIN
         CREATE POLICY tenant_isolation_tenant_meta_config ON {schema}.tenant_meta_config
             USING (tenant_id = current_setting('app.tenant_id', true)::INTEGER);
     END IF;
-    -- Phase 1 再設計: customer 副テーブル群
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_addresses' AND schemaname = '{schema_raw}') THEN
-        CREATE POLICY tenant_isolation_customer_addresses ON {schema}.customer_addresses
-            USING (EXISTS (
-                SELECT 1 FROM {schema}.customers c
-                WHERE c.id = customer_addresses.customer_id
-                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
-            ));
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_sales_channels' AND schemaname = '{schema_raw}') THEN
-        CREATE POLICY tenant_isolation_customer_sales_channels ON {schema}.customer_sales_channels
-            USING (EXISTS (
-                SELECT 1 FROM {schema}.customers c
-                WHERE c.id = customer_sales_channels.customer_id
-                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
-            ));
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_discord' AND schemaname = '{schema_raw}') THEN
-        CREATE POLICY tenant_isolation_customer_discord ON {schema}.customer_discord
-            USING (EXISTS (
-                SELECT 1 FROM {schema}.customers c
-                WHERE c.id = customer_discord.customer_id
-                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
-            ));
-    END IF;
+    -- ADR-089 Sprint 5: customer_addresses/customer_sales_channels/customer_discord/
+    -- customer_contact_channels ポリシー削除済（テーブル廃止）
     -- Phase 1 再設計: staff / bots
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_staff' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_staff ON {schema}.staff
@@ -1355,15 +1213,7 @@ BEGIN
                   AND s.tenant_id = current_setting('app.tenant_id', true)::INTEGER
             ));
     END IF;
-    -- Phase 1-B-1: customer_contact_channels（customer_id 経由で分離）
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_customer_contact_channels' AND schemaname = '{schema_raw}') THEN
-        CREATE POLICY tenant_isolation_customer_contact_channels ON {schema}.customer_contact_channels
-            USING (EXISTS (
-                SELECT 1 FROM {schema}.customers c
-                WHERE c.id = customer_contact_channels.customer_id
-                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
-            ));
-    END IF;
+    -- ADR-089 Sprint 5: tenant_isolation_customer_contact_channels 削除済（テーブル廃止）
     -- Phase 1-B-2: companies + contacts 階層
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_companies' AND schemaname = '{schema_raw}') THEN
         CREATE POLICY tenant_isolation_companies ON {schema}.companies
@@ -1386,6 +1236,15 @@ BEGIN
             USING (EXISTS (
                 SELECT 1 FROM {schema}.companies c
                 WHERE c.id = company_sales_channels.company_id
+                  AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
+            ));
+    END IF;
+    -- ADR-089 Sprint 1/Sprint 5: company_discord の RLS ポリシー
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'tenant_isolation_company_discord' AND schemaname = '{schema_raw}') THEN
+        CREATE POLICY tenant_isolation_company_discord ON {schema}.company_discord
+            USING (EXISTS (
+                SELECT 1 FROM {schema}.companies c
+                WHERE c.id = company_discord.company_id
                   AND c.tenant_id = current_setting('app.tenant_id', true)::INTEGER
             ));
     END IF;

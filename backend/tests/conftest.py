@@ -75,6 +75,8 @@ async def test_engine():
             statement = statement.replace("public.permissions", "permissions")
         if "public.data_access_events" in statement:
             statement = statement.replace("public.data_access_events", "data_access_events")
+        if "public.tenant_discord_config" in statement:
+            statement = statement.replace("public.tenant_discord_config", "tenant_discord_config")
         # SQLite は FOR UPDATE をサポートしない（ファイルレベルロックで代替）。
         if " FOR UPDATE" in statement:
             statement = statement.replace(" FOR UPDATE", "")
@@ -88,87 +90,7 @@ async def test_engine():
 async def setup_test_db(test_engine):
     """テスト用テーブルをセットアップする"""
     async with test_engine.begin() as conn:
-        # 顧客テーブル（Phase 1 再設計: 正規化本体）
-        await conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS customers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tenant_id INTEGER NOT NULL DEFAULT 999,
-                customer_code VARCHAR(20),
-                lead_id INTEGER,
-                sales_rep_id INTEGER,
-                company_name VARCHAR(255),
-                trust_level SMALLINT,
-                priority_focus VARCHAR(50),
-                per_order_amount NUMERIC(15,2),
-                monthly_frequency SMALLINT,
-                monthly_forecast NUMERIC(15,2),
-                monthly_forecast_source VARCHAR(20),
-                monthly_forecast_updated_at TIMESTAMP,
-                meeting_requested BOOLEAN NOT NULL DEFAULT 0,
-                billing_display_name VARCHAR(255),
-                payment_recipient_name VARCHAR(255),
-                fedex_account VARCHAR(100),
-                shipping_note TEXT,
-                primary_contact_channel VARCHAR(30),
-                status VARCHAR(20) NOT NULL DEFAULT 'active',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (tenant_id, customer_code)
-            )
-        """))
-        # 顧客副テーブル（Phase 1 再設計）
-        await conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS customer_addresses (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-                address_type VARCHAR(20) NOT NULL,
-                name VARCHAR(255),
-                email VARCHAR(255),
-                telephone VARCHAR(50),
-                tax_id VARCHAR(100),
-                address_line_1 VARCHAR(255),
-                address_line_2 VARCHAR(255),
-                address_line_3 VARCHAR(255),
-                city VARCHAR(100),
-                state VARCHAR(100),
-                zip VARCHAR(50),
-                country_code CHAR(2),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """))
-        await conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS customer_sales_channels (
-                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-                channel VARCHAR(30) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (customer_id, channel)
-            )
-        """))
-        await conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS customer_discord (
-                customer_id INTEGER PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
-                is_joined BOOLEAN NOT NULL DEFAULT 0,
-                channel_id VARCHAR(50),
-                user_id VARCHAR(50),
-                invoice_webhook TEXT,
-                shipment_webhook TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """))
-        # Phase 1-B-1: 連絡ツール別テーブル
-        await conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS customer_contact_channels (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
-                channel VARCHAR(30) NOT NULL,
-                purpose VARCHAR(50),
-                is_primary BOOLEAN NOT NULL DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """))
+        # ADR-089 Sprint 6: customers/customer_* テーブル削除済（Sprint 3 でルーター廃止済）
         # Phase 1-B-2: companies + contacts 階層（Step 5b-1 で routers.companies/contacts のテスト用）
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS companies (
@@ -250,6 +172,19 @@ async def setup_test_db(test_engine):
                 channel VARCHAR(30) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (company_id, channel)
+            )
+        """))
+        # ADR-089 Sprint 1/Sprint 6: company_discord テーブル（migration 097 と同等）
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS company_discord (
+                company_id INTEGER PRIMARY KEY REFERENCES companies(id) ON DELETE CASCADE,
+                is_joined BOOLEAN NOT NULL DEFAULT 0,
+                channel_id VARCHAR(50),
+                user_id VARCHAR(50),
+                invoice_webhook TEXT,
+                shipment_webhook TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
         await conn.execute(text("""
@@ -404,7 +339,11 @@ async def setup_test_db(test_engine):
                 messenger_link VARCHAR(1000),
                 discord_id VARCHAR(255),
                 instagram_link VARCHAR(1000),
-                whatsapp_link VARCHAR(1000)
+                whatsapp_link VARCHAR(1000),
+                discord_user_id VARCHAR(50),
+                discord_dm_channel_id VARCHAR(50),
+                discord_role_sync_status VARCHAR(20),
+                discord_role_sync_at TIMESTAMP
             )
         """))
         # 案件テーブル（Step 5d: 旧 customer_id 列削除済）
@@ -865,6 +804,14 @@ async def setup_test_db(test_engine):
         """))
         # Sprint 8 / F8: テナント発行者情報 (PO PDF / メール差出人)
         await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS tenant_discord_config (
+                tenant_id INTEGER PRIMARY KEY,
+                guild_id  VARCHAR(32) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS tenant_profile (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 company_name VARCHAR(255),
@@ -1004,6 +951,8 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM suppliers"))
         # Sprint 8: tenant_profile
         await conn.execute(text("DELETE FROM tenant_profile"))
+        # Sprint D2: tenant_discord_config
+        await conn.execute(text("DELETE FROM tenant_discord_config"))
         await conn.execute(text("DELETE FROM order_commissions"))
         await conn.execute(text("DELETE FROM tenant_commission_settings"))
         await conn.execute(text("DELETE FROM order_shipping_details"))
@@ -1013,16 +962,13 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM products"))
         await conn.execute(text("DELETE FROM deals"))
         await conn.execute(text("DELETE FROM leads"))
-        # Phase 1 再設計の副テーブル → 本体の順
-        await conn.execute(text("DELETE FROM customer_contact_channels"))
-        await conn.execute(text("DELETE FROM customer_discord"))
-        await conn.execute(text("DELETE FROM customer_sales_channels"))
-        await conn.execute(text("DELETE FROM customer_addresses"))
         # Phase 1-B-2 Step 5b-1: companies/contacts 副テーブル → 本体
+        # ADR-089 Sprint 6: customer_contact_channels/customer_discord/customer_sales_channels/customer_addresses は削除済み
         await conn.execute(text("DELETE FROM contact_contact_channels"))
         await conn.execute(text("DELETE FROM contact_discord"))
         await conn.execute(text("DELETE FROM contact_emails"))
         await conn.execute(text("DELETE FROM contacts"))
+        await conn.execute(text("DELETE FROM company_discord"))
         await conn.execute(text("DELETE FROM company_sales_channels"))
         await conn.execute(text("DELETE FROM company_addresses"))
         await conn.execute(text("DELETE FROM companies"))
@@ -1031,7 +977,6 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM staff_ui_preferences"))
         await conn.execute(text("DELETE FROM staff_emails"))
         await conn.execute(text("DELETE FROM staff"))
-        await conn.execute(text("DELETE FROM customers"))
         await conn.execute(text("DELETE FROM team_members"))
         await conn.execute(text("DELETE FROM teams"))
         await conn.execute(text("DELETE FROM user_roles"))
@@ -1160,7 +1105,8 @@ async def client(db_session):
     # audit_log と権限チェックをまとめてモック（ネスト制限回避のため ExitStack 使用）
     from contextlib import ExitStack
     _audit_targets = [
-        "app.routers.customers", "app.routers.deals", "app.routers.orders",
+        # ADR-089 Sprint 3: app.routers.customers 廃止済み
+        "app.routers.deals", "app.routers.orders",
         "app.routers.order_financials",
         "app.routers.order_shipping_details",
         "app.routers.order_purchase_details",
@@ -1180,6 +1126,8 @@ async def client(db_session):
         "app.routers.staff",
         # Sprint 8 / F8: テナント発行者情報
         "app.routers.tenant_profile",
+        # Sprint D2: Discord Guild 設定
+        "app.routers.discord_guild_config",
     ]
     with ExitStack() as stack:
         for target in _audit_targets:

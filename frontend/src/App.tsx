@@ -9,7 +9,6 @@ import Layout from "./components/Layout";
 import LoginPage from "./pages/login/LoginPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import GoalSettingPage from "./pages/goal-setting/GoalSettingPage";
-import CustomersPage from "./pages/customers/CustomersPage";
 import CompaniesPage from "./pages/companies/CompaniesPage";
 import CompanyDetailPage from "./pages/company-detail/CompanyDetailPage";
 import ContactsPage from "./pages/contacts/ContactsPage";
@@ -46,6 +45,8 @@ import SuperAdminMastersPage from "./pages/super-admin/MastersPage";
 import InventoryVisibilityPage from "./pages/admin/InventoryVisibilityPage";
 // spec.md v1.1 F8 (Sprint 8): テナント発行者情報 (PO PDF / メール差出人) admin UI
 import TenantProfilePage from "./pages/admin/TenantProfilePage";
+// Sprint D2: Discord Guild 設定 admin UI
+import DiscordConfigPage from "./pages/admin/DiscordConfigPage";
 // spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧（中央 admin）
 import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
@@ -95,7 +96,7 @@ function App() {
 
                   {/* 旧ルート後方互換リダイレクト（/crm/* ハブへ転送） */}
                   <Route path="/leads"         element={<Navigate to="/crm/leads"     replace />} />
-                  <Route path="/customers"     element={<Navigate to="/crm/customers"  replace />} />
+                  <Route path="/customers"     element={<Navigate to="/crm/companies"  replace />} />
                   <Route path="/companies"     element={<Navigate to="/crm/companies"  replace />} />
                   <Route path="/companies/:id" element={<CompanyIdRedirect />} />
                   <Route path="/contacts"      element={<Navigate to="/crm/contacts"   replace />} />
@@ -113,7 +114,6 @@ function App() {
                     {/* Step 5c-2: 会社詳細ページ（multi_branch 住所編集 + 担当者タブ） */}
                     <Route path="companies/:id"   element={<CompanyDetailPage />} />
                     <Route path="contacts"        element={<ContactsPage />} />
-                    <Route path="customers"       element={<CustomersPage />} />
                     <Route path="archive"         element={<ArchivesPage />} />
                   </Route>
 
@@ -222,6 +222,11 @@ function App() {
                   <Route
                     path="/admin/tenant-profile"
                     element={<TenantProfilePage />}
+                  />
+                  {/* Sprint D2: Discord Guild 設定 (tenant.profile.edit / view) */}
+                  <Route
+                    path="/admin/discord-config"
+                    element={<DiscordConfigPage />}
                   />
 
                   {/* ADR-069: デザインシステム パーツ保管庫（開発環境専用） */}

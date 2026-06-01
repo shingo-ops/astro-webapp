@@ -6,6 +6,8 @@ Celery Beatにより10分ごとに実行。
 
 変更履歴:
   2026-04-16: Phase 1対応（lead/team KPI追加、schema_version=2）
+  ADR-089 Sprint 3: customers テーブル廃止に伴い companies テーブルを参照するよう改修。
+    schema_version=3 に更新。customer_count→company_count、recent_customers→recent_companies。
 """
 
 import json
@@ -28,7 +30,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 DASHBOARD_CACHE_TTL = 660  # 11分（10分の更新間隔 + 1分のバッファ）
 
 # KPIキャッシュのスキーマバージョン。ルーター側の KPI_SCHEMA_VERSION と揃える。
-KPI_SCHEMA_VERSION = 2
+KPI_SCHEMA_VERSION = 3
 
 
 def _get_sync_engine():
@@ -48,9 +50,9 @@ def _compute_kpis(session, tenant_id: int) -> dict:
     session.execute(text(f"SET search_path = {schema_name}, public"))
     session.execute(text(f"SET app.tenant_id = '{tenant_id}'"))
 
-    # 顧客数
-    r = session.execute(text("SELECT COUNT(*) FROM customers"))
-    customer_count = r.scalar() or 0
+    # 会社数
+    r = session.execute(text("SELECT COUNT(*) FROM companies"))
+    company_count = r.scalar() or 0
 
     # リード集計
     r = session.execute(text("""
@@ -87,12 +89,12 @@ def _compute_kpis(session, tenant_id: int) -> dict:
     r = session.execute(text("SELECT COUNT(*) FROM teams WHERE is_active = TRUE"))
     team_count = r.scalar() or 0
 
-    # 直近の顧客（5件）
+    # 直近の会社（5件）
     r = session.execute(text("""
-        SELECT id, name, company, created_at
-        FROM customers ORDER BY created_at DESC LIMIT 5
+        SELECT id, company_code, COALESCE(billing_display_name, name) AS name, name AS company, created_at
+        FROM companies ORDER BY created_at DESC LIMIT 5
     """))
-    recent_customers = [
+    recent_companies = [
         {k: (str(v) if isinstance(v, datetime) else v) for k, v in dict(row).items()}
         for row in r.mappings().all()
     ]
@@ -120,7 +122,7 @@ def _compute_kpis(session, tenant_id: int) -> dict:
 
     return {
         "schema_version": KPI_SCHEMA_VERSION,
-        "customer_count": customer_count,
+        "company_count": company_count,
         "lead_count": lead_row["total"],
         "lead_open_count": lead_row["open_count"],
         "deal_count": deal_row["total"],
@@ -132,7 +134,7 @@ def _compute_kpis(session, tenant_id: int) -> dict:
         "order_pending_count": order_row["pending_count"],
         "order_total_amount": float(order_row["total_amount"]),
         "team_count": team_count,
-        "recent_customers": recent_customers,
+        "recent_companies": recent_companies,
         "recent_deals": recent_deals,
         "recent_leads": recent_leads,
     }

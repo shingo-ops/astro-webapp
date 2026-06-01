@@ -48,11 +48,18 @@ destructive な変更が必要な場合は必ずしんごさん（PO）に確認
 
 新規 migration を追加した場合:
 - **additive-only 原則**: カラム削除・テーブル削除・型変更は禁止（downgrade未整備、ADR-045:90）。destructive変更はPO確認＆ADR起案必須
-- **`deploy.yml` 登録必須**: `migrations/NNN.sql` を作成したら、必ず `.github/workflows/deploy.yml` の part 2 マイグレーションリストの「新しいマイグレーションはここに追加」コメント直前に psql 実行ステップを追記すること。**登録しないと本番 DB に適用されず、API が 500 エラーになる**（ADR-045, PR #1277 の前例あり）
-- **CI が自動検知**: `migration-guard.yml` が `migrations/NNN.sql` の追加を検出し、`deploy.yml` に対応行がない場合は PR をブロックする
+- **ファイル命名規則（101番以降）**: `migrations/YYYYMMDD_HHMMSS_description.sql`（例: `20260601_082000_add_foo.sql`）。連番（`NNN_`）は廃止（001〜100は既存ファイル）。タイムスタンプにより並行エージェント間の番号衝突を防ぐ。CI が形式を強制するため、連番形式は CI でブロックされる
+- **`deploy.yml` 登録必須**: migration ファイルを作成したら、必ず `.github/workflows/deploy.yml` の「新しいマイグレーションはここに追加」コメント直前に psql 実行ステップを追記すること。**登録しないと本番 DB に適用されず、API が 500 エラーになる**（ADR-045, PR #1277 の前例あり）
+- **CI が自動検知**: `migration-guard.yml` が新規 migration ファイルを検出し、deploy.yml に対応行がない場合 or ファイル名形式が不正な場合は PR をブロックする
 - テンプレート形式（`{schema}` プレースホルダ含む）の SQL は `deploy.yml` で直接実行不可。`DO $$ ... pg_namespace` 走査形式に書き換えること
 - 既存全テナント + 新規作成テナント両方への適用経路を PR body に明記する
 - PostgreSQL実機で `information_schema.columns` により全テナントschema整合を確認（SQLite不可）
+
+## 取引先 SSOT: companies（ADR-089 完了）
+
+`customers` テーブルは廃止済み（2026-06-01 Sprint 7 DROP）。取引先は `companies` / `company_addresses` / `company_discord` を使うこと。本番DROP手順: `scripts/migrate_089_drop_customers_tables.py`（PO確認必須）。詳細: `docs/adr/ADR-089-deprecate-customers-unify-to-companies.md`
+
+---
 
 ## Meta App Review テナント（tenant_006）パスワード管理
 

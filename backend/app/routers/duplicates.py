@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 """
-重複検知API（customers ベース）。
+重複検知API（companies ベース）。
 
-顧客の重複候補を検出する読み取り専用 API。
-旧来 customers テーブル直下の手作業マージ画面 (CustomersPage) 用に残している。
+会社の重複候補を検出する読み取り専用 API。
 
 検出ルール:
   1. メールアドレス完全一致
   2. 電話番号正規化後一致
-  3. 会社名＋名前のレーベンシュタイン類似度
+  3. 会社名の類似度
 
 変更履歴:
   2026-04-17: 初版作成（Phase 3）。
@@ -22,8 +21,8 @@ from __future__ import annotations
   2026-04-27 (A-4 / PR #145+#152 follow-up): 重複マージ機能を companies ベースで
     再設計し `POST /companies/{master_id}/merge` (routers/companies.py) として
     再実装した。本ルーターからは旧 `merge_customers` エンドポイントを撤去。
-    検出 (`GET /customers/duplicates`) は引き続き customers テーブル直下の重複
-    候補を返す（旧 UI の互換維持）。
+  ADR-089 Sprint 3: customers テーブル廃止に伴い、検出エンドポイントを
+    `/companies/duplicates` に移行し companies テーブルを参照するよう改修。
 """
 
 import re
@@ -65,37 +64,37 @@ class DuplicatesResponse(BaseModel):
 
 
 @router.get(
-    "/customers/duplicates",
+    "/companies/duplicates",
     response_model=DuplicatesResponse,
-    dependencies=[Depends(require_permission("customers.view"))],
+    dependencies=[Depends(require_permission("companies.view"))],
 )
-async def find_customer_duplicates(
+async def find_company_duplicates(
     confidence: float = Query(default=0.7, ge=0.5, le=1.0),
     db: AsyncSession = Depends(get_db),
     tenant_id: int = Depends(get_current_tenant),
     current_user: User = Depends(get_current_user),
 ):
-    """顧客の重複候補を検出する（新スキーマ：customer_addresses 副テーブル対応）"""
-    # 各顧客について、表示名・メール・電話を billing / delivery の両方から集約
+    """会社の重複候補を検出する（company_addresses 副テーブル対応）"""
+    # 各会社について、表示名・メール・電話を billing / delivery の両方から集約
     result = await db.execute(
         text("""
             SELECT
                 c.id,
-                COALESCE(c.billing_display_name, c.company_name) AS name,
-                c.company_name AS company,
+                COALESCE(c.billing_display_name, c.name) AS name,
+                c.name AS company,
                 ba.email AS billing_email,
                 da.email AS delivery_email,
                 ba.telephone AS billing_phone,
                 da.telephone AS delivery_phone,
                 c.status
-            FROM customers c
-            LEFT JOIN customer_addresses ba ON ba.customer_id = c.id AND ba.address_type = 'billing'
-            LEFT JOIN customer_addresses da ON da.customer_id = c.id AND da.address_type = 'delivery'
+            FROM companies c
+            LEFT JOIN company_addresses ba ON ba.company_id = c.id AND ba.address_type = 'billing'
+            LEFT JOIN company_addresses da ON da.company_id = c.id AND da.address_type = 'delivery'
             WHERE c.status != 'archived'
             ORDER BY c.id
         """)
     )
-    customers = [dict(row) for row in result.mappings().all()]
+    companies = [dict(row) for row in result.mappings().all()]
     duplicates: list[DuplicateMatch] = []
 
     def _first_non_empty(*vals: str | None) -> str | None:
@@ -104,8 +103,8 @@ async def find_customer_duplicates(
                 return v
         return None
 
-    for i, c1 in enumerate(customers):
-        for c2 in customers[i + 1:]:
+    for i, c1 in enumerate(companies):
+        for c2 in companies[i + 1:]:
             score = 0.0
             reason = ""
             c1_email = _first_non_empty(c1.get("billing_email"), c1.get("delivery_email"))
@@ -123,7 +122,7 @@ async def find_customer_duplicates(
                 if p1 and p2 and p1 == p2 and len(p1) >= 10:
                     score = 0.95
                     reason = "電話番号一致"
-            # Rule 3: 会社名+表示名の類似度
+            # Rule 3: 会社名の類似度
             if score == 0 and c1.get("company") and c2.get("company"):
                 co_sim = _similarity(c1["company"] or "", c2["company"] or "")
                 nm_sim = _similarity(c1["name"] or "", c2["name"] or "")
