@@ -45,6 +45,8 @@ import SuperAdminMastersPage from "./pages/super-admin/MastersPage";
 import InventoryVisibilityPage from "./pages/admin/InventoryVisibilityPage";
 // spec.md v1.1 F8 (Sprint 8): テナント発行者情報 (PO PDF / メール差出人) admin UI
 import TenantProfilePage from "./pages/admin/TenantProfilePage";
+// Sprint D2: Discord Guild 設定 admin UI
+import DiscordConfigPage from "./pages/admin/DiscordConfigPage";
 // spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧（中央 admin）
 import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
@@ -220,6 +222,11 @@ function App() {
                   <Route
                     path="/admin/tenant-profile"
                     element={<TenantProfilePage />}
+                  />
+                  {/* Sprint D2: Discord Guild 設定 (tenant.profile.edit / view) */}
+                  <Route
+                    path="/admin/discord-config"
+                    element={<DiscordConfigPage />}
                   />
 
                   {/* ADR-069: デザインシステム パーツ保管庫（開発環境専用） */}

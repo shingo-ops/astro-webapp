@@ -120,6 +120,7 @@
     "superAdminInbound": "Discord 受信一覧",
     "inventoryVisibility": "在庫表示権限",
     "tenantProfile": "発行者情報",
+    "discordConfig": "Discord 連携設定",
     "superAdminPhaseSwitch": "スプレッドシート Phase",
     "superAdminInventoryOffers": "仕入元現在オファー",
     "account": "アカウント",
@@ -1650,5 +1651,23 @@
     "invoiceWebhook": "請求書 Webhook URL",
     "shipmentWebhook": "発送通知 Webhook URL",
     "deleteSettings": "Discord 設定を削除"
+  },
+  "discordConfig": {
+    "title": "Discord 連携設定",
+    "description": "Discord サーバーの Guild ID を登録すると、リードの規模変更に応じてロールが自動更新されます。",
+    "guildIdLabel": "Guild ID",
+    "guildIdPlaceholder": "例: 1288437029213835356",
+    "guildIdHint": "Discord サーバー名を右クリック → 「サーバー ID をコピー」で取得できます。",
+    "roleMappingTitle": "ロールマッピング（固定）",
+    "loadError": "設定の読み込みに失敗しました",
+    "saveError": "設定の保存に失敗しました",
+    "invalidGuildId": "Guild ID は17〜20桁の数字で入力してください",
+    "saved": "設定を保存しました",
+    "syncStatus": {
+      "success": "同期済み",
+      "failed": "同期失敗",
+      "pending": "同期中",
+      "not_linked": "Discord未連携"
+    }
   }
 }

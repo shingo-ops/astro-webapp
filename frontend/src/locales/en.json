@@ -120,6 +120,7 @@
     "superAdminInbound": "Discord Inbound",
     "inventoryVisibility": "Inventory Visibility",
     "tenantProfile": "Issuer Profile",
+    "discordConfig": "Discord Integration",
     "superAdminPhaseSwitch": "Spreadsheet Phase",
     "superAdminInventoryOffers": "Supplier Offers",
     "account": "Account",
@@ -1650,5 +1651,23 @@
     "invoiceWebhook": "Invoice Webhook URL",
     "shipmentWebhook": "Shipment Webhook URL",
     "deleteSettings": "Delete Discord settings"
+  },
+  "discordConfig": {
+    "title": "Discord Integration",
+    "description": "Register your Discord server's Guild ID to automatically assign roles when a lead's scale changes.",
+    "guildIdLabel": "Guild ID",
+    "guildIdPlaceholder": "e.g. 1288437029213835356",
+    "guildIdHint": "Right-click your Discord server name → 'Copy Server ID' (Developer Mode required).",
+    "roleMappingTitle": "Role Mapping (Fixed)",
+    "loadError": "Failed to load configuration",
+    "saveError": "Failed to save configuration",
+    "invalidGuildId": "Guild ID must be a 17–20 digit number",
+    "saved": "Configuration saved",
+    "syncStatus": {
+      "success": "Synced",
+      "failed": "Sync failed",
+      "pending": "Syncing",
+      "not_linked": "Discord not linked"
+    }
   }
 }

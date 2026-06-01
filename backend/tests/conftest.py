@@ -75,6 +75,8 @@ async def test_engine():
             statement = statement.replace("public.permissions", "permissions")
         if "public.data_access_events" in statement:
             statement = statement.replace("public.data_access_events", "data_access_events")
+        if "public.tenant_discord_config" in statement:
+            statement = statement.replace("public.tenant_discord_config", "tenant_discord_config")
         # SQLite は FOR UPDATE をサポートしない（ファイルレベルロックで代替）。
         if " FOR UPDATE" in statement:
             statement = statement.replace(" FOR UPDATE", "")
@@ -337,7 +339,11 @@ async def setup_test_db(test_engine):
                 messenger_link VARCHAR(1000),
                 discord_id VARCHAR(255),
                 instagram_link VARCHAR(1000),
-                whatsapp_link VARCHAR(1000)
+                whatsapp_link VARCHAR(1000),
+                discord_user_id VARCHAR(50),
+                discord_dm_channel_id VARCHAR(50),
+                discord_role_sync_status VARCHAR(20),
+                discord_role_sync_at TIMESTAMP
             )
         """))
         # 案件テーブル（Step 5d: 旧 customer_id 列削除済）
@@ -798,6 +804,14 @@ async def setup_test_db(test_engine):
         """))
         # Sprint 8 / F8: テナント発行者情報 (PO PDF / メール差出人)
         await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS tenant_discord_config (
+                tenant_id INTEGER PRIMARY KEY,
+                guild_id  VARCHAR(32) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """))
+        await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS tenant_profile (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 company_name VARCHAR(255),
@@ -937,6 +951,8 @@ async def db_session(test_engine, setup_test_db):
         await conn.execute(text("DELETE FROM suppliers"))
         # Sprint 8: tenant_profile
         await conn.execute(text("DELETE FROM tenant_profile"))
+        # Sprint D2: tenant_discord_config
+        await conn.execute(text("DELETE FROM tenant_discord_config"))
         await conn.execute(text("DELETE FROM order_commissions"))
         await conn.execute(text("DELETE FROM tenant_commission_settings"))
         await conn.execute(text("DELETE FROM order_shipping_details"))
@@ -1110,6 +1126,8 @@ async def client(db_session):
         "app.routers.staff",
         # Sprint 8 / F8: テナント発行者情報
         "app.routers.tenant_profile",
+        # Sprint D2: Discord Guild 設定
+        "app.routers.discord_guild_config",
     ]
     with ExitStack() as stack:
         for target in _audit_targets:
