@@ -74,14 +74,17 @@ class QuoteItemResponse(BaseModel):
 class QuoteResponse(BaseModel):
     """見積情報レスポンス。
 
-    Note: PR γ (Step 5d 最終クリーンアップ) で `contact_id: int` 必須に昇格。
-    migration 035 で legacy 行 (contact_id IS NULL) は precondition で 0 件保証。
+    Note: PR γ (Step 5d) で `contact_id` を必須化したが、対象は tenant_004 のみ
+    (migration 035 の precondition で 0 件保証)。後発作成テナント (例: tenant_006
+    /tenant_review) には migration 035 が遡及適用されず、demo/seed で
+    contact_id IS NULL の行が存在しうる。一覧/詳細レスポンスがそれで 500 に
+    ならないよう `int | None` で許容する (作成リクエスト QuoteCreate は引き続き必須)。
     """
     id: int
     quote_code: str | None
     deal_id: int | None
     company_id: int
-    contact_id: int
+    contact_id: int | None
     currency: str
     subtotal: Decimal | None
     shipping_fee: Decimal | None
