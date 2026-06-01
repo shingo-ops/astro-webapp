@@ -1517,8 +1517,6 @@ async def _send_discord_message(
 # ---------------------------------------------------------------------------
 # GET /leads/stream — SSE リアルタイム通知（Phase 3）
 # ---------------------------------------------------------------------------
-import asyncio
-
 from starlette.requests import Request
 from starlette.responses import StreamingResponse
 
