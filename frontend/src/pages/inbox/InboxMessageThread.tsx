@@ -299,7 +299,7 @@ export function InboxMessageThread({
       </div>
 
       {/* 送信エリア */}
-      <div className="inbox-send-area">
+      <div className="inbox-send-area sticky-bottom-bar">
         {sendError && (
           <div className="inbox-send-error" role="alert">
             Send error: {sendError}
