@@ -149,7 +149,7 @@ class TestReportsTask:
     def test_export_queries_defined(self):
         """全レポートタイプのクエリが定義されていること"""
         from app.tasks.reports import EXPORT_QUERIES
-        assert "customers" in EXPORT_QUERIES
+        assert "companies" in EXPORT_QUERIES  # ADR-089 Sprint 7: customers → companies
         assert "deals" in EXPORT_QUERIES
         assert "orders" in EXPORT_QUERIES
 
@@ -198,7 +198,7 @@ class TestReportsAPI:
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 resp = await client.post(
                     "/api/v1/reports/export",
-                    json={"report_type": "customers"},
+                    json={"report_type": "companies"},
                 )
 
         app.dependency_overrides.clear()
@@ -206,7 +206,7 @@ class TestReportsAPI:
         assert resp.status_code == 202
         data = resp.json()
         assert data["task_id"] == "test-task-id-123"
-        assert "customers" in data["message"]
+        assert "companies" in data["message"]
 
     async def test_export_request_invalid_type(self):
         """無効なレポートタイプで422が返ること"""
