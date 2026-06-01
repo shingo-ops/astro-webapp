@@ -714,6 +714,11 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/100_add_meta_messages_image_columns.sql
 
+            # ─────────────────────────────────────────────────────────────────
+            # 101番以降はタイムスタンプ形式: YYYYMMDD_HHMMSS_description.sql
+            # 例: 20260601_082000_add_foo.sql
+            # 連番（NNN_）は廃止。並行エージェント間の番号衝突を防ぐため。
+            # ─────────────────────────────────────────────────────────────────
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
