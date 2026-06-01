@@ -323,6 +323,8 @@ async def _apply_catchup_to_tenant(
     public_migrations: list[tuple[str, str]] = [
         ("042_seed_meta_inbox_permissions.sql", "042: Meta inbox permissions seed"),
         ("043_create_meta_page_routing.sql", "043: public.meta_page_routing 作成"),
+        # ADR-089: customers テーブル廃止（全テナントループ形式・冪等）
+        ("20260601_140000_drop_customers_tables.sql", "ADR-089: customers 関連テーブル DROP"),
     ]
     tenant_migrations: list[tuple[str, str]] = [
         ("040_create_tenant_meta_config.sql", "040: tenant_meta_config"),
