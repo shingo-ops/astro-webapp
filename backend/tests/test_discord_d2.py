@@ -18,7 +18,7 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient, Response
-from sqlalchemy import text
+from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -49,6 +49,13 @@ TEST_USER_ID = 1
 @pytest_asyncio.fixture
 async def db_engine():
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+
+    @event.listens_for(engine.sync_engine, "before_cursor_execute", retval=True)
+    def _rewrite_sqlite(conn, cursor, statement, parameters, context, executemany):
+        statement = statement.replace("public.tenant_discord_config", "tenant_discord_config")
+        statement = statement.replace("NOW()", "CURRENT_TIMESTAMP")
+        return statement, parameters
+
     async with engine.begin() as conn:
         await conn.execute(text(_DDL))
     yield engine
