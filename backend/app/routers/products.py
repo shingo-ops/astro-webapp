@@ -79,6 +79,10 @@ async def list_products(
     search: str | None = Query(default=None, max_length=255),
     category: str | None = Query(default=None, max_length=100),
     status_filter: str | None = Query(default=None, alias="status"),
+    sort: str | None = Query(
+        default=None,
+        description="name_asc / name_desc。未指定は updated_at DESC（従来順）",
+    ),
     archived: bool = Query(
         default=False,
         description="true で廃番(is_archived=true)も含む。default は非表示",
@@ -113,9 +117,14 @@ async def list_products(
 
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
+    # 名前ソート（在庫表ヘッダーのトグル用）。ホワイトリストで SQL インジェクション防止。
+    # 未指定は従来どおり updated_at DESC。
+    _SORT_MAP = {"name_asc": "name_ja ASC", "name_desc": "name_ja DESC"}
+    order_by = _SORT_MAP.get(sort or "", "updated_at DESC")
+
     products_t = tenant_table_ref(db, tenant_id, "products")
     result = await db.execute(
-        text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} {where} ORDER BY updated_at DESC LIMIT :limit OFFSET :offset"),
+        text(f"SELECT {_PRODUCT_COLUMNS} FROM {products_t} {where} ORDER BY {order_by} LIMIT :limit OFFSET :offset"),
         params,
     )
     return [ProductResponse(**row) for row in result.mappings().all()]

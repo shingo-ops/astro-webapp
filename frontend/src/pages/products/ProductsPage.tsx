@@ -109,7 +109,15 @@ export default function ProductsPage() {
   const [archiveBlocked, setArchiveBlocked] = useState<ArchiveBlockedDetail | null>(null);
   // QA 2026-05-31: 在庫表からチェックして見積/請求を作成するための複数選択
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  // 名前列の昇順/降順ソート（"" = 従来順 / name_asc / name_desc）
+  const [sort, setSort] = useState<"" | "name_asc" | "name_desc">("");
   const navigate = useNavigate();
+
+  // 名前ヘッダークリックで 昇順 → 降順 → 解除 をトグル
+  const toggleNameSort = () => {
+    setSort((prev) => (prev === "name_asc" ? "name_desc" : prev === "name_desc" ? "" : "name_asc"));
+    setPage(1);
+  };
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -137,6 +145,7 @@ export default function ProductsPage() {
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
+      if (sort) params.set("sort", sort);
       params.set("page", String(page));
       params.set("per_page", String(PER_PAGE));
       const qs = `?${params.toString()}`;
@@ -157,7 +166,7 @@ export default function ProductsPage() {
   }, [search]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [search, page]);
+  useEffect(() => { load(); }, [search, page, sort]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -387,14 +396,29 @@ export default function ProductsPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th style={{ width: "var(--col-width-checkbox)", textAlign: "center" }} aria-label={t("common.select")}></th>
-              <th>{t("common.name")}</th>
-              <th>{t("quotes.items")}</th>
+              {/* チェックボックス列＝見積/請求作成用の複数選択。意味が伝わるよう title/aria でツールチップ説明 */}
+              <th
+                style={{ width: "var(--col-width-checkbox)", textAlign: "center", cursor: "help" }}
+                aria-label={t("products.selectHint")}
+                title={t("products.selectHint")}
+              ></th>
+              <th
+                onClick={toggleNameSort}
+                style={{ cursor: "pointer", userSelect: "none" }}
+                title={t("products.sortByName")}
+                data-testid="products-sort-name"
+              >
+                {t("common.name")}
+                <span aria-hidden="true" style={{ marginLeft: "var(--space-1)", color: "var(--text-secondary)" }}>
+                  {sort === "name_asc" ? "↑" : sort === "name_desc" ? "↓" : ""}
+                </span>
+              </th>
+              <th>{t("products.rarityCol")}</th>
               <th>{t("language.label")}</th>
               <th>{t("leads.type")}</th>
+              <th>{t("products.conditionCol")}</th>
               <th>{t("products.unitPrice")}</th>
               <th>{t("products.stockQty")}</th>
-              <th>{t("common.status")}</th>
               <th>{t("common.actions")}</th>
             </tr>
           </thead>
@@ -429,6 +453,7 @@ export default function ProductsPage() {
                 <td>{p.rarity || "-"}</td>
                 <td>{p.language ? t(`language.${p.language}`, { defaultValue: p.language }) : "-"}</td>
                 <td>{p.category || "-"}</td>
+                <td>{p.condition || "-"}</td>
                 <td>
                   {p.unit_price != null ? `¥${Math.round(p.unit_price).toLocaleString()}` : "-"}
                   {(p.unit_price_usd != null || p.unit_price_eur != null) && (
@@ -444,7 +469,6 @@ export default function ProductsPage() {
                     {p.quantity}
                   </span>
                 </td>
-                <td><span className={`badge badge-${p.status === "active" ? "won" : "lost"}`}>{p.status === "active" ? t("products.status_active") : t("products.status_discontinued")}</span></td>
                 <td className="actions">
                   {hasPermission("products.update") && <button className="btn-sm" onClick={() => handleEdit(p)}>{t("common.edit")}</button>}
                   {/* QA 2026-05-30: 「追加」と誤表記された廃番(archive)トグルを撤去（誤クリックで行が消える事故防止）。
