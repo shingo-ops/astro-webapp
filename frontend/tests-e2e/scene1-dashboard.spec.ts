@@ -129,8 +129,8 @@ test.describe("Scene 1: Dashboard Overview", () => {
     await expect(page.getByText("受注・売上", { exact: true })).toBeVisible();
 
     // チームタブに切り替えると商談・リードセクションが表示される
-    await page.getByRole("button", { name: "チーム" }).click();
     // db-period-area にスコープして sidebar-label の "リード" (opacity:0) と衝突しないようにする
+    await page.getByRole("button", { name: "チーム" }).click();
     await expect(page.locator(".db-period-area").getByText("リード", { exact: true })).toBeVisible();
     await expect(page.locator(".db-period-area").getByText("商談", { exact: true })).toBeVisible();
   });
