@@ -229,11 +229,16 @@ async def apply_product_candidates(
       （NOT EXISTS による重複防止。products.name に UNIQUE は無いため
       厳密な同時実行排他ではないが、通常運用では実質冪等）
     - category は任意。指定があれば全件に同じ分類を付与する
+    - language は 'ja' 固定で付与する。Discord 受信通知は基本的に日本語のため
+      （ユーザー方針 2026-06-02: 英語版の明記がなければ日本語扱い）。英語自動判定は別途。
     """
     # public.products.name は VARCHAR(255)。超過名はバッチ全体を巻き込む
     # 制約違反（→全件ロールバック）になるため、登録対象から除外する。
     _NAME_MAX_LEN = 255
     category = (payload.category or "").strip() or None
+    # Discord 取込は基本日本語（ユーザー方針）。在庫表(/products, public.products)で
+    # 言語列が日本語として表示される。
+    _IMPORT_LANGUAGE = "ja"
     inserted = 0
     skipped = 0
     seen: set[str] = set()
@@ -247,13 +252,13 @@ async def apply_product_candidates(
             continue
         result = await db.execute(
             text(
-                "INSERT INTO public.products (name, category) "
-                "SELECT :name, :category "
+                "INSERT INTO public.products (name, category, language) "
+                "SELECT :name, :category, :language "
                 "WHERE NOT EXISTS ("
                 "  SELECT 1 FROM public.products WHERE name = :name"
                 ")"
             ),
-            {"name": name, "category": category},
+            {"name": name, "category": category, "language": _IMPORT_LANGUAGE},
         )
         if result.rowcount:
             inserted += 1
