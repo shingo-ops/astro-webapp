@@ -577,7 +577,7 @@
   background: var(--bg-surface);
   position: sticky;
   bottom: 0;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 /* 白い角丸ボックス（Meta実測: bg=white, br=8px → 12px に拡大） */
 .send-card {
