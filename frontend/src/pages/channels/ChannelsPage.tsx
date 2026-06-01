@@ -20,6 +20,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { ApiError, api } from "../../lib/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import { usePermissions } from "../../hooks/usePermissions";
@@ -85,6 +86,7 @@ function daysUntil(iso: string | null): number | null {
 
 export default function ChannelsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,8 +96,10 @@ export default function ChannelsPage() {
   const [disconnectTarget, setDisconnectTarget] = useState<Channel | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
   const [banner, setBanner] = useState<Banner>(null);
+  const [discordGuildId, setDiscordGuildId] = useState<string | null>(null);
 
   const canManage = hasPermission("channels.manage");
+  const canViewDiscord = hasPermission("tenant.profile.view");
 
   // ADR-041: 旧スコープ（business_management 未付与）の接続が 1 つでもあれば再認証を促す
   const reauthRequired = channels.some((c) => c.is_active && c.requires_reauth);
@@ -153,6 +157,14 @@ export default function ChannelsPage() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadChannels(); }, []);
+
+  // ----- Discord Guild ID 取得 -----
+  useEffect(() => {
+    if (!canViewDiscord) return;
+    api.get<{ guild_id: string | null }>("/admin/discord-config")
+      .then((d) => setDiscordGuildId(d.guild_id))
+      .catch(() => { /* サイレント: Discord未設定テナントは表示しない */ });
+  }, [canViewDiscord]);
 
   // ----- 接続開始 -----
   const handleConnect = async () => {
@@ -429,6 +441,31 @@ export default function ChannelsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Discord Guild 設定セクション */}
+      {canViewDiscord && (
+        <div style={{ marginTop: "var(--space-8)" }}>
+          <h3 style={{ fontSize: "var(--font-sidebar-brand)", marginBottom: "var(--space-3)", color: "var(--text-primary)" }}>
+            {t("channels.discordSection")}
+          </h3>
+          <div className="card" style={{ padding: "var(--space-4)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-4)" }}>
+            <div>
+              <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", marginBottom: "var(--space-1)" }}>
+                {t("channels.discordGuildId")}
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--font-sm)" }}>
+                {discordGuildId ?? <span style={{ color: "var(--text-muted)" }}>{t("channels.discordGuildIdNotSet")}</span>}
+              </div>
+            </div>
+            <button
+              className="btn-sm btn-secondary"
+              onClick={() => navigate("/admin/discord-config")}
+            >
+              {t("channels.discordEdit")}
+            </button>
+          </div>
         </div>
       )}
 
