@@ -54,6 +54,18 @@ destructive な変更が必要な場合は必ずしんごさん（PO）に確認
 - 既存全テナント + 新規作成テナント両方への適用経路を PR body に明記する
 - PostgreSQL実機で `information_schema.columns` により全テナントschema整合を確認（SQLite不可）
 
+## 取引先 SSOT: companies テーブル（ADR-089 完了）
+
+**`customers` テーブルは廃止済み。**  
+2026-06-01 に ADR-089 Sprint 7 で DROP。取引先データはすべて `companies` / `company_addresses` / `contacts` を使うこと。
+
+- ❌ 禁止: `FROM customers` / `JOIN customers` / `customer_id` 参照
+- ✅ 使用: `companies` / `company_addresses` / `company_discord`
+- 本番 DROP 手順: `scripts/migrate_089_drop_customers_tables.py`（PO確認後に手動実行）
+- 詳細: `docs/adr/ADR-089-deprecate-customers-unify-to-companies.md`
+
+---
+
 ## Meta App Review テナント（tenant_006）パスワード管理
 
 `scripts/setup_review_tenant.py` 実行後は必ずホスト側に保存すること（コンテナ `/tmp` は再起動で消える）。
