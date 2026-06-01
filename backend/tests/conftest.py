@@ -426,6 +426,7 @@ async def setup_test_db(test_engine):
                 assigned_to INTEGER,
                 expected_close_date DATE,
                 notes TEXT,
+                lead_source VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
