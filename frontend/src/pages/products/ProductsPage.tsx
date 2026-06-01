@@ -48,6 +48,7 @@ interface Product {
   is_archived: boolean;
   archived_at: string | null;
   supplier_default_id: number | null;
+  tcg_type: string | null;
 }
 
 type FormState = {
@@ -111,7 +112,21 @@ export default function ProductsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   // 名前列の昇順/降順ソート（"" = 従来順 / name_asc / name_desc）
   const [sort, setSort] = useState<"" | "name_asc" | "name_desc">("");
+  // ADR-090 PR5a: TCG種別マスタによる絞り込み
+  const [tcgType, setTcgType] = useState("");
+  const [tcgTypes, setTcgTypes] = useState<{ code: string; name_ja: string }[]>([]);
   const navigate = useNavigate();
+
+  // TCG種別マスタ一覧を取得（絞り込みフィルタ + 「タイプ」列の表示名解決用）
+  useEffect(() => {
+    api
+      .get<{ code: string; name_ja: string }[]>("/products/tcg-types")
+      .then(setTcgTypes)
+      .catch(() => setTcgTypes([]));
+  }, []);
+
+  // code → name_ja マップ（「タイプ」列の表示に使用）
+  const tcgTypeName = new Map(tcgTypes.map((t) => [t.code, t.name_ja]));
 
   // 名前ヘッダークリックで 昇順 → 降順 → 解除 をトグル
   const toggleNameSort = () => {
@@ -146,6 +161,7 @@ export default function ProductsPage() {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (sort) params.set("sort", sort);
+      if (tcgType) params.set("tcg_type", tcgType);
       params.set("page", String(page));
       params.set("per_page", String(PER_PAGE));
       const qs = `?${params.toString()}`;
@@ -166,7 +182,7 @@ export default function ProductsPage() {
   }, [search]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [search, page, sort]);
+  useEffect(() => { load(); }, [search, page, sort, tcgType]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -276,6 +292,19 @@ export default function ProductsPage() {
     >
       <div className="search-bar" style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
         <input type="text" placeholder={t("common.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
+        {tcgTypes.length > 0 && (
+          <select
+            value={tcgType}
+            onChange={(e) => { setTcgType(e.target.value); setPage(1); }}
+            aria-label={t("products.filterByTcgType")}
+            data-testid="products-tcg-type-filter"
+          >
+            <option value="">{t("products.allTcgTypes")}</option>
+            {tcgTypes.map((tt) => (
+              <option key={tt.code} value={tt.code}>{tt.name_ja}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* QA 2026-05-31: 在庫表からチェックした商品で見積/請求を作成 */}
@@ -452,7 +481,7 @@ export default function ProductsPage() {
                 </td>
                 <td>{p.rarity || "-"}</td>
                 <td>{p.language ? t(`language.${p.language}`, { defaultValue: p.language }) : "-"}</td>
-                <td>{p.category || "-"}</td>
+                <td>{p.tcg_type ? (tcgTypeName.get(p.tcg_type) ?? p.tcg_type) : (p.category || "-")}</td>
                 <td>{p.condition || "-"}</td>
                 <td>
                   {p.unit_price != null ? `¥${Math.round(p.unit_price).toLocaleString()}` : "-"}
