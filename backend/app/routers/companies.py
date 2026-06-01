@@ -32,6 +32,8 @@ from app.schemas.company import (
     CompanyAddressInput,
     CompanyAddressResponse,
     CompanyCreate,
+    CompanyDiscordInput,
+    CompanyDiscordResponse,
     CompanyMergeRequest,
     CompanyResponse,
     CompanyUpdate,
@@ -52,6 +54,10 @@ _AUDIT_ADDRESS_COLUMNS = [
     "city", "state", "zip", "country_code", "is_default",
 ]
 
+_AUDIT_DISCORD_COLUMNS = [
+    "is_joined", "channel_id", "user_id", "invoice_webhook", "shipment_webhook",
+]
+
 
 async def _snapshot_company_subtables(db: AsyncSession, company_id: int) -> dict[str, object]:
     """audit_log 用に company の副テーブルをスナップショットする。
@@ -65,6 +71,9 @@ async def _snapshot_company_subtables(db: AsyncSession, company_id: int) -> dict
         ),
         "company_sales_channels": await snapshot_subtable_scalars(
             db, "company_sales_channels", "company_id", company_id, "channel",
+        ),
+        "company_discord": await snapshot_subtable_rows(
+            db, "company_discord", "company_id", company_id, _AUDIT_DISCORD_COLUMNS,
         ),
     }
 
@@ -122,12 +131,67 @@ async def _fetch_sales_channels(db: AsyncSession, company_id: int) -> list[str]:
     return [row.channel for row in res.fetchall()]
 
 
+async def _fetch_discord(db: AsyncSession, company_id: int) -> CompanyDiscordResponse | None:
+    """company_discord 副テーブルを取得。行がなければ None。"""
+    res = await db.execute(
+        text("""
+            SELECT company_id, is_joined, channel_id, user_id,
+                   invoice_webhook, shipment_webhook
+            FROM company_discord WHERE company_id = :cid
+        """),
+        {"cid": company_id},
+    )
+    row = res.mappings().first()
+    if row is None:
+        return None
+    return CompanyDiscordResponse(**row)
+
+
+async def _upsert_discord(db: AsyncSession, company_id: int, discord: CompanyDiscordInput) -> None:
+    """company_discord を upsert（insert or update）する。"""
+    await db.execute(
+        text("""
+            INSERT INTO company_discord (
+                company_id, is_joined, channel_id, user_id,
+                invoice_webhook, shipment_webhook
+            ) VALUES (
+                :cid, :is_joined, :channel_id, :user_id,
+                :invoice_webhook, :shipment_webhook
+            )
+            ON CONFLICT (company_id) DO UPDATE SET
+                is_joined = EXCLUDED.is_joined,
+                channel_id = EXCLUDED.channel_id,
+                user_id = EXCLUDED.user_id,
+                invoice_webhook = EXCLUDED.invoice_webhook,
+                shipment_webhook = EXCLUDED.shipment_webhook,
+                updated_at = NOW()
+        """),
+        {
+            "cid": company_id,
+            "is_joined": discord.is_joined,
+            "channel_id": discord.channel_id,
+            "user_id": discord.user_id,
+            "invoice_webhook": discord.invoice_webhook,
+            "shipment_webhook": discord.shipment_webhook,
+        },
+    )
+
+
+async def _delete_discord(db: AsyncSession, company_id: int) -> None:
+    """company_discord 行を削除（discord=null で明示削除）。"""
+    await db.execute(
+        text("DELETE FROM company_discord WHERE company_id = :cid"),
+        {"cid": company_id},
+    )
+
+
 async def _compose_response(db: AsyncSession, main_row: dict) -> CompanyResponse:
     cid = main_row["id"]
     return CompanyResponse(
         **main_row,
         addresses=await _fetch_addresses(db, cid),
         sales_channels=await _fetch_sales_channels(db, cid),
+        discord=await _fetch_discord(db, cid),
     )
 
 
@@ -419,6 +483,9 @@ async def update_company(
 
     addresses = update_data.pop("addresses", None)
     sales_channels = update_data.pop("sales_channels", None)
+    # AC3.4: discord キーが存在しない場合は _sentinel（未送信）として扱う
+    _discord_sentinel = object()
+    discord_raw = update_data.pop("discord", _discord_sentinel)
 
     update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLUMNS}
     for k, v in list(update_data.items()):
@@ -455,6 +522,13 @@ async def update_company(
         await _replace_addresses(db, company_id, addr_models)
     if sales_channels is not None:
         await _replace_sales_channels(db, company_id, sales_channels)
+    # AC3.2/AC3.3: discord の upsert / delete
+    if discord_raw is not _discord_sentinel:
+        if discord_raw is None:
+            await _delete_discord(db, company_id)
+        else:
+            discord_input = CompanyDiscordInput(**discord_raw) if isinstance(discord_raw, dict) else discord_raw
+            await _upsert_discord(db, company_id, discord_input)
 
     # PR #145 F9: 副テーブル変更後の new スナップショットを取得して diff を組み立てる。
     # _replace_* が呼ばれていない副テーブルでも old/new 同一なら diff_rows/diff_scalars が None

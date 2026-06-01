@@ -7,10 +7,12 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import type {
-  Company, Contact, Tab, AddressFormState, BasicFormState, CompanyAddress, ContactFormState,
+  Company, Contact, Tab, AddressFormState, BasicFormState, CompanyAddress,
+  ContactFormState, DiscordFormState,
 } from "./company-detail.types";
 import {
   emptyAddress, addressFromApi, basicFromApi, emptyContact, contactFromApi,
+  emptyDiscordForm, discordFromApi,
 } from "./company-detail.types";
 
 export function useCompanyDetail(id: string | undefined) {
@@ -43,6 +45,11 @@ export function useCompanyDetail(id: string | undefined) {
   const [contactSubmitting, setContactSubmitting] = useState(false);
   const [contactDeleteTarget, setContactDeleteTarget] = useState<Contact | null>(null);
 
+  // Discord タブ（ADR-089 Sprint 2）
+  const [discordForm, setDiscordForm] = useState<DiscordFormState>(emptyDiscordForm());
+  const [discordDirty, setDiscordDirty] = useState(false);
+  const [discordSubmitting, setDiscordSubmitting] = useState(false);
+
   // dedup 解消
   const [dedupConfirmOpen, setDedupConfirmOpen] = useState(false);
   const [dedupSubmitting, setDedupSubmitting] = useState(false);
@@ -57,6 +64,8 @@ export function useCompanyDetail(id: string | undefined) {
       setChannelsText(c.sales_channels.join(", "));
       setBasicDirty(false);
       setChannelsDirty(false);
+      setDiscordForm(c.discord ? discordFromApi(c.discord) : emptyDiscordForm());
+      setDiscordDirty(false);
       const list = await api.get<Contact[]>(`/companies/${id}/contacts`);
       setContacts(list);
     } catch (e) {
@@ -121,10 +130,40 @@ export function useCompanyDetail(id: string | undefined) {
     }
   };
 
-  /**
-   * 住所を全置換で保存する。1 件追加/編集/削除のいずれも
-   * 既存の全住所を含む next 配列を送る。
-   */
+  const handleDiscordSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!company) return;
+    setError("");
+    setDiscordSubmitting(true);
+    try {
+      const toNull = (v: string) => (v.trim() ? v.trim() : null);
+      const discord = {
+        is_joined: discordForm.is_joined,
+        channel_id: toNull(discordForm.channel_id),
+        user_id: toNull(discordForm.user_id),
+        invoice_webhook: toNull(discordForm.invoice_webhook),
+        shipment_webhook: toNull(discordForm.shipment_webhook),
+      };
+      await api.patch(`/companies/${company.id}`, { discord });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.saveError"));
+    } finally {
+      setDiscordSubmitting(false);
+    }
+  };
+
+  const handleDiscordDelete = async () => {
+    if (!company) return;
+    setError("");
+    try {
+      await api.patch(`/companies/${company.id}`, { discord: null });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.deleteError"));
+    }
+  };
+
   const submitAddresses = async (next: AddressFormState[]) => {
     if (!company) return;
     const toNull = (v: string) => (v ? v : null);
@@ -153,7 +192,6 @@ export function useCompanyDetail(id: string | undefined) {
     await load();
   };
 
-  /** 同 type の既定住所が既に存在するかを返す（自分自身は除外） */
   const hasOtherDefault = (type: "billing" | "delivery", excludeId: number | null): boolean =>
     (company?.addresses || []).some(
       (a) => a.address_type === type && a.is_default && a.id !== excludeId,
@@ -169,7 +207,6 @@ export function useCompanyDetail(id: string | undefined) {
     setAddrModalOpen(true);
   };
 
-  /** 種別切替時に is_default を再評価（F2 修正） */
   const handleAddressTypeChange = (newType: "billing" | "delivery") => {
     setAddrForm({
       ...addrForm,
@@ -276,6 +313,7 @@ export function useCompanyDetail(id: string | undefined) {
     contactModalOpen, setContactModalOpen,
     contactForm, setContactForm, contactSubmitting,
     contactDeleteTarget, setContactDeleteTarget,
+    discordForm, setDiscordForm, discordDirty, setDiscordDirty, discordSubmitting,
     dedupConfirmOpen, setDedupConfirmOpen, dedupSubmitting,
     mergeModalOpen, setMergeModalOpen,
     load,
@@ -285,6 +323,7 @@ export function useCompanyDetail(id: string | undefined) {
     handleAddressTypeChange,
     openContactNew, openContactEdit,
     handleContactSubmit, handleContactDelete,
+    handleDiscordSubmit, handleDiscordDelete,
     handleResolveAsDistinct, handleAddressDelete,
   };
 }
