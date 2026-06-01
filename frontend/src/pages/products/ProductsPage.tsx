@@ -524,7 +524,7 @@ export default function ProductsPage() {
               </tr>
               );
             })}
-            {products.length === 0 && <tr><td colSpan={9} className="empty">{t("products.noProducts")}</td></tr>}
+            {products.length === 0 && <tr><td colSpan={10} className="empty">{t("products.noProducts")}</td></tr>}
           </tbody>
         </table>
       )}
