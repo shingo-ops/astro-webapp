@@ -729,6 +729,11 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/20260602_000000_add_products_central_columns.sql
 
+            # Migration 20260602_010000: ADR-090 PR2 — 下流 product_id FK を public.products へ張替え + tenant固有商品の中央移行
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/20260602_010000_repoint_downstream_fk_to_public_products.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
