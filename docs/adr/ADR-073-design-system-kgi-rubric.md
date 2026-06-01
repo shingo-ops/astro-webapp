@@ -44,11 +44,11 @@
 合格条件（7カテゴリ全てのセクションが `/design-system` に存在する）:
 - ✅ Color Tokens（実装済み）
 - ✅ Typography Roles（実装済み）
-- ⬜ Spacing — `--space-*` トークンを横棒で視覚化
-- ⬜ Shadow — `--shadow-*` トークンをカードで視覚化
-- ⬜ Border Radius — `--radius-*` トークンを正方形で視覚化
-- ⬜ Z-index — `--z-*` トークンを表形式で視覚化
-- ⬜ Motion — `--transition-*` / `--ease-*` トークンをホバーデモで視覚化
+- ✅ Spacing（実装済み — SpacingSection, DesignSystemPage.tsx）
+- ✅ Shadow（実装済み — ShadowSection, DesignSystemPage.tsx）
+- ✅ Border Radius（実装済み — RadiusSection, DesignSystemPage.tsx）
+- ✅ Z-index（実装済み — ZIndexSection, DesignSystemPage.tsx）
+- ✅ Motion（実装済み — MotionSection, DesignSystemPage.tsx）
 
 ### 軸3: CI 自動ブロック（20%）
 
