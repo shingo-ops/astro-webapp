@@ -708,6 +708,12 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/099_add_discord_guild_config.sql
 
+            # Migration 100: meta_messages に attachment_url / attachment_type 追加（受信箱画像送信 Sprint 2）。
+            #   ADD COLUMN IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/100_add_meta_messages_image_columns.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
