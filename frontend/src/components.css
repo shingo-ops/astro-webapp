@@ -498,10 +498,16 @@
 .page-header-actions .icon-btn:hover {
   border-color: var(--border-icon);
 }
-/* stylelint-disable no-descending-specificity -- intentional: header context overrides base btn-ghost/icon-btn */
-.page-header-actions .btn-ghost {
+/* stylelint-disable no-descending-specificity -- intentional: header context overrides base button variants */
+.page-header-actions .btn-ghost,
+.page-header-actions .btn-primary,
+.page-header-actions .btn-secondary {
   font-size: var(--font-sm);
   height: var(--size-icon-btn);
+  padding-top: 0;
+  padding-bottom: 0;
+  display: flex;
+  align-items: center;
 }
 /* stylelint-enable no-descending-specificity */
 
