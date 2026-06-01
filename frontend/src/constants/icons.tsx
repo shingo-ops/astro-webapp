@@ -51,6 +51,7 @@ import {
   ArrowUpIcon, ArrowDownIcon,
   LanguageIcon,
   PaperAirplaneIcon,
+  PaperClipIcon,
 } from "@heroicons/react/24/solid";
 
 // ── outline: サイドバーナビゲーション専用 ────────────────────────────────
@@ -136,6 +137,7 @@ const Phone         = hi(PhoneIcon);
 const ArchiveBox    = hi(ArchiveBoxIcon);
 const Languages     = hi(LanguageIcon);
 const PaperAirplane = hi(PaperAirplaneIcon);
+const Paperclip     = hi(PaperClipIcon);
 
 // ── outline wrapped（サイドバーナビゲーション専用）────────────────────────
 const SquaresFour       = hi(Squares2X2Icon);
@@ -317,6 +319,7 @@ export const INBOX_ACTION_ICONS = {
   delete:     Trash,           // TrashIcon         — 削除
   translate:  Languages,       // LanguageIcon      — AI翻訳（ADR-088）
   send:       PaperAirplane,   // PaperAirplaneIcon — 送信ボタン（solid）
+  attach:     Paperclip,       // PaperClipIcon     — 画像添付ボタン
 } satisfies Record<string, Icon>;
 
 // Layout.tsx の /lead-chat ナビアイテム用（outline バリアント — サイドバー統一仕様）
