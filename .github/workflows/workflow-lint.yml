@@ -88,6 +88,16 @@ jobs:
                   "rule": "has_pull_request_blocking",
                   "reason": "ADR-072 テナントスキーマlint: pull_requestトリガー削除・continue-on-error追加でテナント分離チェックが無効化される",
               },
+              {
+                  "file": ".github/workflows/migration-test.yml",
+                  "rule": "has_aggregator_pattern",
+                  "reason": "PR #1361 CI最適化: detect-changes+aggregator(if:always())パターン必須。削除するとmigrationなしPRでもPostgreSQLが起動し2〜3分のムダが発生する",
+              },
+              {
+                  "file": ".github/workflows/e2e.yml",
+                  "rule": "has_aggregator_pattern",
+                  "reason": "PR #1361 CI最適化: detect-changes+aggregator(if:always())パターン必須。削除すると非フロントエンドPRでもnpm installが走りデッドロック(PR #534)が再発する",
+              },
           ]
 
           errors = []
@@ -138,6 +148,31 @@ jobs:
                   if pr_trigger is not None:
                       errors.append(
                           f"❌ {check['file']}: pull_request トリガーが追加されています\n"
+                          f"   理由: {check['reason']}"
+                      )
+              elif check["rule"] == "has_aggregator_pattern":
+                  jobs_section = data.get("jobs", {})
+                  # aggregator: if: always() かつ needs を持つジョブが1つ以上あるか
+                  has_aggregator = any(
+                      isinstance(job, dict) and
+                      job.get("if") == "always()" and
+                      "needs" in job
+                      for job in jobs_section.values()
+                  )
+                  # detect-changes: dorny/paths-filter を使うジョブが1つ以上あるか
+                  has_detect = any(
+                      isinstance(job, dict) and
+                      any(
+                          isinstance(step, dict) and
+                          "paths-filter" in str(step.get("uses", ""))
+                          for step in job.get("steps", [])
+                      )
+                      for job in jobs_section.values()
+                  )
+                  if not has_aggregator or not has_detect:
+                      errors.append(
+                          f"❌ {check['file']}: detect-changes + aggregator(if: always())パターンが崩れています\n"
+                          f"   has_aggregator={has_aggregator}, has_detect={has_detect}\n"
                           f"   理由: {check['reason']}"
                       )
               elif check["rule"] == "has_pull_request_blocking":
