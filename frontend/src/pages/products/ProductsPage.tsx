@@ -396,14 +396,12 @@ export default function ProductsPage() {
         <table className="data-table">
           <thead>
             <tr>
+              {/* チェックボックス列＝見積/請求作成用の複数選択。意味が伝わるよう title/aria でツールチップ説明 */}
               <th
                 style={{ width: "var(--col-width-checkbox)", textAlign: "center", cursor: "help" }}
                 aria-label={t("products.selectHint")}
                 title={t("products.selectHint")}
-              >
-                {/* チェックボックス列＝見積/請求作成用の複数選択。意味が伝わるよう ✓ + tooltip を表示 */}
-                <span aria-hidden="true" style={{ color: "var(--text-secondary)" }}>✓</span>
-              </th>
+              ></th>
               <th
                 onClick={toggleNameSort}
                 style={{ cursor: "pointer", userSelect: "none" }}
@@ -412,7 +410,7 @@ export default function ProductsPage() {
               >
                 {t("common.name")}
                 <span aria-hidden="true" style={{ marginLeft: "var(--space-1)", color: "var(--text-secondary)" }}>
-                  {sort === "name_asc" ? "▲" : sort === "name_desc" ? "▼" : "↕"}
+                  {sort === "name_asc" ? "↑" : sort === "name_desc" ? "↓" : ""}
                 </span>
               </th>
               <th>{t("products.rarityCol")}</th>
