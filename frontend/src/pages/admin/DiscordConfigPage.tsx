@@ -35,8 +35,7 @@ export default function DiscordConfigPage() {
       setLoading(true);
       setError("");
       try {
-        const res = await api.get<DiscordConfig>("/admin/discord-config");
-        const data: DiscordConfig = res.data;
+        const data = await api.get<DiscordConfig>("/admin/discord-config");
         setConfig(data);
         setGuildId(data.guild_id ?? "");
       } catch {
@@ -57,8 +56,8 @@ export default function DiscordConfigPage() {
     setError("");
     setSaved(false);
     try {
-      const res = await api.put<DiscordConfig>("/admin/discord-config", { guild_id: guildId.trim() });
-      setConfig(res.data);
+      const updated = await api.put<DiscordConfig>("/admin/discord-config", { guild_id: guildId.trim() });
+      setConfig(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
