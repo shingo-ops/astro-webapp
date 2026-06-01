@@ -7,10 +7,10 @@ import { useEffect, useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import type {
-  Company, Contact, Tab, AddressFormState, BasicFormState, CompanyAddress,
+  Company, Contact, Tab, AddressFormState, BasicFormState, CompanyAddress, ContactFormState,
 } from "./company-detail.types";
 import {
-  emptyAddress, addressFromApi, basicFromApi,
+  emptyAddress, addressFromApi, basicFromApi, emptyContact, contactFromApi,
 } from "./company-detail.types";
 
 export function useCompanyDetail(id: string | undefined) {
@@ -36,6 +36,12 @@ export function useCompanyDetail(id: string | undefined) {
   const [addrModalOpen, setAddrModalOpen] = useState(false);
   const [addrForm, setAddrForm] = useState<AddressFormState>(emptyAddress("billing"));
   const [addrDeleteTarget, setAddrDeleteTarget] = useState<CompanyAddress | null>(null);
+
+  // 担当者モーダル
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [contactForm, setContactForm] = useState<ContactFormState>(emptyContact());
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [contactDeleteTarget, setContactDeleteTarget] = useState<Contact | null>(null);
 
   // dedup 解消
   const [dedupConfirmOpen, setDedupConfirmOpen] = useState(false);
@@ -188,6 +194,63 @@ export function useCompanyDetail(id: string | undefined) {
     }
   };
 
+  const openContactNew = () => {
+    setContactForm(emptyContact());
+    setContactModalOpen(true);
+  };
+
+  const openContactEdit = (c: Contact) => {
+    setContactForm(contactFromApi(c));
+    setContactModalOpen(true);
+  };
+
+  const handleContactSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!company) return;
+    setError("");
+    setContactSubmitting(true);
+    try {
+      const toNull = (v: string) => (v.trim() ? v.trim() : null);
+      const payload = {
+        company_id: company.id,
+        display_name: toNull(contactForm.display_name),
+        surname: toNull(contactForm.surname),
+        given_name: toNull(contactForm.given_name),
+        job_title: toNull(contactForm.job_title),
+        department: toNull(contactForm.department),
+        is_primary_contact: contactForm.is_primary_contact,
+        primary_email: toNull(contactForm.primary_email),
+        primary_phone: toNull(contactForm.primary_phone),
+        status: contactForm.status || "active",
+      };
+      if (contactForm.id === null) {
+        await api.post("/contacts", payload);
+      } else {
+        await api.patch(`/contacts/${contactForm.id}`, payload);
+      }
+      setContactModalOpen(false);
+      const list = await api.get<Contact[]>(`/companies/${company.id}/contacts`);
+      setContacts(list);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.saveError"));
+    } finally {
+      setContactSubmitting(false);
+    }
+  };
+
+  const handleContactDelete = async () => {
+    if (!company || !contactDeleteTarget) return;
+    try {
+      await api.delete(`/contacts/${contactDeleteTarget.id}`);
+      setContactDeleteTarget(null);
+      const list = await api.get<Contact[]>(`/companies/${company.id}/contacts`);
+      setContacts(list);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("common.deleteError"));
+      setContactDeleteTarget(null);
+    }
+  };
+
   const handleAddressDelete = async () => {
     if (!company || !addrDeleteTarget) return;
     try {
@@ -210,6 +273,9 @@ export function useCompanyDetail(id: string | undefined) {
     addrModalOpen, setAddrModalOpen,
     addrForm, setAddrForm,
     addrDeleteTarget, setAddrDeleteTarget,
+    contactModalOpen, setContactModalOpen,
+    contactForm, setContactForm, contactSubmitting,
+    contactDeleteTarget, setContactDeleteTarget,
     dedupConfirmOpen, setDedupConfirmOpen, dedupSubmitting,
     mergeModalOpen, setMergeModalOpen,
     load,
@@ -217,6 +283,8 @@ export function useCompanyDetail(id: string | undefined) {
     submitAddresses, hasOtherDefault,
     openAddressNew, openAddressEdit,
     handleAddressTypeChange,
+    openContactNew, openContactEdit,
+    handleContactSubmit, handleContactDelete,
     handleResolveAsDistinct, handleAddressDelete,
   };
 }
