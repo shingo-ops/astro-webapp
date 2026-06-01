@@ -36,7 +36,13 @@ from app.schemas.lead import LeadConvertRequest, LeadCreate, LeadResponse, LeadU
 from app.services import encryption, meta_graph
 from app.services import messaging_window as mw
 from app.services.audit import record_audit_log
-from app.services.meta_graph import MetaGraphAPIError, MetaGraphError, MetaGraphRateLimitError, MetaGraphTimeoutError, MetaGraphTransportError
+from app.services.meta_graph import (
+    MetaGraphAPIError,
+    MetaGraphError,
+    MetaGraphRateLimitError,
+    MetaGraphTimeoutError,
+    MetaGraphTransportError,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -1757,7 +1763,7 @@ async def send_lead_image_message(
                 messaging_type=messaging_type,
                 tag=message_tag,
             )
-    except MetaGraphRateLimitError as e:
+    except MetaGraphRateLimitError:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                             detail={"message": "Meta APIのレート制限に達しました"})
     except MetaGraphTimeoutError:
