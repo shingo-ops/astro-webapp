@@ -699,8 +699,8 @@
 
 /* メッセージバブル内の画像添付 */
 .msg-attachment-img {
-  max-width: 240px;
-  max-height: 200px;
+  max-width: var(--size-msg-attach-w);
+  max-height: var(--size-msg-attach-h);
   border-radius: var(--radius-sm);
   display: block;
   object-fit: cover;
