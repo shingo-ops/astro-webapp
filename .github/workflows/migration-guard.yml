@@ -164,3 +164,51 @@ jobs:
           echo "前例: ADR-045（migration 055）、PR #1277（migration 083）"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           exit 1
+
+      # ──────────────────────────────────────────────────────────────────────
+      # チェック3（新規）: migrations/NNN.sql に {schema} テンプレートリテラル禁止
+      #
+      # 背景: PR #1345 で {schema} プレースホルダをそのまま psql に渡し、
+      #       本番デプロイが約1.5時間停止した（2026-06-01）。
+      #       全テナント対応の正しい形式は DO $$ pg_namespace 走査ループ。
+      # ──────────────────────────────────────────────────────────────────────
+      - name: migration に {schema} テンプレートリテラルが含まれていないか確認
+        if: steps.detect_sql.outputs.new_sql == 'true'
+        run: |
+          FAILED=0
+          IFS='|' read -ra SQL_FILES <<< "${{ steps.detect_sql.outputs.new_sql_files }}"
+          for sql_path in "${SQL_FILES[@]}"; do
+            if grep -q '{schema}' "$sql_path"; then
+              echo "❌ $sql_path に {schema} テンプレートリテラルが含まれています"
+              FAILED=1
+            else
+              echo "✅ $(basename $sql_path) — {schema} なし"
+            fi
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo ""
+            echo "❌ MIGRATION GUARD FAILED (チェック3)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "{schema} プレースホルダは psql に渡すと構文エラーになります。"
+            echo "全テナントへの適用は DO \$\$ pg_namespace 走査形式で書いてください:"
+            echo ""
+            echo "  DO \$\$"
+            echo "  DECLARE schema_record RECORD;"
+            echo "  BEGIN"
+            echo "    FOR schema_record IN"
+            echo "      SELECT nspname AS schema_name FROM pg_namespace"
+            echo "      WHERE nspname LIKE 'tenant_%' ORDER BY nspname"
+            echo "    LOOP"
+            echo "      EXECUTE format("
+            echo "        'ALTER TABLE %I.your_table ADD COLUMN IF NOT EXISTS ...',"
+            echo "        schema_record.schema_name"
+            echo "      );"
+            echo "    END LOOP;"
+            echo "  END \$\$;"
+            echo ""
+            echo "参考: migrations/090_add_lead_contact_links.sql"
+            echo "前例: PR #1345（migration 100）で本番デプロイ1.5h停止"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          fi
