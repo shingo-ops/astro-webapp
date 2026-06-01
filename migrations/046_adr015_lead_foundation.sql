@@ -168,14 +168,20 @@ CREATE TRIGGER trigger_set_updated_at_lead_playbook
 COMMENT ON TABLE {schema}.lead_playbook IS 'ADR-015 §7 テナント別 AI 対応プレイブック（挨拶・質問・アサイン条件のカスタマイズ）';
 
 -- === §3: customer_contact_channels に SNS dedup 用 external_id を追加 ===
+-- ADR-089 Sprint 5 以降、新規テナントには customer_contact_channels が作成されないため
+-- テーブルが存在する場合のみ適用する（冪等性維持）。
+DO $ccc_external_id$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = '{schema_raw}'
+          AND table_name = 'customer_contact_channels'
+    ) THEN
+        ALTER TABLE {schema}.customer_contact_channels
+            ADD COLUMN IF NOT EXISTS external_id VARCHAR(100);
 
-ALTER TABLE {schema}.customer_contact_channels
-    ADD COLUMN IF NOT EXISTS external_id VARCHAR(100);
-
--- (channel, external_id) で既存顧客検索（同一 SNS ユーザーからの再問い合わせ判定）
-CREATE INDEX IF NOT EXISTS idx_ccc_channel_external_id
-    ON {schema}.customer_contact_channels (channel, external_id)
-    WHERE external_id IS NOT NULL;
-
-COMMENT ON COLUMN {schema}.customer_contact_channels.external_id IS
-    'ADR-015 §3 SNS プラットフォーム上のユーザー ID（Discord user_id / Messenger PSID / Instagram IGSID 等）。新規問い合わせ時の既存顧客 dedup に使用';
+        CREATE INDEX IF NOT EXISTS idx_ccc_channel_external_id
+            ON {schema}.customer_contact_channels (channel, external_id)
+            WHERE external_id IS NOT NULL;
+    END IF;
+END $ccc_external_id$;
