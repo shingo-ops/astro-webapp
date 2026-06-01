@@ -485,3 +485,56 @@ class TestInvoicesValidation:
 
         res = await client.post(f"/api/v1/invoices/{created['id']}/void", json={})
         assert res.status_code == 422
+
+
+class TestInvoiceResponseSchema:
+    """InvoiceResponse の堅牢性（後発テナントの NULL contact_id 行）。"""
+
+    def _row(self, **overrides):
+        from datetime import datetime
+
+        row = {
+            "id": 1,
+            "invoice_number": "INV-001",
+            "quote_id": None,
+            "company_id": 10,
+            "contact_id": 20,
+            "currency": "JPY",
+            "subtotal": None,
+            "shipping_fee": None,
+            "tax_amount": None,
+            "total_amount": None,
+            "exchange_rate_jpy": None,
+            "exchange_rate_usd": None,
+            "amount_jpy": None,
+            "amount_usd": None,
+            "payment_method": None,
+            "status": "draft",
+            "branch_number": None,
+            "pdf_url": None,
+            "erp_key": None,
+            "issued_at": None,
+            "due_date": None,
+            "paid_at": None,
+            "voided_at": None,
+            "void_reason": None,
+            "notes": None,
+            "created_by": None,
+            "created_at": datetime(2026, 1, 1, 0, 0, 0),
+            "updated_at": datetime(2026, 1, 1, 0, 0, 0),
+        }
+        row.update(overrides)
+        return row
+
+    def test_contact_id_null_does_not_raise(self):
+        """tenant_006 等の NULL contact_id 行で GET /invoices が 500 にならないこと。"""
+        from app.schemas.invoice import InvoiceResponse
+
+        resp = InvoiceResponse(**self._row(contact_id=None))
+        assert resp.contact_id is None
+        assert resp.company_id == 10
+
+    def test_contact_id_present_still_valid(self):
+        from app.schemas.invoice import InvoiceResponse
+
+        assert InvoiceResponse(**self._row(contact_id=20)).contact_id == 20
