@@ -34,6 +34,13 @@
   max-width: none;
 }
 
+/* 「一覧へ戻る」ボタンが右上固定の .avatar-btn と重ならないよう、
+   PageLayout の .page-layout-header と同じアバタークリアランスを確保する。
+   （本ページは詳細ページ=navKey 非対応のため PageLayout を使わず生の .page-header を使用） */
+.page.super-admin-parse-review-page .page-header {
+  padding-right: var(--page-header-avatar-clearance);
+}
+
 .review-split {
   display: flex;
   gap: var(--space-4);
