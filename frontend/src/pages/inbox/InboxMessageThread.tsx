@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useId } from "react";
 import { useTranslation } from "react-i18next";
 import { INBOX_ACTION_ICONS, NAV_ICONS, PAGE_ICONS } from "../../constants/icons";
 import { ICON } from "../../constants/iconSizes";
@@ -55,6 +55,32 @@ export function InboxMessageThread({
   const { t, i18n } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // 画像添付
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputId = useId();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+
+  const handleAttachClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
+    setAttachedFile(file);
+    e.target.value = "";
+  }, []);
+
+  const clearAttachment = useCallback(() => {
+    setPreviewUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
+    setAttachedFile(null);
+  }, []);
+
+  // 会話切り替えで添付をリセット
+  useEffect(() => { clearAttachment(); }, [selectedLeadId, clearAttachment]);
 
   // Translation state: keyed by message_id
   const [translations, setTranslations] = useState<Record<string, TranslationState>>({});
@@ -315,6 +341,21 @@ export function InboxMessageThread({
           </div>
         )}
         <div className="send-card">
+          {/* 画像プレビュー */}
+          {previewUrl && (
+            <div className="send-attachment-preview">
+              <img src={previewUrl} alt={t("inbox.imagePreviewAlt")} className="send-preview-img" />
+              <button
+                type="button"
+                className="send-preview-remove"
+                onClick={clearAttachment}
+                aria-label={t("inbox.removeAttachment")}
+              >
+                <INBOX_ACTION_ICONS.delete size={ICON.sm} aria-hidden="true" />
+              </button>
+              <span className="send-preview-filename">{attachedFile?.name}</span>
+            </div>
+          )}
           <div className="send-top-row">
             <div className="conv-avatar" style={{ width: 'var(--size-thread-avatar)', height: 'var(--size-thread-avatar)', fontSize: "var(--font-xs)", flexShrink: 0 }}>
               Me
@@ -335,18 +376,40 @@ export function InboxMessageThread({
                 rows={2}
                 disabled={!canSend || sending}
               />
+              {/* 隠し file input */}
+              <input
+                ref={fileInputRef}
+                id={fileInputId}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="sr-only"
+                onChange={handleFileChange}
+                disabled={!canSend || sending}
+                aria-label={t("inbox.attachImage")}
+              />
+              {/* クリップボタン（Meta と同配置: ピル内右端） */}
+              <button
+                type="button"
+                className="send-attach-btn"
+                onClick={handleAttachClick}
+                disabled={!canSend || sending}
+                aria-label={t("inbox.attachImage")}
+                title={t("inbox.attachImage")}
+              >
+                <INBOX_ACTION_ICONS.attach size={ICON.md} aria-hidden="true" />
+              </button>
             </div>
             <button
               type="button"
               className="inbox-send-btn"
               onClick={submitSend}
-              disabled={sendDisabled}
+              disabled={sendDisabled && !attachedFile}
               title={
                 discordDmChannelMissing
                   ? t("inbox.discordDmChannelMissing")
                   : !canSend
                     ? t("inbox.sendDisabled7d")
-                    : trimmedDraft.length === 0
+                    : trimmedDraft.length === 0 && !attachedFile
                       ? t("inbox.messagePlaceholder")
                       : t("inbox.send")
               }

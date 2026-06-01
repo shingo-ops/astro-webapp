@@ -78,7 +78,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "goalSettings": "Goal Settings",
-    "leads": "Customers",
+    "leads": "Leads",
     "leadChat": "Inbox",
     "newLeads": "New Leads",
     "routeCustomers": "Route Customers",
@@ -509,6 +509,9 @@
     "sendDisabled7d": "Messaging window has expired (7 days). Cannot send messages.",
     "discordNotLinked": "Discord not linked",
     "discordDmChannelMissing": "You can reply after the customer sends a message",
+    "attachImage": "Attach image",
+    "imagePreviewAlt": "Attached image preview",
+    "removeAttachment": "Remove attachment",
     "humanAgentTag": "Attach Human Agent Tag (for 24h–7d window)",
     "windowExpired": "Messaging window expired",
     "windowWarning": "Messaging window: less than 24h remaining",

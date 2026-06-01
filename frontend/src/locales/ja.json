@@ -78,7 +78,7 @@
   "nav": {
     "dashboard": "ダッシュボード",
     "goalSettings": "目標設定",
-    "leads": "顧客管理",
+    "leads": "リード",
     "leadChat": "受信箱",
     "newLeads": "新規リード",
     "routeCustomers": "ルート顧客",
@@ -509,6 +509,9 @@
     "sendDisabled7d": "メッセージウィンドウが期限切れ（7日）。メッセージを送信できません。",
     "discordNotLinked": "Discord未連携",
     "discordDmChannelMissing": "顧客からのメッセージを受信後に返信できます",
+    "attachImage": "画像を添付",
+    "imagePreviewAlt": "添付画像プレビュー",
+    "removeAttachment": "添付を削除",
     "humanAgentTag": "ヒューマンエージェントタグを付与（24h〜7d ウィンドウ用）",
     "windowExpired": "メッセージウィンドウ期限切れ",
     "windowWarning": "メッセージウィンドウ: 残り24時間未満",
