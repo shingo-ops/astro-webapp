@@ -2,7 +2,8 @@
  * 顧客管理ハブ（Customer Hub）
  *
  * 管理センターと同パターンの左サブナビ + 右コンテンツ（Outlet）シェル。
- * CRM 関連ページ（リード・会社・担当者・顧客(旧)・アーカイブ）を一元管理する。
+ * CRM 関連ページ（リード・会社・顧客(旧)・アーカイブ）を一元管理する。
+ * 担当者は会社詳細ページの「担当者」タブで管理するためサブナビから除外。
  *
  * ルート: /crm/*
  */
@@ -32,11 +33,6 @@ export default function CustomerHubPage() {
     {
       to: "companies",
       labelKey: "nav.companies",
-      visible: hasPermission("customers.view"),
-    },
-    {
-      to: "contacts",
-      labelKey: "nav.contacts",
       visible: hasPermission("customers.view"),
     },
     {
