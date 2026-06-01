@@ -40,6 +40,7 @@
 | feature/morimoto/profile-section-kana-fields | プロフィール設定かなフィールド追加 | 2026-05-31 | IN_PROGRESS | | |
 | feature/morimoto/move-templates-to-inbox-header | テンプレートをサイドバーから受信箱ヘッダーへ移動 | 2026-05-31 | IN_PROGRESS | | |
 | feature/morimoto/hub-shell-unification | hub-shell 共通化・背景透過 | 2026-05-31 | IN_PROGRESS | | |
+| feature/morimoto/inventory-picker-outside-click | 商品候補ドロップダウンを外側クリックで閉じる修正 | 2026-06-01 | IN_PROGRESS | | |
 ---
 
 ## 記入例
