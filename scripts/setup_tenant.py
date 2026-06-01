@@ -208,6 +208,8 @@ async def _apply_catchup_migrations(engine, tenant_id: int, schema_name: str) ->
         ("014_create_current_tenant_id_function.sql", "014: public.current_tenant_id() 関数"),
         ("042_seed_meta_inbox_permissions.sql", "042: Meta inbox permissions seed"),
         ("043_create_meta_page_routing.sql",    "043: public.meta_page_routing 作成"),
+        # ADR-089: customers テーブル廃止（全テナントループ形式・冪等）
+        ("20260601_140000_drop_customers_tables.sql", "ADR-089: customers 関連テーブル DROP"),
     ]
     for sql_file, desc in public_migrations:
         sql_path = MIGRATIONS_DIR / sql_file
