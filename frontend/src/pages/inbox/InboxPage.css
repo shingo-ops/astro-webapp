@@ -696,6 +696,23 @@
   transition: background var(--transition-micro), color var(--transition-micro);
 }
 .send-preview-remove:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* メッセージバブル内の画像添付 */
+.msg-attachment-img {
+  max-width: var(--size-msg-attach-w);
+  max-height: var(--size-msg-attach-h);
+  border-radius: var(--radius-sm);
+  display: block;
+  object-fit: cover;
+}
+.msg-attachment-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+}
+
 /* 送信ボタン（アイコンのみ・円形・send-top-row 内インライン配置） */
 .inbox-send-btn {
   width: var(--size-icon-btn);

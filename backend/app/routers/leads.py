@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,7 +36,13 @@ from app.schemas.lead import LeadConvertRequest, LeadCreate, LeadResponse, LeadU
 from app.services import encryption, meta_graph
 from app.services import messaging_window as mw
 from app.services.audit import record_audit_log
-from app.services.meta_graph import MetaGraphAPIError, MetaGraphError, MetaGraphRateLimitError, MetaGraphTimeoutError
+from app.services.meta_graph import (
+    MetaGraphAPIError,
+    MetaGraphError,
+    MetaGraphRateLimitError,
+    MetaGraphTimeoutError,
+    MetaGraphTransportError,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -651,22 +657,44 @@ async def list_lead_messages(
         params["before"] = before
     where_sql = " AND ".join(where)
 
-    msg_result = await db.execute(
-        text(f"""
-            SELECT
-                id, platform, sender_id, sender_name, message_text, direction,
-                message_id, recipient_id, messaging_type, message_tag,
-                sent_by_staff_id, error_code, error_message,
-                seen_at, seen_by_staff_id,
-                created_at
-            FROM {meta_messages_t}
-            WHERE {where_sql}
-            ORDER BY created_at ASC, id ASC
-            LIMIT :limit
-        """),
-        params,
-    )
-    msg_rows = msg_result.mappings().all()
+    # attachment_url/attachment_type は migration 097 以降のカラム。未適用環境は graceful fallback。
+    try:
+        msg_result = await db.execute(
+            text(f"""
+                SELECT
+                    id, platform, sender_id, sender_name, message_text, direction,
+                    message_id, recipient_id, messaging_type, message_tag,
+                    sent_by_staff_id, error_code, error_message,
+                    seen_at, seen_by_staff_id,
+                    created_at, attachment_url, attachment_type
+                FROM {meta_messages_t}
+                WHERE {where_sql}
+                ORDER BY created_at ASC, id ASC
+                LIMIT :limit
+            """),
+            params,
+        )
+        msg_rows = msg_result.mappings().all()
+        _has_attachment_cols = True
+    except Exception:
+        # attachment_url/attachment_type カラム未適用テナント / テスト環境
+        msg_result = await db.execute(
+            text(f"""
+                SELECT
+                    id, platform, sender_id, sender_name, message_text, direction,
+                    message_id, recipient_id, messaging_type, message_tag,
+                    sent_by_staff_id, error_code, error_message,
+                    seen_at, seen_by_staff_id,
+                    created_at
+                FROM {meta_messages_t}
+                WHERE {where_sql}
+                ORDER BY created_at ASC, id ASC
+                LIMIT :limit
+            """),
+            params,
+        )
+        msg_rows = msg_result.mappings().all()
+        _has_attachment_cols = False
 
     messages = [
         {
@@ -686,6 +714,8 @@ async def list_lead_messages(
             "seen_at": _meta_msg_format_dt(r["seen_at"]),
             "seen_by_staff_id": r["seen_by_staff_id"],
             "created_at": _meta_msg_format_dt(r["created_at"]),
+            "attachment_url": r["attachment_url"] if _has_attachment_cols else None,
+            "attachment_type": r["attachment_type"] if _has_attachment_cols else None,
         }
         for r in msg_rows
     ]
@@ -1511,6 +1541,346 @@ async def _send_discord_message(
         "sent_at": _meta_msg_format_dt(new_created_at),
         "lead_id": lead_id,
         "platform": "discord",
+    }
+
+
+# ---------------------------------------------------------------------------
+# POST /leads/{lead_id}/messages/image — 画像メッセージ送信
+# ---------------------------------------------------------------------------
+
+# 許可する画像 MIME タイプ（Meta Messenger 対応形式）
+_ALLOWED_IMAGE_TYPES = frozenset({
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+})
+# ファイルサイズ上限: 8MB（Meta 制限は 25MB だが運用バッファを考慮）
+_MAX_IMAGE_BYTES = 8 * 1024 * 1024
+
+
+@router.post(
+    "/leads/{lead_id}/messages/image",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("messaging.send"))],
+)
+async def send_lead_image_message(
+    lead_id: int,
+    image: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """指定 lead に Meta 経由で画像メッセージを送信する（Sprint 2）。
+
+    1. バリデーション: MIME タイプ (image/*) + サイズ (≤8MB)
+    2. lead 存在確認 + platform 推論（text 送信と同じロジック）
+    3. messaging window 判定（Meta のみ）
+    4. Meta Attachment Upload API でアップロード → attachment_id 取得
+    5. Meta Send API で attachment_id を使って送信
+    6. meta_messages に direction='outbound', attachment_type='image' で INSERT
+
+    Discord は画像送信未対応（400）。
+    """
+    # ----- (1) バリデーション -----
+    content_type = image.content_type or ""
+    if content_type not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"サポートされていない画像形式です（{content_type}）。JPEG/PNG/GIF/WebP を使用してください",
+        )
+    file_bytes = await image.read()
+    if len(file_bytes) > _MAX_IMAGE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"ファイルサイズが上限（8MB）を超えています（{len(file_bytes) // 1024 // 1024}MB）",
+        )
+    if not file_bytes:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="空のファイルです")
+
+    # ----- (2) lead 存在 + tenant 確認 -----
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
+    meta_messages_t = tenant_table_ref(db, tenant_id, "meta_messages")
+    tenant_meta_config_t = tenant_table_ref(db, tenant_id, "tenant_meta_config")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
+
+    lead_q = await db.execute(
+        text(f"SELECT {_LEAD_COLUMNS} FROM {leads_t} "
+             "WHERE id = :id AND tenant_id = :tenant_id"),
+        {"id": lead_id, "tenant_id": tenant_id},
+    )
+    lead_row = lead_q.mappings().first()
+    if not lead_row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="リードが見つかりません")
+
+    # ----- (3) 直近 inbound 取得 + platform 推論 -----
+    inbound_q = await db.execute(
+        text(f"""
+            SELECT created_at, sender_id, platform
+            FROM {meta_messages_t}
+            WHERE lead_id = :lead_id AND tenant_id = :tenant_id AND direction = 'inbound'
+            ORDER BY created_at DESC, id DESC LIMIT 1
+        """),
+        {"lead_id": lead_id, "tenant_id": tenant_id},
+    )
+    inbound_row = inbound_q.first()
+    if inbound_row is None:
+        last_inbound_at = None
+        inbound_sender_id = None
+        inbound_platform = None
+    else:
+        last_inbound_at = _meta_msg_parse_aware(inbound_row[0])
+        inbound_sender_id = inbound_row[1]
+        inbound_platform = inbound_row[2]
+
+    source_str = lead_row.get("source") if hasattr(lead_row, "get") else lead_row["source"]
+    platform = inbound_platform
+    if not platform and source_str:
+        if isinstance(source_str, str) and ":" in source_str:
+            prefix = source_str.split(":", 1)[0]
+            if prefix in ("messenger", "instagram", "discord"):
+                platform = prefix
+
+    if platform == "discord":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Discord への画像送信はサポートされていません",
+        )
+    if platform not in ("messenger", "instagram"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="このリードはメッセージング連携されていないため送信できません",
+        )
+
+    # ----- (4) messaging window 判定 -----
+    state = mw.compute_state(last_inbound_at)
+    messaging_type, message_tag = mw.messaging_type_for_state(state)
+    if messaging_type is None:
+        if state == mw.WindowState.EXPIRED:
+            detail = "メッセージウィンドウを超過しています（受信から 7 日以上経過）"
+        else:
+            detail = "受信履歴がないため送信できません"
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+    # ----- (5) recipient_id 解決 -----
+    recipient_id = _extract_recipient_id(source_str, inbound_sender_id)
+    if not recipient_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="送信先 ID が解決できません",
+        )
+
+    # ----- (6) Page Access Token 取得 -----
+    if platform == "messenger":
+        token_q = await db.execute(
+            text(f"""
+                SELECT id, page_id, page_access_token_encrypted, instagram_business_account_id
+                FROM {tenant_meta_config_t}
+                WHERE tenant_id = :tenant_id AND is_active = TRUE
+                ORDER BY connected_at DESC, id DESC LIMIT 1
+            """),
+            {"tenant_id": tenant_id},
+        )
+    else:
+        token_q = await db.execute(
+            text(f"""
+                SELECT id, page_id, page_access_token_encrypted, instagram_business_account_id
+                FROM {tenant_meta_config_t}
+                WHERE tenant_id = :tenant_id AND is_active = TRUE
+                  AND instagram_business_account_id IS NOT NULL
+                ORDER BY connected_at DESC, id DESC LIMIT 1
+            """),
+            {"tenant_id": tenant_id},
+        )
+    config_row = token_q.first()
+    if config_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="送信に使う Meta 接続が見つかりません（Channels 設定で接続してください）",
+        )
+    config_id, page_id_for_send, encrypted_token_blob, ig_business_id = (
+        int(config_row[0]),
+        config_row[1],
+        config_row[2],
+        config_row[3],
+    )
+    try:
+        page_access_token = encryption.decrypt(_decode_token_blob(encrypted_token_blob))
+    except encryption.EncryptionError as e:
+        logger.error("Page Access Token 復号失敗: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="保存トークンの復号に失敗しました",
+        )
+
+    # ----- (7) Attachment Upload → attachment_id -----
+    pid_str = str(page_id_for_send) if page_id_for_send else "me"
+    filename = image.filename or f"image.{content_type.split('/')[-1]}"
+    try:
+        attachment_id = await meta_graph.upload_attachment(
+            page_id=pid_str,
+            page_access_token=page_access_token,
+            file_bytes=file_bytes,
+            content_type=content_type,
+            filename=filename,
+        )
+    except MetaGraphAPIError as e:
+        logger.warning("Attachment Upload API error for lead %s: %s", lead_id, e.error_type)
+        await _record_send_audit_safely(
+            db, tenant_id=tenant_id, user_id=current_user.id,
+            action="meta_image_upload_failed", record_id=config_id,
+            new_data={"lead_id": lead_id, "meta_error": e.to_audit_dict()},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"detail": "画像アップロードに失敗しました", "error_code": e.error_code},
+        )
+    except MetaGraphTimeoutError:
+        raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail="画像アップロードがタイムアウトしました")
+    except MetaGraphTransportError as e:
+        logger.warning("Attachment Upload transport error for lead %s: %s", lead_id, e)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="画像アップロードへの接続に失敗しました")
+
+    # ----- (8) Meta Send API で attachment_id 送信 -----
+    try:
+        if platform == "messenger":
+            send_result = await meta_graph.send_messenger_attachment(
+                page_access_token=page_access_token,
+                recipient_id=recipient_id,
+                attachment_id=attachment_id,
+                messaging_type=messaging_type,
+                tag=message_tag,
+                page_id=pid_str,
+            )
+        else:  # instagram
+            if not ig_business_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Instagram Business Account が紐づいていません",
+                )
+            send_result = await meta_graph.send_instagram_attachment(
+                page_access_token=page_access_token,
+                page_id=pid_str,
+                recipient_id=recipient_id,
+                attachment_id=attachment_id,
+                messaging_type=messaging_type,
+                tag=message_tag,
+            )
+    except MetaGraphRateLimitError:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                            detail={"message": "Meta APIのレート制限に達しました"})
+    except MetaGraphTimeoutError:
+        raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail="Meta Send API がタイムアウトしました")
+    except MetaGraphAPIError as e:
+        logger.warning("Meta Send API error (image) for lead %s: %s", lead_id, e.error_type)
+        await _record_send_audit_safely(
+            db, tenant_id=tenant_id, user_id=current_user.id,
+            action="meta_image_send_failed", record_id=config_id,
+            new_data={"lead_id": lead_id, "meta_error": e.to_audit_dict()},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"detail": "Meta Send API がエラーを返しました", "error_code": e.error_code},
+        )
+    except MetaGraphError as e:
+        logger.warning("Meta Send transport error (image) for lead %s: %s", lead_id, e)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Meta Send API への接続に失敗しました")
+
+    # ----- (9) sent_by_staff_id 解決 -----
+    sent_by_staff_id: Optional[int] = None
+    if current_user.email:
+        try:
+            sr = await db.execute(
+                text(f"SELECT id FROM {staff_t} WHERE primary_email = :email ORDER BY id ASC LIMIT 1"),
+                {"email": current_user.email},
+            )
+            row = sr.first()
+            if row:
+                sent_by_staff_id = int(row[0])
+        except Exception:
+            sent_by_staff_id = None
+
+    # ----- (10) meta_messages に outbound 行 INSERT -----
+    sender_id = page_id_for_send if platform == "messenger" else (ig_business_id or page_id_for_send)
+    page_id_for_message = page_id_for_send if platform == "messenger" else None
+    insert_params = {
+        "tenant_id": tenant_id,
+        "lead_id": lead_id,
+        "platform": platform,
+        "sender_id": str(sender_id) if sender_id is not None else None,
+        "message_id": send_result.get("message_id"),
+        "recipient_id": recipient_id,
+        "messaging_type": messaging_type,
+        "message_tag": message_tag,
+        "sent_by_staff_id": sent_by_staff_id,
+        "page_id": page_id_for_message,
+        "attachment_type": "image",
+    }
+    insert_result = await db.execute(
+        text(f"""
+            INSERT INTO {meta_messages_t} (
+                tenant_id, lead_id, platform, sender_id, message_text,
+                direction, message_id, recipient_id,
+                messaging_type, message_tag, sent_by_staff_id, page_id,
+                attachment_type, created_at
+            )
+            VALUES (
+                :tenant_id, :lead_id, :platform, :sender_id, '',
+                'outbound', :message_id, :recipient_id,
+                :messaging_type, :message_tag, :sent_by_staff_id, :page_id,
+                :attachment_type, NOW()
+            )
+            RETURNING id, created_at
+        """),
+        insert_params,
+    )
+    new_row = insert_result.first()
+    if new_row is None:
+        await db.execute(
+            text(f"""
+                INSERT INTO {meta_messages_t} (
+                    tenant_id, lead_id, platform, sender_id, message_text,
+                    direction, message_id, recipient_id,
+                    messaging_type, message_tag, sent_by_staff_id, page_id,
+                    attachment_type, created_at
+                )
+                VALUES (
+                    :tenant_id, :lead_id, :platform, :sender_id, '',
+                    'outbound', :message_id, :recipient_id,
+                    :messaging_type, :message_tag, :sent_by_staff_id, :page_id,
+                    :attachment_type, NOW()
+                )
+            """),
+            insert_params,
+        )
+        last_id_row = await db.execute(text("SELECT last_insert_rowid(), CURRENT_TIMESTAMP"))
+        new_id_row = last_id_row.first()
+        new_id = int(new_id_row[0]) if new_id_row else 0
+        new_created_at = new_id_row[1] if new_id_row else None
+    else:
+        new_id = int(new_row[0])
+        new_created_at = new_row[1]
+
+    await _record_send_audit_safely(
+        db, tenant_id=tenant_id, user_id=current_user.id,
+        action="meta_image_sent", record_id=new_id,
+        new_data={
+            "lead_id": lead_id,
+            "platform": platform,
+            "messaging_type": messaging_type,
+            "message_tag": message_tag,
+            "message_id": send_result.get("message_id"),
+            "attachment_type": "image",
+        },
+    )
+    await db.commit()
+
+    return {
+        "id": new_id,
+        "message_id": send_result.get("message_id"),
+        "messaging_type": messaging_type,
+        "message_tag": message_tag,
+        "sent_at": _meta_msg_format_dt(new_created_at),
+        "lead_id": lead_id,
+        "platform": platform,
+        "attachment_type": "image",
     }
 
 

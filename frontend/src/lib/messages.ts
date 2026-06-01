@@ -58,6 +58,8 @@ export interface Message {
   seen_at: string | null;
   seen_by_staff_id: number | null;
   created_at: string | null;
+  attachment_url: string | null;
+  attachment_type: string | null;
 }
 
 export interface MessagingWindow {
@@ -190,6 +192,21 @@ export async function sendMessage(
     `/leads/${leadId}/messages`,
     { text: request.text },
   );
+}
+
+/**
+ * POST /api/v1/leads/{lead_id}/messages/image
+ *
+ * 画像ファイルを multipart/form-data で送信する。
+ * 失敗時は ApiError を throw。
+ */
+export async function sendImageMessage(
+  leadId: number,
+  file: File,
+): Promise<SendMessageResponse> {
+  const form = new FormData();
+  form.append("image", file);
+  return api.postForm<SendMessageResponse>(`/leads/${leadId}/messages/image`, form);
 }
 
 // ---------------------------------------------------------------------------

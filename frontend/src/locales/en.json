@@ -513,6 +513,7 @@
     "attachImage": "Attach image",
     "imagePreviewAlt": "Attached image preview",
     "removeAttachment": "Remove attachment",
+    "imageSent": "Image",
     "humanAgentTag": "Attach Human Agent Tag (for 24h–7d window)",
     "windowExpired": "Messaging window expired",
     "windowWarning": "Messaging window: less than 24h remaining",
