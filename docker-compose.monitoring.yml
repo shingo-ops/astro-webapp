@@ -155,6 +155,11 @@ services:
       - no-new-privileges:true
 
   loki:
+    # ログ集約: アプリ VPS の Promtail (docker-compose.exporters.yml) が
+    # discord-gateway コンテナのログを収集し、SSH 逆トンネル経由で push。
+    # discord-gateway ログクエリ: {job="containerlogs", container_name=~".*discord.*"}
+    # DM 受信エラー確認:         {job="containerlogs"} |= "[dm_writer]" |= "失敗"
+    # Loki アラートルール:        monitoring/loki/rules/jarvis/alerts.yml::discord_gateway
     image: grafana/loki:3.7.2
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
