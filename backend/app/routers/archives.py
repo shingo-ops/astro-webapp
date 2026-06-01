@@ -28,7 +28,7 @@ from app.services.audit import record_audit_log
 
 router = APIRouter()
 
-ARCHIVABLE_TABLES = {"customers", "deals", "orders", "leads", "quotes", "invoices"}
+ARCHIVABLE_TABLES = {"deals", "orders", "leads", "quotes", "invoices"}
 
 
 class ArchiveRequest(BaseModel):
