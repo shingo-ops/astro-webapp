@@ -660,6 +660,8 @@
     "stage_won": "Won",
     "stage_lost": "Lost",
     "stage_on_hold": "On hold",
+    "leadSource": "Lead source",
+    "leadSourcePlaceholder": "e.g., Web inquiry, Instagram, Referral",
     "deleteConfirmSuffix": "will be deleted.",
     "deleteConstraint": "Cannot delete if there are associated orders (please delete those first).",
     "subtitle": "Manage deal stages and probabilities."

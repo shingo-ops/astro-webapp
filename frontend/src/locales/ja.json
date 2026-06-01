@@ -660,6 +660,8 @@
     "stage_won": "成約",
     "stage_lost": "失注",
     "stage_on_hold": "保留",
+    "leadSource": "流入元",
+    "leadSourcePlaceholder": "例: Web問い合わせ、Instagram、紹介",
     "deleteConfirmSuffix": "を削除します。",
     "deleteConstraint": "関連する注文がある場合は削除できません（先に注文を削除してください）。",
     "subtitle": "商談のステージと確度を管理します。"
