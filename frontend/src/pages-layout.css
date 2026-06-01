@@ -92,6 +92,8 @@
 
 .page-layout-content--no-scroll {
   overflow-y: hidden;
+  /* noScrollページ（受信箱）は自分でpaddingを管理するため上書き */
+  padding: 0;
 }
 
 /* ============================================================
