@@ -12,6 +12,7 @@ from __future__ import annotations
     （resolver / customer 経路廃止、company_id + contact_id を唯一の正に）
 """
 
+import asyncio
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -53,7 +54,8 @@ _LEAD_COLUMNS = """
     nickname, country, target_titles,
     messenger_link, discord_id,
     instagram_link, whatsapp_link,
-    discord_user_id, discord_dm_channel_id
+    discord_user_id, discord_dm_channel_id,
+    discord_role_sync_status, discord_role_sync_at
 """
 
 _UPDATABLE_COLUMNS = {
@@ -358,6 +360,27 @@ async def update_lead(
         await publish_leads_update(tenant_id)
     except Exception:
         logging.warning("[Leads] SSE publish 失敗（リード更新継続）: tenant_id=%s", tenant_id)
+
+    # Discord ロール同期 (fire-and-forget, AC2.7)
+    # estimated_scale が変更され、discord_user_id が設定されている場合のみ
+    if "estimated_scale" in update_data:
+        discord_user_id_val = str(row.get("discord_user_id") or "")
+        new_scale_val = str(update_data.get("estimated_scale") or "")
+        if discord_user_id_val and new_scale_val:
+            try:
+                from app.services.discord_role_sync import sync_lead_discord_role
+                asyncio.create_task(
+                    sync_lead_discord_role(
+                        tenant_id=tenant_id,
+                        lead_id=lead_id,
+                        discord_user_id=discord_user_id_val,
+                        new_scale=new_scale_val,
+                    )
+                )
+            except Exception:
+                logger.warning(
+                    "[leads] Discord role sync task creation failed lead=%d", lead_id,
+                )
 
     return LeadResponse(**row)
 
