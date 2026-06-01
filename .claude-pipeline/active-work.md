@@ -47,6 +47,9 @@
 | feature/morimoto/header-btn-size-unify | ヘッダーアクションボタンサイズ統一 | 2026-06-01 | IN_PROGRESS | | |
 | feature/morimoto/discord-bot-token-deploy | （記入してください） | 2026-06-01 13:12 | IN_PROGRESS | | |
 | feature/morimoto/discord-integration-d1 | （記入してください） | 2026-06-01 13:58 | IN_PROGRESS | | |
+| feature/morimoto/hotfix-backend-500s | （記入してください） | 2026-06-01 15:40 | IN_PROGRESS | | |
+| feature/morimoto/deal-lead-source | （記入してください） | 2026-06-01 15:56 | IN_PROGRESS | | |
+| feature/morimoto/inbox-send-btn-paper-airplane | 受信箱Sendボタン紙飛行機アイコン・インライン配置 | 2026-06-01 | IN_PROGRESS | | |
 ---
 
 ## 記入例
