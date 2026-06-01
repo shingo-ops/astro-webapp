@@ -39,8 +39,34 @@ groups:
           summary: "バックエンドのエラーログが急増しています"
           description: "直近5分間にERROR/Exceptionが30件以上検出されました。"
 
-      # PostgreSQLエラーログ検知
-      - alert: DatabaseError
+  - name: discord_gateway
+    rules:
+      # Discord Gateway 切断 / 再接続失敗（DM 受信箱に影響）
+      - alert: DiscordGatewayReconnectFailure
+        expr: |
+          sum(count_over_time({job="containerlogs", container_name=~".*discord.*"} |~ "reconnect|LoginFailure|RuntimeError|接続失敗" [10m])) > 3
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Discord Gateway が再接続に繰り返し失敗しています"
+          description: "直近10分間に reconnect/LoginFailure ログが3件以上。DM 受信が停止している可能性があります。"
+
+      # dm_writer DB 書き込みエラー（lead 取得失敗）
+      - alert: DiscordDmWriterError
+        expr: |
+          sum(count_over_time({job="containerlogs", container_name=~".*discord.*"} |= "[dm_writer]" |~ "失敗|ERROR|error" [5m])) > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Discord DM 受信箱への書き込みエラーが発生しています"
+          description: "dm_writer が5分間に5件以上のエラーを出力しました。DB 接続またはスキーマを確認してください。"
+
+  - name: error_anomaly
+    rules:
+      # バックエンドのエラーログ急増（5分間に30件以上）
+      - alert: BackendErrorSpike
         expr: |
           sum(count_over_time({job="containerlogs", container_name=~".*postgres.*"} |~ "ERROR|FATAL|PANIC" [5m])) > 5
         for: 1m

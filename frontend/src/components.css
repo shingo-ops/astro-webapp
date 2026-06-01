@@ -300,6 +300,12 @@
 .badge-won, .badge-confirmed, .badge-delivered { background: var(--success-bg); color: var(--success-text); }
 .badge-lost, .badge-cancelled { background: var(--danger-bg); color: var(--danger-text); }
 .badge-on_hold, .badge-shipped { background: var(--purple-bg); color: var(--purple-text); }
+/* 受注ステータス（migration 090） */
+.badge-awaiting_payment { background: var(--warning-bg); color: var(--warning-text); }
+.badge-sourcing { background: var(--info-bg); color: var(--info-text); }
+.badge-awaiting_shipping { background: var(--purple-bg); color: var(--purple-text); }
+.badge-completed { background: var(--success-bg); color: var(--success-text); }
+.badge-trouble { background: var(--danger-bg); color: var(--danger-text); }
 
 /* PR #145 Q2: pending_dedup_review の status badge と行ハイライト
    companies / contacts の <span class="status-badge status-pending_dedup_review">
@@ -492,10 +498,16 @@
 .page-header-actions .icon-btn:hover {
   border-color: var(--border-icon);
 }
-/* stylelint-disable no-descending-specificity -- intentional: header context overrides base btn-ghost/icon-btn */
-.page-header-actions .btn-ghost {
+/* stylelint-disable no-descending-specificity -- intentional: header context overrides base button variants */
+.page-header-actions .btn-ghost,
+.page-header-actions .btn-primary,
+.page-header-actions .btn-secondary {
   font-size: var(--font-sm);
   height: var(--size-icon-btn);
+  padding-top: 0;
+  padding-bottom: 0;
+  display: flex;
+  align-items: center;
 }
 /* stylelint-enable no-descending-specificity */
 

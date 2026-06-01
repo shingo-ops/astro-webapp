@@ -37,11 +37,11 @@ export function useOrdersState() {
   const { t } = useTranslation();
 
   const STATUS_LABELS: Record<string, string> = {
-    pending: t("orders.status_pending"),
-    processing: t("orders.status_processing"),
-    shipped: t("orders.status_shipped"),
-    delivered: t("orders.status_delivered"),
-    returned: t("orders.status_returned"),
+    awaiting_payment: t("orders.status_awaiting_payment"),
+    sourcing: t("orders.status_sourcing"),
+    awaiting_shipping: t("orders.status_awaiting_shipping"),
+    completed: t("orders.status_completed"),
+    trouble: t("orders.status_trouble"),
     cancelled: t("orders.status_cancelled"),
   };
 

@@ -12,7 +12,7 @@
 
 import "./InboxPage.css";
 import { useNavigate } from "react-router-dom";
-import { NAV_ICONS, PAGE_ICONS } from "../../constants/icons";
+import { PAGE_ICONS } from "../../constants/icons";
 import { PageLayout } from "../../components/PageLayout";
 import { ICON } from "../../constants/iconSizes";
 import { useInboxState } from "./useInboxState";
@@ -63,15 +63,6 @@ export default function InboxPage() {
       <button
         type="button"
         className="icon-btn"
-        onClick={() => navigate("/templates")}
-        aria-label={t("nav.templates")}
-        data-tooltip={t("nav.templates")}
-      >
-        <NAV_ICONS.fileText size={ICON.md} aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        className="icon-btn"
         onClick={() => setShowSettings(true)}
         aria-label={t("inbox.settings.title")}
         data-tooltip={t("inbox.settings.tooltip")}
@@ -105,6 +96,7 @@ export default function InboxPage() {
                 <option value="all">{t("inbox.platformAll")}</option>
                 <option value="messenger">{t("inbox.platformMessenger")}</option>
                 <option value="instagram">{t("inbox.platformInstagram")}</option>
+                <option value="discord">{t("inbox.platformDiscord")}</option>
               </select>
             </div>
 
@@ -145,6 +137,7 @@ export default function InboxPage() {
               <InboxMessageThread
                 selectedLeadId={selectedLeadId}
                 selectedConversation={selectedConversation}
+                leadDetail={leadDetail}
                 messagesData={state.messagesData}
                 msgLoading={state.msgLoading}
                 msgError={state.msgError}
@@ -164,6 +157,7 @@ export default function InboxPage() {
                 sendError={state.sendError}
                 sendDisabled={state.sendDisabled}
                 canSend={state.canSend}
+                discordDmChannelMissing={state.discordDmChannelMissing}
                 trimmedDraft={state.trimmedDraft}
                 submitSend={state.submitSend}
                 handleKeyDown={state.handleKeyDown}

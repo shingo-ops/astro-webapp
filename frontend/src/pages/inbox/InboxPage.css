@@ -265,7 +265,9 @@
 /* 会話リスト */
 .inbox-conversation-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* 会話アイテム — Meta実測: padding=12px, h=92px, borderなし */
@@ -439,6 +441,19 @@
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.discord-unlinked-badge {
+  font-size: var(--font-2xs);
+  font-weight: var(--font-weight-semi);
+  color: var(--color-warning-text, var(--text-muted));
+  background: var(--color-warning-subtle, var(--bg-subtle));
+  border-radius: var(--radius-badge);
+  padding: var(--space-2px) var(--space-6px);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .inbox-thread-actions {
   display: flex;
@@ -471,7 +486,9 @@
 }
 .inbox-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
@@ -515,11 +532,64 @@
 }
 .msg-time.inbound { text-align: left; }
 
-/* 送信エリア — Meta実測: 白角丸カード(br=8px) + 左側に送信者アバター */
+/* ADR-088: メッセージ翻訳ボタン */
+.msg-translate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2px);
+  margin-left: var(--space-1);
+  border-radius: var(--radius-sm);
+  opacity: var(--opacity-secondary);
+  transition: opacity var(--transition-micro), background var(--transition-micro);
+  vertical-align: middle;
+  color: inherit;
+}
+.msg-translate-btn:hover {
+  opacity: 1;
+  background: var(--bg-hover);
+}
+.msg-translate-btn:disabled {
+  opacity: var(--opacity-muted);
+  cursor: not-allowed;
+}
+
+/* ADR-088: 翻訳結果表示 */
+.msg-translation {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-light);
+  font-size: var(--font-sm);
+  line-height: 1.4;
+}
+.msg-translation--loading {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.msg-translation--error {
+  color: var(--danger-text);
+  font-size: var(--font-xs);
+}
+.msg-translation-text {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg-translation-badge {
+  display: inline-block;
+  margin-top: var(--space-1);
+  font-size: var(--font-2xs);
+  opacity: var(--opacity-muted);
+  font-style: italic;
+}
+
+/* 送信エリア — Meta実測: 白角丸カード(br=8px) + 左側に送信者アバター
+   sticky / flex-shrink:0 / z-index / background は .sticky-bottom-bar（pages-layout.css）に委譲 */
 .inbox-send-area {
   padding: var(--space-1) var(--space-3) var(--space-3);
-  flex-shrink: 0;
-  background: var(--bg-surface);
 }
 /* 白い角丸ボックス（Meta実測: bg=white, br=8px → 12px に拡大） */
 .send-card {
@@ -598,6 +668,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overscroll-behavior: contain;
   border-top-left-radius: var(--radius-sm);
   border-top-right-radius: var(--radius-sm);
 }
@@ -945,7 +1016,8 @@
     border-bottom: 1px solid var(--border);
     overflow-y: auto;
   }
-  .inbox-center  { width: 100%; flex: 1; min-height: var(--inbox-center-min-h); }
+  /* overflow:hidden を明示してデスクトップと sticky スコープを統一 */
+  .inbox-center  { width: 100%; flex: 1; min-height: var(--inbox-center-min-h); overflow: hidden; }
   .msg-bubble    { max-width: 85%; }
   .inbox-send-btn { padding: var(--space-2) var(--space-4); }
   .inbox-search-row { padding: var(--space-2) var(--space-2) var(--space-1); }

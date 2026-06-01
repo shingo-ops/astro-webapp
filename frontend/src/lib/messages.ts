@@ -98,7 +98,7 @@ export interface SendMessageResponse {
   platform: string;
 }
 
-export type PlatformFilter = "all" | "messenger" | "instagram";
+export type PlatformFilter = "all" | "messenger" | "instagram" | "discord";
 
 // ---------------------------------------------------------------------------
 // 表示ヘルパ（Phase 1-E F24-S5: platform 推論を一箇所に集約）
@@ -124,6 +124,7 @@ export function inferPlatform(
 export function platformLabel(p: string | null): string {
   if (p === "messenger") return "Messenger";
   if (p === "instagram") return "Instagram";
+  if (p === "discord") return "Discord";
   return p || "—";
 }
 
@@ -188,5 +189,31 @@ export async function sendMessage(
   return api.post<SendMessageResponse>(
     `/leads/${leadId}/messages`,
     { text: request.text },
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ADR-088: メッセージ翻訳
+// ---------------------------------------------------------------------------
+
+export interface TranslateMessageResponse {
+  translated_text: string;
+  cached: boolean;
+  engine: string;
+}
+
+/**
+ * POST /api/v1/leads/{lead_id}/messages/{message_id}/translate
+ *
+ * AI 翻訳をリクエストする。キャッシュがあれば即座に返却される。
+ */
+export async function translateMessage(
+  leadId: number,
+  messageId: string,
+  targetLanguage: string,
+): Promise<TranslateMessageResponse> {
+  return api.post<TranslateMessageResponse>(
+    `/leads/${leadId}/messages/${messageId}/translate`,
+    { target_language: targetLanguage },
   );
 }

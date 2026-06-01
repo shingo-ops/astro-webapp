@@ -188,7 +188,16 @@ docker compose logs backend | grep -i "webhook" | tail -20
   -- 既存 staff の場合は確認のみ
   SELECT id, email, role_id FROM tenant_006.staff WHERE email = 'review@salesanchor.jp';
   ```
-- [ ] パスワードを安全な場所に保管（**注意**: 過去 setup ではコンテナ `/tmp` 保存で再起動消失リスクあり。今後の setup は永続保管必須）
+- [ ] パスワードを VPS ホスト側の永続ファイルに保管（コンテナ `/tmp` は再起動で消えるため必須）:
+  ```bash
+  # スクリプト実行直後に以下を実行してホスト側に保存する
+  docker compose exec -T backend cat /tmp/review_tenant_setup_*.txt \
+    > /home/ubuntu/salesanchor/review-tenant-password.txt
+  chmod 600 /home/ubuntu/salesanchor/review-tenant-password.txt
+  # 確認
+  cat /home/ubuntu/salesanchor/review-tenant-password.txt
+  ```
+  **注意**: デプロイ（`docker compose up --build`）でコンテナが再起動するたびに `/tmp` は消える。保存前に再起動した場合はスクリプトを再実行すること（Firebase・DB 両方が更新される）。
 - [ ] Firebase Auth で同 Email を 1 アカウント作成 + 当該 `tenant_006.staff.id` と紐付け済
 - [ ] tenant_006 ログイン後の URL 末尾が `?tenant_code=tenant-review` 等で識別できることを確認
 

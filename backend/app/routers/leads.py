@@ -50,7 +50,10 @@ _LEAD_COLUMNS = """
     converted_deal_id, notes, created_at, updated_at,
     next_action, next_action_date, challenge, meeting_memo, meeting_impression,
     cs_memo, sales_form, competitor_check, per_order_amount, monthly_frequency,
-    nickname, country, target_titles
+    nickname, country, target_titles,
+    messenger_link, discord_id,
+    instagram_link, whatsapp_link,
+    discord_user_id, discord_dm_channel_id
 """
 
 _UPDATABLE_COLUMNS = {
@@ -62,6 +65,10 @@ _UPDATABLE_COLUMNS = {
     "next_action", "next_action_date", "challenge", "meeting_memo",
     "meeting_impression", "cs_memo", "sales_form", "competitor_check",
     "per_order_amount", "monthly_frequency", "nickname", "country", "target_titles",
+    # Migration 090: 連絡先リンク
+    "messenger_link", "discord_id",
+    # Migration 095: ソーシャルリンク
+    "instagram_link", "whatsapp_link",
 }
 
 
@@ -690,6 +697,18 @@ async def list_lead_messages(
     last_inbound_raw = inbound_q.scalar()
     last_inbound_at = _meta_msg_parse_aware(last_inbound_raw)
 
+    # Discord は 24h 制限なし → 常に送信可能
+    if latest_platform == "discord":
+        messaging_window: dict = {
+            "last_inbound_at": None,
+            "expires_at": None,
+            "can_send_response": True,
+            "requires_human_agent_tag": False,
+            "can_send_at_all": True,
+        }
+    else:
+        messaging_window = _compute_messaging_window(last_inbound_at)
+
     return {
         "messages": messages,
         "lead": {
@@ -699,7 +718,7 @@ async def list_lead_messages(
             "platform": latest_platform,
             "source": lead_row["source"],
         },
-        "messaging_window": _compute_messaging_window(last_inbound_at),
+        "messaging_window": messaging_window,
     }
 
 
@@ -795,6 +814,114 @@ async def mark_lead_messages_read(
     await db.commit()
 
     return {"marked_count": marked}
+
+
+# ---------------------------------------------------------------------------
+# ADR-088: メッセージ翻訳
+# ---------------------------------------------------------------------------
+
+
+class _TranslateRequest(BaseModel):
+    """翻訳リクエスト body。"""
+    target_language: str = Field(min_length=2, max_length=10)
+
+
+@router.post(
+    "/leads/{lead_id}/messages/{message_id}/translate",
+    dependencies=[Depends(require_permission("messaging.view"))],
+)
+async def translate_message_endpoint(
+    lead_id: int,
+    message_id: str,
+    body: _TranslateRequest,
+    db: AsyncSession = Depends(get_db),
+    tenant_id: int = Depends(get_current_tenant),
+    current_user: User = Depends(get_current_user),
+):
+    """指定メッセージを AI 翻訳する（ADR-088）。
+
+    キャッシュヒット時は Gemini 未呼び出しで即返却。
+    予算超過時は 429 を返す。
+    """
+    from app.services.inventory_parser_llm import LLMConfigError, LLMParseError
+    from app.services.message_translator import (
+        BudgetExceededError,
+        translate_message,
+    )
+
+    if not message_id or message_id.strip() == "":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="message_id is required",
+        )
+
+    # lead 存在確認
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
+    lead_q = await db.execute(
+        text(f"SELECT id FROM {leads_t} WHERE id = :id AND tenant_id = :tenant_id"),
+        {"id": lead_id, "tenant_id": tenant_id},
+    )
+    if lead_q.first() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="リードが見つかりません",
+        )
+
+    # message 存在確認 & テキスト取得
+    meta_messages_t = tenant_table_ref(db, tenant_id, "meta_messages")
+    msg_q = await db.execute(
+        text(
+            f"SELECT message_text FROM {meta_messages_t} "
+            "WHERE message_id = :message_id AND lead_id = :lead_id AND tenant_id = :tenant_id"
+        ),
+        {"message_id": message_id, "lead_id": lead_id, "tenant_id": tenant_id},
+    )
+    msg_row = msg_q.first()
+    if msg_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="メッセージが見つかりません",
+        )
+
+    message_text = msg_row[0]
+    if not message_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="メッセージ本文が空です",
+        )
+
+    translations_t = tenant_table_ref(db, tenant_id, "message_translations")
+
+    try:
+        result = await translate_message(
+            db=db,
+            tenant_id=tenant_id,
+            table_ref=translations_t,
+            message_id=message_id,
+            message_text=message_text,
+            target_language=body.target_language,
+        )
+    except BudgetExceededError:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="LLM budget exceeded for this month",
+        )
+    except LLMConfigError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        )
+    except LLMParseError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        )
+
+    return {
+        "translated_text": result.translated_text,
+        "cached": result.cached,
+        "engine": result.engine,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -933,15 +1060,26 @@ async def send_lead_message(
     if not platform and source_str:
         if isinstance(source_str, str) and ":" in source_str:
             prefix = source_str.split(":", 1)[0]
-            if prefix in ("messenger", "instagram"):
+            if prefix in ("messenger", "instagram", "discord"):
                 platform = prefix
-    if platform not in ("messenger", "instagram"):
+    if platform not in ("messenger", "instagram", "discord"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="このリードはメタ系の会話ではないため送信できません",
+            detail="このリードはメッセージング連携されていないため送信できません",
         )
 
-    # ----- (3) messaging window 判定 -----
+    # ----- (2b) Discord 送信経路（messaging_window 不要）-----
+    if platform == "discord":
+        return await _send_discord_message(
+            db=db,
+            tenant_id=tenant_id,
+            lead_id=lead_id,
+            lead_row=lead_row,
+            text_body=text_body,
+            current_user=current_user,
+        )
+
+    # ----- (3) messaging window 判定（Meta のみ）-----
     state = mw.compute_state(last_inbound_at)
     messaging_type, message_tag = mw.messaging_type_for_state(state)
     if messaging_type is None:
@@ -1232,6 +1370,125 @@ async def _record_send_audit_safely(
         )
     except Exception:
         logger.warning("audit_log 記録に失敗（無視して継続）", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# Discord DM 送信ヘルパ
+# ---------------------------------------------------------------------------
+
+
+async def _send_discord_message(
+    *,
+    db: AsyncSession,
+    tenant_id: int,
+    lead_id: int,
+    lead_row,
+    text_body: str,
+    current_user,
+) -> dict:
+    """Discord DM 経由でメッセージを送信し、meta_messages に outbound 行を INSERT して返す。
+
+    messaging_window 制約なし（Discord は 24h 制限を持たない）。
+    discord_dm_channel_id が未設定（顧客からのメッセージ受信前）の場合は 409。
+    Bot Token が未設定の場合も 409。
+    Discord API エラーは 502。
+    """
+    from app.services.discord_sender import DiscordSendError, send_discord_dm
+
+    leads_t = tenant_table_ref(db, tenant_id, "leads")
+    meta_messages_t = tenant_table_ref(db, tenant_id, "meta_messages")
+    staff_t = tenant_table_ref(db, tenant_id, "staff")
+
+    # discord_dm_channel_id を leads から取得
+    ch_q = await db.execute(
+        text(f"SELECT discord_user_id, discord_dm_channel_id FROM {leads_t} "
+             "WHERE id = :id AND tenant_id = :tenant_id"),
+        {"id": lead_id, "tenant_id": tenant_id},
+    )
+    ch_row = ch_q.first()
+    if ch_row is None or not ch_row[1]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Discord DM チャンネルが設定されていません。"
+                "顧客から先にメッセージを受信すると自動設定されます。"
+            ),
+        )
+    discord_user_id = ch_row[0]
+    dm_channel_id = str(ch_row[1])
+
+    # Discord Bot API で送信
+    try:
+        discord_msg_id = await send_discord_dm(
+            tenant_id=tenant_id,
+            dm_channel_id=dm_channel_id,
+            text=text_body,
+        )
+    except DiscordSendError as e:
+        logger.warning("Discord DM 送信失敗 lead=%s: %s", lead_id, e)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Discord 送信エラー: {e}",
+        )
+
+    # sent_by_staff_id 解決
+    sent_by_staff_id: Optional[int] = None
+    if current_user.email:
+        try:
+            sr = await db.execute(
+                text(f"SELECT id FROM {staff_t} WHERE primary_email = :email "
+                     "ORDER BY id ASC LIMIT 1"),
+                {"email": current_user.email},
+            )
+            row = sr.first()
+            if row:
+                sent_by_staff_id = int(row[0])
+        except Exception:
+            sent_by_staff_id = None
+
+    # meta_messages に outbound 行 INSERT
+    insert_result = await db.execute(
+        text(f"""
+            INSERT INTO {meta_messages_t}
+                (tenant_id, lead_id, platform, sender_id, message_text,
+                 direction, message_id, recipient_id,
+                 sent_by_staff_id, created_at)
+            VALUES
+                (:tenant_id, :lead_id, 'discord', :sender_id, :text,
+                 'outbound', :message_id, :recipient_id,
+                 :sent_by_staff_id, NOW())
+            RETURNING id, created_at
+        """),
+        {
+            "tenant_id": tenant_id,
+            "lead_id": lead_id,
+            "sender_id": f"bot:{tenant_id}",
+            "text": text_body,
+            "message_id": discord_msg_id,
+            "recipient_id": discord_user_id,
+            "sent_by_staff_id": sent_by_staff_id,
+        },
+    )
+    new_row = insert_result.first()
+    new_id = int(new_row[0]) if new_row else 0
+    new_created_at = new_row[1] if new_row else None
+
+    await _record_send_audit_safely(
+        db, tenant_id=tenant_id, user_id=current_user.id,
+        action="discord_message_sent", record_id=new_id,
+        new_data={"lead_id": lead_id, "platform": "discord", "message_id": discord_msg_id},
+    )
+    await db.commit()
+
+    return {
+        "id": new_id,
+        "message_id": discord_msg_id,
+        "messaging_type": None,
+        "message_tag": None,
+        "sent_at": _meta_msg_format_dt(new_created_at),
+        "lead_id": lead_id,
+        "platform": "discord",
+    }
 
 
 # ---------------------------------------------------------------------------

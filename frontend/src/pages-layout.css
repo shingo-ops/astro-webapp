@@ -92,6 +92,23 @@
 
 .page-layout-content--no-scroll {
   overflow-y: hidden;
+  /* noScrollページ（受信箱）は自分でpaddingを管理するため上書き */
+  padding: 0;
+}
+
+/* ============================================================
+   汎用レイアウトパターン
+   ============================================================ */
+
+/* 画面下部 sticky 固定エリア（送信バー・フォーム送信行など）
+   sticky-ok: 親要素に overflow:hidden または overflow-y:auto がある前提で機能
+   使用例: <div className="inbox-send-area sticky-bottom-bar"> */
+.sticky-bottom-bar {
+  position: sticky;
+  bottom: 0;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  z-index: var(--z-base);
 }
 
 /* ============================================================

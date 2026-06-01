@@ -126,6 +126,7 @@ jobs:
               -e '/^GOOGLE_CALENDAR_CLIENT_ID=/d' \
               -e '/^GOOGLE_CALENDAR_CLIENT_SECRET=/d' \
               -e '/^GOOGLE_CALENDAR_REDIRECT_URI=/d' \
+              -e '/^DISCORD_BOT_TOKEN_4=/d' \
               .env
             rm -f .env.bak
             # YAML `|` ブロックの共通インデント (12 スペース) はパース時に自動除去される。
@@ -145,6 +146,7 @@ jobs:
             GOOGLE_CALENDAR_CLIENT_ID=${{ secrets.GOOGLE_CALENDAR_CLIENT_ID }}
             GOOGLE_CALENDAR_CLIENT_SECRET=${{ secrets.GOOGLE_CALENDAR_CLIENT_SECRET }}
             GOOGLE_CALENDAR_REDIRECT_URI=${{ secrets.GOOGLE_CALENDAR_REDIRECT_URI }}
+            DISCORD_BOT_TOKEN_4=${{ secrets.DISCORD_BOT_TOKEN_4 }}
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
@@ -646,6 +648,41 @@ jobs:
             docker exec -i astro-webapp-postgres-1 \
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/087_create_supplier_prompts.sql
+
+            # Migration 090: 全テナントの leads に messenger_link / discord_id 追加。
+            #   DO $$ pg_namespace 走査形式。ADD COLUMN IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/090_add_lead_contact_links.sql
+
+            # Migration 093: orders.status 旧 6 値 → 新 6 値（支払い待ち/仕入れ中/発送待ち/完了/トラブル/キャンセル）
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/093_rename_order_statuses.sql
+
+            # Migration 091: leads に discord_user_id / discord_dm_channel_id 追加（Discord 顧客メッセージング）
+            #   DO $$ pg_namespace 走査形式。ADD COLUMN IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/091_add_leads_discord_messaging_columns.sql
+
+            # Migration 092: meta_messages に Discord Partial Index 追加
+            #   DO $$ pg_namespace 走査形式。CREATE INDEX IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/092_add_meta_messages_discord_index.sql
+
+            # Migration 094: 全テナントに message_translations テーブル追加（ADR-088 AI翻訳キャッシュ）
+            #   DO $$ pg_namespace 走査形式。CREATE TABLE/INDEX IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/094_create_message_translations.sql
+
+            # Migration 095: 全テナントの leads に instagram_link / whatsapp_link 追加。
+            #   DO $$ pg_namespace 走査形式。ADD COLUMN IF NOT EXISTS で冪等。
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/095_add_lead_social_links.sql
 
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため

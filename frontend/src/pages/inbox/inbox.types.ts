@@ -72,6 +72,13 @@ export interface LeadDetail {
   nickname: string | null;
   country: string | null;
   target_titles: string | null;
+  messenger_link: string | null;
+  discord_id: string | null;
+  instagram_link: string | null;
+  whatsapp_link: string | null;
+  // Discord Gateway fields (read-only, set by dm_writer)
+  discord_user_id: string | null;
+  discord_dm_channel_id: string | null;
 }
 
 // ---------------------------------------------------------------------------

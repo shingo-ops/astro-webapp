@@ -1,13 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { INBOX_ACTION_ICONS, NAV_ICONS, PAGE_ICONS } from "../../constants/icons";
 import { ICON } from "../../constants/iconSizes";
 import type { Conversation, MessagesResponse } from "../../lib/messages";
+import { translateMessage } from "../../lib/messages";
 import { formatAbsolute, getInitials, relativeTime } from "./inbox.types";
+import type { LeadDetail } from "./inbox.types";
 
 interface Props {
   selectedLeadId: number | null;
   selectedConversation: Conversation | null;
+  leadDetail: LeadDetail | null;
   messagesData: MessagesResponse | null;
   msgLoading: boolean;
   msgError: string | null;
@@ -27,23 +30,34 @@ interface Props {
   sendError: string | null;
   sendDisabled: boolean;
   canSend: boolean;
+  discordDmChannelMissing: boolean;
   trimmedDraft: string;
   submitSend: () => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
+/** Per-message translation state. */
+interface TranslationState {
+  text: string | null;
+  loading: boolean;
+  error: string | null;
+}
+
 export function InboxMessageThread({
-  selectedLeadId, selectedConversation, messagesData, msgLoading, msgError,
+  selectedLeadId, selectedConversation, leadDetail, messagesData, msgLoading, msgError,
   avatarErrors, handleAvatarError,
   handleMarkUnread, handleExclude, handleDeleteLead,
   showKartePanel, openKartePanel, closeKartePanel, inboxSettings,
   messageListRef,
-  draft, setDraft, sending, sendError, sendDisabled, canSend, trimmedDraft,
-  submitSend, handleKeyDown,
+  draft, setDraft, sending, sendError, sendDisabled, canSend, discordDmChannelMissing,
+  trimmedDraft, submitSend, handleKeyDown,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Translation state: keyed by message_id
+  const [translations, setTranslations] = useState<Record<string, TranslationState>>({});
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -55,6 +69,53 @@ export function InboxMessageThread({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
+
+  // Reset translations when conversation changes
+  useEffect(() => {
+    setTranslations({});
+  }, [selectedLeadId]);
+
+  const handleTranslate = useCallback(async (messageId: string | null) => {
+    if (!messageId || !selectedLeadId) return;
+
+    // If already translated, toggle off
+    if (translations[messageId]?.text) {
+      setTranslations((prev) => {
+        const updated = { ...prev };
+        delete updated[messageId];
+        return updated;
+      });
+      return;
+    }
+
+    // 翻訳先は常に UI 言語（ADR-088: オペレーターが読める言語に揃える）
+    const targetLanguage = i18n.language ?? "ja";
+
+    setTranslations((prev) => ({
+      ...prev,
+      [messageId]: { text: null, loading: true, error: null },
+    }));
+
+    try {
+      const result = await translateMessage(selectedLeadId, messageId, targetLanguage);
+      setTranslations((prev) => ({
+        ...prev,
+        [messageId]: { text: result.translated_text, loading: false, error: null },
+      }));
+    } catch (err: unknown) {
+      let errorMsg = t("inbox.translationError");
+      if (err && typeof err === "object" && "status" in err) {
+        const status = (err as { status: number }).status;
+        if (status === 429) {
+          errorMsg = t("inbox.translationBudgetExceeded");
+        }
+      }
+      setTranslations((prev) => ({
+        ...prev,
+        [messageId]: { text: null, loading: false, error: errorMsg },
+      }));
+    }
+  }, [selectedLeadId, translations, i18n.language, t]);
 
   if (selectedLeadId === null) {
     return (
@@ -92,6 +153,12 @@ export function InboxMessageThread({
           {messagesData?.lead?.customer_name
             || selectedConversation?.customer_name
             || `Lead #${selectedLeadId}`}
+          {/* AC1.6: Discord 未連携バッジ */}
+          {messagesData?.lead?.platform === "discord" && !leadDetail?.discord_user_id && (
+            <span className="discord-unlinked-badge" title={t("inbox.discordNotLinked")}>
+              {t("inbox.discordNotLinked")}
+            </span>
+          )}
         </h3>
         <div className="inbox-thread-actions">
           <button type="button" className="inbox-thread-action-btn"
@@ -176,6 +243,7 @@ export function InboxMessageThread({
         {messagesData?.messages.map((msg) => {
           const outbound = msg.direction === "outbound";
           const failed = !!msg.error_code;
+          const translationState = msg.message_id ? translations[msg.message_id] : undefined;
           return (
             <div key={msg.id} className={`inbox-msg-row${outbound ? " outbound" : " inbound"}`}>
               <div
@@ -198,8 +266,40 @@ export function InboxMessageThread({
                   </div>
                 )}
                 <div>{msg.message_text || "(no body)"}</div>
+
+                {/* Translation section */}
+                {translationState?.loading && (
+                  <div className="msg-translation msg-translation--loading">
+                    {t("inbox.translating")}
+                  </div>
+                )}
+                {translationState?.error && (
+                  <div className="msg-translation msg-translation--error">
+                    {translationState.error}
+                  </div>
+                )}
+                {translationState?.text && (
+                  <div className="msg-translation">
+                    <span className="msg-translation-text">{translationState.text}</span>
+                    <span className="msg-translation-badge">{t("inbox.translatedBy")}</span>
+                  </div>
+                )}
+
                 <div className={`msg-time${outbound ? "" : " inbound"}`}>
                   {relativeTime(msg.created_at)}
+                  {/* Translate button */}
+                  {msg.message_id && msg.message_text && !failed && (
+                    <button
+                      type="button"
+                      className="msg-translate-btn"
+                      onClick={() => handleTranslate(msg.message_id)}
+                      aria-label={translationState?.text ? t("inbox.showOriginal") : t("inbox.translate")}
+                      title={translationState?.text ? t("inbox.showOriginal") : t("inbox.translate")}
+                      disabled={translationState?.loading}
+                    >
+                      <INBOX_ACTION_ICONS.translate size={14} weight="fill" aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -208,7 +308,7 @@ export function InboxMessageThread({
       </div>
 
       {/* 送信エリア */}
-      <div className="inbox-send-area">
+      <div className="inbox-send-area sticky-bottom-bar">
         {sendError && (
           <div className="inbox-send-error" role="alert">
             Send error: {sendError}
@@ -225,7 +325,13 @@ export function InboxMessageThread({
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={canSend ? t("inbox.messagePlaceholder") : t("inbox.sendDisabled7d")}
+                placeholder={
+                  discordDmChannelMissing
+                    ? t("inbox.discordDmChannelMissing")
+                    : canSend
+                      ? t("inbox.messagePlaceholder")
+                      : t("inbox.sendDisabled7d")
+                }
                 rows={2}
                 disabled={!canSend || sending}
               />
@@ -238,11 +344,13 @@ export function InboxMessageThread({
               onClick={submitSend}
               disabled={sendDisabled}
               title={
-                !canSend
-                  ? t("inbox.sendDisabled7d")
-                  : trimmedDraft.length === 0
-                    ? t("inbox.messagePlaceholder")
-                    : t("inbox.send")
+                discordDmChannelMissing
+                  ? t("inbox.discordDmChannelMissing")
+                  : !canSend
+                    ? t("inbox.sendDisabled7d")
+                    : trimmedDraft.length === 0
+                      ? t("inbox.messagePlaceholder")
+                      : t("inbox.send")
               }
             >
               {sending ? t("inbox.sending") : t("inbox.send")}
