@@ -16,14 +16,38 @@ name: Migration SQL Test
 #   - DEFAULT 指定漏れ（既存行が NULL になるバグ）
 #   - ADD COLUMN IF NOT EXISTS 書き忘れ（再実行でエラーになるバグ）
 #   - PL/pgSQL DO ブロックのロジックエラー（冪等性破壊）
+#
+# 最適化（2026-06-01）: detect-changes → migration-test-run → aggregator パターンを導入。
+#   migration 変更がない PR では PostgreSQL コンテナ起動 + pip install を省略（約2〜3分短縮）。
+#   test.yml・schema-check.yml と同じ設計パターン。
 
 on:
   pull_request:
     branches: [main, develop]
 
 jobs:
-  test-migrations:
-    name: マイグレーションSQL 実行テスト（実DB）
+  # マイグレーション関連ファイルの変更有無を判定
+  detect-changes:
+    name: マイグレーション変更検出
+    runs-on: ubuntu-latest
+    outputs:
+      migrations: ${{ steps.filter.outputs.migrations }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            migrations:
+              - 'migrations/**'
+              - 'scripts/migrate_*.py'
+              - '.github/workflows/migration-test.yml'
+
+  # マイグレーション変更がある場合のみ PostgreSQL を起動して実行
+  migration-test-run:
+    name: マイグレーションSQL 実行（内部）
+    needs: detect-changes
+    if: needs.detect-changes.outputs.migrations == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -258,3 +282,24 @@ jobs:
             psql -h localhost -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 -f "$sqlfile"
             echo "✅ $sqlfile 再実行成功（冪等性 OK）"
           done
+
+  # ルールセット必須 Check の名前と一致させる。always() で常に実行し、
+  # - migration 変更あり: migration-test-run の結果を報告
+  # - migration 変更なし: migration-test-run が skipped → 成功として報告
+  migration-test:
+    name: マイグレーションSQL 実行テスト（実DB）
+    needs: [detect-changes, migration-test-run]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report results
+        run: |
+          r="${{ needs.migration-test-run.result }}"
+          echo "migration-test-run: $r"
+          if [[ "$r" == "success" || "$r" == "skipped" ]]; then
+            echo "OK: migration test passed or no migration changes"
+            exit 0
+          else
+            echo "FAIL: migration-test-run=$r"
+            exit 1
+          fi

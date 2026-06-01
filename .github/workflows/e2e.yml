@@ -23,7 +23,13 @@ on:
 # Check ADR-067) が paths にマッチしない PR で "Expected — Waiting for status
 # to be reported" のまま pending → merge blocked デッドロックが PR #534 で発生。
 # Issue #523 ② で migration-guard と同じく「paths 条件なし常時実行 + 不要時即
-# pass」パターンに統一。frontend 未変更時は各 step 内で対象ファイル 0 件 → 即 pass。
+# pass」パターンに統一。
+#
+# NOTE (2026-06-01): detect-changes → lint-run → lint(aggregator) パターンに移行。
+# test.yml・schema-check.yml・migration-test.yml と同じ設計に統一。
+# frontend 未変更時は lint-run が skipped → aggregator が success を報告。
+# デッドロック問題（PR #534）の根本解消: aggregator の if: always() により
+# paths フィルタなしでも Required Check が常に報告される。
 
 # 同一 PR への再プッシュ時に古い実行をキャンセルして無駄な消費を防ぐ。
 concurrency:
@@ -31,9 +37,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # フロントエンド関連ファイルの変更有無を判定
+  detect-changes:
+    name: フロントエンド変更検出
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+
   # ─── ADR-067: ダークモード色規約チェック ───────────────────────────────────
-  lint:
-    name: Lint & Dark Mode Check (ADR-067)
+  lint-run:
+    name: Lint & Dark Mode Check（内部）
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -54,6 +77,27 @@ jobs:
 
       - name: 全チェック統合 — ADR-067 デザイントークン・レイアウト・アイコン・ページ規約
         run: npm run check:all
+
+  # ルールセット必須 Check の名前と一致させる。always() で常に実行し、
+  # - frontend 変更あり: lint-run の結果を報告
+  # - frontend 変更なし: lint-run が skipped → 成功として報告（デッドロック解消）
+  lint:
+    name: Lint & Dark Mode Check (ADR-067)
+    needs: [detect-changes, lint-run]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report results
+        run: |
+          r="${{ needs.lint-run.result }}"
+          echo "lint-run: $r"
+          if [[ "$r" == "success" || "$r" == "skipped" ]]; then
+            echo "OK: lint passed or no frontend changes"
+            exit 0
+          else
+            echo "FAIL: lint-run=$r"
+            exit 1
+          fi
 
   # ─── E2E テスト ────────────────────────────────────────────────────────────
   playwright:
