@@ -9,7 +9,6 @@ import Layout from "./components/Layout";
 import LoginPage from "./pages/login/LoginPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import GoalSettingPage from "./pages/goal-setting/GoalSettingPage";
-import CustomersPage from "./pages/customers/CustomersPage";
 import CompaniesPage from "./pages/companies/CompaniesPage";
 import CompanyDetailPage from "./pages/company-detail/CompanyDetailPage";
 import ContactsPage from "./pages/contacts/ContactsPage";
@@ -95,7 +94,7 @@ function App() {
 
                   {/* 旧ルート後方互換リダイレクト（/crm/* ハブへ転送） */}
                   <Route path="/leads"         element={<Navigate to="/crm/leads"     replace />} />
-                  <Route path="/customers"     element={<Navigate to="/crm/customers"  replace />} />
+                  <Route path="/customers"     element={<Navigate to="/crm/companies"  replace />} />
                   <Route path="/companies"     element={<Navigate to="/crm/companies"  replace />} />
                   <Route path="/companies/:id" element={<CompanyIdRedirect />} />
                   <Route path="/contacts"      element={<Navigate to="/crm/contacts"   replace />} />
@@ -113,7 +112,6 @@ function App() {
                     {/* Step 5c-2: 会社詳細ページ（multi_branch 住所編集 + 担当者タブ） */}
                     <Route path="companies/:id"   element={<CompanyDetailPage />} />
                     <Route path="contacts"        element={<ContactsPage />} />
-                    <Route path="customers"       element={<CustomersPage />} />
                     <Route path="archive"         element={<ArchivesPage />} />
                   </Route>
 
