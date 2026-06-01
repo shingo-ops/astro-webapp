@@ -50,6 +50,39 @@ docker exec -e TENANT_CODE=highlife-jpn ...
 
 ---
 
+## Migration SQL の書き方（必須パターン）
+
+**`{schema}` プレースホルダは絶対使用禁止。** psql に渡すと構文エラーになり本番デプロイが停止する（前例: PR #1345 で約1.5h停止）。
+
+全テナントへのカラム追加・テーブル追加は必ず `DO $$ pg_namespace` 走査形式で書くこと:
+
+```sql
+DO $$
+DECLARE
+    schema_record RECORD;
+BEGIN
+    FOR schema_record IN
+        SELECT nspname AS schema_name
+        FROM pg_namespace
+        WHERE nspname LIKE 'tenant_%'
+        ORDER BY nspname
+    LOOP
+        RAISE NOTICE 'Processing schema: %', schema_record.schema_name;
+
+        EXECUTE format(
+            'ALTER TABLE %I.your_table
+             ADD COLUMN IF NOT EXISTS new_col TEXT',
+            schema_record.schema_name
+        );
+    END LOOP;
+END
+$$;
+```
+
+参考ファイル: `migrations/090_add_lead_contact_links.sql`
+
+---
+
 ## 品質チェック
 
 ```bash
