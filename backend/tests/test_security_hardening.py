@@ -174,7 +174,7 @@ class TestAuthDependency429:
             transport = ASGITransport(app=app)
             async with AsyncClient(transport=transport, base_url="http://test") as client:
                 resp = await client.get(
-                    "/api/v1/customers",
+                    "/api/v1/companies",
                     headers={"Authorization": "Bearer valid-token-format"},
                 )
 

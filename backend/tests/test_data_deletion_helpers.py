@@ -280,7 +280,7 @@ class TestReportsGetSyncEngine:
     def test_export_queries_keys(self):
         """EXPORT_QUERIES に必要なキーが存在する。"""
         from app.tasks.reports import EXPORT_QUERIES
-        assert "customers" in EXPORT_QUERIES
+        assert "companies" in EXPORT_QUERIES  # ADR-089 Sprint 7: customers → companies
         assert "deals" in EXPORT_QUERIES
         assert "orders" in EXPORT_QUERIES
 
