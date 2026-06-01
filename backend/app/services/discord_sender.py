@@ -75,6 +75,15 @@ async def send_discord_dm(
             "[discord_sender] 送信失敗 tenant=%d ch=%s status=%d body=%s",
             tenant_id, dm_channel_id, response.status_code, body,
         )
+        # AC1.9: User-friendly error messages for common Discord API errors
+        if response.status_code == 401:
+            raise DiscordSendError(
+                "Discord Bot Token が無効です。Discord 設定を確認してください。"
+            )
+        if response.status_code == 403:
+            raise DiscordSendError(
+                "Discord Bot に送信権限がありません。Discord 設定を確認してください。"
+            )
         raise DiscordSendError(
             f"Discord API HTTP {response.status_code}: {body}"
         )

@@ -52,7 +52,8 @@ _LEAD_COLUMNS = """
     cs_memo, sales_form, competitor_check, per_order_amount, monthly_frequency,
     nickname, country, target_titles,
     messenger_link, discord_id,
-    instagram_link, whatsapp_link
+    instagram_link, whatsapp_link,
+    discord_user_id, discord_dm_channel_id
 """
 
 _UPDATABLE_COLUMNS = {

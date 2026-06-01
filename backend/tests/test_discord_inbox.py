@@ -320,7 +320,31 @@ async def test_send_discord_dm_raises_on_non_200(monkeypatch):
         mock_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
         mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
 
-        with pytest.raises(DiscordSendError, match="403"):
+        with pytest.raises(DiscordSendError, match="送信権限"):
+            await send_discord_dm(
+                tenant_id=4,
+                dm_channel_id="ch-123",
+                text="テスト送信",
+            )
+
+
+@pytest.mark.asyncio
+async def test_send_discord_dm_raises_user_friendly_on_401(monkeypatch):
+    """Discord API が 401 を返した場合はユーザーフレンドリーなエラーメッセージを送出する。"""
+    monkeypatch.setenv("DISCORD_BOT_TOKEN_4", "Bot-token-test")
+
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.text = '{"message": "401: Unauthorized"}'
+
+    mock_client = AsyncMock()
+    mock_client.post.return_value = mock_response
+
+    with patch("app.services.discord_sender.httpx.AsyncClient") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        with pytest.raises(DiscordSendError, match="Token が無効"):
             await send_discord_dm(
                 tenant_id=4,
                 dm_channel_id="ch-123",
