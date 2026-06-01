@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_tenant, get_current_user, require_permission
+from app.auth.dependencies import get_current_tenant, get_current_user, require_permission, reset_tenant_context
 from app.database import get_db
 from app.models import User
 from app.services.audit import record_audit_log
@@ -100,6 +100,7 @@ async def update_discord_config(
         new_data={"guild_id": data.guild_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072: commit 後の search_path 復元
 
     logger.info(
         "[discord_config] updated tenant=%d guild_id=%s by user=%d",

@@ -120,6 +120,7 @@
     "superAdminInbound": "Discord Inbound",
     "inventoryVisibility": "Inventory Visibility",
     "tenantProfile": "Issuer Profile",
+    "discordConfig": "Discord Integration",
     "superAdminPhaseSwitch": "Spreadsheet Phase",
     "superAdminInventoryOffers": "Supplier Offers",
     "account": "Account",

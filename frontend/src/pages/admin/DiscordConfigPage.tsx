@@ -35,7 +35,7 @@ export default function DiscordConfigPage() {
       setLoading(true);
       setError("");
       try {
-        const res = await api.get("/admin/discord-config");
+        const res = await api.get<DiscordConfig>("/admin/discord-config");
         const data: DiscordConfig = res.data;
         setConfig(data);
         setGuildId(data.guild_id ?? "");
@@ -57,7 +57,7 @@ export default function DiscordConfigPage() {
     setError("");
     setSaved(false);
     try {
-      const res = await api.put("/admin/discord-config", { guild_id: guildId.trim() });
+      const res = await api.put<DiscordConfig>("/admin/discord-config", { guild_id: guildId.trim() });
       setConfig(res.data);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -72,14 +72,14 @@ export default function DiscordConfigPage() {
 
   if (permsLoading || loading) {
     return (
-      <PageLayout title={t("discordConfig.title")}>
+      <PageLayout navKey="nav.discordConfig">
         <p className="text-token-text-secondary text-sm">{t("loading")}</p>
       </PageLayout>
     );
   }
 
   return (
-    <PageLayout title={t("discordConfig.title")}>
+    <PageLayout navKey="nav.discordConfig">
       <div className="max-w-lg space-y-6">
         <p className="text-token-text-secondary text-sm">
           {t("discordConfig.description")}

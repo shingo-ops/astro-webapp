@@ -337,7 +337,11 @@ async def setup_test_db(test_engine):
                 messenger_link VARCHAR(1000),
                 discord_id VARCHAR(255),
                 instagram_link VARCHAR(1000),
-                whatsapp_link VARCHAR(1000)
+                whatsapp_link VARCHAR(1000),
+                discord_user_id VARCHAR(50),
+                discord_dm_channel_id VARCHAR(50),
+                discord_role_sync_status VARCHAR(20),
+                discord_role_sync_at TIMESTAMP
             )
         """))
         # 案件テーブル（Step 5d: 旧 customer_id 列削除済）
