@@ -14,6 +14,7 @@
  *   2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id 経路を完全撤去。
  *     interface Deal から customer_id 削除、company_id を必須化、
  *     PR #147 F2 のレガシー deal 編集 UX も廃止（本番に該当 deal は存在しないため）。
+ *   2026-06-01: migration 096 — lead_source（流入元）追加。
  */
 
 import { useEffect, useState, FormEvent } from "react";
@@ -40,6 +41,7 @@ interface Deal {
   assigned_to: number | null;
   expected_close_date: string | null;
   notes: string | null;
+  lead_source: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,7 +58,7 @@ const STAGES = ["open", "negotiating", "proposal", "won", "lost", "on_hold"];
 const emptyForm = {
   title: "", amount: "", currency: "JPY",
   status: "open", stage: "open", probability: "10", lost_reason: "",
-  assigned_to: "", expected_close_date: "", notes: "",
+  assigned_to: "", expected_close_date: "", notes: "", lead_source: "",
 };
 
 export default function DealsPage() {
@@ -128,6 +130,7 @@ export default function DealsPage() {
       assigned_to: form.assigned_to ? Number(form.assigned_to) : null,
       expected_close_date: form.expected_close_date || null,
       notes: form.notes || null,
+      lead_source: form.lead_source || null,
     };
     try {
       if (editId) {
@@ -158,6 +161,7 @@ export default function DealsPage() {
       assigned_to: d.assigned_to != null ? String(d.assigned_to) : "",
       expected_close_date: d.expected_close_date || "",
       notes: d.notes || "",
+      lead_source: d.lead_source || "",
     });
     // Step 5d: 旧 customer_id 経路は撤去済。company_id は backend で必須なので必ず存在する。
     setCompanyId(d.company_id);
@@ -236,6 +240,14 @@ export default function DealsPage() {
                 error={selectorError}
                 companies={companies}
               />
+              <div className="form-group"><label>{t("deals.leadSource")}</label>
+                <input
+                  value={form.lead_source}
+                  placeholder={t("deals.leadSourcePlaceholder")}
+                  maxLength={50}
+                  onChange={(e) => setForm({ ...form, lead_source: e.target.value })}
+                />
+              </div>
               <div className="form-group"><label>{t("deals.dealTitle")} *</label>
                 <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
               </div>
@@ -293,6 +305,7 @@ export default function DealsPage() {
             <tr>
               <th>{t("deals.dealTitle")}</th>
               <th>{t("common.company")}</th>
+              <th>{t("deals.leadSource")}</th>
               <th>{t("deals.amount")}</th>
               <th>{t("dashboard.stage")}</th>
               <th>{t("deals.probability")}</th>
@@ -305,6 +318,7 @@ export default function DealsPage() {
               <tr key={d.id}>
                 <td>{d.title}</td>
                 <td>{companyName(d.company_id)}</td>
+                <td>{d.lead_source || "-"}</td>
                 <td>{d.amount ? fmt(d.amount, d.currency) : "-"}</td>
                 <td>{d.stage ? (t(`deals.stage_${d.stage}`) || d.stage) : "-"}</td>
                 <td>{d.probability != null ? `${d.probability}%` : "-"}</td>
@@ -316,7 +330,7 @@ export default function DealsPage() {
               </tr>
             ))}
             {deals.length === 0 && (
-              <tr><td colSpan={8} className="empty">{t("deals.noDeals")}</td></tr>
+              <tr><td colSpan={9} className="empty">{t("deals.noDeals")}</td></tr>
             )}
           </tbody>
         </table>

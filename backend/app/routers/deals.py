@@ -38,14 +38,14 @@ _DEAL_COLUMNS = """
     id, deal_code, company_id, contact_id, lead_id,
     title, amount, currency,
     status, stage, probability, lost_reason, assigned_to,
-    expected_close_date, notes, created_at, updated_at
+    expected_close_date, notes, lead_source, created_at, updated_at
 """
 
 _UPDATABLE_COLUMNS = {
     "company_id", "contact_id", "lead_id",
     "title", "amount", "currency",
     "status", "stage", "probability", "lost_reason", "assigned_to",
-    "expected_close_date", "notes",
+    "expected_close_date", "notes", "lead_source",
 }
 
 
@@ -169,13 +169,13 @@ async def create_deal(
                 tenant_id, company_id, contact_id, lead_id,
                 title, amount, currency,
                 status, stage, probability, lost_reason, assigned_to,
-                expected_close_date, notes
+                expected_close_date, notes, lead_source
             )
             VALUES (
                 :tenant_id, :company_id, :contact_id, :lead_id,
                 :title, :amount, :currency,
                 :status, :stage, :probability, :lost_reason, :assigned_to,
-                :expected_close_date, :notes
+                :expected_close_date, :notes, :lead_source
             )
             RETURNING id
         """),
@@ -194,6 +194,7 @@ async def create_deal(
             "assigned_to": data.assigned_to,
             "expected_close_date": data.expected_close_date,
             "notes": data.notes,
+            "lead_source": data.lead_source,
         },
     )
     new_id = result.scalar_one()

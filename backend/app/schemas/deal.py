@@ -6,13 +6,14 @@ from __future__ import annotations
 テナントスキーマの deals テーブル定義:
   id, tenant_id, deal_code, company_id, contact_id, lead_id, title, amount,
   currency, status, stage, probability, lost_reason, assigned_to,
-  expected_close_date, notes, created_at, updated_at
+  expected_close_date, notes, lead_source, created_at, updated_at
 
 変更履歴:
   2026-04-16: Phase 1拡張（deal_code, lead_id, assigned_to, stage,
     probability, lost_reason, currency を追加）
   2026-04-27: Phase 1-B-2 Step 5d — 旧 customer_id を撤去し、
     company_id / contact_id を必須化（新 B2B モデル唯一の正）
+  2026-06-01: migration 096 — lead_source（流入元）追加
 """
 
 from datetime import date, datetime
@@ -62,6 +63,7 @@ class DealCreate(BaseModel):
     assigned_to: int | None = Field(default=None, ge=1, description="担当者ユーザーID")
     expected_close_date: date | None = Field(default=None, description="成約予定日")
     notes: str | None = Field(default=None, max_length=5000, description="備考")
+    lead_source: str | None = Field(default=None, max_length=50, description="流入元")
 
 
 class DealUpdate(BaseModel):
@@ -79,6 +81,7 @@ class DealUpdate(BaseModel):
     assigned_to: int | None = Field(default=None, ge=1)
     expected_close_date: date | None = None
     notes: str | None = Field(default=None, max_length=5000)
+    lead_source: str | None = Field(default=None, max_length=50)
 
 
 class DealResponse(BaseModel):
@@ -103,6 +106,7 @@ class DealResponse(BaseModel):
     assigned_to: int | None
     expected_close_date: date | None
     notes: str | None
+    lead_source: str | None
     created_at: datetime
     updated_at: datetime
 
