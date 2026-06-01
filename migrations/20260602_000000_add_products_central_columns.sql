@@ -6,7 +6,7 @@
 -- name↔name_ja / quantity↔stock_quantity は PR2 で router の SELECT alias で吸収するため
 -- ここでは列を追加しない（重複列を作らない）。
 --
--- 列型は tenant_NNN.products（migration 005 の {schema}.products 定義）に厳密一致させる:
+-- 列型は tenant_NNN.products（migration 005 の tenant スキーマ products 定義）に厳密一致させる:
 --   mark VARCHAR(100) / status VARCHAR(20) DEFAULT 'active' / condition VARCHAR(50)
 --   / weight NUMERIC(10,3) / notes TEXT
 --
