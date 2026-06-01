@@ -66,7 +66,7 @@ _COLS = (
     "b.tenant_id, b.monthly_budget_usd, b.current_month_usd, "
     "b.last_reset_at, b.hard_stop, b.notify_admin, "
     "b.created_at, b.updated_at, "
-    "t.tenant_code, t.name AS tenant_name"
+    "t.tenant_code, t.tenant_name"
 )
 
 
