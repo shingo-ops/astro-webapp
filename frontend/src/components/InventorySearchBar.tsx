@@ -112,6 +112,7 @@ export default function InventorySearchBar({
   // 親 div で clip されて見えなくなる。createPortal で document.body 直下にマウントし、
   // 座標は getBoundingClientRect() で動的計算する。
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
   const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number }>(
     { top: 0, left: 0, width: 0 },
   );
@@ -134,6 +135,22 @@ export default function InventorySearchBar({
       window.removeEventListener("resize", handler);
     };
   }, [open, recalcDropdownPosition]);
+
+  // 外側クリックで閉じる (QA 2026-06-01)。ドロップダウンは createPortal で body 直下に
+  // 描画されるため input の親要素では捕捉できない。input / listRef どちらの外側を
+  // mousedown したときだけ閉じる (候補 li の onMouseDown は listRef 内なので閉じない)。
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (inputRef.current?.contains(target)) return;
+      if (listRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
 
   const doSearch = useCallback(
     async (q: string, currentOp: "and" | "or") => {
@@ -332,6 +349,7 @@ export default function InventorySearchBar({
       )}
       {open && query.trim().length > 0 && createPortal(
         <ul
+          ref={listRef}
           role="listbox"
           aria-label={t("inventory.search.candidatesLabel")}
           data-testid={`${testIdPrefix}-results`}
