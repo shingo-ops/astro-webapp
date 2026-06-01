@@ -600,10 +600,10 @@
   flex-direction: column;
   overflow: hidden;
 }
-/* 上段: 送信者アバター + 入力エリア */
+/* 上段: 送信者アバター + 入力エリア + 送信ボタン（インライン配置） */
 .send-top-row {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: var(--space-2);
   padding: var(--send-top-row-padding);
 }
@@ -630,23 +630,20 @@
   line-height: 1.4;
 }
 .inbox-textarea:disabled { cursor: not-allowed; opacity: var(--opacity-disabled); }
-/* 下段: 送信ボタン */
-.send-bottom-row {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 0 var(--space-10px) var(--space-10px);
-}
+/* 送信ボタン（アイコンのみ・円形・send-top-row 内インライン配置） */
 .inbox-send-btn {
-  padding: var(--space-2) var(--space-5);
-  border-radius: var(--radius-pill);
+  width: var(--size-icon-btn);
+  height: var(--size-icon-btn);
+  padding: 0;
+  border-radius: 50%;
   background: var(--accent);
   color: var(--on-accent);
   border: none;
-  font-size: var(--font-base);
-  font-weight: 600;
   cursor: pointer;
-  font-family: inherit;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background var(--transition-micro);
 }
 .inbox-send-btn:hover:not(:disabled) { background: var(--accent-hover); }
@@ -1019,7 +1016,7 @@
   /* overflow:hidden を明示してデスクトップと sticky スコープを統一 */
   .inbox-center  { width: 100%; flex: 1; min-height: var(--inbox-center-min-h); overflow: hidden; }
   .msg-bubble    { max-width: 85%; }
-  .inbox-send-btn { padding: var(--space-2) var(--space-4); }
+  .inbox-send-btn { width: var(--size-avatar-sm); height: var(--size-avatar-sm); }
   .inbox-search-row { padding: var(--space-2) var(--space-2) var(--space-1); }
 
   /* カルテをボトムシートに変換（下から 80vh でスライドアップ） */

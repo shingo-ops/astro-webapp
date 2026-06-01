@@ -336,8 +336,6 @@ export function InboxMessageThread({
                 disabled={!canSend || sending}
               />
             </div>
-          </div>
-          <div className="send-bottom-row">
             <button
               type="button"
               className="inbox-send-btn"
@@ -353,7 +351,8 @@ export function InboxMessageThread({
                       : t("inbox.send")
               }
             >
-              {sending ? t("inbox.sending") : t("inbox.send")}
+              <INBOX_ACTION_ICONS.send size={ICON.base} aria-hidden="true" />
+              <span className="sr-only">{sending ? t("inbox.sending") : t("inbox.send")}</span>
             </button>
           </div>
         </div>
