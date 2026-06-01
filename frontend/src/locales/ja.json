@@ -1641,5 +1641,14 @@
   },
   "buddy": {
     "subtitle": "バディ設定とペアリングを管理します。"
+  },
+  "discord": {
+    "title": "Discord",
+    "isJoined": "Discord 連携済み",
+    "channelId": "チャンネル ID",
+    "userId": "ユーザー ID",
+    "invoiceWebhook": "請求書 Webhook URL",
+    "shipmentWebhook": "発送通知 Webhook URL",
+    "deleteSettings": "Discord 設定を削除"
   }
 }

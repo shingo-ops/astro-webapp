@@ -66,7 +66,7 @@ class TestDashboard:
         res = await client.get("/api/v1/dashboard")
         assert res.status_code == 200
         data = res.json()
-        assert data["customer_count"] == 0
+        assert data["company_count"] == 0  # ADR-089: customer_count → company_count
         assert data["deal_count"] == 0
         assert data["order_count"] == 0
         assert data["deal_total_amount"] == 0.0

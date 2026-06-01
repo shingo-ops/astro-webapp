@@ -82,6 +82,20 @@ class CompanyAddressResponse(CompanyAddressInput):
     model_config = {"from_attributes": True}
 
 
+class CompanyDiscordInput(BaseModel):
+    """Discord webhook 設定（company_discord 副テーブル）。"""
+    is_joined: bool = False
+    channel_id: str | None = Field(default=None, max_length=50)
+    user_id: str | None = Field(default=None, max_length=50)
+    invoice_webhook: str | None = None
+    shipment_webhook: str | None = None
+
+
+class CompanyDiscordResponse(CompanyDiscordInput):
+    company_id: int
+    model_config = {"from_attributes": True}
+
+
 # ========== 本体 ==========
 
 
@@ -137,6 +151,8 @@ class CompanyUpdate(BaseModel):
     # 副テーブル更新。None=触らない、[]=空に置換
     addresses: list[CompanyAddressInput] | None = None
     sales_channels: list[str] | None = None
+    # Discord webhook。None=触らない（省略時）、null=行削除、object=upsert
+    discord: CompanyDiscordInput | None = None
 
 
 class CompanyResponse(BaseModel):
@@ -165,6 +181,7 @@ class CompanyResponse(BaseModel):
     notes: str | None
     addresses: list[CompanyAddressResponse] = Field(default_factory=list)
     sales_channels: list[str] = Field(default_factory=list)
+    discord: CompanyDiscordResponse | None = None
     created_at: datetime
     updated_at: datetime
 
