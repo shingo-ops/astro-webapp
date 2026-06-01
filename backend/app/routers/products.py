@@ -28,6 +28,7 @@ from app.auth.dependencies import (
     get_current_user,
     is_postgresql,
     require_permission,
+    reset_tenant_context,
 )
 from app.cache import invalidate_dashboard_cache
 from app.database import get_db
@@ -224,6 +225,7 @@ async def create_product(
         new_data=data.model_dump(exclude_none=True, mode="json"),
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
     return ProductResponse(**row)
@@ -285,6 +287,7 @@ async def update_product(
         old_data=dict(old_row), new_data=update_data,
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     await invalidate_dashboard_cache(tenant_id)
 
     return ProductResponse(**row)
@@ -405,6 +408,7 @@ async def delete_product(
             new_data={"blocking_references": blocking, "result": "409_conflict"},
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
@@ -432,6 +436,7 @@ async def delete_product(
             old_data=dict(old_row),
         )
         await db.commit()
+        await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
     except IntegrityError as exc:
         await db.rollback()
         logger.warning(
@@ -447,6 +452,7 @@ async def delete_product(
                 new_data={"blocking_references": ["unknown"], "result": "409_integrity_error"},
             )
             await db.commit()
+            await reset_tenant_context(db, tenant_id)  # ADR-072 Phase 2.5
         except Exception:
             # audit log 自体の失敗で 500 を返さない（ベストエフォート）
             await db.rollback()
