@@ -126,6 +126,7 @@ jobs:
               -e '/^GOOGLE_CALENDAR_CLIENT_ID=/d' \
               -e '/^GOOGLE_CALENDAR_CLIENT_SECRET=/d' \
               -e '/^GOOGLE_CALENDAR_REDIRECT_URI=/d' \
+              -e '/^DISCORD_BOT_TOKEN_4=/d' \
               .env
             rm -f .env.bak
             # YAML `|` ブロックの共通インデント (12 スペース) はパース時に自動除去される。
@@ -145,6 +146,7 @@ jobs:
             GOOGLE_CALENDAR_CLIENT_ID=${{ secrets.GOOGLE_CALENDAR_CLIENT_ID }}
             GOOGLE_CALENDAR_CLIENT_SECRET=${{ secrets.GOOGLE_CALENDAR_CLIENT_SECRET }}
             GOOGLE_CALENDAR_REDIRECT_URI=${{ secrets.GOOGLE_CALENDAR_REDIRECT_URI }}
+            DISCORD_BOT_TOKEN_4=${{ secrets.DISCORD_BOT_TOKEN_4 }}
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
