@@ -32,7 +32,10 @@ jobs:
       - name: リリース PR を起票
         if: steps.check.outputs.open_count == '0'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PIPELINE_PAT で起票する（GITHUB_TOKEN だと GitHub の再帰防止仕様により
+          # 作成された PR で pull_request トリガーの workflow が一切起動せず、
+          # 必須チェックが "Expected — Waiting" のまま永久に BLOCKED になるため）。
+          GH_TOKEN: ${{ secrets.PIPELINE_PAT }}
           PR_BODY: |
             ## リリース PR（自動起票）
 
@@ -49,6 +52,7 @@ jobs:
 
             ---
             *このPRは `develop` ブランチへのプッシュを検知して自動起票されました。*
+            *（必須チェックを起動させるため PIPELINE_PAT で起票しています）*
         run: |
           AHEAD=$(git rev-list --count origin/main..HEAD)
           gh pr create \
