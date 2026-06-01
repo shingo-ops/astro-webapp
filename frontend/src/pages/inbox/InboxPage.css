@@ -632,8 +632,8 @@
 .inbox-textarea:disabled { cursor: not-allowed; opacity: var(--opacity-disabled); }
 /* 送信ボタン（アイコンのみ・円形・send-top-row 内インライン配置） */
 .inbox-send-btn {
-  width: 36px;
-  height: 36px;
+  width: var(--size-icon-btn);
+  height: var(--size-icon-btn);
   padding: 0;
   border-radius: 50%;
   background: var(--accent);
@@ -1016,7 +1016,7 @@
   /* overflow:hidden を明示してデスクトップと sticky スコープを統一 */
   .inbox-center  { width: 100%; flex: 1; min-height: var(--inbox-center-min-h); overflow: hidden; }
   .msg-bubble    { max-width: 85%; }
-  .inbox-send-btn { width: 32px; height: 32px; }
+  .inbox-send-btn { width: var(--size-avatar-sm); height: var(--size-avatar-sm); }
   .inbox-search-row { padding: var(--space-2) var(--space-2) var(--space-1); }
 
   /* カルテをボトムシートに変換（下から 80vh でスライドアップ） */
