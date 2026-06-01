@@ -623,3 +623,46 @@ class TestOrderStatusSixValues:
             "/api/v1/orders/group-counts", params={"status": "confirmed"},
         )
         assert res.status_code == 400
+
+
+class TestOrderResponseSchema:
+    """OrderResponse の堅牢性（後発テナントの NULL contact_id 行）。"""
+
+    def _row(self, **overrides):
+        from datetime import datetime
+
+        row = {
+            "id": 1,
+            "company_id": 10,
+            "contact_id": 20,
+            "deal_id": None,
+            "invoice_id": None,
+            "order_number": "O-001",
+            "total_amount": None,
+            "currency": None,
+            "status": "pending",
+            "shipping_carrier": None,
+            "shipping_fee": None,
+            "tracking_number": None,
+            "shipped_at": None,
+            "delivered_at": None,
+            "shipping_country": None,
+            "notes": None,
+            "created_at": datetime(2026, 1, 1, 0, 0, 0),
+            "updated_at": datetime(2026, 1, 1, 0, 0, 0),
+        }
+        row.update(overrides)
+        return row
+
+    def test_contact_id_null_does_not_raise(self):
+        """tenant_006 等の NULL contact_id 行で GET /orders が 500 にならないこと。"""
+        from app.schemas.order import OrderResponse
+
+        resp = OrderResponse(**self._row(contact_id=None))
+        assert resp.contact_id is None
+        assert resp.company_id == 10
+
+    def test_contact_id_present_still_valid(self):
+        from app.schemas.order import OrderResponse
+
+        assert OrderResponse(**self._row(contact_id=20)).contact_id == 20
