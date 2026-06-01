@@ -24,7 +24,7 @@ router = APIRouter()
 
 
 class ReportType(str, Enum):
-    customers = "customers"
+    companies = "companies"  # ADR-089 Sprint 7: customers → companies
     leads = "leads"
     deals = "deals"
     orders = "orders"

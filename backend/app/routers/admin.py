@@ -27,7 +27,7 @@ async def register_tenant(
       ① tenant_codeの重複チェック
       ② public.tenants にテナント情報を保存
       ③ tenant_{id:03d} スキーマを自動作成
-      ④ スキーマ内に業務テーブル（customers, deals, orders, audit_logs）を作成
+      ④ スキーマ内に業務テーブル（companies, deals, orders, audit_logs）を作成
       ⑤ Row Level Security（RLS）ポリシーを自動適用
 
     注意:
