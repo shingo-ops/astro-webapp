@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-06-02 / ADR 総数: 82 件
+最終更新: 2026-06-02 / ADR 総数: 83 件
 
 ## 一覧
 
@@ -90,6 +90,7 @@
 | [ADR-090](./ADR-090-products-central-unification.md) | ADR-090: products アーキテクチャ統一（tenant別 → public 中央）と Discord取込→在庫表反映 | Accepted | — |
 | [ADR-091](./ADR-091-discord-bot-scope-definition.md) | ADR-091: Discord Bot 担当業務スコープ定義 | Proposed | — |
 | [ADR-092](./ADR-092-deploy-concurrency-control.md) | ADR-092: deploy.yml 多重実行防止（concurrency 制御 + コンテナ pre-cleanup） | Accepted | — |
+| [ADR-093](./ADR-093-inventory-table-product-master-redesign.md) | ADR-093: 在庫表 / 仕入元オファー / 商品マスタ 再設計 | Accepted | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例
