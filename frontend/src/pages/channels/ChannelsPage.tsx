@@ -237,15 +237,16 @@ export default function ChannelsPage() {
     <PageLayout
       navKey="nav.channels"
       subtitleKey="channels.subtitle"
-      headerAction={canManage ? (
+      headerAction={canViewDiscord ? (
         <div className="page-header-actions">
-          <button
+          <a
+            href="https://discord.com/oauth2/authorize?client_id=1499458730171961535&permissions=268504082&integration_type=0&scope=bot"
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn-primary"
-            onClick={handleConnect}
-            disabled={connecting}
           >
-            {connecting ? t("channels.connecting") : t("channels.connect")}
-          </button>
+            {t("channels.discordAddBot")}
+          </a>
         </div>
       ) : undefined}
     >
@@ -473,17 +474,7 @@ export default function ChannelsPage() {
                 )}
               </div>
             </div>
-            <div style={{ display: "flex", gap: "var(--space-2)", flexShrink: 0 }}>
-              {canManage && (
-                <a
-                  href="https://discord.com/oauth2/authorize?client_id=1499458730171961535&permissions=268504082&integration_type=0&scope=bot"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-sm btn-primary"
-                >
-                  {t("channels.discordAddBot")}
-                </a>
-              )}
+            <div style={{ flexShrink: 0 }}>
               <button
                 className="btn-sm btn-secondary"
                 onClick={() => navigate("/admin/discord-config")}
