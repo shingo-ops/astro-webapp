@@ -267,6 +267,7 @@ async def deploy_ticket_button(
         new_data={"channel_id": channel_id, "message_id": message_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)
 
     logger.info(
         "[discord_ticket_config] deploy-button posted tenant=%d ch=%s msg=%s by user=%d",
