@@ -62,7 +62,7 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U jarvis -d jarvis_db"
-          --health-interval 10s
+          --health-interval 5s
           --health-timeout 5s
           --health-retries 5
 
@@ -81,12 +81,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
-          cache-dependency-path: backend/requirements.txt
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/requirements.txt
 
       - name: Install dependencies
         working-directory: backend
-        run: pip install -r requirements.txt
+        run: uv pip install --system -r requirements.txt
 
       - name: PostgreSQL 待機
         run: |

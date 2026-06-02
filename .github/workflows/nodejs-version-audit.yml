@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Scan for outdated Node.js versions
-        id: scan
+        id: scan-node
         run: |
           # EOL 済み・GHA 廃止対象のバージョンパターン（18以下 + 20 を対象）
           OUTDATED=$(grep -rn "node-version:.*['\"]\\?\(1[0-9]\|20\)['\"]\\?" \
@@ -36,13 +36,54 @@ jobs:
 
           if [ -n "$OUTDATED" ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
-            echo "$OUTDATED" > outdated.txt
+            echo "$OUTDATED" > outdated_node.txt
             echo "検出結果:"
-            cat outdated.txt
+            cat outdated_node.txt
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
             echo "✅ 古い Node.js バージョンは検出されませんでした"
           fi
+
+      - name: Scan for npm install usage (npm ci 推奨)
+        id: scan-npm
+        run: |
+          # CI では npm install より npm ci を使うべき（再現性・速度）
+          # コメント行・echo 文・npm install -g は除外
+          NPM_INSTALL=$(grep -rn "npm install" \
+            .github/workflows/ \
+            --include="*.yml" \
+            2>/dev/null \
+            | grep -v "^\s*#\|echo\|npm install -g\|npm ci" \
+            | grep -v "^Binary" || true)
+
+          if [ -n "$NPM_INSTALL" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "$NPM_INSTALL" > outdated_npm.txt
+            echo "検出結果:"
+            cat outdated_npm.txt
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "✅ npm install の使用は検出されませんでした（全て npm ci）"
+          fi
+
+      - name: Combine scan results
+        id: scan
+        run: |
+          FOUND=false
+          rm -f combined_issues.txt
+          if [ -f outdated_node.txt ]; then
+            echo "### 古い Node.js バージョン" >> combined_issues.txt
+            cat outdated_node.txt >> combined_issues.txt
+            echo "" >> combined_issues.txt
+            FOUND=true
+          fi
+          if [ -f outdated_npm.txt ]; then
+            echo "### npm install 使用箇所（npm ci に変更してください）" >> combined_issues.txt
+            cat outdated_npm.txt >> combined_issues.txt
+            echo "" >> combined_issues.txt
+            FOUND=true
+          fi
+          echo "found=$FOUND" >> "$GITHUB_OUTPUT"
 
       - name: Check for existing open issue (重複防止)
         id: dedup
