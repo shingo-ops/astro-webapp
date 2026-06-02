@@ -87,6 +87,7 @@
     "customers": "顧客管理（旧）",
     "archive": "アーカイブ",
     "inventory": "在庫表",
+    "products": "商品マスタ",
     "quotesInvoices": "請求書作成",
     "orders": "受注管理",
     "newQuote": "新規見積",
@@ -708,6 +709,53 @@
     "subtitle": "商談のステージと確度を管理します。"
   },
   "inventory": {
+    "view": {
+      "subtitle": "仕入元の現在オファー（取り込み済み在庫）を表示します。",
+      "searchPlaceholder": "商品名・英名・カテゴリ・マーク・仕入元で検索"
+    },
+    "expiryWarning": "オファーは掲載から18時間で自動的に削除されます。",
+    "filter": { "allTypes": "全種別" },
+    "col": {
+      "product": "商品",
+      "unit": "形態",
+      "condition": "状態",
+      "unitPrice": "単価",
+      "quantity": "数量",
+      "supplier": "仕入元"
+    },
+    "condition": {
+      "shrink": "シュリンク付き",
+      "no_shrink": "シュリンクなし",
+      "sealed": "未開封",
+      "damage": "ダメージあり",
+      "unsearched": "未サーチ",
+      "searched": "サーチ済み",
+      "graded": "鑑定品",
+      "grade_s": "S評価",
+      "grade_a": "A評価",
+      "grade_b": "B評価",
+      "grade_c": "C評価",
+      "grade_d": "D評価",
+      "junk": "ジャンク",
+      "bulk": "バルク",
+      "normal": "ノーマル",
+      "unknown": "不明"
+    },
+    "unit": {
+      "piece": "個",
+      "pack": "パック",
+      "box": "Box",
+      "case": "Case",
+      "set": "セット"
+    },
+    "noResults": "該当する在庫がありません",
+    "pageOf": "{{page}} / {{total}} ページ（全 {{count}} 件）",
+    "sortAsc": "▲",
+    "sortDesc": "▼",
+    "justNow": "たった今",
+    "minutesAgo": "{{count}}分前",
+    "hoursAgo": "{{count}}時間前",
+    "createPO": "発注書作成",
     "search": {
       "placeholder": "商品名・カード番号・JAN・型番・仕入元 alias で検索",
       "opGroupLabel": "複数キーワードの結合方法",
@@ -869,7 +917,26 @@
     "status_inactive": "無効",
     "status_discontinued": "廃番",
     "outOfStockTooltip": "在庫切れ — 仕入元の発注または在庫補充が必要です",
-    "pageLabel": "{{page}} ページ目 ({{count}} 件表示中)"
+    "pageLabel": "{{page}} ページ目 ({{count}} 件表示中)",
+    "master": {
+      "sectionBox": "Box・梱包",
+      "sectionShipping": "発送ラベル",
+      "sectionSearch": "検索・分類",
+      "boxesPerCase": "ケース入数（Box/Case）",
+      "packsPerBox": "Box入数（パック/Box）",
+      "boxWeightKg": "Box重量 (kg)",
+      "caseWeightKg": "Case重量 (kg)",
+      "volumeWeight": "容積重量 (kg)",
+      "moq": "最小発注数 (MOQ)",
+      "hsCode": "HSコード",
+      "material": "素材",
+      "item": "品目",
+      "requiredOutputValue": "必須出力値",
+      "searchKeywords": "検索キーワード",
+      "excludeKeywords": "除外キーワード",
+      "relatedSeries": "関連シリーズ",
+      "categoryClassification": "カテゴリ分類"
+    }
   },
   "suppliers": {
     "title": "仕入先管理",
@@ -917,7 +984,8 @@
     "supplier": "仕入先",
     "supplierRequired": "仕入先を選択してください",
     "itemsRequired": "明細はすべて商品と数量を入力してください",
-    "createdInfo": "発注を新規登録しました"
+    "createdInfo": "発注を新規登録しました",
+    "fromInventoryMultiSupplier": "複数の仕入元が選択されました。先頭の仕入元分のみで発注書を作成します。他 {{count}} 件の仕入元は別途作成してください。"
   },
   "tenantProfile": {
     "title": "発行者情報",

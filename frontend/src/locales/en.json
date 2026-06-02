@@ -87,6 +87,7 @@
     "customers": "Legacy Customers",
     "archive": "Archive",
     "inventory": "Inventory List",
+    "products": "Product Master",
     "quotesInvoices": "Create Invoice",
     "orders": "Orders",
     "newQuote": "New Quote",
@@ -708,6 +709,53 @@
     "subtitle": "Manage deal stages and probabilities."
   },
   "inventory": {
+    "view": {
+      "subtitle": "Shows suppliers' current offers (imported stock).",
+      "searchPlaceholder": "Search by name, English name, category, mark, or supplier"
+    },
+    "expiryWarning": "Offers are automatically removed 18 hours after they are posted.",
+    "filter": { "allTypes": "All types" },
+    "col": {
+      "product": "Product",
+      "unit": "Form",
+      "condition": "Condition",
+      "unitPrice": "Unit price",
+      "quantity": "Qty",
+      "supplier": "Supplier"
+    },
+    "condition": {
+      "shrink": "Shrink-wrapped",
+      "no_shrink": "No shrink",
+      "sealed": "Sealed",
+      "damage": "Damaged",
+      "unsearched": "Unsearched",
+      "searched": "Searched",
+      "graded": "Graded",
+      "grade_s": "Grade S",
+      "grade_a": "Grade A",
+      "grade_b": "Grade B",
+      "grade_c": "Grade C",
+      "grade_d": "Grade D",
+      "junk": "Junk",
+      "bulk": "Bulk",
+      "normal": "Normal",
+      "unknown": "Unknown"
+    },
+    "unit": {
+      "piece": "Piece",
+      "pack": "Pack",
+      "box": "Box",
+      "case": "Case",
+      "set": "Set"
+    },
+    "noResults": "No matching inventory",
+    "pageOf": "Page {{page}} / {{total}} ({{count}} items)",
+    "sortAsc": "▲",
+    "sortDesc": "▼",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "createPO": "Create PO",
     "search": {
       "placeholder": "Search by product name, card number, JAN, expansion code, or supplier alias",
       "opGroupLabel": "Multi-keyword join mode",
@@ -869,7 +917,26 @@
     "status_inactive": "Inactive",
     "status_discontinued": "Discontinued",
     "outOfStockTooltip": "Out of stock — requires reorder or replenishment",
-    "pageLabel": "Page {{page}} ({{count}} items)"
+    "pageLabel": "Page {{page}} ({{count}} items)",
+    "master": {
+      "sectionBox": "Box / Packaging",
+      "sectionShipping": "Shipping label",
+      "sectionSearch": "Search / Classification",
+      "boxesPerCase": "Boxes per Case",
+      "packsPerBox": "Packs per Box",
+      "boxWeightKg": "Box weight (kg)",
+      "caseWeightKg": "Case weight (kg)",
+      "volumeWeight": "Volume weight (kg)",
+      "moq": "MOQ",
+      "hsCode": "HS code",
+      "material": "Material",
+      "item": "Commodity item",
+      "requiredOutputValue": "Required output value",
+      "searchKeywords": "Search keywords",
+      "excludeKeywords": "Exclude keywords",
+      "relatedSeries": "Related series",
+      "categoryClassification": "Category classification"
+    }
   },
   "suppliers": {
     "title": "Suppliers",
@@ -917,7 +984,8 @@
     "supplier": "Supplier",
     "supplierRequired": "Please select a supplier",
     "itemsRequired": "All line items must have product and quantity",
-    "createdInfo": "Purchase order created"
+    "createdInfo": "Purchase order created",
+    "fromInventoryMultiSupplier": "Multiple suppliers were selected. Creating a purchase order for the first supplier only; please create separate orders for the other {{count}} supplier(s)."
   },
   "tenantProfile": {
     "title": "Issuer Profile",

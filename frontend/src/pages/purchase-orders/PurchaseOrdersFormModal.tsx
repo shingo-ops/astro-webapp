@@ -19,7 +19,7 @@ interface Supplier {
   is_active: boolean;
 }
 
-interface POLineItem {
+export interface POLineItem {
   product_id: number | null;
   product_name: string;
   quantity: number;
@@ -32,9 +32,13 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  /** 在庫表からの前埋め: 仕入元 ID（ADR-093 Phase 2b）。 */
+  initialSupplierId?: number | "";
+  /** 在庫表からの前埋め: 明細行（ADR-093 Phase 2b）。 */
+  initialItems?: POLineItem[];
 }
 
-export default function PurchaseOrdersFormModal({ open, onClose, onCreated }: Props) {
+export default function PurchaseOrdersFormModal({ open, onClose, onCreated, initialSupplierId, initialItems }: Props) {
   const { t } = useTranslation();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierId, setSupplierId] = useState<number | "">("");
@@ -46,13 +50,14 @@ export default function PurchaseOrdersFormModal({ open, onClose, onCreated }: Pr
   useEffect(() => {
     if (!open) return;
     setError("");
-    setSupplierId("");
+    // 在庫表からの前埋めがあれば採用、無ければ空（新規発注ボタン経由）。
+    setSupplierId(initialSupplierId ?? "");
     setNotes("");
-    setItems([emptyLine()]);
+    setItems(initialItems && initialItems.length > 0 ? initialItems : [emptyLine()]);
     api.get<Supplier[]>("/suppliers").then((rows) =>
       setSuppliers(rows.filter((s) => s.is_active)),
     ).catch((e) => setError(e instanceof Error ? e.message : t("common.fetchError")));
-  }, [open, t]);
+  }, [open, t, initialSupplierId, initialItems]);
 
   if (!open) return null;
 
