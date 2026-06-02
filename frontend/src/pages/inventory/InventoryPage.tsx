@@ -329,8 +329,8 @@ export default function InventoryPage() {
                     </div>
                   )}
                 </td>
-                <td>{it.unit ? t(`inventory.unit.${it.unit}`, it.unit) : "-"}</td>
-                <td>{t(`inventory.condition.${it.condition}`, it.condition)}</td>
+                <td>{it.unit ? t(`inventory.unit.${it.unit}`, { defaultValue: it.unit }) : "-"}</td>
+                <td>{t(`inventory.condition.${it.condition}`, { defaultValue: it.condition })}</td>
                 <td style={{ textAlign: "right" }}>¥{it.unit_price.toLocaleString()}</td>
                 <td style={{ textAlign: "right" }}>{it.quantity}</td>
                 {/* 仕入元（複合）: 仕入元名 + 掲載時間 */}
