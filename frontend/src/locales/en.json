@@ -869,7 +869,26 @@
     "status_inactive": "Inactive",
     "status_discontinued": "Discontinued",
     "outOfStockTooltip": "Out of stock — requires reorder or replenishment",
-    "pageLabel": "Page {{page}} ({{count}} items)"
+    "pageLabel": "Page {{page}} ({{count}} items)",
+    "master": {
+      "sectionBox": "Box / Packaging",
+      "sectionShipping": "Shipping label",
+      "sectionSearch": "Search / Classification",
+      "boxesPerCase": "Boxes per Case",
+      "packsPerBox": "Packs per Box",
+      "boxWeightKg": "Box weight (kg)",
+      "caseWeightKg": "Case weight (kg)",
+      "volumeWeight": "Volume weight (kg)",
+      "moq": "MOQ",
+      "hsCode": "HS code",
+      "material": "Material",
+      "item": "Commodity item",
+      "requiredOutputValue": "Required output value",
+      "searchKeywords": "Search keywords",
+      "excludeKeywords": "Exclude keywords",
+      "relatedSeries": "Related series",
+      "categoryClassification": "Category classification"
+    }
   },
   "suppliers": {
     "title": "Suppliers",

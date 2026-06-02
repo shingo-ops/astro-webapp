@@ -64,6 +64,22 @@ class ProductCreate(BaseModel):
     tcg_type: str | None = Field(default=None, max_length=50)
     unit: str | None = Field(default=None, max_length=20)
 
+    # ADR-093 Phase 1: 商品マスタ全項目（Box 属性 + 発送ラベル + 検索/分類）
+    boxes_per_case: int | None = Field(default=None, ge=0)
+    packs_per_box: int | None = Field(default=None, ge=0)
+    box_weight_kg: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=3)
+    case_weight_kg: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=3)
+    volume_weight: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=3)
+    moq: int | None = Field(default=None, ge=0)
+    hs_code: str | None = Field(default=None, max_length=20)
+    material: str | None = Field(default=None, max_length=50)
+    item: str | None = Field(default=None, max_length=255)
+    required_output_value: str | None = Field(default=None, max_length=255)
+    search_keywords: str | None = Field(default=None, max_length=5000)
+    exclude_keywords: str | None = Field(default=None, max_length=5000)
+    related_series: str | None = Field(default=None, max_length=255)
+    category_classification: str | None = Field(default=None, max_length=100)
+
     @field_validator("image_url")
     @classmethod
     def _check_image_url_create(cls, v: str | None) -> str | None:
@@ -96,6 +112,22 @@ class ProductUpdate(BaseModel):
     supplier_default_id: int | None = None
     tcg_type: str | None = Field(default=None, max_length=50)
     unit: str | None = Field(default=None, max_length=20)
+
+    # ADR-093 Phase 1: 商品マスタ全項目（Box 属性 + 発送ラベル + 検索/分類）
+    boxes_per_case: int | None = Field(default=None, ge=0)
+    packs_per_box: int | None = Field(default=None, ge=0)
+    box_weight_kg: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=3)
+    case_weight_kg: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=3)
+    volume_weight: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=3)
+    moq: int | None = Field(default=None, ge=0)
+    hs_code: str | None = Field(default=None, max_length=20)
+    material: str | None = Field(default=None, max_length=50)
+    item: str | None = Field(default=None, max_length=255)
+    required_output_value: str | None = Field(default=None, max_length=255)
+    search_keywords: str | None = Field(default=None, max_length=5000)
+    exclude_keywords: str | None = Field(default=None, max_length=5000)
+    related_series: str | None = Field(default=None, max_length=255)
+    category_classification: str | None = Field(default=None, max_length=100)
 
     @field_validator("image_url")
     @classmethod
@@ -134,6 +166,22 @@ class ProductResponse(BaseModel):
     supplier_default_id: int | None = None
     tcg_type: str | None = Field(default=None, max_length=50)
     unit: str | None = Field(default=None, max_length=20)
+
+    # ADR-093 Phase 1: 商品マスタ全項目（Box 属性 + 発送ラベル + 検索/分類）
+    boxes_per_case: int | None = None
+    packs_per_box: int | None = None
+    box_weight_kg: Decimal | None = None
+    case_weight_kg: Decimal | None = None
+    volume_weight: Decimal | None = None
+    moq: int | None = None
+    hs_code: str | None = None
+    material: str | None = None
+    item: str | None = None
+    required_output_value: str | None = None
+    search_keywords: str | None = None
+    exclude_keywords: str | None = None
+    related_series: str | None = None
+    category_classification: str | None = None
 
     model_config = {"from_attributes": True}
 

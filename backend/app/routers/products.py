@@ -60,6 +60,11 @@ _UPDATABLE_COLUMNS = {
     "tcg_type",
     # ADR-090 PR5b: 取引単位（Box/Case 等）
     "unit",
+    # ADR-093 Phase 1: 商品マスタ全項目（Box 属性 + 発送ラベル + 検索/分類）
+    "boxes_per_case", "packs_per_box", "box_weight_kg", "case_weight_kg",
+    "volume_weight", "moq", "hs_code", "material", "item",
+    "required_output_value", "search_keywords", "exclude_keywords",
+    "related_series", "category_classification",
 }
 
 
@@ -82,7 +87,11 @@ def _select_columns(ctx: dict[str, str]) -> str:
         "notes, release_date, created_at, updated_at, "
         "jan_code, card_number, expansion_code, rarity, language, "
         "unit_price_usd, unit_price_eur, image_url, "
-        "is_archived, archived_at, supplier_default_id, tcg_type, unit"
+        "is_archived, archived_at, supplier_default_id, tcg_type, unit, "
+        # ADR-093 Phase 1: 商品マスタ全項目
+        "boxes_per_case, packs_per_box, box_weight_kg, case_weight_kg, "
+        "volume_weight, moq, hs_code, material, item, required_output_value, "
+        "search_keywords, exclude_keywords, related_series, category_classification"
     )
 
 
@@ -233,14 +242,22 @@ async def create_product(
                 notes, release_date,
                 jan_code, card_number, expansion_code, rarity, language,
                 unit_price_usd, unit_price_eur, image_url,
-                is_archived, supplier_default_id, tcg_type, unit
+                is_archived, supplier_default_id, tcg_type, unit,
+                boxes_per_case, packs_per_box, box_weight_kg, case_weight_kg,
+                volume_weight, moq, hs_code, material, item,
+                required_output_value, search_keywords, exclude_keywords,
+                related_series, category_classification
             ) VALUES (
                 :tenant_id, :name_ja, :name_en, :category, :mark,
                 :status, :condition, :unit_price, :quantity, :weight,
                 :notes, :release_date,
                 :jan_code, :card_number, :expansion_code, :rarity, :language,
                 :unit_price_usd, :unit_price_eur, :image_url,
-                :is_archived, :supplier_default_id, :tcg_type, :unit
+                :is_archived, :supplier_default_id, :tcg_type, :unit,
+                :boxes_per_case, :packs_per_box, :box_weight_kg, :case_weight_kg,
+                :volume_weight, :moq, :hs_code, :material, :item,
+                :required_output_value, :search_keywords, :exclude_keywords,
+                :related_series, :category_classification
             ) RETURNING id
         """),
         payload,

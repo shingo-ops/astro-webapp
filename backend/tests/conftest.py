@@ -648,7 +648,21 @@ async def setup_test_db(test_engine):
                 archived_at TIMESTAMP,
                 supplier_default_id INTEGER,
                 tcg_type VARCHAR(50),
-                unit VARCHAR(20)
+                unit VARCHAR(20),
+                boxes_per_case INTEGER,
+                packs_per_box INTEGER,
+                box_weight_kg NUMERIC(8, 3),
+                case_weight_kg NUMERIC(8, 3),
+                volume_weight NUMERIC(8, 3),
+                moq INTEGER,
+                hs_code VARCHAR(20),
+                material VARCHAR(50),
+                item VARCHAR(255),
+                required_output_value VARCHAR(255),
+                search_keywords TEXT,
+                exclude_keywords TEXT,
+                related_series VARCHAR(255),
+                category_classification VARCHAR(100)
             )
         """))
         await conn.execute(text("""

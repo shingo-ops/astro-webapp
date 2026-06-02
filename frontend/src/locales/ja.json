@@ -869,7 +869,26 @@
     "status_inactive": "無効",
     "status_discontinued": "廃番",
     "outOfStockTooltip": "在庫切れ — 仕入元の発注または在庫補充が必要です",
-    "pageLabel": "{{page}} ページ目 ({{count}} 件表示中)"
+    "pageLabel": "{{page}} ページ目 ({{count}} 件表示中)",
+    "master": {
+      "sectionBox": "Box・梱包",
+      "sectionShipping": "発送ラベル",
+      "sectionSearch": "検索・分類",
+      "boxesPerCase": "ケース入数（Box/Case）",
+      "packsPerBox": "Box入数（パック/Box）",
+      "boxWeightKg": "Box重量 (kg)",
+      "caseWeightKg": "Case重量 (kg)",
+      "volumeWeight": "容積重量 (kg)",
+      "moq": "最小発注数 (MOQ)",
+      "hsCode": "HSコード",
+      "material": "素材",
+      "item": "品目",
+      "requiredOutputValue": "必須出力値",
+      "searchKeywords": "検索キーワード",
+      "excludeKeywords": "除外キーワード",
+      "relatedSeries": "関連シリーズ",
+      "categoryClassification": "カテゴリ分類"
+    }
   },
   "suppliers": {
     "title": "仕入先管理",
