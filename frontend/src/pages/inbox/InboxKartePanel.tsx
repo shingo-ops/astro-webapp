@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NAV_ICONS } from "../../constants/icons";
 import { ICON } from "../../constants/iconSizes";
+import { api } from "../../lib/api";
 import { getInitials } from "./inbox.types";
 import type { LeadDetail, KarteTabKey } from "./inbox.types";
 
@@ -65,6 +67,15 @@ export function InboxKartePanel({
   handleCardFieldChange, handleCardFieldBlur,
 }: Props) {
   const { t } = useTranslation();
+  const [guildId, setGuildId] = useState<string | null>(null);
+
+  // guild_id は チケットチャンネルリンク生成に必要。チャンネルがある場合のみ1回フェッチ。
+  useEffect(() => {
+    if (!leadDetail?.discord_guild_channel_id || guildId) return;
+    api.get<{ guild_id: string | null }>("/admin/discord-config")
+      .then((d) => setGuildId(d.guild_id ?? null))
+      .catch(() => { /* リンク表示を省略するだけ */ });
+  }, [leadDetail?.discord_guild_channel_id, guildId]);
 
   return (
     <aside
@@ -135,6 +146,7 @@ export function InboxKartePanel({
               cardForm={cardForm}
               handleCardFieldChange={handleCardFieldChange}
               handleCardFieldBlur={handleCardFieldBlur}
+              guildId={guildId}
             />
           </div>
         </div>
@@ -152,13 +164,14 @@ export function InboxKartePanel({
 // ---------------------------------------------------------------------------
 
 function KarteTabContent({
-  tab, leadDetail, cardForm, handleCardFieldChange, handleCardFieldBlur,
+  tab, leadDetail, cardForm, handleCardFieldChange, handleCardFieldBlur, guildId,
 }: {
   tab: KarteTabKey;
   leadDetail: LeadDetail;
   cardForm: CardForm;
   handleCardFieldChange: (field: keyof LeadDetail, value: unknown) => void;
   handleCardFieldBlur: () => void;
+  guildId: string | null;
 }) {
   const { t } = useTranslation();
 
@@ -199,6 +212,25 @@ function KarteTabContent({
             <span className="right-panel-label">{t("leads.discordUserId")}</span>
             <input className="right-panel-field" type="text" value={leadDetail.discord_user_id}
               readOnly tabIndex={-1} />
+          </div>
+        )}
+        {/* ADR-091 KPI3: チケットチャンネルリンク */}
+        {leadDetail.discord_guild_channel_id && (
+          <div className="right-panel-row">
+            <span className="right-panel-label">{t("leads.discordTicketChannel")}</span>
+            {guildId ? (
+              <a
+                href={`https://discord.com/channels/${guildId}/${leadDetail.discord_guild_channel_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="right-panel-field text-token-accent underline truncate"
+              >
+                {t("leads.openDiscordChannel")}
+              </a>
+            ) : (
+              <input className="right-panel-field" type="text"
+                value={leadDetail.discord_guild_channel_id} readOnly tabIndex={-1} />
+            )}
           </div>
         )}
         <div className="right-panel-row">

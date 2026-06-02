@@ -319,6 +319,8 @@
     "messengerLink": "Messengerリンク",
     "discordId": "Discord ID",
     "discordUserId": "Discord User ID",
+    "discordTicketChannel": "チケットチャンネル",
+    "openDiscordChannel": "Discordで開く",
     "instagramLink": "Instagramリンク",
     "whatsappLink": "WhatsAppリンク",
     "country": "国",
@@ -1701,6 +1703,12 @@
     "loadError": "チケット設定の読み込みに失敗しました",
     "saveError": "チケット設定の保存に失敗しました",
     "saved": "チケット設定を保存しました",
-    "invalidSnowflake": "ID は17〜20桁の数字で入力してください"
+    "invalidSnowflake": "ID は17〜20桁の数字で入力してください",
+    "deployButtonTitle": "ボタンを Discord に設置する",
+    "deployButtonHint": "設定済みのチャンネルに「チケットを開く」ボタン付きメッセージを投稿します。",
+    "deployButton": "ボタンを投稿する",
+    "deploying": "投稿中...",
+    "deployDone": "ボタンメッセージを投稿しました",
+    "deployError": "投稿に失敗しました。Bot権限とチャンネルIDを確認してください。"
   }
 }
