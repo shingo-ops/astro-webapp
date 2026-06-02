@@ -34,6 +34,7 @@ from app.routers import (
     dashboard,
     deals,
     discord_guild_config,  # Sprint D2: Discord Guild 設定 admin API
+    discord_ticket_config,  # ADR-091 KPI3: チケット機能設定 admin API
     duplicates,
     erp,
     goals,  # ダッシュボード強化: 目標管理
@@ -188,6 +189,11 @@ app.include_router(
 # Sprint D2: Discord Guild 設定 API (tenant admin)
 app.include_router(
     discord_guild_config.router, prefix="/api/v1", tags=["discord"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# ADR-091 KPI3: チケット機能設定 API (tenant admin)
+app.include_router(
+    discord_ticket_config.router, prefix="/api/v1", tags=["discord"],
     dependencies=[Depends(get_current_tenant)],
 )
 # Phase 1-B-2 Step 5b-1: companies/contacts API（ADR-089 Sprint 3: customers 廃止済み）

@@ -1682,5 +1682,25 @@
       "pending": "Syncing",
       "not_linked": "Discord not linked"
     }
+  },
+  "discordTicketConfig": {
+    "title": "Ticket Settings",
+    "description": "Configure the ticket feature to automatically create private channels for customers.",
+    "categoryIdLabel": "Ticket Category ID",
+    "categoryIdPlaceholder": "e.g. 1288437029213835356",
+    "categoryIdHint": "ID of the category where private channels will be created. Right-click a category in Discord → 'Copy ID'.",
+    "buttonChannelIdLabel": "Button Channel ID",
+    "buttonChannelIdPlaceholder": "e.g. 1288437029213835357",
+    "buttonChannelIdHint": "ID of the channel where the 'Open Ticket' button will be posted.",
+    "staffRoleIdLabel": "Staff Role ID (Optional)",
+    "staffRoleIdPlaceholder": "e.g. 1288437029213835358",
+    "staffRoleIdHint": "ID of the staff role to add to ticket channels automatically. Leave blank to add only the bot.",
+    "welcomeTemplateLabel": "Welcome Message",
+    "welcomeTemplatePlaceholder": "Message sent when a ticket channel is created",
+    "welcomeTemplateHint": "Message sent to the customer when they open a ticket (max 500 characters).",
+    "loadError": "Failed to load ticket configuration",
+    "saveError": "Failed to save ticket configuration",
+    "saved": "Ticket configuration saved",
+    "invalidSnowflake": "ID must be a 17–20 digit number"
   }
 }

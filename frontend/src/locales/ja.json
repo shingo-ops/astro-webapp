@@ -1682,5 +1682,25 @@
       "pending": "同期中",
       "not_linked": "Discord未連携"
     }
+  },
+  "discordTicketConfig": {
+    "title": "チケット機能設定",
+    "description": "顧客専用プライベートチャンネルを自動発行するためのチケット機能を設定します。",
+    "categoryIdLabel": "チケットカテゴリ ID",
+    "categoryIdPlaceholder": "例: 1288437029213835356",
+    "categoryIdHint": "プライベートチャンネルを作成するカテゴリの ID です。Discord でカテゴリを右クリック → 「ID をコピー」で取得できます。",
+    "buttonChannelIdLabel": "ボタン設置チャンネル ID",
+    "buttonChannelIdPlaceholder": "例: 1288437029213835357",
+    "buttonChannelIdHint": "「チケットを開く」ボタンを設置するチャンネルの ID です。",
+    "staffRoleIdLabel": "担当者ロール ID（任意）",
+    "staffRoleIdPlaceholder": "例: 1288437029213835358",
+    "staffRoleIdHint": "チケットチャンネルに自動追加するスタッフロールの ID です。未設定の場合はボットのみが参加します。",
+    "welcomeTemplateLabel": "ウェルカムメッセージ",
+    "welcomeTemplatePlaceholder": "チケットチャンネル作成時に送信するメッセージ",
+    "welcomeTemplateHint": "顧客がチケットを開いた際に送信されるメッセージです（最大500文字）。",
+    "loadError": "チケット設定の読み込みに失敗しました",
+    "saveError": "チケット設定の保存に失敗しました",
+    "saved": "チケット設定を保存しました",
+    "invalidSnowflake": "ID は17〜20桁の数字で入力してください"
   }
 }
