@@ -27,6 +27,14 @@
 - [ ] `npm run check:dark-parity` でパリティ確認済み
 - [ ] 既存トークンで代替できないか確認した（トークン重複防止）
 
+### backend/app/routers/ 変更時（write エンドポイントを追加・変更した場合）
+- [ ] `db.commit()` 直後に `await reset_tenant_context(db, tenant_id)` を呼んでいる（ADR-072）
+- [ ] commit が複数ある場合、各 commit の直後に呼んでいる
+
 ### セキュリティ
 - [ ] ハードコードされたシークレットがない
 - [ ] ユーザー入力を適切にバリデーションしている
+
+### CLAUDE.md 変更時
+- [ ] 追加先のファイルの行数上限を超えていないか（`npm run check:claude-size` で確認）
+- [ ] 新規ファイルを作成した場合、`check-claude-size.js` の LIMITS 配列に登録した
