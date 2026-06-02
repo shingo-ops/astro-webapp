@@ -138,14 +138,15 @@ def messaging_type_for_state(
 ) -> tuple[Optional[str], Optional[str]]:
     """送信時の (messaging_type, message_tag) を決める。
 
-    人間スタッフが送信する前提のため、window 内は常に HUMAN_AGENT を付与する（ADR-035）。
-
     - EXPIRED / NO_INBOUND → (None, None)（呼び出し側が 400 を返すべき）
-    - WITHIN_24H / WITHIN_HUMAN_AGENT → ("MESSAGE_TAG", "HUMAN_AGENT")
+    - WITHIN_24H → ("RESPONSE", None)
+    - WITHIN_HUMAN_AGENT → ("MESSAGE_TAG", "HUMAN_AGENT")（Meta要審査承認）
     """
     if state in (WindowState.EXPIRED, WindowState.NO_INBOUND):
         return (None, None)
-    return ("MESSAGE_TAG", "HUMAN_AGENT")
+    if state == WindowState.WITHIN_HUMAN_AGENT:
+        return ("MESSAGE_TAG", "HUMAN_AGENT")
+    return ("RESPONSE", None)
 
 
 __all__ = [

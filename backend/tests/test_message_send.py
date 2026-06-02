@@ -455,15 +455,14 @@ async def test_send_within_24h_uses_response_messaging_type(app_client, db_sessi
 
     assert resp.status_code == 201
     body = resp.json()
-    # HUMAN_AGENT auto-apply 仕様 (dac01e3) に追随:
-    # 24h 以内でも messaging_type=MESSAGE_TAG / message_tag=HUMAN_AGENT を返す
-    assert body["messaging_type"] == "MESSAGE_TAG"
-    assert body["message_tag"] == "HUMAN_AGENT"
+    # 24h 以内は RESPONSE（HUMAN_AGENT タグは Meta 審査承認が必要なため使わない）
+    assert body["messaging_type"] == "RESPONSE"
+    assert body["message_tag"] is None
     assert body["message_id"] == "mid-001"
     # Send API に正しい引数が渡る
     assert mocked.await_count == 1
-    assert captured["messaging_type"] == "MESSAGE_TAG"
-    assert captured["tag"] == "HUMAN_AGENT"
+    assert captured["messaging_type"] == "RESPONSE"
+    assert captured["tag"] is None
     assert captured["text"] == "ありがとう"
     assert captured["recipient_id"] == "PSID-1"
 
@@ -549,9 +548,10 @@ async def test_send_force_human_agent_within_24h_uses_message_tag(app_client, db
 
     assert resp.status_code == 201
     body = resp.json()
-    assert body["messaging_type"] == "MESSAGE_TAG"
-    assert body["message_tag"] == "HUMAN_AGENT"
-    assert captured["messaging_type"] == "MESSAGE_TAG"
+    # force_human_agent_tag は 24h 以内では無視される（RESPONSE を返す）
+    assert body["messaging_type"] == "RESPONSE"
+    assert body["message_tag"] is None
+    assert captured["messaging_type"] == "RESPONSE"
 
 
 # ---------------------------------------------------------------------------
@@ -681,10 +681,9 @@ async def test_send_success_inserts_outbound_meta_message(app_client, db_session
     assert direction == "outbound"
     assert message_text == "Hello"
     assert recipient_id == "PSID-1"
-    # HUMAN_AGENT auto-apply 仕様 (dac01e3) に追随:
-    # window 内は常に MESSAGE_TAG / HUMAN_AGENT で書き込む
-    assert messaging_type == "MESSAGE_TAG"
-    assert message_tag == "HUMAN_AGENT"
+    # 24h 以内は RESPONSE で送信
+    assert messaging_type == "RESPONSE"
+    assert message_tag is None
     assert message_id == "mid-success"
     assert platform == "messenger"
     assert sender_id == "page-1"
