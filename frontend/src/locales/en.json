@@ -638,8 +638,9 @@
       "internal_error": "An internal error occurred. Please contact support.",
       "unknown": "Connection failed (reason: {{reason}})."
     },
-    "subtitle": "Set up Meta and Discord message integrations.",
-    "discordSection": "Discord Guild Settings",
+    "subtitle": "Set up integrations with external messaging tools.",
+    "facebookSection": "Facebook Page Integration",
+    "discordSection": "Discord Server Integration",
     "discordGuildId": "Guild ID",
     "discordGuildIdNotSet": "Not configured",
     "discordEdit": "Edit settings"
