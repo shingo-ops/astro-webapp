@@ -1555,6 +1555,8 @@
           "quantityOffered": "Qty on hand",
           "quantityOfferedPlaceholder": "Offered qty",
           "unit": "Unit",
+          "offerType": "Type",
+          "shipTiming": "Ship timing",
           "unitPrice": "Unit price (JPY)",
           "unitPricePlaceholder": "Offered price"
         },
@@ -1631,6 +1633,8 @@
         "supplier": "Supplier",
         "product": "Product",
         "condition": "Condition",
+        "offerType": "Type",
+        "shipTiming": "Ship timing",
         "quantity": "Qty",
         "unitPrice": "Unit price (JPY)",
         "status": "Status",

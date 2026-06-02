@@ -28,6 +28,9 @@ interface InventoryOffer {
   supplier_id: number;
   product_id: number;
   condition: string;
+  // ADR-093 Phase 3b: 区分(在庫/予約)・発送日（key 要素のため表示専用。編集は削除→再作成）
+  offer_type: string;
+  ship_timing: string | null;
   quantity: number;
   unit_price: number;
   status: InventoryStatus;
@@ -322,6 +325,8 @@ export default function InventoryOffersPage() {
             <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.supplier")}</th>
             <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.product")}</th>
             <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.condition")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.offerType")}</th>
+            <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.shipTiming")}</th>
             <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.quantity")}</th>
             <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.unitPrice")}</th>
             <th style={{ textAlign: "center" }}>{t("superAdmin.inventoryOffers.col.status")}</th>
@@ -333,7 +338,7 @@ export default function InventoryOffersPage() {
         <tbody>
           {items.length === 0 ? (
             <tr>
-              <td colSpan={9} data-testid="offers-empty">
+              <td colSpan={11} data-testid="offers-empty">
                 {t("superAdmin.inventoryOffers.noResults")}
               </td>
             </tr>
@@ -353,6 +358,15 @@ export default function InventoryOffersPage() {
                   </td>
                   <td>
                     <code>{o.condition}</code>
+                  </td>
+                  {/* ADR-093 Phase 3b: 区分/発送日（表示専用） */}
+                  <td style={{ textAlign: "center" }}>
+                    {t(`inventory.offerType.${o.offer_type}`, { defaultValue: o.offer_type })}
+                  </td>
+                  <td style={{ textAlign: "center" }}>
+                    {o.ship_timing
+                      ? t(`inventory.shipTiming.${o.ship_timing}`, { defaultValue: o.ship_timing })
+                      : "-"}
                   </td>
                   <td>
                     {isEditing && draft ? (

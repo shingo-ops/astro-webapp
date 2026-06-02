@@ -203,6 +203,8 @@ async def apply_inbound_items(
                     quantity=int(item.get("quantity_offered") or 0),
                     unit_price=int(item.get("unit_price") or 0),
                     unit=item.get("unit"),
+                    offer_type=str(item.get("offer_type") or "in_stock"),
+                    ship_timing=item.get("ship_timing"),
                 )
                 offers_recorded += 1
             else:
@@ -330,6 +332,8 @@ async def apply_inbound_items(
                     quantity=int(offered_qty),
                     unit_price=int(item.get("unit_price") or 0),
                     unit=item.get("unit"),
+                    offer_type=str(item.get("offer_type") or "in_stock"),
+                    ship_timing=item.get("ship_timing"),
                 )
                 offers_recorded += 1
 

@@ -36,6 +36,9 @@ interface ReviewItem {
   product_name?: string | null;
   quantity?: number | null;
   unit?: string | null;  // parser 正規化値: box / carton / pack / piece / set
+  // ADR-093 Phase 3b: parser が自動判定した区分/発送日（admin が修正可能）
+  offer_type?: string | null;   // in_stock / pre_order
+  ship_timing?: string | null;  // on_release / 1day_before / 2day_before / other
 }
 
 interface ParseResultJson {
@@ -79,6 +82,9 @@ interface RowDraft {
   // 単位 (QA 2026-05-30): Box / Case / Pack / Set / Peace。空文字 = 未指定。
   // parser の unit (box/carton/pack/piece/set) を UI 値にマップして prefill する。
   unit: string;
+  // ADR-093 Phase 3b: 区分(在庫/予約)・発送日。空文字 = 未指定。
+  offer_type: string;
+  ship_timing: string;
   // 表示専用 (送信しない): LLM が抽出した商品名
   product_name: string;
 }
@@ -120,6 +126,10 @@ const CONDITION_OPTIONS = [
   "graded", "grade_s", "grade_a", "grade_b", "grade_c", "grade_d",
   "junk", "bulk", "normal", "unknown",
 ] as const;
+
+// ADR-093 Phase 3b: 区分(在庫/予約)・発送日の選択肢（DB 正規値と同一）。
+const OFFER_TYPE_OPTIONS = ["in_stock", "pre_order"] as const;
+const SHIP_TIMING_OPTIONS = ["on_release", "1day_before", "2day_before", "other"] as const;
 
 function mapParserUnit(raw: string | null | undefined): InventoryUnit | "" {
   if (!raw) return "";
@@ -164,6 +174,9 @@ function detailToDrafts(detail: ParseReviewDetail): RowDraft[] {
       quantity_offered: offered,
       unit_price: toIntPriceString(item.unit_price),
       unit: mapParserUnit(item.unit),
+      // ADR-093 Phase 3b: parser 自動判定の区分/発送日を prefill（admin 修正可）
+      offer_type: String(item.offer_type ?? ""),
+      ship_timing: String(item.ship_timing ?? ""),
       // 表示専用: LLM 抽出の商品名
       product_name: String(item.product_name ?? ""),
     };
@@ -267,6 +280,9 @@ export default function ParseReviewPage() {
             quantity_offered: qOffered ? Number.parseInt(qOffered, 10) : null,
             unit_price: uPrice ? Number.parseInt(uPrice, 10) : null,
             unit: r.unit || null,
+            // ADR-093 Phase 3b: 区分/発送日（空文字 = 未指定 → null = 在庫扱い）
+            offer_type: r.offer_type || null,
+            ship_timing: r.ship_timing || null,
           };
         });
       const skipped_indices = drafts
@@ -495,6 +511,8 @@ export default function ParseReviewPage() {
                       <th>{t("superAdmin.inbound.review.col.condition")}</th>
                       <th>{t("superAdmin.inbound.review.col.quantityOffered")}</th>
                       <th>{t("superAdmin.inbound.review.col.unit")}</th>
+                      <th>{t("superAdmin.inbound.review.col.offerType")}</th>
+                      <th>{t("superAdmin.inbound.review.col.shipTiming")}</th>
                       <th>{t("superAdmin.inbound.review.col.unitPrice")}</th>
                       <th>{t("superAdmin.inbound.review.col.alias")}</th>
                     </tr>
@@ -622,6 +640,48 @@ export default function ParseReviewPage() {
                               {UNIT_OPTIONS.map((u) => (
                                 <option key={u} value={u}>
                                   {u}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          {/* ADR-093 Phase 3b: 区分(在庫/予約) */}
+                          <td>
+                            <select
+                              data-testid={`review-row-${idx}-offer-type`}
+                              value={row.offer_type}
+                              disabled={row.skipped || isFinal}
+                              onChange={(e) =>
+                                updateDraft(idx, { offer_type: e.target.value })
+                              }
+                              style={{ width: "6rem" }}
+                            >
+                              <option value="">
+                                {t("superAdmin.inbound.review.condition.unspecified")}
+                              </option>
+                              {OFFER_TYPE_OPTIONS.map((o) => (
+                                <option key={o} value={o}>
+                                  {t(`inventory.offerType.${o}`)}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          {/* ADR-093 Phase 3b: 発送日(予約のみ) */}
+                          <td>
+                            <select
+                              data-testid={`review-row-${idx}-ship-timing`}
+                              value={row.ship_timing}
+                              disabled={row.skipped || isFinal}
+                              onChange={(e) =>
+                                updateDraft(idx, { ship_timing: e.target.value })
+                              }
+                              style={{ width: "8rem" }}
+                            >
+                              <option value="">
+                                {t("superAdmin.inbound.review.condition.unspecified")}
+                              </option>
+                              {SHIP_TIMING_OPTIONS.map((s) => (
+                                <option key={s} value={s}>
+                                  {t(`inventory.shipTiming.${s}`)}
                                 </option>
                               ))}
                             </select>

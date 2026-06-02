@@ -1555,6 +1555,8 @@
           "quantityOffered": "在庫数",
           "quantityOfferedPlaceholder": "提示数量",
           "unit": "単位",
+          "offerType": "区分",
+          "shipTiming": "発送日",
           "unitPrice": "単価 (円)",
           "unitPricePlaceholder": "提示単価"
         },
@@ -1631,6 +1633,8 @@
         "supplier": "仕入元",
         "product": "商品",
         "condition": "状態",
+        "offerType": "区分",
+        "shipTiming": "発送日",
         "quantity": "在庫数",
         "unitPrice": "単価 (円)",
         "status": "ステータス",
