@@ -18,6 +18,7 @@ import LeadsPage from "./pages/leads/LeadsPage";
 import TeamsPage from "./pages/teams/TeamsPage";
 import RolesPage from "./pages/roles/RolesPage";
 import ProductsPage from "./pages/products/ProductsPage";
+import InventoryPage from "./pages/inventory/InventoryPage";
 import QuotesPage from "./pages/quotes/QuotesPage";
 import QuoteCreatePage from "./pages/quote-create/QuoteCreatePage";
 import QuoteDetailPage from "./pages/quote-detail/QuoteDetailPage";
@@ -119,8 +120,10 @@ function App() {
                     <Route path="archive"         element={<ArchivesPage />} />
                   </Route>
 
-                  {/* 在庫 */}
-                  <Route path="/inventory" element={<ProductsPage />} />
+                  {/* 在庫表（最終ユーザー向け offers ビュー / ADR-093 Phase 2） */}
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  {/* 商品マスタ CRUD（管理者向けに退避。操作は Page 内 hasPermission で制御） */}
+                  <Route path="/admin/products" element={<ProductsPage />} />
 
                   {/* 見積・請求 */}
                   <Route path="/quotes/new" element={<QuoteCreatePage />} />

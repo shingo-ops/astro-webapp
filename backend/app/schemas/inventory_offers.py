@@ -103,6 +103,46 @@ class InventoryOfferListResponse(BaseModel):
     per_page: int
 
 
+# ---------------------------------------------------------------------------
+# 最終ユーザー向け在庫表ビュー (GET /inventory) — 読み取り専用・参考画像準拠の列
+# ADR-093 Phase 2: 在庫表を public.inventory（仕入元オファー）ベースに作替え。
+# ---------------------------------------------------------------------------
+
+
+class InventoryRow(BaseModel):
+    """在庫表ビューの 1 明細行（商品×仕入元×状態）。読み取り専用。
+
+    admin 専用フィールド（notes/source/status）は含めない。最終ユーザー（各クライアントの
+    営業担当ロール以上）が閲覧 + 見積/請求/発注作成するための列のみ。
+    condition は migration 089 の 16 値だが、旧データ混入時も 500 にしないため str で受ける
+    （inventory_offers 500 の教訓）。
+    """
+
+    id: int
+    product_id: int
+    product_name: str | None = None   # 商品名（= public.products.name = name_ja）
+    name_en: str | None = None        # 英語名（任意表示）
+    category: str | None = None       # カテゴリ（例: Pokemon）
+    mark: str | None = None           # マーク（例: M4）
+    condition: str                    # 状態 16 値（フロントで i18n ラベル化）
+    unit: str | None = None           # 形態 piece/pack/box/case/set
+    supplier_id: int
+    supplier_name: str | None = None  # 仕入元
+    unit_price: int                   # 単価
+    quantity: int                     # 数量
+    tcg_type: str | None = None       # TCG 種別（フィルタ用 = public.products.tcg_type）
+    offered_at: datetime              # 掲載時間（≒ Discord 受信時刻）
+
+
+class InventoryListResponse(BaseModel):
+    """在庫表ビューのページング付き一覧。"""
+
+    items: list[InventoryRow]
+    total: int
+    page: int
+    per_page: int
+
+
 __all__ = [
     "InventoryCondition",
     "InventoryOfferBase",
@@ -110,6 +150,8 @@ __all__ = [
     "InventoryOfferUpdate",
     "InventoryOfferResponse",
     "InventoryOfferListResponse",
+    "InventoryRow",
+    "InventoryListResponse",
     "InventoryStatus",
     "InventorySource",
     "InventoryUnit",

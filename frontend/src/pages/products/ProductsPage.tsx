@@ -362,7 +362,7 @@ export default function ProductsPage() {
 
   return (
     <PageLayout
-      navKey="nav.inventory"
+      navKey="nav.products"
       subtitleKey="products.subtitle"
       headerAction={
         hasPermission("products.create") ? (

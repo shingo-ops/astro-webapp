@@ -18,13 +18,15 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import require_super_admin
+from app.auth.dependencies import require_permission, require_super_admin
 from app.database import get_db
 from app.schemas.inventory_offers import (
+    InventoryListResponse,
     InventoryOfferCreate,
     InventoryOfferListResponse,
     InventoryOfferResponse,
     InventoryOfferUpdate,
+    InventoryRow,
 )
 
 router = APIRouter()
@@ -62,6 +64,95 @@ async def _load_offer(db: AsyncSession, offer_id: int) -> dict | None:
         )
     ).mappings().first()
     return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# 最終ユーザー向け在庫表ビュー GET /inventory（ADR-093 Phase 2）
+# 各クライアントの営業担当ロール以上（products.view）が閲覧。読み取り専用。
+# ---------------------------------------------------------------------------
+
+# 在庫表ビュー用 SELECT（参考画像準拠の列。admin 専用の notes/source/status は除外）。
+_VIEW_SELECT = """
+    SELECT i.id, i.product_id, i.condition, i.unit, i.unit_price,
+           i.quantity, i.offered_at, i.supplier_id,
+           s.name AS supplier_name,
+           p.name AS product_name,
+           p.name_en AS name_en,
+           p.category AS category,
+           p.mark AS mark,
+           p.tcg_type AS tcg_type
+    FROM public.inventory i
+    LEFT JOIN public.suppliers s ON s.id = i.supplier_id
+    LEFT JOIN public.products  p ON p.id = i.product_id
+"""
+
+_VIEW_COUNT_FROM = (
+    "FROM public.inventory i "
+    "LEFT JOIN public.suppliers s ON s.id = i.supplier_id "
+    "LEFT JOIN public.products  p ON p.id = i.product_id "
+)
+
+
+@router.get(
+    "/inventory",
+    response_model=InventoryListResponse,
+    dependencies=[Depends(require_permission("products.view"))],
+)
+async def list_inventory_view(
+    q: str | None = Query(default=None, max_length=255, description="商品名/英名/コード/カテゴリ/マーク/仕入元の部分一致"),
+    tcg_type: str | None = Query(default=None, max_length=50, description="TCG種別 (public.products.tcg_type)"),
+    sort: str = Query(default="name", pattern="^(name)$"),
+    order: str = Query(default="asc", pattern="^(asc|desc)$"),
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+):
+    """在庫表（最終ユーザー向け）。
+
+    public.inventory の status='in_stock' かつ未失効 (expires_at > NOW()) のオファーを
+    「商品×仕入元×状態」の明細行で返す。名前ソート + TCG種別フィルタ + 検索 + ページング。
+
+    - 権限: products.view（各クライアントの営業担当ロール以上）。編集/削除は持たない。
+    - 18h 失効: expires_at <= NOW() の行は非表示（表示フィルタのみ、実データは消さない）。
+    - 在庫数マスクなし（I-05 撤廃 / 在庫は全テナント共通で見える）。
+    """
+    offset = (page - 1) * per_page
+    conditions: list[str] = [
+        "i.status = 'in_stock'",
+        "(i.expires_at IS NULL OR i.expires_at > NOW())",
+    ]
+    params: dict = {"limit": per_page, "offset": offset}
+    if tcg_type:
+        conditions.append("p.tcg_type = :tcg_type")
+        params["tcg_type"] = tcg_type
+    if q:
+        conditions.append(
+            "(s.name ILIKE :q OR p.name ILIKE :q OR p.name_en ILIKE :q "
+            "OR p.product_code ILIKE :q OR p.category ILIKE :q OR p.mark ILIKE :q)"
+        )
+        params["q"] = f"%{q}%"
+    where = "WHERE " + " AND ".join(conditions)
+    order_dir = "ASC" if order == "asc" else "DESC"
+
+    total = (
+        await db.execute(
+            text(f"SELECT COUNT(*) {_VIEW_COUNT_FROM} {where}"),
+            params,
+        )
+    ).scalar_one()
+
+    result = await db.execute(
+        text(
+            f"{_VIEW_SELECT} {where} "
+            f"ORDER BY p.name {order_dir} NULLS LAST, i.id ASC "
+            "LIMIT :limit OFFSET :offset"
+        ),
+        params,
+    )
+    items = [InventoryRow(**dict(r)) for r in result.mappings().all()]
+    return InventoryListResponse(
+        items=items, total=int(total or 0), page=page, per_page=per_page
+    )
 
 
 @router.get(
