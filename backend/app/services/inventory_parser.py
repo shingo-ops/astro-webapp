@@ -161,6 +161,7 @@ DEFAULT_UNIT_NORMALIZATION: dict[str, str] = {
     "ボックス": "box",
     "箱": "box",
     "カートン": "case",
+    "carton": "case",
     "Carton": "case",
     "CARTON": "case",
     "case": "case",

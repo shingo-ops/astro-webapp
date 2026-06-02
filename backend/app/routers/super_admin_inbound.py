@@ -14,6 +14,7 @@ API:
 from __future__ import annotations
 
 import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
@@ -168,12 +169,27 @@ async def get_inbound(
 
 # 解析結果から商品名候補を取り出すための共通 CTE。
 # parse_result_json.items[] の product_name をトリムし、空でないものだけ対象にする。
-_PARSED_NAMES_CTE = (
-    "SELECT TRIM(it->>'product_name') AS pname, it->>'raw_line' AS raw_line "
+# PR5c: 取込時に転記する unit / condition も同時に取り出す。
+#   - unit は小文字化し carton→case に正規化（ユーザー方針 2026-06-02）
+#   - condition は小文字化（表記揺れ吸収）。空文字は NULL 扱い
+_PARSED_ITEMS_CTE = (
+    "SELECT TRIM(it->>'product_name') AS pname, it->>'raw_line' AS raw_line, "
+    "CASE WHEN LOWER(TRIM(it->>'unit')) = 'carton' THEN 'case' "
+    "     ELSE NULLIF(LOWER(TRIM(it->>'unit')), '') END AS unit, "
+    "NULLIF(LOWER(TRIM(it->>'condition')), '') AS condition "
     "FROM public.discord_inbound_messages m, "
     "jsonb_array_elements(COALESCE(m.parse_result_json->'items', '[]'::jsonb)) it "
     "WHERE COALESCE(TRIM(it->>'product_name'), '') <> ''"
 )
+
+# 商品名に日本語（ひらがな / カタカナ / 漢字 / 半角カナ）が 1 文字でもあれば 'ja'、
+# 無ければ 'en'。取込候補の言語既定値に使う（取込時にオペレータが修正可能）。
+# 範囲: U+3040-30FF(かな) / U+3400-9FFF(漢字) / U+FF66-FF9F(半角カナ)
+_JP_CHAR_RE = re.compile(r"[぀-ヿ㐀-鿿ｦ-ﾟ]")
+
+
+def _detect_language(name: str | None) -> str:
+    return "ja" if _JP_CHAR_RE.search(name or "") else "en"
 
 
 @router.get(
@@ -192,8 +208,10 @@ async def list_product_candidates(
     """
     result = await db.execute(
         text(
-            f"WITH parsed AS ({_PARSED_NAMES_CTE}) "
-            "SELECT p.pname AS name, COUNT(*) AS occurrences, MIN(p.raw_line) AS sample "
+            f"WITH parsed AS ({_PARSED_ITEMS_CTE}) "
+            "SELECT p.pname AS name, COUNT(*) AS occurrences, MIN(p.raw_line) AS sample, "
+            "  mode() WITHIN GROUP (ORDER BY p.unit) FILTER (WHERE p.unit IS NOT NULL) AS unit, "
+            "  mode() WITHIN GROUP (ORDER BY p.condition) FILTER (WHERE p.condition IS NOT NULL) AS condition "
             "FROM parsed p "
             "WHERE NOT EXISTS ("
             "  SELECT 1 FROM public.products pr WHERE pr.name = p.pname"
@@ -208,6 +226,10 @@ async def list_product_candidates(
             name=r["name"],
             occurrences=int(r["occurrences"]),
             sample=r.get("sample"),
+            unit=r.get("unit"),
+            condition=r.get("condition"),
+            # 言語は商品名から自動判定した既定値。取込 UI でオペレータが修正可能。
+            language=_detect_language(r["name"]),
         )
         for r in rows
     ]
@@ -229,16 +251,32 @@ async def apply_product_candidates(
       （NOT EXISTS による重複防止。products.name に UNIQUE は無いため
       厳密な同時実行排他ではないが、通常運用では実質冪等）
     - category は任意。指定があれば全件に同じ分類を付与する
-    - language は 'ja' 固定で付与する。Discord 受信通知は基本的に日本語のため
-      （ユーザー方針 2026-06-02: 英語版の明記がなければ日本語扱い）。英語自動判定は別途。
+    - PR5c: 解析結果(parse_result_json) から代表的な unit / condition を転記する。
+      unit は carton→case 正規化済・小文字、condition は小文字。
+    - language は payload.languages の上書き（取込 UI でオペレータが修正した値）を
+      優先し、無指定なら商品名から自動判定（日本語文字があれば ja、無ければ en）。
     """
     # public.products.name は VARCHAR(255)。超過名はバッチ全体を巻き込む
     # 制約違反（→全件ロールバック）になるため、登録対象から除外する。
     _NAME_MAX_LEN = 255
     category = (payload.category or "").strip() or None
-    # Discord 取込は基本日本語（ユーザー方針）。在庫表(/products, public.products)で
-    # 言語列が日本語として表示される。
-    _IMPORT_LANGUAGE = "ja"
+
+    # 商品名 → 代表的な unit / condition（最頻値）。解析結果全体から一括取得して
+    # 名前ごとに引く（候補抽出と同じ正規化ルール）。
+    rep_result = await db.execute(
+        text(
+            f"WITH parsed AS ({_PARSED_ITEMS_CTE}) "
+            "SELECT pname, "
+            "  mode() WITHIN GROUP (ORDER BY unit) FILTER (WHERE unit IS NOT NULL) AS unit, "
+            "  mode() WITHIN GROUP (ORDER BY condition) FILTER (WHERE condition IS NOT NULL) AS condition "
+            "FROM parsed GROUP BY pname"
+        )
+    )
+    rep: dict[str, tuple[str | None, str | None]] = {
+        r["pname"]: (r.get("unit"), r.get("condition")) for r in rep_result.mappings().all()
+    }
+    overrides = payload.languages or {}
+
     inserted = 0
     skipped = 0
     seen: set[str] = set()
@@ -250,15 +288,25 @@ async def apply_product_candidates(
         if len(name) > _NAME_MAX_LEN:
             skipped += 1
             continue
+        unit, condition = rep.get(name, (None, None))
+        lang = (overrides.get(name) or "").strip().lower()
+        if lang not in ("ja", "en"):
+            lang = _detect_language(name)
         result = await db.execute(
             text(
-                "INSERT INTO public.products (name, category, language) "
-                "SELECT :name, :category, :language "
+                "INSERT INTO public.products (name, category, unit, condition, language) "
+                "SELECT :name, :category, :unit, :condition, :language "
                 "WHERE NOT EXISTS ("
                 "  SELECT 1 FROM public.products WHERE name = :name"
                 ")"
             ),
-            {"name": name, "category": category, "language": _IMPORT_LANGUAGE},
+            {
+                "name": name,
+                "category": category,
+                "unit": unit,
+                "condition": condition,
+                "language": lang,
+            },
         )
         if result.rowcount:
             inserted += 1

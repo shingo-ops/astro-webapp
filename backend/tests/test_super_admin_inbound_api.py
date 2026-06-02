@@ -9,6 +9,7 @@ AC 対応:
 """
 from __future__ import annotations
 
+import json
 import os
 import uuid
 from datetime import datetime, timezone
@@ -174,3 +175,129 @@ async def test_list_inbound_403_without_super_admin(engine, seed_inbound_message
             assert resp.status_code == 403, resp.text
     finally:
         app.dependency_overrides.pop(get_current_user, None)
+
+
+# ---------------------------------------------------------------------------
+# PR5c: 取込候補で unit / condition / language を取得する（実 PG）
+# ---------------------------------------------------------------------------
+@pytest.fixture
+async def seed_inbound_for_import(engine):
+    """parse_result_json に unit/condition 付きの items を持つ 1 件を seed。
+
+    - 日本語名（carton×2 → mode=case, condition=shrink）
+    - 英語名（BOX → box, condition なし）
+    どちらも商品マスタ未登録になるよう uuid 付きユニーク名にする。
+    """
+    from sqlalchemy import text
+
+    channel_id = f"c_imp_{uuid.uuid4().hex[:10]}"
+    msg_id = f"imp_{uuid.uuid4().hex[:8]}"
+    jp_name = f"テスト取込_{uuid.uuid4().hex[:8]}"
+    en_name = f"TestImport {uuid.uuid4().hex[:8]}"
+    parse_result = {
+        "items": [
+            {"product_name": jp_name, "raw_line": f"{jp_name} 2カートン", "unit": "carton", "condition": "Shrink"},
+            {"product_name": jp_name, "raw_line": f"{jp_name} 1カートン", "unit": "carton", "condition": "shrink"},
+            {"product_name": en_name, "raw_line": f"{en_name} 1box", "unit": "BOX", "condition": None},
+        ]
+    }
+
+    async with engine.begin() as conn:
+        exists = (await conn.execute(text(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema='public' AND table_name='discord_inbound_messages'"
+        ))).scalar_one_or_none()
+        if not exists:
+            pytest.skip("public.discord_inbound_messages 未作成 (migration 059 必要)")
+        # PR5b の unit 列が無い環境ではスキップ（migration 未適用）。
+        has_unit = (await conn.execute(text(
+            "SELECT 1 FROM information_schema.columns "
+            "WHERE table_schema='public' AND table_name='products' AND column_name='unit'"
+        ))).scalar_one_or_none()
+        if not has_unit:
+            pytest.skip("public.products.unit 未作成 (PR5b migration 必要)")
+
+        await conn.execute(text("""
+            INSERT INTO public.discord_inbound_messages
+                (discord_message_id, discord_channel_id,
+                 raw_content, parse_status, parse_result_json, received_at)
+            VALUES (:mid, :ch, :raw, 'parsed_rule_only', CAST(:prj AS jsonb), NOW())
+        """), {"mid": msg_id, "ch": channel_id, "raw": "import test",
+               "prj": json.dumps(parse_result)})
+
+    yield {"channel_id": channel_id, "jp_name": jp_name, "en_name": en_name}
+
+    async with engine.begin() as conn:
+        await conn.execute(text(
+            "DELETE FROM public.discord_inbound_messages WHERE discord_channel_id = :ch"
+        ), {"ch": channel_id})
+        await conn.execute(text(
+            "DELETE FROM public.products WHERE name IN (:jp, :en)"
+        ), {"jp": jp_name, "en": en_name})
+
+
+async def test_import_candidates_and_apply_capture_unit_condition_language(
+    engine, seed_inbound_for_import
+):
+    """PR5c: 候補で unit(carton→case)/condition/言語自動判定、apply で products へ転記。
+
+    - jp_name: unit=case(carton正規化), condition=shrink, language=ja(自動)
+    - en_name: unit=box(BOX小文字化), language=en(自動) → apply で languages 上書き ja
+    """
+    from httpx import AsyncClient, ASGITransport
+    from sqlalchemy import text
+    from app.main import app
+    from app.auth.dependencies import require_super_admin
+    from app.models import User
+
+    ctx = seed_inbound_for_import
+    jp_name, en_name = ctx["jp_name"], ctx["en_name"]
+
+    async def _fake_super_admin() -> User:
+        u = User()
+        u.id = 1
+        u.is_super_admin = True
+        u.role = "admin"
+        u.tenant_id = 6
+        return u
+
+    app.dependency_overrides[require_super_admin] = _fake_super_admin
+    try:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.get("/api/v1/super-admin/inbound/product-candidates")
+            assert resp.status_code == 200, resp.text
+            by_name = {c["name"]: c for c in resp.json()["candidates"]}
+            assert jp_name in by_name and en_name in by_name
+
+            jp = by_name[jp_name]
+            assert jp["unit"] == "case"          # carton → case 正規化
+            assert jp["condition"] == "shrink"   # 小文字化 + mode
+            assert jp["language"] == "ja"         # 日本語名 → ja 自動判定
+
+            en = by_name[en_name]
+            assert en["unit"] == "box"           # BOX → box 小文字化
+            assert en["language"] == "en"         # 英語名 → en 自動判定
+
+            # apply: en_name の言語をオペレータが ja に修正したケース
+            resp2 = await client.post(
+                "/api/v1/super-admin/inbound/product-candidates/apply",
+                json={"names": [jp_name, en_name], "languages": {en_name: "ja"}},
+            )
+            assert resp2.status_code == 200, resp2.text
+            assert resp2.json()["inserted"] == 2
+
+        async with engine.begin() as conn:
+            rows = (await conn.execute(text(
+                "SELECT name, unit, condition, language FROM public.products "
+                "WHERE name IN (:jp, :en)"
+            ), {"jp": jp_name, "en": en_name})).mappings().all()
+        got = {r["name"]: r for r in rows}
+        assert got[jp_name]["unit"] == "case"
+        assert got[jp_name]["condition"] == "shrink"
+        assert got[jp_name]["language"] == "ja"
+        assert got[en_name]["unit"] == "box"
+        assert got[en_name]["language"] == "ja"   # languages 上書きが優先
+    finally:
+        app.dependency_overrides.pop(require_super_admin, None)
