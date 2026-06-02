@@ -115,5 +115,25 @@ if git rev-parse --verify "origin/${AGENT_BASE_BRANCH}" >/dev/null 2>&1; then
   fi
 fi
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# チェック4: マージ済みPRへの追加 push を禁止
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 問題: PRマージ後に同じブランチへ push すると変更が develop/main に反映されない
+# 解決: gh でPR状態を確認し MERGED なら push をブロックする
+
+if command -v gh >/dev/null 2>&1; then
+  PR_STATE="$(gh pr list --head "${CURRENT_BRANCH}" --state merged --json state --jq '.[0].state' 2>/dev/null)"
+  if [ "${PR_STATE}" = "MERGED" ]; then
+    echo ""
+    echo "🚫 push を中断しました: このブランチのPRはすでにマージ済みです。"
+    echo "   ブランチ: ${CURRENT_BRANCH}"
+    echo ""
+    echo "   追加変更がある場合は新しいブランチ・PRを作成してください:"
+    echo "   bash scripts/new-worktree.sh ${AGENT_BRANCH_PREFIX}<新トピック名>"
+    echo ""
+    exit 1
+  fi
+fi
+
 echo "✅ オーナーシップチェック通過: ${CURRENT_BRANCH}"
 exit 0
