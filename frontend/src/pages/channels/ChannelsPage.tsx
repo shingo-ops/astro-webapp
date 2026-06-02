@@ -188,7 +188,22 @@ export default function ChannelsPage() {
     setDiscordConnecting(true);
     try {
       const data = await api.post<{ invite_url: string }>("/discord/oauth/start", {});
-      window.location.href = data.invite_url;
+      // 新しいタブで開く（元のアプリページを維持）
+      window.open(data.invite_url, "_blank", "noopener,noreferrer");
+      setDiscordConnecting(false);
+      // フォーカスが戻ったときに guild_id を再取得して自動反映
+      const handleFocus = () => {
+        api.get<{ guild_id: string | null }>("/admin/discord-config")
+          .then((d) => {
+            setDiscordGuildId(d.guild_id);
+            if (d.guild_id) {
+              setBanner({ type: "success", text: t("channels.discordConnectedSuccess") });
+            }
+          })
+          .catch(() => {});
+        window.removeEventListener("focus", handleFocus);
+      };
+      window.addEventListener("focus", handleFocus);
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : t("channels.discordConnectError"));
       setBanner({ type: "error", text: msg });
