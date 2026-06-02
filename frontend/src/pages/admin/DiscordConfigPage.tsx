@@ -204,9 +204,9 @@ export default function DiscordConfigPage() {
         {/* ── チケット機能設定 ── */}
         <section className="space-y-6">
           <div>
-            <h2 className="text-base font-semibold text-token-text-primary">
+            <p className="text-base font-semibold text-token-text-primary">
               {t("discordTicketConfig.title")}
-            </h2>
+            </p>
             <p className="mt-1 text-sm text-token-text-secondary">
               {t("discordTicketConfig.description")}
             </p>

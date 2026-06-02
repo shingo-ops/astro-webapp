@@ -15,22 +15,22 @@ CREATE TABLE IF NOT EXISTS public.tenant_discord_ticket_config (
 -- 全テナントの leads テーブルに discord_guild_channel_id カラムを追加
 DO $$
 DECLARE
-    schema_name TEXT;
+    v_schema TEXT;
 BEGIN
-    FOR schema_name IN
+    FOR v_schema IN
         SELECT schema_name
         FROM information_schema.schemata
         WHERE schema_name LIKE 'tenant_%'
     LOOP
         EXECUTE format(
             'ALTER TABLE %I.leads ADD COLUMN IF NOT EXISTS discord_guild_channel_id VARCHAR(50)',
-            schema_name
+            v_schema
         );
         EXECUTE format(
             'CREATE INDEX IF NOT EXISTS idx_leads_discord_guild_channel_id
              ON %I.leads (tenant_id, discord_guild_channel_id)
              WHERE discord_guild_channel_id IS NOT NULL',
-            schema_name
+            v_schema
         );
     END LOOP;
 END
