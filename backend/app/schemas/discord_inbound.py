@@ -58,6 +58,10 @@ class InboundProductCandidate(BaseModel):
     name: str
     occurrences: int = Field(..., description="受信通知の解析結果中での出現回数")
     sample: str | None = Field(default=None, description="抽出元の受信本文サンプル（raw_line）")
+    # PR5c: 取込時に商品マスタへ転記する付随情報。
+    unit: str | None = Field(default=None, description="代表的な取引単位（carton→case 正規化済・小文字）")
+    condition: str | None = Field(default=None, description="代表的な状態（小文字）")
+    language: str = Field(default="ja", description="商品名から自動判定した言語（ja/en・取込時に修正可）")
 
 
 class InboundProductCandidatesResponse(BaseModel):
@@ -70,6 +74,9 @@ class InboundProductImportApply(BaseModel):
 
     names: list[str] = Field(default_factory=list, description="登録する商品名のリスト")
     category: str | None = Field(default=None, max_length=50, description="一括で付与する分類（任意）")
+    # PR5c: 商品名→言語コード（ja/en）の上書きマップ。オペレータが候補UIで修正した値。
+    # 未指定の名前は商品名から自動判定する。
+    languages: dict[str, str] = Field(default_factory=dict, description="商品名ごとの言語コード上書き（ja/en）")
 
 
 class InboundProductImportApplyResponse(BaseModel):

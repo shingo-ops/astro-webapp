@@ -56,6 +56,10 @@ _UPDATABLE_COLUMNS = {
     "jan_code", "card_number", "expansion_code", "rarity", "language",
     "unit_price_usd", "unit_price_eur", "image_url",
     "is_archived", "supplier_default_id",
+    # ADR-090 PR5a: TCG 種別マスタ統一
+    "tcg_type",
+    # ADR-090 PR5b: 取引単位（Box/Case 等）
+    "unit",
 }
 
 
@@ -78,7 +82,7 @@ def _select_columns(ctx: dict[str, str]) -> str:
         "notes, release_date, created_at, updated_at, "
         "jan_code, card_number, expansion_code, rarity, language, "
         "unit_price_usd, unit_price_eur, image_url, "
-        "is_archived, archived_at, supplier_default_id"
+        "is_archived, archived_at, supplier_default_id, tcg_type, unit"
     )
 
 
@@ -92,6 +96,7 @@ async def list_products(
     per_page: int = Query(default=20, ge=1, le=100),
     search: str | None = Query(default=None, max_length=255),
     category: str | None = Query(default=None, max_length=100),
+    tcg_type: str | None = Query(default=None, max_length=50, description="TCG種別コードで絞り込み（tcg_type_master.code）"),
     status_filter: str | None = Query(default=None, alias="status"),
     sort: str | None = Query(
         default=None,
@@ -124,6 +129,9 @@ async def list_products(
     if category:
         conditions.append("category = :category")
         params["category"] = category
+    if tcg_type:
+        conditions.append("tcg_type = :tcg_type")
+        params["tcg_type"] = tcg_type
     if status_filter:
         conditions.append("status = :status")
         params["status"] = status_filter
@@ -142,6 +150,37 @@ async def list_products(
         params,
     )
     return [ProductResponse(**row) for row in result.mappings().all()]
+
+
+@router.get(
+    "/products/tcg-types",
+    dependencies=[Depends(require_permission("products.view"))],
+)
+async def list_product_tcg_types(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """在庫表の TCG 絞り込みフィルタ用に、有効な TCG 種別マスタ一覧を返す（ADR-090 PR5a）。
+    super_admin_tcg の CRUD は super_admin 限定のため、products.view 権限で読める軽量版。
+    `/products/{product_id}` より前に登録すること（path 競合防止）。
+    """
+    # マスタ未投入環境（SQLite テスト等）では空配列を返す。
+    if is_postgresql(db):
+        exists = await db.execute(text("SELECT to_regclass('public.tcg_type_master') IS NOT NULL"))
+        if not exists.scalar():
+            return []
+        ref = "public.tcg_type_master"
+    else:
+        exists = await db.execute(
+            text("SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='tcg_type_master')")
+        )
+        if not exists.scalar():
+            return []
+        ref = "tcg_type_master"
+    result = await db.execute(
+        text(f"SELECT code, name_ja FROM {ref} WHERE is_active ORDER BY sort_order, code")
+    )
+    return [{"code": r["code"], "name_ja": r["name_ja"]} for r in result.mappings().all()]
 
 
 @router.get(
@@ -194,14 +233,14 @@ async def create_product(
                 notes, release_date,
                 jan_code, card_number, expansion_code, rarity, language,
                 unit_price_usd, unit_price_eur, image_url,
-                is_archived, supplier_default_id
+                is_archived, supplier_default_id, tcg_type, unit
             ) VALUES (
                 :tenant_id, :name_ja, :name_en, :category, :mark,
                 :status, :condition, :unit_price, :quantity, :weight,
                 :notes, :release_date,
                 :jan_code, :card_number, :expansion_code, :rarity, :language,
                 :unit_price_usd, :unit_price_eur, :image_url,
-                :is_archived, :supplier_default_id
+                :is_archived, :supplier_default_id, :tcg_type, :unit
             ) RETURNING id
         """),
         payload,

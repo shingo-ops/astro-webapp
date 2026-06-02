@@ -165,7 +165,7 @@ Discord 仕入元から届いた在庫メッセージのうち、ルールベー
 # 出力要件
 - {lang_instruction}
 - quantity は数値のみ（box / pack / セット等の数量を整数で）
-- unit は box / pack / set / piece / case のいずれか（不明なら null）
+- unit は box / pack / set / piece / case のいずれか（不明なら null）。カートン（carton）は case として扱う
 - unit_price は数値（円単位、不明なら null）
 - condition は 'shrink' / 'no_shrink' / 'sealed' / 'damage' / 'unsearched' / 'searched' / 'graded' / 'grade_s' / 'grade_a' / 'grade_b' / 'grade_c' / 'grade_d' / 'junk' / 'bulk' / 'normal' / 'unknown' のいずれか（不明なら null）
 - confidence は 0.0〜1.0 で推定信頼度
@@ -304,7 +304,7 @@ async def parse_with_gemini(
                 line_no=int(it.get("line_no", 0)),
                 name=str(it.get("name", "")),
                 quantity=_safe_int(it.get("quantity")),
-                unit=_safe_str_or_none(it.get("unit")),
+                unit=_normalize_unit(it.get("unit")),
                 unit_price=_safe_float(it.get("unit_price")),
                 condition=_safe_str_or_none(it.get("condition")),
                 confidence=_safe_float(it.get("confidence")),
@@ -367,6 +367,20 @@ def _safe_str_or_none(v: Any) -> str | None:
     if v is None or v == "":
         return None
     return str(v)
+
+
+def _normalize_unit(v: Any) -> str | None:
+    """取引単位を小文字化し carton→case に正規化する（ユーザー方針 2026-06-02）。
+
+    在庫表・取込転記での単位表記を box / pack / box / case / set / piece に統一する。
+    """
+    s = _safe_str_or_none(v)
+    if s is None:
+        return None
+    lc = s.strip().lower()
+    if not lc:
+        return None
+    return "case" if lc == "carton" else lc
 
 
 __all__ = [

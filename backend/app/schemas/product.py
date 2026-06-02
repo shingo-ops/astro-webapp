@@ -61,6 +61,8 @@ class ProductCreate(BaseModel):
     image_url: str | None = Field(default=None, max_length=500)
     is_archived: bool = Field(default=False)
     supplier_default_id: int | None = None
+    tcg_type: str | None = Field(default=None, max_length=50)
+    unit: str | None = Field(default=None, max_length=20)
 
     @field_validator("image_url")
     @classmethod
@@ -92,6 +94,8 @@ class ProductUpdate(BaseModel):
     image_url: str | None = Field(default=None, max_length=500)
     is_archived: bool | None = None
     supplier_default_id: int | None = None
+    tcg_type: str | None = Field(default=None, max_length=50)
+    unit: str | None = Field(default=None, max_length=20)
 
     @field_validator("image_url")
     @classmethod
@@ -128,6 +132,8 @@ class ProductResponse(BaseModel):
     is_archived: bool = False
     archived_at: datetime | None = None
     supplier_default_id: int | None = None
+    tcg_type: str | None = Field(default=None, max_length=50)
+    unit: str | None = Field(default=None, max_length=20)
 
     model_config = {"from_attributes": True}
 
