@@ -22,7 +22,8 @@
 | feature/morimoto/pre-commit-active-work-exception | （記入してください） | 2026-06-02 10:40 | IN_PROGRESS | | |
 | feature/morimoto/fix-release-pr-drawbacks | （記入してください） | 2026-06-02 10:42 | IN_PROGRESS | | |
 | feature/morimoto/discord-ticket-phase1 | ADR-091 KPI3 Phase 1+2 | 2026-06-02 12:53 | DONE | #1404 | |
-| feature/morimoto/discord-ticket-phase3 | ADR-091 KPI3 Phase 3 | 2026-06-02 13:30 | IN_PROGRESS | | |
+| feature/morimoto/discord-ticket-phase3 | ADR-091 KPI3 Phase 3 | 2026-06-02 13:30 | DONE | #1406 | |
+| feature/morimoto/discord-kpi4-announce | ADR-091 KPI4 アナウンス投稿 | 2026-06-02 14:00 | IN_PROGRESS | | |
 ---
 
 ## 記入例
