@@ -71,7 +71,12 @@ jobs:
       PGPASSWORD: testpass
 
     steps:
+      # fetch-depth: 0 必須。後段の detect step が PR base..head の git diff で
+      # 変更 SQL を特定するため、base SHA を含む全履歴が必要（shallow=1 だと
+      # `fatal: bad object` で diff が失敗し、変更検出が空＝SQL未実行の偽 green になる）。
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -170,9 +175,17 @@ jobs:
           BASE=${{ github.event.pull_request.base.sha }}
           HEAD=${{ github.event.pull_request.head.sha }}
 
-          # Python スクリプト
-          CHANGED=$(git diff --name-only "$BASE" "$HEAD" \
-            | grep '^scripts/migrate_' | sort || true)
+          # fail-closed: base..head の diff を 1 回だけ取得し、失敗したらジョブを落とす。
+          # shallow checkout 等で base SHA が無いと git diff は `fatal: bad object` になる。
+          # これを `|| true` で握りつぶすと「変更なし」と誤判定し、migration を実際には
+          # 実行しないまま緑（false-positive）になるため、明示的に exit 1 する。
+          if ! ALL_CHANGED=$(git diff --name-only "$BASE" "$HEAD"); then
+            echo "::error::git diff $BASE..$HEAD に失敗（base SHA 不在の可能性）。fail-closed でジョブを失敗させます。checkout の fetch-depth: 0 を確認してください。"
+            exit 1
+          fi
+
+          # Python スクリプト（上で取得済みの diff から抽出）
+          CHANGED=$(echo "$ALL_CHANGED" | grep '^scripts/migrate_' | sort || true)
 
           echo "changed_scripts<<EOF" >> "$GITHUB_OUTPUT"
           echo "$CHANGED" >> "$GITHUB_OUTPUT"
@@ -190,7 +203,7 @@ jobs:
           # 生 SQL ファイル（{schema} テンプレートは psql 直接実行不可のため除外）
           # xargs -r: 入力が空なら grep を実行しない（GNU xargs）
           # grep -L (not -rL): ディレクトリ再帰を行わない
-          CHANGED_SQL=$(git diff --name-only "$BASE" "$HEAD" \
+          CHANGED_SQL=$(echo "$ALL_CHANGED" \
             | grep '^migrations/[0-9][0-9][0-9].*\.sql$' \
             | xargs -r grep -L '{schema}' 2>/dev/null | sort || true)
 
