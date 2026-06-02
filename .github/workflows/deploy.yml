@@ -744,6 +744,11 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/20260602_030000_add_products_unit.sql
 
+            # Migration 20260602_040000: ADR-090 PR5c follow-up — 既存 products の unit/condition を解析結果から backfill
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/20260602_040000_backfill_products_unit_condition_from_inbound.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py
