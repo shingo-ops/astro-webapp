@@ -37,7 +37,15 @@ interface InboundProductCandidate {
   name: string;
   occurrences: number;
   sample: string | null;
+  // PR5c: 取込時に商品マスタへ転記する付随情報。
+  unit: string | null;       // 代表的な取引単位（carton→case 正規化済・小文字）
+  condition: string | null;  // 代表的な状態（小文字）
+  language: string;          // 商品名から自動判定した言語（ja/en・取込時に修正可）
 }
+
+// 取引単位は backend で carton→case 正規化済。表示は「先頭の文字だけ大文字」（例: case→Case）。
+const capUnit = (u: string | null) =>
+  u ? u.charAt(0).toUpperCase() + u.slice(1).toLowerCase() : "-";
 
 // parse_status enum (migration 059 と整合)
 const PARSE_STATUS_VALUES = [
@@ -92,6 +100,8 @@ export default function DiscordInboundPage() {
   const [importSelected, setImportSelected] = useState<Set<string>>(new Set());
   const [importCategory, setImportCategory] = useState("");
   const [importDone, setImportDone] = useState("");
+  // PR5c: 商品名→言語コード(ja/en)。自動判定値を初期値にし、オペレータが取込時に修正できる。
+  const [importLanguages, setImportLanguages] = useState<Record<string, string>>({});
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -130,6 +140,7 @@ export default function DiscordInboundPage() {
     setCandidates([]);
     setImportSelected(new Set());
     setImportCategory("");
+    setImportLanguages({});
     try {
       const data = await api.get<{ candidates: InboundProductCandidate[]; total: number }>(
         "/super-admin/inbound/product-candidates",
@@ -138,6 +149,8 @@ export default function DiscordInboundPage() {
       setCandidates(list);
       // デフォルトは全選択（オペレータがノイズを外す運用）
       setImportSelected(new Set(list.map((c) => c.name)));
+      // 言語は自動判定値を初期値に。取込時にオペレータが個別修正できる。
+      setImportLanguages(Object.fromEntries(list.map((c) => [c.name, c.language || "ja"])));
     } catch (e) {
       setImportError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
@@ -154,6 +167,10 @@ export default function DiscordInboundPage() {
     });
   };
 
+  const setImportLanguage = (name: string, lang: string) => {
+    setImportLanguages((prev) => ({ ...prev, [name]: lang }));
+  };
+
   const allImportSelected = candidates.length > 0 && importSelected.size === candidates.length;
   const toggleImportAll = () => {
     setImportSelected(allImportSelected ? new Set() : new Set(candidates.map((c) => c.name)));
@@ -163,12 +180,17 @@ export default function DiscordInboundPage() {
   const applyImport = async () => {
     const names = candidates.map((c) => c.name).filter((n) => importSelected.has(n));
     if (names.length === 0) return;
+    // 選択された名前ぶんの言語上書き（取込時にオペレータが修正した値）
+    const languages: Record<string, string> = {};
+    names.forEach((n) => {
+      if (importLanguages[n]) languages[n] = importLanguages[n];
+    });
     setImportApplying(true);
     setImportError("");
     try {
       const res = await api.post<{ inserted: number; skipped: number }>(
         "/super-admin/inbound/product-candidates/apply",
-        { names, category: importCategory.trim() || null },
+        { names, category: importCategory.trim() || null, languages },
       );
       setShowImport(false);
       setImportDone(t("products.importDone", { count: res.inserted }));
@@ -252,6 +274,8 @@ export default function DiscordInboundPage() {
                         <th style={{ width: "var(--col-width-checkbox)", textAlign: "center" }} aria-label={t("common.select")}></th>
                         <th>{t("common.name")}</th>
                         <th style={{ width: "var(--col-width-checkbox)", textAlign: "right" }}>{t("products.importOccurrences")}</th>
+                        <th>{t("products.unitCol")}</th>
+                        <th>{t("language.label")}</th>
                         <th>{t("products.importSample")}</th>
                       </tr>
                     </thead>
@@ -268,6 +292,17 @@ export default function DiscordInboundPage() {
                           </td>
                           <td>{c.name}</td>
                           <td style={{ textAlign: "right" }}>{c.occurrences}</td>
+                          <td>{capUnit(c.unit)}</td>
+                          <td>
+                            <select
+                              value={importLanguages[c.name] ?? c.language ?? "ja"}
+                              onChange={(e) => setImportLanguage(c.name, e.target.value)}
+                              aria-label={t("language.label")}
+                            >
+                              <option value="ja">{t("language.ja")}</option>
+                              <option value="en">{t("language.en")}</option>
+                            </select>
+                          </td>
                           <td style={{ color: "var(--text-secondary)", fontSize: "var(--font-xs)" }}>{c.sample || "-"}</td>
                         </tr>
                       ))}
