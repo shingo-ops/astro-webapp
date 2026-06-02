@@ -38,7 +38,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
       - name: Install pytest
-        run: pip install pytest
+        run: uv pip install --system pytest
       - name: Run hook logic tests
         run: pytest scripts/test_pre_commit_hook.py -v
