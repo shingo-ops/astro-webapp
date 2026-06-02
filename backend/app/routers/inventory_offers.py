@@ -261,8 +261,8 @@ async def create_offer(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "同じ supplier × product × condition のオファーが既に存在します。"
-                "PATCH で更新するか、condition を変えて作成してください。"
+                "同じ 仕入元×商品×状態×形態×区分×発送日 のオファーが既に存在します。"
+                "PATCH で更新するか、いずれかの軸を変えて作成してください。"
             ),
         ) from e
 
