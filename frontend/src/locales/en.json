@@ -322,6 +322,11 @@
     "discordUserId": "Discord User ID",
     "discordTicketChannel": "Ticket Channel",
     "openDiscordChannel": "Open in Discord",
+    "channelInvite": "Channel Invitation",
+    "channelInviteSend": "Send Invitation",
+    "channelInviteSending": "Sending...",
+    "channelInviteSent": "Sent successfully",
+    "channelInviteError": "Failed to send. Check channel settings.",
     "instagramLink": "Instagram Link",
     "whatsappLink": "WhatsApp Link",
     "country": "Country",
@@ -1710,7 +1715,12 @@
     "deployButton": "Post Button",
     "deploying": "Posting...",
     "deployDone": "Button message posted successfully",
-    "deployError": "Failed to post. Check bot permissions and channel ID."
+    "deployError": "Failed to post. Check bot permissions and channel ID.",
+    "smallChannelIdLabel": "Small Customer Channel ID (optional)",
+    "largeChannelIdLabel": "Large Customer Channel ID (optional)",
+    "scaleChannelIdPlaceholder": "e.g. 1288437029213835356",
+    "smallChannelIdHint": "Used for channel invitation messages to Small-scale customers.",
+    "largeChannelIdHint": "Used for channel invitation messages to Large-scale customers."
   },
   "discordAnnounce": {
     "description": "Post announcements to a Discord channel directly from the app — no need to open Discord.",
