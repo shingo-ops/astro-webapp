@@ -283,12 +283,17 @@ _MAX_RECONNECT_ATTEMPTS = 10
 
 
 async def run_gateway(tenant: TenantBotConfig) -> None:
-    """1 テナント分の Gateway 接続を維持する。切断時は discord.py が自動再接続する。
+    """1 テナント分の Gateway 接続を維持する。
+
+    reconnect=False で discord.py 内部の無制限再接続を無効化し、
+    外側の while ループが指数バックオフで再接続を管理する。
+    reconnect=True のままにすると接続→即切断を無制限に繰り返し、
+    Discord から「短時間に1000回接続」として Token をリセットされる。
 
     LoginFailure は致命的（Token 不正/失効）として例外を re-raise する。
     main 側で全テナント致命時に非ゼロ終了する。
 
-    一般例外は指数バックオフで再起動（最大 60 秒）。
+    一般例外・正常切断ともに指数バックオフで再接続（最大 60 秒）。
     _MAX_RECONNECT_ATTEMPTS 回連続失敗したら停止してアラートを発報する。
     """
     backoff = 5
@@ -297,7 +302,9 @@ async def run_gateway(tenant: TenantBotConfig) -> None:
     while True:
         client = JarvisDiscordClient(tenant)
         try:
-            await client.start(tenant.bot_token, reconnect=True)
+            # reconnect=False: discord.py 内部の無制限再接続を無効化。
+            # 切断時は start() が返り、外側ループが backoff 付きで再接続する。
+            await client.start(tenant.bot_token, reconnect=False)
         except discord.LoginFailure:
             logger.critical(
                 "[discord-gateway] LoginFailure tenant=%s — Token 不正/失効。"
@@ -336,5 +343,16 @@ async def run_gateway(tenant: TenantBotConfig) -> None:
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, max_backoff)
         else:
-            backoff = 5
+            # 正常切断（サーバー側 close 等）もバックオフを挟んで再接続する。
+            # スリープなしで即座に再接続すると短時間多接続になるため必須。
             reconnect_count = 0
+            logger.info(
+                "[discord-gateway] 正常切断 tenant=%s — %d 秒後に再接続",
+                tenant.tenant_code,
+                backoff,
+            )
+            try:
+                await client.close()
+            except Exception:
+                pass
+            await asyncio.sleep(backoff)
