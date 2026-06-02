@@ -81,6 +81,9 @@ export interface LeadDetail {
   discord_dm_channel_id: string | null;
   // ADR-091 KPI3: チケットチャンネル (read-only, set by ticket_channel_creator)
   discord_guild_channel_id: string | null;
+  // ADR-091 KPI7: ロール同期ステータス (read-only, set by discord_role_sync service)
+  discord_role_sync_status: string | null;
+  discord_role_sync_at: string | null;
 }
 
 // ---------------------------------------------------------------------------

@@ -242,6 +242,14 @@ function KarteTabContent({
         {leadDetail.discord_user_id && (
           <DiscordRemoveButtons leadId={leadDetail.id} hasChannel={!!leadDetail.discord_guild_channel_id} />
         )}
+        {/* ADR-091 KPI7: ロール同期ステータス */}
+        {leadDetail.discord_user_id && (
+          <RoleSyncStatusRow
+            leadId={leadDetail.id}
+            status={leadDetail.discord_role_sync_status}
+            syncAt={leadDetail.discord_role_sync_at}
+          />
+        )}
         <div className="right-panel-row">
           <span className="right-panel-label">{t("leads.instagramLink")}</span>
           <input className="right-panel-field" type="url"
@@ -428,6 +436,64 @@ function ChannelInviteButton({ leadId }: { leadId: number }) {
           {sending ? t("leads.channelInviteSending") : t("leads.channelInviteSend")}
         </button>
         {sent && <span className="text-xs text-green-600">{t("leads.channelInviteSent")}</span>}
+        {error && <span className="text-xs text-red-500">{error}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** ADR-091 KPI7: ロール同期ステータス表示 + 手動再同期ボタン */
+function RoleSyncStatusRow({
+  leadId, status, syncAt,
+}: { leadId: number; status: string | null; syncAt: string | null }) {
+  const { t } = useTranslation();
+  const [syncing, setSyncing] = useState(false);
+  const [triggered, setTriggered] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleResync = async () => {
+    setSyncing(true);
+    setError("");
+    setTriggered(false);
+    try {
+      await api.post(`/discord/sync-role/${leadId}`, {});
+      setTriggered(true);
+      setTimeout(() => setTriggered(false), 5000);
+    } catch {
+      setError(t("leads.discordRoleSyncError"));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const badgeClass = status === "synced"
+    ? "text-xs text-green-600"
+    : status === "failed"
+      ? "text-xs text-red-500"
+      : "text-xs text-token-muted";
+
+  return (
+    <div className="right-panel-row">
+      <span className="right-panel-label">{t("leads.discordRoleSyncStatus")}</span>
+      <div className="flex flex-col gap-1">
+        <span className={badgeClass}>
+          {status ? t(`leads.discordRoleSyncStatus_${status}`) : "—"}
+          {syncAt && (
+            <span className="text-token-muted ml-1">
+              ({new Date(syncAt.replace(" ", "T")).toLocaleString("ja-JP", {
+                month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+              })})
+            </span>
+          )}
+        </span>
+        <button
+          onClick={handleResync}
+          disabled={syncing}
+          className="btn btn-secondary text-xs"
+        >
+          {syncing ? t("leads.discordRoleSyncing") : t("leads.discordRoleResync")}
+        </button>
+        {triggered && <span className="text-xs text-green-600">{t("leads.discordRoleSyncTriggered")}</span>}
         {error && <span className="text-xs text-red-500">{error}</span>}
       </div>
     </div>
