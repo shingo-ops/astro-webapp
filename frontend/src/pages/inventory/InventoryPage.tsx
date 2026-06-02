@@ -35,12 +35,21 @@ interface InventoryRow {
   offered_at: string;
 }
 
+interface SupplierFacet {
+  id: number;
+  name: string | null;
+}
+
 interface InventoryListResponse {
   items: InventoryRow[];
   total: number;
   page: number;
   per_page: number;
+  suppliers?: SupplierFacet[];
 }
+
+// ADR-093 Phase 4: ユーザー別フィルタで取捨できる列（商品/仕入元の複合セルは常時表示）。
+const HIDEABLE_COLUMNS = ["unit", "condition", "unitPrice", "quantity"] as const;
 
 const PER_PAGE = 50;
 
@@ -60,6 +69,18 @@ export default function InventoryPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // ADR-093 Phase 4: ユーザー別フィルタ（ポップアップ・永続化）
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [filterEnabled, setFilterEnabled] = useState(false);
+  const [hiddenSupplierIds, setHiddenSupplierIds] = useState<Set<number>>(new Set());
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+  const [supplierFacet, setSupplierFacet] = useState<SupplierFacet[]>([]);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
+
+  // フィルタ ON 時のみ適用（OFF は全表示）。
+  const colVisible = (c: string) => !filterEnabled || !hiddenColumns.has(c);
+  const visibleColCount = 3 + HIDEABLE_COLUMNS.filter((c) => colVisible(c)).length;
 
   const totalPages = useMemo(
     () => (total === 0 ? 1 : Math.ceil(total / PER_PAGE)),
@@ -106,19 +127,59 @@ export default function InventoryPage() {
       if (debouncedQ.trim()) params.set("q", debouncedQ.trim());
       if (tcgType) params.set("tcg_type", tcgType);
       if (offerTypeFilter) params.set("offer_type", offerTypeFilter);
+      // ADR-093 Phase 4: フィルタ ON 時のみ「仕入元 非表示」を適用
+      if (filterEnabled && hiddenSupplierIds.size > 0) {
+        params.set("hide_supplier_ids", Array.from(hiddenSupplierIds).join(","));
+      }
       const d = await api.get<InventoryListResponse>(`/inventory?${params.toString()}`);
       setItems(d.items);
       setTotal(d.total);
+      if (d.suppliers) setSupplierFacet(d.suppliers);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
       setLoading(false);
     }
-  }, [page, order, debouncedQ, tcgType, offerTypeFilter, t]);
+  }, [page, order, debouncedQ, tcgType, offerTypeFilter, filterEnabled, hiddenSupplierIds, t]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // ADR-093 Phase 4: 保存済みフィルタを初回ロード（再ログイン後も保持）
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get<{ enabled: boolean; hidden_supplier_ids: number[]; hidden_columns: string[] }>(
+        "/me/inventory-filters",
+      )
+      .then((f) => {
+        if (cancelled) return;
+        setFilterEnabled(!!f.enabled);
+        setHiddenSupplierIds(new Set(f.hidden_supplier_ids ?? []));
+        setHiddenColumns(new Set(f.hidden_columns ?? []));
+      })
+      .catch(() => { /* 取得失敗時はデフォルト（全表示）のまま */ })
+      .finally(() => { if (!cancelled) setFiltersLoaded(true); });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ADR-093 Phase 4: フィルタ変更をユーザー別に永続化（初回ロード後のみ・250ms デバウンス）
+  useEffect(() => {
+    if (!filtersLoaded) return;
+    const timer = setTimeout(() => {
+      void api
+        .patch("/me/inventory-filters", {
+          enabled: filterEnabled,
+          hidden_supplier_ids: Array.from(hiddenSupplierIds),
+          hidden_columns: Array.from(hiddenColumns),
+        })
+        .catch(() => { /* 保存失敗は致命でない（次回操作で再送） */ });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [filtersLoaded, filterEnabled, hiddenSupplierIds, hiddenColumns]);
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) => {
@@ -149,6 +210,25 @@ export default function InventoryPage() {
   const toggleSort = () => {
     setOrder((o) => (o === "asc" ? "desc" : "asc"));
     setPage(1);
+  };
+
+  // ADR-093 Phase 4: フィルタ操作（仕入元 表示/非表示・列 取捨）
+  const toggleHiddenSupplier = (id: number) => {
+    setHiddenSupplierIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setPage(1);
+  };
+  const toggleHiddenColumn = (col: string) => {
+    setHiddenColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(col)) next.delete(col);
+      else next.add(col);
+      return next;
+    });
   };
 
   return (
@@ -220,7 +300,95 @@ export default function InventoryPage() {
           <option value="in_stock">{t("inventory.offerType.in_stock")}</option>
           <option value="pre_order">{t("inventory.offerType.pre_order")}</option>
         </select>
+        {/* ADR-093 Phase 4: ユーザー別フィルタ ポップアップ起動 */}
+        <button
+          type="button"
+          className={filterEnabled ? "btn-primary btn-sm" : "btn-secondary btn-sm"}
+          data-testid="inventory-filter-toggle"
+          aria-expanded={showFilterPanel}
+          aria-pressed={filterEnabled}
+          onClick={() => setShowFilterPanel((v) => !v)}
+        >
+          {t("inventory.filterPanel.button")}
+        </button>
       </section>
+
+      {/* ADR-093 Phase 4: フィルタ ポップアップ（ON/OFF・仕入元 表示/非表示・列 取捨。設定はユーザー別に永続化） */}
+      {showFilterPanel && (
+        <section
+          className="inventory-filter-panel"
+          data-testid="inventory-filter-panel"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--space-3)",
+            margin: "0 0 var(--space-4)",
+            padding: "var(--space-3)",
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-sm)",
+            maxWidth: "40rem",
+          }}
+        >
+          <label style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", fontWeight: "var(--font-weight-semi)" }}>
+            <input
+              type="checkbox"
+              data-testid="inventory-filter-enabled"
+              checked={filterEnabled}
+              onChange={(e) => { setFilterEnabled(e.target.checked); setPage(1); }}
+            />
+            {t("inventory.filterPanel.enable")}
+          </label>
+
+          <div>
+            <div style={{ fontSize: "var(--font-sm)", color: "var(--text-secondary)", marginBottom: "var(--space-1)" }}>
+              {t("inventory.filterPanel.suppliers")}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
+              {supplierFacet.length === 0 ? (
+                <span style={{ color: "var(--text-secondary)" }}>{t("inventory.noResults")}</span>
+              ) : (
+                supplierFacet.map((s) => (
+                  <label key={s.id} style={{ display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
+                    <input
+                      type="checkbox"
+                      data-testid={`inventory-filter-supplier-${s.id}`}
+                      checked={!hiddenSupplierIds.has(s.id)}
+                      onChange={() => toggleHiddenSupplier(s.id)}
+                    />
+                    {s.name ?? `#${s.id}`}
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: "var(--font-sm)", color: "var(--text-secondary)", marginBottom: "var(--space-1)" }}>
+              {t("inventory.filterPanel.columns")}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
+              {HIDEABLE_COLUMNS.map((c) => (
+                <label key={c} style={{ display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
+                  <input
+                    type="checkbox"
+                    data-testid={`inventory-filter-col-${c}`}
+                    checked={!hiddenColumns.has(c)}
+                    onChange={() => toggleHiddenColumn(c)}
+                  />
+                  {t(`inventory.col.${c}`)}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <button type="button" className="btn-sm" onClick={() => setShowFilterPanel(false)}>
+              {t("common.close")}
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* 選択 → 見積/請求作成（発注書PDF は後続 PR で追加） */}
       {selectedIds.size > 0 && (
@@ -316,17 +484,17 @@ export default function InventoryPage() {
                 </span>
               </button>
             </th>
-            <th style={{ width: "6rem" }}>{t("inventory.col.unit")}</th>
-            <th style={{ width: "8rem" }}>{t("inventory.col.condition")}</th>
-            <th style={{ width: "7rem", textAlign: "right" }}>{t("inventory.col.unitPrice")}</th>
-            <th style={{ width: "5rem", textAlign: "right" }}>{t("inventory.col.quantity")}</th>
+            {colVisible("unit") && <th style={{ width: "6rem" }}>{t("inventory.col.unit")}</th>}
+            {colVisible("condition") && <th style={{ width: "8rem" }}>{t("inventory.col.condition")}</th>}
+            {colVisible("unitPrice") && <th style={{ width: "7rem", textAlign: "right" }}>{t("inventory.col.unitPrice")}</th>}
+            {colVisible("quantity") && <th style={{ width: "5rem", textAlign: "right" }}>{t("inventory.col.quantity")}</th>}
             <th style={{ width: "11rem" }}>{t("inventory.col.supplier")}</th>
           </tr>
         </thead>
         <tbody>
           {items.length === 0 ? (
             <tr>
-              <td colSpan={7} data-testid="inventory-empty">
+              <td colSpan={visibleColCount} data-testid="inventory-empty">
                 {t("inventory.noResults")}
               </td>
             </tr>
@@ -357,22 +525,30 @@ export default function InventoryPage() {
                     </div>
                   )}
                 </td>
-                <td>{it.unit ? t(`inventory.unit.${it.unit}`, { defaultValue: it.unit }) : "-"}</td>
-                <td>
-                  <div>{t(`inventory.condition.${it.condition}`, { defaultValue: it.condition })}</div>
-                  {it.offer_type === "pre_order" && (
-                    <div style={{ marginTop: "var(--space-1)" }}>
-                      <span className="badge badge-negotiating">{t("inventory.offerType.pre_order")}</span>
-                      {it.ship_timing && (
-                        <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)", marginLeft: "var(--space-1)" }}>
-                          {t(`inventory.shipTiming.${it.ship_timing}`, { defaultValue: it.ship_timing })}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </td>
-                <td style={{ textAlign: "right" }}>¥{it.unit_price.toLocaleString()}</td>
-                <td style={{ textAlign: "right" }}>{it.quantity}</td>
+                {colVisible("unit") && (
+                  <td>{it.unit ? t(`inventory.unit.${it.unit}`, { defaultValue: it.unit }) : "-"}</td>
+                )}
+                {colVisible("condition") && (
+                  <td>
+                    <div>{t(`inventory.condition.${it.condition}`, { defaultValue: it.condition })}</div>
+                    {it.offer_type === "pre_order" && (
+                      <div style={{ marginTop: "var(--space-1)" }}>
+                        <span className="badge badge-negotiating">{t("inventory.offerType.pre_order")}</span>
+                        {it.ship_timing && (
+                          <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)", marginLeft: "var(--space-1)" }}>
+                            {t(`inventory.shipTiming.${it.ship_timing}`, { defaultValue: it.ship_timing })}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                )}
+                {colVisible("unitPrice") && (
+                  <td style={{ textAlign: "right" }}>¥{it.unit_price.toLocaleString()}</td>
+                )}
+                {colVisible("quantity") && (
+                  <td style={{ textAlign: "right" }}>{it.quantity}</td>
+                )}
                 {/* 仕入元（複合）: 仕入元名 + 掲載時間 */}
                 <td style={{ overflow: "hidden" }}>
                   <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

@@ -148,6 +148,17 @@ class InventoryRow(BaseModel):
     offered_at: datetime              # 掲載時間（≒ Discord 受信時刻）
 
 
+class InventorySupplierFacet(BaseModel):
+    """在庫表フィルタ用の仕入元ファセット（ADR-093 Phase 4）。
+
+    在庫オファーに登場する仕入元のみ。フィルタ ポップアップの「仕入元 表示/非表示」
+    チェックボックス候補に使う（ページング・他フィルタに依存せず全候補を返す）。
+    """
+
+    id: int
+    name: str | None = None
+
+
 class InventoryListResponse(BaseModel):
     """在庫表ビューのページング付き一覧。"""
 
@@ -155,6 +166,8 @@ class InventoryListResponse(BaseModel):
     total: int
     page: int
     per_page: int
+    # ADR-093 Phase 4: フィルタ UI 用の仕入元一覧（在庫オファーに存在する仕入元）。
+    suppliers: list[InventorySupplierFacet] = []
 
 
 __all__ = [
@@ -165,6 +178,7 @@ __all__ = [
     "InventoryOfferResponse",
     "InventoryOfferListResponse",
     "InventoryRow",
+    "InventorySupplierFacet",
     "InventoryListResponse",
     "InventoryStatus",
     "InventorySource",
