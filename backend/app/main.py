@@ -37,6 +37,7 @@ from app.routers import (
     discord_channel_invite,  # ADR-091 KPI5: チャンネル招待メッセージ送信 API
     discord_guild_config,  # Sprint D2: Discord Guild 設定 admin API
     discord_remove,  # ADR-091 KPI6: チャンネル削除・Kick・BAN API
+    discord_role_resync,  # ADR-091 KPI7: ロール手動再同期 API
     discord_ticket_config,  # ADR-091 KPI3: チケット機能設定 admin API
     duplicates,
     erp,
@@ -202,6 +203,11 @@ app.include_router(
 # ADR-091 KPI6: Discord 顧客削除操作 API (チャンネル削除・Kick・BAN)
 app.include_router(
     discord_remove.router, prefix="/api/v1", tags=["discord"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# ADR-091 KPI7: Discord ロール手動再同期 API
+app.include_router(
+    discord_role_resync.router, prefix="/api/v1", tags=["discord"],
     dependencies=[Depends(get_current_tenant)],
 )
 # Sprint D2: Discord Guild 設定 API (tenant admin)
