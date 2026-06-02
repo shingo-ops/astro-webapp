@@ -73,7 +73,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: 全チェック統合 — ADR-067 デザイントークン・レイアウト・アイコン・ページ規約
         run: npm run check:all
@@ -125,7 +125,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # Playwright のブラウザは別キャッシュ。OS 依存の system deps は --with-deps で入る。
       # actions/cache で node_modules ごと cache すると Playwright バイナリも入るが、
