@@ -22,7 +22,7 @@ from typing import Any, Callable
 
 import discord
 
-from app.discord_gateway import dm_writer, inbound_writer
+from app.discord_gateway import dm_writer, inbound_writer, ticket_channel_creator
 from app.discord_gateway.config import TenantBotConfig
 
 logger = logging.getLogger(__name__)
@@ -106,6 +106,74 @@ class JarvisDiscordClient(discord.Client):
             "[discord-gateway] DISCONNECT tenant=%s tenant_id=%d",
             self.tenant.tenant_code,
             self.tenant.tenant_id,
+        )
+
+    async def on_interaction(self, interaction: discord.Interaction) -> None:
+        """ボタン押下: ticket_open ボタンでプライベートチャンネルを自動発行する。
+
+        custom_id が "ticket_open" で始まるボタン操作のみ処理する。
+        他のインタラクション（セレクトメニュー等）は無視する。
+        """
+        if interaction.type != discord.InteractionType.component:
+            return
+        custom_id: str = (interaction.data or {}).get("custom_id", "")  # type: ignore[arg-type]
+        if not custom_id.startswith("ticket_open"):
+            return
+
+        # 3 秒以内に応答しないと Discord がタイムアウトするため先に defer
+        try:
+            await interaction.response.defer(ephemeral=True)
+        except discord.HTTPException:
+            return
+
+        guild = interaction.guild
+        member = interaction.user
+        if guild is None or not isinstance(member, discord.Member):
+            await interaction.followup.send(
+                "サーバー内でのみ利用できます。", ephemeral=True
+            )
+            return
+
+        db_factory = self._db_factory()
+        async with db_factory() as session:
+            config = await ticket_channel_creator.get_ticket_config(
+                session, self.tenant.tenant_id
+            )
+
+        if config is None:
+            logger.warning(
+                "[ticket] config not set tenant=%s", self.tenant.tenant_code
+            )
+            await interaction.followup.send(
+                "チケット機能が設定されていません。管理者にお問い合わせください。",
+                ephemeral=True,
+            )
+            return
+
+        channel = await ticket_channel_creator.get_or_create_ticket_channel(
+            guild=guild,
+            config=config,
+            member=member,
+            tenant_id=self.tenant.tenant_id,
+            db_factory=db_factory,
+        )
+
+        if channel is None:
+            await interaction.followup.send(
+                "チャンネルの作成に失敗しました。管理者にお問い合わせください。",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.followup.send(
+            f"専用チャンネルを用意しました → {channel.mention}",
+            ephemeral=True,
+        )
+        logger.info(
+            "[ticket] interaction handled tenant=%s user=%s channel=%s",
+            self.tenant.tenant_code,
+            member.id,
+            channel.id,
         )
 
     async def on_message(self, message: discord.Message) -> None:  # type: ignore[override]

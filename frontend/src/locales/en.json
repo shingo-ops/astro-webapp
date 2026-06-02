@@ -319,6 +319,8 @@
     "messengerLink": "Messenger Link",
     "discordId": "Discord ID",
     "discordUserId": "Discord User ID",
+    "discordTicketChannel": "Ticket Channel",
+    "openDiscordChannel": "Open in Discord",
     "instagramLink": "Instagram Link",
     "whatsappLink": "WhatsApp Link",
     "country": "Country",
@@ -1701,6 +1703,12 @@
     "loadError": "Failed to load ticket configuration",
     "saveError": "Failed to save ticket configuration",
     "saved": "Ticket configuration saved",
-    "invalidSnowflake": "ID must be a 17–20 digit number"
+    "invalidSnowflake": "ID must be a 17–20 digit number",
+    "deployButtonTitle": "Post Button to Discord",
+    "deployButtonHint": "Posts a message with a 'Open Ticket' button to the configured channel.",
+    "deployButton": "Post Button",
+    "deploying": "Posting...",
+    "deployDone": "Button message posted successfully",
+    "deployError": "Failed to post. Check bot permissions and channel ID."
   }
 }

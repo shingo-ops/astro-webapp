@@ -61,7 +61,8 @@ _LEAD_COLUMNS = """
     messenger_link, discord_id,
     instagram_link, whatsapp_link,
     discord_user_id, discord_dm_channel_id,
-    discord_role_sync_status, discord_role_sync_at
+    discord_role_sync_status, discord_role_sync_at,
+    discord_guild_channel_id
 """
 
 _UPDATABLE_COLUMNS = {

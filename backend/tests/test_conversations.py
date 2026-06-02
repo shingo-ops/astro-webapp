@@ -99,7 +99,8 @@ async def engine():
                 discord_user_id VARCHAR(50),
                 discord_dm_channel_id VARCHAR(50),
                 discord_role_sync_status VARCHAR(20),
-                discord_role_sync_at TIMESTAMP
+                discord_role_sync_at TIMESTAMP,
+        discord_guild_channel_id VARCHAR(50)
             )
         """))
         # meta_messages（migration 012 + 041 + 045 (F14-S5 page_id) を SQLite 用に縮小）
