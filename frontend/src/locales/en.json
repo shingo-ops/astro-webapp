@@ -677,7 +677,9 @@
     "discordGuildIdNotSet": "Not configured",
     "discordEdit": "Edit settings",
     "discordAddBot": "Add Bot to Discord Server",
-    "discordBotConnected": "Bot connected"
+    "discordBotConnected": "Bot connected",
+    "discordNoServer": "No Discord server connected yet",
+    "discordNoServerDesc": "Add a Bot to your Discord server to start message integration."
   },
   "deals": {
     "title": "Deal Management",
