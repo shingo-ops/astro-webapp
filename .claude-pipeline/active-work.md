@@ -16,14 +16,27 @@
 
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
-| feature/morimoto/dev-workflow-improvements | 開発ワークフロー改善 | 2026-06-02 | IN_PROGRESS | | |
-| feature/morimoto/invoice-issuer-path-fix | 請求書作成 発行者情報ボタンパス修正 | 2026-06-02 | IN_PROGRESS | | |
+| feature/morimoto/dev-workflow-improvements | 開発ワークフロー改善 | 2026-06-02 | DONE | #1383 | |
+| feature/morimoto/invoice-issuer-path-fix | 請求書作成 発行者情報ボタンパス修正 | 2026-06-02 | DONE | #1387 | |
 
-| feature/morimoto/pre-commit-active-work-exception | （記入してください） | 2026-06-02 10:40 | IN_PROGRESS | | |
-| feature/morimoto/fix-release-pr-drawbacks | （記入してください） | 2026-06-02 10:42 | IN_PROGRESS | | |
+| feature/morimoto/pre-commit-active-work-exception | pre-commitフック例外追加 | 2026-06-02 | DONE | #1389 | |
+| feature/morimoto/fix-release-pr-drawbacks | リリースPR弊害対策 | 2026-06-02 | DONE | #1386 | |
+| feature/morimoto/fix-pre-commit-regex | pre-commit正規表現修正 | 2026-06-02 | DONE | #1393 | |
+| feature/morimoto/discord-bot-adr | Discord Bot ADR-091 | 2026-06-02 | DONE | #1394 | |
+| feature/morimoto/hook-test-ci | CIテスト追加（shellcheck・pytest） | 2026-06-02 | DONE | #1397 | |
+| feature/morimoto/discord-bot-reconnect-fix | Discord接続ループ防止 | 2026-06-02 | DONE | #1398 | |
 | feature/morimoto/discord-ticket-phase1 | ADR-091 KPI3 Phase 1+2 | 2026-06-02 12:53 | DONE | #1404 | |
 | feature/morimoto/discord-ticket-phase3 | ADR-091 KPI3 Phase 3 | 2026-06-02 13:30 | DONE | #1406 | |
-| feature/morimoto/discord-kpi4-announce | ADR-091 KPI4 アナウンス投稿 | 2026-06-02 14:00 | IN_PROGRESS | | |
+| feature/morimoto/discord-kpi4-announce | ADR-091 KPI4 アナウンス投稿 | 2026-06-02 14:00 | DONE | #1408 | |
+| feature/morimoto/adr072-precommit | （記入してください） | 2026-06-02 14:11 | IN_PROGRESS | | |
+| feature/morimoto/discord-kpi5-role-channel | ADR-091 KPI5 顧客規模別チャンネル・ロール連動 | 2026-06-02 14:20 | DONE | #1411 | |
+| feature/morimoto/discord-kpi6-remove | ADR-091 KPI6 アプリからの顧客削除 | 2026-06-02 14:48 | DONE | #1413 | |
+| feature/morimoto/claude-md-hierarchy | （記入してください） | 2026-06-02 14:55 | IN_PROGRESS | | |
+| feature/morimoto/discord-kpi7-role-ui | ADR-091 KPI7 ロール同期ステータス UI | 2026-06-02 14:55 | DONE | #1416 | |
+| feature/morimoto/discord-kpi7-status-fix | KPI7 バッジ synced→success 修正 | 2026-06-02 | DONE | #1418 | |
+| feature/morimoto/discord-role-name-config | ロール名アプリ設定 | 2026-06-02 | DONE | #1419 | |
+| feature/morimoto/fix-messaging-window-response-type | messaging_window HUMAN_AGENT タグ未承認バグ修正 | 2026-06-02 15:00 | IN_PROGRESS | | |
+| feature/morimoto/ci-fix-deploy-retry | （記入してください） | 2026-06-02 15:28 | IN_PROGRESS | | |
 ---
 
 ## 記入例
