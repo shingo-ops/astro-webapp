@@ -1,4 +1,28 @@
 #!/bin/sh
+# worktree 外からのコミットを早期ブロック（push時より前に検知）
+if [ -z "${GITHUB_ACTIONS}" ]; then
+  GIT_COMMON_DIR="$(git rev-parse --git-common-dir 2>/dev/null)"
+  case "${GIT_COMMON_DIR}" in
+    /*) MAIN_REPO_ROOT="$(dirname "${GIT_COMMON_DIR}")" ;;
+    *)  MAIN_REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" ;;
+  esac
+  CONFIG_FILE="${MAIN_REPO_ROOT}/.claude/agent-config.sh"
+  # shellcheck source=.claude/agent-config.sh
+  [ -f "${CONFIG_FILE}" ] && . "${CONFIG_FILE}"
+  AGENT_WORKTREE_BASE="${AGENT_WORKTREE_BASE:-${HOME}/worktrees}"
+  ACTUAL_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+  case "${ACTUAL_ROOT}" in
+    "${AGENT_WORKTREE_BASE}/"*) ;;
+    *)
+      echo ""
+      echo "🚫 commit を中断しました: worktree 外での作業は禁止されています。"
+      echo "   正しい手順: bash scripts/new-worktree.sh feature/morimoto/<トピック名>"
+      echo ""
+      exit 1
+      ;;
+  esac
+fi
+
 # ADR-067: ダークモード色規約の強制
 # このフックはコミット前に以下のチェックを実行します:
 #   1. ESLint — TSXインラインスタイルへのhex色禁止
