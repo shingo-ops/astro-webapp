@@ -1743,7 +1743,12 @@
     "largeChannelIdLabel": "大口顧客向けチャンネル ID（任意）",
     "scaleChannelIdPlaceholder": "例: 1288437029213835356",
     "smallChannelIdHint": "estimated_scale が Small の顧客への専用チャンネル案内で使用されます。",
-    "largeChannelIdHint": "estimated_scale が Large の顧客への専用チャンネル案内で使用されます。"
+    "largeChannelIdHint": "estimated_scale が Large の顧客への専用チャンネル案内で使用されます。",
+    "roleMappingTitle": "ロール自動付与 設定",
+    "roleMappingHint": "estimated_scale に応じて Discord ロールを自動付与します。ロール名は Discord サーバー内のロール名と完全一致させてください（存在しない場合 Bot が自動作成します）。",
+    "smallRoleNameLabel": "Small 顧客向けロール名",
+    "largeRoleNameLabel": "Large 顧客向けロール名",
+    "invalidRoleName": "ロール名は1文字以上入力してください"
   },
   "discordAnnounce": {
     "description": "Discordの指定チャンネルにアナウンスを投稿します。Discordを開かずにアプリから直接送信できます。",

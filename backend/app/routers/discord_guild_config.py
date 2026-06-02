@@ -60,13 +60,25 @@ async def get_discord_config(
 ) -> DiscordConfigResponse:
     """Discord Guild 設定を取得する。未設定の場合は guild_id=None を返す。"""
     result = await db.execute(
-        text(
-            "SELECT guild_id FROM public.tenant_discord_config WHERE tenant_id = :tid"
-        ),
+        text("""
+            SELECT dc.guild_id,
+                   COALESCE(tc.small_role_name, 'Member')  AS role_member,
+                   COALESCE(tc.large_role_name, 'Partner') AS role_partner
+            FROM public.tenant_discord_config dc
+            LEFT JOIN public.tenant_discord_ticket_config tc
+                   ON tc.tenant_id = dc.tenant_id
+            WHERE dc.tenant_id = :tid
+        """),
         {"tid": tenant_id},
     )
-    row = result.first()
-    return DiscordConfigResponse(guild_id=str(row[0]) if row else None)
+    row = result.mappings().first()
+    if not row:
+        return DiscordConfigResponse(guild_id=None)
+    return DiscordConfigResponse(
+        guild_id=str(row["guild_id"]) if row["guild_id"] else None,
+        role_member=row["role_member"],
+        role_partner=row["role_partner"],
+    )
 
 
 @router.put(
