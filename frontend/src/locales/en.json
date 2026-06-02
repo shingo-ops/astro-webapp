@@ -721,11 +721,16 @@
       "searchPlaceholder": "Search by name, English name, category, mark, or supplier"
     },
     "expiryWarning": "Offers are automatically removed 18 hours after they are posted.",
-    "filter": { "allTypes": "All types", "allOfferTypes": "Stock & pre-order" },
+    "filter": { "allTypes": "All types", "allOfferTypes": "Stock & pre-order", "allCategories": "All categories" },
+    "resetSort": "Reset",
     "offerType": { "in_stock": "In stock", "pre_order": "Pre-order" },
     "shipTiming": { "on_release": "Ship on release", "1day_before": "Ship 1 day before", "2day_before": "Ship 2 days before", "other": "Other" },
     "col": {
       "product": "Product",
+      "category": "Category",
+      "mark": "Model",
+      "title": "Title",
+      "offerType": "Type",
       "unit": "Form",
       "condition": "Condition",
       "unitPrice": "Unit price",
@@ -769,6 +774,7 @@
       "button": "Filter",
       "enable": "Enable filter (apply my saved view)",
       "suppliers": "Show / hide suppliers",
+      "categories": "Show / hide categories",
       "columns": "Visible columns"
     },
     "search": {

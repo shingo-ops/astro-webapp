@@ -15,10 +15,10 @@
   background: var(--platform-mail-bg);
 }
 
-/* Squircle（Instagram等）: 角丸四角形クリッピング・白背景なし（アイコン自身が背景を持つ） */
+/* Squircle（Instagram等）: 角丸四角形クリッピング・サーフェス背景（ライト:白 / ダーク:反転） */
 .platform-icon-wrap--squircle {
   border-radius: var(--radius-lg);
-  background: transparent;
+  background: var(--bg-surface);
 }
 
 /* 未知プラットフォーム: グレー */

@@ -33,8 +33,11 @@ class InventoryFilterPayload(BaseModel):
     hidden_supplier_ids: list[int] = Field(
         default_factory=list, description="非表示にする仕入元ID（複数選択）"
     )
+    hidden_categories: list[str] = Field(
+        default_factory=list, description="非表示にするカテゴリー（複数選択）"
+    )
     hidden_columns: list[str] = Field(
-        default_factory=list, description="非表示にする列キー（unit / condition / unitPrice / quantity 等）"
+        default_factory=list, description="非表示にする列キー（category/mark/condition/unit/offer_type/quantity/unit_price/supplier）"
     )
 
 
@@ -76,6 +79,7 @@ async def get_my_inventory_filters(
     return InventoryFilterPayload(
         enabled=bool(row["enabled"]),
         hidden_supplier_ids=_coerce_int_list(f.get("hidden_supplier_ids")),
+        hidden_categories=[str(x) for x in (f.get("hidden_categories") or []) if isinstance(x, str)],
         hidden_columns=[str(x) for x in (f.get("hidden_columns") or []) if isinstance(x, str)],
     )
 
@@ -92,6 +96,7 @@ async def update_my_inventory_filters(
     filters_json = json.dumps(
         {
             "hidden_supplier_ids": payload.hidden_supplier_ids,
+            "hidden_categories": payload.hidden_categories,
             "hidden_columns": payload.hidden_columns,
         }
     )
