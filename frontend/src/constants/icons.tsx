@@ -257,15 +257,15 @@ const PLATFORM_IMG: Record<string, string> = {
   telegram:  "/brand-icons/telegram.svg",
 };
 
-/** 真円のブランドロゴ（SVG） → wrap幅いっぱいに表示 */
+/** 真円のブランドロゴ（SVG） → circular バッジで表示 */
 const FULL_CIRCLE_ICONS = new Set(["messenger", "whatsapp", "telegram"]);
 
 /**
- * スクワークル（角丸四角形）形状のロゴ（PNG）→ 70%に縮小して円形バッジ内に収める
+ * スクワークル（角丸四角形）形状のロゴ（PNG）→ squircle バッジで表示
  * Instagram の公式アセットは真円ではなく squircle のため、
- * circular clip で切り抜くと視覚的に大きく見える問題を回避する。
+ * Meta Business Suite 同様にバッジも squircle 形状で表示する。
  */
-const SQUIRCLE_ICONS = new Set(["instagram"]);
+export const SQUIRCLE_ICONS = new Set(["instagram"]);
 
 /**
  * プラットフォームバッジアイコン（会話リスト アバター右下表示用）
@@ -292,15 +292,13 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
     );
   }
 
-  // 真円SVG → フル充填 / スクワークルPNG(Instagram) → 70%で円形内に収める / シンボルのみ(Discord等) → 72%
-  const imgSize = FULL_CIRCLE_ICONS.has(platform)
-    ? size
-    : SQUIRCLE_ICONS.has(platform)
-      ? Math.round(size * 0.70)
-      : Math.round(size * 0.72);
+  // squircle(Instagram) → squircle wrap でフル充填 / 真円SVG → circle wrap でフル充填 / シンボルのみ(Discord等) → 72%
+  const isSquircle = SQUIRCLE_ICONS.has(platform);
+  const imgSize = (FULL_CIRCLE_ICONS.has(platform) || isSquircle) ? size : Math.round(size * 0.72);
+  const wrapClass = isSquircle ? "platform-icon-wrap platform-icon-wrap--squircle" : "platform-icon-wrap";
 
   return (
-    <span className="platform-icon-wrap" style={{ width: size, height: size }}>
+    <span className={wrapClass} style={{ width: size, height: size }}>
       <img
         src={src}
         width={imgSize}
