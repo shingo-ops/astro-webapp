@@ -79,6 +79,8 @@ export interface LeadDetail {
   // Discord Gateway fields (read-only, set by dm_writer)
   discord_user_id: string | null;
   discord_dm_channel_id: string | null;
+  // ADR-091 KPI3: チケットチャンネル (read-only, set by ticket_channel_creator)
+  discord_guild_channel_id: string | null;
 }
 
 // ---------------------------------------------------------------------------
