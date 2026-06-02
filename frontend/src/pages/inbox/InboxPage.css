@@ -334,6 +334,10 @@
   overflow: hidden;
   line-height: 0;
 }
+/* squircle 形状バッジ（Instagram）: 角丸四角形で表示 */
+.conv-platform-dot--squircle {
+  border-radius: var(--radius-lg);
+}
 
 /* 会話情報 */
 .conv-info { flex: 1; min-width: 0; }

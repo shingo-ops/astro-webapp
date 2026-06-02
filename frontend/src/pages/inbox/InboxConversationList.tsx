@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { INBOX_ACTION_ICONS, NAV_ICONS, PlatformIcon } from "../../constants/icons";
+import { INBOX_ACTION_ICONS, NAV_ICONS, PlatformIcon, SQUIRCLE_ICONS } from "../../constants/icons";
 import { ICON } from "../../constants/iconSizes";
 import type { Conversation } from "../../lib/messages";
 import { getInitials, relativeTime } from "./inbox.types";
@@ -215,7 +215,7 @@ export function InboxConversationList({
                       getInitials(conv.customer_name)
                     )}
                   </div>
-                  <span className="conv-platform-dot icon-frame">
+                  <span className={`conv-platform-dot icon-frame${SQUIRCLE_ICONS.has(conv.platform ?? "") ? " conv-platform-dot--squircle" : ""}`}>
                     <PlatformIcon platform={conv.platform} size={ICON.base} />
                   </span>
                 </div>
