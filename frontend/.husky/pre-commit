@@ -14,11 +14,16 @@ if [ -z "${GITHUB_ACTIONS}" ]; then
   case "${ACTUAL_ROOT}" in
     "${AGENT_WORKTREE_BASE}/"*) ;;
     *)
-      echo ""
-      echo "🚫 commit を中断しました: worktree 外での作業は禁止されています。"
-      echo "   正しい手順: bash scripts/new-worktree.sh feature/morimoto/<トピック名>"
-      echo ""
-      exit 1
+      # active-work.md のみの変更（DONE更新等の管理作業）は例外として許可
+      STAGED_FILES="$(git diff --cached --name-only 2>/dev/null)"
+      NON_ADMIN_FILES="$(echo "${STAGED_FILES}" | grep -v '^\\.claude-pipeline/active-work\\.md$' || true)"
+      if [ -n "${NON_ADMIN_FILES}" ]; then
+        echo ""
+        echo "🚫 commit を中断しました: worktree 外での作業は禁止されています。"
+        echo "   正しい手順: bash scripts/new-worktree.sh feature/morimoto/<トピック名>"
+        echo ""
+        exit 1
+      fi
       ;;
   esac
 fi
