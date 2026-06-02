@@ -327,6 +327,21 @@
     "channelInviteSending": "Sending...",
     "channelInviteSent": "Sent successfully",
     "channelInviteError": "Failed to send. Check channel settings.",
+    "discordRemove": "Discord Remove",
+    "discordRemoveFromChannel": "Remove from Channel",
+    "discordKick": "Kick",
+    "discordBan": "BAN",
+    "discordRemoveError": "Action failed. Check bot permissions.",
+    "discordRemoveConfirm": {
+      "remove-from-channel": "Remove this user from the ticket channel?",
+      "kick": "Kick this user from the server? They can rejoin.",
+      "ban": "Permanently BAN this user from the server? This cannot be undone."
+    },
+    "discordRemoveDone": {
+      "remove-from-channel": "Removed from channel",
+      "kick": "Kicked",
+      "ban": "Banned"
+    },
     "instagramLink": "Instagram Link",
     "whatsappLink": "WhatsApp Link",
     "country": "Country",

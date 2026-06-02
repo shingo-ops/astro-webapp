@@ -327,6 +327,21 @@
     "channelInviteSending": "送信中...",
     "channelInviteSent": "送信しました",
     "channelInviteError": "送信に失敗しました。チャンネル設定を確認してください。",
+    "discordRemove": "Discord 削除操作",
+    "discordRemoveFromChannel": "チャンネルから削除",
+    "discordKick": "Kick（退出）",
+    "discordBan": "BAN（永久追放）",
+    "discordRemoveError": "操作に失敗しました。Bot 権限を確認してください。",
+    "discordRemoveConfirm": {
+      "remove-from-channel": "このユーザーをチケットチャンネルから削除しますか？",
+      "kick": "このユーザーをサーバーから退出（Kick）させますか？再参加は可能です。",
+      "ban": "このユーザーをサーバーから永久追放（BAN）しますか？この操作は取り消せません。"
+    },
+    "discordRemoveDone": {
+      "remove-from-channel": "チャンネルから削除しました",
+      "kick": "Kick しました",
+      "ban": "BAN しました"
+    },
     "instagramLink": "Instagramリンク",
     "whatsappLink": "WhatsAppリンク",
     "country": "国",
