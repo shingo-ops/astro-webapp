@@ -60,13 +60,31 @@ async def get_discord_config(
 ) -> DiscordConfigResponse:
     """Discord Guild 設定を取得する。未設定の場合は guild_id=None を返す。"""
     result = await db.execute(
-        text(
-            "SELECT guild_id FROM public.tenant_discord_config WHERE tenant_id = :tid"
-        ),
+        text("SELECT guild_id FROM public.tenant_discord_config WHERE tenant_id = :tid"),
         {"tid": tenant_id},
     )
     row = result.first()
-    return DiscordConfigResponse(guild_id=str(row[0]) if row else None)
+    guild_id = str(row[0]) if row else None
+
+    # ロール名は tenant_discord_ticket_config から取得（テーブル未作成時はデフォルト）
+    role_member, role_partner = "Member", "Partner"
+    try:
+        tc = await db.execute(
+            text("""
+                SELECT COALESCE(small_role_name, 'Member'),
+                       COALESCE(large_role_name, 'Partner')
+                FROM public.tenant_discord_ticket_config
+                WHERE tenant_id = :tid
+            """),
+            {"tid": tenant_id},
+        )
+        tc_row = tc.first()
+        if tc_row:
+            role_member, role_partner = tc_row[0], tc_row[1]
+    except Exception:  # noqa: BLE001 — SQLite テスト環境など
+        pass
+
+    return DiscordConfigResponse(guild_id=guild_id, role_member=role_member, role_partner=role_partner)
 
 
 @router.put(

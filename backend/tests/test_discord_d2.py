@@ -275,7 +275,7 @@ class TestSyncLeadDiscordRole:
     async def test_skip_no_guild_id(self):
         """guild_id 未設定のとき silent skip (ログのみ)。"""
         with patch.dict(os.environ, {"DISCORD_BOT_TOKEN_4": "fake-token"}):
-            with patch("app.services.discord_role_sync._get_guild_id", new=AsyncMock(return_value=None)):
+            with patch("app.services.discord_role_sync._get_guild_and_role_names", new=AsyncMock(return_value=(None, "Member", "Partner"))):
                 with patch("app.services.discord_role_sync.discord_api_request") as mock_req:
                     await sync_lead_discord_role(
                         tenant_id=4,

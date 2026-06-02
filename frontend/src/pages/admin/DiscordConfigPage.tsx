@@ -1,8 +1,8 @@
 /**
- * /admin/discord-config — Discord Guild 設定 + チケット機能設定 (ADR-091 KPI3)
+ * /admin/discord-config — Discord Guild 設定 + チケット機能設定 (ADR-091 KPI3/KPI7)
  *
  * テナント admin が Discord サーバー（Guild）の Guild ID を登録する画面。
- * ロールマッピングは固定 (Small→Member, Large→Partner) なので表示のみ。
+ * ロールマッピング (Small/Large → ロール名) は DB で設定可能。
  * チケット機能設定（カテゴリID・ボタンチャンネルID・担当者ロール・ウェルカムメッセージ）も管理する。
  *
  * 権限:
@@ -28,6 +28,8 @@ interface DiscordTicketConfig {
   welcome_template: string;
   small_channel_id: string | null;
   large_channel_id: string | null;
+  small_role_name: string;
+  large_role_name: string;
 }
 
 export default function DiscordConfigPage() {
@@ -52,6 +54,8 @@ export default function DiscordConfigPage() {
   );
   const [smallChannelId, setSmallChannelId] = useState("");
   const [largeChannelId, setLargeChannelId] = useState("");
+  const [smallRoleName, setSmallRoleName] = useState("Member");
+  const [largeRoleName, setLargeRoleName] = useState("Partner");
   const [ticketSaving, setTicketSaving] = useState(false);
   const [ticketError, setTicketError] = useState("");
   const [ticketSaved, setTicketSaved] = useState(false);
@@ -77,6 +81,8 @@ export default function DiscordConfigPage() {
         setWelcomeTemplate(ticketData.welcome_template);
         setSmallChannelId(ticketData.small_channel_id ?? "");
         setLargeChannelId(ticketData.large_channel_id ?? "");
+        setSmallRoleName(ticketData.small_role_name ?? "Member");
+        setLargeRoleName(ticketData.large_role_name ?? "Partner");
       } catch {
         setError(t("discordConfig.loadError"));
       } finally {
@@ -132,6 +138,14 @@ export default function DiscordConfigPage() {
     setTicketError("");
     setTicketSaved(false);
     try {
+      if (!smallRoleName.trim()) {
+        setTicketError(t("discordTicketConfig.invalidRoleName"));
+        return;
+      }
+      if (!largeRoleName.trim()) {
+        setTicketError(t("discordTicketConfig.invalidRoleName"));
+        return;
+      }
       const updated = await api.put<DiscordTicketConfig>("/admin/discord-ticket-config", {
         ticket_category_id: ticketCategoryId.trim(),
         ticket_button_channel_id: ticketButtonChannelId.trim(),
@@ -139,10 +153,14 @@ export default function DiscordConfigPage() {
         welcome_template: welcomeTemplate,
         small_channel_id: smallChannelId.trim() || null,
         large_channel_id: largeChannelId.trim() || null,
+        small_role_name: smallRoleName.trim(),
+        large_role_name: largeRoleName.trim(),
       });
       setTicketConfig(updated);
       setSmallChannelId(updated.small_channel_id ?? "");
       setLargeChannelId(updated.large_channel_id ?? "");
+      setSmallRoleName(updated.small_role_name ?? "Member");
+      setLargeRoleName(updated.large_role_name ?? "Partner");
       setTicketSaved(true);
       setTimeout(() => setTicketSaved(false), 3000);
     } catch {
@@ -200,30 +218,6 @@ export default function DiscordConfigPage() {
             </p>
           </div>
 
-          {/* ロールマッピング（固定・表示のみ） */}
-          {config && (
-            <div className="rounded border border-token-border bg-token-bg-subtle p-4 space-y-2">
-              <p className="text-sm font-medium text-token-text-primary">
-                {t("discordConfig.roleMappingTitle")}
-              </p>
-              <div className="text-sm text-token-text-secondary space-y-1">
-                <p>
-                  <span className="font-medium">{t("leads.scale_small")}</span>
-                  {" → "}
-                  <span className="font-mono bg-token-bg-muted px-1.5 py-0.5 rounded text-xs">
-                    {config.role_member}
-                  </span>
-                </p>
-                <p>
-                  <span className="font-medium">{t("leads.scale_large")}</span>
-                  {" → "}
-                  <span className="font-mono bg-token-bg-muted px-1.5 py-0.5 rounded text-xs">
-                    {config.role_partner}
-                  </span>
-                </p>
-              </div>
-            </div>
-          )}
 
           {error && <p className="text-sm text-red-500">{error}</p>}
           {saved && <p className="text-sm text-green-600">{t("discordConfig.saved")}</p>}
@@ -355,6 +349,44 @@ export default function DiscordConfigPage() {
             <p className="text-xs text-token-text-secondary">
               {t("discordTicketConfig.largeChannelIdHint")}
             </p>
+          </div>
+
+          {/* ロール名設定（Small / Large） */}
+          <div className="rounded border border-token-border bg-token-bg-subtle p-4 space-y-4">
+            <p className="text-sm font-medium text-token-text-primary">
+              {t("discordTicketConfig.roleMappingTitle")}
+            </p>
+            <p className="text-xs text-token-text-secondary">
+              {t("discordTicketConfig.roleMappingHint")}
+            </p>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-token-text-primary">
+                {t("discordTicketConfig.smallRoleNameLabel")}
+              </label>
+              <input
+                type="text"
+                value={smallRoleName}
+                onChange={(e) => setSmallRoleName(e.target.value)}
+                disabled={!canEdit}
+                placeholder="Member"
+                maxLength={100}
+                className="input w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-token-text-primary">
+                {t("discordTicketConfig.largeRoleNameLabel")}
+              </label>
+              <input
+                type="text"
+                value={largeRoleName}
+                onChange={(e) => setLargeRoleName(e.target.value)}
+                disabled={!canEdit}
+                placeholder="Partner"
+                maxLength={100}
+                className="input w-full"
+              />
+            </div>
           </div>
 
           {ticketError && <p className="text-sm text-red-500">{ticketError}</p>}

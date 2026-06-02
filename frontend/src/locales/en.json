@@ -1743,7 +1743,12 @@
     "largeChannelIdLabel": "Large Customer Channel ID (optional)",
     "scaleChannelIdPlaceholder": "e.g. 1288437029213835356",
     "smallChannelIdHint": "Used for channel invitation messages to Small-scale customers.",
-    "largeChannelIdHint": "Used for channel invitation messages to Large-scale customers."
+    "largeChannelIdHint": "Used for channel invitation messages to Large-scale customers.",
+    "roleMappingTitle": "Auto Role Assignment",
+    "roleMappingHint": "Automatically assigns Discord roles based on estimated_scale. The role name must exactly match a role in your Discord server (Bot will create it if it doesn't exist).",
+    "smallRoleNameLabel": "Role name for Small customers",
+    "largeRoleNameLabel": "Role name for Large customers",
+    "invalidRoleName": "Role name must not be empty"
   },
   "discordAnnounce": {
     "description": "Post announcements to a Discord channel directly from the app — no need to open Discord.",
