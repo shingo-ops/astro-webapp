@@ -322,6 +322,11 @@
     "discordUserId": "Discord User ID",
     "discordTicketChannel": "チケットチャンネル",
     "openDiscordChannel": "Discordで開く",
+    "channelInvite": "専用チャンネル案内",
+    "channelInviteSend": "案内を送信",
+    "channelInviteSending": "送信中...",
+    "channelInviteSent": "送信しました",
+    "channelInviteError": "送信に失敗しました。チャンネル設定を確認してください。",
     "instagramLink": "Instagramリンク",
     "whatsappLink": "WhatsAppリンク",
     "country": "国",
@@ -1710,7 +1715,12 @@
     "deployButton": "ボタンを投稿する",
     "deploying": "投稿中...",
     "deployDone": "ボタンメッセージを投稿しました",
-    "deployError": "投稿に失敗しました。Bot権限とチャンネルIDを確認してください。"
+    "deployError": "投稿に失敗しました。Bot権限とチャンネルIDを確認してください。",
+    "smallChannelIdLabel": "小口顧客向けチャンネル ID（任意）",
+    "largeChannelIdLabel": "大口顧客向けチャンネル ID（任意）",
+    "scaleChannelIdPlaceholder": "例: 1288437029213835356",
+    "smallChannelIdHint": "estimated_scale が Small の顧客への専用チャンネル案内で使用されます。",
+    "largeChannelIdHint": "estimated_scale が Large の顧客への専用チャンネル案内で使用されます。"
   },
   "discordAnnounce": {
     "description": "Discordの指定チャンネルにアナウンスを投稿します。Discordを開かずにアプリから直接送信できます。",

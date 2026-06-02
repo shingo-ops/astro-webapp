@@ -34,6 +34,7 @@ from app.routers import (
     dashboard,
     deals,
     discord_announcement,  # ADR-091 KPI4: アナウンス投稿 API
+    discord_channel_invite,  # ADR-091 KPI5: チャンネル招待メッセージ送信 API
     discord_guild_config,  # Sprint D2: Discord Guild 設定 admin API
     discord_ticket_config,  # ADR-091 KPI3: チケット機能設定 admin API
     duplicates,
@@ -190,6 +191,11 @@ app.include_router(
 # ADR-091 KPI4: Discord アナウンス投稿 API
 app.include_router(
     discord_announcement.router, prefix="/api/v1", tags=["discord"],
+    dependencies=[Depends(get_current_tenant)],
+)
+# ADR-091 KPI5: Discord チャンネル招待メッセージ送信 API
+app.include_router(
+    discord_channel_invite.router, prefix="/api/v1", tags=["discord"],
     dependencies=[Depends(get_current_tenant)],
 )
 # Sprint D2: Discord Guild 設定 API (tenant admin)

@@ -1,10 +1,11 @@
-"""Discord チケット機能設定 API (ADR-091 KPI3 Phase 1/3).
+"""Discord チケット機能設定 API (ADR-091 KPI3/KPI5).
 
 テナント admin がチケット機能の設定を管理するエンドポイント。
 - カテゴリID（プライベートDM専用カテゴリ）
 - ボタン設置チャンネルID
 - 担当者ロールID（任意）
 - ウェルカムメッセージテンプレート
+- 小口/大口顧客向け専用チャンネルID（KPI5）
 
 API:
   GET  /api/v1/admin/discord-ticket-config              — 現在の設定取得
@@ -55,6 +56,8 @@ class DiscordTicketConfigResponse(BaseModel):
     ticket_button_channel_id: str | None = None
     staff_role_id: str | None = None
     welcome_template: str = "ご連絡ありがとうございます。こちらのチャンネルでサポートいたします。"
+    small_channel_id: str | None = None
+    large_channel_id: str | None = None
 
 
 class DiscordTicketConfigUpdate(BaseModel):
@@ -65,6 +68,8 @@ class DiscordTicketConfigUpdate(BaseModel):
         default="ご連絡ありがとうございます。こちらのチャンネルでサポートいたします。",
         max_length=_WELCOME_TEMPLATE_MAX,
     )
+    small_channel_id: str | None = Field(default=None, min_length=17, max_length=20)
+    large_channel_id: str | None = Field(default=None, min_length=17, max_length=20)
 
     @field_validator("ticket_category_id", "ticket_button_channel_id")
     @classmethod
@@ -73,11 +78,11 @@ class DiscordTicketConfigUpdate(BaseModel):
             raise ValueError("ID は17〜20桁の数字で入力してください")
         return v
 
-    @field_validator("staff_role_id")
+    @field_validator("staff_role_id", "small_channel_id", "large_channel_id")
     @classmethod
-    def validate_staff_role_id(cls, v: str | None) -> str | None:
+    def validate_optional_snowflake(cls, v: str | None) -> str | None:
         if v is not None and not _is_valid_snowflake(v):
-            raise ValueError("ロールID は17〜20桁の数字で入力してください")
+            raise ValueError("ID は17〜20桁の数字で入力してください")
         return v
 
 
@@ -94,7 +99,8 @@ async def get_discord_ticket_config(
     result = await db.execute(
         text("""
             SELECT ticket_category_id, ticket_button_channel_id,
-                   staff_role_id, welcome_template
+                   staff_role_id, welcome_template,
+                   small_channel_id, large_channel_id
             FROM public.tenant_discord_ticket_config
             WHERE tenant_id = :tid
         """),
@@ -108,6 +114,8 @@ async def get_discord_ticket_config(
         ticket_button_channel_id=str(row["ticket_button_channel_id"]),
         staff_role_id=str(row["staff_role_id"]) if row["staff_role_id"] else None,
         welcome_template=row["welcome_template"],
+        small_channel_id=str(row["small_channel_id"]) if row["small_channel_id"] else None,
+        large_channel_id=str(row["large_channel_id"]) if row["large_channel_id"] else None,
     )
 
 
@@ -127,16 +135,20 @@ async def update_discord_ticket_config(
         text("""
             INSERT INTO public.tenant_discord_ticket_config
                 (tenant_id, ticket_category_id, ticket_button_channel_id,
-                 staff_role_id, welcome_template, updated_at)
+                 staff_role_id, welcome_template,
+                 small_channel_id, large_channel_id, updated_at)
             VALUES
                 (:tid, :category_id, :button_channel_id,
-                 :staff_role_id, :welcome_template, NOW())
+                 :staff_role_id, :welcome_template,
+                 :small_channel_id, :large_channel_id, NOW())
             ON CONFLICT (tenant_id) DO UPDATE SET
-                ticket_category_id      = EXCLUDED.ticket_category_id,
+                ticket_category_id       = EXCLUDED.ticket_category_id,
                 ticket_button_channel_id = EXCLUDED.ticket_button_channel_id,
-                staff_role_id           = EXCLUDED.staff_role_id,
-                welcome_template        = EXCLUDED.welcome_template,
-                updated_at              = NOW()
+                staff_role_id            = EXCLUDED.staff_role_id,
+                welcome_template         = EXCLUDED.welcome_template,
+                small_channel_id         = EXCLUDED.small_channel_id,
+                large_channel_id         = EXCLUDED.large_channel_id,
+                updated_at               = NOW()
         """),
         {
             "tid": tenant_id,
@@ -144,6 +156,8 @@ async def update_discord_ticket_config(
             "button_channel_id": data.ticket_button_channel_id,
             "staff_role_id": data.staff_role_id,
             "welcome_template": data.welcome_template,
+            "small_channel_id": data.small_channel_id,
+            "large_channel_id": data.large_channel_id,
         },
     )
     await record_audit_log(
@@ -157,6 +171,8 @@ async def update_discord_ticket_config(
             "ticket_category_id": data.ticket_category_id,
             "ticket_button_channel_id": data.ticket_button_channel_id,
             "staff_role_id": data.staff_role_id,
+            "small_channel_id": data.small_channel_id,
+            "large_channel_id": data.large_channel_id,
         },
     )
     await db.commit()
@@ -171,6 +187,8 @@ async def update_discord_ticket_config(
         ticket_button_channel_id=data.ticket_button_channel_id,
         staff_role_id=data.staff_role_id,
         welcome_template=data.welcome_template,
+        small_channel_id=data.small_channel_id,
+        large_channel_id=data.large_channel_id,
     )
 
 

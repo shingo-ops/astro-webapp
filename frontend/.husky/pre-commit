@@ -73,3 +73,11 @@ if [ -n "$BACKEND_PY_CHANGES" ]; then
   fi
   cd "$REPO_ROOT/frontend" || exit 1
 fi
+
+# ADR-072: write endpoint reset_tenant_context チェック
+# backend/app/routers/ の .py ファイルが変更されたときのみ実行
+ROUTER_PY_CHANGES=$(git diff --cached --name-only | grep -E "^backend/app/routers/.*\.py$" || true)
+if [ -n "$ROUTER_PY_CHANGES" ]; then
+  echo "🔍 ADR-072: write エンドポイントの reset_tenant_context チェック..."
+  python3 "$REPO_ROOT/scripts/lint_tenant_schema.py" --mode strict "$REPO_ROOT/backend/app/routers/"
+fi
