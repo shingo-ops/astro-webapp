@@ -18,8 +18,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_tenant, get_current_user, require_permission
-from app.database import get_db, reset_tenant_context
+from app.auth.dependencies import get_current_tenant, get_current_user, require_permission, reset_tenant_context
+from app.database import get_db
 from app.discord_gateway.config import load_tenant_bot_configs
 from app.models import User
 from app.services.audit import record_audit_log
