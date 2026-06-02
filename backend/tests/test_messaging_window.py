@@ -157,15 +157,14 @@ def test_messaging_type_returns_none_for_expired_or_no_inbound(state, expected):
 
 
 def test_messaging_type_within_24h_default_response():
-    # HUMAN_AGENT auto-apply 仕様 (dac01e3) に追随:
-    # 24h 以内でも force 不要で MESSAGE_TAG=HUMAN_AGENT を付与する
-    assert messaging_type_for_state(WindowState.WITHIN_24H) == ("MESSAGE_TAG", "HUMAN_AGENT")
+    # 24h 以内は RESPONSE（HUMAN_AGENT タグは Meta 審査承認が必要なため使わない）
+    assert messaging_type_for_state(WindowState.WITHIN_24H) == ("RESPONSE", None)
 
 
-def test_messaging_type_within_24h_with_force_returns_human_agent():
-    """24h 以内でも `force_human_agent_tag=True` で MESSAGE_TAG=HUMAN_AGENT。"""
+def test_messaging_type_within_24h_with_force_returns_response():
+    """24h 以内は force_human_agent_tag に関わらず RESPONSE を返す。"""
     assert messaging_type_for_state(WindowState.WITHIN_24H, force_human_agent_tag=True) == (
-        "MESSAGE_TAG", "HUMAN_AGENT",
+        "RESPONSE", None,
     )
 
 
