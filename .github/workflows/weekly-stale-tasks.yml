@@ -36,4 +36,11 @@ jobs:
             echo "→ \`tasks/todo.md\` を確認: https://github.com/shingo-ops/salesanchor/blob/develop/tasks/todo.md"
           } > /tmp/discord_msg.txt
 
+          if [ -z "${DISCORD_WEBHOOK_OWNER_PING}" ]; then
+            echo "⚠️  DISCORD_WEBHOOK_SCHEDULED_REPORT secret が未設定のため通知をスキップします"
+            echo "   設定手順: docs/runbooks/weekly-stale-tasks.md を参照"
+            cat /tmp/discord_msg.txt
+            exit 0
+          fi
+
           bash scripts/notify/discord-owner-ping.sh "$(cat /tmp/discord_msg.txt)"
