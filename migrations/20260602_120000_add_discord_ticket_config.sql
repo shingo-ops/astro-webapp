@@ -13,25 +13,38 @@ CREATE TABLE IF NOT EXISTS public.tenant_discord_ticket_config (
 );
 
 -- 全テナントの leads テーブルに discord_guild_channel_id カラムを追加
+-- leads テーブルが存在するスキーマのみ適用（冪等）
 DO $$
 DECLARE
-    v_schema TEXT;
+    schema_record RECORD;
 BEGIN
-    FOR v_schema IN
-        SELECT schema_name
-        FROM information_schema.schemata
-        WHERE schema_name LIKE 'tenant_%'
+    FOR schema_record IN
+        SELECT nspname AS schema_name
+        FROM pg_namespace
+        WHERE nspname LIKE 'tenant_%'
+        ORDER BY nspname
     LOOP
-        EXECUTE format(
-            'ALTER TABLE %I.leads ADD COLUMN IF NOT EXISTS discord_guild_channel_id VARCHAR(50)',
-            v_schema
-        );
-        EXECUTE format(
-            'CREATE INDEX IF NOT EXISTS idx_leads_discord_guild_channel_id
-             ON %I.leads (tenant_id, discord_guild_channel_id)
-             WHERE discord_guild_channel_id IS NOT NULL',
-            v_schema
-        );
+        -- leads テーブルが存在する場合のみ適用
+        IF EXISTS (
+            SELECT 1 FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = schema_record.schema_name
+              AND c.relname = 'leads'
+        ) THEN
+            EXECUTE format(
+                'ALTER TABLE %I.leads ADD COLUMN IF NOT EXISTS discord_guild_channel_id VARCHAR(50)',
+                schema_record.schema_name
+            );
+            EXECUTE format(
+                'CREATE INDEX IF NOT EXISTS idx_leads_discord_guild_channel_id
+                 ON %I.leads (tenant_id, discord_guild_channel_id)
+                 WHERE discord_guild_channel_id IS NOT NULL',
+                schema_record.schema_name
+            );
+            RAISE NOTICE 'discord_guild_channel_id added to %.leads', schema_record.schema_name;
+        ELSE
+            RAISE NOTICE 'Skipping %.leads (table not found)', schema_record.schema_name;
+        END IF;
     END LOOP;
 END
 $$;
