@@ -460,16 +460,37 @@ export default function ChannelsPage() {
               <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", marginBottom: "var(--space-1)" }}>
                 {t("channels.discordGuildId")}
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--font-sm)" }}>
-                {discordGuildId ?? <span style={{ color: "var(--text-muted)" }}>{t("channels.discordGuildIdNotSet")}</span>}
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--font-sm)", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                {discordGuildId ? (
+                  <>
+                    {discordGuildId}
+                    <span className="badge" style={{ background: "var(--success-bg)", color: "var(--success-text)", fontFamily: "var(--font-sans)" }}>
+                      {t("channels.discordBotConnected")}
+                    </span>
+                  </>
+                ) : (
+                  <span style={{ color: "var(--text-muted)" }}>{t("channels.discordGuildIdNotSet")}</span>
+                )}
               </div>
             </div>
-            <button
-              className="btn-sm btn-secondary"
-              onClick={() => navigate("/admin/discord-config")}
-            >
-              {t("channels.discordEdit")}
-            </button>
+            <div style={{ display: "flex", gap: "var(--space-2)", flexShrink: 0 }}>
+              {canManage && (
+                <a
+                  href="https://discord.com/oauth2/authorize?client_id=1499458730171961535&permissions=268504082&integration_type=0&scope=bot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-sm btn-primary"
+                >
+                  {t("channels.discordAddBot")}
+                </a>
+              )}
+              <button
+                className="btn-sm btn-secondary"
+                onClick={() => navigate("/admin/discord-config")}
+              >
+                {t("channels.discordEdit")}
+              </button>
+            </div>
           </div>
         </div>
       )}

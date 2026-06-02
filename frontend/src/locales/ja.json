@@ -675,7 +675,9 @@
     "discordSection": "Discordサーバー連携",
     "discordGuildId": "Guild ID",
     "discordGuildIdNotSet": "未設定",
-    "discordEdit": "設定を編集"
+    "discordEdit": "設定を編集",
+    "discordAddBot": "BotをDiscordサーバーに追加",
+    "discordBotConnected": "Bot接続済み"
   },
   "deals": {
     "title": "案件管理",
