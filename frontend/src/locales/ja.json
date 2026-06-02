@@ -677,7 +677,10 @@
     "discordGuildIdNotSet": "未設定",
     "discordEdit": "設定を編集",
     "discordAddBot": "BotをDiscordサーバーに追加",
-    "discordBotConnected": "Bot接続済み"
+    "discordConnecting": "接続中...",
+    "discordBotConnected": "Bot接続済み",
+    "discordConnectedSuccess": "DiscordサーバーにBotを追加しました。",
+    "discordConnectError": "Discord連携に失敗しました。もう一度お試しください。"
   },
   "deals": {
     "title": "案件管理",
