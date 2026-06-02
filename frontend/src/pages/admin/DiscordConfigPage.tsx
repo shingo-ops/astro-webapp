@@ -51,6 +51,9 @@ export default function DiscordConfigPage() {
   const [ticketSaving, setTicketSaving] = useState(false);
   const [ticketError, setTicketError] = useState("");
   const [ticketSaved, setTicketSaved] = useState(false);
+  const [deploying, setDeploying] = useState(false);
+  const [deployError, setDeployError] = useState("");
+  const [deployDone, setDeployDone] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -128,6 +131,21 @@ export default function DiscordConfigPage() {
       setTicketError(t("discordTicketConfig.saveError"));
     } finally {
       setTicketSaving(false);
+    }
+  };
+
+  const handleDeployButton = async () => {
+    setDeploying(true);
+    setDeployError("");
+    setDeployDone(false);
+    try {
+      await api.post("/admin/discord-ticket-config/deploy-button", {});
+      setDeployDone(true);
+      setTimeout(() => setDeployDone(false), 5000);
+    } catch {
+      setDeployError(t("discordTicketConfig.deployError"));
+    } finally {
+      setDeploying(false);
     }
   };
 
@@ -292,6 +310,27 @@ export default function DiscordConfigPage() {
             <button onClick={handleTicketSave} disabled={ticketSaving} className="btn btn-primary">
               {ticketSaving ? t("saving") : t("save")}
             </button>
+          )}
+
+          {/* ── ボタン設置 (Phase 3) ── */}
+          {canEdit && ticketConfig?.ticket_button_channel_id && (
+            <div className="mt-6 rounded border border-token-border bg-token-bg-subtle p-4 space-y-3">
+              <p className="text-sm font-medium text-token-text-primary">
+                {t("discordTicketConfig.deployButtonTitle")}
+              </p>
+              <p className="text-xs text-token-text-secondary">
+                {t("discordTicketConfig.deployButtonHint")}
+              </p>
+              {deployError && <p className="text-sm text-red-500">{deployError}</p>}
+              {deployDone && <p className="text-sm text-green-600">{t("discordTicketConfig.deployDone")}</p>}
+              <button
+                onClick={handleDeployButton}
+                disabled={deploying}
+                className="btn btn-secondary"
+              >
+                {deploying ? t("discordTicketConfig.deploying") : t("discordTicketConfig.deployButton")}
+              </button>
+            </div>
           )}
         </section>
       </div>

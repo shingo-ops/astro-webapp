@@ -343,7 +343,8 @@ async def setup_test_db(test_engine):
                 discord_user_id VARCHAR(50),
                 discord_dm_channel_id VARCHAR(50),
                 discord_role_sync_status VARCHAR(20),
-                discord_role_sync_at TIMESTAMP
+                discord_role_sync_at TIMESTAMP,
+                discord_guild_channel_id VARCHAR(50)
             )
         """))
         # 案件テーブル（Step 5d: 旧 customer_id 列削除済）
