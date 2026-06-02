@@ -466,7 +466,7 @@ function RoleSyncStatusRow({
     }
   };
 
-  const badgeClass = status === "synced"
+  const badgeClass = status === "success"
     ? "text-xs text-green-600"
     : status === "failed"
       ? "text-xs text-red-500"
