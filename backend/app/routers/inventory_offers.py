@@ -99,6 +99,21 @@ _VIEW_COUNT_FROM = (
 )
 
 
+# ADR-093 在庫表改修: 全列ソート用のホワイトリスト（sort キー → SQL 列。SQLi 防止）。
+_SORT_COLUMNS = {
+    "name": "p.name",
+    "category": "p.category",
+    "mark": "p.mark",
+    "condition": "i.condition",
+    "unit": "i.unit",
+    "offer_type": "i.offer_type",
+    "quantity": "i.quantity",
+    "unit_price": "i.unit_price",
+    "supplier": "s.name",
+    "offered_at": "i.offered_at",
+}
+
+
 @router.get(
     "/inventory",
     response_model=InventoryListResponse,
@@ -107,9 +122,15 @@ _VIEW_COUNT_FROM = (
 async def list_inventory_view(
     q: str | None = Query(default=None, max_length=255, description="商品名/英名/コード/カテゴリ/マーク/仕入元の部分一致"),
     tcg_type: str | None = Query(default=None, max_length=50, description="TCG種別 (public.products.tcg_type)"),
+    category: str | None = Query(default=None, max_length=100, description="カテゴリー絞り込み (public.products.category)"),
     offer_type: str | None = Query(default=None, pattern="^(in_stock|pre_order)$", description="区分: in_stock(在庫) / pre_order(予約)"),
     hide_supplier_ids: str | None = Query(default=None, max_length=2000, description="非表示にする仕入元IDのCSV（ユーザー別フィルタ用）"),
-    sort: str = Query(default="name", pattern="^(name)$"),
+    hide_categories: str | None = Query(default=None, max_length=2000, description="非表示にするカテゴリーのCSV（ユーザー別フィルタ用）"),
+    sort: str = Query(
+        default="name",
+        pattern="^(name|category|mark|condition|unit|offer_type|quantity|unit_price|supplier|offered_at)$",
+        description="ソート列。全列対応（ADR-093 在庫表改修）",
+    ),
     order: str = Query(default="asc", pattern="^(asc|desc)$"),
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=50, ge=1, le=200),
@@ -133,6 +154,9 @@ async def list_inventory_view(
     if tcg_type:
         conditions.append("p.tcg_type = :tcg_type")
         params["tcg_type"] = tcg_type
+    if category:
+        conditions.append("p.category = :category")
+        params["category"] = category
     if offer_type:
         conditions.append("i.offer_type = :offer_type")
         params["offer_type"] = offer_type
@@ -153,8 +177,16 @@ async def list_inventory_view(
         conditions.append(f"i.supplier_id NOT IN ({placeholders})")
         for i, sid in enumerate(hidden_ids):
             params[f"hsid{i}"] = sid
+    # ADR-093 在庫表改修: 「カテゴリー 非表示」（CSV → NOT IN）
+    hidden_cats = [c.strip() for c in (hide_categories or "").split(",") if c.strip()]
+    if hidden_cats:
+        cat_ph = ", ".join(f":hcat{i}" for i in range(len(hidden_cats)))
+        conditions.append(f"p.category NOT IN ({cat_ph})")
+        for i, c in enumerate(hidden_cats):
+            params[f"hcat{i}"] = c
     where = "WHERE " + " AND ".join(conditions)
     order_dir = "ASC" if order == "asc" else "DESC"
+    sort_col = _SORT_COLUMNS.get(sort, "p.name")
 
     total = (
         await db.execute(
@@ -166,7 +198,7 @@ async def list_inventory_view(
     result = await db.execute(
         text(
             f"{_VIEW_SELECT} {where} "
-            f"ORDER BY p.name {order_dir} NULLS LAST, i.id ASC "
+            f"ORDER BY {sort_col} {order_dir} NULLS LAST, i.id ASC "
             "LIMIT :limit OFFSET :offset"
         ),
         params,
@@ -185,8 +217,26 @@ async def list_inventory_view(
         )
     )
     suppliers = [InventorySupplierFacet(**dict(r)) for r in facet_rows.mappings().all()]
+
+    # ADR-093 在庫表改修: カテゴリーファセット（在庫品・未失効のみ。フィルタ非依存で全候補）。
+    cat_rows = await db.execute(
+        text(
+            "SELECT DISTINCT p.category AS category "
+            "FROM public.inventory i "
+            "LEFT JOIN public.products p ON p.id = i.product_id "
+            "WHERE i.status = 'in_stock' AND (i.expires_at IS NULL OR i.expires_at > NOW()) "
+            "AND p.category IS NOT NULL AND p.category <> '' "
+            "ORDER BY p.category"
+        )
+    )
+    categories = [r["category"] for r in cat_rows.mappings().all()]
     return InventoryListResponse(
-        items=items, total=int(total or 0), page=page, per_page=per_page, suppliers=suppliers
+        items=items,
+        total=int(total or 0),
+        page=page,
+        per_page=per_page,
+        suppliers=suppliers,
+        categories=categories,
     )
 
 

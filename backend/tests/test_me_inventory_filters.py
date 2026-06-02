@@ -25,6 +25,7 @@ class TestMeInventoryFilters:
             json={
                 "enabled": True,
                 "hidden_supplier_ids": [1, 2, 3],
+                "hidden_categories": ["One Piece", "Pokemon"],
                 "hidden_columns": ["unit", "unitPrice"],
             },
         )
@@ -32,6 +33,7 @@ class TestMeInventoryFilters:
         d = res.json()
         assert d["enabled"] is True
         assert d["hidden_supplier_ids"] == [1, 2, 3]
+        assert d["hidden_categories"] == ["One Piece", "Pokemon"]
         assert d["hidden_columns"] == ["unit", "unitPrice"]
 
     async def test_patch_invalid_supplier_id_type_422(self, client):

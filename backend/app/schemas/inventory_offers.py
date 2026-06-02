@@ -168,6 +168,8 @@ class InventoryListResponse(BaseModel):
     per_page: int
     # ADR-093 Phase 4: フィルタ UI 用の仕入元一覧（在庫オファーに存在する仕入元）。
     suppliers: list[InventorySupplierFacet] = []
+    # ADR-093 在庫表改修: フィルタ UI 用のカテゴリー一覧（在庫オファーに存在するカテゴリー）。
+    categories: list[str] = []
 
 
 __all__ = [

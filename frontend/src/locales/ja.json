@@ -721,11 +721,16 @@
       "searchPlaceholder": "商品名・英名・カテゴリ・マーク・仕入元で検索"
     },
     "expiryWarning": "オファーは掲載から18時間で自動的に削除されます。",
-    "filter": { "allTypes": "全種別", "allOfferTypes": "在庫・予約すべて" },
+    "filter": { "allTypes": "全種別", "allOfferTypes": "在庫・予約すべて", "allCategories": "全カテゴリー" },
+    "resetSort": "リセット",
     "offerType": { "in_stock": "在庫", "pre_order": "予約" },
     "shipTiming": { "on_release": "発売日発送", "1day_before": "発売1日前発送", "2day_before": "発売2日前発送", "other": "その他" },
     "col": {
       "product": "商品",
+      "category": "カテゴリー",
+      "mark": "型番",
+      "title": "タイトル",
+      "offerType": "在庫・予約",
       "unit": "形態",
       "condition": "状態",
       "unitPrice": "単価",
@@ -769,6 +774,7 @@
       "button": "フィルタ",
       "enable": "フィルタを有効化（自分用の表示設定を適用）",
       "suppliers": "仕入元の表示／非表示",
+      "categories": "カテゴリーの表示／非表示",
       "columns": "表示する列"
     },
     "search": {
