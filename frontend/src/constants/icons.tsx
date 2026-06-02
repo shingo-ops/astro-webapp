@@ -257,8 +257,15 @@ const PLATFORM_IMG: Record<string, string> = {
   telegram:  "/brand-icons/telegram.svg",
 };
 
-/** 独自の円形背景を含むアイコン → 0.85比率で表示（ボーダー内側に0.5px余白を確保） */
-const FULL_CIRCLE_ICONS = new Set(["messenger", "instagram", "whatsapp", "telegram"]);
+/** 真円のブランドロゴ（SVG） → wrap幅いっぱいに表示 */
+const FULL_CIRCLE_ICONS = new Set(["messenger", "whatsapp", "telegram"]);
+
+/**
+ * スクワークル（角丸四角形）形状のロゴ（PNG）→ 70%に縮小して円形バッジ内に収める
+ * Instagram の公式アセットは真円ではなく squircle のため、
+ * circular clip で切り抜くと視覚的に大きく見える問題を回避する。
+ */
+const SQUIRCLE_ICONS = new Set(["instagram"]);
 
 /**
  * プラットフォームバッジアイコン（会話リスト アバター右下表示用）
@@ -285,9 +292,12 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
     );
   }
 
-  // 円形背景ありアイコンは85%（icon-frame 1px ボーダー分を除いた余白を確保）
-  // シンボルのみ(Discord等)は72%で内側に収める
-  const imgSize = FULL_CIRCLE_ICONS.has(platform) ? Math.round(size * 0.85) : Math.round(size * 0.72);
+  // 真円SVG → フル充填 / スクワークルPNG(Instagram) → 70%で円形内に収める / シンボルのみ(Discord等) → 72%
+  const imgSize = FULL_CIRCLE_ICONS.has(platform)
+    ? size
+    : SQUIRCLE_ICONS.has(platform)
+      ? Math.round(size * 0.70)
+      : Math.round(size * 0.72);
 
   return (
     <span className="platform-icon-wrap" style={{ width: size, height: size }}>
