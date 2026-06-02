@@ -3,7 +3,7 @@
 > このファイルは `scripts/generate-adr-index.js` により自動生成されます。
 > **手動編集禁止。** ADR ファイルを追加・変更後に `node scripts/generate-adr-index.js` を実行してください。
 
-最終更新: 2026-06-01 / ADR 総数: 80 件
+最終更新: 2026-06-02 / ADR 総数: 81 件
 
 ## 一覧
 
@@ -88,6 +88,7 @@
 | [ADR-087](./ADR-087-hub-shell-layout-standard.md) | ADR-087: hub-shell 共通シェルレイアウト標準 | — | 2026-05-31 |
 | [ADR-089](./ADR-089-deprecate-customers-unify-to-companies.md) | ADR-089: `customers` テーブル廃止と `companies` への一元化 | Accepted | — |
 | [ADR-090](./ADR-090-products-central-unification.md) | ADR-090: products アーキテクチャ統一（tenant別 → public 中央）と Discord取込→在庫表反映 | Accepted | — |
+| [ADR-091](./ADR-091-discord-bot-scope-definition.md) | ADR-091: Discord Bot 担当業務スコープ定義 | Proposed | — |
 | [ADR-999](./ADR-999-pipeline-test.md) | ADR-999: パイプライン動作テスト | テスト用（マージ後に削除予定） | — |
 
 ## ステータス凡例
