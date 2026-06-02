@@ -677,7 +677,10 @@
     "discordGuildIdNotSet": "Not configured",
     "discordEdit": "Edit settings",
     "discordAddBot": "Add Bot to Discord Server",
+    "discordConnecting": "Connecting...",
     "discordBotConnected": "Bot connected",
+    "discordConnectedSuccess": "Bot successfully added to your Discord server.",
+    "discordConnectError": "Failed to connect Discord. Please try again.",
     "discordNoServer": "No Discord server connected yet",
     "discordNoServerDesc": "Add a Bot to your Discord server to start message integration."
   },

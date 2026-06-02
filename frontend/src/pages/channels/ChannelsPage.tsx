@@ -97,6 +97,7 @@ export default function ChannelsPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [banner, setBanner] = useState<Banner>(null);
   const [discordGuildId, setDiscordGuildId] = useState<string | null>(null);
+  const [discordConnecting, setDiscordConnecting] = useState(false);
 
   const canManage = hasPermission("channels.manage");
   const canViewDiscord = hasPermission("tenant.profile.view");
@@ -105,10 +106,26 @@ export default function ChannelsPage() {
   const reauthRequired = channels.some((c) => c.is_active && c.requires_reauth);
 
   // ----- OAuth callback の URL クエリを解析 -----
-  // この effect は初回マウントのみ走る。?status=... があれば banner を立てて
-  // history.replaceState で URL を綺麗にする。
+  // この effect は初回マウントのみ走る。?status=... または ?discord_status=... があれば
+  // banner を立てて history.replaceState で URL を綺麗にする。
   useEffect(() => {
     const url = new URL(window.location.href);
+    const discordStatus = url.searchParams.get("discord_status");
+
+    if (discordStatus) {
+      if (discordStatus === "connected") {
+        setBanner({ type: "success", text: t("channels.discordConnectedSuccess") });
+        api.get<{ guild_id: string | null }>("/admin/discord-config")
+          .then((d) => setDiscordGuildId(d.guild_id))
+          .catch(() => {});
+      } else {
+        setBanner({ type: "error", text: t("channels.discordConnectError") });
+      }
+      url.search = "";
+      window.history.replaceState({}, "", url.pathname);
+      return;
+    }
+
     const statusParam = url.searchParams.get("status");
     if (!statusParam) return;
 
@@ -165,6 +182,19 @@ export default function ChannelsPage() {
       .then((d) => setDiscordGuildId(d.guild_id))
       .catch(() => { /* サイレント: Discord未設定テナントは表示しない */ });
   }, [canViewDiscord]);
+
+  // ----- Discord Bot 招待開始 -----
+  const handleDiscordConnect = async () => {
+    setDiscordConnecting(true);
+    try {
+      const data = await api.post<{ invite_url: string }>("/discord/oauth/start", {});
+      window.location.href = data.invite_url;
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : t("channels.discordConnectError"));
+      setBanner({ type: "error", text: msg });
+      setDiscordConnecting(false);
+    }
+  };
 
   // ----- 接続開始 -----
   const handleConnect = async () => {
