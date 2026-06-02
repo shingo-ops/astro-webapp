@@ -97,6 +97,7 @@ export default function ChannelsPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [banner, setBanner] = useState<Banner>(null);
   const [discordGuildId, setDiscordGuildId] = useState<string | null>(null);
+  const [discordConnecting, setDiscordConnecting] = useState(false);
 
   const canManage = hasPermission("channels.manage");
   const canViewDiscord = hasPermission("tenant.profile.view");
@@ -105,10 +106,26 @@ export default function ChannelsPage() {
   const reauthRequired = channels.some((c) => c.is_active && c.requires_reauth);
 
   // ----- OAuth callback の URL クエリを解析 -----
-  // この effect は初回マウントのみ走る。?status=... があれば banner を立てて
-  // history.replaceState で URL を綺麗にする。
+  // この effect は初回マウントのみ走る。?status=... または ?discord_status=... があれば
+  // banner を立てて history.replaceState で URL を綺麗にする。
   useEffect(() => {
     const url = new URL(window.location.href);
+    const discordStatus = url.searchParams.get("discord_status");
+
+    if (discordStatus) {
+      if (discordStatus === "connected") {
+        setBanner({ type: "success", text: t("channels.discordConnectedSuccess") });
+        api.get<{ guild_id: string | null }>("/admin/discord-config")
+          .then((d) => setDiscordGuildId(d.guild_id))
+          .catch(() => {});
+      } else {
+        setBanner({ type: "error", text: t("channels.discordConnectError") });
+      }
+      url.search = "";
+      window.history.replaceState({}, "", url.pathname);
+      return;
+    }
+
     const statusParam = url.searchParams.get("status");
     if (!statusParam) return;
 
@@ -165,6 +182,19 @@ export default function ChannelsPage() {
       .then((d) => setDiscordGuildId(d.guild_id))
       .catch(() => { /* サイレント: Discord未設定テナントは表示しない */ });
   }, [canViewDiscord]);
+
+  // ----- Discord Bot 招待開始 -----
+  const handleDiscordConnect = async () => {
+    setDiscordConnecting(true);
+    try {
+      const data = await api.post<{ invite_url: string }>("/discord/oauth/start", {});
+      window.location.href = data.invite_url;
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : t("channels.discordConnectError"));
+      setBanner({ type: "error", text: msg });
+      setDiscordConnecting(false);
+    }
+  };
 
   // ----- 接続開始 -----
   const handleConnect = async () => {
@@ -444,41 +474,63 @@ export default function ChannelsPage() {
             {t("channels.discordSection")}
           </h3>
 
-          <div className="card" style={{ padding: "var(--space-4)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-4)" }}>
-            <div>
-              <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", marginBottom: "var(--space-1)" }}>
-                {t("channels.discordGuildId")}
+          {!discordGuildId ? (
+            // ----- 未接続 空 state（Facebookと同スタイル） -----
+            <div
+              className="card"
+              style={{
+                textAlign: "center",
+                padding: "var(--space-12) var(--space-6)",
+              }}
+            >
+              <h3 style={{ marginTop: 0 }}>{t("channels.discordNoServer")}</h3>
+              <p style={{ color: "var(--text-muted)", marginBottom: "var(--space-6)" }}>
+                {t("channels.discordNoServerDesc")}
+              </p>
+              {canManage && (
+                <button
+                  className="btn-primary"
+                  onClick={handleDiscordConnect}
+                  disabled={discordConnecting}
+                  style={{ fontSize: "var(--font-md)", padding: "var(--space-3) var(--space-6)" }}
+                >
+                  {discordConnecting ? t("channels.discordConnecting") : t("channels.discordAddBot")}
+                </button>
+              )}
+            </div>
+          ) : (
+            // ----- 接続済み state -----
+            <div className="card" style={{ padding: "var(--space-4)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-4)" }}>
+              <div>
+                <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", marginBottom: "var(--space-1)" }}>
+                  {t("channels.discordGuildId")}
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--font-sm)", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                  {discordGuildId}
+                  <span className="badge" style={{ background: "var(--success-bg)", color: "var(--success-text)", fontFamily: "var(--font-sans)" }}>
+                    {t("channels.discordBotConnected")}
+                  </span>
+                </div>
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "var(--font-sm)", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                {discordGuildId ? (
-                  <>
-                    {discordGuildId}
-                    <span className="badge" style={{ background: "var(--success-bg)", color: "var(--success-text)", fontFamily: "var(--font-sans)" }}>
-                      {t("channels.discordBotConnected")}
-                    </span>
-                  </>
-                ) : (
-                  <span style={{ color: "var(--text-muted)" }}>{t("channels.discordGuildIdNotSet")}</span>
+              <div style={{ display: "flex", gap: "var(--space-2)", flexShrink: 0 }}>
+                {canManage && (
+                  <button
+                    className="btn-sm btn-primary"
+                    onClick={handleDiscordConnect}
+                    disabled={discordConnecting}
+                  >
+                    {discordConnecting ? t("channels.discordConnecting") : t("channels.discordAddBot")}
+                  </button>
                 )}
+                <button
+                  className="btn-sm btn-secondary"
+                  onClick={() => navigate("/admin/discord-config")}
+                >
+                  {t("channels.discordEdit")}
+                </button>
               </div>
             </div>
-            <div style={{ display: "flex", gap: "var(--space-2)", flexShrink: 0 }}>
-              <a
-                href="https://discord.com/oauth2/authorize?client_id=1499458730171961535&permissions=268504082&integration_type=0&scope=bot"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-sm btn-primary"
-              >
-                {t("channels.discordAddBot")}
-              </a>
-              <button
-                className="btn-sm btn-secondary"
-                onClick={() => navigate("/admin/discord-config")}
-              >
-                {t("channels.discordEdit")}
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
