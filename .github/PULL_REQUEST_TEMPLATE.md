@@ -38,3 +38,8 @@
 ### CLAUDE.md 変更時
 - [ ] 行数上限を超えていないか（`npm run check:claude-size` で確認）
 - [ ] 新規ファイルを作成した場合、`check-claude-size.js` の LIMITS 配列に登録した
+
+### .github/workflows/ 変更時
+- [ ] `node-version` を変更した場合、全ワークフローで統一されているか確認した（現在の統一バージョン: 22）
+- [ ] `actions/setup-node` / `actions/setup-python` 等のバージョンを変更した場合、他ワークフローと揃えた
+- [ ] 新規ワークフローに `timeout-minutes` を設定した（未設定だとデフォルト360分）

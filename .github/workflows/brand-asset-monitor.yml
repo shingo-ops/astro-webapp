@@ -122,7 +122,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'  # GHA Node.js 20 廃止対応 2026-06-16
 
       # Playwright ブラウザのキャッシュ
       - name: Cache Playwright browsers

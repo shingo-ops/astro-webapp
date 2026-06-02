@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.changed.outputs.changed == 'true'
         with:
-          node-version: '20'
+          node-version: '22'  # GHA Node.js 20 廃止対応 2026-06-16
 
       - name: Check CLAUDE.md sizes
         if: steps.changed.outputs.changed == 'true'
