@@ -192,18 +192,20 @@ export default function ChannelsPage() {
       window.open(data.invite_url, "_blank", "noopener,noreferrer");
       setDiscordConnecting(false);
       // フォーカスが戻ったとき guild_id を自動再取得
+      // window.open 直後の誤発火を避けるため 1s 遅らせて登録
+      // guild_id が取得できるまでリスナーを保持する
       const handleFocus = () => {
         api.get<{ guild_id: string | null }>("/admin/discord-config")
           .then((d) => {
             setDiscordGuildId(d.guild_id);
             if (d.guild_id) {
               setBanner({ type: "success", text: t("channels.discordConnectedSuccess") });
+              window.removeEventListener("focus", handleFocus);
             }
           })
           .catch(() => {});
-        window.removeEventListener("focus", handleFocus);
       };
-      window.addEventListener("focus", handleFocus);
+      setTimeout(() => window.addEventListener("focus", handleFocus), 1000);
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : t("channels.discordConnectError"));
       setBanner({ type: "error", text: msg });
