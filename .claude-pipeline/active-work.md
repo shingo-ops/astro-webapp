@@ -17,7 +17,10 @@
 | ブランチ名 | 担当機能エリア | 開始日時 | 状態 | PR# | 備考 |
 |-----------|--------------|---------|------|-----|------|
 | feature/morimoto/dev-workflow-improvements | 開発ワークフロー改善 | 2026-06-02 | IN_PROGRESS | | |
+| feature/morimoto/invoice-issuer-path-fix | 請求書作成 発行者情報ボタンパス修正 | 2026-06-02 | IN_PROGRESS | | |
 
+| feature/morimoto/pre-commit-active-work-exception | （記入してください） | 2026-06-02 10:40 | IN_PROGRESS | | |
+| feature/morimoto/fix-release-pr-drawbacks | （記入してください） | 2026-06-02 10:42 | IN_PROGRESS | | |
 ---
 
 ## 記入例
