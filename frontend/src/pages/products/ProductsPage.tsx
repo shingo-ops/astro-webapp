@@ -550,10 +550,10 @@ export default function ProductsPage() {
                   <input maxLength={255} value={form.related_series} onChange={(e) => setForm({ ...form, related_series: e.target.value })} />
                 </div>
                 <div className="form-group"><label>{t("products.master.searchKeywords")}</label>
-                  <textarea value={form.search_keywords} onChange={(e) => setForm({ ...form, search_keywords: e.target.value })} />
+                  <textarea maxLength={5000} value={form.search_keywords} onChange={(e) => setForm({ ...form, search_keywords: e.target.value })} />
                 </div>
                 <div className="form-group"><label>{t("products.master.excludeKeywords")}</label>
-                  <textarea value={form.exclude_keywords} onChange={(e) => setForm({ ...form, exclude_keywords: e.target.value })} />
+                  <textarea maxLength={5000} value={form.exclude_keywords} onChange={(e) => setForm({ ...form, exclude_keywords: e.target.value })} />
                 </div>
               </fieldset>
 
