@@ -66,5 +66,15 @@ destructive な変更が必要な場合は必ずしんごさん（PO）に確認
 `scripts/setup_review_tenant.py` 実行後は必ずホスト側に保存すること（コンテナ `/tmp` は再起動で消える）。
 手順詳細: `backend/scripts/CLAUDE.md`
 
+## write エンドポイント実装チェックリスト（ADR-072）
+
+`@router.post|put|patch|delete` を実装するたびに確認すること:
+
+- [ ] `await db.commit()` の**直後**に `await reset_tenant_context(db, tenant_id)` を呼ぶ
+- [ ] インポート: `from app.database import reset_tenant_context`
+- [ ] commit が複数ある場合は、**各 commit の直後**にそれぞれ呼ぶ
+
+違反は pre-commit フックと CI（`lint-tenant-schema.yml`）が自動検出して FAIL させる。
+
 ## 品質チェック
 ローカル: `make lint`（ruff/bandit/mypy）/ `make check`（lint + pytest）初回: `pip install -r requirements-dev.txt`

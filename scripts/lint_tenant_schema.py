@@ -343,6 +343,17 @@ def main(argv: list[str] | None = None) -> int:
                 f"{v.file}:{v.line} [Rule {v.rule}] {v.function}: {v.message}\n"
             )
         sys.stderr.write(f"\n{len(all_violations)} violation(s) found.\n")
+
+        rule_b_violations = [v for v in all_violations if v.rule == "B"]
+        if rule_b_violations:
+            sys.stderr.write(
+                "\n[Rule B 修正方法]\n"
+                "  await db.commit() の直後に必ず以下を追加してください:\n"
+                "    await reset_tenant_context(db, tenant_id)\n"
+                "  インポート: from app.database import reset_tenant_context\n"
+                "  参照: docs/adr/ADR-072-tenant-schema-prefix-enforcement.md\n"
+            )
+
         if args.mode == "strict":
             sys.stderr.write(
                 "mode=strict: failing CI (ADR-072 Phase 4 enforcement)\n"
