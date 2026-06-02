@@ -675,7 +675,9 @@
     "discordSection": "Discordサーバー連携",
     "discordGuildId": "Guild ID",
     "discordGuildIdNotSet": "未設定",
-    "discordEdit": "設定を編集"
+    "discordEdit": "設定を編集",
+    "discordAddBot": "BotをDiscordサーバーに追加",
+    "discordBotConnected": "Bot接続済み"
   },
   "deals": {
     "title": "案件管理",
@@ -714,7 +716,9 @@
       "searchPlaceholder": "商品名・英名・カテゴリ・マーク・仕入元で検索"
     },
     "expiryWarning": "オファーは掲載から18時間で自動的に削除されます。",
-    "filter": { "allTypes": "全種別" },
+    "filter": { "allTypes": "全種別", "allOfferTypes": "在庫・予約すべて" },
+    "offerType": { "in_stock": "在庫", "pre_order": "予約" },
+    "shipTiming": { "on_release": "発売日発送", "1day_before": "発売1日前発送", "2day_before": "発売2日前発送", "other": "その他" },
     "col": {
       "product": "商品",
       "unit": "形態",
@@ -1553,6 +1557,8 @@
           "quantityOffered": "在庫数",
           "quantityOfferedPlaceholder": "提示数量",
           "unit": "単位",
+          "offerType": "区分",
+          "shipTiming": "発送日",
           "unitPrice": "単価 (円)",
           "unitPricePlaceholder": "提示単価"
         },
@@ -1629,6 +1635,8 @@
         "supplier": "仕入元",
         "product": "商品",
         "condition": "状態",
+        "offerType": "区分",
+        "shipTiming": "発送日",
         "quantity": "在庫数",
         "unitPrice": "単価 (円)",
         "status": "ステータス",

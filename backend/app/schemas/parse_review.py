@@ -16,7 +16,12 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.schemas.inventory_offers import InventoryCondition, InventoryUnit
+from app.schemas.inventory_offers import (
+    InventoryCondition,
+    InventoryOfferType,
+    InventoryShipTiming,
+    InventoryUnit,
+)
 
 
 class ReviewItemInput(BaseModel):
@@ -85,6 +90,15 @@ class ReviewItemInput(BaseModel):
             "数量の単位。正規値: piece / pack / box / case / set。"
             "migration 084 で public.inventory.unit (VARCHAR(20)) へ UPSERT 保存される。None なら NULL。"
         ),
+    )
+    # ADR-093 Phase 3b: 区分(在庫/予約)・発送日。parser 自動判定の初期値を admin が修正可能。
+    offer_type: InventoryOfferType | None = Field(
+        default=None,
+        description="区分: in_stock(在庫) / pre_order(予約)。None は in_stock 扱いで UPSERT。",
+    )
+    ship_timing: InventoryShipTiming | None = Field(
+        default=None,
+        description="発送日(予約のみ): on_release / 1day_before / 2day_before / other。在庫は None。",
     )
 
 

@@ -86,6 +86,8 @@ async def _upsert_inventory_offer(
     quantity: int,
     unit_price: int,
     unit: str | None = None,
+    offer_type: str = "in_stock",
+    ship_timing: str | None = None,
 ) -> None:
     """public.inventory に「仕入元 × 商品 × 状態」の現在オファーを UPSERT する。
 
@@ -103,10 +105,15 @@ async def _upsert_inventory_offer(
             """
             INSERT INTO public.inventory
                 (supplier_id, product_id, condition, quantity, unit_price, unit,
+                 offer_type, ship_timing,
                  status, source, offered_at, expires_at)
-            VALUES (:sid, :pid, :cond, :qty, :up, :unit, 'in_stock', 'f6_approved',
+            VALUES (:sid, :pid, :cond, :qty, :up, :unit,
+                    :offer_type, :ship_timing,
+                    'in_stock', 'f6_approved',
                     NOW(), NOW() + make_interval(hours => :exp_hours))
-            ON CONFLICT (supplier_id, product_id, condition) DO UPDATE SET
+            -- ADR-093 Phase 3a: UNIQUE キー粒度拡張に合わせ ON CONFLICT を
+            -- COALESCE ベースの式 UNIQUE INDEX (uq_inventory_offer_key) に一致させる。
+            ON CONFLICT (supplier_id, product_id, condition, COALESCE(unit, ''), offer_type, COALESCE(ship_timing, '')) DO UPDATE SET
                 quantity = EXCLUDED.quantity,
                 unit_price = EXCLUDED.unit_price,
                 unit = EXCLUDED.unit,
@@ -124,6 +131,8 @@ async def _upsert_inventory_offer(
             "qty": int(quantity),
             "up": int(unit_price),
             "unit": (str(unit) if unit else None),
+            "offer_type": str(offer_type or "in_stock"),
+            "ship_timing": (str(ship_timing) if ship_timing else None),
             "exp_hours": _OFFER_EXPIRY_HOURS,
         },
     )
@@ -194,6 +203,8 @@ async def apply_inbound_items(
                     quantity=int(item.get("quantity_offered") or 0),
                     unit_price=int(item.get("unit_price") or 0),
                     unit=item.get("unit"),
+                    offer_type=str(item.get("offer_type") or "in_stock"),
+                    ship_timing=item.get("ship_timing"),
                 )
                 offers_recorded += 1
             else:
@@ -321,6 +332,8 @@ async def apply_inbound_items(
                     quantity=int(offered_qty),
                     unit_price=int(item.get("unit_price") or 0),
                     unit=item.get("unit"),
+                    offer_type=str(item.get("offer_type") or "in_stock"),
+                    ship_timing=item.get("ship_timing"),
                 )
                 offers_recorded += 1
 

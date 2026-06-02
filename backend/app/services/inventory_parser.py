@@ -104,6 +104,9 @@ class ParsedItem:
     unit_price: str | None = None  # Decimal を JSON 安全に str で保持
     condition: str | None = None  # 'normal' / 'state_a_minus' / 'state_b' / 'shrink_yes' / 'shrink_no'
     raw_condition: str | None = None  # マッチした元テキスト
+    # ADR-093 Phase 3b: 区分/発送日の行内自動判定。offer_type=None は在庫(in_stock)扱い。
+    offer_type: str | None = None  # 'pre_order' 検出時のみ。None=在庫
+    ship_timing: str | None = None  # 'on_release'/'1day_before'/'2day_before'/'other'（予約のみ）
     notes: str | None = None  # 「シール有り」等の補足
 
 
@@ -232,6 +235,19 @@ CONDITION_PATTERNS: list[tuple[str, str]] = [
 ]
 CONDITION_REGEXES: list[tuple[re.Pattern[str], str]] = [
     (re.compile(p), label) for p, label in CONDITION_PATTERNS
+]
+
+# ADR-093 Phase 3b: 区分(予約/在庫) と 発送日 の行内自動判定。
+# 予約キーワード（在庫はデフォルト=区分なし）。
+OFFER_TYPE_REGEXES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"予\s*約|ご予約|preorder|pre-?order|発売前|入荷前", re.IGNORECASE), "pre_order"),
+]
+# 発送日（予約品）。順序重要: 「2日前」を「1日前」より先に判定。
+SHIP_TIMING_REGEXES: list[tuple[re.Pattern[str], str]] = [
+    # 数字境界の負の後読みで「発売12日前」の末尾 "2日前" 等の誤判定を防ぐ（Reviewer PR#1445）。
+    (re.compile(r"(?:発売)?\s*(?<![0-9０-９])2\s*日\s*前", re.IGNORECASE), "2day_before"),
+    (re.compile(r"(?:発売)?\s*(?<![0-9０-９])1\s*日\s*前|前日\s*発送|前日着", re.IGNORECASE), "1day_before"),
+    (re.compile(r"発売日\s*(?:発送|当日)?|当日\s*発送|入荷日\s*発送|発売日着", re.IGNORECASE), "on_release"),
 ]
 
 # Exclude pattern（既定）: rule で上書き / 追加可能
@@ -499,6 +515,32 @@ def _extract_condition(line: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+def _extract_offer_type_ship_timing(line: str) -> tuple[str | None, str | None]:
+    """行から (offer_type, ship_timing) を推定（ADR-093 Phase 3b）。
+
+    - offer_type: 予約キーワードがあれば 'pre_order'、無ければ None（=在庫 in_stock 扱い）。
+    - ship_timing: 発送日キーワードを検出（予約品のみ）。
+    - 発送日だけ取れて予約語が無い場合も、発送日指定は予約の特徴なので pre_order とみなす。
+    - 予約だが発送日が特定できない場合は 'other'。
+    最終判定は admin が ParseReview / オファー画面で修正できる（自動判定はあくまで初期値）。
+    """
+    offer_type: str | None = None
+    for pat, label in OFFER_TYPE_REGEXES:
+        if pat.search(line):
+            offer_type = label
+            break
+    ship_timing: str | None = None
+    for pat, label in SHIP_TIMING_REGEXES:
+        if pat.search(line):
+            ship_timing = label
+            break
+    if ship_timing is not None and offer_type is None:
+        offer_type = "pre_order"
+    if offer_type == "pre_order" and ship_timing is None:
+        ship_timing = "other"
+    return offer_type, ship_timing
+
+
 # ---------------------------------------------------------------------------
 # Step 4b: 1 行に複数 (qty × unit @ price [condition]) ブロックが含まれる場合の分割
 # ---------------------------------------------------------------------------
@@ -668,6 +710,9 @@ def _classify_line(
         # 単価も数量も取れない alias 一致行（"商品名のみ" など）は 1 item として記録
         cleaned = [(None, None, None, None, None)]
 
+    # ADR-093 Phase 3b: 区分/発送日は行レベルで 1 回判定し、その行の全 item に付与。
+    offer_type, ship_timing = _extract_offer_type_ship_timing(normalized)
+
     items: list[ParsedItem] = []
     for qty, unit, price, condition, raw_cond in cleaned:
         items.append(
@@ -682,6 +727,8 @@ def _classify_line(
                 unit_price=str(price) if price is not None else None,
                 condition=condition,
                 raw_condition=raw_cond,
+                offer_type=offer_type,
+                ship_timing=ship_timing,
                 notes=None,
             )
         )
@@ -1039,6 +1086,10 @@ def _to_parsed_item_from_llm(llm_item: Any) -> ParsedItem:
         notes_parts.append(f"confidence={llm_item.confidence:.2f}")
     notes_value = "; ".join(notes_parts)
 
+    # ADR-093 Phase 3b: 区分/発送日は LLM プロンプトを拡張せず、ルールベース検出を
+    # LLM 結果の raw_line に再利用（rule_v1 と一貫・低リスク）。
+    offer_type, ship_timing = _extract_offer_type_ship_timing(llm_item.raw_line or "")
+
     return ParsedItem(
         raw_line=llm_item.raw_line,
         line_no=llm_item.line_no,
@@ -1050,6 +1101,8 @@ def _to_parsed_item_from_llm(llm_item: Any) -> ParsedItem:
         unit_price=price_str,
         condition=llm_item.condition,
         raw_condition=None,
+        offer_type=offer_type,
+        ship_timing=ship_timing,
         notes=notes_value,
     )
 

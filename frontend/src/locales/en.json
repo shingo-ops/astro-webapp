@@ -675,7 +675,9 @@
     "discordSection": "Discord Server Integration",
     "discordGuildId": "Guild ID",
     "discordGuildIdNotSet": "Not configured",
-    "discordEdit": "Edit settings"
+    "discordEdit": "Edit settings",
+    "discordAddBot": "Add Bot to Discord Server",
+    "discordBotConnected": "Bot connected"
   },
   "deals": {
     "title": "Deal Management",
@@ -714,7 +716,9 @@
       "searchPlaceholder": "Search by name, English name, category, mark, or supplier"
     },
     "expiryWarning": "Offers are automatically removed 18 hours after they are posted.",
-    "filter": { "allTypes": "All types" },
+    "filter": { "allTypes": "All types", "allOfferTypes": "Stock & pre-order" },
+    "offerType": { "in_stock": "In stock", "pre_order": "Pre-order" },
+    "shipTiming": { "on_release": "Ship on release", "1day_before": "Ship 1 day before", "2day_before": "Ship 2 days before", "other": "Other" },
     "col": {
       "product": "Product",
       "unit": "Form",
@@ -1553,6 +1557,8 @@
           "quantityOffered": "Qty on hand",
           "quantityOfferedPlaceholder": "Offered qty",
           "unit": "Unit",
+          "offerType": "Type",
+          "shipTiming": "Ship timing",
           "unitPrice": "Unit price (JPY)",
           "unitPricePlaceholder": "Offered price"
         },
@@ -1629,6 +1635,8 @@
         "supplier": "Supplier",
         "product": "Product",
         "condition": "Condition",
+        "offerType": "Type",
+        "shipTiming": "Ship timing",
         "quantity": "Qty",
         "unitPrice": "Unit price (JPY)",
         "status": "Status",

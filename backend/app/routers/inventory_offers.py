@@ -34,7 +34,8 @@ router = APIRouter()
 
 _BASE_SELECT = """
     SELECT i.id, i.supplier_id, i.product_id, i.condition, i.quantity,
-           i.unit_price, i.unit, i.status, i.notes_ja, i.notes_en,
+           i.unit_price, i.unit, i.offer_type, i.ship_timing,
+           i.status, i.notes_ja, i.notes_en,
            i.offered_at, i.expires_at, i.source,
            i.created_at, i.updated_at,
            s.name AS supplier_name,
@@ -49,6 +50,9 @@ _UPDATABLE_COLS = {
     "quantity",
     "unit_price",
     "unit",
+    # ADR-093 Phase 3: 区分/発送日も admin が編集可（UNIQUE キー要素のため衝突時は 409）
+    "offer_type",
+    "ship_timing",
     "status",
     "notes_ja",
     "notes_en",
@@ -73,7 +77,8 @@ async def _load_offer(db: AsyncSession, offer_id: int) -> dict | None:
 
 # 在庫表ビュー用 SELECT（参考画像準拠の列。admin 専用の notes/source/status は除外）。
 _VIEW_SELECT = """
-    SELECT i.id, i.product_id, i.condition, i.unit, i.unit_price,
+    SELECT i.id, i.product_id, i.condition, i.unit,
+           i.offer_type, i.ship_timing, i.unit_price,
            i.quantity, i.offered_at, i.supplier_id,
            s.name AS supplier_name,
            p.name AS product_name,
@@ -101,6 +106,7 @@ _VIEW_COUNT_FROM = (
 async def list_inventory_view(
     q: str | None = Query(default=None, max_length=255, description="商品名/英名/コード/カテゴリ/マーク/仕入元の部分一致"),
     tcg_type: str | None = Query(default=None, max_length=50, description="TCG種別 (public.products.tcg_type)"),
+    offer_type: str | None = Query(default=None, pattern="^(in_stock|pre_order)$", description="区分: in_stock(在庫) / pre_order(予約)"),
     sort: str = Query(default="name", pattern="^(name)$"),
     order: str = Query(default="asc", pattern="^(asc|desc)$"),
     page: int = Query(default=1, ge=1),
@@ -125,6 +131,9 @@ async def list_inventory_view(
     if tcg_type:
         conditions.append("p.tcg_type = :tcg_type")
         params["tcg_type"] = tcg_type
+    if offer_type:
+        conditions.append("i.offer_type = :offer_type")
+        params["offer_type"] = offer_type
     if q:
         conditions.append(
             "(s.name ILIKE :q OR p.name ILIKE :q OR p.name_en ILIKE :q "
@@ -235,8 +244,10 @@ async def create_offer(
                     """
                     INSERT INTO public.inventory
                         (supplier_id, product_id, condition, quantity, unit_price, unit,
+                         offer_type, ship_timing,
                          status, notes_ja, notes_en, expires_at, source)
                     VALUES (:supplier_id, :product_id, :condition, :quantity, :unit_price, :unit,
+                            :offer_type, :ship_timing,
                             :status, :notes_ja, :notes_en, :expires_at, :source)
                     RETURNING id
                     """
@@ -250,8 +261,8 @@ async def create_offer(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "同じ supplier × product × condition のオファーが既に存在します。"
-                "PATCH で更新するか、condition を変えて作成してください。"
+                "同じ 仕入元×商品×状態×形態×区分×発送日 のオファーが既に存在します。"
+                "PATCH で更新するか、いずれかの軸を変えて作成してください。"
             ),
         ) from e
 
@@ -271,10 +282,10 @@ async def update_offer(
     payload: InventoryOfferUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    """admin が在庫数 / 単価 / status / メモ / 期限を編集 (AC11.5)。
+    """admin が在庫数 / 単価 / 形態 / 区分 / 発送日 / status / メモ / 期限を編集 (AC11.5)。
 
-    UNIQUE キー (supplier_id, product_id, condition) は変更不可。変更したい場合は
-    DELETE + POST してください。
+    supplier_id / product_id / condition は変更不可。unit / offer_type / ship_timing は
+    UNIQUE キー要素のため、変更により他オファーと衝突する場合は 409 を返す（ADR-093 Phase 3）。
     """
     update_data = payload.model_dump(exclude_unset=True)
     update_data = {k: v for k, v in update_data.items() if k in _UPDATABLE_COLS}
@@ -287,10 +298,20 @@ async def update_offer(
     set_clause = ", ".join(f"{k} = :{k}" for k in update_data)
     update_data["id"] = offer_id
 
-    result = await db.execute(
-        text(f"UPDATE public.inventory SET {set_clause} WHERE id = :id RETURNING id"),
-        update_data,
-    )
+    try:
+        result = await db.execute(
+            text(f"UPDATE public.inventory SET {set_clause} WHERE id = :id RETURNING id"),
+            update_data,
+        )
+    except IntegrityError as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "形態 / 区分 / 発送日 の変更で同一キー（仕入元×商品×状態×形態×区分×発送日）の"
+                "オファーと衝突しました。既存行を確認してください。"
+            ),
+        ) from e
     if result.first() is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
