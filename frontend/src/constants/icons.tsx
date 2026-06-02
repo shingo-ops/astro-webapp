@@ -257,7 +257,7 @@ const PLATFORM_IMG: Record<string, string> = {
   telegram:  "/brand-icons/telegram.svg",
 };
 
-/** 独自の円形背景を含むアイコン → wrap幅いっぱいに表示（0.72比率不要） */
+/** 独自の円形背景を含むアイコン → 0.85比率で表示（ボーダー内側に0.5px余白を確保） */
 const FULL_CIRCLE_ICONS = new Set(["messenger", "instagram", "whatsapp", "telegram"]);
 
 /**
@@ -285,8 +285,9 @@ export function PlatformIcon({ platform, size = 16 }: { platform: string | null;
     );
   }
 
-  // 円形背景ありアイコンはwrapを満たす / シンボルのみ(Discord等)は72%で内側に収める
-  const imgSize = FULL_CIRCLE_ICONS.has(platform) ? size : Math.round(size * 0.72);
+  // 円形背景ありアイコンは85%（icon-frame 1px ボーダー分を除いた余白を確保）
+  // シンボルのみ(Discord等)は72%で内側に収める
+  const imgSize = FULL_CIRCLE_ICONS.has(platform) ? Math.round(size * 0.85) : Math.round(size * 0.72);
 
   return (
     <span className="platform-icon-wrap" style={{ width: size, height: size }}>
