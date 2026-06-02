@@ -239,7 +239,23 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 ---
 
-## 10. Discord Gateway Worker (ADR-009)
+## 10. GitHub Actions Exporter（ADR-077）
+
+| 変数名 | 必須 | 用途 | 例 |
+|---|---|---|---|
+| `GHA_APP_ID` | ✅ | GitHub Actions メトリクス収集用 GitHub App ID | `3890309` |
+| `GHA_APP_KEY_PATH` | ✅ | GitHub App 秘密鍵 PEM ファイルのパス | `/home/ubuntu/salesanchor/secrets/gha-exporter-key.pem` |
+
+**取得**: GitHub → Settings → Developer settings → GitHub Apps → 対象アプリ。
+
+**運用注意**:
+- PEM ファイルは **VPS に手動配置**が必要（ADR-077 §VPSデプロイ手順 参照）。git に含めない
+- `GHA_APP_KEY_PATH` が指すファイルは VPS の `/home/ubuntu/salesanchor/secrets/gha-exporter-key.pem` に配置
+- PEM ファイルをローテートする際は、新しい秘密鍵を GitHub App で生成 → VPS の同パスに上書き配置 → 旧鍵を GitHub App から削除
+
+---
+
+## 11. Discord Gateway Worker (ADR-009)
 
 | 変数名 | 必須 | 用途 |
 |---|---|---|
@@ -254,7 +270,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 ---
 
-## 11. デプロイ前 / 撮影前のチェック
+## 12. デプロイ前 / 撮影前のチェック
 
 | カテゴリ | チェック項目 |
 |---|---|
@@ -277,7 +293,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 
 ---
 
-## 12. 関連ドキュメント
+## 13. 関連ドキュメント
 
 - 仕様書本体: `.claude-pipeline/spec.md`
 - `.env.example`: 全変数のテンプレート
