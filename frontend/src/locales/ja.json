@@ -760,6 +760,12 @@
     "minutesAgo": "{{count}}分前",
     "hoursAgo": "{{count}}時間前",
     "createPO": "発注書作成",
+    "filterPanel": {
+      "button": "フィルタ",
+      "enable": "フィルタを有効化（自分用の表示設定を適用）",
+      "suppliers": "仕入元の表示／非表示",
+      "columns": "表示する列"
+    },
     "search": {
       "placeholder": "商品名・カード番号・JAN・型番・仕入元 alias で検索",
       "opGroupLabel": "複数キーワードの結合方法",

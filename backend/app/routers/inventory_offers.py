@@ -27,6 +27,7 @@ from app.schemas.inventory_offers import (
     InventoryOfferResponse,
     InventoryOfferUpdate,
     InventoryRow,
+    InventorySupplierFacet,
 )
 
 router = APIRouter()
@@ -107,6 +108,7 @@ async def list_inventory_view(
     q: str | None = Query(default=None, max_length=255, description="商品名/英名/コード/カテゴリ/マーク/仕入元の部分一致"),
     tcg_type: str | None = Query(default=None, max_length=50, description="TCG種別 (public.products.tcg_type)"),
     offer_type: str | None = Query(default=None, pattern="^(in_stock|pre_order)$", description="区分: in_stock(在庫) / pre_order(予約)"),
+    hide_supplier_ids: str | None = Query(default=None, max_length=2000, description="非表示にする仕入元IDのCSV（ユーザー別フィルタ用）"),
     sort: str = Query(default="name", pattern="^(name)$"),
     order: str = Query(default="asc", pattern="^(asc|desc)$"),
     page: int = Query(default=1, ge=1),
@@ -140,6 +142,17 @@ async def list_inventory_view(
             "OR p.product_code ILIKE :q OR p.category ILIKE :q OR p.mark ILIKE :q)"
         )
         params["q"] = f"%{q}%"
+    # ADR-093 Phase 4: ユーザー別フィルタ「仕入元 非表示」（CSV → NOT IN、整数のみ採用で SQLi 防止）
+    hidden_ids = [
+        int(tok)
+        for tok in (hide_supplier_ids or "").split(",")
+        if tok.strip().lstrip("-").isdigit()
+    ]
+    if hidden_ids:
+        placeholders = ", ".join(f":hsid{i}" for i in range(len(hidden_ids)))
+        conditions.append(f"i.supplier_id NOT IN ({placeholders})")
+        for i, sid in enumerate(hidden_ids):
+            params[f"hsid{i}"] = sid
     where = "WHERE " + " AND ".join(conditions)
     order_dir = "ASC" if order == "asc" else "DESC"
 
@@ -159,8 +172,21 @@ async def list_inventory_view(
         params,
     )
     items = [InventoryRow(**dict(r)) for r in result.mappings().all()]
+
+    # ADR-093 Phase 4: フィルタ UI 用の仕入元ファセット（在庫品・未失効のみ。
+    # 他フィルタ非依存で全候補を返す＝非表示にした仕入元もチェックボックスに残る）。
+    facet_rows = await db.execute(
+        text(
+            "SELECT DISTINCT i.supplier_id AS id, s.name AS name "
+            "FROM public.inventory i "
+            "LEFT JOIN public.suppliers s ON s.id = i.supplier_id "
+            "WHERE i.status = 'in_stock' AND (i.expires_at IS NULL OR i.expires_at > NOW()) "
+            "ORDER BY s.name NULLS LAST"
+        )
+    )
+    suppliers = [InventorySupplierFacet(**dict(r)) for r in facet_rows.mappings().all()]
     return InventoryListResponse(
-        items=items, total=int(total or 0), page=page, per_page=per_page
+        items=items, total=int(total or 0), page=page, per_page=per_page, suppliers=suppliers
     )
 
 

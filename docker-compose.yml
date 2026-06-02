@@ -344,7 +344,7 @@ services:
       # GHA_APP_KEY_PATH が指すホスト側PEMファイルをコンテナ内同パスでマウント
       - ${GHA_APP_KEY_PATH:-/dev/null}:${GHA_APP_KEY_PATH:-/dev/null}:ro
     command:
-      - --repo=shingo-ops/salesanchor
+      - --repos=shingo-ops/salesanchor
       - --sleep=60s
       - --backfill
     restart: unless-stopped
