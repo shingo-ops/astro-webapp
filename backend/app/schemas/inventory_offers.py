@@ -15,6 +15,10 @@ from pydantic import BaseModel, ConfigDict, Field
 InventoryStatus = Literal["in_stock", "out_of_stock", "reserved", "archived"]
 InventorySource = Literal["manual", "discord_parsed", "csv_import", "f6_approved"]
 InventoryUnit = Literal["piece", "pack", "box", "case", "set"]
+# 区分: 在庫(in_stock) / 予約(pre_order)（ADR-093 Phase 3）
+InventoryOfferType = Literal["in_stock", "pre_order"]
+# 発送日: 発売日発送 / 発売1日前 / 発売2日前 / その他（予約品のみ。在庫品は None）
+InventoryShipTiming = Literal["on_release", "1day_before", "2day_before", "other"]
 
 # 状態の正規 16 値 (migration 089)。
 # UNIQUE(supplier_id × product_id × condition) の discriminator として使用。
@@ -50,6 +54,9 @@ class InventoryOfferBase(BaseModel):
     unit_price: int = Field(..., ge=0)
     # 数量の単位。正規値: piece / pack / box / case / set。
     unit: InventoryUnit | None = Field(default=None)
+    # 区分(在庫/予約) と 発送日（予約品のみ）。UNIQUE キーの discriminator（ADR-093 Phase 3）。
+    offer_type: InventoryOfferType = "in_stock"
+    ship_timing: InventoryShipTiming | None = Field(default=None)
     status: InventoryStatus = "in_stock"
     notes_ja: str | None = Field(default=None, max_length=2000)
     notes_en: str | None = Field(default=None, max_length=2000)
@@ -68,6 +75,8 @@ class InventoryOfferUpdate(BaseModel):
     quantity: int | None = Field(default=None, ge=0)
     unit_price: int | None = Field(default=None, ge=0)
     unit: InventoryUnit | None = Field(default=None)
+    offer_type: InventoryOfferType | None = None
+    ship_timing: InventoryShipTiming | None = Field(default=None)
     status: InventoryStatus | None = None
     notes_ja: str | None = Field(default=None, max_length=2000)
     notes_en: str | None = Field(default=None, max_length=2000)
@@ -87,6 +96,9 @@ class InventoryOfferResponse(InventoryOfferBase):
     # レスポンスでは condition を str に緩める（非正規値を含む既存データで500にならないよう）
     # 書き込み側（Create/Update）は InventoryCondition のまま維持
     condition: str = Field(...)
+    # 区分/発送日もレスポンスは str に緩める（旧データ/将来値で500を避ける）
+    offer_type: str = "in_stock"
+    ship_timing: str | None = None
 
     # JOIN 結果 (admin UI 表示用、任意)
     supplier_name: str | None = None
@@ -126,6 +138,8 @@ class InventoryRow(BaseModel):
     mark: str | None = None           # マーク（例: M4）
     condition: str                    # 状態 16 値（フロントで i18n ラベル化）
     unit: str | None = None           # 形態 piece/pack/box/case/set
+    offer_type: str = "in_stock"      # 区分 在庫/予約（ADR-093 Phase 3）
+    ship_timing: str | None = None    # 発送日（予約品のみ。在庫品は None）
     supplier_id: int
     supplier_name: str | None = None  # 仕入元
     unit_price: int                   # 単価
@@ -155,4 +169,6 @@ __all__ = [
     "InventoryStatus",
     "InventorySource",
     "InventoryUnit",
+    "InventoryOfferType",
+    "InventoryShipTiming",
 ]
