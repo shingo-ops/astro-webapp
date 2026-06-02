@@ -146,6 +146,7 @@ export function InboxKartePanel({
               cardForm={cardForm}
               handleCardFieldChange={handleCardFieldChange}
               handleCardFieldBlur={handleCardFieldBlur}
+              guildId={guildId}
             />
           </div>
         </div>
@@ -163,13 +164,14 @@ export function InboxKartePanel({
 // ---------------------------------------------------------------------------
 
 function KarteTabContent({
-  tab, leadDetail, cardForm, handleCardFieldChange, handleCardFieldBlur,
+  tab, leadDetail, cardForm, handleCardFieldChange, handleCardFieldBlur, guildId,
 }: {
   tab: KarteTabKey;
   leadDetail: LeadDetail;
   cardForm: CardForm;
   handleCardFieldChange: (field: keyof LeadDetail, value: unknown) => void;
   handleCardFieldBlur: () => void;
+  guildId: string | null;
 }) {
   const { t } = useTranslation();
 
