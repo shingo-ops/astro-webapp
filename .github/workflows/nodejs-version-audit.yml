@@ -1,0 +1,98 @@
+name: Node.js バージョン監査（四半期）
+
+# GitHub Actions で使用している Node.js バージョンが古いままになっていないかを
+# 四半期ごとに自動チェックし、問題があれば GitHub Issue を作成する。
+#
+# 目的: Node.js のEOL・GHA廃止スケジュールによる CI クラッシュを事前に防ぐ。
+# 重複対策: ラベル "ci-maintenance" の open Issue が存在する場合は作成しない。
+
+on:
+  schedule:
+    # 毎年 1月・4月・7月・10月の1日 午前9時（JST = UTC 0時）に実行
+    - cron: '0 0 1 1,4,7,10 *'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Node.js バージョン監査
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan for outdated Node.js versions
+        id: scan
+        run: |
+          # EOL 済み・GHA 廃止対象のバージョンパターン（18以下 + 20 を対象）
+          OUTDATED=$(grep -rn "node-version:.*['\"]\\?\(1[0-9]\|20\)['\"]\\?" \
+            .github/workflows/ \
+            --include="*.yml" \
+            --exclude="nodejs-version-audit.yml" \
+            2>/dev/null | grep -v "^Binary" || true)
+
+          if [ -n "$OUTDATED" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "$OUTDATED" > outdated.txt
+            echo "検出結果:"
+            cat outdated.txt
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "✅ 古い Node.js バージョンは検出されませんでした"
+          fi
+
+      - name: Check for existing open issue (重複防止)
+        id: dedup
+        if: steps.scan.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # ラベル "ci-maintenance" の open Issue が既に存在する場合はスキップ
+          COUNT=$(gh issue list \
+            --label "ci-maintenance" \
+            --state open \
+            --json number \
+            --jq 'length')
+          echo "open_count=$COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$COUNT" -gt 0 ]; then
+            echo "⏭️ 既存の ci-maintenance Issue が $COUNT 件あるため作成をスキップします"
+          fi
+
+      - name: Create GitHub Issue
+        if: steps.scan.outputs.found == 'true' && steps.dedup.outputs.open_count == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MONTH=$(date +%-m)
+          QUARTER=$(( (MONTH - 1) / 3 + 1 ))
+          YEAR_Q="$(date +%Y)-Q${QUARTER}"
+          OUTDATED_LIST=$(cat outdated.txt)
+
+          {
+            echo "以下のワークフローで古い Node.js バージョン（20以下）が検出されました。"
+            echo "GitHub Actions の Node.js 20 ランタイムは廃止済みのため、最新 LTS（22）への更新が必要です。"
+            echo ""
+            echo "## 検出箇所"
+            echo '```'
+            echo "${OUTDATED_LIST}"
+            echo '```'
+            echo ""
+            echo "## 対応手順"
+            echo "1. 上記ファイルの \`node-version: '20'\` を \`node-version: '22'\` に変更する"
+            echo "2. PR を作成して CI が通ることを確認する"
+            echo "3. この Issue を Close する"
+            echo ""
+            echo "## 参考"
+            echo "- Node.js リリーススケジュール: https://nodejs.org/en/about/previous-releases"
+            echo "- GitHub Actions Node.js ランタイム廃止ポリシー: https://github.blog/changelog/"
+            echo ""
+            echo "完了したらこの Issue を Close してください。次の四半期チェックは自動で実行されます。"
+          } > issue_body.txt
+
+          gh issue create \
+            --title "CI Node.js バージョン要更新 ${YEAR_Q}（古いバージョン検出）" \
+            --body-file issue_body.txt \
+            --label "ci-maintenance"

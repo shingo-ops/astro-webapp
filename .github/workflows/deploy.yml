@@ -45,7 +45,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Node.js 22 LTS（2027-04 EOL）。Astro 4.x は Node 18+ 対応のため互換。
+          # 他ワークフロー（chromatic/e2e/frontend-check）と統一。
+          # GHA Node.js 20 廃止対応 2026-06-16（ADR-n/a）。
+          node-version: '22'
           cache: npm
           cache-dependency-path: lp/package-lock.json
 
