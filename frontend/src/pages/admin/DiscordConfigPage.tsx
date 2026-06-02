@@ -26,6 +26,8 @@ interface DiscordTicketConfig {
   ticket_button_channel_id: string | null;
   staff_role_id: string | null;
   welcome_template: string;
+  small_channel_id: string | null;
+  large_channel_id: string | null;
 }
 
 export default function DiscordConfigPage() {
@@ -48,6 +50,8 @@ export default function DiscordConfigPage() {
   const [welcomeTemplate, setWelcomeTemplate] = useState(
     "ご連絡ありがとうございます。こちらのチャンネルでサポートいたします。"
   );
+  const [smallChannelId, setSmallChannelId] = useState("");
+  const [largeChannelId, setLargeChannelId] = useState("");
   const [ticketSaving, setTicketSaving] = useState(false);
   const [ticketError, setTicketError] = useState("");
   const [ticketSaved, setTicketSaved] = useState(false);
@@ -71,6 +75,8 @@ export default function DiscordConfigPage() {
         setTicketButtonChannelId(ticketData.ticket_button_channel_id ?? "");
         setStaffRoleId(ticketData.staff_role_id ?? "");
         setWelcomeTemplate(ticketData.welcome_template);
+        setSmallChannelId(ticketData.small_channel_id ?? "");
+        setLargeChannelId(ticketData.large_channel_id ?? "");
       } catch {
         setError(t("discordConfig.loadError"));
       } finally {
@@ -114,6 +120,14 @@ export default function DiscordConfigPage() {
       setTicketError(t("discordTicketConfig.invalidSnowflake"));
       return;
     }
+    if (smallChannelId.trim() && !snowflakeRe.test(smallChannelId.trim())) {
+      setTicketError(t("discordTicketConfig.invalidSnowflake"));
+      return;
+    }
+    if (largeChannelId.trim() && !snowflakeRe.test(largeChannelId.trim())) {
+      setTicketError(t("discordTicketConfig.invalidSnowflake"));
+      return;
+    }
     setTicketSaving(true);
     setTicketError("");
     setTicketSaved(false);
@@ -123,8 +137,12 @@ export default function DiscordConfigPage() {
         ticket_button_channel_id: ticketButtonChannelId.trim(),
         staff_role_id: staffRoleId.trim() || null,
         welcome_template: welcomeTemplate,
+        small_channel_id: smallChannelId.trim() || null,
+        large_channel_id: largeChannelId.trim() || null,
       });
       setTicketConfig(updated);
+      setSmallChannelId(updated.small_channel_id ?? "");
+      setLargeChannelId(updated.large_channel_id ?? "");
       setTicketSaved(true);
       setTimeout(() => setTicketSaved(false), 3000);
     } catch {
@@ -300,6 +318,42 @@ export default function DiscordConfigPage() {
             />
             <p className="text-xs text-token-text-secondary">
               {t("discordTicketConfig.welcomeTemplateHint")}
+            </p>
+          </div>
+
+          {/* 小口顧客向けチャンネル ID（任意） */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-token-text-primary">
+              {t("discordTicketConfig.smallChannelIdLabel")}
+            </label>
+            <input
+              type="text"
+              value={smallChannelId}
+              onChange={(e) => setSmallChannelId(e.target.value)}
+              disabled={!canEdit}
+              placeholder={t("discordTicketConfig.scaleChannelIdPlaceholder")}
+              className="input w-full"
+            />
+            <p className="text-xs text-token-text-secondary">
+              {t("discordTicketConfig.smallChannelIdHint")}
+            </p>
+          </div>
+
+          {/* 大口顧客向けチャンネル ID（任意） */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-token-text-primary">
+              {t("discordTicketConfig.largeChannelIdLabel")}
+            </label>
+            <input
+              type="text"
+              value={largeChannelId}
+              onChange={(e) => setLargeChannelId(e.target.value)}
+              disabled={!canEdit}
+              placeholder={t("discordTicketConfig.scaleChannelIdPlaceholder")}
+              className="input w-full"
+            />
+            <p className="text-xs text-token-text-secondary">
+              {t("discordTicketConfig.largeChannelIdHint")}
             </p>
           </div>
 

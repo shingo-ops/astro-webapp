@@ -233,6 +233,11 @@ function KarteTabContent({
             )}
           </div>
         )}
+        {/* ADR-091 KPI5: 規模別チャンネル招待送信 */}
+        {leadDetail.discord_guild_channel_id &&
+          (leadDetail.estimated_scale === "Small" || leadDetail.estimated_scale === "Large") && (
+          <ChannelInviteButton leadId={leadDetail.id} />
+        )}
         <div className="right-panel-row">
           <span className="right-panel-label">{t("leads.instagramLink")}</span>
           <input className="right-panel-field" type="url"
@@ -381,6 +386,46 @@ function KarteTabContent({
       <textarea className="right-panel-field" rows={3} value={cardForm.cs_memo ?? ""}
         onChange={(e) => handleCardFieldChange("cs_memo", e.target.value)}
         onBlur={handleCardFieldBlur} placeholder={t("leads.csMemo")} />
+    </div>
+  );
+}
+
+/** ADR-091 KPI5: 規模別チャンネル招待ボタン */
+function ChannelInviteButton({ leadId }: { leadId: number }) {
+  const { t } = useTranslation();
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSend = async () => {
+    setSending(true);
+    setError("");
+    setSent(false);
+    try {
+      await api.post(`/discord/channel-invite/${leadId}`, {});
+      setSent(true);
+      setTimeout(() => setSent(false), 4000);
+    } catch {
+      setError(t("leads.channelInviteError"));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="right-panel-row">
+      <span className="right-panel-label">{t("leads.channelInvite")}</span>
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={handleSend}
+          disabled={sending}
+          className="btn btn-secondary text-xs"
+        >
+          {sending ? t("leads.channelInviteSending") : t("leads.channelInviteSend")}
+        </button>
+        {sent && <span className="text-xs text-green-600">{t("leads.channelInviteSent")}</span>}
+        {error && <span className="text-xs text-red-500">{error}</span>}
+      </div>
     </div>
   );
 }
