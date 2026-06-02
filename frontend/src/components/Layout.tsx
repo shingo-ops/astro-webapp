@@ -237,17 +237,7 @@ export default function Layout() {
                 </NavLink>
               )}
 
-              {/* 商品マスタ管理（ADR-093 Phase 2: 在庫表から CRUD を分離）。編集権限者のみ表示。 */}
-              {hasPermission("products.update") && (
-                <NavLink
-                  to="/admin/products"
-                  className={({ isActive }) => `sidebar-item${isActive ? " active" : ""}`}
-                  onClick={handleNavClick}
-                >
-                  <span className="sidebar-icon"><NAV_ICONS.admin size={ICON.base} /></span>
-                  <span className="sidebar-label">{t("nav.products")}</span>
-                </NavLink>
-              )}
+              {/* 商品マスタ管理は管理センターのスーパー管理者セクションへ集約（ADR-093 / 重複排除）。 */}
 
               {showSalesLink && (
                 <NavLink
