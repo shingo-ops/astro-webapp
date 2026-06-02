@@ -244,8 +244,9 @@ OFFER_TYPE_REGEXES: list[tuple[re.Pattern[str], str]] = [
 ]
 # 発送日（予約品）。順序重要: 「2日前」を「1日前」より先に判定。
 SHIP_TIMING_REGEXES: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"(?:発売)?\s*2\s*日\s*前", re.IGNORECASE), "2day_before"),
-    (re.compile(r"(?:発売)?\s*1\s*日\s*前|前日\s*発送|前日着", re.IGNORECASE), "1day_before"),
+    # 数字境界の負の後読みで「発売12日前」の末尾 "2日前" 等の誤判定を防ぐ（Reviewer PR#1445）。
+    (re.compile(r"(?:発売)?\s*(?<![0-9０-９])2\s*日\s*前", re.IGNORECASE), "2day_before"),
+    (re.compile(r"(?:発売)?\s*(?<![0-9０-９])1\s*日\s*前|前日\s*発送|前日着", re.IGNORECASE), "1day_before"),
     (re.compile(r"発売日\s*(?:発送|当日)?|当日\s*発送|入荷日\s*発送|発売日着", re.IGNORECASE), "on_release"),
 ]
 

@@ -751,3 +751,7 @@ class TestOfferTypeShipTimingDetection:
     def test_ship_timing_implies_preorder(self):
         """発送日指定だけでも予約品とみなす。"""
         assert _extract_offer_type_ship_timing("発売日発送 BOX @10,000") == ("pre_order", "on_release")
+
+    def test_digit_boundary_no_false_match(self):
+        """数字境界: 「発売12日前」の末尾 '2日前' を ship_timing に誤判定しない（Reviewer PR#1445）。"""
+        assert _extract_offer_type_ship_timing("発売12日前発送 BOX @10,000") == (None, None)
