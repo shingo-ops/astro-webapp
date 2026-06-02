@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_tenant, get_current_user, require_permission
-from app.database import get_db
+from app.database import get_db, reset_tenant_context
 from app.discord_gateway.config import load_tenant_bot_configs
 from app.models import User
 from app.services.audit import record_audit_log
@@ -98,6 +98,7 @@ async def post_announcement(
         new_data={"channel_id": data.channel_id, "message_id": message_id},
     )
     await db.commit()
+    await reset_tenant_context(db, tenant_id)
 
     logger.info(
         "[discord_announce] posted tenant=%d ch=%s msg=%s by user=%d",
