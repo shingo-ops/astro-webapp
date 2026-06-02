@@ -48,7 +48,7 @@ _DISCORD_CALLBACK_URL = os.getenv(
     "DISCORD_CALLBACK_URL",
     "https://api.salesanchor.jp/api/v1/discord/oauth/callback",
 )
-_FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "https://app.salesanchor.jp")
+_FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL") or "https://app.salesanchor.jp"
 
 
 def _build_invite_url(state: str) -> str:
