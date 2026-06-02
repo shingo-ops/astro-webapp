@@ -32,3 +32,8 @@ class TestInventoryViewValidation:
         """per_page は最大 200。超過は 422。"""
         res = await client.get("/api/v1/inventory", params={"per_page": 999})
         assert res.status_code == 422
+
+    async def test_invalid_offer_type_returns_422(self, client):
+        """offer_type は in_stock/pre_order のみ（ADR-093 Phase 3）。それ以外は 422。"""
+        res = await client.get("/api/v1/inventory", params={"offer_type": "bogus"})
+        assert res.status_code == 422

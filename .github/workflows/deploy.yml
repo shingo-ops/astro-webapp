@@ -804,6 +804,11 @@ jobs:
               psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
               < migrations/20260602_170000_add_products_master_label_columns.sql
 
+            # ADR-093 Phase 3a: public.inventory に offer_type/ship_timing 追加 + UNIQUE キー粒度拡張
+            docker exec -i astro-webapp-postgres-1 \
+              psql -U jarvis -d jarvis_db -v ON_ERROR_STOP=1 \
+              < migrations/20260602_180000_add_inventory_offer_type_ship_timing.sql
+
             # 新しいマイグレーションはここに追加してください（idempotent必須）
             # NOTE: 015-017 / 019-022 はテンプレート（{schema}プレースホルダ含む）のため
             #       deploy.yml では自動実行しない。新テナント作成は backend/app/services/tenant.py

@@ -25,6 +25,8 @@ interface InventoryRow {
   mark: string | null;
   condition: string;
   unit: string | null;
+  offer_type: string;          // 区分 in_stock/pre_order（ADR-093 Phase 3）
+  ship_timing: string | null;  // 発送日（予約品のみ）
   supplier_id: number;
   supplier_name: string | null;
   unit_price: number;
@@ -53,6 +55,7 @@ export default function InventoryPage() {
   const [searchQ, setSearchQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [tcgType, setTcgType] = useState("");
+  const [offerTypeFilter, setOfferTypeFilter] = useState("");
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -102,6 +105,7 @@ export default function InventoryPage() {
       params.set("order", order);
       if (debouncedQ.trim()) params.set("q", debouncedQ.trim());
       if (tcgType) params.set("tcg_type", tcgType);
+      if (offerTypeFilter) params.set("offer_type", offerTypeFilter);
       const d = await api.get<InventoryListResponse>(`/inventory?${params.toString()}`);
       setItems(d.items);
       setTotal(d.total);
@@ -110,7 +114,7 @@ export default function InventoryPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, order, debouncedQ, tcgType, t]);
+  }, [page, order, debouncedQ, tcgType, offerTypeFilter, t]);
 
   useEffect(() => {
     void load();
@@ -202,6 +206,19 @@ export default function InventoryPage() {
               {tt}
             </option>
           ))}
+        </select>
+        <select
+          data-testid="inventory-offer-type-filter"
+          value={offerTypeFilter}
+          onChange={(e) => {
+            setOfferTypeFilter(e.target.value);
+            setPage(1);
+          }}
+          aria-label={t("inventory.filter.allOfferTypes")}
+        >
+          <option value="">{t("inventory.filter.allOfferTypes")}</option>
+          <option value="in_stock">{t("inventory.offerType.in_stock")}</option>
+          <option value="pre_order">{t("inventory.offerType.pre_order")}</option>
         </select>
       </section>
 
@@ -341,7 +358,19 @@ export default function InventoryPage() {
                   )}
                 </td>
                 <td>{it.unit ? t(`inventory.unit.${it.unit}`, { defaultValue: it.unit }) : "-"}</td>
-                <td>{t(`inventory.condition.${it.condition}`, { defaultValue: it.condition })}</td>
+                <td>
+                  <div>{t(`inventory.condition.${it.condition}`, { defaultValue: it.condition })}</div>
+                  {it.offer_type === "pre_order" && (
+                    <div style={{ marginTop: "var(--space-1)" }}>
+                      <span className="badge badge-negotiating">{t("inventory.offerType.pre_order")}</span>
+                      {it.ship_timing && (
+                        <span style={{ fontSize: "var(--font-xs)", color: "var(--text-secondary)", marginLeft: "var(--space-1)" }}>
+                          {t(`inventory.shipTiming.${it.ship_timing}`, { defaultValue: it.ship_timing })}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </td>
                 <td style={{ textAlign: "right" }}>¥{it.unit_price.toLocaleString()}</td>
                 <td style={{ textAlign: "right" }}>{it.quantity}</td>
                 {/* 仕入元（複合）: 仕入元名 + 掲載時間 */}
