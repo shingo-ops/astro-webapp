@@ -239,10 +239,11 @@ async def seed_inbound_for_import(engine):
 async def test_import_candidates_and_apply_capture_unit_condition_language(
     engine, seed_inbound_for_import
 ):
-    """PR5c: 候補で unit(carton→case)/condition/言語自動判定、apply で products へ転記。
+    """PR5c: 候補で unit(carton→case)/condition、apply で products へ転記。
+    言語は全件デフォルト ja（2026-06-02 方針）、apply で en へ上書き可。
 
-    - jp_name: unit=case(carton正規化), condition=shrink, language=ja(自動)
-    - en_name: unit=box(BOX小文字化), language=en(自動) → apply で languages 上書き ja
+    - jp_name: unit=case(carton正規化), condition=shrink, language=ja(既定)
+    - en_name: unit=box(BOX小文字化), language=ja(既定) → apply で languages 上書き en
     """
     from httpx import AsyncClient, ASGITransport
     from sqlalchemy import text
@@ -274,16 +275,16 @@ async def test_import_candidates_and_apply_capture_unit_condition_language(
             jp = by_name[jp_name]
             assert jp["unit"] == "case"          # carton → case 正規化
             assert jp["condition"] == "shrink"   # 小文字化 + mode
-            assert jp["language"] == "ja"         # 日本語名 → ja 自動判定
+            assert jp["language"] == "ja"         # 既定 ja
 
             en = by_name[en_name]
             assert en["unit"] == "box"           # BOX → box 小文字化
-            assert en["language"] == "en"         # 英語名 → en 自動判定
+            assert en["language"] == "ja"         # 既定 ja（自動判定は廃止）
 
-            # apply: en_name の言語をオペレータが ja に修正したケース
+            # apply: en_name の言語をオペレータが en に修正したケース
             resp2 = await client.post(
                 "/api/v1/super-admin/inbound/product-candidates/apply",
-                json={"names": [jp_name, en_name], "languages": {en_name: "ja"}},
+                json={"names": [jp_name, en_name], "languages": {en_name: "en"}},
             )
             assert resp2.status_code == 200, resp2.text
             assert resp2.json()["inserted"] == 2
@@ -296,8 +297,8 @@ async def test_import_candidates_and_apply_capture_unit_condition_language(
         got = {r["name"]: r for r in rows}
         assert got[jp_name]["unit"] == "case"
         assert got[jp_name]["condition"] == "shrink"
-        assert got[jp_name]["language"] == "ja"
+        assert got[jp_name]["language"] == "ja"   # 上書きなし → 既定 ja
         assert got[en_name]["unit"] == "box"
-        assert got[en_name]["language"] == "ja"   # languages 上書きが優先
+        assert got[en_name]["language"] == "en"   # languages 上書きが優先
     finally:
         app.dependency_overrides.pop(require_super_admin, None)

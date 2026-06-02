@@ -61,7 +61,7 @@ class InboundProductCandidate(BaseModel):
     # PR5c: 取込時に商品マスタへ転記する付随情報。
     unit: str | None = Field(default=None, description="代表的な取引単位（carton→case 正規化済・小文字）")
     condition: str | None = Field(default=None, description="代表的な状態（小文字）")
-    language: str = Field(default="ja", description="商品名から自動判定した言語（ja/en・取込時に修正可）")
+    language: str = Field(default="ja", description="既定言語（全件 ja。取込時に en へ修正可）")
 
 
 class InboundProductCandidatesResponse(BaseModel):

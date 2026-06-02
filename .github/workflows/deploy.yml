@@ -5,6 +5,16 @@ on:
     branches:
       - main
 
+# 連続リリースで deploy.yml が並行実行されると、Docker コンテナ名衝突
+# （Conflict. The container name "/astro-webapp-backend-1" is already in use）で
+# backend が起動できず 502 になる（2026-06-02 #1390/1395/1396 の 9 分間連続マージで実発生）。
+# 同一グループで直列化し、並行実行を防ぐ。
+# cancel-in-progress: false — migration 実行中に後続がキャンセルすると DB が
+# 中途半端な状態になる危険があるため、キャンセルせずキュー待ちにする（ADR-092）。
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -150,15 +160,21 @@ jobs:
             ENV_EOF
 
             echo "Step 3: Rebuilding and restarting containers..."
-            # 旧プロジェクト名ハッシュ付きコンテナ（例: 6fc85fea3e3b_astro-webapp-frontend-1）が
-            # 残留すると名前衝突で compose up が失敗するため、up の前に停止・削除する。
-            docker ps -a --filter "name=astro-webapp-frontend" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
             # build と up を分離してダウンタイムを最小化する。
             # --build を up と一体で実行すると旧コンテナ停止後にビルドが走り（最大2分程度）
             # その間 nginx が 502 を返す問題があった（2026-05-30 障害）。
             # build を先に完了させてから up（切り替えのみ）を実行することで
             # ダウンタイムをコンテナ再起動の数秒に短縮する。
             docker compose build
+            # build 完了後・up 直前に、graceful stop に失敗した/ハッシュ付き重複の
+            # app 系コンテナを force 削除し、単一・クリーンな状態を保証する。
+            #  - 名前衝突による compose up 失敗を防ぐ（2026-05-30 frontend / 2026-06-02 backend で 502 障害）
+            #  - discord-gateway の重複起動による Discord 再接続storm→token reset を防ぐ
+            # build 後に置くことで削除→up の間（数秒）のみのダウンタイムに抑える。
+            # postgres / redis / nginx / certbot は状態を持つため対象外。
+            for _svc in backend frontend celery-worker celery-beat discord-gateway; do
+              docker ps -a --filter "name=astro-webapp-${_svc}" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
+            done
             docker compose up -d --remove-orphans
 
             echo "Step 4: Waiting for backend to become healthy (max 120s)..."
