@@ -27,12 +27,12 @@ from app.auth.dependencies import (
     get_current_user,
     require_permission,
     reset_tenant_context,
+    tenant_table_ref,
 )
 from app.database import get_db
 from app.discord_gateway.config import load_tenant_bot_configs
 from app.models import User
 from app.services.audit import record_audit_log
-from app.utils.tenant import tenant_table_ref
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
