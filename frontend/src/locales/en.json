@@ -343,7 +343,7 @@
       "ban": "Banned"
     },
     "discordRoleSyncStatus": "Discord Role Sync",
-    "discordRoleSyncStatus_synced": "Synced",
+    "discordRoleSyncStatus_success": "Synced",
     "discordRoleSyncStatus_failed": "Failed",
     "discordRoleSyncStatus_pending": "Pending",
     "discordRoleResync": "Re-sync Role",
