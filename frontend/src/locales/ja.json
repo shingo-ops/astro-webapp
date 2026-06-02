@@ -87,6 +87,7 @@
     "customers": "顧客管理（旧）",
     "archive": "アーカイブ",
     "inventory": "在庫表",
+    "products": "商品マスタ",
     "quotesInvoices": "請求書作成",
     "orders": "受注管理",
     "newQuote": "新規見積",
@@ -708,6 +709,52 @@
     "subtitle": "商談のステージと確度を管理します。"
   },
   "inventory": {
+    "view": {
+      "subtitle": "仕入元の現在オファー（取り込み済み在庫）を表示します。",
+      "searchPlaceholder": "商品名・英名・カテゴリ・マーク・仕入元で検索"
+    },
+    "expiryWarning": "オファーは掲載から18時間で自動的に削除されます。",
+    "filter": { "allTypes": "全種別" },
+    "col": {
+      "product": "商品",
+      "unit": "形態",
+      "condition": "状態",
+      "unitPrice": "単価",
+      "quantity": "数量",
+      "supplier": "仕入元"
+    },
+    "condition": {
+      "shrink": "シュリンク付き",
+      "no_shrink": "シュリンクなし",
+      "sealed": "未開封",
+      "damage": "ダメージあり",
+      "unsearched": "未サーチ",
+      "searched": "サーチ済み",
+      "graded": "鑑定品",
+      "grade_s": "S評価",
+      "grade_a": "A評価",
+      "grade_b": "B評価",
+      "grade_c": "C評価",
+      "grade_d": "D評価",
+      "junk": "ジャンク",
+      "bulk": "バルク",
+      "normal": "ノーマル",
+      "unknown": "不明"
+    },
+    "unit": {
+      "piece": "個",
+      "pack": "パック",
+      "box": "Box",
+      "case": "Case",
+      "set": "セット"
+    },
+    "noResults": "該当する在庫がありません",
+    "pageOf": "{{page}} / {{total}} ページ（全 {{count}} 件）",
+    "sortAsc": "▲",
+    "sortDesc": "▼",
+    "justNow": "たった今",
+    "minutesAgo": "{{count}}分前",
+    "hoursAgo": "{{count}}時間前",
     "search": {
       "placeholder": "商品名・カード番号・JAN・型番・仕入元 alias で検索",
       "opGroupLabel": "複数キーワードの結合方法",
