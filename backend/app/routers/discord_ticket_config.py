@@ -58,6 +58,9 @@ class DiscordTicketConfigResponse(BaseModel):
     welcome_template: str = "ご連絡ありがとうございます。こちらのチャンネルでサポートいたします。"
     small_channel_id: str | None = None
     large_channel_id: str | None = None
+    # KPI7 拡張: ロール名設定（Small→Member, Large→Partner がデフォルト）
+    small_role_name: str = "Member"
+    large_role_name: str = "Partner"
 
 
 class DiscordTicketConfigUpdate(BaseModel):
@@ -70,6 +73,9 @@ class DiscordTicketConfigUpdate(BaseModel):
     )
     small_channel_id: str | None = Field(default=None, min_length=17, max_length=20)
     large_channel_id: str | None = Field(default=None, min_length=17, max_length=20)
+    # KPI7 拡張: ロール名（1〜100文字、空文字禁止）
+    small_role_name: str = Field(default="Member", min_length=1, max_length=100)
+    large_role_name: str = Field(default="Partner", min_length=1, max_length=100)
 
     @field_validator("ticket_category_id", "ticket_button_channel_id")
     @classmethod
@@ -100,7 +106,8 @@ async def get_discord_ticket_config(
         text("""
             SELECT ticket_category_id, ticket_button_channel_id,
                    staff_role_id, welcome_template,
-                   small_channel_id, large_channel_id
+                   small_channel_id, large_channel_id,
+                   small_role_name, large_role_name
             FROM public.tenant_discord_ticket_config
             WHERE tenant_id = :tid
         """),
@@ -116,6 +123,8 @@ async def get_discord_ticket_config(
         welcome_template=row["welcome_template"],
         small_channel_id=str(row["small_channel_id"]) if row["small_channel_id"] else None,
         large_channel_id=str(row["large_channel_id"]) if row["large_channel_id"] else None,
+        small_role_name=row["small_role_name"] or "Member",
+        large_role_name=row["large_role_name"] or "Partner",
     )
 
 
@@ -136,11 +145,13 @@ async def update_discord_ticket_config(
             INSERT INTO public.tenant_discord_ticket_config
                 (tenant_id, ticket_category_id, ticket_button_channel_id,
                  staff_role_id, welcome_template,
-                 small_channel_id, large_channel_id, updated_at)
+                 small_channel_id, large_channel_id,
+                 small_role_name, large_role_name, updated_at)
             VALUES
                 (:tid, :category_id, :button_channel_id,
                  :staff_role_id, :welcome_template,
-                 :small_channel_id, :large_channel_id, NOW())
+                 :small_channel_id, :large_channel_id,
+                 :small_role_name, :large_role_name, NOW())
             ON CONFLICT (tenant_id) DO UPDATE SET
                 ticket_category_id       = EXCLUDED.ticket_category_id,
                 ticket_button_channel_id = EXCLUDED.ticket_button_channel_id,
@@ -148,6 +159,8 @@ async def update_discord_ticket_config(
                 welcome_template         = EXCLUDED.welcome_template,
                 small_channel_id         = EXCLUDED.small_channel_id,
                 large_channel_id         = EXCLUDED.large_channel_id,
+                small_role_name          = EXCLUDED.small_role_name,
+                large_role_name          = EXCLUDED.large_role_name,
                 updated_at               = NOW()
         """),
         {
@@ -158,6 +171,8 @@ async def update_discord_ticket_config(
             "welcome_template": data.welcome_template,
             "small_channel_id": data.small_channel_id,
             "large_channel_id": data.large_channel_id,
+            "small_role_name": data.small_role_name,
+            "large_role_name": data.large_role_name,
         },
     )
     await record_audit_log(
@@ -173,6 +188,8 @@ async def update_discord_ticket_config(
             "staff_role_id": data.staff_role_id,
             "small_channel_id": data.small_channel_id,
             "large_channel_id": data.large_channel_id,
+            "small_role_name": data.small_role_name,
+            "large_role_name": data.large_role_name,
         },
     )
     await db.commit()
@@ -189,6 +206,8 @@ async def update_discord_ticket_config(
         welcome_template=data.welcome_template,
         small_channel_id=data.small_channel_id,
         large_channel_id=data.large_channel_id,
+        small_role_name=data.small_role_name,
+        large_role_name=data.large_role_name,
     )
 
 
