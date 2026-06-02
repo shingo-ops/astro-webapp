@@ -16,7 +16,7 @@ if [ -z "${GITHUB_ACTIONS}" ]; then
     *)
       # active-work.md のみの変更（DONE更新等の管理作業）は例外として許可
       STAGED_FILES="$(git diff --cached --name-only 2>/dev/null)"
-      NON_ADMIN_FILES="$(echo "${STAGED_FILES}" | grep -v '^\\.claude-pipeline/active-work\\.md$' || true)"
+      NON_ADMIN_FILES="$(echo "${STAGED_FILES}" | grep -v '^\.claude-pipeline/active-work\.md$' || true)"
       if [ -n "${NON_ADMIN_FILES}" ]; then
         echo ""
         echo "🚫 commit を中断しました: worktree 外での作業は禁止されています。"
