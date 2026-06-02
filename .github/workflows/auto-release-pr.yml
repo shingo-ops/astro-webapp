@@ -54,11 +54,10 @@ jobs:
             *このPRは `develop` ブランチへのプッシュを検知して自動起票されました。*
             *（必須チェックを起動させるため PIPELINE_PAT で起票しています）*
         run: |
-          AHEAD=$(git rev-list --count origin/main..HEAD)
           gh pr create \
             --base main \
             --head develop \
-            --title "release: develop → main (${AHEAD} commits)" \
+            --title "release: develop → main" \
             --body "$PR_BODY"
           echo "✅ release PR を自動起票しました"
 
