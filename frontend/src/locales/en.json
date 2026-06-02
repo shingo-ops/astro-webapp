@@ -675,7 +675,9 @@
     "discordSection": "Discord Server Integration",
     "discordGuildId": "Guild ID",
     "discordGuildIdNotSet": "Not configured",
-    "discordEdit": "Edit settings"
+    "discordEdit": "Edit settings",
+    "discordAddBot": "Add Bot to Discord Server",
+    "discordBotConnected": "Bot connected"
   },
   "deals": {
     "title": "Deal Management",
