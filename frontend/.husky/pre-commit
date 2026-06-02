@@ -16,7 +16,10 @@ if [ -z "${GITHUB_ACTIONS}" ]; then
     *)
       # active-work.md のみの変更（DONE更新等の管理作業）は例外として許可
       STAGED_FILES="$(git diff --cached --name-only 2>/dev/null)"
-      NON_ADMIN_FILES="$(echo "${STAGED_FILES}" | grep -v '^\.claude-pipeline/active-work\.md$' || true)"
+      NON_ADMIN_FILES=""
+      if [ -n "${STAGED_FILES}" ]; then
+        NON_ADMIN_FILES="$(printf '%s\n' "${STAGED_FILES}" | grep -v '^\.claude-pipeline/active-work\.md$' || true)"
+      fi
       if [ -n "${NON_ADMIN_FILES}" ]; then
         echo ""
         echo "🚫 commit を中断しました: worktree 外での作業は禁止されています。"
@@ -38,7 +41,7 @@ fi
 # git rev-parse --show-toplevel 再呼び出し誤動作を回避）
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
-cd "$REPO_ROOT/frontend"
+cd "$REPO_ROOT/frontend" || exit 1
 
 echo "🔍 ADR-067: ダークモード色規約チェック中..."
 
@@ -60,7 +63,7 @@ node "$REPO_ROOT/frontend/scripts/check-claude-size.js"
 BACKEND_PY_CHANGES=$(git diff --cached --name-only | grep -E "^backend/app/.*\.py$" || true)
 if [ -n "$BACKEND_PY_CHANGES" ]; then
   echo "🐍 backend Python 変更検出 → ruff チェック..."
-  cd "$REPO_ROOT/backend"
+  cd "$REPO_ROOT/backend" || exit 1
   if command -v ruff >/dev/null 2>&1; then
     ruff check app/ --exit-zero
   else
@@ -68,5 +71,5 @@ if [ -n "$BACKEND_PY_CHANGES" ]; then
     echo "   backend/app/ の変更をコミットするには ruff が必要です。"
     exit 1
   fi
-  cd "$REPO_ROOT/frontend"
+  cd "$REPO_ROOT/frontend" || exit 1
 fi

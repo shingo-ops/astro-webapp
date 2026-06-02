@@ -1,0 +1,44 @@
+name: Hook Tests
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'frontend/.husky/**'
+      - 'scripts/test_pre_commit_hook.py'
+      - '.github/workflows/hook-test.yml'
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'frontend/.husky/**'
+      - 'scripts/test_pre_commit_hook.py'
+      - '.github/workflows/hook-test.yml'
+
+jobs:
+  # ── shellcheck: 構文・パターンの静的解析 ─────────────────────────────────
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+      - name: Run shellcheck on pre-commit hook
+        run: |
+          shellcheck --shell=sh \
+            --exclude=SC1091 \
+            frontend/.husky/pre-commit
+
+  # ── pytest: フックロジックの動作テスト ───────────────────────────────────
+  pytest-hook-logic:
+    name: pytest (hook logic)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: pip install pytest
+      - name: Run hook logic tests
+        run: pytest scripts/test_pre_commit_hook.py -v
