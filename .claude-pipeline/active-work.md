@@ -26,6 +26,7 @@
 | feature/morimoto/discord-kpi4-announce | ADR-091 KPI4 アナウンス投稿 | 2026-06-02 14:00 | IN_PROGRESS | | |
 | feature/morimoto/discord-newtab | （記入してください） | 2026-06-02 22:12 | IN_PROGRESS | | |
 | feature/morimoto/worktree-guard-auto-recovery | worktreeガード自動リカバリー機能 | 2026-06-02 23:00 | IN_PROGRESS | | |
+| feature/morimoto/migrate-consolidation | マイグレーション一括化 | 2026-06-02 23:30 | IN_PROGRESS | | |
 ---
 
 ## 記入例
