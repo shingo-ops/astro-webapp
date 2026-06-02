@@ -65,6 +65,6 @@ destructive な変更が必要な場合は必ずしんごさん（PO）に確認
 
 `scripts/setup_review_tenant.py` 実行後は必ずホスト側に保存すること（コンテナ `/tmp` は再起動で消える）。
 手順詳細: `backend/scripts/CLAUDE.md`
-
 ## 品質チェック
 ローカル: `make lint`（ruff/bandit/mypy）/ `make check`（lint + pytest）初回: `pip install -r requirements-dev.txt`
+**ADR-072**: write endpoint は `db.commit()` 直後に `await reset_tenant_context(db, tenant_id)` 必須（`from app.database import reset_tenant_context`）。pre-commit + CI が自動 FAIL させる。
