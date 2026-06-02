@@ -638,8 +638,9 @@
       "internal_error": "内部エラーが発生しました。サポートにお問い合わせください。",
       "unknown": "接続に失敗しました（理由: {{reason}}）。"
     },
-    "subtitle": "MetaとDiscordの受信連携を設定します。",
-    "discordSection": "Discord Guild 設定",
+    "subtitle": "外部メッセージツールの受信連携を設定します。",
+    "facebookSection": "Facebookページ連携",
+    "discordSection": "Discordサーバー連携",
     "discordGuildId": "Guild ID",
     "discordGuildIdNotSet": "未設定",
     "discordEdit": "設定を編集"

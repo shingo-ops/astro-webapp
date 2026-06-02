@@ -327,6 +327,10 @@ export default function ChannelsPage() {
         </div>
       )}
 
+      <h3 style={{ fontSize: "var(--font-sidebar-brand)", marginBottom: "var(--space-3)", color: "var(--text-primary)" }}>
+        {t("channels.facebookSection")}
+      </h3>
+
       {loading ? (
         <div className="loading">{t("common.loading")}</div>
       ) : channels.length === 0 ? (
@@ -450,6 +454,7 @@ export default function ChannelsPage() {
           <h3 style={{ fontSize: "var(--font-sidebar-brand)", marginBottom: "var(--space-3)", color: "var(--text-primary)" }}>
             {t("channels.discordSection")}
           </h3>
+
           <div className="card" style={{ padding: "var(--space-4)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "var(--space-4)" }}>
             <div>
               <div style={{ fontSize: "var(--font-sm)", color: "var(--text-muted)", marginBottom: "var(--space-1)" }}>
