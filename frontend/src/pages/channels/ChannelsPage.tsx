@@ -18,7 +18,7 @@
  *   2026-04-30: Phase 1-D Sprint 3 初版
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ApiError, api } from "../../lib/api";
@@ -98,6 +98,8 @@ export default function ChannelsPage() {
   const [banner, setBanner] = useState<Banner>(null);
   const [discordGuildId, setDiscordGuildId] = useState<string | null>(null);
   const [discordConnecting, setDiscordConnecting] = useState(false);
+  const focusListenerRef = useRef<(() => void) | null>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const canManage = hasPermission("channels.manage");
   const canViewDiscord = hasPermission("tenant.profile.view");
@@ -183,6 +185,18 @@ export default function ChannelsPage() {
       .catch(() => { /* サイレント: Discord未設定テナントは表示しない */ });
   }, [canViewDiscord]);
 
+  // ----- Discord focus リスナー / タイマーのアンマウントクリーンアップ -----
+  useEffect(() => {
+    return () => {
+      if (focusListenerRef.current) {
+        window.removeEventListener("focus", focusListenerRef.current);
+      }
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current);
+      }
+    };
+  }, []);
+
   // ----- Discord Bot 招待開始 -----
   const handleDiscordConnect = async () => {
     setDiscordConnecting(true);
@@ -191,6 +205,15 @@ export default function ChannelsPage() {
       // 新しいタブで開く（元のアプリページを維持）
       window.open(data.invite_url, "_blank", "noopener,noreferrer");
       setDiscordConnecting(false);
+
+      // 既存リスナー・タイマーをクリーンアップ（二重登録防止）
+      if (focusListenerRef.current) {
+        window.removeEventListener("focus", focusListenerRef.current);
+      }
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current);
+      }
+
       // フォーカスが戻ったとき guild_id を自動再取得
       // window.open 直後の誤発火を避けるため 1s 遅らせて登録
       // guild_id が取得できるまでリスナーを保持する
@@ -200,12 +223,16 @@ export default function ChannelsPage() {
             setDiscordGuildId(d.guild_id);
             if (d.guild_id) {
               setBanner({ type: "success", text: t("channels.discordConnectedSuccess") });
-              window.removeEventListener("focus", handleFocus);
+              if (focusListenerRef.current) {
+                window.removeEventListener("focus", focusListenerRef.current);
+                focusListenerRef.current = null;
+              }
             }
           })
           .catch(() => {});
       };
-      setTimeout(() => window.addEventListener("focus", handleFocus), 1000);
+      focusListenerRef.current = handleFocus;
+      focusTimerRef.current = setTimeout(() => window.addEventListener("focus", handleFocus), 1000);
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : (e instanceof Error ? e.message : t("channels.discordConnectError"));
       setBanner({ type: "error", text: msg });
