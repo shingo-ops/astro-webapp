@@ -72,7 +72,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Node.js 22 LTS。self-hosted VPS runner で初回実行時のみダウンロードが発生する（数十秒・1回限り）。
+          # Playwright は Node.js 22 正式サポート済み。GHA Node.js 20 廃止対応 2026-06-16。
+          node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
