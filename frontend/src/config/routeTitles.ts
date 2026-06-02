@@ -35,6 +35,8 @@ export const ROUTE_TITLE_KEYS: Record<string, string> = {
   "/commission-settings":        "nav.commissionSettings",
   "/admin/inventory-visibility": "nav.inventoryVisibility",
   "/admin/tenant-profile":       "nav.tenantProfile",
+  "/admin/discord-config":       "nav.discordConfig",
+  "/admin/discord-announce":     "nav.discordAnnounce",
   "/super-admin/masters":        "nav.superAdminMasters",
   "/super-admin/inbound":        "nav.superAdminInbound",
   "/super-admin/phase-switch":   "nav.superAdminPhaseSwitch",

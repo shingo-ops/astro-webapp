@@ -121,6 +121,7 @@
     "inventoryVisibility": "Inventory Visibility",
     "tenantProfile": "Issuer Profile",
     "discordConfig": "Discord Integration",
+    "discordAnnounce": "Discord Announce",
     "superAdminPhaseSwitch": "Spreadsheet Phase",
     "superAdminInventoryOffers": "Supplier Offers",
     "account": "Account",
@@ -1702,5 +1703,19 @@
     "saveError": "Failed to save ticket configuration",
     "saved": "Ticket configuration saved",
     "invalidSnowflake": "ID must be a 17–20 digit number"
+  },
+  "discordAnnounce": {
+    "description": "Post announcements to a Discord channel directly from the app — no need to open Discord.",
+    "channelIdLabel": "Target Channel ID",
+    "channelIdPlaceholder": "e.g. 1288437029213835356",
+    "channelIdHint": "Right-click the Discord channel → 'Copy ID' to get the channel ID.",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Enter your announcement (max 2000 characters)",
+    "send": "Post",
+    "sending": "Posting...",
+    "sent": "Posted successfully",
+    "sendError": "Failed to post. Check the channel ID and bot permissions.",
+    "invalidChannelId": "Channel ID must be a 17–20 digit number",
+    "messageRequired": "Message is required"
   }
 }

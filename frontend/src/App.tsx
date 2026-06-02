@@ -47,6 +47,8 @@ import InventoryVisibilityPage from "./pages/admin/InventoryVisibilityPage";
 import TenantProfilePage from "./pages/admin/TenantProfilePage";
 // Sprint D2: Discord Guild 設定 admin UI
 import DiscordConfigPage from "./pages/admin/DiscordConfigPage";
+// ADR-091 KPI4: Discord アナウンス投稿 admin UI
+import DiscordAnnouncePage from "./pages/admin/DiscordAnnouncePage";
 // spec.md v1.1 F5 (Sprint 5): Discord Inbound 受信メッセージ一覧（中央 admin）
 import DiscordInboundPage from "./pages/super-admin/DiscordInboundPage";
 import ParseReviewPage from "./pages/super-admin/ParseReviewPage";
@@ -227,6 +229,11 @@ function App() {
                   <Route
                     path="/admin/discord-config"
                     element={<DiscordConfigPage />}
+                  />
+                  {/* ADR-091 KPI4: Discord アナウンス投稿 */}
+                  <Route
+                    path="/admin/discord-announce"
+                    element={<DiscordAnnouncePage />}
                   />
 
                   {/* ADR-069: デザインシステム パーツ保管庫（開発環境専用） */}

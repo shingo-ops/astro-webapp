@@ -121,6 +121,7 @@
     "inventoryVisibility": "在庫表示権限",
     "tenantProfile": "発行者情報",
     "discordConfig": "Discord 連携設定",
+    "discordAnnounce": "Discordアナウンス",
     "superAdminPhaseSwitch": "スプレッドシート Phase",
     "superAdminInventoryOffers": "仕入元現在オファー",
     "account": "アカウント",
@@ -1702,5 +1703,19 @@
     "saveError": "チケット設定の保存に失敗しました",
     "saved": "チケット設定を保存しました",
     "invalidSnowflake": "ID は17〜20桁の数字で入力してください"
+  },
+  "discordAnnounce": {
+    "description": "Discordの指定チャンネルにアナウンスを投稿します。Discordを開かずにアプリから直接送信できます。",
+    "channelIdLabel": "投稿先チャンネル ID",
+    "channelIdPlaceholder": "例: 1288437029213835356",
+    "channelIdHint": "投稿したいDiscordチャンネルを右クリック → 「IDをコピー」で取得できます。",
+    "messageLabel": "メッセージ",
+    "messagePlaceholder": "アナウンス内容を入力してください（最大2000文字）",
+    "send": "投稿する",
+    "sending": "投稿中...",
+    "sent": "投稿しました",
+    "sendError": "投稿に失敗しました。チャンネルIDとBot権限を確認してください。",
+    "invalidChannelId": "チャンネルIDは17〜20桁の数字で入力してください",
+    "messageRequired": "メッセージを入力してください"
   }
 }
