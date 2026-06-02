@@ -326,6 +326,45 @@ services:
     networks:
       - backnet
 
+  # ============================================================
+  # GitHub Actions Exporter (ADR-077: CI品質モニタリング)
+  # ============================================================
+  # gravitational/gha-exporter v0.0.15
+  # GitHub App認証（GHA_APP_ID + GHA_APP_KEY_PATH）でActions APIをポーリングし
+  # ワークフロー/ジョブ/ステップの実行時間・成否をPrometheus形式で :8080 に公開。
+  # prometheus.yml の gha-exporter scrape job が 60s 間隔で収集する。
+  gha-exporter:
+    build:
+      context: ./monitoring/gha-exporter
+    environment:
+      - GHA_APP_ID=${GHA_APP_ID}
+      # 秘密鍵はファイルマウント方式（.envにPEM内容を直書きしない）
+      - GHA_APP_KEY_FILE=${GHA_APP_KEY_PATH}
+    volumes:
+      # GHA_APP_KEY_PATH が指すホスト側PEMファイルをコンテナ内同パスでマウント
+      - ${GHA_APP_KEY_PATH:-/dev/null}:${GHA_APP_KEY_PATH:-/dev/null}:ro
+    command:
+      - --repo=shingo-ops/salesanchor
+      - --sleep=60s
+      - --backfill
+    restart: unless-stopped
+    expose:
+      - "8080"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backnet
+
 volumes:
   postgres_data:
   redis_data:
