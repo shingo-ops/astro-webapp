@@ -35,8 +35,8 @@ from app.routers import (
     deals,
     discord_announcement,  # ADR-091 KPI4: アナウンス投稿 API
     discord_channel_invite,  # ADR-091 KPI5: チャンネル招待メッセージ送信 API
-    discord_remove,  # ADR-091 KPI6: チャンネル削除・Kick・BAN API
     discord_guild_config,  # Sprint D2: Discord Guild 設定 admin API
+    discord_remove,  # ADR-091 KPI6: チャンネル削除・Kick・BAN API
     discord_ticket_config,  # ADR-091 KPI3: チケット機能設定 admin API
     duplicates,
     erp,
