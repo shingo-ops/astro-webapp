@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import signal
 import sys
 
@@ -7,6 +8,20 @@ from app.discord_gateway.client import run_gateway
 from app.discord_gateway.config import get_log_level, load_tenant_bot_configs
 
 logger = logging.getLogger(__name__)
+
+
+def _fatal_cooldown_seconds() -> int:
+    """致命的エラーで非ゼロ終了する前のクールダウン秒数（既定 60s）。
+
+    Docker `restart: unless-stopped` は exit のたびにコンテナを再起動する。
+    Token 失効等で起動直後に毎回 fatal になると、再起動→Discord 再接続が高頻度で
+    繰り返され、短時間に大量接続 → Discord による Bot Token 自動リセットを招く
+    （2026-06-02 実発生）。終了前にクールダウンを挟み再起動頻度を抑える。
+    """
+    try:
+        return max(0, int(os.getenv("DISCORD_GATEWAY_FATAL_COOLDOWN", "60")))
+    except ValueError:
+        return 60
 
 
 def _setup_logging() -> None:
@@ -67,10 +82,19 @@ async def _run_with_shutdown(tenants: list) -> int:
 
     fatal = [r for r in results if isinstance(r, Exception) and not isinstance(r, asyncio.CancelledError)]
     if fatal and len(fatal) == len(tenants):
+        cooldown = _fatal_cooldown_seconds()
         logger.critical(
-            "[discord-gateway] 全 %d テナントで致命的エラー、非ゼロ終了します",
+            "[discord-gateway] 全 %d テナントで致命的エラー、%d 秒クールダウン後に非ゼロ終了します"
+            "（Docker 再起動の連打による Discord 再接続storm→token reset を防ぐ）",
             len(fatal),
+            cooldown,
         )
+        if cooldown > 0:
+            # SIGTERM（デプロイ停止）が来たら即座に終了できるよう中断可能な待機にする。
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=cooldown)
+            except asyncio.TimeoutError:
+                pass
         return 1
     return 0
 
