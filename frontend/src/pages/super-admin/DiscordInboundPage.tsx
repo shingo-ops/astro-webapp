@@ -149,8 +149,8 @@ export default function DiscordInboundPage() {
       setCandidates(list);
       // デフォルトは全選択（オペレータがノイズを外す運用）
       setImportSelected(new Set(list.map((c) => c.name)));
-      // 言語は自動判定値を初期値に。取込時にオペレータが個別修正できる。
-      setImportLanguages(Object.fromEntries(list.map((c) => [c.name, c.language || "ja"])));
+      // 言語は全件デフォルト「日本語」（ユーザー方針 2026-06-02）。英語は取込時に個別修正できる。
+      setImportLanguages(Object.fromEntries(list.map((c) => [c.name, "ja"])));
     } catch (e) {
       setImportError(e instanceof Error ? e.message : t("common.fetchError"));
     } finally {
@@ -267,15 +267,17 @@ export default function DiscordInboundPage() {
                     />
                   </span>
                 </div>
-                <div style={{ maxHeight: "50vh", overflowY: "auto", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
-                  <table className="data-table">
+                {/* table-layout: fixed + width 100% でモーダル幅に収める（横スクロール抑止）。
+                    名前/サンプルは可変幅で折返し、単位/言語は固定幅。overflowX も明示 hidden。 */}
+                <div style={{ maxHeight: "50vh", overflowY: "auto", overflowX: "hidden", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
+                  <table className="data-table" style={{ tableLayout: "fixed" }}>
                     <thead>
                       <tr>
                         <th style={{ width: "var(--col-width-checkbox)", textAlign: "center" }} aria-label={t("common.select")}></th>
                         <th>{t("common.name")}</th>
                         <th style={{ width: "var(--col-width-checkbox)", textAlign: "right" }}>{t("products.importOccurrences")}</th>
-                        <th>{t("products.unitCol")}</th>
-                        <th>{t("language.label")}</th>
+                        <th style={{ width: "72px" }}>{t("products.unitCol")}</th>
+                        <th style={{ width: "104px" }}>{t("language.label")}</th>
                         <th>{t("products.importSample")}</th>
                       </tr>
                     </thead>
@@ -290,12 +292,13 @@ export default function DiscordInboundPage() {
                               aria-label={c.name}
                             />
                           </td>
-                          <td>{c.name}</td>
+                          <td style={{ wordBreak: "break-word" }}>{c.name}</td>
                           <td style={{ textAlign: "right" }}>{c.occurrences}</td>
                           <td>{capUnit(c.unit)}</td>
                           <td>
                             <select
-                              value={importLanguages[c.name] ?? c.language ?? "ja"}
+                              style={{ maxWidth: "100%" }}
+                              value={importLanguages[c.name] ?? "ja"}
                               onChange={(e) => setImportLanguage(c.name, e.target.value)}
                               aria-label={t("language.label")}
                             >
@@ -303,7 +306,7 @@ export default function DiscordInboundPage() {
                               <option value="en">{t("language.en")}</option>
                             </select>
                           </td>
-                          <td style={{ color: "var(--text-secondary)", fontSize: "var(--font-xs)" }}>{c.sample || "-"}</td>
+                          <td style={{ color: "var(--text-secondary)", fontSize: "var(--font-xs)", wordBreak: "break-word" }}>{c.sample || "-"}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -14,7 +14,6 @@ API:
 from __future__ import annotations
 
 import logging
-import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
@@ -181,15 +180,9 @@ _PARSED_ITEMS_CTE = (
     "jsonb_array_elements(COALESCE(m.parse_result_json->'items', '[]'::jsonb)) it "
     "WHERE COALESCE(TRIM(it->>'product_name'), '') <> ''"
 )
-
-# 商品名に日本語（ひらがな / カタカナ / 漢字 / 半角カナ）が 1 文字でもあれば 'ja'、
-# 無ければ 'en'。取込候補の言語既定値に使う（取込時にオペレータが修正可能）。
-# 範囲: U+3040-30FF(かな) / U+3400-9FFF(漢字) / U+FF66-FF9F(半角カナ)
-_JP_CHAR_RE = re.compile(r"[぀-ヿ㐀-鿿ｦ-ﾟ]")
-
-
-def _detect_language(name: str | None) -> str:
-    return "ja" if _JP_CHAR_RE.search(name or "") else "en"
+# 取込候補の言語は全件デフォルト「日本語(ja)」（ユーザー方針 2026-06-02）。
+# 英語の商品は取込 UI でオペレータが個別に 'en' へ修正する。
+_DEFAULT_IMPORT_LANGUAGE = "ja"
 
 
 @router.get(
@@ -228,8 +221,8 @@ async def list_product_candidates(
             sample=r.get("sample"),
             unit=r.get("unit"),
             condition=r.get("condition"),
-            # 言語は商品名から自動判定した既定値。取込 UI でオペレータが修正可能。
-            language=_detect_language(r["name"]),
+            # 言語は全件デフォルト日本語。取込 UI でオペレータが個別修正可能。
+            language=_DEFAULT_IMPORT_LANGUAGE,
         )
         for r in rows
     ]
@@ -289,9 +282,10 @@ async def apply_product_candidates(
             skipped += 1
             continue
         unit, condition = rep.get(name, (None, None))
+        # 言語は UI 上書きを優先し、無指定/不正値はデフォルト日本語。
         lang = (overrides.get(name) or "").strip().lower()
         if lang not in ("ja", "en"):
-            lang = _detect_language(name)
+            lang = _DEFAULT_IMPORT_LANGUAGE
         result = await db.execute(
             text(
                 "INSERT INTO public.products (name, category, unit, condition, language) "
