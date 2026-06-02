@@ -48,6 +48,7 @@ from app.routers import (
     inventory_search,
     invoices,
     leads,
+    me_inventory_filters,  # ADR-093 Phase 4: 在庫表ユーザー別フィルタ設定
     meta,
     meta_inbox,  # Phase 1-D Sprint 2: OAuth 接続バックエンド
     notifications,
@@ -417,6 +418,12 @@ app.include_router(
 app.include_router(
     inventory_offers.router, prefix="/api/v1",
     tags=["super-admin"],
+)
+
+# ADR-093 Phase 4: 在庫表のユーザー別フィルタ設定（GET/PATCH /me/inventory-filters）
+app.include_router(
+    me_inventory_filters.router, prefix="/api/v1",
+    tags=["inventory"],
 )
 
 # spec.md v1.2 F9 (Sprint 9): スプレッドシート並走 Phase 切替 admin API

@@ -760,6 +760,12 @@
     "minutesAgo": "{{count}} min ago",
     "hoursAgo": "{{count}} h ago",
     "createPO": "Create PO",
+    "filterPanel": {
+      "button": "Filter",
+      "enable": "Enable filter (apply my saved view)",
+      "suppliers": "Show / hide suppliers",
+      "columns": "Visible columns"
+    },
     "search": {
       "placeholder": "Search by product name, card number, JAN, expansion code, or supplier alias",
       "opGroupLabel": "Multi-keyword join mode",
