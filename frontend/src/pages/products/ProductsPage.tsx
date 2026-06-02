@@ -50,6 +50,21 @@ interface Product {
   supplier_default_id: number | null;
   tcg_type: string | null;
   unit: string | null;
+  // ADR-093 Phase 1: 商品マスタ全項目（Box 属性 + 発送ラベル + 検索/分類）
+  boxes_per_case: number | null;
+  packs_per_box: number | null;
+  box_weight_kg: number | null;
+  case_weight_kg: number | null;
+  volume_weight: number | null;
+  moq: number | null;
+  hs_code: string | null;
+  material: string | null;
+  item: string | null;
+  required_output_value: string | null;
+  search_keywords: string | null;
+  exclude_keywords: string | null;
+  related_series: string | null;
+  category_classification: string | null;
 }
 
 type FormState = {
@@ -73,6 +88,21 @@ type FormState = {
   unit_price_usd: string;
   unit_price_eur: string;
   image_url: string;
+  // ADR-093 Phase 1: 商品マスタ全項目（Box 属性 + 発送ラベル + 検索/分類）
+  boxes_per_case: string;
+  packs_per_box: string;
+  box_weight_kg: string;
+  case_weight_kg: string;
+  volume_weight: string;
+  moq: string;
+  hs_code: string;
+  material: string;
+  item: string;
+  required_output_value: string;
+  search_keywords: string;
+  exclude_keywords: string;
+  related_series: string;
+  category_classification: string;
 };
 
 const emptyForm: FormState = {
@@ -81,6 +111,10 @@ const emptyForm: FormState = {
   weight: "", notes: "",
   jan_code: "", card_number: "", expansion_code: "", rarity: "", language: "",
   unit_price_usd: "", unit_price_eur: "", image_url: "",
+  boxes_per_case: "", packs_per_box: "", box_weight_kg: "", case_weight_kg: "",
+  volume_weight: "", moq: "", hs_code: "", material: "", item: "",
+  required_output_value: "", search_keywords: "", exclude_keywords: "",
+  related_series: "", category_classification: "",
 };
 
 // 取引単位は取込パーサ由来で表記が揺れる（BOX/box/carton 等）。
@@ -223,6 +257,21 @@ export default function ProductsPage() {
       unit_price_usd: form.unit_price_usd ? Number(form.unit_price_usd) : null,
       unit_price_eur: form.unit_price_eur ? Number(form.unit_price_eur) : null,
       image_url: toNull(form.image_url),
+      // ADR-093 Phase 1: 商品マスタ全項目
+      boxes_per_case: form.boxes_per_case ? Number(form.boxes_per_case) : null,
+      packs_per_box: form.packs_per_box ? Number(form.packs_per_box) : null,
+      box_weight_kg: form.box_weight_kg ? Number(form.box_weight_kg) : null,
+      case_weight_kg: form.case_weight_kg ? Number(form.case_weight_kg) : null,
+      volume_weight: form.volume_weight ? Number(form.volume_weight) : null,
+      moq: form.moq ? Number(form.moq) : null,
+      hs_code: toNull(form.hs_code),
+      material: toNull(form.material),
+      item: toNull(form.item),
+      required_output_value: toNull(form.required_output_value),
+      search_keywords: toNull(form.search_keywords),
+      exclude_keywords: toNull(form.exclude_keywords),
+      related_series: toNull(form.related_series),
+      category_classification: toNull(form.category_classification),
     };
     try {
       if (editId) {
@@ -261,6 +310,20 @@ export default function ProductsPage() {
       unit_price_usd: p.unit_price_usd != null ? String(p.unit_price_usd) : "",
       unit_price_eur: p.unit_price_eur != null ? String(p.unit_price_eur) : "",
       image_url: p.image_url || "",
+      boxes_per_case: p.boxes_per_case != null ? String(p.boxes_per_case) : "",
+      packs_per_box: p.packs_per_box != null ? String(p.packs_per_box) : "",
+      box_weight_kg: p.box_weight_kg != null ? String(p.box_weight_kg) : "",
+      case_weight_kg: p.case_weight_kg != null ? String(p.case_weight_kg) : "",
+      volume_weight: p.volume_weight != null ? String(p.volume_weight) : "",
+      moq: p.moq != null ? String(p.moq) : "",
+      hs_code: p.hs_code || "",
+      material: p.material || "",
+      item: p.item || "",
+      required_output_value: p.required_output_value || "",
+      search_keywords: p.search_keywords || "",
+      exclude_keywords: p.exclude_keywords || "",
+      related_series: p.related_series || "",
+      category_classification: p.category_classification || "",
     });
     setShowForm(true);
   };
@@ -436,6 +499,64 @@ export default function ProductsPage() {
               <div className="form-group"><label>{t("common.notes")}</label>
                 <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
+
+              {/* ADR-093 Phase 1: Box・梱包属性（入数・重量・MOQ・素材） */}
+              <fieldset style={{ border: "1px solid var(--border)", padding: "var(--space-3)", marginBottom: "var(--space-4)" }}>
+                <legend style={{ padding: "0 var(--space-2)", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.master.sectionBox")}</legend>
+                <div className="form-group"><label>{t("products.master.boxesPerCase")}</label>
+                  <input type="number" min="0" value={form.boxes_per_case} onChange={(e) => setForm({ ...form, boxes_per_case: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.packsPerBox")}</label>
+                  <input type="number" min="0" value={form.packs_per_box} onChange={(e) => setForm({ ...form, packs_per_box: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.boxWeightKg")}</label>
+                  <input type="number" min="0" step="0.001" value={form.box_weight_kg} onChange={(e) => setForm({ ...form, box_weight_kg: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.caseWeightKg")}</label>
+                  <input type="number" min="0" step="0.001" value={form.case_weight_kg} onChange={(e) => setForm({ ...form, case_weight_kg: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.volumeWeight")}</label>
+                  <input type="number" min="0" step="0.001" value={form.volume_weight} onChange={(e) => setForm({ ...form, volume_weight: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.moq")}</label>
+                  <input type="number" min="0" value={form.moq} onChange={(e) => setForm({ ...form, moq: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.material")}</label>
+                  <input maxLength={50} value={form.material} onChange={(e) => setForm({ ...form, material: e.target.value })} />
+                </div>
+              </fieldset>
+
+              {/* ADR-093 Phase 1: 発送ラベル（HSコード・品目・必須出力値） */}
+              <fieldset style={{ border: "1px solid var(--border)", padding: "var(--space-3)", marginBottom: "var(--space-4)" }}>
+                <legend style={{ padding: "0 var(--space-2)", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.master.sectionShipping")}</legend>
+                <div className="form-group"><label>{t("products.master.hsCode")}</label>
+                  <input maxLength={20} value={form.hs_code} onChange={(e) => setForm({ ...form, hs_code: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.item")}</label>
+                  <input maxLength={255} value={form.item} onChange={(e) => setForm({ ...form, item: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.requiredOutputValue")}</label>
+                  <input maxLength={255} value={form.required_output_value} onChange={(e) => setForm({ ...form, required_output_value: e.target.value })} />
+                </div>
+              </fieldset>
+
+              {/* ADR-093 Phase 1: 検索・分類（キーワード・関連シリーズ・カテゴリ分類） */}
+              <fieldset style={{ border: "1px solid var(--border)", padding: "var(--space-3)", marginBottom: "var(--space-4)" }}>
+                <legend style={{ padding: "0 var(--space-2)", fontSize: "var(--font-sm)", color: "var(--text-secondary)" }}>{t("products.master.sectionSearch")}</legend>
+                <div className="form-group"><label>{t("products.master.categoryClassification")}</label>
+                  <input maxLength={100} value={form.category_classification} onChange={(e) => setForm({ ...form, category_classification: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.relatedSeries")}</label>
+                  <input maxLength={255} value={form.related_series} onChange={(e) => setForm({ ...form, related_series: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.searchKeywords")}</label>
+                  <textarea value={form.search_keywords} onChange={(e) => setForm({ ...form, search_keywords: e.target.value })} />
+                </div>
+                <div className="form-group"><label>{t("products.master.excludeKeywords")}</label>
+                  <textarea value={form.exclude_keywords} onChange={(e) => setForm({ ...form, exclude_keywords: e.target.value })} />
+                </div>
+              </fieldset>
+
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>{t("common.cancel")}</button>
                 <button type="submit" className="btn-primary">{editId ? t("common.update") : t("common.register")}</button>

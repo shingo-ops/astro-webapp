@@ -464,3 +464,75 @@ class TestProductsValidation:
         assert data["language"] == "JP"
         assert float(data["unit_price_usd"]) == 15.99
         assert float(data["unit_price_eur"]) == 14.5
+
+
+# ---------------------------------------------------------------------------
+# ADR-093 Phase 1: 商品マスタ全項目（Box 属性 + 発送ラベル + 検索/分類）
+# ---------------------------------------------------------------------------
+
+class TestProductsMasterFields:
+    """ADR-093 で API/UI に露出した商品マスタ全項目の保存・取得・更新"""
+
+    _MASTER_PAYLOAD = {
+        "boxes_per_case": 16,
+        "packs_per_box": 30,
+        "box_weight_kg": "1.250",
+        "case_weight_kg": "20.500",
+        "volume_weight": "25.000",
+        "moq": 4,
+        "hs_code": "9504.40",
+        "material": "paper",
+        "item": "trading cards",
+        "required_output_value": "TCG-BOX",
+        "search_keywords": "ピカチュウ pikachu sv",
+        "exclude_keywords": "プロモ promo",
+        "related_series": "Scarlet & Violet",
+        "category_classification": "sealed_box",
+    }
+
+    async def test_master_fields_stored_on_create(self, client):
+        """作成時に全マスタ項目が保存・取得できる"""
+        res = await client.post("/api/v1/products", json={
+            "name_ja": "Box属性テスト商品",
+            **self._MASTER_PAYLOAD,
+        })
+        assert res.status_code == 201
+        data = res.json()
+        assert data["boxes_per_case"] == 16
+        assert data["packs_per_box"] == 30
+        assert float(data["box_weight_kg"]) == 1.25
+        assert float(data["case_weight_kg"]) == 20.5
+        assert float(data["volume_weight"]) == 25.0
+        assert data["moq"] == 4
+        assert data["hs_code"] == "9504.40"
+        assert data["material"] == "paper"
+        assert data["item"] == "trading cards"
+        assert data["required_output_value"] == "TCG-BOX"
+        assert data["search_keywords"] == "ピカチュウ pikachu sv"
+        assert data["exclude_keywords"] == "プロモ promo"
+        assert data["related_series"] == "Scarlet & Violet"
+        assert data["category_classification"] == "sealed_box"
+
+    async def test_master_fields_updatable(self, client):
+        """更新時に全マスタ項目を変更できる"""
+        create_res = await client.post("/api/v1/products", json={"name_ja": "マスタ更新前"})
+        product_id = create_res.json()["id"]
+
+        res = await client.patch(f"/api/v1/products/{product_id}", json=self._MASTER_PAYLOAD)
+        assert res.status_code == 200
+        data = res.json()
+        assert data["boxes_per_case"] == 16
+        assert data["hs_code"] == "9504.40"
+        assert data["exclude_keywords"] == "プロモ promo"
+
+        # 永続化確認（再取得）
+        get_res = await client.get(f"/api/v1/products/{product_id}")
+        assert get_res.json()["category_classification"] == "sealed_box"
+
+    async def test_negative_boxes_per_case_rejected(self, client):
+        """負の入数は 422（ge=0 バリデーション）"""
+        res = await client.post("/api/v1/products", json={
+            "name_ja": "負の入数商品",
+            "boxes_per_case": -1,
+        })
+        assert res.status_code == 422
