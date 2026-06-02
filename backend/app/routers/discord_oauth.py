@@ -28,8 +28,12 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import get_current_tenant, get_current_user, require_permission
-from app.auth.dependencies import reset_tenant_context
+from app.auth.dependencies import (
+    get_current_tenant,
+    get_current_user,
+    require_permission,
+    reset_tenant_context,
+)
 from app.database import get_db
 from app.models import User
 from app.services import oauth_state
