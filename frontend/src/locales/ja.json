@@ -755,6 +755,7 @@
     "justNow": "たった今",
     "minutesAgo": "{{count}}分前",
     "hoursAgo": "{{count}}時間前",
+    "createPO": "発注書作成",
     "search": {
       "placeholder": "商品名・カード番号・JAN・型番・仕入元 alias で検索",
       "opGroupLabel": "複数キーワードの結合方法",
@@ -983,7 +984,8 @@
     "supplier": "仕入先",
     "supplierRequired": "仕入先を選択してください",
     "itemsRequired": "明細はすべて商品と数量を入力してください",
-    "createdInfo": "発注を新規登録しました"
+    "createdInfo": "発注を新規登録しました",
+    "fromInventoryMultiSupplier": "複数の仕入元が選択されました。先頭の仕入元分のみで発注書を作成します。他 {{count}} 件の仕入元は別途作成してください。"
   },
   "tenantProfile": {
     "title": "発行者情報",

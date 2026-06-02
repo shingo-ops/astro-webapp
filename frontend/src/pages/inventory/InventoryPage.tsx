@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import { PageLayout } from "../../components/PageLayout";
+import { usePermissions } from "../../hooks/usePermissions";
 
 interface InventoryRow {
   id: number;
@@ -44,6 +45,7 @@ const PER_PAGE = 50;
 export default function InventoryPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
 
   const [items, setItems] = useState<InventoryRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -236,6 +238,15 @@ export default function InventoryPage() {
           >
             {t("products.createInvoice")}
           </button>
+          {hasPermission("purchase_orders.create") && (
+            <button
+              className="btn-primary btn-sm"
+              onClick={() => goCreate("/purchase-orders")}
+              data-testid="create-po-from-inventory"
+            >
+              {t("inventory.createPO")}
+            </button>
+          )}
           <button className="btn-sm" onClick={() => setSelectedIds(new Set())}>
             {t("common.clear")}
           </button>

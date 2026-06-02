@@ -1,10 +1,22 @@
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import { auth } from "../../lib/firebase";
 import { usePermissions } from "../../hooks/usePermissions";
 import { PageLayout } from "../../components/PageLayout";
-import PurchaseOrdersFormModal from "./PurchaseOrdersFormModal";
+import PurchaseOrdersFormModal, { POLineItem } from "./PurchaseOrdersFormModal";
+
+// 在庫表（InventoryPage）の複数選択から渡される商品（ADR-093 Phase 2b）。
+interface SelectedProduct {
+  product_id: number;
+  product_name: string;
+  unit_price: number | null;
+  condition?: string;
+  unit?: string | null;
+  supplier_id?: number;
+  supplier_name?: string | null;
+}
 
 interface PO {
   id: number;
@@ -26,6 +38,40 @@ export default function PurchaseOrdersPage() {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
+  // 在庫表からの前埋め（仕入元 + 明細）。null = 新規発注ボタン経由（空フォーム）。
+  const [poInitial, setPoInitial] = useState<{ supplierId: number | ""; items: POLineItem[] } | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // 在庫表の複数選択 → 発注書作成（ADR-093 Phase 2b）。
+  // 発注書は仕入元単位のため、先頭仕入元分のみで前埋めし、他仕入元があれば注意表示。
+  useEffect(() => {
+    const sel = (location.state as { selectedProducts?: SelectedProduct[] } | null)?.selectedProducts;
+    if (!sel || sel.length === 0) return;
+    const firstSupplier = sel.find((s) => s.supplier_id != null)?.supplier_id ?? "";
+    const sameSupplier = sel.filter((s) => (s.supplier_id ?? "") === firstSupplier);
+    const otherSupplierNames = Array.from(
+      new Set(
+        sel
+          .filter((s) => (s.supplier_id ?? "") !== firstSupplier)
+          .map((s) => s.supplier_name ?? `#${s.supplier_id}`),
+      ),
+    );
+    const items: POLineItem[] = sameSupplier.map((s) => ({
+      product_id: s.product_id,
+      product_name: s.product_name,
+      quantity: 1,
+      unit_cost: s.unit_price ?? 0,
+    }));
+    setPoInitial({ supplierId: firstSupplier === "" ? "" : Number(firstSupplier), items });
+    setShowNewModal(true);
+    if (otherSupplierNames.length > 0) {
+      setInfo(t("purchaseOrders.fromInventoryMultiSupplier", { count: otherSupplierNames.length }));
+    }
+    // 二重発火防止: 消費した state をクリア
+    navigate(location.pathname, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const STATUS_LABELS: Record<string, string> = {
     draft: t("purchaseOrders.status_draft"),
@@ -137,7 +183,7 @@ export default function PurchaseOrdersPage() {
       subtitleKey="purchaseOrders.subtitle"
       headerAction={hasPermission("purchase_orders.create") ? (
         <div className="page-header-actions">
-          <button className="btn-primary" data-testid="po-new-btn" onClick={() => setShowNewModal(true)}>
+          <button className="btn-primary" data-testid="po-new-btn" onClick={() => { setPoInitial(null); setShowNewModal(true); }}>
             {t("purchaseOrders.newPO")}
           </button>
         </div>
@@ -147,6 +193,8 @@ export default function PurchaseOrdersPage() {
         open={showNewModal}
         onClose={() => setShowNewModal(false)}
         onCreated={() => { setInfo(t("purchaseOrders.createdInfo")); load(); }}
+        initialSupplierId={poInitial?.supplierId}
+        initialItems={poInitial?.items}
       />
       <div className="filter-bar">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
