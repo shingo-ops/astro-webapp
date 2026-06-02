@@ -5,6 +5,16 @@ on:
     branches:
       - main
 
+# 連続リリースで deploy.yml が並行実行されると、Docker コンテナ名衝突
+# （Conflict. The container name "/astro-webapp-backend-1" is already in use）で
+# backend が起動できず 502 になる（2026-06-02 #1390/1395/1396 の 9 分間連続マージで実発生）。
+# 同一グループで直列化し、並行実行を防ぐ。
+# cancel-in-progress: false — migration 実行中に後続がキャンセルすると DB が
+# 中途半端な状態になる危険があるため、キャンセルせずキュー待ちにする（ADR-092）。
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
