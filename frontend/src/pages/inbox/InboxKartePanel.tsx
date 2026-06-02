@@ -238,6 +238,10 @@ function KarteTabContent({
           (leadDetail.estimated_scale === "Small" || leadDetail.estimated_scale === "Large") && (
           <ChannelInviteButton leadId={leadDetail.id} />
         )}
+        {/* ADR-091 KPI6: Discord 顧客削除操作 */}
+        {leadDetail.discord_user_id && (
+          <DiscordRemoveButtons leadId={leadDetail.id} hasChannel={!!leadDetail.discord_guild_channel_id} />
+        )}
         <div className="right-panel-row">
           <span className="right-panel-label">{t("leads.instagramLink")}</span>
           <input className="right-panel-field" type="url"
@@ -424,6 +428,65 @@ function ChannelInviteButton({ leadId }: { leadId: number }) {
           {sending ? t("leads.channelInviteSending") : t("leads.channelInviteSend")}
         </button>
         {sent && <span className="text-xs text-green-600">{t("leads.channelInviteSent")}</span>}
+        {error && <span className="text-xs text-red-500">{error}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** ADR-091 KPI6: Discord チャンネル削除・Kick・BAN ボタン */
+function DiscordRemoveButtons({ leadId, hasChannel }: { leadId: number; hasChannel: boolean }) {
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState<string | null>(null);
+  const [done, setDone] = useState("");
+  const [error, setError] = useState("");
+
+  const handleAction = async (action: "remove-from-channel" | "kick" | "ban") => {
+    if (!window.confirm(t(`leads.discordRemoveConfirm.${action}`))) return;
+    setLoading(action);
+    setError("");
+    setDone("");
+    try {
+      await api.post(`/discord/${action}/${leadId}`, {});
+      setDone(t(`leads.discordRemoveDone.${action}`));
+      setTimeout(() => setDone(""), 5000);
+    } catch {
+      setError(t("leads.discordRemoveError"));
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  return (
+    <div className="right-panel-row">
+      <span className="right-panel-label">{t("leads.discordRemove")}</span>
+      <div className="flex flex-col gap-1">
+        <div className="flex gap-1 flex-wrap">
+          {hasChannel && (
+            <button
+              onClick={() => handleAction("remove-from-channel")}
+              disabled={loading !== null}
+              className="btn btn-secondary text-xs"
+            >
+              {loading === "remove-from-channel" ? t("processing") : t("leads.discordRemoveFromChannel")}
+            </button>
+          )}
+          <button
+            onClick={() => handleAction("kick")}
+            disabled={loading !== null}
+            className="btn btn-secondary text-xs"
+          >
+            {loading === "kick" ? t("processing") : t("leads.discordKick")}
+          </button>
+          <button
+            onClick={() => handleAction("ban")}
+            disabled={loading !== null}
+            className="btn btn-danger text-xs"
+          >
+            {loading === "ban" ? t("processing") : t("leads.discordBan")}
+          </button>
+        </div>
+        {done && <span className="text-xs text-green-600">{done}</span>}
         {error && <span className="text-xs text-red-500">{error}</span>}
       </div>
     </div>
