@@ -135,6 +135,14 @@ Ruleset の bypass を使った場合、以下にログを残す:
 
 新しい bypass 使用時は、本表に追記。
 
+### bypass actor 登録変更履歴
+
+Ruleset の bypass actor（GitHub UI: Settings → Rules → Rulesets → Protect main → Bypass list）を追加・削除した際のログ:
+
+| 日時 | 追加者 | 対象Ruleset | actor | 理由 |
+|------|--------|------------|-------|------|
+| 2026-06-02 | shingo-ops | main #15777895 | RepositoryRole: Admin | 緊急hotfix時のCI bypass用 |
+
 ---
 
 ## 5-bis. Required approvals の変更経緯 (2026-05-20)

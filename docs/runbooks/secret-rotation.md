@@ -14,6 +14,7 @@ GitHub Actions で使用している Secret の更新手順です。
 | `DISCORD_WEBHOOK_SCHEDULED_REPORT` | Discord 定期レポート通知 URL | Discord サーバー設定 |
 | `DISCORD_WEBHOOK_PR` | Discord PR 通知 URL | Discord サーバー設定 |
 | `METADATA_FERNET_KEY` | Meta トークン暗号化キー | 本番環境 `.env` |
+| `GHA_APP_KEY_PATH`（GitHub App PEM: gha-exporter） | GitHub Actions メトリクス収集用 GitHub App 秘密鍵 | VPS `/home/ubuntu/salesanchor/secrets/gha-exporter-key.pem` |
 
 ## 手順
 
@@ -56,6 +57,14 @@ https://github.com/shingo-ops/salesanchor/settings/secrets/actions
 2. `docker compose exec backend python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` で新しいキーを生成
 3. `.env` の `METADATA_FERNET_KEY` を更新 → `docker compose restart backend`
 4. 同じ値を GitHub Secrets に貼り付け
+
+#### `GHA_APP_KEY_PATH`（GitHub App PEM: gha-exporter）
+1. [GitHub Apps 設定](https://github.com/settings/apps) → `gha-exporter` アプリを選択
+2. **Private keys** セクションで **Generate a private key** をクリック
+3. ダウンロードされた `.pem` ファイルを VPS の `/home/ubuntu/salesanchor/secrets/gha-exporter-key.pem` に配置
+4. 旧鍵は GitHub App の **Private keys** 一覧から削除
+5. `GHA_APP_KEY_PATH` は変数値（パス文字列）自体は変わらないため GitHub Secrets の更新は不要。ファイル配置のみ。
+6. 詳細手順は `docs/adr/ADR-077-*.md` §VPSデプロイ手順 参照
 
 ### 4. 動作確認
 
