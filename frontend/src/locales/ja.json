@@ -343,7 +343,7 @@
       "ban": "BAN しました"
     },
     "discordRoleSyncStatus": "Discordロール同期",
-    "discordRoleSyncStatus_synced": "同期済み",
+    "discordRoleSyncStatus_success": "同期済み",
     "discordRoleSyncStatus_failed": "失敗",
     "discordRoleSyncStatus_pending": "同期中",
     "discordRoleResync": "ロール再同期",
