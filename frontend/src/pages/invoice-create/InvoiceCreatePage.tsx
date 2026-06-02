@@ -201,9 +201,14 @@ export default function InvoiceCreatePage() {
       <div className="page-header">
         {/* eslint-disable-next-line no-restricted-syntax -- 作成ページ(route param 無し)は navKey 制約対象外 */}
         <h2>{t("invoices.createTitle")}</h2>
-        <button className="btn-secondary" onClick={() => navigate("/invoices")}>
-          {t("common.back")}
-        </button>
+        <div style={{ display: "flex", gap: "var(--space-2)" }}>
+          <button className="btn-secondary" onClick={() => navigate("/admin/tenant-profile")}>
+            {t("nav.tenantProfile")}
+          </button>
+          <button className="btn-secondary" onClick={() => navigate("/invoices")}>
+            {t("common.back")}
+          </button>
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
